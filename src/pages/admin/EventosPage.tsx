@@ -73,7 +73,11 @@ export default function EventosPage() {
       setDialogOpen(false);
     },
     onError: (err: Error) => {
-      toast.error("Erro ao criar evento: " + err.message);
+      if (err.message?.includes("events_slug_key")) {
+        toast.error("Já existe um evento com esse slug. Escolha outro.");
+      } else {
+        toast.error("Erro ao criar evento: " + err.message);
+      }
     },
   });
 
@@ -110,7 +114,11 @@ export default function EventosPage() {
       setEditingEvent(null);
     },
     onError: (err: Error) => {
-      toast.error("Erro ao atualizar evento: " + err.message);
+      if (err.message?.includes("events_slug_key")) {
+        toast.error("Já existe um evento com esse slug. Escolha outro.");
+      } else {
+        toast.error("Erro ao atualizar evento: " + err.message);
+      }
     },
   });
 
@@ -141,7 +149,8 @@ export default function EventosPage() {
 
   const formatDate = (date: string | null) => {
     if (!date) return "—";
-    return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
+    // Append T00:00:00 to avoid UTC shift on date-only strings
+    return format(new Date(date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR });
   };
 
   return (
