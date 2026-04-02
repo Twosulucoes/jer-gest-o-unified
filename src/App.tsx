@@ -13,6 +13,7 @@ import EventosPage from "./pages/admin/EventosPage";
 import ModalidadesPage from "./pages/admin/ModalidadesPage";
 import CategoriasPage from "./pages/admin/CategoriasPage";
 import LocaisPage from "./pages/admin/LocaisPage";
+import InstituicoesPage from "./pages/admin/InstituicoesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
