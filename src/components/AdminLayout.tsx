@@ -10,6 +10,7 @@ import {
   MapPin,
   Dumbbell,
   ListTree,
+  Building2,
 } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
