@@ -58,6 +58,60 @@ export type Database = {
           },
         ]
       }
+      delegations: {
+        Row: {
+          chief_email: string | null
+          chief_name: string | null
+          chief_phone: string | null
+          created_at: string
+          event_id: string
+          id: string
+          institution_id: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          chief_email?: string | null
+          chief_name?: string | null
+          chief_phone?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          institution_id: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          chief_email?: string | null
+          chief_name?: string | null
+          chief_phone?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          institution_id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delegations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegations_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
@@ -91,6 +145,57 @@ export type Database = {
           status?: string
           updated_at?: string
           year?: number
+        }
+        Relationships: []
+      }
+      institutions: {
+        Row: {
+          city: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          district: string | null
+          id: string
+          is_active: boolean
+          name: string
+          network_type: string
+          official_name: string | null
+          slug: string
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          district?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          network_type?: string
+          official_name?: string | null
+          slug: string
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          district?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          network_type?: string
+          official_name?: string | null
+          slug?: string
+          state?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
