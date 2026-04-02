@@ -199,6 +199,71 @@ export type Database = {
         }
         Relationships: []
       }
+      people: {
+        Row: {
+          birth_date: string
+          cpf: string | null
+          created_at: string
+          disability_type: string | null
+          email: string | null
+          food_restrictions: string | null
+          full_name: string
+          gender: string
+          id: string
+          institution_id: string | null
+          is_active: boolean
+          medical_notes: string | null
+          phone: string | null
+          photo_url: string | null
+          rg: string | null
+          updated_at: string
+        }
+        Insert: {
+          birth_date: string
+          cpf?: string | null
+          created_at?: string
+          disability_type?: string | null
+          email?: string | null
+          food_restrictions?: string | null
+          full_name: string
+          gender?: string
+          id?: string
+          institution_id?: string | null
+          is_active?: boolean
+          medical_notes?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          rg?: string | null
+          updated_at?: string
+        }
+        Update: {
+          birth_date?: string
+          cpf?: string | null
+          created_at?: string
+          disability_type?: string | null
+          email?: string | null
+          food_restrictions?: string | null
+          full_name?: string
+          gender?: string
+          id?: string
+          institution_id?: string | null
+          is_active?: boolean
+          medical_notes?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          rg?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
