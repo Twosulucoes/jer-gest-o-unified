@@ -121,7 +121,7 @@ export default function InstitutionFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome</FormLabel>
-                  <FormControl><Input placeholder="Escola Municipal João da Silva" {...field} /></FormControl>
+                  <FormControl><Input placeholder="Escola Municipal João da Silva" {...field} onChange={(e) => handleNameChange(e.target.value)} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
