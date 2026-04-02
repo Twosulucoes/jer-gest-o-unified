@@ -11,6 +11,7 @@ import {
   Dumbbell,
   ListTree,
   Building2,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
   { label: "Categorias", to: "/admin/categorias", icon: <ListTree className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
   { label: "Locais", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
   { label: "Instituições", to: "/admin/instituicoes", icon: <Building2 className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
+  { label: "Delegações", to: "/admin/delegacoes", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
 ];
 
 function getRoleLabel(role: AppRole): string {
