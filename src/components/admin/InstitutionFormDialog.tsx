@@ -90,6 +90,19 @@ export default function InstitutionFormDialog({
     }
   }, [institution, form]);
 
+  const handleNameChange = (value: string) => {
+    form.setValue("name", value);
+    if (!isEditing || form.getValues("slug") === "") {
+      const slug = value
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      form.setValue("slug", slug);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
