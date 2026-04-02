@@ -30,6 +30,7 @@ const navItems: NavItem[] = [
   { label: "Modalidades", to: "/admin/modalidades", icon: <Dumbbell className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
   { label: "Categorias", to: "/admin/categorias", icon: <ListTree className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
   { label: "Locais", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
+  { label: "Instituições", to: "/admin/instituicoes", icon: <Building2 className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
 ];
 
 function getRoleLabel(role: AppRole): string {
