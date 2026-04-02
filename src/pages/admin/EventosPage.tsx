@@ -114,7 +114,11 @@ export default function EventosPage() {
       setEditingEvent(null);
     },
     onError: (err: Error) => {
-      toast.error("Erro ao atualizar evento: " + err.message);
+      if (err.message?.includes("events_slug_key")) {
+        toast.error("Já existe um evento com esse slug. Escolha outro.");
+      } else {
+        toast.error("Erro ao atualizar evento: " + err.message);
+      }
     },
   });
 
