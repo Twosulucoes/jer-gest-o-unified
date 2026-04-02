@@ -141,7 +141,8 @@ export default function EventosPage() {
 
   const formatDate = (date: string | null) => {
     if (!date) return "—";
-    return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
+    // Append T00:00:00 to avoid UTC shift on date-only strings
+    return format(new Date(date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR });
   };
 
   return (
