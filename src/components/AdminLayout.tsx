@@ -12,6 +12,7 @@ import {
   ListTree,
   Building2,
   Users,
+  Upload,
 } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
