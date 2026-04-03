@@ -581,6 +581,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_inscricoes_batch: { Args: { payload: Json }; Returns: Json }
     }
     Enums: {
       app_role:
