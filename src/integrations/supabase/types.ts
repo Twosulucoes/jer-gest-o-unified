@@ -199,6 +199,81 @@ export type Database = {
         }
         Relationships: []
       }
+      participant_credentials: {
+        Row: {
+          activated_at: string | null
+          binding_source: string
+          created_at: string
+          credential_code: string
+          event_id: string
+          external_participant_id: string | null
+          external_registration_id: string | null
+          external_system: string
+          id: string
+          issued_at: string | null
+          last_validated_at: string | null
+          participant_id: string
+          qr_code_value: string
+          raw_payload: Json | null
+          revoked_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string | null
+          binding_source?: string
+          created_at?: string
+          credential_code: string
+          event_id: string
+          external_participant_id?: string | null
+          external_registration_id?: string | null
+          external_system?: string
+          id?: string
+          issued_at?: string | null
+          last_validated_at?: string | null
+          participant_id: string
+          qr_code_value: string
+          raw_payload?: Json | null
+          revoked_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string | null
+          binding_source?: string
+          created_at?: string
+          credential_code?: string
+          event_id?: string
+          external_participant_id?: string | null
+          external_registration_id?: string | null
+          external_system?: string
+          id?: string
+          issued_at?: string | null
+          last_validated_at?: string | null
+          participant_id?: string
+          qr_code_value?: string
+          raw_payload?: Json | null
+          revoked_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_credentials_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_credentials_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_sport_events: {
         Row: {
           created_at: string
