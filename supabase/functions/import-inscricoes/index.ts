@@ -6,27 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ─── Constants ───────────────────────────────────────────────────────
 const MAX_ROWS = 3000;
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
 function slugify(text: string): string {
-  return text
-    .toString()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return text.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 function capitalize(text: string): string {
-  return text
-    .trim()
-    .toLowerCase()
-    .replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+  return text.trim().toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
 }
 
 function cleanCpf(cpf: string | null | undefined): string | null {
@@ -39,15 +29,12 @@ function parseDate(value: unknown): string | null {
   if (!value) return null;
   if (value instanceof Date) return value.toISOString().split("T")[0];
   if (typeof value === "number") {
-    // Excel serial date
     const date = new Date((value - 25569) * 86400 * 1000);
     return date.toISOString().split("T")[0];
   }
   const str = String(value).trim();
-  // Try DD/MM/YYYY
   const brMatch = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
-  // Try YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
   return null;
 }
@@ -60,11 +47,19 @@ function normalizeGender(value: string | null | undefined): string {
   return "male";
 }
 
+/** Split PROVA cell into individual sport events, filtering blanks and "---" */
+function parseSportEvents(raw: string): Array<{ name: string; slug: string }> {
+  if (!raw || raw.trim() === "" || raw.trim() === "---") return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s !== "" && s !== "---")
+    .map((name) => ({ name, slug: slugify(name) }));
+}
+
 // ─── Types ───────────────────────────────────────────────────────────
 
-interface RawRow {
-  [key: string]: unknown;
-}
+interface RawRow { [key: string]: unknown; }
 
 interface NormalizedRow {
   row_number: number;
@@ -78,8 +73,7 @@ interface NormalizedRow {
   institution_slug: string;
   sport_slug: string;
   category_slug: string;
-  sport_event_name: string;
-  sport_event_slug: string;
+  sport_events: Array<{ name: string; slug: string }>;
   user_type: string;
   inscription_status: string;
   raw: RawRow;
@@ -118,13 +112,7 @@ const REQUIRED_COLUMNS = ["NOME", "DATA NASCIMENTO", "SEXO", "ESCOLA", "MODALIDA
 function validateHeaders(rawRows: RawRow[]): string[] {
   if (rawRows.length === 0) return [];
   const headers = Object.keys(rawRows[0]);
-  const missing: string[] = [];
-  for (const col of REQUIRED_COLUMNS) {
-    if (!headers.includes(col)) {
-      missing.push(col);
-    }
-  }
-  return missing;
+  return REQUIRED_COLUMNS.filter((col) => !headers.includes(col));
 }
 
 // ─── Column Mapping ──────────────────────────────────────────────────
@@ -143,7 +131,7 @@ function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
   const institution = getField(raw, "ESCOLA", "INSTITUICAO");
   const sport = getField(raw, "MODALIDADE");
   const category = getField(raw, "COMPETICAO", "CATEGORIA");
-  const prova = getField(raw, "PROVA");
+  const provaRaw = getField(raw, "PROVA");
   const userType = getField(raw, "TIPO USUARIO", "TIPO_USUARIO").toLowerCase();
   const status = getField(raw, "STATUS DA INSCRIÇÃO", "STATUS DA INSCRICAO", "STATUS_INSCRICAO");
 
@@ -159,8 +147,7 @@ function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
     institution_slug: slugify(institution),
     sport_slug: slugify(sport),
     category_slug: slugify(category),
-    sport_event_name: prova,
-    sport_event_slug: slugify(prova),
+    sport_events: parseSportEvents(provaRaw),
     user_type: userType,
     inscription_status: status,
     raw,
@@ -213,18 +200,15 @@ function validateRow(
   const warnings: RowResult[] = [];
   const resolved: Record<string, string | null> = {};
 
-  // Skip non-athlete rows (coaches, staff, etc.)
   if (row.user_type && row.user_type !== "atleta") {
     return { errors: [], warnings: [], resolved: {}, skip: true };
   }
 
-  // Skip rows with invalid inscription status
   if (row.inscription_status && row.inscription_status.toLowerCase() !== "válida" && row.inscription_status.toLowerCase() !== "valida") {
     warnings.push({ row: row.row_number, field: "STATUS DA INSCRIÇÃO", value: row.inscription_status, code: "INVALID_STATUS", message: `Inscrição com status "${row.inscription_status}" — ignorada` });
     return { errors: [], warnings, resolved: {}, skip: true };
   }
 
-  // Required fields
   if (!row.full_name) {
     errors.push({ row: row.row_number, field: "NOME", value: row.full_name, code: "NAME_MISSING", message: "Nome obrigatório" });
   }
@@ -232,7 +216,6 @@ function validateRow(
     errors.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING", message: "Data de nascimento obrigatória" });
   }
 
-  // Institution
   const instId = refs.institutions.get(row.institution_slug);
   if (!instId) {
     errors.push({ row: row.row_number, field: "ESCOLA", value: row.institution_slug, code: "INSTITUTION_NOT_FOUND", message: "Instituição não encontrada" });
@@ -246,7 +229,6 @@ function validateRow(
     }
   }
 
-  // Sport
   const sportId = refs.sports.get(row.sport_slug);
   if (!sportId) {
     errors.push({ row: row.row_number, field: "MODALIDADE", value: row.sport_slug, code: "SPORT_NOT_FOUND", message: "Modalidade não encontrada" });
@@ -254,7 +236,6 @@ function validateRow(
     resolved.sport_id = sportId;
   }
 
-  // Category
   const catId = refs.categories.get(row.category_slug);
   if (!catId) {
     errors.push({ row: row.row_number, field: "COMPETICAO", value: row.category_slug, code: "CATEGORY_NOT_FOUND", message: "Categoria não encontrada" });
@@ -262,9 +243,10 @@ function validateRow(
     resolved.category_id = catId;
   }
 
-  // Sport event name
-  if (!row.sport_event_name) {
-    errors.push({ row: row.row_number, field: "PROVA", value: null, code: "PROVA_MISSING", message: "Nome da prova obrigatório" });
+  // Sport events (PROVA) — now an array
+  if (row.sport_events.length === 0) {
+    warnings.push({ row: row.row_number, field: "PROVA", value: null, code: "PROVA_EMPTY", message: "Nenhuma prova válida encontrada — linha ignorada" });
+    return { errors: [], warnings, resolved: {}, skip: true };
   }
 
   // CPF resolution
@@ -334,14 +316,17 @@ function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
       });
     }
 
-    enrollments.push({
-      person_key: personKey,
-      delegation_id: resolved.delegation_id!,
-      sport_id: resolved.sport_id!,
-      category_id: resolved.category_id!,
-      sport_event_name: row.sport_event_name,
-      sport_event_slug: row.sport_event_slug,
-    });
+    // Expand: one enrollment per sport_event in the array
+    for (const se of row.sport_events) {
+      enrollments.push({
+        person_key: personKey,
+        delegation_id: resolved.delegation_id!,
+        sport_id: resolved.sport_id!,
+        category_id: resolved.category_id!,
+        sport_event_name: se.name,
+        sport_event_slug: se.slug,
+      });
+    }
   }
 
   return {
@@ -359,12 +344,10 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // ── Auth ──
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -378,13 +361,11 @@ Deno.serve(async (req: Request) => {
     const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const operatorId = claimsData.claims.sub as string;
 
-    // ── Parse multipart ──
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const eventId = formData.get("event_id") as string | null;
@@ -404,18 +385,13 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ── Service-role client for data operations ──
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // ── Validate event exists ──
     const { data: eventData, error: eventError } = await serviceClient
-      .from("events")
-      .select("id")
-      .eq("id", eventId)
-      .maybeSingle();
+      .from("events").select("id").eq("id", eventId).maybeSingle();
 
     if (eventError || !eventData) {
       return new Response(
@@ -424,15 +400,12 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ── Parse XLSX ──
     const buffer = await file.arrayBuffer();
     const rawRows = parseXlsx(buffer);
 
     if (rawRows.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Planilha vazia" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Planilha vazia" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (rawRows.length > MAX_ROWS) {
@@ -442,10 +415,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ── Load reference maps ──
     const refs = await loadReferenceMaps(serviceClient, eventId);
 
-    // ── Validate headers ──
     const missingCols = validateHeaders(rawRows);
     if (missingCols.length > 0) {
       return new Response(
@@ -454,7 +425,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ── Normalize and validate ──
     const allErrors: RowResult[] = [];
     const allWarnings: RowResult[] = [];
     const validRows: ProcessedRow[] = [];
@@ -465,28 +435,29 @@ Deno.serve(async (req: Request) => {
     for (const row of normalizedRows) {
       const { errors, warnings, resolved, skip } = validateRow(row, refs);
       allWarnings.push(...warnings);
-      if (skip) {
-        skippedRows++;
-        continue;
-      }
-      if (errors.length > 0) {
-        allErrors.push(...errors);
-      } else {
-        validRows.push({ row, resolved });
+      if (skip) { skippedRows++; continue; }
+      if (errors.length > 0) { allErrors.push(...errors); }
+      else { validRows.push({ row, resolved }); }
+    }
+
+    // Preview counts — based on expanded enrollments
+    const personActions = validRows.map((r) => r.resolved.person_action);
+    const totalEnrollments = validRows.reduce((sum, r) => sum + r.row.sport_events.length, 0);
+    const sportEventKeys = new Set<string>();
+    for (const { row, resolved } of validRows) {
+      for (const se of row.sport_events) {
+        sportEventKeys.add(`${resolved.sport_id}|${resolved.category_id}|${se.slug}`);
       }
     }
 
-    // ── Preview counts ──
-    const personActions = validRows.map((r) => r.resolved.person_action);
     const preview = {
       people_to_create: personActions.filter((a) => a === "create").length,
       people_to_reuse: personActions.filter((a) => a === "reuse").length,
       participants_to_create: validRows.length,
-      sport_events_to_create: new Set(validRows.map((r) => `${r.resolved.sport_id}|${r.resolved.category_id}|${r.row.sport_event_slug}`)).size,
-      enrollments_to_create: validRows.length,
+      sport_events_to_create: sportEventKeys.size,
+      enrollments_to_create: totalEnrollments,
     };
 
-    // ── Mode: validate ──
     if (mode === "validate") {
       return new Response(
         JSON.stringify({
@@ -530,11 +501,7 @@ Deno.serve(async (req: Request) => {
 
     if (rpcError) {
       return new Response(
-        JSON.stringify({
-          status: "rollback",
-          error: rpcError.message,
-          details: rpcError,
-        }),
+        JSON.stringify({ status: "rollback", error: rpcError.message, details: rpcError }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
