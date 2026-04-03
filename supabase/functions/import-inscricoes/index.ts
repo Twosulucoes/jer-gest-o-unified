@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import * as XLSX from "https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs";
+import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.49.4/cors";
 
 // ─── Constants ───────────────────────────────────────────────────────
