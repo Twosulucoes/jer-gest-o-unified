@@ -438,16 +438,30 @@ Deno.serve(async (req: Request) => {
     // ── Load reference maps ──
     const refs = await loadReferenceMaps(serviceClient, eventId);
 
+    // ── Validate headers ──
+    const missingCols = validateHeaders(rawRows);
+    if (missingCols.length > 0) {
+      return new Response(
+        JSON.stringify({ error: `Colunas obrigatórias ausentes: ${missingCols.join(", ")}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── Normalize and validate ──
     const allErrors: RowResult[] = [];
     const allWarnings: RowResult[] = [];
     const validRows: ProcessedRow[] = [];
+    let skippedRows = 0;
 
     const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i));
 
     for (const row of normalizedRows) {
-      const { errors, warnings, resolved } = validateRow(row, refs);
+      const { errors, warnings, resolved, skip } = validateRow(row, refs);
       allWarnings.push(...warnings);
+      if (skip) {
+        skippedRows++;
+        continue;
+      }
       if (errors.length > 0) {
         allErrors.push(...errors);
       } else {
