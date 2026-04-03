@@ -204,28 +204,39 @@ async function loadReferenceMaps(
 function validateRow(
   row: NormalizedRow,
   refs: ReferenceMaps
-): { errors: RowResult[]; warnings: RowResult[]; resolved: Record<string, string | null> } {
+): { errors: RowResult[]; warnings: RowResult[]; resolved: Record<string, string | null>; skip: boolean } {
   const errors: RowResult[] = [];
   const warnings: RowResult[] = [];
   const resolved: Record<string, string | null> = {};
+
+  // Skip non-athlete rows (coaches, staff, etc.)
+  if (row.user_type && row.user_type !== "atleta") {
+    return { errors: [], warnings: [], resolved: {}, skip: true };
+  }
+
+  // Skip rows with invalid inscription status
+  if (row.inscription_status && row.inscription_status.toLowerCase() !== "válida" && row.inscription_status.toLowerCase() !== "valida") {
+    warnings.push({ row: row.row_number, field: "STATUS DA INSCRIÇÃO", value: row.inscription_status, code: "INVALID_STATUS", message: `Inscrição com status "${row.inscription_status}" — ignorada` });
+    return { errors: [], warnings, resolved: {}, skip: true };
+  }
 
   // Required fields
   if (!row.full_name) {
     errors.push({ row: row.row_number, field: "NOME", value: row.full_name, code: "NAME_MISSING", message: "Nome obrigatório" });
   }
   if (!row.birth_date) {
-    errors.push({ row: row.row_number, field: "DATA_NASCIMENTO", value: null, code: "DOB_MISSING", message: "Data de nascimento obrigatória" });
+    errors.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING", message: "Data de nascimento obrigatória" });
   }
 
   // Institution
   const instId = refs.institutions.get(row.institution_slug);
   if (!instId) {
-    errors.push({ row: row.row_number, field: "INSTITUICAO", value: row.institution_slug, code: "INSTITUTION_NOT_FOUND", message: "Instituição não encontrada" });
+    errors.push({ row: row.row_number, field: "ESCOLA", value: row.institution_slug, code: "INSTITUTION_NOT_FOUND", message: "Instituição não encontrada" });
   } else {
     resolved.institution_id = instId;
     const delId = refs.delegations.get(instId);
     if (!delId) {
-      errors.push({ row: row.row_number, field: "DELEGACAO", value: instId, code: "DELEGATION_NOT_FOUND", message: "Delegação não encontrada para esta instituição/evento" });
+      errors.push({ row: row.row_number, field: "DELEGAÇÃO", value: instId, code: "DELEGATION_NOT_FOUND", message: "Delegação não encontrada para esta instituição/evento" });
     } else {
       resolved.delegation_id = delId;
     }
@@ -280,7 +291,7 @@ function validateRow(
     }
   }
 
-  return { errors, warnings, resolved };
+  return { errors, warnings, resolved, skip: false };
 }
 
 // ─── Build Commit Payload ────────────────────────────────────────────
