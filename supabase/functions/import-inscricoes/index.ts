@@ -323,6 +323,9 @@ function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
         birth_date: row.birth_date,
         gender: row.gender,
         cpf: row.cpf,
+        rg: row.rg,
+        email: row.email,
+        phone: row.phone,
         institution_id: resolved.institution_id,
       });
     }
