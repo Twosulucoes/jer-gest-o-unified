@@ -52,6 +52,7 @@ function normalizeGender(value: string | null | undefined): string {
   if (!value) return "male";
   const v = value.toString().trim().toLowerCase();
   if (["f", "feminino", "female", "fem"].includes(v)) return "female";
+  if (["m", "masculino", "male", "masc"].includes(v)) return "male";
   return "male";
 }
 
