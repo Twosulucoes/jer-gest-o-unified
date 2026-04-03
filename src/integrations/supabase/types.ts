@@ -199,6 +199,51 @@ export type Database = {
         }
         Relationships: []
       }
+      participant_sport_events: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          participant_id: string
+          sport_event_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          participant_id: string
+          sport_event_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          participant_id?: string
+          sport_event_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_sport_events_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_sport_events_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participants: {
         Row: {
           created_at: string
@@ -348,6 +393,64 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sport_events: {
+        Row: {
+          category_id: string
+          created_at: string
+          event_id: string
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sport_id: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          sport_id: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sport_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sport_events_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_events_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sports: {
         Row: {
