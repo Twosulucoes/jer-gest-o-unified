@@ -489,6 +489,7 @@ Deno.serve(async (req: Request) => {
           timestamp: new Date().toISOString(),
           summary: {
             total_rows: rawRows.length,
+            skipped_rows: skippedRows,
             valid: validRows.length,
             warnings: allWarnings.length,
             errors: allErrors.length,
