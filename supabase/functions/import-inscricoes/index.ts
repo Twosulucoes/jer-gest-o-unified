@@ -68,11 +68,16 @@ interface NormalizedRow {
   birth_date: string | null;
   gender: string;
   cpf: string | null;
+  rg: string | null;
+  email: string | null;
+  phone: string | null;
   institution_slug: string;
   sport_slug: string;
   category_slug: string;
   sport_event_name: string;
   sport_event_slug: string;
+  user_type: string;
+  inscription_status: string;
   raw: RawRow;
 }
 
@@ -85,12 +90,12 @@ interface RowResult {
 }
 
 interface ReferenceMaps {
-  institutions: Map<string, string>; // slug → id
-  delegations: Map<string, string>; // institution_id → delegation id (for event)
-  sports: Map<string, string>; // slug → id
-  categories: Map<string, string>; // slug → id
+  institutions: Map<string, string>;
+  delegations: Map<string, string>;
+  sports: Map<string, string>;
+  categories: Map<string, string>;
   peopleByCpf: Map<string, { id: string; full_name: string; birth_date: string }>;
-  peopleByNameDob: Map<string, string>; // "name|dob|gender" → id
+  peopleByNameDob: Map<string, string>;
 }
 
 // ─── XLSX Parsing ────────────────────────────────────────────────────
@@ -102,28 +107,58 @@ function parseXlsx(buffer: ArrayBuffer): RawRow[] {
   return XLSX.utils.sheet_to_json(sheet, { defval: null }) as RawRow[];
 }
 
+// ─── Header Validation ──────────────────────────────────────────────
+
+const REQUIRED_COLUMNS = ["NOME", "DATA NASCIMENTO", "SEXO", "ESCOLA", "MODALIDADE", "PROVA", "COMPETICAO"];
+
+function validateHeaders(rawRows: RawRow[]): string[] {
+  if (rawRows.length === 0) return [];
+  const headers = Object.keys(rawRows[0]);
+  const missing: string[] = [];
+  for (const col of REQUIRED_COLUMNS) {
+    if (!headers.includes(col)) {
+      missing.push(col);
+    }
+  }
+  return missing;
+}
+
 // ─── Column Mapping ──────────────────────────────────────────────────
-// Maps expected column names from the spreadsheet to internal fields.
-// Adjust these when the real spreadsheet columns are confirmed.
+
+function getField(raw: RawRow, ...keys: string[]): string {
+  for (const k of keys) {
+    if (raw[k] != null && String(raw[k]).trim() !== "" && String(raw[k]).trim() !== "---") {
+      return String(raw[k]).trim();
+    }
+  }
+  return "";
+}
 
 function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
-  const fullName = capitalize(String(raw["NOME"] ?? raw["NOME_COMPLETO"] ?? ""));
-  const institution = String(raw["INSTITUICAO"] ?? raw["ESCOLA"] ?? "");
-  const sport = String(raw["MODALIDADE"] ?? "");
-  const category = String(raw["COMPETICAO"] ?? raw["CATEGORIA"] ?? "");
-  const prova = String(raw["PROVA"] ?? "");
+  const fullName = capitalize(getField(raw, "NOME", "NOME COMPLETO", "NOME_COMPLETO"));
+  const institution = getField(raw, "ESCOLA", "INSTITUICAO");
+  const sport = getField(raw, "MODALIDADE");
+  const category = getField(raw, "COMPETICAO", "CATEGORIA");
+  const prova = getField(raw, "PROVA");
+  const userType = getField(raw, "TIPO USUARIO", "TIPO_USUARIO").toLowerCase();
+  const status = getField(raw, "STATUS DA INSCRIÇÃO", "STATUS DA INSCRICAO", "STATUS_INSCRICAO");
 
   return {
-    row_number: rowIndex + 2, // +2 for header row + 0-index
+    row_number: rowIndex + 2,
     full_name: fullName,
-    birth_date: parseDate(raw["DATA_NASCIMENTO"] ?? raw["NASCIMENTO"]),
-    gender: normalizeGender(String(raw["SEXO"] ?? raw["GENERO"] ?? "")),
-    cpf: cleanCpf(raw["CPF"] as string),
+    birth_date: parseDate(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"] ?? raw["NASCIMENTO"]),
+    gender: normalizeGender(getField(raw, "SEXO", "GENERO")),
+    cpf: cleanCpf(getField(raw, "CPF") || null),
+    rg: getField(raw, "RG") || null,
+    email: getField(raw, "EMAIL") || null,
+    phone: getField(raw, "TELEFONE") || null,
     institution_slug: slugify(institution),
     sport_slug: slugify(sport),
     category_slug: slugify(category),
-    sport_event_name: prova.trim(),
+    sport_event_name: prova,
     sport_event_slug: slugify(prova),
+    user_type: userType,
+    inscription_status: status,
     raw,
   };
 }
