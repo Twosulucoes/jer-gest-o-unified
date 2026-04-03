@@ -411,18 +411,73 @@ export default function ImportacaoPage() {
 
             {/* Commit button */}
             <div className="flex gap-3 pt-2 border-t">
-              <Button
-                onClick={handleCommit}
-                disabled={!canCommit}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                {committing ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="mr-2 h-4 w-4" />
-                )}
-                {committing ? "Importando…" : "Confirmar importação"}
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    disabled={!canCommit}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {committing ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="mr-2 h-4 w-4" />
+                    )}
+                    {committing ? "Importando…" : "Confirmar importação"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                      Confirmar importação
+                    </AlertDialogTitle>
+                    <AlertDialogDescription asChild>
+                      <div className="space-y-3">
+                        <p>
+                          Esta ação vai <strong className="text-foreground">gravar dados permanentemente</strong> no sistema
+                          para o evento <strong className="text-foreground">{_selectedEvent?.name} ({_selectedEvent?.year})</strong>.
+                        </p>
+                        <p>
+                          Certifique-se de ter revisado todos os erros e avisos antes de prosseguir.
+                        </p>
+                        <Separator />
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="flex justify-between rounded-md bg-muted px-3 py-1.5">
+                            <span className="text-muted-foreground">Linhas válidas</span>
+                            <span className="font-semibold text-foreground">{validateResult.summary.valid}</span>
+                          </div>
+                          <div className="flex justify-between rounded-md bg-muted px-3 py-1.5">
+                            <span className="text-muted-foreground">Avisos</span>
+                            <span className="font-semibold text-foreground">{validateResult.summary.warnings}</span>
+                          </div>
+                          <div className="flex justify-between rounded-md bg-muted px-3 py-1.5">
+                            <span className="text-muted-foreground">Pessoas a criar</span>
+                            <span className="font-semibold text-foreground">{validateResult.preview.people_to_create}</span>
+                          </div>
+                          <div className="flex justify-between rounded-md bg-muted px-3 py-1.5">
+                            <span className="text-muted-foreground">Participantes</span>
+                            <span className="font-semibold text-foreground">{validateResult.preview.participants_to_create}</span>
+                          </div>
+                          <div className="flex justify-between rounded-md bg-muted px-3 py-1.5 col-span-2">
+                            <span className="text-muted-foreground">Inscrições esportivas</span>
+                            <span className="font-semibold text-foreground">{validateResult.preview.enrollments_to_create}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleCommit}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      Sim, importar agora
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <Button onClick={handleReset} variant="ghost">
                 <RotateCcw className="mr-2 h-4 w-4" />
                 Cancelar
