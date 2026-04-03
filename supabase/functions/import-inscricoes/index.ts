@@ -1,6 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import * as XLSX from "https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.49.4/cors";
+import * as XLSX from "https://esm.sh/xlsx@0.18.5";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 // ─── Constants ───────────────────────────────────────────────────────
 const MAX_ROWS = 3000;
@@ -52,6 +56,7 @@ function normalizeGender(value: string | null | undefined): string {
   if (!value) return "male";
   const v = value.toString().trim().toLowerCase();
   if (["f", "feminino", "female", "fem"].includes(v)) return "female";
+  if (["m", "masculino", "male", "masc"].includes(v)) return "male";
   return "male";
 }
 
@@ -67,11 +72,16 @@ interface NormalizedRow {
   birth_date: string | null;
   gender: string;
   cpf: string | null;
+  rg: string | null;
+  email: string | null;
+  phone: string | null;
   institution_slug: string;
   sport_slug: string;
   category_slug: string;
   sport_event_name: string;
   sport_event_slug: string;
+  user_type: string;
+  inscription_status: string;
   raw: RawRow;
 }
 
@@ -84,12 +94,12 @@ interface RowResult {
 }
 
 interface ReferenceMaps {
-  institutions: Map<string, string>; // slug → id
-  delegations: Map<string, string>; // institution_id → delegation id (for event)
-  sports: Map<string, string>; // slug → id
-  categories: Map<string, string>; // slug → id
+  institutions: Map<string, string>;
+  delegations: Map<string, string>;
+  sports: Map<string, string>;
+  categories: Map<string, string>;
   peopleByCpf: Map<string, { id: string; full_name: string; birth_date: string }>;
-  peopleByNameDob: Map<string, string>; // "name|dob|gender" → id
+  peopleByNameDob: Map<string, string>;
 }
 
 // ─── XLSX Parsing ────────────────────────────────────────────────────
@@ -101,28 +111,58 @@ function parseXlsx(buffer: ArrayBuffer): RawRow[] {
   return XLSX.utils.sheet_to_json(sheet, { defval: null }) as RawRow[];
 }
 
+// ─── Header Validation ──────────────────────────────────────────────
+
+const REQUIRED_COLUMNS = ["NOME", "DATA NASCIMENTO", "SEXO", "ESCOLA", "MODALIDADE", "PROVA", "COMPETICAO"];
+
+function validateHeaders(rawRows: RawRow[]): string[] {
+  if (rawRows.length === 0) return [];
+  const headers = Object.keys(rawRows[0]);
+  const missing: string[] = [];
+  for (const col of REQUIRED_COLUMNS) {
+    if (!headers.includes(col)) {
+      missing.push(col);
+    }
+  }
+  return missing;
+}
+
 // ─── Column Mapping ──────────────────────────────────────────────────
-// Maps expected column names from the spreadsheet to internal fields.
-// Adjust these when the real spreadsheet columns are confirmed.
+
+function getField(raw: RawRow, ...keys: string[]): string {
+  for (const k of keys) {
+    if (raw[k] != null && String(raw[k]).trim() !== "" && String(raw[k]).trim() !== "---") {
+      return String(raw[k]).trim();
+    }
+  }
+  return "";
+}
 
 function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
-  const fullName = capitalize(String(raw["NOME"] ?? raw["NOME_COMPLETO"] ?? ""));
-  const institution = String(raw["INSTITUICAO"] ?? raw["ESCOLA"] ?? "");
-  const sport = String(raw["MODALIDADE"] ?? "");
-  const category = String(raw["COMPETICAO"] ?? raw["CATEGORIA"] ?? "");
-  const prova = String(raw["PROVA"] ?? "");
+  const fullName = capitalize(getField(raw, "NOME", "NOME COMPLETO", "NOME_COMPLETO"));
+  const institution = getField(raw, "ESCOLA", "INSTITUICAO");
+  const sport = getField(raw, "MODALIDADE");
+  const category = getField(raw, "COMPETICAO", "CATEGORIA");
+  const prova = getField(raw, "PROVA");
+  const userType = getField(raw, "TIPO USUARIO", "TIPO_USUARIO").toLowerCase();
+  const status = getField(raw, "STATUS DA INSCRIÇÃO", "STATUS DA INSCRICAO", "STATUS_INSCRICAO");
 
   return {
-    row_number: rowIndex + 2, // +2 for header row + 0-index
+    row_number: rowIndex + 2,
     full_name: fullName,
-    birth_date: parseDate(raw["DATA_NASCIMENTO"] ?? raw["NASCIMENTO"]),
-    gender: normalizeGender(String(raw["SEXO"] ?? raw["GENERO"] ?? "")),
-    cpf: cleanCpf(raw["CPF"] as string),
+    birth_date: parseDate(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"] ?? raw["NASCIMENTO"]),
+    gender: normalizeGender(getField(raw, "SEXO", "GENERO")),
+    cpf: cleanCpf(getField(raw, "CPF") || null),
+    rg: getField(raw, "RG") || null,
+    email: getField(raw, "EMAIL") || null,
+    phone: getField(raw, "TELEFONE") || null,
     institution_slug: slugify(institution),
     sport_slug: slugify(sport),
     category_slug: slugify(category),
-    sport_event_name: prova.trim(),
+    sport_event_name: prova,
     sport_event_slug: slugify(prova),
+    user_type: userType,
+    inscription_status: status,
     raw,
   };
 }
@@ -168,28 +208,39 @@ async function loadReferenceMaps(
 function validateRow(
   row: NormalizedRow,
   refs: ReferenceMaps
-): { errors: RowResult[]; warnings: RowResult[]; resolved: Record<string, string | null> } {
+): { errors: RowResult[]; warnings: RowResult[]; resolved: Record<string, string | null>; skip: boolean } {
   const errors: RowResult[] = [];
   const warnings: RowResult[] = [];
   const resolved: Record<string, string | null> = {};
+
+  // Skip non-athlete rows (coaches, staff, etc.)
+  if (row.user_type && row.user_type !== "atleta") {
+    return { errors: [], warnings: [], resolved: {}, skip: true };
+  }
+
+  // Skip rows with invalid inscription status
+  if (row.inscription_status && row.inscription_status.toLowerCase() !== "válida" && row.inscription_status.toLowerCase() !== "valida") {
+    warnings.push({ row: row.row_number, field: "STATUS DA INSCRIÇÃO", value: row.inscription_status, code: "INVALID_STATUS", message: `Inscrição com status "${row.inscription_status}" — ignorada` });
+    return { errors: [], warnings, resolved: {}, skip: true };
+  }
 
   // Required fields
   if (!row.full_name) {
     errors.push({ row: row.row_number, field: "NOME", value: row.full_name, code: "NAME_MISSING", message: "Nome obrigatório" });
   }
   if (!row.birth_date) {
-    errors.push({ row: row.row_number, field: "DATA_NASCIMENTO", value: null, code: "DOB_MISSING", message: "Data de nascimento obrigatória" });
+    errors.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING", message: "Data de nascimento obrigatória" });
   }
 
   // Institution
   const instId = refs.institutions.get(row.institution_slug);
   if (!instId) {
-    errors.push({ row: row.row_number, field: "INSTITUICAO", value: row.institution_slug, code: "INSTITUTION_NOT_FOUND", message: "Instituição não encontrada" });
+    errors.push({ row: row.row_number, field: "ESCOLA", value: row.institution_slug, code: "INSTITUTION_NOT_FOUND", message: "Instituição não encontrada" });
   } else {
     resolved.institution_id = instId;
     const delId = refs.delegations.get(instId);
     if (!delId) {
-      errors.push({ row: row.row_number, field: "DELEGACAO", value: instId, code: "DELEGATION_NOT_FOUND", message: "Delegação não encontrada para esta instituição/evento" });
+      errors.push({ row: row.row_number, field: "DELEGAÇÃO", value: instId, code: "DELEGATION_NOT_FOUND", message: "Delegação não encontrada para esta instituição/evento" });
     } else {
       resolved.delegation_id = delId;
     }
@@ -244,7 +295,7 @@ function validateRow(
     }
   }
 
-  return { errors, warnings, resolved };
+  return { errors, warnings, resolved, skip: false };
 }
 
 // ─── Build Commit Payload ────────────────────────────────────────────
@@ -276,6 +327,9 @@ function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
         birth_date: row.birth_date,
         gender: row.gender,
         cpf: row.cpf,
+        rg: row.rg,
+        email: row.email,
+        phone: row.phone,
         institution_id: resolved.institution_id,
       });
     }
@@ -391,16 +445,30 @@ Deno.serve(async (req: Request) => {
     // ── Load reference maps ──
     const refs = await loadReferenceMaps(serviceClient, eventId);
 
+    // ── Validate headers ──
+    const missingCols = validateHeaders(rawRows);
+    if (missingCols.length > 0) {
+      return new Response(
+        JSON.stringify({ error: `Colunas obrigatórias ausentes: ${missingCols.join(", ")}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── Normalize and validate ──
     const allErrors: RowResult[] = [];
     const allWarnings: RowResult[] = [];
     const validRows: ProcessedRow[] = [];
+    let skippedRows = 0;
 
     const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i));
 
     for (const row of normalizedRows) {
-      const { errors, warnings, resolved } = validateRow(row, refs);
+      const { errors, warnings, resolved, skip } = validateRow(row, refs);
       allWarnings.push(...warnings);
+      if (skip) {
+        skippedRows++;
+        continue;
+      }
       if (errors.length > 0) {
         allErrors.push(...errors);
       } else {
@@ -428,6 +496,7 @@ Deno.serve(async (req: Request) => {
           timestamp: new Date().toISOString(),
           summary: {
             total_rows: rawRows.length,
+            skipped_rows: skippedRows,
             valid: validRows.length,
             warnings: allWarnings.length,
             errors: allErrors.length,
