@@ -179,7 +179,7 @@ export default function ImportacaoPage() {
     setCommitResult(null);
   };
 
-  const selectedEvent = events.find((e) => e.id === selectedEventId);
+  const _selectedEvent = events.find((e) => e.id === selectedEventId);
   const canValidate = !!file && !!selectedEventId && !validating && !committing;
   const canCommit =
     validateResult &&
