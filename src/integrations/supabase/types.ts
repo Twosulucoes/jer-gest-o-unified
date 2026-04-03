@@ -199,6 +199,67 @@ export type Database = {
         }
         Relationships: []
       }
+      participants: {
+        Row: {
+          created_at: string
+          delegation_id: string
+          event_id: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          participant_type: string
+          person_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delegation_id: string
+          event_id: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          participant_type?: string
+          person_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delegation_id?: string
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          participant_type?: string
+          person_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participants_delegation_id_fkey"
+            columns: ["delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participants_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       people: {
         Row: {
           birth_date: string
