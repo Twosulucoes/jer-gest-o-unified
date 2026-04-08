@@ -641,6 +641,55 @@ export default function CompeticaoPartidaDetalhePage() {
         onSubmit={(v) => updateMatchMut.mutate(v)}
         isPending={updateMatchMut.isPending}
       />
+
+      {/* Confirmation: remove participant */}
+      <AlertDialog open={!!confirmRemoveEntryId} onOpenChange={(open) => { if (!open) setConfirmRemoveEntryId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover participante</AlertDialogTitle>
+            <AlertDialogDescription>
+              O participante será desvinculado desta partida. Se já houver resultado lançado para ele, a remoção pode causar inconsistência. Esta ação não é facilmente reversível.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (confirmRemoveEntryId) removeEntryMut.mutate(confirmRemoveEntryId); setConfirmRemoveEntryId(null); }}>
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmation: validate / publish / unpublish */}
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => { if (!open) setConfirmAction(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction === "validate" && "Validar resultados"}
+              {confirmAction === "publish" && "Publicar resultados oficialmente"}
+              {confirmAction === "unpublish" && "Despublicar resultados"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction === "validate" && "Os resultados lançados serão marcados como validados. Após validação, ainda será possível publicar ou editar."}
+              {confirmAction === "publish" && "Os resultados serão publicados oficialmente. Após publicação, qualquer alteração exigirá despublicação prévia."}
+              {confirmAction === "unpublish" && "A publicação oficial será revertida para status validado. Os dados de publicação (quem publicou e quando) serão removidos. Esta ação pode impactar informações já divulgadas."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (confirmAction === "validate") validateResultsMut.mutate();
+              if (confirmAction === "publish") publishResultsMut.mutate();
+              if (confirmAction === "unpublish") unpublishResultsMut.mutate();
+              setConfirmAction(null);
+            }}>
+              {confirmAction === "validate" && "Validar"}
+              {confirmAction === "publish" && "Publicar"}
+              {confirmAction === "unpublish" && "Despublicar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
