@@ -40,6 +40,7 @@ interface NavItem {
 
 const TRANSPORT_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "transporte"];
 const FOOD_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"];
+const LODGING_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"];
 
 const navItems: NavItem[] = [
   { label: "Dashboard", to: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, roles: "all" },
