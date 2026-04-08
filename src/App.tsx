@@ -28,6 +28,9 @@ import AlimentacaoConsumoPage from "./pages/admin/AlimentacaoConsumoPage";
 import AlojamentoLocaisPage from "./pages/admin/AlojamentoLocaisPage";
 import AlojamentoUnidadesPage from "./pages/admin/AlojamentoUnidadesPage";
 import AlojamentoOcupacaoPage from "./pages/admin/AlojamentoOcupacaoPage";
+import CompeticaoFasesPage from "./pages/admin/CompeticaoFasesPage";
+import CompeticaoPartidasPage from "./pages/admin/CompeticaoPartidasPage";
+import CompeticaoAgendaPage from "./pages/admin/CompeticaoAgendaPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +38,7 @@ const queryClient = new QueryClient();
 const TRANSPORT_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "transporte"] as const;
 const FOOD_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"] as const;
 const LODGING_ROLES = ["admin", "secretaria", "coordenacao_tecnica"] as const;
+const COMPETITION_ROLES = ["admin", "secretaria", "coordenacao_tecnica"] as const;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
