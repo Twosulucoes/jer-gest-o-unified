@@ -96,25 +96,38 @@ export default function AdminLayout() {
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          {visibleItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/admin"}
-              onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-primary"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`
-              }
-            >
-              {item.icon}
-              {item.label}
-            </NavLink>
-          ))}
+        <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
+          {(() => {
+            let lastSection: string | undefined;
+            return visibleItems.map((item) => {
+              const showSection = item.section && item.section !== lastSection;
+              lastSection = item.section;
+              return (
+                <div key={item.to}>
+                  {showSection && (
+                    <p className="mt-4 mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+                      {item.section}
+                    </p>
+                  )}
+                  <NavLink
+                    to={item.to}
+                    end={item.to === "/admin"}
+                    onClick={() => setSidebarOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-primary"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      }`
+                    }
+                  >
+                    {item.icon}
+                    {item.label}
+                  </NavLink>
+                </div>
+              );
+            });
+          })()}
         </nav>
 
         <div className="border-t border-sidebar-border p-4">
