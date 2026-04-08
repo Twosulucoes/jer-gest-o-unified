@@ -68,6 +68,10 @@ interface ValidateResult {
     participants_to_create: number;
     sport_events_to_create: number;
     enrollments_to_create: number;
+    staff_to_create?: number;
+    institutions_created?: number;
+    sports_created?: number;
+    categories_created?: number;
   };
   errors: Array<{ row: number; field: string; value: unknown; code: string; message: string }>;
   warnings: Array<{ row: number; field: string; value: unknown; code: string; message: string }>;
