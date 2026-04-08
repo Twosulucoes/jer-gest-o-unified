@@ -486,17 +486,17 @@ export default function CompeticaoPartidaDetalhePage() {
               </Button>
             )}
             {canWrite && hasPendingValidation && (
-              <Button size="sm" onClick={() => validateResultsMut.mutate()} disabled={validateResultsMut.isPending}>
+              <Button size="sm" onClick={() => setConfirmAction("validate")} disabled={validateResultsMut.isPending}>
                 <CheckCircle2 className="mr-2 h-4 w-4" />Validar
               </Button>
             )}
             {canWrite && hasValidatedReady && !allPublished && (
-              <Button size="sm" variant="default" onClick={() => publishResultsMut.mutate()} disabled={publishResultsMut.isPending}>
+              <Button size="sm" variant="default" onClick={() => setConfirmAction("publish")} disabled={publishResultsMut.isPending}>
                 Publicar oficialmente
               </Button>
             )}
             {canWrite && hasPublished && (
-              <Button size="sm" variant="destructive" onClick={() => unpublishResultsMut.mutate()} disabled={unpublishResultsMut.isPending}>
+              <Button size="sm" variant="destructive" onClick={() => setConfirmAction("unpublish")} disabled={unpublishResultsMut.isPending}>
                 Despublicar
               </Button>
             )}
