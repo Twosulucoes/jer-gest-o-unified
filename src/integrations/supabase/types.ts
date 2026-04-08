@@ -58,6 +58,221 @@ export type Database = {
           },
         ]
       }
+      competition_groups: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          name: string
+          phase_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          name: string
+          phase_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          name?: string
+          phase_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_groups_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_groups_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "competition_phases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_match_entries: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          participant_sport_event_id: string
+          seed: number | null
+          side: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          participant_sport_event_id: string
+          seed?: number | null
+          side?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          participant_sport_event_id?: string
+          seed?: number | null
+          side?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_match_entries_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_match_entries_participant_sport_event_id_fkey"
+            columns: ["participant_sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "participant_sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_matches: {
+        Row: {
+          created_at: string
+          event_id: string
+          group_id: string | null
+          id: string
+          match_date: string | null
+          match_number: number | null
+          notes: string | null
+          phase_id: string
+          start_time: string | null
+          status: string
+          updated_at: string
+          venue_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          group_id?: string | null
+          id?: string
+          match_date?: string | null
+          match_number?: number | null
+          notes?: string | null
+          phase_id: string
+          start_time?: string | null
+          status?: string
+          updated_at?: string
+          venue_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          group_id?: string | null
+          id?: string
+          match_date?: string | null
+          match_number?: number | null
+          notes?: string | null
+          phase_id?: string
+          start_time?: string | null
+          status?: string
+          updated_at?: string
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_matches_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "competition_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_matches_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "competition_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_matches_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_phases: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          name: string
+          phase_type: string
+          sort_order: number
+          sport_event_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          name: string
+          phase_type?: string
+          sort_order?: number
+          sport_event_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          name?: string
+          phase_type?: string
+          sort_order?: number
+          sport_event_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_phases_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_phases_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credential_scans: {
         Row: {
           credential_id: string
