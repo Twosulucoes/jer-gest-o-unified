@@ -68,6 +68,10 @@ interface ValidateResult {
     participants_to_create: number;
     sport_events_to_create: number;
     enrollments_to_create: number;
+    staff_to_create?: number;
+    institutions_created?: number;
+    sports_created?: number;
+    categories_created?: number;
   };
   errors: Array<{ row: number; field: string; value: unknown; code: string; message: string }>;
   warnings: Array<{ row: number; field: string; value: unknown; code: string; message: string }>;
@@ -322,14 +326,26 @@ export default function ImportacaoPage() {
             {/* Preview */}
             <div>
               <h3 className="text-sm font-medium text-foreground mb-2">
+                Entidades auto-criadas
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <SummaryCard label="Instituições" value={validateResult.preview.institutions_created ?? 0} variant="success" />
+                <SummaryCard label="Modalidades" value={validateResult.preview.sports_created ?? 0} variant="success" />
+                <SummaryCard label="Categorias" value={validateResult.preview.categories_created ?? 0} variant="success" />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-foreground mb-2">
                 Preview de criação
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                 <SummaryCard label="Pessoas (criar)" value={validateResult.preview.people_to_create} />
                 <SummaryCard label="Pessoas (reusar)" value={validateResult.preview.people_to_reuse} variant="muted" />
                 <SummaryCard label="Participantes" value={validateResult.preview.participants_to_create} />
                 <SummaryCard label="Provas" value={validateResult.preview.sport_events_to_create} />
                 <SummaryCard label="Inscrições" value={validateResult.preview.enrollments_to_create} />
+                <SummaryCard label="Comissão/Staff" value={validateResult.preview.staff_to_create ?? 0} variant="muted" />
               </div>
             </div>
 
