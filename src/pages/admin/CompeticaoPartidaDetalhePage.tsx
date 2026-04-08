@@ -484,7 +484,8 @@ export default function CompeticaoPartidaDetalhePage() {
             <p className="text-sm text-muted-foreground text-center py-6">Nenhum resultado lançado ainda.</p>
           ) : (
             <div className="space-y-3">
-              {allValidated && <Badge variant="default" className="mb-2">✓ Resultado validado</Badge>}
+              {allPublished && <Badge variant="secondary" className="mb-2">✓ Publicado oficialmente</Badge>}
+              {allValidated && !allPublished && <Badge variant="default" className="mb-2">✓ Resultado validado</Badge>}
               {hasPendingValidation && <Badge variant="outline" className="mb-2">Pendente de validação</Badge>}
               <div className="rounded-lg border">
                 <Table>
