@@ -33,6 +33,7 @@ import CompeticaoPartidasPage from "./pages/admin/CompeticaoPartidasPage";
 import CompeticaoAgendaPage from "./pages/admin/CompeticaoAgendaPage";
 import CompeticaoPartidaDetalhePage from "./pages/admin/CompeticaoPartidaDetalhePage";
 import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
+import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -85,6 +86,7 @@ const App = () => (
               <Route path="alojamento/ocupacao" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoOcupacaoPage /></ProtectedRoute>} />
               {/* Competição */}
               <Route path="competicao/fases" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoFasesPage /></ProtectedRoute>} />
+              <Route path="competicao/grupos" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoGruposPage /></ProtectedRoute>} />
               <Route path="competicao/partidas" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidasPage /></ProtectedRoute>} />
               <Route path="competicao/agenda" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoAgendaPage /></ProtectedRoute>} />
               <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />
