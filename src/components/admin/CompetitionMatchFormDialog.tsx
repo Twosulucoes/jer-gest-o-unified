@@ -89,10 +89,10 @@ export default function CompetitionMatchFormDialog({ open, onOpenChange, match, 
               <FormField control={form.control} name="group_id" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Grupo (opcional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                  <Select onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)} value={field.value || "__none__"}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
                       {phaseGroups.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
