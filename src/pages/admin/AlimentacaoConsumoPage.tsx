@@ -233,19 +233,96 @@ export default function AlimentacaoConsumoPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Registrar consumo</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou CPF..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <CardContent className="space-y-4">
+            {/* QR Code lookup */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block flex items-center gap-1">
+                <QrCode className="h-3 w-3" /> Busca por QR Code
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Escanear ou colar código QR..."
+                  value={qrCode}
+                  onChange={(e) => { setQrCode(e.target.value); setQrResult(null); setQrError(null); }}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter" && qrCode.trim() && selectedEventId) {
+                      const { data, error } = await lookupByQrCode(qrCode.trim(), selectedEventId);
+                      if (error) { setQrError(error.message); setQrResult(null); }
+                      else if (data) {
+                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, type: data.participant_type, foodRestrictions: data.food_restrictions ?? null });
+                        setQrError(null);
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!qrCode.trim() || qrLoading}
+                  onClick={async () => {
+                    if (qrCode.trim() && selectedEventId) {
+                      const { data, error } = await lookupByQrCode(qrCode.trim(), selectedEventId);
+                      if (error) { setQrError(error.message); setQrResult(null); }
+                      else if (data) {
+                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, type: data.participant_type, foodRestrictions: data.food_restrictions ?? null });
+                        setQrError(null);
+                      }
+                    }
+                  }}
+                >
+                  {qrLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
+                </Button>
+              </div>
+              {qrError && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4" /> {qrError}
+                </div>
+              )}
+              {qrResult && (
+                <div className="mt-2 rounded-lg border px-4 py-2.5 bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{qrResult.name}</p>
+                      <p className="text-xs text-muted-foreground">{qrResult.cpf ?? "Sem CPF"} • {qrResult.type === "athlete" ? "Atleta" : qrResult.type}</p>
+                      {qrResult.foodRestrictions && (
+                        <p className="text-xs mt-0.5 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3 text-destructive" />
+                          <span className="text-destructive font-medium">Restrição: {qrResult.foodRestrictions}</span>
+                        </p>
+                      )}
+                    </div>
+                    {consumedParticipantIds.has(qrResult.participantId) ? (
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> Já consumiu
+                      </Badge>
+                    ) : (
+                      <Button size="sm" onClick={() => { consumeMut.mutate(qrResult.participantId); setQrCode(""); setQrResult(null); }} disabled={consumeMut.isPending}>
+                        <UtensilsCrossed className="mr-1 h-3 w-3" /> Registrar
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            {searching && <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Buscando...</div>}
+
+            {/* Manual search */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block flex items-center gap-1">
+                <Search className="h-3 w-3" /> Busca manual por nome/CPF
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome ou CPF..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            {searching && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Buscando...</div>}
             {searchResults.length > 0 && (
-              <div className="mt-3 rounded-lg border divide-y max-h-60 overflow-y-auto">
+              <div className="rounded-lg border divide-y max-h-60 overflow-y-auto">
                 {searchResults.map((sr) => {
                   const alreadyConsumed = consumedParticipantIds.has(sr.id);
                   const hasRestrictions = !!sr.person?.food_restrictions;
@@ -258,8 +335,8 @@ export default function AlimentacaoConsumoPage() {
                         </p>
                         {hasRestrictions && (
                           <p className="text-xs mt-0.5 flex items-center gap-1">
-                            <AlertTriangle className="h-3 w-3 text-yellow-600" />
-                            <span className="text-yellow-700 dark:text-yellow-400 font-medium">Restrição: {sr.person?.food_restrictions}</span>
+                            <AlertTriangle className="h-3 w-3 text-destructive" />
+                            <span className="text-destructive font-medium">Restrição: {sr.person?.food_restrictions}</span>
                           </p>
                         )}
                       </div>
