@@ -173,7 +173,7 @@ export default function CompeticaoPartidasPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Prova (filtro)</label>
-              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => setSelectedSportEventId(v === "__all__" ? "" : v)} disabled={!selectedEventId}>
+              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => { setSelectedSportEventId(v === "__all__" ? "" : v); setCurrentPage(1); }} disabled={!selectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todas</SelectItem>
