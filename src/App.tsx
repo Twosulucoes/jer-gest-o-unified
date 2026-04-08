@@ -18,9 +18,15 @@ import DelegacoesPage from "./pages/admin/DelegacoesPage";
 import ImportacaoPage from "./pages/admin/ImportacaoPage";
 import CredenciamentoPage from "./pages/admin/CredenciamentoPage";
 import ValidacaoQRPage from "./pages/admin/ValidacaoQRPage";
+import TransporteVeiculosPage from "./pages/admin/TransporteVeiculosPage";
+import TransporteRotasPage from "./pages/admin/TransporteRotasPage";
+import TransporteViagensPage from "./pages/admin/TransporteViagensPage";
+import TransporteEmbarquePage from "./pages/admin/TransporteEmbarquePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+const TRANSPORT_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "transporte"] as const;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -41,78 +47,20 @@ const App = () => (
               }
             >
               <Route index element={<DashboardPage />} />
-              <Route
-                path="eventos"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
-                    <EventosPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="modalidades"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
-                    <ModalidadesPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="categorias"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
-                    <CategoriasPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="locais"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
-                    <LocaisPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="instituicoes"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
-                    <InstituicoesPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="delegacoes"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
-                    <DelegacoesPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="importacao"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "secretaria"]}>
-                    <ImportacaoPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="credenciamento"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
-                    <CredenciamentoPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="validacao-qr"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"]}>
-                    <ValidacaoQRPage />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventosPage /></ProtectedRoute>} />
+              <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
+              <Route path="categorias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CategoriasPage /></ProtectedRoute>} />
+              <Route path="locais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><LocaisPage /></ProtectedRoute>} />
+              <Route path="instituicoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><InstituicoesPage /></ProtectedRoute>} />
+              <Route path="delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacoesPage /></ProtectedRoute>} />
+              <Route path="importacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPage /></ProtectedRoute>} />
+              <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoPage /></ProtectedRoute>} />
+              <Route path="validacao-qr" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"]}><ValidacaoQRPage /></ProtectedRoute>} />
+              {/* Transporte */}
+              <Route path="transporte/veiculos" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteVeiculosPage /></ProtectedRoute>} />
+              <Route path="transporte/rotas" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteRotasPage /></ProtectedRoute>} />
+              <Route path="transporte/viagens" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteViagensPage /></ProtectedRoute>} />
+              <Route path="transporte/embarque/:tripId" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteEmbarquePage /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
