@@ -122,10 +122,10 @@ export default function CompeticaoAgendaPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Modalidade/Prova</label>
-              <Select value={selectedSportEventId} onValueChange={(v) => { setSelectedSportEventId(v); setSelectedPhaseId(""); }} disabled={!selectedEventId}>
+              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => { setSelectedSportEventId(v === "__all__" ? "" : v); setSelectedPhaseId(""); }} disabled={!selectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="__all__">Todas</SelectItem>
                   {sportEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
                 </SelectContent>
               </Select>
