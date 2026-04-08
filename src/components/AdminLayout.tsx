@@ -15,6 +15,9 @@ import {
   Upload,
   UserCheck,
   ScanLine,
+  Bus,
+  Route,
+  Navigation,
 } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
@@ -26,7 +29,10 @@ interface NavItem {
   to: string;
   icon: React.ReactNode;
   roles: AppRole[] | "all";
+  section?: string;
 }
+
+const TRANSPORT_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "transporte"];
 
 const navItems: NavItem[] = [
   { label: "Dashboard", to: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, roles: "all" },
@@ -39,6 +45,10 @@ const navItems: NavItem[] = [
   { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] },
   { label: "Credenciamento", to: "/admin/credenciamento", icon: <UserCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
   { label: "Validação QR", to: "/admin/validacao-qr", icon: <ScanLine className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"] },
+  // Transporte
+  { label: "Veículos", to: "/admin/transporte/veiculos", icon: <Bus className="h-4 w-4" />, roles: TRANSPORT_ROLES, section: "Transporte" },
+  { label: "Rotas", to: "/admin/transporte/rotas", icon: <Route className="h-4 w-4" />, roles: TRANSPORT_ROLES, section: "Transporte" },
+  { label: "Viagens", to: "/admin/transporte/viagens", icon: <Navigation className="h-4 w-4" />, roles: TRANSPORT_ROLES, section: "Transporte" },
 ];
 
 function getRoleLabel(role: AppRole): string {
