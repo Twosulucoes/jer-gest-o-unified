@@ -44,6 +44,7 @@ interface NavItem {
 const TRANSPORT_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "transporte"];
 const FOOD_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"];
 const LODGING_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"];
+const COMPETITION_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"];
 
 const navItems: NavItem[] = [
   { label: "Dashboard", to: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, roles: "all" },
@@ -68,6 +69,10 @@ const navItems: NavItem[] = [
   { label: "Locais", to: "/admin/alojamento/locais", icon: <Building className="h-4 w-4" />, roles: LODGING_ROLES, section: "Alojamento" },
   { label: "Unidades", to: "/admin/alojamento/unidades", icon: <DoorOpen className="h-4 w-4" />, roles: LODGING_ROLES, section: "Alojamento" },
   { label: "Ocupação", to: "/admin/alojamento/ocupacao", icon: <KeyRound className="h-4 w-4" />, roles: LODGING_ROLES, section: "Alojamento" },
+  // Competição
+  { label: "Fases", to: "/admin/competicao/fases", icon: <Trophy className="h-4 w-4" />, roles: COMPETITION_ROLES, section: "Competição" },
+  { label: "Partidas", to: "/admin/competicao/partidas", icon: <Swords className="h-4 w-4" />, roles: COMPETITION_ROLES, section: "Competição" },
+  { label: "Agenda", to: "/admin/competicao/agenda", icon: <CalendarDays className="h-4 w-4" />, roles: COMPETITION_ROLES, section: "Competição" },
 ];
 
 function getRoleLabel(role: AppRole): string {
