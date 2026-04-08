@@ -31,6 +31,7 @@ import AlojamentoOcupacaoPage from "./pages/admin/AlojamentoOcupacaoPage";
 import CompeticaoFasesPage from "./pages/admin/CompeticaoFasesPage";
 import CompeticaoPartidasPage from "./pages/admin/CompeticaoPartidasPage";
 import CompeticaoAgendaPage from "./pages/admin/CompeticaoAgendaPage";
+import CompeticaoPartidaDetalhePage from "./pages/admin/CompeticaoPartidaDetalhePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
