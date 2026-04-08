@@ -24,6 +24,9 @@ import {
   Building,
   DoorOpen,
   KeyRound,
+  Trophy,
+  Swords,
+  CalendarDays,
 } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
