@@ -132,10 +132,10 @@ export default function CompeticaoAgendaPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Fase</label>
-              <Select value={selectedPhaseId} onValueChange={setSelectedPhaseId} disabled={!selectedEventId}>
+              <Select value={selectedPhaseId || "__all__"} onValueChange={(v) => setSelectedPhaseId(v === "__all__" ? "" : v)} disabled={!selectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="__all__">Todas</SelectItem>
                   {filteredPhases.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                 </SelectContent>
               </Select>
