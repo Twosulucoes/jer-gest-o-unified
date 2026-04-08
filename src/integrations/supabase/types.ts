@@ -156,6 +156,8 @@ export type Database = {
           match_id: string
           notes: string | null
           position: number | null
+          published_at: string | null
+          published_by: string | null
           recorded_at: string
           recorded_by: string
           result_status: string
@@ -172,6 +174,8 @@ export type Database = {
           match_id: string
           notes?: string | null
           position?: number | null
+          published_at?: string | null
+          published_by?: string | null
           recorded_at?: string
           recorded_by: string
           result_status?: string
@@ -188,6 +192,8 @@ export type Database = {
           match_id?: string
           notes?: string | null
           position?: number | null
+          published_at?: string | null
+          published_by?: string | null
           recorded_at?: string
           recorded_by?: string
           result_status?: string

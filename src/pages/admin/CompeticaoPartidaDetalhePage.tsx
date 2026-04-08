@@ -296,6 +296,38 @@ export default function CompeticaoPartidaDetalhePage() {
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
+  const publishResultsMut = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Usuário não autenticado");
+      const ids = results.filter((r) => r.result_status === "resultado_validado").map((r) => r.id);
+      if (!ids.length) throw new Error("Nenhum resultado validado para publicar");
+      const { error } = await supabase.from("competition_match_results").update({
+        result_status: "publicado",
+        published_by: user.id,
+        published_at: new Date().toISOString(),
+      }).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Resultados publicados oficialmente"); },
+    onError: (e: Error) => toast.error("Erro: " + e.message),
+  });
+
+  const unpublishResultsMut = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Usuário não autenticado");
+      const ids = results.filter((r) => r.result_status === "publicado").map((r) => r.id);
+      if (!ids.length) throw new Error("Nenhum resultado publicado");
+      const { error } = await supabase.from("competition_match_results").update({
+        result_status: "resultado_validado",
+        published_by: null,
+        published_at: null,
+      }).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Publicação revertida para validado"); },
+    onError: (e: Error) => toast.error("Erro: " + e.message),
+  });
+
   const openResultDialog = () => {
     const form: Record<string, { score: string; position: string; result_text: string }> = {};
     entries.forEach((entry) => {
@@ -324,7 +356,10 @@ export default function CompeticaoPartidaDetalhePage() {
   const formatDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" }) : "—";
   const hasResults = results.length > 0;
   const hasPendingValidation = results.some((r) => r.result_status === "resultado_lancado");
+  const hasValidatedReady = results.some((r) => r.result_status === "resultado_validado");
+  const hasPublished = results.some((r) => r.result_status === "publicado");
   const allValidated = hasResults && results.every((r) => r.result_status === "resultado_validado" || r.result_status === "publicado");
+  const allPublished = hasResults && results.every((r) => r.result_status === "publicado");
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -421,7 +456,7 @@ export default function CompeticaoPartidaDetalhePage() {
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-base">Resultado interno</CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {canWrite && entries.length > 0 && (
               <Button size="sm" variant="outline" onClick={openResultDialog}>
                 <ClipboardList className="mr-2 h-4 w-4" />{hasResults ? "Editar resultado" : "Lançar resultado"}
@@ -432,6 +467,16 @@ export default function CompeticaoPartidaDetalhePage() {
                 <CheckCircle2 className="mr-2 h-4 w-4" />Validar
               </Button>
             )}
+            {canWrite && hasValidatedReady && !allPublished && (
+              <Button size="sm" variant="default" onClick={() => publishResultsMut.mutate()} disabled={publishResultsMut.isPending}>
+                Publicar oficialmente
+              </Button>
+            )}
+            {canWrite && hasPublished && (
+              <Button size="sm" variant="destructive" onClick={() => unpublishResultsMut.mutate()} disabled={unpublishResultsMut.isPending}>
+                Despublicar
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -439,7 +484,8 @@ export default function CompeticaoPartidaDetalhePage() {
             <p className="text-sm text-muted-foreground text-center py-6">Nenhum resultado lançado ainda.</p>
           ) : (
             <div className="space-y-3">
-              {allValidated && <Badge variant="default" className="mb-2">✓ Resultado validado</Badge>}
+              {allPublished && <Badge variant="secondary" className="mb-2">✓ Publicado oficialmente</Badge>}
+              {allValidated && !allPublished && <Badge variant="default" className="mb-2">✓ Resultado validado</Badge>}
               {hasPendingValidation && <Badge variant="outline" className="mb-2">Pendente de validação</Badge>}
               <div className="rounded-lg border">
                 <Table>
