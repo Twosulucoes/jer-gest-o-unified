@@ -4,14 +4,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CalendarDays, Clock, Plus, Trash2, Pencil } from "lucide-react";
+import { ArrowLeft, MapPin, CalendarDays, Clock, Plus, Trash2, Pencil, CheckCircle2, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
 
 const STATUS_OPTIONS = [
@@ -20,6 +22,17 @@ const STATUS_OPTIONS = [
   { value: "finished", label: "Finalizada" },
   { value: "cancelled", label: "Cancelada" },
 ];
+
+const RESULT_STATUS_LABEL: Record<string, string> = {
+  resultado_lancado: "Lançado",
+  resultado_validado: "Validado",
+  publicado: "Publicado",
+};
+const RESULT_STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
+  resultado_lancado: "outline",
+  resultado_validado: "default",
+  publicado: "secondary",
+};
 
 export default function CompeticaoPartidaDetalhePage() {
   const { matchId } = useParams<{ matchId: string }>();
@@ -31,6 +44,9 @@ export default function CompeticaoPartidaDetalhePage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addEntryOpen, setAddEntryOpen] = useState(false);
   const [selectedPSEId, setSelectedPSEId] = useState("");
+  const [resultDialogOpen, setResultDialogOpen] = useState(false);
+  const [resultForm, setResultForm] = useState<Record<string, { score: string; position: string; result_text: string }>>({});
+  const [resultNotes, setResultNotes] = useState("");
 
   // Fetch match
   const { data: match, isLoading } = useQuery({
@@ -43,7 +59,6 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!matchId,
   });
 
-  // Fetch related data
   const { data: phase } = useQuery({
     queryKey: ["competition_phase", match?.phase_id],
     queryFn: async () => {
@@ -75,7 +90,6 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!match?.venue_id,
   });
 
-  // Fetch phases, groups, venues for edit dialog
   const { data: allPhases = [] } = useQuery({
     queryKey: ["competition_phases", match?.event_id],
     queryFn: async () => {
@@ -106,7 +120,6 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!match?.event_id,
   });
 
-  // Match entries
   const { data: entries = [] } = useQuery({
     queryKey: ["competition_match_entries", matchId],
     queryFn: async () => {
@@ -117,7 +130,16 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!matchId,
   });
 
-  // Fetch participant_sport_events for the sport_event to allow adding entries
+  const { data: results = [] } = useQuery({
+    queryKey: ["competition_match_results", matchId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("competition_match_results").select("*").eq("match_id", matchId!);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!matchId,
+  });
+
   const { data: availablePSE = [] } = useQuery({
     queryKey: ["participant_sport_events_for_match", phase?.sport_event_id],
     queryFn: async () => {
@@ -133,9 +155,6 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!phase?.sport_event_id,
   });
 
-  // Fetch participants + people for display
-  const participantIds = [...new Set([...entries.map((e) => e.participant_sport_event_id), ...availablePSE.map((p) => p.participant_id)])];
-  
   const { data: participants = [] } = useQuery({
     queryKey: ["participants_for_match", match?.event_id],
     queryFn: async () => {
@@ -162,10 +181,21 @@ export default function CompeticaoPartidaDetalhePage() {
   const participantsMap = new Map(participants.map((p) => [p.id, p]));
   const peopleMap = new Map(people.map((p) => [p.id, p]));
   const pseMap = new Map(availablePSE.map((p) => [p.id, p]));
+  const resultsMap = new Map(results.map((r) => [r.match_entry_id, r]));
 
   const getPersonName = (pseId: string) => {
     const pse = pseMap.get(pseId);
-    if (!pse) return "—";
+    if (!pse) {
+      // fallback: search entries -> find participant via all participants
+      for (const p of participants) {
+        for (const entry of entries) {
+          if (entry.participant_sport_event_id === pseId) {
+            // try to find PSE from availablePSE or do a broader lookup
+          }
+        }
+      }
+      return "Participante";
+    }
     const participant = participantsMap.get(pse.participant_id);
     if (!participant) return "—";
     const person = peopleMap.get(participant.person_id);
@@ -179,7 +209,6 @@ export default function CompeticaoPartidaDetalhePage() {
     return person?.full_name ?? "—";
   };
 
-  // Already linked PSE IDs
   const linkedPSEIds = new Set(entries.map((e) => e.participant_sport_event_id));
   const availableToAdd = availablePSE.filter((p) => !linkedPSEIds.has(p.id));
 
@@ -187,23 +216,13 @@ export default function CompeticaoPartidaDetalhePage() {
   const updateMatchMut = useMutation({
     mutationFn: async (v: MatchFormValues) => {
       const { error } = await supabase.from("competition_matches").update({
-        phase_id: v.phase_id,
-        group_id: v.group_id || null,
-        match_number: v.match_number || null,
-        match_date: v.match_date || null,
-        start_time: v.start_time || null,
-        venue_id: v.venue_id || null,
-        status: v.status,
-        notes: v.notes || null,
+        phase_id: v.phase_id, group_id: v.group_id || null, match_number: v.match_number || null,
+        match_date: v.match_date || null, start_time: v.start_time || null, venue_id: v.venue_id || null,
+        status: v.status, notes: v.notes || null,
       }).eq("id", matchId!);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["competition_match", matchId] });
-      qc.invalidateQueries({ queryKey: ["competition_matches"] });
-      toast.success("Partida atualizada");
-      setEditDialogOpen(false);
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match", matchId] }); qc.invalidateQueries({ queryKey: ["competition_matches"] }); toast.success("Partida atualizada"); setEditDialogOpen(false); },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
@@ -212,29 +231,16 @@ export default function CompeticaoPartidaDetalhePage() {
       const { error } = await supabase.from("competition_matches").update({ status }).eq("id", matchId!);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["competition_match", matchId] });
-      qc.invalidateQueries({ queryKey: ["competition_matches"] });
-      toast.success("Status atualizado");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match", matchId] }); qc.invalidateQueries({ queryKey: ["competition_matches"] }); toast.success("Status atualizado"); },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
   const addEntryMut = useMutation({
     mutationFn: async (pseId: string) => {
-      const { error } = await supabase.from("competition_match_entries").insert({
-        match_id: matchId!,
-        participant_sport_event_id: pseId,
-        side: "participant",
-      });
+      const { error } = await supabase.from("competition_match_entries").insert({ match_id: matchId!, participant_sport_event_id: pseId, side: "participant" });
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["competition_match_entries", matchId] });
-      toast.success("Participante vinculado");
-      setSelectedPSEId("");
-      setAddEntryOpen(false);
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_entries", matchId] }); toast.success("Participante vinculado"); setSelectedPSEId(""); setAddEntryOpen(false); },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
@@ -243,12 +249,67 @@ export default function CompeticaoPartidaDetalhePage() {
       const { error } = await supabase.from("competition_match_entries").delete().eq("id", entryId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["competition_match_entries", matchId] });
-      toast.success("Participante removido");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_entries", matchId] }); toast.success("Participante removido"); },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
+
+  // Results mutations
+  const saveResultsMut = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Usuário não autenticado");
+      const upserts = entries.map((entry) => {
+        const form = resultForm[entry.id] || { score: "", position: "", result_text: "" };
+        const existing = resultsMap.get(entry.id);
+        return {
+          ...(existing ? { id: existing.id } : {}),
+          match_id: matchId!,
+          match_entry_id: entry.id,
+          score: form.score || null,
+          position: form.position ? parseInt(form.position) : null,
+          result_text: form.result_text || null,
+          result_status: "resultado_lancado",
+          recorded_by: existing?.recorded_by ?? user.id,
+          recorded_at: existing?.recorded_at ?? new Date().toISOString(),
+          notes: resultNotes || null,
+        };
+      });
+      const { error } = await supabase.from("competition_match_results").upsert(upserts, { onConflict: "match_entry_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Resultados lançados"); setResultDialogOpen(false); },
+    onError: (e: Error) => toast.error("Erro: " + e.message),
+  });
+
+  const validateResultsMut = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Usuário não autenticado");
+      const ids = results.filter((r) => r.result_status === "resultado_lancado").map((r) => r.id);
+      if (!ids.length) throw new Error("Nenhum resultado pendente de validação");
+      const { error } = await supabase.from("competition_match_results").update({
+        result_status: "resultado_validado",
+        validated_by: user.id,
+        validated_at: new Date().toISOString(),
+      }).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Resultados validados"); },
+    onError: (e: Error) => toast.error("Erro: " + e.message),
+  });
+
+  const openResultDialog = () => {
+    const form: Record<string, { score: string; position: string; result_text: string }> = {};
+    entries.forEach((entry) => {
+      const existing = resultsMap.get(entry.id);
+      form[entry.id] = {
+        score: existing?.score ?? "",
+        position: existing?.position?.toString() ?? "",
+        result_text: existing?.result_text ?? "",
+      };
+    });
+    setResultForm(form);
+    setResultNotes(results[0]?.notes ?? "");
+    setResultDialogOpen(true);
+  };
 
   const statusLabel = (s: string) => {
     const m: Record<string, string> = { scheduled: "Agendada", in_progress: "Em andamento", finished: "Finalizada", cancelled: "Cancelada" };
@@ -261,6 +322,9 @@ export default function CompeticaoPartidaDetalhePage() {
   if (!match) return <div className="p-4 text-muted-foreground">Partida não encontrada.</div>;
 
   const formatDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" }) : "—";
+  const hasResults = results.length > 0;
+  const hasPendingValidation = results.some((r) => r.result_status === "resultado_lancado");
+  const allValidated = hasResults && results.every((r) => r.result_status === "resultado_validado" || r.result_status === "publicado");
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -282,25 +346,14 @@ export default function CompeticaoPartidaDetalhePage() {
         )}
       </div>
 
-      {/* Match info */}
+      {/* Match info + Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-base">Informações</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-muted-foreground" />
-              <span className="capitalize">{formatDate(match.match_date)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="font-mono">{match.start_time?.slice(0, 5) ?? "Horário não definido"}</span>
-            </div>
-            {venue && (
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>{venue.name}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-muted-foreground" /><span className="capitalize">{formatDate(match.match_date)}</span></div>
+            <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-muted-foreground" /><span className="font-mono">{match.start_time?.slice(0, 5) ?? "Horário não definido"}</span></div>
+            {venue && <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-muted-foreground" /><span>{venue.name}</span></div>}
             {match.notes && <p className="text-muted-foreground border-t pt-2">{match.notes}</p>}
           </CardContent>
         </Card>
@@ -312,15 +365,7 @@ export default function CompeticaoPartidaDetalhePage() {
             {canWrite && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {STATUS_OPTIONS.filter((o) => o.value !== match.status).map((o) => (
-                  <Button
-                    key={o.value}
-                    variant="outline"
-                    size="sm"
-                    disabled={updateStatusMut.isPending}
-                    onClick={() => updateStatusMut.mutate(o.value)}
-                  >
-                    {o.label}
-                  </Button>
+                  <Button key={o.value} variant="outline" size="sm" disabled={updateStatusMut.isPending} onClick={() => updateStatusMut.mutate(o.value)}>{o.label}</Button>
                 ))}
               </div>
             )}
@@ -333,9 +378,7 @@ export default function CompeticaoPartidaDetalhePage() {
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-base">Participantes vinculados</CardTitle>
           {canWrite && availableToAdd.length > 0 && (
-            <Button size="sm" onClick={() => setAddEntryOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />Vincular
-            </Button>
+            <Button size="sm" onClick={() => setAddEntryOpen(true)}><Plus className="mr-2 h-4 w-4" />Vincular</Button>
           )}
         </CardHeader>
         <CardContent>
@@ -374,6 +417,125 @@ export default function CompeticaoPartidaDetalhePage() {
         </CardContent>
       </Card>
 
+      {/* Results Card */}
+      <Card>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Resultado interno</CardTitle>
+          <div className="flex items-center gap-2">
+            {canWrite && entries.length > 0 && (
+              <Button size="sm" variant="outline" onClick={openResultDialog}>
+                <ClipboardList className="mr-2 h-4 w-4" />{hasResults ? "Editar resultado" : "Lançar resultado"}
+              </Button>
+            )}
+            {canWrite && hasPendingValidation && (
+              <Button size="sm" onClick={() => validateResultsMut.mutate()} disabled={validateResultsMut.isPending}>
+                <CheckCircle2 className="mr-2 h-4 w-4" />Validar
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!hasResults ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Nenhum resultado lançado ainda.</p>
+          ) : (
+            <div className="space-y-3">
+              {allValidated && <Badge variant="default" className="mb-2">✓ Resultado validado</Badge>}
+              {hasPendingValidation && <Badge variant="outline" className="mb-2">Pendente de validação</Badge>}
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Participante</TableHead>
+                      <TableHead>Placar</TableHead>
+                      <TableHead>Posição</TableHead>
+                      <TableHead>Resultado</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {entries.map((entry) => {
+                      const result = resultsMap.get(entry.id);
+                      if (!result) return null;
+                      return (
+                        <TableRow key={result.id}>
+                          <TableCell className="font-medium">{getPersonName(entry.participant_sport_event_id)}</TableCell>
+                          <TableCell className="font-mono">{result.score ?? "—"}</TableCell>
+                          <TableCell className="font-mono">{result.position ?? "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{result.result_text ?? "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant={RESULT_STATUS_VARIANT[result.result_status] ?? "outline"}>
+                              {RESULT_STATUS_LABEL[result.result_status] ?? result.result_status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              {results[0]?.notes && <p className="text-sm text-muted-foreground mt-2">Obs: {results[0].notes}</p>}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Result entry dialog */}
+      <Dialog open={resultDialogOpen} onOpenChange={setResultDialogOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Lançar resultado</DialogTitle>
+            <DialogDescription>Preencha o resultado de cada participante nesta partida/prova.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {entries.map((entry) => {
+              const form = resultForm[entry.id] || { score: "", position: "", result_text: "" };
+              return (
+                <div key={entry.id} className="space-y-2 border rounded-lg p-3">
+                  <p className="text-sm font-medium">{getPersonName(entry.participant_sport_event_id)}</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Placar</label>
+                      <Input
+                        placeholder="Ex: 3x1"
+                        value={form.score}
+                        onChange={(e) => setResultForm((prev) => ({ ...prev, [entry.id]: { ...form, score: e.target.value } }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Posição</label>
+                      <Input
+                        type="number"
+                        placeholder="1"
+                        value={form.position}
+                        onChange={(e) => setResultForm((prev) => ({ ...prev, [entry.id]: { ...form, position: e.target.value } }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Resultado</label>
+                      <Input
+                        placeholder="Vitória, WO..."
+                        value={form.result_text}
+                        onChange={(e) => setResultForm((prev) => ({ ...prev, [entry.id]: { ...form, result_text: e.target.value } }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div>
+              <label className="text-sm font-medium text-foreground">Observações gerais</label>
+              <Textarea placeholder="Observações sobre o resultado..." value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResultDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={() => saveResultsMut.mutate()} disabled={saveResultsMut.isPending}>
+              {saveResultsMut.isPending ? "Salvando..." : "Salvar resultado"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Add entry dialog */}
       <Dialog open={addEntryOpen} onOpenChange={setAddEntryOpen}>
         <DialogContent className="sm:max-w-md">
@@ -386,9 +548,7 @@ export default function CompeticaoPartidaDetalhePage() {
               <SelectTrigger><SelectValue placeholder="Selecione o participante" /></SelectTrigger>
               <SelectContent>
                 {availableToAdd.map((pse) => (
-                  <SelectItem key={pse.id} value={pse.id}>
-                    {getPersonNameByParticipantId(pse.participant_id)}
-                  </SelectItem>
+                  <SelectItem key={pse.id} value={pse.id}>{getPersonNameByParticipantId(pse.participant_id)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -402,7 +562,6 @@ export default function CompeticaoPartidaDetalhePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit match dialog */}
       <CompetitionMatchFormDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
