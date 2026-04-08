@@ -199,42 +199,71 @@ export default function CompeticaoPartidasPage() {
           <p className="text-sm text-muted-foreground mt-1">Cadastre fases antes de criar partidas.</p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nº</TableHead>
-                <TableHead>Fase</TableHead>
-                <TableHead>Grupo</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Horário</TableHead>
-                <TableHead>Local</TableHead>
-                <TableHead>Status</TableHead>
-                {canWrite && <TableHead className="w-[60px]" />}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {matches.map((m) => (
-                <TableRow key={m.id}>
-                  <TableCell className="font-mono text-sm">{m.match_number ?? "—"}</TableCell>
-                  <TableCell className="font-medium">{phasesMap.get(m.phase_id)?.name ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{m.group_id ? groupsMap.get(m.group_id)?.name ?? "—" : "—"}</TableCell>
-                  <TableCell>{formatDate(m.match_date)}</TableCell>
-                  <TableCell className="font-mono text-xs">{m.start_time?.slice(0, 5) ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{m.venue_id ? venuesMap.get(m.venue_id)?.name ?? "—" : "—"}</TableCell>
-                  <TableCell><Badge variant={statusVariant(m.status)}>{statusLabel(m.status)}</Badge></TableCell>
-                  {canWrite && (
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => { setEditing(m); setDialogOpen(true); }}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        (() => {
+          const totalPages = Math.ceil((matches?.length ?? 0) / PAGE_SIZE);
+          const paginated = matches!.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+          return (
+            <>
+              <div className="rounded-lg border bg-card">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nº</TableHead>
+                      <TableHead>Fase</TableHead>
+                      <TableHead>Grupo</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Horário</TableHead>
+                      <TableHead>Local</TableHead>
+                      <TableHead>Status</TableHead>
+                      {canWrite && <TableHead className="w-[60px]" />}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginated.map((m) => (
+                      <TableRow key={m.id}>
+                        <TableCell className="font-mono text-sm">{m.match_number ?? "—"}</TableCell>
+                        <TableCell className="font-medium">{phasesMap.get(m.phase_id)?.name ?? "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{m.group_id ? groupsMap.get(m.group_id)?.name ?? "—" : "—"}</TableCell>
+                        <TableCell>{formatDate(m.match_date)}</TableCell>
+                        <TableCell className="font-mono text-xs">{m.start_time?.slice(0, 5) ?? "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{m.venue_id ? venuesMap.get(m.venue_id)?.name ?? "—" : "—"}</TableCell>
+                        <TableCell><Badge variant={statusVariant(m.status)}>{statusLabel(m.status)}</Badge></TableCell>
+                        {canWrite && (
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => { setEditing(m); setDialogOpen(true); }}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">{matches!.length} partidas — página {currentPage} de {totalPages}</p>
+                  <Pagination>
+                    <PaginationContent>
+                      {currentPage > 1 && (
+                        <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => p - 1); }} /></PaginationItem>
+                      )}
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        const page = totalPages <= 5 ? i + 1 : currentPage <= 3 ? i + 1 : currentPage >= totalPages - 2 ? totalPages - 4 + i : currentPage - 2 + i;
+                        return (
+                          <PaginationItem key={page}><PaginationLink href="#" isActive={page === currentPage} onClick={(e) => { e.preventDefault(); setCurrentPage(page); }}>{page}</PaginationLink></PaginationItem>
+                        );
+                      })}
+                      {currentPage < totalPages && (
+                        <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => p + 1); }} /></PaginationItem>
+                      )}
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
+          );
+        })()
       )}
 
       <CompetitionMatchFormDialog
