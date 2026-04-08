@@ -58,6 +58,54 @@ export type Database = {
           },
         ]
       }
+      credential_scans: {
+        Row: {
+          credential_id: string
+          event_id: string
+          id: string
+          notes: string | null
+          scan_point: string
+          scan_result: string
+          scanned_at: string
+          scanned_by: string
+        }
+        Insert: {
+          credential_id: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          scan_point?: string
+          scan_result?: string
+          scanned_at?: string
+          scanned_by: string
+        }
+        Update: {
+          credential_id?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          scan_point?: string
+          scan_result?: string
+          scanned_at?: string
+          scanned_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credential_scans_credential_id_fkey"
+            columns: ["credential_id"]
+            isOneToOne: false
+            referencedRelation: "participant_credentials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credential_scans_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delegations: {
         Row: {
           chief_email: string | null
@@ -147,6 +195,50 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      import_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_id: string
+          file_name: string | null
+          id: string
+          performed_by: string
+          result_summary: Json | null
+          row_count: number | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_id: string
+          file_name?: string | null
+          id?: string
+          performed_by: string
+          result_summary?: Json | null
+          row_count?: number | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_id?: string
+          file_name?: string | null
+          id?: string
+          performed_by?: string
+          result_summary?: Json | null
+          row_count?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       institutions: {
         Row: {
