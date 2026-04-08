@@ -28,6 +28,10 @@ export default function TransporteEmbarquePage() {
   const qc = useQueryClient();
   const { user, hasRole } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [qrCode, setQrCode] = useState("");
+  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; type: string } | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const { lookupByQrCode, loading: qrLoading } = useCredentialLookup();
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("transporte");
 
   // Load trip
