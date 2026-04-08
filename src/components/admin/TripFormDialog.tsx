@@ -85,10 +85,10 @@ export default function TripFormDialog({ open, onOpenChange, trip, routes, vehic
             <FormField control={form.control} name="vehicle_id" render={({ field }) => (
               <FormItem>
                 <FormLabel>Veículo (opcional)</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)} value={field.value || "__none__"}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger></FormControl>
                   <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="__none__">Nenhum</SelectItem>
                     {vehicles.filter((v) => v.is_active).map((v) => (
                       <SelectItem key={v.id} value={v.id}>{v.label || v.plate} ({v.capacity} lugares)</SelectItem>
                     ))}
