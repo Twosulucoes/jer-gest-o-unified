@@ -500,11 +500,30 @@ Deno.serve(async (req: Request) => {
     );
 
     if (rpcError) {
+      // Log failed import
+      await serviceClient.from("import_logs").insert({
+        event_id: eventId,
+        performed_by: operatorId,
+        file_name: file.name,
+        row_count: rawRows.length,
+        status: "error",
+        error_message: rpcError.message,
+      });
       return new Response(
         JSON.stringify({ status: "rollback", error: rpcError.message, details: rpcError }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Log successful import
+    await serviceClient.from("import_logs").insert({
+      event_id: eventId,
+      performed_by: operatorId,
+      file_name: file.name,
+      row_count: validRows.length,
+      status: "success",
+      result_summary: rpcResult,
+    });
 
     return new Response(
       JSON.stringify({

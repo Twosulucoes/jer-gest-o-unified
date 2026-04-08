@@ -16,6 +16,8 @@ import LocaisPage from "./pages/admin/LocaisPage";
 import InstituicoesPage from "./pages/admin/InstituicoesPage";
 import DelegacoesPage from "./pages/admin/DelegacoesPage";
 import ImportacaoPage from "./pages/admin/ImportacaoPage";
+import CredenciamentoPage from "./pages/admin/CredenciamentoPage";
+import ValidacaoQRPage from "./pages/admin/ValidacaoQRPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -92,6 +94,22 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={["admin", "secretaria"]}>
                     <ImportacaoPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="credenciamento"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
+                    <CredenciamentoPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="validacao-qr"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"]}>
+                    <ValidacaoQRPage />
                   </ProtectedRoute>
                 }
               />

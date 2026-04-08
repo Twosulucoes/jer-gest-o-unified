@@ -294,6 +294,7 @@ export type Database = {
       participant_credentials: {
         Row: {
           activated_at: string | null
+          activated_by: string | null
           binding_source: string
           created_at: string
           credential_code: string
@@ -303,6 +304,7 @@ export type Database = {
           external_system: string
           id: string
           issued_at: string | null
+          issued_by: string | null
           last_validated_at: string | null
           participant_id: string
           qr_code_value: string
@@ -313,6 +315,7 @@ export type Database = {
         }
         Insert: {
           activated_at?: string | null
+          activated_by?: string | null
           binding_source?: string
           created_at?: string
           credential_code: string
@@ -322,6 +325,7 @@ export type Database = {
           external_system?: string
           id?: string
           issued_at?: string | null
+          issued_by?: string | null
           last_validated_at?: string | null
           participant_id: string
           qr_code_value: string
@@ -332,6 +336,7 @@ export type Database = {
         }
         Update: {
           activated_at?: string | null
+          activated_by?: string | null
           binding_source?: string
           created_at?: string
           credential_code?: string
@@ -341,6 +346,7 @@ export type Database = {
           external_system?: string
           id?: string
           issued_at?: string | null
+          issued_by?: string | null
           last_validated_at?: string | null
           participant_id?: string
           qr_code_value?: string
@@ -414,6 +420,8 @@ export type Database = {
       participants: {
         Row: {
           created_at: string
+          credentialed_at: string | null
+          credentialed_by: string | null
           delegation_id: string
           event_id: string
           id: string
@@ -426,6 +434,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          credentialed_at?: string | null
+          credentialed_by?: string | null
           delegation_id: string
           event_id: string
           id?: string
@@ -438,6 +448,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          credentialed_at?: string | null
+          credentialed_by?: string | null
           delegation_id?: string
           event_id?: string
           id?: string
