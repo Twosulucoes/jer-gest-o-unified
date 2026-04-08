@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCredentialLookup } from "@/hooks/useCredentialLookup";
 import { toast } from "sonner";
 import {
-  Building, Search, Loader2, UserPlus, LogIn, LogOut,
+  Building, Search, Loader2, UserPlus, LogIn, LogOut, QrCode, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
