@@ -13,6 +13,8 @@ import {
   Building2,
   Users,
   Upload,
+  UserCheck,
+  ScanLine,
 } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
@@ -35,6 +37,8 @@ const navItems: NavItem[] = [
   { label: "Instituições", to: "/admin/instituicoes", icon: <Building2 className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
   { label: "Delegações", to: "/admin/delegacoes", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
   { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] },
+  { label: "Credenciamento", to: "/admin/credenciamento", icon: <UserCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] },
+  { label: "Validação QR", to: "/admin/validacao-qr", icon: <ScanLine className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"] },
 ];
 
 function getRoleLabel(role: AppRole): string {
