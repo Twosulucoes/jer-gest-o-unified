@@ -356,7 +356,10 @@ export default function CompeticaoPartidaDetalhePage() {
   const formatDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" }) : "—";
   const hasResults = results.length > 0;
   const hasPendingValidation = results.some((r) => r.result_status === "resultado_lancado");
+  const hasValidatedReady = results.some((r) => r.result_status === "resultado_validado");
+  const hasPublished = results.some((r) => r.result_status === "publicado");
   const allValidated = hasResults && results.every((r) => r.result_status === "resultado_validado" || r.result_status === "publicado");
+  const allPublished = hasResults && results.every((r) => r.result_status === "publicado");
 
   return (
     <div className="animate-fade-in space-y-6">
