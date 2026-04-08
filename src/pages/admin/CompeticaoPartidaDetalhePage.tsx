@@ -460,8 +460,8 @@ export default function CompeticaoPartidaDetalhePage() {
                       <TableCell className="text-muted-foreground">{entry.side}</TableCell>
                       <TableCell className="font-mono text-sm">{entry.seed ?? "—"}</TableCell>
                       {canWrite && (
-                        <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => removeEntryMut.mutate(entry.id)} disabled={removeEntryMut.isPending}>
+                         <TableCell>
+                          <Button variant="ghost" size="icon" onClick={() => setConfirmRemoveEntryId(entry.id)} disabled={removeEntryMut.isPending}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </TableCell>
