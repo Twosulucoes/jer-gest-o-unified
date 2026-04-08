@@ -25,6 +25,9 @@ import TransporteEmbarquePage from "./pages/admin/TransporteEmbarquePage";
 import AlimentacaoTiposPage from "./pages/admin/AlimentacaoTiposPage";
 import AlimentacaoJanelasPage from "./pages/admin/AlimentacaoJanelasPage";
 import AlimentacaoConsumoPage from "./pages/admin/AlimentacaoConsumoPage";
+import AlojamentoLocaisPage from "./pages/admin/AlojamentoLocaisPage";
+import AlojamentoUnidadesPage from "./pages/admin/AlojamentoUnidadesPage";
+import AlojamentoOcupacaoPage from "./pages/admin/AlojamentoOcupacaoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
