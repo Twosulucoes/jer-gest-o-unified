@@ -21,6 +21,9 @@ import {
   UtensilsCrossed,
   Clock,
   ClipboardList,
+  Building,
+  DoorOpen,
+  KeyRound,
 } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
