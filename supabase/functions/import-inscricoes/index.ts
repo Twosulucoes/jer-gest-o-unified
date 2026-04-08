@@ -47,14 +47,24 @@ function normalizeGender(value: string | null | undefined): string {
   return "male";
 }
 
-/** Split PROVA cell into individual sport events, filtering blanks and "---" */
-function parseSportEvents(raw: string): Array<{ name: string; slug: string }> {
-  if (!raw || raw.trim() === "" || raw.trim() === "---") return [];
-  return raw
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s) => s !== "" && s !== "---")
-    .map((name) => ({ name, slug: slugify(name) }));
+function genderScopeFromCompetition(competicao: string): string {
+  const lower = competicao.toLowerCase();
+  if (lower.includes("feminino")) return "female";
+  if (lower.includes("masculino")) return "male";
+  return "mixed";
+}
+
+function isBlank(v: unknown): boolean {
+  if (v == null) return true;
+  const s = String(v).trim();
+  return s === "" || s === "---";
+}
+
+function getField(raw: Record<string, unknown>, ...keys: string[]): string {
+  for (const k of keys) {
+    if (raw[k] != null && !isBlank(raw[k])) return String(raw[k]).trim();
+  }
+  return "";
 }
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -70,13 +80,22 @@ interface NormalizedRow {
   rg: string | null;
   email: string | null;
   phone: string | null;
+  institution_name: string;
   institution_slug: string;
+  delegation_name: string;
+  sport_name: string;
   sport_slug: string;
+  category_name: string;
   category_slug: string;
-  sport_events: Array<{ name: string; slug: string }>;
+  prova_name: string;
+  prova_slug: string;
   user_type: string;
   inscription_status: string;
-  raw: RawRow;
+  participant_type: string;
+  funcao: string;
+  pcd: string | null;
+  food_restrictions: string | null;
+  esfera: string;
 }
 
 interface RowResult {
@@ -87,29 +106,19 @@ interface RowResult {
   message: string;
 }
 
-interface ReferenceMaps {
-  institutions: Map<string, string>;
-  delegations: Map<string, string>;
-  sports: Map<string, string>;
-  categories: Map<string, string>;
-  peopleByCpf: Map<string, { id: string; full_name: string; birth_date: string }>;
-  peopleByNameDob: Map<string, string>;
-}
-
 // ─── XLSX Parsing ────────────────────────────────────────────────────
 
+const REQUIRED_COLUMNS = ["NOME", "ESCOLA", "MODALIDADE", "PROVA", "COMPETICAO"];
+
 function findDataSheet(workbook: XLSX.WorkBook): string {
-  // Try to find a sheet that contains the required headers
   for (const name of workbook.SheetNames) {
     const sheet = workbook.Sheets[name];
     const sample = XLSX.utils.sheet_to_json(sheet, { defval: null, range: 0 }) as RawRow[];
     if (sample.length > 0) {
       const headers = Object.keys(sample[0]);
-      const hasRequired = REQUIRED_COLUMNS.every((col) => headers.includes(col));
-      if (hasRequired) return name;
+      if (REQUIRED_COLUMNS.every((col) => headers.includes(col))) return name;
     }
   }
-  // Fallback to first sheet
   return workbook.SheetNames[0];
 }
 
@@ -121,10 +130,6 @@ function parseXlsx(buffer: ArrayBuffer): RawRow[] {
   return XLSX.utils.sheet_to_json(sheet, { defval: null }) as RawRow[];
 }
 
-// ─── Header Validation ──────────────────────────────────────────────
-
-const REQUIRED_COLUMNS = ["NOME", "DATA NASCIMENTO", "SEXO", "ESCOLA", "MODALIDADE", "PROVA", "COMPETICAO"];
-
 function validateHeaders(rawRows: RawRow[]): string[] {
   if (rawRows.length === 0) return [];
   const headers = Object.keys(rawRows[0]);
@@ -133,162 +138,317 @@ function validateHeaders(rawRows: RawRow[]): string[] {
 
 // ─── Column Mapping ──────────────────────────────────────────────────
 
-function getField(raw: RawRow, ...keys: string[]): string {
-  for (const k of keys) {
-    if (raw[k] != null && String(raw[k]).trim() !== "" && String(raw[k]).trim() !== "---") {
-      return String(raw[k]).trim();
-    }
-  }
-  return "";
+function deriveParticipantType(userType: string, funcao: string): string {
+  const ut = userType.toLowerCase();
+  if (ut.includes("atleta")) return "athlete";
+  if (funcao.toLowerCase().includes("técnico") || funcao.toLowerCase().includes("tecnico")) return "coach";
+  if (funcao.toLowerCase().includes("chefe de delegação") || funcao.toLowerCase().includes("chefe de delegacao")) return "head_of_delegation";
+  if (ut.includes("comissão técnica") || ut.includes("comissao tecnica")) return "coach";
+  if (ut.includes("prestador")) return "staff";
+  return "staff";
 }
 
 function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
-  const fullName = capitalize(getField(raw, "NOME", "NOME COMPLETO", "NOME_COMPLETO"));
+  const fullName = capitalize(getField(raw, "NOME", "NOME COMPLETO"));
   const institution = getField(raw, "ESCOLA", "INSTITUICAO");
+  const delegation = getField(raw, "DELEGAÇÃO", "DELEGACAO");
   const sport = getField(raw, "MODALIDADE");
   const category = getField(raw, "COMPETICAO", "CATEGORIA");
-  const provaRaw = getField(raw, "PROVA");
-  const userType = getField(raw, "TIPO USUARIO", "TIPO_USUARIO").toLowerCase();
+  const prova = getField(raw, "PROVA");
+  const userType = getField(raw, "TIPO USUARIO", "TIPO_USUARIO");
   const status = getField(raw, "STATUS DA INSCRIÇÃO", "STATUS DA INSCRICAO", "STATUS_INSCRICAO");
+  const funcao = getField(raw, "FUNCAO");
+  const pcd = getField(raw, "PCD");
+  const esfera = getField(raw, "ESFERA");
 
   return {
     row_number: rowIndex + 2,
     full_name: fullName,
-    birth_date: parseDate(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"] ?? raw["NASCIMENTO"]),
+    birth_date: parseDate(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"]),
     gender: normalizeGender(getField(raw, "SEXO", "GENERO")),
     cpf: cleanCpf(getField(raw, "CPF") || null),
     rg: getField(raw, "RG") || null,
     email: getField(raw, "EMAIL") || null,
     phone: getField(raw, "TELEFONE") || null,
+    institution_name: institution,
     institution_slug: slugify(institution),
+    delegation_name: delegation,
+    sport_name: sport,
     sport_slug: slugify(sport),
+    category_name: category,
     category_slug: slugify(category),
-    sport_events: parseSportEvents(provaRaw),
+    prova_name: prova,
+    prova_slug: slugify(prova),
     user_type: userType,
     inscription_status: status,
-    raw,
+    participant_type: deriveParticipantType(userType, funcao),
+    funcao,
+    pcd: isBlank(pcd) ? null : pcd,
+    food_restrictions: null,
+    esfera: esfera,
   };
 }
 
-// ─── Reference Data Loading ──────────────────────────────────────────
+// ─── Auto-Create Reference Entities ──────────────────────────────────
 
-async function loadReferenceMaps(
+interface ResolvedMaps {
+  institutions: Map<string, string>;   // slug -> id
+  delegations: Map<string, string>;    // institution_id -> delegation_id
+  sports: Map<string, string>;         // slug -> id
+  categories: Map<string, string>;     // slug -> id
+}
+
+async function ensureReferenceEntities(
   supabase: ReturnType<typeof createClient>,
-  eventId: string
-): Promise<ReferenceMaps> {
-  const [instRes, delRes, sportRes, catRes, peopleRes] = await Promise.all([
-    supabase.from("institutions").select("id, slug").eq("is_active", true),
-    supabase.from("delegations").select("id, institution_id").eq("event_id", eventId),
-    supabase.from("sports").select("id, slug").eq("event_id", eventId),
-    supabase.from("categories").select("id, slug").eq("event_id", eventId),
-    supabase.from("people").select("id, full_name, birth_date, gender, cpf").eq("is_active", true),
-  ]);
+  eventId: string,
+  rows: NormalizedRow[]
+): Promise<{ maps: ResolvedMaps; warnings: RowResult[] }> {
+  const warnings: RowResult[] = [];
 
-  const institutions = new Map<string, string>();
-  for (const i of instRes.data ?? []) institutions.set(i.slug, i.id);
-
-  const delegations = new Map<string, string>();
-  for (const d of delRes.data ?? []) delegations.set(d.institution_id, d.id);
-
-  const sports = new Map<string, string>();
-  for (const s of sportRes.data ?? []) sports.set(s.slug, s.id);
-
-  const categories = new Map<string, string>();
-  for (const c of catRes.data ?? []) categories.set(c.slug, c.id);
-
-  const peopleByCpf = new Map<string, { id: string; full_name: string; birth_date: string }>();
-  const peopleByNameDob = new Map<string, string>();
-  for (const p of peopleRes.data ?? []) {
-    if (p.cpf) peopleByCpf.set(p.cpf, { id: p.id, full_name: p.full_name, birth_date: p.birth_date });
-    peopleByNameDob.set(`${p.full_name.toLowerCase()}|${p.birth_date}|${p.gender}`, p.id);
+  // 1. Collect unique institutions
+  const uniqueInstitutions = new Map<string, string>(); // slug -> name
+  for (const r of rows) {
+    if (r.institution_slug && !uniqueInstitutions.has(r.institution_slug)) {
+      uniqueInstitutions.set(r.institution_slug, r.institution_name);
+    }
   }
 
-  return { institutions, delegations, sports, categories, peopleByCpf, peopleByNameDob };
+  // Load existing institutions
+  const { data: existingInst } = await supabase
+    .from("institutions").select("id, slug").eq("is_active", true);
+  const instMap = new Map<string, string>();
+  for (const i of existingInst ?? []) instMap.set(i.slug, i.id);
+
+  // Create missing institutions
+  for (const [slug, name] of uniqueInstitutions) {
+    if (!instMap.has(slug)) {
+      const { data, error } = await supabase
+        .from("institutions")
+        .insert({ name, slug, network_type: "municipal" })
+        .select("id")
+        .single();
+      if (error) {
+        // Try to fetch in case of race condition
+        const { data: existing } = await supabase
+          .from("institutions").select("id").eq("slug", slug).single();
+        if (existing) {
+          instMap.set(slug, existing.id);
+        } else {
+          console.error(`Failed to create institution ${slug}:`, error.message);
+        }
+      } else {
+        instMap.set(slug, data.id);
+      }
+    }
+  }
+
+  // 2. Collect unique delegations (institution_id -> event)
+  const { data: existingDel } = await supabase
+    .from("delegations").select("id, institution_id").eq("event_id", eventId);
+  const delMap = new Map<string, string>();
+  for (const d of existingDel ?? []) delMap.set(d.institution_id, d.id);
+
+  // Create missing delegations
+  for (const [slug] of uniqueInstitutions) {
+    const instId = instMap.get(slug);
+    if (instId && !delMap.has(instId)) {
+      const { data, error } = await supabase
+        .from("delegations")
+        .insert({ institution_id: instId, event_id: eventId, status: "confirmed" })
+        .select("id")
+        .single();
+      if (error) {
+        const { data: existing } = await supabase
+          .from("delegations")
+          .select("id")
+          .eq("institution_id", instId)
+          .eq("event_id", eventId)
+          .single();
+        if (existing) delMap.set(instId, existing.id);
+      } else {
+        delMap.set(instId, data.id);
+      }
+    }
+  }
+
+  // 3. Collect unique sports
+  const uniqueSports = new Map<string, string>(); // slug -> name
+  for (const r of rows) {
+    if (r.sport_slug && !uniqueSports.has(r.sport_slug)) {
+      uniqueSports.set(r.sport_slug, r.sport_name);
+    }
+  }
+
+  const { data: existingSports } = await supabase
+    .from("sports").select("id, slug").eq("event_id", eventId);
+  const sportMap = new Map<string, string>();
+  for (const s of existingSports ?? []) sportMap.set(s.slug, s.id);
+
+  for (const [slug, name] of uniqueSports) {
+    if (!sportMap.has(slug)) {
+      const isCollective = ["futsal", "futebol", "handebol", "voleibol", "volei-de-praia"].includes(slug);
+      const { data, error } = await supabase
+        .from("sports")
+        .insert({ name, slug, event_id: eventId, is_collective: isCollective })
+        .select("id")
+        .single();
+      if (error) {
+        const { data: existing } = await supabase
+          .from("sports").select("id").eq("slug", slug).eq("event_id", eventId).single();
+        if (existing) sportMap.set(slug, existing.id);
+      } else {
+        sportMap.set(slug, data.id);
+      }
+    }
+  }
+
+  // 4. Collect unique categories (from COMPETICAO)
+  const uniqueCategories = new Map<string, { name: string; genderScope: string }>();
+  for (const r of rows) {
+    if (r.category_slug && !uniqueCategories.has(r.category_slug)) {
+      uniqueCategories.set(r.category_slug, {
+        name: r.category_name,
+        genderScope: genderScopeFromCompetition(r.category_name),
+      });
+    }
+  }
+
+  const { data: existingCats } = await supabase
+    .from("categories").select("id, slug").eq("event_id", eventId);
+  const catMap = new Map<string, string>();
+  for (const c of existingCats ?? []) catMap.set(c.slug, c.id);
+
+  for (const [slug, info] of uniqueCategories) {
+    if (!catMap.has(slug)) {
+      const { data, error } = await supabase
+        .from("categories")
+        .insert({ name: info.name, slug, event_id: eventId, gender_scope: info.genderScope })
+        .select("id")
+        .single();
+      if (error) {
+        const { data: existing } = await supabase
+          .from("categories").select("id").eq("slug", slug).eq("event_id", eventId).single();
+        if (existing) catMap.set(slug, existing.id);
+      } else {
+        catMap.set(slug, data.id);
+      }
+    }
+  }
+
+  return {
+    maps: { institutions: instMap, delegations: delMap, sports: sportMap, categories: catMap },
+    warnings,
+  };
 }
 
 // ─── Row Validation ──────────────────────────────────────────────────
 
 function validateRow(
   row: NormalizedRow,
-  refs: ReferenceMaps
+  maps: ResolvedMaps,
+  peopleByCpf: Map<string, string>,
+  peopleByNameDob: Map<string, string>
 ): { errors: RowResult[]; warnings: RowResult[]; resolved: Record<string, string | null>; skip: boolean } {
   const errors: RowResult[] = [];
   const warnings: RowResult[] = [];
   const resolved: Record<string, string | null> = {};
 
-  if (row.user_type && row.user_type !== "atleta") {
-    return { errors: [], warnings: [], resolved: {}, skip: true };
-  }
+  // Skip non-athletes with no sport data
+  const isAthlete = row.participant_type === "athlete";
 
-  if (row.inscription_status && row.inscription_status.toLowerCase() !== "válida" && row.inscription_status.toLowerCase() !== "valida") {
+  // Skip invalid inscription status
+  if (row.inscription_status && !["válida", "valida", ""].includes(row.inscription_status.toLowerCase())) {
     warnings.push({ row: row.row_number, field: "STATUS DA INSCRIÇÃO", value: row.inscription_status, code: "INVALID_STATUS", message: `Inscrição com status "${row.inscription_status}" — ignorada` });
     return { errors: [], warnings, resolved: {}, skip: true };
   }
 
+  // Basic fields
   if (!row.full_name) {
-    errors.push({ row: row.row_number, field: "NOME", value: row.full_name, code: "NAME_MISSING", message: "Nome obrigatório" });
-  }
-  if (!row.birth_date) {
-    errors.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING", message: "Data de nascimento obrigatória" });
+    errors.push({ row: row.row_number, field: "NOME", value: "", code: "NAME_MISSING", message: "Nome obrigatório" });
   }
 
-  const instId = refs.institutions.get(row.institution_slug);
+  // For athletes, birth_date is required; for staff it's optional
+  if (isAthlete && !row.birth_date) {
+    errors.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING", message: "Data de nascimento obrigatória para atletas" });
+  }
+
+  // Institution
+  const instId = maps.institutions.get(row.institution_slug);
   if (!instId) {
-    errors.push({ row: row.row_number, field: "ESCOLA", value: row.institution_slug, code: "INSTITUTION_NOT_FOUND", message: "Instituição não encontrada" });
+    if (row.institution_slug) {
+      errors.push({ row: row.row_number, field: "ESCOLA", value: row.institution_name, code: "INSTITUTION_RESOLVE_FAILED", message: "Não foi possível resolver a instituição" });
+    }
   } else {
     resolved.institution_id = instId;
-    const delId = refs.delegations.get(instId);
+    const delId = maps.delegations.get(instId);
     if (!delId) {
-      errors.push({ row: row.row_number, field: "DELEGAÇÃO", value: instId, code: "DELEGATION_NOT_FOUND", message: "Delegação não encontrada para esta instituição/evento" });
+      errors.push({ row: row.row_number, field: "DELEGAÇÃO", value: row.institution_name, code: "DELEGATION_RESOLVE_FAILED", message: "Não foi possível resolver a delegação" });
     } else {
       resolved.delegation_id = delId;
     }
   }
 
-  const sportId = refs.sports.get(row.sport_slug);
-  if (!sportId) {
-    errors.push({ row: row.row_number, field: "MODALIDADE", value: row.sport_slug, code: "SPORT_NOT_FOUND", message: "Modalidade não encontrada" });
+  // Sport (required for athletes)
+  if (isAthlete) {
+    const sportId = maps.sports.get(row.sport_slug);
+    if (!sportId) {
+      if (row.sport_slug) {
+        errors.push({ row: row.row_number, field: "MODALIDADE", value: row.sport_name, code: "SPORT_RESOLVE_FAILED", message: "Não foi possível resolver a modalidade" });
+      } else {
+        errors.push({ row: row.row_number, field: "MODALIDADE", value: "", code: "SPORT_MISSING", message: "Modalidade obrigatória para atletas" });
+      }
+    } else {
+      resolved.sport_id = sportId;
+    }
+
+    const catId = maps.categories.get(row.category_slug);
+    if (!catId) {
+      if (row.category_slug) {
+        errors.push({ row: row.row_number, field: "COMPETICAO", value: row.category_name, code: "CATEGORY_RESOLVE_FAILED", message: "Não foi possível resolver a categoria" });
+      } else {
+        errors.push({ row: row.row_number, field: "COMPETICAO", value: "", code: "CATEGORY_MISSING", message: "Competição/categoria obrigatória para atletas" });
+      }
+    } else {
+      resolved.category_id = catId;
+    }
+
+    if (!row.prova_slug) {
+      warnings.push({ row: row.row_number, field: "PROVA", value: null, code: "PROVA_EMPTY", message: "Nenhuma prova — linha ignorada" });
+      return { errors: [], warnings, resolved: {}, skip: true };
+    }
   } else {
-    resolved.sport_id = sportId;
+    // Non-athletes: no sport data needed, but they still need delegation
+    if (!resolved.delegation_id && !row.institution_slug) {
+      // Try to use delegation_name to find any delegation
+      warnings.push({ row: row.row_number, field: "TIPO USUARIO", value: row.user_type, code: "NON_ATHLETE", message: `Tipo "${row.user_type}" sem escola — ignorado` });
+      return { errors: [], warnings, resolved: {}, skip: true };
+    }
   }
 
-  const catId = refs.categories.get(row.category_slug);
-  if (!catId) {
-    errors.push({ row: row.row_number, field: "COMPETICAO", value: row.category_slug, code: "CATEGORY_NOT_FOUND", message: "Categoria não encontrada" });
-  } else {
-    resolved.category_id = catId;
-  }
-
-  // Sport events (PROVA) — now an array
-  if (row.sport_events.length === 0) {
-    warnings.push({ row: row.row_number, field: "PROVA", value: null, code: "PROVA_EMPTY", message: "Nenhuma prova válida encontrada — linha ignorada" });
-    return { errors: [], warnings, resolved: {}, skip: true };
-  }
-
-  // CPF resolution
+  // Person resolution
   if (row.cpf) {
-    const existing = refs.peopleByCpf.get(row.cpf);
-    if (existing) {
-      resolved.person_id = existing.id;
+    const existingId = peopleByCpf.get(row.cpf);
+    if (existingId) {
+      resolved.person_id = existingId;
       resolved.person_action = "reuse";
     } else {
-      resolved.person_id = null;
       resolved.person_action = "create";
     }
   } else {
-    warnings.push({ row: row.row_number, field: "CPF", value: null, code: "CPF_MISSING", message: "CPF ausente — será localizado por nome+nascimento" });
+    if (!isAthlete) {
+      // Staff without CPF — try name match
+      warnings.push({ row: row.row_number, field: "CPF", value: null, code: "CPF_MISSING", message: "CPF ausente" });
+    }
     if (row.full_name && row.birth_date) {
       const key = `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
-      const existingId = refs.peopleByNameDob.get(key);
+      const existingId = peopleByNameDob.get(key);
       if (existingId) {
         resolved.person_id = existingId;
         resolved.person_action = "reuse";
       } else {
-        resolved.person_id = null;
         resolved.person_action = "create";
       }
     } else {
-      resolved.person_id = null;
       resolved.person_action = "create";
     }
   }
@@ -313,6 +473,7 @@ function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
     category_id: string;
     sport_event_name: string;
     sport_event_slug: string;
+    participant_type: string;
   }[] = [];
 
   for (const { row, resolved } of validRows) {
@@ -322,25 +483,40 @@ function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
       seenPeopleKeys.add(personKey);
       peopleToCreate.push({
         full_name: row.full_name,
-        birth_date: row.birth_date,
+        birth_date: row.birth_date || "2000-01-01",
         gender: row.gender,
         cpf: row.cpf,
         rg: row.rg,
         email: row.email,
         phone: row.phone,
         institution_id: resolved.institution_id,
+        disability_type: row.pcd,
       });
     }
 
-    // Expand: one enrollment per sport_event in the array
-    for (const se of row.sport_events) {
+    const isAthlete = row.participant_type === "athlete";
+
+    if (isAthlete && resolved.sport_id && resolved.category_id) {
       enrollments.push({
         person_key: personKey,
         delegation_id: resolved.delegation_id!,
         sport_id: resolved.sport_id!,
         category_id: resolved.category_id!,
-        sport_event_name: se.name,
-        sport_event_slug: se.slug,
+        sport_event_name: row.prova_name,
+        sport_event_slug: row.prova_slug,
+        participant_type: row.participant_type,
+      });
+    } else if (!isAthlete && resolved.delegation_id) {
+      // Non-athletes: create participant without sport enrollment
+      // We still add an enrollment entry but with empty sport data so the RPC creates the participant
+      enrollments.push({
+        person_key: personKey,
+        delegation_id: resolved.delegation_id!,
+        sport_id: "",
+        category_id: "",
+        sport_event_name: "",
+        sport_event_slug: "",
+        participant_type: row.participant_type,
       });
     }
   }
@@ -431,8 +607,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const refs = await loadReferenceMaps(serviceClient, eventId);
-
     const missingCols = validateHeaders(rawRows);
     if (missingCols.length > 0) {
       return new Response(
@@ -441,37 +615,83 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Normalize all rows
+    const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i));
+
+    // Filter only processable rows (valid status, not blank names)
+    const processableRows = normalizedRows.filter(r => {
+      if (!r.full_name) return false;
+      return true;
+    });
+
+    // Auto-create reference entities (institutions, delegations, sports, categories)
+    // In validate mode we only do lookups, in commit mode we create missing ones
+    let maps: ResolvedMaps;
+    const refWarnings: RowResult[] = [];
+
+    if (mode === "commit") {
+      const result = await ensureReferenceEntities(serviceClient, eventId, processableRows);
+      maps = result.maps;
+      refWarnings.push(...result.warnings);
+    } else {
+      // Validate mode: also auto-create so validation is accurate
+      // But we do it anyway because the user needs to see real validation results
+      const result = await ensureReferenceEntities(serviceClient, eventId, processableRows);
+      maps = result.maps;
+      refWarnings.push(...result.warnings);
+    }
+
+    // Load people for dedup
+    const { data: peopleData } = await serviceClient
+      .from("people").select("id, full_name, birth_date, gender, cpf").eq("is_active", true);
+    const peopleByCpf = new Map<string, string>();
+    const peopleByNameDob = new Map<string, string>();
+    for (const p of peopleData ?? []) {
+      if (p.cpf) peopleByCpf.set(p.cpf, p.id);
+      peopleByNameDob.set(`${p.full_name.toLowerCase()}|${p.birth_date}|${p.gender}`, p.id);
+    }
+
+    // Validate each row
     const allErrors: RowResult[] = [];
-    const allWarnings: RowResult[] = [];
+    const allWarnings: RowResult[] = [...refWarnings];
     const validRows: ProcessedRow[] = [];
     let skippedRows = 0;
 
-    const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i));
-
     for (const row of normalizedRows) {
-      const { errors, warnings, resolved, skip } = validateRow(row, refs);
+      const { errors, warnings, resolved, skip } = validateRow(row, maps, peopleByCpf, peopleByNameDob);
       allWarnings.push(...warnings);
       if (skip) { skippedRows++; continue; }
       if (errors.length > 0) { allErrors.push(...errors); }
       else { validRows.push({ row, resolved }); }
     }
 
-    // Preview counts — based on expanded enrollments
+    // Preview counts
     const personActions = validRows.map((r) => r.resolved.person_action);
-    const totalEnrollments = validRows.reduce((sum, r) => sum + r.row.sport_events.length, 0);
+    const athleteRows = validRows.filter(r => r.row.participant_type === "athlete");
     const sportEventKeys = new Set<string>();
-    for (const { row, resolved } of validRows) {
-      for (const se of row.sport_events) {
-        sportEventKeys.add(`${resolved.sport_id}|${resolved.category_id}|${se.slug}`);
+    for (const { row, resolved } of athleteRows) {
+      if (resolved.sport_id && resolved.category_id) {
+        sportEventKeys.add(`${resolved.sport_id}|${resolved.category_id}|${row.prova_slug}`);
       }
     }
 
+    // Count unique people
+    const uniquePeopleKeys = new Set<string>();
+    for (const { row } of validRows) {
+      const key = row.cpf ?? `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
+      uniquePeopleKeys.add(key);
+    }
+
     const preview = {
-      people_to_create: personActions.filter((a) => a === "create").length,
-      people_to_reuse: personActions.filter((a) => a === "reuse").length,
-      participants_to_create: validRows.length,
+      people_to_create: new Set(validRows.filter(r => r.resolved.person_action === "create").map(r => r.row.cpf ?? `${r.row.full_name.toLowerCase()}|${r.row.birth_date}|${r.row.gender}`)).size,
+      people_to_reuse: new Set(validRows.filter(r => r.resolved.person_action === "reuse").map(r => r.row.cpf ?? `${r.row.full_name.toLowerCase()}|${r.row.birth_date}|${r.row.gender}`)).size,
+      participants_to_create: uniquePeopleKeys.size,
       sport_events_to_create: sportEventKeys.size,
-      enrollments_to_create: totalEnrollments,
+      enrollments_to_create: athleteRows.length,
+      staff_to_create: validRows.filter(r => r.row.participant_type !== "athlete").length,
+      institutions_created: maps.institutions.size,
+      sports_created: maps.sports.size,
+      categories_created: maps.categories.size,
     };
 
     if (mode === "validate") {
@@ -516,7 +736,6 @@ Deno.serve(async (req: Request) => {
     );
 
     if (rpcError) {
-      // Log failed import
       await serviceClient.from("import_logs").insert({
         event_id: eventId,
         performed_by: operatorId,
@@ -531,7 +750,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Log successful import
     await serviceClient.from("import_logs").insert({
       event_id: eventId,
       performed_by: operatorId,
