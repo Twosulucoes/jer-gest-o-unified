@@ -672,6 +672,224 @@ export type Database = {
           },
         ]
       }
+      transport_passengers: {
+        Row: {
+          alighted_at: string | null
+          alighted_by: string | null
+          boarded_at: string | null
+          boarded_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          participant_id: string
+          status: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          alighted_at?: string | null
+          alighted_by?: string | null
+          boarded_at?: string | null
+          boarded_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          participant_id: string
+          status?: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          alighted_at?: string | null
+          alighted_by?: string | null
+          boarded_at?: string | null
+          boarded_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          participant_id?: string
+          status?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_passengers_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_passengers_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "transport_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_routes: {
+        Row: {
+          created_at: string
+          destination: string | null
+          event_id: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          origin: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          destination?: string | null
+          event_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          origin?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string | null
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          origin?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_routes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_trips: {
+        Row: {
+          arrived_at: string | null
+          created_at: string
+          created_by: string | null
+          departed_at: string | null
+          driver_name: string | null
+          driver_phone: string | null
+          event_id: string
+          id: string
+          notes: string | null
+          route_id: string
+          scheduled_at: string | null
+          status: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          arrived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          departed_at?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          event_id: string
+          id?: string
+          notes?: string | null
+          route_id: string
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          arrived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          departed_at?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          event_id?: string
+          id?: string
+          notes?: string | null
+          route_id?: string
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_trips_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_trips_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "transport_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "transport_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_vehicles: {
+        Row: {
+          capacity: number
+          created_at: string
+          event_id: string
+          id: string
+          is_active: boolean
+          label: string | null
+          plate: string
+          updated_at: string
+          vehicle_type: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          event_id: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          plate: string
+          updated_at?: string
+          vehicle_type?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          plate?: string
+          updated_at?: string
+          vehicle_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_vehicles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
