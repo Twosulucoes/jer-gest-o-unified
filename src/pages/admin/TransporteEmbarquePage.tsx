@@ -263,19 +263,87 @@ export default function TransporteEmbarquePage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Adicionar participante</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou CPF..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <CardContent className="space-y-4">
+            {/* QR Code lookup */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block flex items-center gap-1">
+                <QrCode className="h-3 w-3" /> Busca por QR Code
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Escanear ou colar código QR..."
+                  value={qrCode}
+                  onChange={(e) => { setQrCode(e.target.value); setQrResult(null); setQrError(null); }}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter" && qrCode.trim() && trip?.event_id) {
+                      const { data, error } = await lookupByQrCode(qrCode.trim(), trip.event_id);
+                      if (error) { setQrError(error.message); setQrResult(null); }
+                      else if (data) {
+                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, type: data.participant_type });
+                        setQrError(null);
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!qrCode.trim() || qrLoading}
+                  onClick={async () => {
+                    if (qrCode.trim() && trip?.event_id) {
+                      const { data, error } = await lookupByQrCode(qrCode.trim(), trip.event_id);
+                      if (error) { setQrError(error.message); setQrResult(null); }
+                      else if (data) {
+                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, type: data.participant_type });
+                        setQrError(null);
+                      }
+                    }
+                  }}
+                >
+                  {qrLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
+                </Button>
+              </div>
+              {qrError && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4" /> {qrError}
+                </div>
+              )}
+              {qrResult && (
+                <div className="mt-2 flex items-center justify-between rounded-lg border px-4 py-2.5 bg-muted/30">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{qrResult.name}</p>
+                    <p className="text-xs text-muted-foreground">{qrResult.cpf ?? "Sem CPF"} • {qrResult.type === "athlete" ? "Atleta" : qrResult.type}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={boardedIds.has(qrResult.participantId) || boardMut.isPending}
+                    variant={boardedIds.has(qrResult.participantId) ? "secondary" : "default"}
+                    onClick={() => { boardMut.mutate(qrResult.participantId); setQrCode(""); setQrResult(null); }}
+                  >
+                    {boardedIds.has(qrResult.participantId) ? "Já embarcado" : <><UserPlus className="mr-1 h-3 w-3" />Embarcar</>}
+                  </Button>
+                </div>
+              )}
             </div>
-            {searching && <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Buscando...</div>}
+
+            {/* Manual search */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block flex items-center gap-1">
+                <Search className="h-3 w-3" /> Busca manual por nome/CPF
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome ou CPF..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            {searching && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Buscando...</div>}
             {searchResults.length > 0 && (
-              <div className="mt-3 rounded-lg border divide-y max-h-60 overflow-y-auto">
+              <div className="rounded-lg border divide-y max-h-60 overflow-y-auto">
                 {searchResults.map((sr) => {
                   const alreadyBoarded = boardedIds.has(sr.id);
                   return (

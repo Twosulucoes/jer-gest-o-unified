@@ -21,6 +21,10 @@ export default function AlimentacaoConsumoPage() {
   const [selectedEventId, setSelectedEventId] = useState("");
   const [selectedWindowId, setSelectedWindowId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [qrCode, setQrCode] = useState("");
+  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; type: string; foodRestrictions: string | null } | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const { lookupByQrCode, loading: qrLoading } = useCredentialLookup();
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
 
   const { data: events = [] } = useQuery({

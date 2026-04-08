@@ -21,6 +21,10 @@ export default function AlojamentoOcupacaoPage() {
   const [selectedEventId, setSelectedEventId] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [qrCode, setQrCode] = useState("");
+  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; gender: string } | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const { lookupByQrCode, loading: qrLoading } = useCredentialLookup();
   const canOperate = hasRole("admin") || hasRole("secretaria");
 
   const { data: events = [] } = useQuery({
