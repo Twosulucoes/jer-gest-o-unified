@@ -27,6 +27,7 @@ import {
   Trophy,
   Swords,
   CalendarDays,
+  Layers,
 } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
