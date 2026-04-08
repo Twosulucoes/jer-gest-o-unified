@@ -142,7 +142,7 @@ export default function CompeticaoResultadosPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Status do resultado</label>
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ResultStatusFilter)}>
+              <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as ResultStatusFilter); setCurrentPage(1); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos ({counts.all})</SelectItem>
