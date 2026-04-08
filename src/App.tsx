@@ -22,11 +22,15 @@ import TransporteVeiculosPage from "./pages/admin/TransporteVeiculosPage";
 import TransporteRotasPage from "./pages/admin/TransporteRotasPage";
 import TransporteViagensPage from "./pages/admin/TransporteViagensPage";
 import TransporteEmbarquePage from "./pages/admin/TransporteEmbarquePage";
+import AlimentacaoTiposPage from "./pages/admin/AlimentacaoTiposPage";
+import AlimentacaoJanelasPage from "./pages/admin/AlimentacaoJanelasPage";
+import AlimentacaoConsumoPage from "./pages/admin/AlimentacaoConsumoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const TRANSPORT_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "transporte"] as const;
+const FOOD_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"] as const;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -61,6 +65,10 @@ const App = () => (
               <Route path="transporte/rotas" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteRotasPage /></ProtectedRoute>} />
               <Route path="transporte/viagens" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteViagensPage /></ProtectedRoute>} />
               <Route path="transporte/embarque/:tripId" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteEmbarquePage /></ProtectedRoute>} />
+              {/* Alimentação */}
+              <Route path="alimentacao/tipos" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoTiposPage /></ProtectedRoute>} />
+              <Route path="alimentacao/janelas" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoJanelasPage /></ProtectedRoute>} />
+              <Route path="alimentacao/consumo" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoConsumoPage /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

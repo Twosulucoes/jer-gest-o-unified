@@ -18,6 +18,9 @@ import {
   Bus,
   Route,
   Navigation,
+  UtensilsCrossed,
+  Clock,
+  ClipboardList,
 } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
@@ -33,6 +36,7 @@ interface NavItem {
 }
 
 const TRANSPORT_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "transporte"];
+const FOOD_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"];
 
 const navItems: NavItem[] = [
   { label: "Dashboard", to: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, roles: "all" },
@@ -49,6 +53,10 @@ const navItems: NavItem[] = [
   { label: "Veículos", to: "/admin/transporte/veiculos", icon: <Bus className="h-4 w-4" />, roles: TRANSPORT_ROLES, section: "Transporte" },
   { label: "Rotas", to: "/admin/transporte/rotas", icon: <Route className="h-4 w-4" />, roles: TRANSPORT_ROLES, section: "Transporte" },
   { label: "Viagens", to: "/admin/transporte/viagens", icon: <Navigation className="h-4 w-4" />, roles: TRANSPORT_ROLES, section: "Transporte" },
+  // Alimentação
+  { label: "Refeições", to: "/admin/alimentacao/tipos", icon: <UtensilsCrossed className="h-4 w-4" />, roles: FOOD_ROLES, section: "Alimentação" },
+  { label: "Janelas", to: "/admin/alimentacao/janelas", icon: <Clock className="h-4 w-4" />, roles: FOOD_ROLES, section: "Alimentação" },
+  { label: "Consumo", to: "/admin/alimentacao/consumo", icon: <ClipboardList className="h-4 w-4" />, roles: FOOD_ROLES, section: "Alimentação" },
 ];
 
 function getRoleLabel(role: AppRole): string {
