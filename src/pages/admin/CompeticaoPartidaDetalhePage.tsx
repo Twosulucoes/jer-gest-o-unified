@@ -51,6 +51,8 @@ export default function CompeticaoPartidaDetalhePage() {
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [resultForm, setResultForm] = useState<Record<string, { score: string; position: string; result_text: string }>>({});
   const [resultNotes, setResultNotes] = useState("");
+  const [confirmRemoveEntryId, setConfirmRemoveEntryId] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"validate" | "publish" | "unpublish" | null>(null);
 
   // Fetch match
   const { data: match, isLoading } = useQuery({
