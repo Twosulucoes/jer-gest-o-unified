@@ -138,7 +138,7 @@ export default function AlimentacaoConsumoPage() {
         meal_window_id: selectedWindowId,
         participant_id: participantId,
         consumed_at: new Date().toISOString(),
-        registered_by: user?.id!,
+        registered_by: user!.id,
         method: "manual",
       });
       if (error) throw error;

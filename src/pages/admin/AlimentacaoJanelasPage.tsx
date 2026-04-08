@@ -55,7 +55,6 @@ export default function AlimentacaoJanelasPage() {
 
   const createMut = useMutation({
     mutationFn: async (v: MealWindowFormValues) => {
-      const mt = mealTypesMap.get(v.meal_type_id);
       const { error } = await supabase.from("meal_windows").insert({
         event_id: selectedEventId,
         meal_type_id: v.meal_type_id,
