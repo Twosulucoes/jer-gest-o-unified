@@ -14,6 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
 
 const STATUS_OPTIONS = [
@@ -47,6 +51,8 @@ export default function CompeticaoPartidaDetalhePage() {
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [resultForm, setResultForm] = useState<Record<string, { score: string; position: string; result_text: string }>>({});
   const [resultNotes, setResultNotes] = useState("");
+  const [confirmRemoveEntryId, setConfirmRemoveEntryId] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"validate" | "publish" | "unpublish" | null>(null);
 
   // Fetch match
   const { data: match, isLoading } = useQuery({
@@ -454,8 +460,8 @@ export default function CompeticaoPartidaDetalhePage() {
                       <TableCell className="text-muted-foreground">{entry.side}</TableCell>
                       <TableCell className="font-mono text-sm">{entry.seed ?? "—"}</TableCell>
                       {canWrite && (
-                        <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => removeEntryMut.mutate(entry.id)} disabled={removeEntryMut.isPending}>
+                         <TableCell>
+                          <Button variant="ghost" size="icon" onClick={() => setConfirmRemoveEntryId(entry.id)} disabled={removeEntryMut.isPending}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </TableCell>
@@ -480,17 +486,17 @@ export default function CompeticaoPartidaDetalhePage() {
               </Button>
             )}
             {canWrite && hasPendingValidation && (
-              <Button size="sm" onClick={() => validateResultsMut.mutate()} disabled={validateResultsMut.isPending}>
+              <Button size="sm" onClick={() => setConfirmAction("validate")} disabled={validateResultsMut.isPending}>
                 <CheckCircle2 className="mr-2 h-4 w-4" />Validar
               </Button>
             )}
             {canWrite && hasValidatedReady && !allPublished && (
-              <Button size="sm" variant="default" onClick={() => publishResultsMut.mutate()} disabled={publishResultsMut.isPending}>
+              <Button size="sm" variant="default" onClick={() => setConfirmAction("publish")} disabled={publishResultsMut.isPending}>
                 Publicar oficialmente
               </Button>
             )}
             {canWrite && hasPublished && (
-              <Button size="sm" variant="destructive" onClick={() => unpublishResultsMut.mutate()} disabled={unpublishResultsMut.isPending}>
+              <Button size="sm" variant="destructive" onClick={() => setConfirmAction("unpublish")} disabled={unpublishResultsMut.isPending}>
                 Despublicar
               </Button>
             )}
@@ -635,6 +641,55 @@ export default function CompeticaoPartidaDetalhePage() {
         onSubmit={(v) => updateMatchMut.mutate(v)}
         isPending={updateMatchMut.isPending}
       />
+
+      {/* Confirmation: remove participant */}
+      <AlertDialog open={!!confirmRemoveEntryId} onOpenChange={(open) => { if (!open) setConfirmRemoveEntryId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover participante</AlertDialogTitle>
+            <AlertDialogDescription>
+              O participante será desvinculado desta partida. Se já houver resultado lançado para ele, a remoção pode causar inconsistência. Esta ação não é facilmente reversível.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (confirmRemoveEntryId) removeEntryMut.mutate(confirmRemoveEntryId); setConfirmRemoveEntryId(null); }}>
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmation: validate / publish / unpublish */}
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => { if (!open) setConfirmAction(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction === "validate" && "Validar resultados"}
+              {confirmAction === "publish" && "Publicar resultados oficialmente"}
+              {confirmAction === "unpublish" && "Despublicar resultados"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction === "validate" && "Os resultados lançados serão marcados como validados. Após validação, ainda será possível publicar ou editar."}
+              {confirmAction === "publish" && "Os resultados serão publicados oficialmente. Após publicação, qualquer alteração exigirá despublicação prévia."}
+              {confirmAction === "unpublish" && "A publicação oficial será revertida para status validado. Os dados de publicação (quem publicou e quando) serão removidos. Esta ação pode impactar informações já divulgadas."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (confirmAction === "validate") validateResultsMut.mutate();
+              if (confirmAction === "publish") publishResultsMut.mutate();
+              if (confirmAction === "unpublish") unpublishResultsMut.mutate();
+              setConfirmAction(null);
+            }}>
+              {confirmAction === "validate" && "Validar"}
+              {confirmAction === "publish" && "Publicar"}
+              {confirmAction === "unpublish" && "Despublicar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
