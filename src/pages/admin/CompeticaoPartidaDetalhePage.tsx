@@ -456,7 +456,7 @@ export default function CompeticaoPartidaDetalhePage() {
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-base">Resultado interno</CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {canWrite && entries.length > 0 && (
               <Button size="sm" variant="outline" onClick={openResultDialog}>
                 <ClipboardList className="mr-2 h-4 w-4" />{hasResults ? "Editar resultado" : "Lançar resultado"}
@@ -465,6 +465,16 @@ export default function CompeticaoPartidaDetalhePage() {
             {canWrite && hasPendingValidation && (
               <Button size="sm" onClick={() => validateResultsMut.mutate()} disabled={validateResultsMut.isPending}>
                 <CheckCircle2 className="mr-2 h-4 w-4" />Validar
+              </Button>
+            )}
+            {canWrite && hasValidatedReady && !allPublished && (
+              <Button size="sm" variant="default" onClick={() => publishResultsMut.mutate()} disabled={publishResultsMut.isPending}>
+                Publicar oficialmente
+              </Button>
+            )}
+            {canWrite && hasPublished && (
+              <Button size="sm" variant="destructive" onClick={() => unpublishResultsMut.mutate()} disabled={unpublishResultsMut.isPending}>
+                Despublicar
               </Button>
             )}
           </div>
