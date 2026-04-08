@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Plus, Pencil, Swords } from "lucide-react";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +20,8 @@ export default function CompeticaoPartidasPage() {
   const [editing, setEditing] = useState<any>(null);
   const [selectedEventId, setSelectedEventId] = useState("");
   const [selectedSportEventId, setSelectedSportEventId] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   const { data: events = [] } = useQuery({
@@ -163,14 +166,14 @@ export default function CompeticaoPartidasPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setSelectedSportEventId(""); }}>
+              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setSelectedSportEventId(""); setCurrentPage(1); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Prova (filtro)</label>
-              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => setSelectedSportEventId(v === "__all__" ? "" : v)} disabled={!selectedEventId}>
+              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => { setSelectedSportEventId(v === "__all__" ? "" : v); setCurrentPage(1); }} disabled={!selectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todas</SelectItem>
@@ -196,42 +199,71 @@ export default function CompeticaoPartidasPage() {
           <p className="text-sm text-muted-foreground mt-1">Cadastre fases antes de criar partidas.</p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nº</TableHead>
-                <TableHead>Fase</TableHead>
-                <TableHead>Grupo</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Horário</TableHead>
-                <TableHead>Local</TableHead>
-                <TableHead>Status</TableHead>
-                {canWrite && <TableHead className="w-[60px]" />}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {matches.map((m) => (
-                <TableRow key={m.id}>
-                  <TableCell className="font-mono text-sm">{m.match_number ?? "—"}</TableCell>
-                  <TableCell className="font-medium">{phasesMap.get(m.phase_id)?.name ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{m.group_id ? groupsMap.get(m.group_id)?.name ?? "—" : "—"}</TableCell>
-                  <TableCell>{formatDate(m.match_date)}</TableCell>
-                  <TableCell className="font-mono text-xs">{m.start_time?.slice(0, 5) ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{m.venue_id ? venuesMap.get(m.venue_id)?.name ?? "—" : "—"}</TableCell>
-                  <TableCell><Badge variant={statusVariant(m.status)}>{statusLabel(m.status)}</Badge></TableCell>
-                  {canWrite && (
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => { setEditing(m); setDialogOpen(true); }}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        (() => {
+          const totalPages = Math.ceil((matches?.length ?? 0) / PAGE_SIZE);
+          const paginated = matches!.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+          return (
+            <>
+              <div className="rounded-lg border bg-card">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nº</TableHead>
+                      <TableHead>Fase</TableHead>
+                      <TableHead>Grupo</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Horário</TableHead>
+                      <TableHead>Local</TableHead>
+                      <TableHead>Status</TableHead>
+                      {canWrite && <TableHead className="w-[60px]" />}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginated.map((m) => (
+                      <TableRow key={m.id}>
+                        <TableCell className="font-mono text-sm">{m.match_number ?? "—"}</TableCell>
+                        <TableCell className="font-medium">{phasesMap.get(m.phase_id)?.name ?? "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{m.group_id ? groupsMap.get(m.group_id)?.name ?? "—" : "—"}</TableCell>
+                        <TableCell>{formatDate(m.match_date)}</TableCell>
+                        <TableCell className="font-mono text-xs">{m.start_time?.slice(0, 5) ?? "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{m.venue_id ? venuesMap.get(m.venue_id)?.name ?? "—" : "—"}</TableCell>
+                        <TableCell><Badge variant={statusVariant(m.status)}>{statusLabel(m.status)}</Badge></TableCell>
+                        {canWrite && (
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => { setEditing(m); setDialogOpen(true); }}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">{matches!.length} partidas — página {currentPage} de {totalPages}</p>
+                  <Pagination>
+                    <PaginationContent>
+                      {currentPage > 1 && (
+                        <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => p - 1); }} /></PaginationItem>
+                      )}
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        const page = totalPages <= 5 ? i + 1 : currentPage <= 3 ? i + 1 : currentPage >= totalPages - 2 ? totalPages - 4 + i : currentPage - 2 + i;
+                        return (
+                          <PaginationItem key={page}><PaginationLink href="#" isActive={page === currentPage} onClick={(e) => { e.preventDefault(); setCurrentPage(page); }}>{page}</PaginationLink></PaginationItem>
+                        );
+                      })}
+                      {currentPage < totalPages && (
+                        <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => p + 1); }} /></PaginationItem>
+                      )}
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
+          );
+        })()
       )}
 
       <CompetitionMatchFormDialog

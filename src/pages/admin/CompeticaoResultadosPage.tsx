@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Trophy, Eye } from "lucide-react";
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 
 type ResultStatusFilter = "all" | "sem_resultado" | "resultado_lancado" | "resultado_validado" | "publicado";
 
@@ -27,6 +28,8 @@ export default function CompeticaoResultadosPage() {
   const navigate = useNavigate();
   const [selectedEventId, setSelectedEventId] = useState("");
   const [statusFilter, setStatusFilter] = useState<ResultStatusFilter>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
@@ -132,14 +135,14 @@ export default function CompeticaoResultadosPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setStatusFilter("all"); }}>
+              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setStatusFilter("all"); setCurrentPage(1); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Status do resultado</label>
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ResultStatusFilter)}>
+              <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as ResultStatusFilter); setCurrentPage(1); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos ({counts.all})</SelectItem>
@@ -167,47 +170,76 @@ export default function CompeticaoResultadosPage() {
           <p className="text-muted-foreground font-medium">Nenhuma partida neste filtro</p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Prova</TableHead>
-                <TableHead>Fase</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Horário</TableHead>
-                <TableHead>Status partida</TableHead>
-                <TableHead>Resultado</TableHead>
-                <TableHead className="w-[60px]" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((m) => {
-                const phase = phasesMap.get(m.phase_id);
-                const se = phase ? sportEventsMap.get(phase.sport_event_id) : null;
-                const rStatus = matchResultStatus.get(m.id) ?? "sem_resultado";
-                return (
-                  <TableRow key={m.id}>
-                    <TableCell className="font-medium">{se?.name ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{phase?.name ?? "—"}</TableCell>
-                    <TableCell>{formatDate(m.match_date)}</TableCell>
-                    <TableCell className="font-mono text-xs">{m.start_time?.slice(0, 5) ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={m.status === "finished" ? "secondary" : m.status === "in_progress" ? "default" : "outline"}>
-                        {m.status === "scheduled" ? "Agendada" : m.status === "in_progress" ? "Em andamento" : m.status === "finished" ? "Finalizada" : "Cancelada"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(rStatus)}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/competicao/partida/${m.id}`)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        (() => {
+          const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+          const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+          return (
+            <>
+              <div className="rounded-lg border bg-card">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Prova</TableHead>
+                      <TableHead>Fase</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Horário</TableHead>
+                      <TableHead>Status partida</TableHead>
+                      <TableHead>Resultado</TableHead>
+                      <TableHead className="w-[60px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginated.map((m) => {
+                      const phase = phasesMap.get(m.phase_id);
+                      const se = phase ? sportEventsMap.get(phase.sport_event_id) : null;
+                      const rStatus = matchResultStatus.get(m.id) ?? "sem_resultado";
+                      return (
+                        <TableRow key={m.id}>
+                          <TableCell className="font-medium">{se?.name ?? "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{phase?.name ?? "—"}</TableCell>
+                          <TableCell>{formatDate(m.match_date)}</TableCell>
+                          <TableCell className="font-mono text-xs">{m.start_time?.slice(0, 5) ?? "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant={m.status === "finished" ? "secondary" : m.status === "in_progress" ? "default" : "outline"}>
+                              {m.status === "scheduled" ? "Agendada" : m.status === "in_progress" ? "Em andamento" : m.status === "finished" ? "Finalizada" : "Cancelada"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(rStatus)}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/competicao/partida/${m.id}`)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">{filtered.length} partidas — página {currentPage} de {totalPages}</p>
+                  <Pagination>
+                    <PaginationContent>
+                      {currentPage > 1 && (
+                        <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => p - 1); }} /></PaginationItem>
+                      )}
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        const page = totalPages <= 5 ? i + 1 : currentPage <= 3 ? i + 1 : currentPage >= totalPages - 2 ? totalPages - 4 + i : currentPage - 2 + i;
+                        return (
+                          <PaginationItem key={page}><PaginationLink href="#" isActive={page === currentPage} onClick={(e) => { e.preventDefault(); setCurrentPage(page); }}>{page}</PaginationLink></PaginationItem>
+                        );
+                      })}
+                      {currentPage < totalPages && (
+                        <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => p + 1); }} /></PaginationItem>
+                      )}
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
+          );
+        })()
       )}
     </div>
   );
