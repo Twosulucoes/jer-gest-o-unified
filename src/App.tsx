@@ -39,13 +39,62 @@ const App = () => (
               }
             >
               <Route index element={<DashboardPage />} />
-              <Route path="eventos" element={<EventosPage />} />
-              <Route path="modalidades" element={<ModalidadesPage />} />
-              <Route path="categorias" element={<CategoriasPage />} />
-              <Route path="locais" element={<LocaisPage />} />
-              <Route path="instituicoes" element={<InstituicoesPage />} />
-              <Route path="delegacoes" element={<DelegacoesPage />} />
-              <Route path="importacao" element={<ImportacaoPage />} />
+              <Route
+                path="eventos"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
+                    <EventosPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="modalidades"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
+                    <ModalidadesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="categorias"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
+                    <CategoriasPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="locais"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
+                    <LocaisPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="instituicoes"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
+                    <InstituicoesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="delegacoes"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}>
+                    <DelegacoesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="importacao"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "secretaria"]}>
+                    <ImportacaoPage />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
