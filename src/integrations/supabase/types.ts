@@ -291,6 +291,152 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_consumptions: {
+        Row: {
+          consumed_at: string
+          created_at: string
+          id: string
+          meal_window_id: string
+          method: string
+          notes: string | null
+          participant_id: string
+          registered_by: string
+        }
+        Insert: {
+          consumed_at?: string
+          created_at?: string
+          id?: string
+          meal_window_id: string
+          method?: string
+          notes?: string | null
+          participant_id: string
+          registered_by: string
+        }
+        Update: {
+          consumed_at?: string
+          created_at?: string
+          id?: string
+          meal_window_id?: string
+          method?: string
+          notes?: string | null
+          participant_id?: string
+          registered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_consumptions_meal_window_id_fkey"
+            columns: ["meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "meal_windows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_consumptions_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_types: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_types_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_windows: {
+        Row: {
+          created_at: string
+          end_time: string
+          event_id: string
+          id: string
+          is_active: boolean
+          label: string | null
+          location: string | null
+          meal_type_id: string
+          service_date: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          event_id: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          location?: string | null
+          meal_type_id: string
+          service_date: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          location?: string | null
+          meal_type_id?: string
+          service_date?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_meal_type_id_fkey"
+            columns: ["meal_type_id"]
+            isOneToOne: false
+            referencedRelation: "meal_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_credentials: {
         Row: {
           activated_at: string | null
