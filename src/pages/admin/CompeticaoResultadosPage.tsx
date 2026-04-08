@@ -28,6 +28,8 @@ export default function CompeticaoResultadosPage() {
   const navigate = useNavigate();
   const [selectedEventId, setSelectedEventId] = useState("");
   const [statusFilter, setStatusFilter] = useState<ResultStatusFilter>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],

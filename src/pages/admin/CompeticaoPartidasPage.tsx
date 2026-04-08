@@ -20,6 +20,8 @@ export default function CompeticaoPartidasPage() {
   const [editing, setEditing] = useState<any>(null);
   const [selectedEventId, setSelectedEventId] = useState("");
   const [selectedSportEventId, setSelectedSportEventId] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   const { data: events = [] } = useQuery({
