@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, MapPin } from "lucide-react";
+import { CalendarDays, MapPin, Eye, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 
 export default function CompeticaoAgendaPage() {
+  const navigate = useNavigate();
   const [selectedEventId, setSelectedEventId] = useState("");
+  const [selectedSportEventId, setSelectedSportEventId] = useState("");
+  const [selectedPhaseId, setSelectedPhaseId] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
@@ -74,15 +81,27 @@ export default function CompeticaoAgendaPage() {
   const statusVariant = (s: string): "default" | "secondary" | "outline" | "destructive" =>
     s === "in_progress" ? "default" : s === "finished" ? "secondary" : s === "cancelled" ? "destructive" : "outline";
 
-  // Group matches by date
-  const matchesByDate = new Map<string, typeof matches>();
-  matches.forEach((m) => {
+  // Filter matches
+  const filtered = matches.filter((m) => {
+    const phase = phasesMap.get(m.phase_id);
+    if (selectedSportEventId && phase?.sport_event_id !== selectedSportEventId) return false;
+    if (selectedPhaseId && m.phase_id !== selectedPhaseId) return false;
+    if (selectedDate && m.match_date !== selectedDate) return false;
+    return true;
+  });
+
+  // Group by date
+  const matchesByDate = new Map<string, typeof filtered>();
+  filtered.forEach((m) => {
     const d = m.match_date ?? "sem-data";
     if (!matchesByDate.has(d)) matchesByDate.set(d, []);
     matchesByDate.get(d)!.push(m);
   });
 
   const formatDate = (d: string) => d === "sem-data" ? "Sem data definida" : new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+
+  // Filtered phases for phase filter dropdown
+  const filteredPhases = selectedSportEventId ? phases.filter((p) => p.sport_event_id === selectedSportEventId) : phases;
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -93,12 +112,38 @@ export default function CompeticaoAgendaPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="space-y-2 max-w-xs">
-            <label className="text-sm font-medium text-foreground">Evento</label>
-            <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-              <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
-              <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Evento</label>
+              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setSelectedSportEventId(""); setSelectedPhaseId(""); setSelectedDate(""); }}>
+                <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
+                <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Modalidade/Prova</label>
+              <Select value={selectedSportEventId} onValueChange={(v) => { setSelectedSportEventId(v); setSelectedPhaseId(""); }} disabled={!selectedEventId}>
+                <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas</SelectItem>
+                  {sportEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Fase</label>
+              <Select value={selectedPhaseId} onValueChange={setSelectedPhaseId} disabled={!selectedEventId}>
+                <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas</SelectItem>
+                  {filteredPhases.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Data</label>
+              <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} disabled={!selectedEventId} />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -110,10 +155,11 @@ export default function CompeticaoAgendaPage() {
         </div>
       ) : isLoading ? (
         <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-md" />)}</div>
-      ) : !matches.length ? (
+      ) : !filtered.length ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-          <CalendarDays className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhuma partida agendada</p>
+          <Filter className="h-10 w-10 text-muted-foreground mb-3" />
+          <p className="text-muted-foreground font-medium">Nenhuma partida encontrada</p>
+          <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou cadastre partidas.</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -126,7 +172,7 @@ export default function CompeticaoAgendaPage() {
                   const se = phase ? sportEventsMap.get(phase.sport_event_id) : null;
                   const venue = m.venue_id ? venuesMap.get(m.venue_id) : null;
                   return (
-                    <Card key={m.id} className="hover:shadow-sm transition-shadow">
+                    <Card key={m.id} className="hover:shadow-sm transition-shadow cursor-pointer" onClick={() => navigate(`/admin/competicao/partida/${m.id}`)}>
                       <CardContent className="py-3 px-4 flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <span className="font-mono text-sm font-bold text-muted-foreground w-12">
@@ -144,7 +190,10 @@ export default function CompeticaoAgendaPage() {
                             )}
                           </div>
                         </div>
-                        <Badge variant={statusVariant(m.status)}>{statusLabel(m.status)}</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={statusVariant(m.status)}>{statusLabel(m.status)}</Badge>
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        </div>
                       </CardContent>
                     </Card>
                   );
