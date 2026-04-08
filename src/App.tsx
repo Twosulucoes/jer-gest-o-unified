@@ -25,12 +25,16 @@ import TransporteEmbarquePage from "./pages/admin/TransporteEmbarquePage";
 import AlimentacaoTiposPage from "./pages/admin/AlimentacaoTiposPage";
 import AlimentacaoJanelasPage from "./pages/admin/AlimentacaoJanelasPage";
 import AlimentacaoConsumoPage from "./pages/admin/AlimentacaoConsumoPage";
+import AlojamentoLocaisPage from "./pages/admin/AlojamentoLocaisPage";
+import AlojamentoUnidadesPage from "./pages/admin/AlojamentoUnidadesPage";
+import AlojamentoOcupacaoPage from "./pages/admin/AlojamentoOcupacaoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const TRANSPORT_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "transporte"] as const;
 const FOOD_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"] as const;
+const LODGING_ROLES = ["admin", "secretaria", "coordenacao_tecnica"] as const;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -69,6 +73,10 @@ const App = () => (
               <Route path="alimentacao/tipos" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoTiposPage /></ProtectedRoute>} />
               <Route path="alimentacao/janelas" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoJanelasPage /></ProtectedRoute>} />
               <Route path="alimentacao/consumo" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoConsumoPage /></ProtectedRoute>} />
+              {/* Alojamento */}
+              <Route path="alojamento/locais" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoLocaisPage /></ProtectedRoute>} />
+              <Route path="alojamento/unidades" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoUnidadesPage /></ProtectedRoute>} />
+              <Route path="alojamento/ocupacao" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoOcupacaoPage /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
