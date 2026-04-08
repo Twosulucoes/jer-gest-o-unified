@@ -98,9 +98,25 @@ interface ReferenceMaps {
 
 // ─── XLSX Parsing ────────────────────────────────────────────────────
 
+function findDataSheet(workbook: XLSX.WorkBook): string {
+  // Try to find a sheet that contains the required headers
+  for (const name of workbook.SheetNames) {
+    const sheet = workbook.Sheets[name];
+    const sample = XLSX.utils.sheet_to_json(sheet, { defval: null, range: 0 }) as RawRow[];
+    if (sample.length > 0) {
+      const headers = Object.keys(sample[0]);
+      const hasRequired = REQUIRED_COLUMNS.every((col) => headers.includes(col));
+      if (hasRequired) return name;
+    }
+  }
+  // Fallback to first sheet
+  return workbook.SheetNames[0];
+}
+
 function parseXlsx(buffer: ArrayBuffer): RawRow[] {
   const workbook = XLSX.read(new Uint8Array(buffer), { type: "array" });
-  const sheetName = workbook.SheetNames[0];
+  const sheetName = findDataSheet(workbook);
+  console.log(`import-inscricoes: using sheet "${sheetName}"`);
   const sheet = workbook.Sheets[sheetName];
   return XLSX.utils.sheet_to_json(sheet, { defval: null }) as RawRow[];
 }
