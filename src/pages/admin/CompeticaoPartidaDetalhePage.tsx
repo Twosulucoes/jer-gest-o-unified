@@ -140,6 +140,7 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!matchId,
   });
 
+  // All PSEs for this sport event (for "add participant" dialog — confirmed only)
   const { data: availablePSE = [] } = useQuery({
     queryKey: ["participant_sport_events_for_match", phase?.sport_event_id],
     queryFn: async () => {
@@ -155,20 +156,47 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!phase?.sport_event_id,
   });
 
-  const { data: participants = [] } = useQuery({
-    queryKey: ["participants_for_match", match?.event_id],
+  // PSEs linked to entries (any status — for reliable name resolution)
+  const entryPseIds = entries.map((e) => e.participant_sport_event_id);
+  const { data: linkedPSEs = [] } = useQuery({
+    queryKey: ["linked_pses_for_match", matchId, entryPseIds.length],
     queryFn: async () => {
-      if (!match?.event_id) return [];
-      const { data, error } = await supabase.from("participants").select("id, person_id, delegation_id").eq("event_id", match.event_id);
+      if (!entryPseIds.length) return [];
+      const { data, error } = await supabase
+        .from("participant_sport_events")
+        .select("id, participant_id, status")
+        .in("id", entryPseIds);
       if (error) throw error;
       return data;
     },
-    enabled: !!match?.event_id,
+    enabled: entryPseIds.length > 0,
   });
 
-  const personIds = participants.map((p) => p.person_id);
+  // Merge all known PSEs (linked + available) for a complete map
+  const allKnownPSEs = [...linkedPSEs, ...availablePSE];
+  const pseMap = new Map(allKnownPSEs.map((p) => [p.id, p]));
+
+  // Get all unique participant IDs from known PSEs
+  const allParticipantIds = [...new Set(allKnownPSEs.map((p) => p.participant_id))];
+  const { data: participants = [] } = useQuery({
+    queryKey: ["participants_for_match", match?.event_id, allParticipantIds.length],
+    queryFn: async () => {
+      if (!allParticipantIds.length) return [];
+      const { data, error } = await supabase
+        .from("participants")
+        .select("id, person_id, delegation_id")
+        .in("id", allParticipantIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: allParticipantIds.length > 0,
+  });
+
+  const participantsMap = new Map(participants.map((p) => [p.id, p]));
+
+  const personIds = [...new Set(participants.map((p) => p.person_id))];
   const { data: people = [] } = useQuery({
-    queryKey: ["people_for_match", personIds.slice(0, 5)],
+    queryKey: ["people_for_match", personIds.length, personIds.slice(0, 3).join(",")],
     queryFn: async () => {
       if (!personIds.length) return [];
       const { data, error } = await supabase.from("people").select("id, full_name, cpf").in("id", personIds);
@@ -178,28 +206,17 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: personIds.length > 0,
   });
 
-  const participantsMap = new Map(participants.map((p) => [p.id, p]));
   const peopleMap = new Map(people.map((p) => [p.id, p]));
-  const pseMap = new Map(availablePSE.map((p) => [p.id, p]));
   const resultsMap = new Map(results.map((r) => [r.match_entry_id, r]));
 
   const getPersonName = (pseId: string) => {
     const pse = pseMap.get(pseId);
-    if (!pse) {
-      // fallback: search entries -> find participant via all participants
-      for (const p of participants) {
-        for (const entry of entries) {
-          if (entry.participant_sport_event_id === pseId) {
-            // try to find PSE from availablePSE or do a broader lookup
-          }
-        }
-      }
-      return "Participante";
-    }
+    if (!pse) return `⚠ PSE não encontrado (${pseId.slice(0, 8)}…)`;
     const participant = participantsMap.get(pse.participant_id);
-    if (!participant) return "—";
+    if (!participant) return `⚠ Participante não encontrado (${pse.participant_id.slice(0, 8)}…)`;
     const person = peopleMap.get(participant.person_id);
-    return person?.full_name ?? "—";
+    if (!person) return `⚠ Pessoa não encontrada (${participant.person_id.slice(0, 8)}…)`;
+    return person.full_name;
   };
 
   const getPersonNameByParticipantId = (participantId: string) => {
