@@ -85,8 +85,6 @@ export default function CompeticaoAgendaPage() {
 
   // Filter matches
   const filtered = matches.filter((m) => {
-    const phase = phasesMap.get(m.phase_id);
-    if (selectedSportEventId && phase?.sport_event_id !== selectedSportEventId) return false;
     if (selectedPhaseId && m.phase_id !== selectedPhaseId) return false;
     if (selectedDate && m.match_date !== selectedDate) return false;
     return true;
