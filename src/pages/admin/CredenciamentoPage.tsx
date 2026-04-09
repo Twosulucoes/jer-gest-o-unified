@@ -687,7 +687,15 @@ export default function CredenciamentoPage() {
                 const activeCred = activeCredMap.get(p.id);
 
                 return (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} data-state={selectedIds.has(p.id) ? "selected" : undefined}>
+                    {canCredential && (
+                      <TableCell className="w-10">
+                        <Checkbox
+                          checked={selectedIds.has(p.id)}
+                          onCheckedChange={() => toggleSelected(p.id)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground font-mono text-xs">
                       {person?.cpf ?? "—"}
