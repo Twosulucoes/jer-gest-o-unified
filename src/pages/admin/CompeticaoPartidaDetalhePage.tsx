@@ -480,7 +480,7 @@ export default function CompeticaoPartidaDetalhePage() {
     onError: (e: Error) => toast.error("Erro ao salvar placar: " + e.message),
   });
 
-
+  const openResultDialog = () => {
     const form: Record<string, ResultFormEntry> = {};
     entries.forEach((entry) => {
       const existing = resultsMap.get(entry.id);
