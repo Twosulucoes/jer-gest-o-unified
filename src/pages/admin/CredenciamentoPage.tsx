@@ -52,6 +52,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
+import { SingleLabelDialog, BatchLabelsDialog } from "@/components/admin/CredentialLabelPrint";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
