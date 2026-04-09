@@ -378,7 +378,85 @@ export default function CredenciamentoPage() {
     setPreviewParticipantId(participantId);
   };
 
-  
+  // --- Batch helpers ---
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const awaitingIds = filtered.filter((p) => getParticipantState(p) === "awaiting").map((p) => p.id);
+  const readyToEmitIds = filtered.filter((p) => getParticipantState(p) === "ready_to_emit").map((p) => p.id);
+
+  const selectedAwaiting = [...selectedIds].filter((id) => awaitingIds.includes(id));
+  const selectedReadyToEmit = [...selectedIds].filter((id) => readyToEmitIds.includes(id));
+
+  const toggleSelectAll = () => {
+    const allFilteredIds = filtered.map((p) => p.id);
+    const allSelected = allFilteredIds.every((id) => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allFilteredIds));
+    }
+  };
+
+  const handleBatchCredential = async () => {
+    if (selectedAwaiting.length === 0) return;
+    setBatchProcessing(true);
+    let success = 0;
+    let errors = 0;
+    for (const id of selectedAwaiting) {
+      const { error } = await supabase
+        .from("participants")
+        .update({
+          status: "credentialed",
+          credentialed_at: new Date().toISOString(),
+          credentialed_by: user?.id,
+        })
+        .eq("id", id);
+      if (error) errors++;
+      else success++;
+    }
+    setBatchProcessing(false);
+    setSelectedIds(new Set());
+    queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+    toast.success(`${success} participante(s) credenciado(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
+  };
+
+  const handleBatchEmit = async () => {
+    if (selectedReadyToEmit.length === 0) return;
+    setBatchProcessing(true);
+    let success = 0;
+    let errors = 0;
+    for (const id of selectedReadyToEmit) {
+      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const qrCodeValue = crypto.randomUUID();
+      const { error } = await supabase.from("participant_credentials").insert({
+        participant_id: id,
+        event_id: selectedEventId,
+        credential_code: credentialCode,
+        qr_code_value: qrCodeValue,
+        status: "active",
+        binding_source: "manual",
+        issued_at: new Date().toISOString(),
+        activated_at: new Date().toISOString(),
+        issued_by: user?.id,
+        activated_by: user?.id,
+      });
+      if (error) errors++;
+      else success++;
+    }
+    setBatchProcessing(false);
+    setSelectedIds(new Set());
+    queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
+    toast.success(`${success} credencial(is) emitida(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
+  };
+
+
 
   const getStateInfo = (state: string) => {
     switch (state) {
