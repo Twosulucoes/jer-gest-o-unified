@@ -231,14 +231,20 @@ export default function CompeticaoPartidaDetalhePage() {
   const peopleMap = new Map(people.map((p) => [p.id, p]));
   const resultsMap = new Map(results.map((r) => [r.match_entry_id, r]));
 
-  const getPersonName = (pseId: string) => {
-    const pse = pseMap.get(pseId);
-    if (!pse) return `⚠ PSE não encontrado (${pseId.slice(0, 8)}…)`;
-    const participant = participantsMap.get(pse.participant_id);
-    if (!participant) return `⚠ Participante não encontrado (${pse.participant_id.slice(0, 8)}…)`;
-    const person = peopleMap.get(participant.person_id);
-    if (!person) return `⚠ Pessoa não encontrada (${participant.person_id.slice(0, 8)}…)`;
-    return person.full_name;
+  const getEntryLabel = (entry: any) => {
+    if (entry.team_id) {
+      const team = teamsMap.get(entry.team_id);
+      return team?.name ?? `⚠ Equipe (${entry.team_id.slice(0, 8)}…)`;
+    }
+    if (entry.participant_sport_event_id) {
+      const pse = pseMap.get(entry.participant_sport_event_id);
+      if (!pse) return `⚠ PSE (${entry.participant_sport_event_id.slice(0, 8)}…)`;
+      const participant = participantsMap.get(pse.participant_id);
+      if (!participant) return `⚠ Participante`;
+      const person = peopleMap.get(participant.person_id);
+      return person?.full_name ?? "⚠ Pessoa";
+    }
+    return "—";
   };
 
   const getPersonNameByParticipantId = (participantId: string) => {
@@ -248,8 +254,11 @@ export default function CompeticaoPartidaDetalhePage() {
     return person?.full_name ?? "—";
   };
 
-  const linkedPSEIds = new Set(entries.map((e) => e.participant_sport_event_id));
+  const linkedPSEIds = new Set(entries.filter((e) => e.participant_sport_event_id).map((e) => e.participant_sport_event_id));
+  const linkedTeamIds = new Set(entries.filter((e) => e.team_id).map((e) => e.team_id));
   const availableToAdd = availablePSE.filter((p) => !linkedPSEIds.has(p.id));
+  const availableTeamsToAdd = teamsForSportEvent.filter((t: any) => !linkedTeamIds.has(t.id));
+  const hasTeams = teamsForSportEvent.length > 0;
 
   // Mutations
   const updateMatchMut = useMutation({
