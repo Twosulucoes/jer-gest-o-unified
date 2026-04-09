@@ -34,6 +34,7 @@ import CompeticaoAgendaPage from "./pages/admin/CompeticaoAgendaPage";
 import CompeticaoPartidaDetalhePage from "./pages/admin/CompeticaoPartidaDetalhePage";
 import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
 import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
+import CompeticaoEquipesPage from "./pages/admin/CompeticaoEquipesPage";
 import ParticipantesPage from "./pages/admin/ParticipantesPage";
 import CredencialModelosPage from "./pages/admin/CredencialModelosPage";
 import NotFound from "./pages/NotFound";
@@ -93,6 +94,7 @@ const App = () => (
               <Route path="competicao/partidas" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidasPage /></ProtectedRoute>} />
               <Route path="competicao/agenda" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoAgendaPage /></ProtectedRoute>} />
               <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />
+              <Route path="competicao/equipes" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoEquipesPage /></ProtectedRoute>} />
               <Route path="competicao/resultados" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoResultadosPage /></ProtectedRoute>} />
               {/* Credenciais */}
               <Route path="credenciais/modelos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredencialModelosPage /></ProtectedRoute>} />
