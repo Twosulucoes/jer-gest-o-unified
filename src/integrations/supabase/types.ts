@@ -2227,16 +2227,26 @@ export type Database = {
     Views: {
       vw_participant_sport_history: {
         Row: {
+          aggregated_stats_json: Json | null
+          attempts_count: number | null
+          best_attempt_cm: number | null
+          best_attempt_ms: number | null
+          best_attempt_points: number | null
+          delegation_id: string | null
+          delegation_name: string | null
           distance_cm: number | null
           entry_id: string | null
           event_id: string | null
           group_id: string | null
           group_name: string | null
+          institution_id: string | null
+          institution_name: string | null
           match_date: string | null
           match_id: string | null
           outcome: string | null
           participant_id: string | null
           participation_type: string | null
+          penalties_count: number | null
           phase_id: string | null
           phase_name: string | null
           points: number | null
@@ -2261,16 +2271,26 @@ export type Database = {
       get_participant_sport_history: {
         Args: { _participant_id: string }
         Returns: {
+          aggregated_stats_json: Json | null
+          attempts_count: number | null
+          best_attempt_cm: number | null
+          best_attempt_ms: number | null
+          best_attempt_points: number | null
+          delegation_id: string | null
+          delegation_name: string | null
           distance_cm: number | null
           entry_id: string | null
           event_id: string | null
           group_id: string | null
           group_name: string | null
+          institution_id: string | null
+          institution_name: string | null
           match_date: string | null
           match_id: string | null
           outcome: string | null
           participant_id: string | null
           participation_type: string | null
+          penalties_count: number | null
           phase_id: string | null
           phase_name: string | null
           points: number | null
