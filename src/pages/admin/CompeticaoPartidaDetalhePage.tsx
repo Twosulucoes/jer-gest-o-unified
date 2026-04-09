@@ -24,6 +24,7 @@ import type { MatchConfig } from "@/components/admin/MatchConfigEditor";
 import MatchLineupCard from "@/components/admin/MatchLineupCard";
 import MatchOfficialsCard from "@/components/admin/MatchOfficialsCard";
 import MatchPlayerStatsCard from "@/components/admin/MatchPlayerStatsCard";
+import MatchPenaltiesCard from "@/components/admin/MatchPenaltiesCard";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
