@@ -896,6 +896,44 @@ export type Database = {
           },
         ]
       }
+      match_officials: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          name: string
+          notes: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          name: string
+          notes?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          name?: string
+          notes?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_officials_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_scores: {
         Row: {
           created_at: string
