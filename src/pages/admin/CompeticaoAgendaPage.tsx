@@ -49,10 +49,12 @@ export default function CompeticaoAgendaPage() {
   });
 
   const { data: matches = [], isLoading } = useQuery({
-    queryKey: ["competition_matches_agenda", selectedEventId],
+    queryKey: ["competition_matches_agenda", selectedEventId, selectedSportEventId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("competition_matches").select("*").eq("event_id", selectedEventId).order("match_date").order("start_time");
+      let q = supabase.from("competition_matches").select("*").eq("event_id", selectedEventId).order("match_date").order("start_time");
+      if (selectedSportEventId) q = q.eq("sport_event_id", selectedSportEventId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
@@ -83,8 +85,6 @@ export default function CompeticaoAgendaPage() {
 
   // Filter matches
   const filtered = matches.filter((m) => {
-    const phase = phasesMap.get(m.phase_id);
-    if (selectedSportEventId && phase?.sport_event_id !== selectedSportEventId) return false;
     if (selectedPhaseId && m.phase_id !== selectedPhaseId) return false;
     if (selectedDate && m.match_date !== selectedDate) return false;
     return true;
