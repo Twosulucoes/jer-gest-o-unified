@@ -133,6 +133,18 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!phase?.sport_event_id,
   });
 
+  const { data: sport } = useQuery({
+    queryKey: ["sport_for_match", sportEvent?.sport_id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("sports").select("*").eq("id", sportEvent!.sport_id).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sportEvent?.sport_id,
+  });
+
+  const isCollective = sport?.is_collective ?? false;
+
   const { data: venue } = useQuery({
     queryKey: ["venue", match?.venue_id],
     queryFn: async () => {
@@ -355,7 +367,7 @@ export default function CompeticaoPartidaDetalhePage() {
     mutationFn: async () => {
       if (!user) throw new Error("Usuário não autenticado");
       const upserts = entries.map((entry) => {
-        const form = resultForm[entry.id] || { score: "", position: "", result_text: "" };
+        const form = resultForm[entry.id] || emptyResultForm();
         const existing = resultsMap.get(entry.id);
         return {
           ...(existing ? { id: existing.id } : {}),
@@ -364,13 +376,18 @@ export default function CompeticaoPartidaDetalhePage() {
           score: form.score || null,
           position: form.position ? parseInt(form.position) : null,
           result_text: form.result_text || null,
+          outcome: form.outcome || null,
+          time_ms: form.time_ms ? parseInt(form.time_ms) : null,
+          distance_cm: form.distance_cm ? parseInt(form.distance_cm) : null,
+          points: form.points ? parseFloat(form.points) : null,
+          penalty_notes: form.penalty_notes || null,
           result_status: "resultado_lancado",
           recorded_by: existing?.recorded_by ?? user.id,
           recorded_at: existing?.recorded_at ?? new Date().toISOString(),
           notes: resultNotes || null,
         };
       });
-      const { error } = await supabase.from("competition_match_results").upsert(upserts, { onConflict: "match_entry_id" });
+      const { error } = await supabase.from("competition_match_results").upsert(upserts as any, { onConflict: "match_entry_id" });
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Resultados lançados"); setResultDialogOpen(false); },
@@ -426,13 +443,18 @@ export default function CompeticaoPartidaDetalhePage() {
   });
 
   const openResultDialog = () => {
-    const form: Record<string, { score: string; position: string; result_text: string }> = {};
+    const form: Record<string, ResultFormEntry> = {};
     entries.forEach((entry) => {
       const existing = resultsMap.get(entry.id);
       form[entry.id] = {
         score: existing?.score ?? "",
         position: existing?.position?.toString() ?? "",
         result_text: existing?.result_text ?? "",
+        outcome: (existing as any)?.outcome ?? "",
+        time_ms: (existing as any)?.time_ms?.toString() ?? "",
+        distance_cm: (existing as any)?.distance_cm?.toString() ?? "",
+        points: (existing as any)?.points?.toString() ?? "",
+        penalty_notes: (existing as any)?.penalty_notes ?? "",
       };
     });
     setResultForm(form);
