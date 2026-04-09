@@ -1754,9 +1754,76 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_participant_sport_history: {
+        Row: {
+          distance_cm: number | null
+          entry_id: string | null
+          event_id: string | null
+          group_id: string | null
+          group_name: string | null
+          match_date: string | null
+          match_id: string | null
+          outcome: string | null
+          participant_id: string | null
+          participation_type: string | null
+          phase_id: string | null
+          phase_name: string | null
+          points: number | null
+          position: number | null
+          published_at: string | null
+          result_id: string | null
+          result_notes: string | null
+          result_status: string | null
+          result_text: string | null
+          score: string | null
+          sport_event_id: string | null
+          sport_event_name: string | null
+          team_id: string | null
+          team_name: string | null
+          time_ms: number | null
+          validated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_participant_sport_history: {
+        Args: { _participant_id: string }
+        Returns: {
+          distance_cm: number | null
+          entry_id: string | null
+          event_id: string | null
+          group_id: string | null
+          group_name: string | null
+          match_date: string | null
+          match_id: string | null
+          outcome: string | null
+          participant_id: string | null
+          participation_type: string | null
+          phase_id: string | null
+          phase_name: string | null
+          points: number | null
+          position: number | null
+          published_at: string | null
+          result_id: string | null
+          result_notes: string | null
+          result_status: string | null
+          result_text: string | null
+          score: string | null
+          sport_event_id: string | null
+          sport_event_name: string | null
+          team_id: string | null
+          team_name: string | null
+          time_ms: number | null
+          validated_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "vw_participant_sport_history"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
