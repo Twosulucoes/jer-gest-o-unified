@@ -118,6 +118,19 @@ export default function IndividualMatchSummaryDialog({
   const resultsMap = new Map(results.map((r) => [r.match_entry_id, r]));
   const handlePrint = () => window.print();
 
+  // Ranking
+  const rankField = getPrimaryRankField(individualConfig);
+  const ranked = computeIndividualRanking(entries, results, attemptsData, individualConfig, getEntryLabel);
+  const hasRanking = rankField && ranked.some((r) => r.position != null);
+  const isHeat = individualConfig?.match_type === "heat";
+
+  const RANK_FIELD_LABEL: Record<string, string> = {
+    time_ms: "Tempo", distance_cm: "Distância", points: "Pontos", position: "Posição",
+  };
+  const SOURCE_LABEL: Record<string, string> = {
+    result: "Resultado", attempt: "Melhor tentativa", manual_position: "Manual",
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible">
