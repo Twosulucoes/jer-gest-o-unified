@@ -13,6 +13,8 @@ import {
   Eye,
   Clock,
   ShieldCheck,
+  ArrowRight,
+  Info,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -250,7 +252,7 @@ export default function CredenciamentoPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
-      toast.success("Participante credenciado com sucesso!");
+      toast.success("Participante credenciado! Agora você pode emitir a credencial.");
     },
     onError: (err: Error) => toast.error(`Erro ao credenciar: ${err.message}`),
   });
@@ -276,7 +278,7 @@ export default function CredenciamentoPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
-      toast.success("Credencial emitida e ativada com sucesso!");
+      toast.success("Credencial emitida com sucesso! Clique em 'Ver' para visualizar ou imprimir.");
     },
     onError: (err: Error) => {
       if (err.message?.includes("uq_participant_event_active")) {
@@ -326,6 +328,7 @@ export default function CredenciamentoPage() {
   const confirmedCount = (participants ?? []).filter((p) => p.status === "confirmed").length;
   const credentialedCount = (participants ?? []).filter((p) => p.status === "credentialed").length;
   const credentialsEmittedCount = activeCredentials.length;
+  const pendingEmission = credentialedCount - credentialsEmittedCount;
 
   const handleOpenPreview = (participantId: string) => {
     const tmpl = eventTemplate ?? createDefaultTemplateMutation.data;
@@ -342,42 +345,86 @@ export default function CredenciamentoPage() {
     const isCredentialed = p.status === "credentialed";
     const hasActiveCred = activeCredMap.has(p.id);
 
-    if (!isCredentialed) return "awaiting"; // needs credentialing
-    if (isCredentialed && !hasActiveCred) return "ready_to_emit"; // credentialed, no credential yet
-    return "complete"; // has active credential
+    if (!isCredentialed) return "awaiting";
+    if (isCredentialed && !hasActiveCred) return "ready_to_emit";
+    return "complete";
   };
 
   const getStateInfo = (state: string) => {
     switch (state) {
       case "awaiting":
-        return { label: "Aguardando", icon: <Clock className="h-3.5 w-3.5" />, color: "text-yellow-600", bgColor: "bg-yellow-50 border-yellow-200" };
+        return {
+          label: "Aguardando credenciamento",
+          shortLabel: "Aguardando",
+          icon: <Clock className="h-3.5 w-3.5" />,
+          color: "text-yellow-600",
+          bgColor: "bg-yellow-50 border-yellow-200",
+          hint: "Clique em 'Credenciar' para registrar a conferência presencial",
+        };
       case "ready_to_emit":
-        return { label: "Pronto p/ emissão", icon: <CreditCard className="h-3.5 w-3.5" />, color: "text-blue-600", bgColor: "bg-blue-50 border-blue-200" };
+        return {
+          label: "Credenciado — aguardando emissão",
+          shortLabel: "Pronto p/ emissão",
+          icon: <CreditCard className="h-3.5 w-3.5" />,
+          color: "text-blue-600",
+          bgColor: "bg-blue-50 border-blue-200",
+          hint: "Clique em 'Emitir Credencial' para gerar o código e QR Code",
+        };
       case "complete":
-        return { label: "Credencial ativa", icon: <ShieldCheck className="h-3.5 w-3.5" />, color: "text-green-600", bgColor: "bg-green-50 border-green-200" };
+        return {
+          label: "Credencial ativa",
+          shortLabel: "Credencial ativa",
+          icon: <ShieldCheck className="h-3.5 w-3.5" />,
+          color: "text-green-600",
+          bgColor: "bg-green-50 border-green-200",
+          hint: "Credencial emitida — visualize, imprima ou reemita se necessário",
+        };
       default:
-        return { label: "—", icon: null, color: "", bgColor: "" };
+        return { label: "—", shortLabel: "—", icon: null, color: "", bgColor: "", hint: "" };
     }
   };
 
   return (
     <div className="animate-fade-in space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Credenciamento</h1>
+        <h1 className="font-heading text-2xl font-bold text-foreground">Credenciamento e Emissão de Credencial</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Credenciar participantes e emitir credenciais
+          Registre a presença do participante, emita e gerencie credenciais visuais com QR Code.
         </p>
       </div>
 
-      {/* Filters */}
+      {/* Flow guide */}
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3">
+        <Info className="h-4 w-4 text-muted-foreground shrink-0" />
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Fluxo:</span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-yellow-500" />
+            Participante importado
+          </span>
+          <ArrowRight className="h-3 w-3" />
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-blue-500" />
+            Credenciado (conferência presencial)
+          </span>
+          <ArrowRight className="h-3 w-3" />
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            Credencial emitida (QR Code + código)
+          </span>
+        </div>
+      </div>
+
+      {/* Event selection + search */}
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Evento</label>
+              <label className="text-sm font-medium text-foreground">1. Selecione o evento</label>
               <Select value={selectedEventId} onValueChange={setSelectedEventId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o evento" />
+                  <SelectValue placeholder="Escolha o evento..." />
                 </SelectTrigger>
                 <SelectContent>
                   {events.map((e) => (
@@ -389,11 +436,11 @@ export default function CredenciamentoPage() {
               </Select>
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-foreground">Buscar participante</label>
+              <label className="text-sm font-medium text-foreground">2. Busque o participante por nome ou CPF</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Nome ou CPF..."
+                  placeholder="Digite o nome ou CPF..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -408,28 +455,38 @@ export default function CredenciamentoPage() {
       {/* Stats */}
       {selectedEventId && participants && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Total</p>
-            <p className="text-2xl font-bold text-foreground">{participants.length}</p>
-          </CardContent></Card>
-          <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Aguardando</p>
-            <p className="text-2xl font-bold text-yellow-600">{confirmedCount}</p>
-          </CardContent></Card>
-          <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Credenciados</p>
-            <p className="text-2xl font-bold text-green-600">{credentialedCount}</p>
-          </CardContent></Card>
-          <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Credenciais emitidas</p>
-            <p className="text-2xl font-bold text-blue-600">{credentialsEmittedCount}</p>
-          </CardContent></Card>
-          <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Progresso</p>
-            <p className="text-2xl font-bold text-primary">
-              {participants.length > 0 ? `${Math.round((credentialedCount / participants.length) * 100)}%` : "—"}
-            </p>
-          </CardContent></Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <p className="text-xs text-muted-foreground">Participantes no evento</p>
+              <p className="text-2xl font-bold text-foreground">{participants.length}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-yellow-200">
+            <CardContent className="pt-4 pb-4">
+              <p className="text-xs text-muted-foreground">Aguardando credenciamento</p>
+              <p className="text-2xl font-bold text-yellow-600">{confirmedCount}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-blue-200">
+            <CardContent className="pt-4 pb-4">
+              <p className="text-xs text-muted-foreground">Credenciados (sem credencial)</p>
+              <p className="text-2xl font-bold text-blue-600">{pendingEmission > 0 ? pendingEmission : 0}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-green-200">
+            <CardContent className="pt-4 pb-4">
+              <p className="text-xs text-muted-foreground">Credenciais emitidas</p>
+              <p className="text-2xl font-bold text-green-600">{credentialsEmittedCount}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <p className="text-xs text-muted-foreground">Progresso geral</p>
+              <p className="text-2xl font-bold text-primary">
+                {participants.length > 0 ? `${Math.round((credentialsEmittedCount / participants.length) * 100)}%` : "—"}
+              </p>
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -437,8 +494,8 @@ export default function CredenciamentoPage() {
       {!selectedEventId ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <UserCheck className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Selecione um evento</p>
-          <p className="text-sm text-muted-foreground mt-1">Escolha o evento para iniciar o credenciamento.</p>
+          <p className="text-muted-foreground font-medium">Selecione um evento para começar</p>
+          <p className="text-sm text-muted-foreground mt-1">Escolha o evento no seletor acima para visualizar os participantes e operar o credenciamento.</p>
         </div>
       ) : isLoading ? (
         <div className="space-y-3">
@@ -451,7 +508,9 @@ export default function CredenciamentoPage() {
           <XCircle className="h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground font-medium">Nenhum participante encontrado</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {searchTerm ? "Tente outro termo de busca." : "Importe participantes primeiro."}
+            {searchTerm
+              ? "Nenhum participante corresponde à busca. Tente outro nome ou CPF."
+              : "Nenhum participante importado para este evento. Use o módulo de Importação primeiro."}
           </p>
         </div>
       ) : (
@@ -464,7 +523,7 @@ export default function CredenciamentoPage() {
                 <TableHead className="hidden lg:table-cell">Instituição</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Situação</TableHead>
-                {canCredential && <TableHead>Ações</TableHead>}
+                {canCredential && <TableHead>Próxima ação</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -490,13 +549,13 @@ export default function CredenciamentoPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
-                        <span className={`inline-flex items-center gap-1 text-xs font-medium ${stateInfo.color}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${stateInfo.color}`}>
                           {stateInfo.icon}
-                          {stateInfo.label}
+                          {stateInfo.shortLabel}
                         </span>
                         {activeCred && (
                           <span className="text-[11px] font-mono text-muted-foreground">
-                            {activeCred.credential_code}
+                            Código: {activeCred.credential_code}
                           </span>
                         )}
                       </div>
@@ -504,75 +563,96 @@ export default function CredenciamentoPage() {
                     {canCredential && (
                       <TableCell>
                         <div className="flex gap-1.5 flex-wrap">
-                          {/* State 1: Credenciar */}
+                          {/* State 1: Aguardando → Credenciar */}
                           {state === "awaiting" && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button size="sm" disabled={credentialMutation.isPending}>
-                                  <UserCheck className="mr-1 h-3 w-3" />
+                                  <UserCheck className="mr-1.5 h-3.5 w-3.5" />
                                   Credenciar
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Confirmar credenciamento</AlertDialogTitle>
+                                  <AlertDialogTitle>Credenciar participante</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Credenciar <strong>{person?.full_name}</strong>? Essa ação registra a conferência presencial do participante.
+                                    Confirma que <strong>{person?.full_name}</strong> se apresentou presencialmente e foi conferido?
+                                    <br /><br />
+                                    <span className="text-xs text-muted-foreground">
+                                      Após credenciar, o próximo passo será emitir a credencial com QR Code.
+                                    </span>
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                   <AlertDialogAction onClick={() => credentialMutation.mutate(p.id)}>
-                                    Confirmar
+                                    Sim, credenciar
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
                           )}
 
-                          {/* State 2: Emitir */}
+                          {/* State 2: Credenciado → Emitir Credencial */}
                           {state === "ready_to_emit" && (
-                            <Button
-                              size="sm"
-                              onClick={() => emitCredentialMutation.mutate(p.id)}
-                              disabled={emitCredentialMutation.isPending}
-                            >
-                              {emitCredentialMutation.isPending ? (
-                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                              ) : (
-                                <CreditCard className="mr-1 h-3 w-3" />
-                              )}
-                              Emitir Credencial
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" disabled={emitCredentialMutation.isPending}>
+                                  {emitCredentialMutation.isPending ? (
+                                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <CreditCard className="mr-1.5 h-3.5 w-3.5" />
+                                  )}
+                                  Emitir Credencial
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Emitir credencial</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Emitir credencial para <strong>{person?.full_name}</strong>?
+                                    <br /><br />
+                                    Será gerado um código único e um QR Code para uso durante o evento.
+                                    Após a emissão, você poderá visualizar e imprimir a credencial.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => emitCredentialMutation.mutate(p.id)}>
+                                    Emitir agora
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           )}
 
-                          {/* State 3: Ver + Reemitir */}
+                          {/* State 3: Credencial emitida → Ver + Reemitir */}
                           {state === "complete" && (
                             <>
                               <Button size="sm" variant="outline" onClick={() => handleOpenPreview(p.id)}>
-                                <Eye className="mr-1 h-3 w-3" />
-                                Ver
+                                <Eye className="mr-1.5 h-3.5 w-3.5" />
+                                Ver / Imprimir
                               </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button size="sm" variant="ghost" disabled={reissueMutation.isPending}>
-                                    <RefreshCw className="mr-1 h-3 w-3" />
-                                    Reemitir
+                                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                                    2ª Via
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Reemitir credencial (2ª via)</AlertDialogTitle>
+                                    <AlertDialogTitle>Emitir segunda via</AlertDialogTitle>
                                     <AlertDialogDescription>
                                       Reemitir credencial de <strong>{person?.full_name}</strong>?
-                                      A credencial atual (<code className="text-xs">{activeCred?.credential_code}</code>) será invalidada
-                                      e uma nova será gerada com novo código e QR Code.
+                                      <br /><br />
+                                      A credencial atual (<code className="text-xs bg-muted px-1 rounded">{activeCred?.credential_code}</code>) será <strong>invalidada permanentemente</strong> e uma nova será gerada com novo código e QR Code.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                     <AlertDialogAction onClick={() => reissueMutation.mutate(p.id)}>
-                                      Confirmar reemissão
+                                      Confirmar segunda via
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
