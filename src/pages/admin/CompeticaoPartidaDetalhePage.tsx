@@ -866,9 +866,8 @@ export default function CompeticaoPartidaDetalhePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  {/* Score (collective or individual with score config) */}
-                  {(isTeamEntry || isCollective || showScore) && !((!isTeamEntry && !isCollective) && !showScore) && (
-                    showScore || isTeamEntry || isCollective) && (
+                  {/* Score */}
+                  {(isTeamEntry || isCollective || showScore) && (
                     <div>
                       <label className="text-xs text-muted-foreground">Placar</label>
                       <Input placeholder="Ex: 3x1" value={form.score} onChange={(e) => updateField("score", e.target.value)} />
