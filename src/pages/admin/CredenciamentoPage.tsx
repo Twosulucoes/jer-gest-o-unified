@@ -208,16 +208,56 @@ export default function CredenciamentoPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
       queryClient.invalidateQueries({ queryKey: ["participant-credentials"] });
       toast.success("Credencial emitida e ativada!");
     },
     onError: (err: Error) => {
-      if (err.message?.includes("uq_participant_event")) {
-        toast.error("Este participante já possui credencial para este evento.");
+      if (err.message?.includes("uq_participant_event_active")) {
+        toast.error("Este participante já possui credencial ativa para este evento.");
       } else {
         toast.error(`Erro: ${err.message}`);
       }
     },
+  });
+
+  const reissueMutation = useMutation({
+    mutationFn: async (participantId: string) => {
+      // 1. Mark existing active credential as 'reissued'
+      const existing = activeCredMap.get(participantId);
+      if (existing) {
+        const { error: revokeErr } = await supabase
+          .from("participant_credentials")
+          .update({ status: "reissued", revoked_at: new Date().toISOString() })
+          .eq("id", existing.id);
+        if (revokeErr) throw revokeErr;
+      }
+
+      // 2. Create new credential
+      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const qrCodeValue = crypto.randomUUID();
+
+      const { error } = await supabase.from("participant_credentials").insert({
+        participant_id: participantId,
+        event_id: selectedEventId,
+        credential_code: credentialCode,
+        qr_code_value: qrCodeValue,
+        status: "active",
+        binding_source: "manual",
+        issued_at: new Date().toISOString(),
+        activated_at: new Date().toISOString(),
+        issued_by: user?.id,
+        activated_by: user?.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
+      queryClient.invalidateQueries({ queryKey: ["participant-credentials"] });
+      toast.success("Credencial reemitida com sucesso! A anterior foi marcada como substituída.");
+    },
+    onError: (err: Error) => toast.error(`Erro na reemissão: ${err.message}`),
   });
 
   const confirmedCount = (participants ?? []).filter((p) => p.status === "confirmed").length;
