@@ -21,6 +21,7 @@ import {
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
 import CollectiveScoreForm, { type ScoreEntry } from "@/components/admin/CollectiveScoreForm";
 import type { MatchConfig } from "@/components/admin/MatchConfigEditor";
+import type { IndividualConfig } from "@/components/admin/IndividualConfigEditor";
 import MatchLineupCard from "@/components/admin/MatchLineupCard";
 import MatchOfficialsCard from "@/components/admin/MatchOfficialsCard";
 import MatchPlayerStatsCard from "@/components/admin/MatchPlayerStatsCard";
@@ -155,7 +156,18 @@ export default function CompeticaoPartidaDetalhePage() {
   });
 
   const isCollective = sport?.is_collective ?? false;
-
+  const individualConfig: IndividualConfig | null = !isCollective
+    ? ((sport?.match_config as any)?.individual_config as IndividualConfig | undefined) ?? null
+    : null;
+  // Which result fields are visible for individual sports
+  const rf = individualConfig?.result_fields ?? {};
+  const hasAnyIndividualFields = Object.values(rf).some(Boolean);
+  // If no config or no fields set, fallback to showing all fields
+  const showTime = isCollective || !individualConfig || !hasAnyIndividualFields || !!rf.time;
+  const showDistance = isCollective || !individualConfig || !hasAnyIndividualFields || !!rf.distance;
+  const showPoints = isCollective || !individualConfig || !hasAnyIndividualFields || !!rf.points;
+  const showScore = isCollective || !individualConfig || !hasAnyIndividualFields || !!rf.score;
+  const showPosition = isCollective || !individualConfig || !hasAnyIndividualFields || !!rf.position;
   const { data: venue } = useQuery({
     queryKey: ["venue", match?.venue_id],
     queryFn: async () => {
@@ -788,11 +800,11 @@ export default function CompeticaoPartidaDetalhePage() {
                     <TableRow>
                       <TableHead>Participante</TableHead>
                       <TableHead>Desfecho</TableHead>
-                      <TableHead>Placar</TableHead>
-                      <TableHead>Pos.</TableHead>
-                      <TableHead>Tempo</TableHead>
-                      <TableHead>Distância</TableHead>
-                      <TableHead>Pontos</TableHead>
+                      {showScore && <TableHead>Placar</TableHead>}
+                      {showPosition && <TableHead>Pos.</TableHead>}
+                      {showTime && <TableHead>Tempo</TableHead>}
+                      {showDistance && <TableHead>Distância</TableHead>}
+                      {showPoints && <TableHead>Pontos</TableHead>}
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -804,11 +816,11 @@ export default function CompeticaoPartidaDetalhePage() {
                         <TableRow key={result.id}>
                           <TableCell className="font-medium">{getEntryLabel(entry)}</TableCell>
                           <TableCell>{result.outcome ? (OUTCOME_LABEL[result.outcome] ?? result.outcome) : "—"}</TableCell>
-                          <TableCell className="font-mono">{result.score ?? "—"}</TableCell>
-                          <TableCell className="font-mono">{result.position ?? "—"}</TableCell>
-                          <TableCell className="font-mono text-xs">{result.time_ms ? formatTimeMs(result.time_ms) : "—"}</TableCell>
-                          <TableCell className="font-mono text-xs">{result.distance_cm ? formatDistanceCm(result.distance_cm) : "—"}</TableCell>
-                          <TableCell className="font-mono">{result.points != null ? Number(result.points).toString() : "—"}</TableCell>
+                          {showScore && <TableCell className="font-mono">{result.score ?? "—"}</TableCell>}
+                          {showPosition && <TableCell className="font-mono">{result.position ?? "—"}</TableCell>}
+                          {showTime && <TableCell className="font-mono text-xs">{result.time_ms ? formatTimeMs(result.time_ms) : "—"}</TableCell>}
+                          {showDistance && <TableCell className="font-mono text-xs">{result.distance_cm ? formatDistanceCm(result.distance_cm) : "—"}</TableCell>}
+                          {showPoints && <TableCell className="font-mono">{result.points != null ? Number(result.points).toString() : "—"}</TableCell>}
                           <TableCell>
                             <Badge variant={RESULT_STATUS_VARIANT[result.result_status] ?? "outline"}>
                               {RESULT_STATUS_LABEL[result.result_status] ?? result.result_status}
@@ -854,31 +866,39 @@ export default function CompeticaoPartidaDetalhePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  {/* Collective: score */}
-                  {(isTeamEntry || isCollective) && (
+                  {/* Score */}
+                  {(isTeamEntry || isCollective || showScore) && (
                     <div>
                       <label className="text-xs text-muted-foreground">Placar</label>
                       <Input placeholder="Ex: 3x1" value={form.score} onChange={(e) => updateField("score", e.target.value)} />
                     </div>
                   )}
-                  {/* Individual fields */}
+                  {/* Adaptive individual fields */}
                   <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-muted-foreground">Posição</label>
-                      <Input type="number" placeholder="1" value={form.position} onChange={(e) => updateField("position", e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Pontos</label>
-                      <Input type="number" step="0.001" placeholder="0.000" value={form.points} onChange={(e) => updateField("points", e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Tempo (ms)</label>
-                      <Input type="number" placeholder="Milissegundos" value={form.time_ms} onChange={(e) => updateField("time_ms", e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Distância (cm)</label>
-                      <Input type="number" placeholder="Centímetros" value={form.distance_cm} onChange={(e) => updateField("distance_cm", e.target.value)} />
-                    </div>
+                    {showPosition && (
+                      <div>
+                        <label className="text-xs text-muted-foreground">Posição</label>
+                        <Input type="number" placeholder="1" value={form.position} onChange={(e) => updateField("position", e.target.value)} />
+                      </div>
+                    )}
+                    {showPoints && (
+                      <div>
+                        <label className="text-xs text-muted-foreground">Pontos</label>
+                        <Input type="number" step="0.001" placeholder="0.000" value={form.points} onChange={(e) => updateField("points", e.target.value)} />
+                      </div>
+                    )}
+                    {showTime && (
+                      <div>
+                        <label className="text-xs text-muted-foreground">Tempo (ms)</label>
+                        <Input type="number" placeholder="Milissegundos" value={form.time_ms} onChange={(e) => updateField("time_ms", e.target.value)} />
+                      </div>
+                    )}
+                    {showDistance && (
+                      <div>
+                        <label className="text-xs text-muted-foreground">Distância (cm)</label>
+                        <Input type="number" placeholder="Centímetros" value={form.distance_cm} onChange={(e) => updateField("distance_cm", e.target.value)} />
+                      </div>
+                    )}
                   </div>
                   {/* Free text + penalty */}
                   <div className="grid grid-cols-2 gap-2">
