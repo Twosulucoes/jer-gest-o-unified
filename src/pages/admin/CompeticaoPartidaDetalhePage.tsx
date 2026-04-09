@@ -103,6 +103,7 @@ export default function CompeticaoPartidaDetalhePage() {
   const [resultNotes, setResultNotes] = useState("");
   const [confirmRemoveEntryId, setConfirmRemoveEntryId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"validate" | "publish" | "unpublish" | null>(null);
+  const [collectiveScoreOpen, setCollectiveScoreOpen] = useState(false);
 
   // Fetch match
   const { data: match, isLoading } = useQuery({
