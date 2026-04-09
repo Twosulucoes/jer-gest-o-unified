@@ -32,7 +32,7 @@ interface Props {
 export default function CredentialPreviewDialog({ open, onOpenChange, template, participantId: fixedParticipantId }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedParticipantId, setSelectedParticipantId] = useState(fixedParticipantId || "");
-  const [rendering, setRendering] = useState(false);
+  const [_rendering, setRendering] = useState(false);
 
   const eventId = template?.event_id;
 

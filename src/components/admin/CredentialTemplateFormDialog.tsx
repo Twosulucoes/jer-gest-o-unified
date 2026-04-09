@@ -129,7 +129,7 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
         is_active: isActive,
         notes: notes || null,
         background_url: bgUrl,
-        field_config: fieldConfig,
+        field_config: fieldConfig as unknown as Record<string, unknown>,
       };
 
       if (isEdit) {
