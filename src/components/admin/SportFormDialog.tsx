@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
 import MatchConfigEditor, { type MatchConfig } from "./MatchConfigEditor";
+import IndividualConfigEditor, { type IndividualConfig } from "./IndividualConfigEditor";
 
 const sportSchema = z.object({
   event_id: z.string().min(1, "Selecione um evento"),
@@ -231,22 +232,27 @@ export default function SportFormDialog({
               />
             </div>
 
-            {isCollective && (
-              <FormField
-                control={form.control}
-                name="match_config"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
+            <FormField
+              control={form.control}
+              name="match_config"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    {isCollective ? (
                       <MatchConfigEditor
                         value={(field.value as MatchConfig) ?? {}}
                         onChange={field.onChange}
                       />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            )}
+                    ) : (
+                      <IndividualConfigEditor
+                        value={((field.value as any)?.individual_config as IndividualConfig) ?? {}}
+                        onChange={(ic) => field.onChange({ ...((field.value as any) ?? {}), individual_config: ic })}
+                      />
+                    )}
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button
