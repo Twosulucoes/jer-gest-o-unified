@@ -26,6 +26,7 @@ import MatchOfficialsCard from "@/components/admin/MatchOfficialsCard";
 import MatchPlayerStatsCard from "@/components/admin/MatchPlayerStatsCard";
 import MatchPenaltiesCard from "@/components/admin/MatchPenaltiesCard";
 import MatchAttachmentsCard from "@/components/admin/MatchAttachmentsCard";
+import MatchSummaryDialog from "@/components/admin/MatchSummaryDialog";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
@@ -109,6 +110,7 @@ export default function CompeticaoPartidaDetalhePage() {
   const [confirmRemoveEntryId, setConfirmRemoveEntryId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"validate" | "publish" | "unpublish" | null>(null);
   const [collectiveScoreOpen, setCollectiveScoreOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   // Fetch match
   const { data: match, isLoading } = useQuery({
@@ -537,11 +539,18 @@ export default function CompeticaoPartidaDetalhePage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">Detalhe da partida/prova</p>
         </div>
-        {canWrite && (
-          <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
-            <Pencil className="mr-2 h-4 w-4" />Editar
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {isCollective && (
+            <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)}>
+              <ClipboardList className="mr-2 h-4 w-4" />Súmula
+            </Button>
+          )}
+          {canWrite && (
+            <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />Editar
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Match info + Status */}
@@ -1000,6 +1009,25 @@ export default function CompeticaoPartidaDetalhePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Súmula consolidada */}
+      {isCollective && (
+        <MatchSummaryDialog
+          open={summaryOpen}
+          onOpenChange={setSummaryOpen}
+          matchId={matchId!}
+          match={match}
+          phase={phase}
+          sportEvent={sportEvent}
+          sport={sport}
+          venue={venue}
+          entries={entries}
+          matchScores={matchScores}
+          matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
+          getEntryLabel={getEntryLabel}
+          groupName={allGroups.find((g: any) => g.id === match.group_id)?.name}
+        />
+      )}
     </div>
   );
 }
