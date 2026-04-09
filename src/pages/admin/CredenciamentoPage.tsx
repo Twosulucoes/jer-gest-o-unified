@@ -478,13 +478,9 @@ export default function CredenciamentoPage() {
                   </TableRow>
                 );
               })}
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })}
+            </TableBody>
+          </Table>
+        </div>
             </TableBody>
           </Table>
         </div>
