@@ -23,6 +23,7 @@ import CollectiveScoreForm, { type ScoreEntry } from "@/components/admin/Collect
 import type { MatchConfig } from "@/components/admin/MatchConfigEditor";
 import MatchLineupCard from "@/components/admin/MatchLineupCard";
 import MatchOfficialsCard from "@/components/admin/MatchOfficialsCard";
+import MatchPlayerStatsCard from "@/components/admin/MatchPlayerStatsCard";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
