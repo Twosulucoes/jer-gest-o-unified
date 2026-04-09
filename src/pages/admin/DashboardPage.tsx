@@ -229,6 +229,32 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Quick Actions */}
+      {visibleActions.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            Acesso Rápido
+          </h2>
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {visibleActions.map((action) => (
+              <Link
+                key={action.to}
+                to={action.to}
+                className="group flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-4 text-center transition-colors hover:border-primary/40 hover:bg-accent"
+              >
+                <div className="text-muted-foreground group-hover:text-primary transition-colors">
+                  {action.icon}
+                </div>
+                <span className="text-sm font-medium text-foreground">{action.label}</span>
+                <span className="text-[10px] text-muted-foreground">{action.group}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Separator />
+
       {!eventId ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <TrendingUp className="h-10 w-10 text-muted-foreground mb-3" />
