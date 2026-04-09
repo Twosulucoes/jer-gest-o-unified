@@ -530,7 +530,7 @@ export default function CredenciamentoPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">1. Selecione o evento</label>
-              <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setSelectedIds(new Set()); }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Escolha o evento..." />
                 </SelectTrigger>
