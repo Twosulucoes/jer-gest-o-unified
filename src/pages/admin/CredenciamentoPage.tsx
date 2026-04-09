@@ -622,18 +622,63 @@ export default function CredenciamentoPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead className="hidden md:table-cell">CPF</TableHead>
-                <TableHead className="hidden lg:table-cell">Instituição</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Situação</TableHead>
-                {canCredential && <TableHead>Próxima ação</TableHead>}
-              </TableRow>
-            </TableHeader>
+        <>
+          {/* Batch action bar */}
+          {canCredential && selectedIds.size > 0 && (
+            <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+              <span className="text-sm font-medium text-foreground">
+                {selectedIds.size} selecionado(s)
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                Limpar seleção
+              </Button>
+              {selectedAwaiting.length > 0 && (
+                <Button
+                  size="sm"
+                  onClick={handleBatchCredential}
+                  disabled={batchProcessing}
+                >
+                  {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
+                  Credenciar {selectedAwaiting.length} em lote
+                </Button>
+              )}
+              {selectedReadyToEmit.length > 0 && (
+                <Button
+                  size="sm"
+                  onClick={handleBatchEmit}
+                  disabled={batchProcessing}
+                >
+                  {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CreditCard className="mr-1.5 h-3.5 w-3.5" />}
+                  Emitir {selectedReadyToEmit.length} em lote
+                </Button>
+              )}
+            </div>
+          )}
+
+          <div className="rounded-lg border bg-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {canCredential && (
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id))}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
+                  )}
+                  <TableHead>Nome</TableHead>
+                  <TableHead className="hidden md:table-cell">CPF</TableHead>
+                  <TableHead className="hidden lg:table-cell">Instituição</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Situação</TableHead>
+                  {canCredential && <TableHead>Próxima ação</TableHead>}
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {filtered.map((p) => {
                 const person = peopleMap.get(p.person_id);
