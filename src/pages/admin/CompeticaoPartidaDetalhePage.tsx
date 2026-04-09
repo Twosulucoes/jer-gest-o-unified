@@ -31,6 +31,7 @@ import MatchSummaryDialog from "@/components/admin/MatchSummaryDialog";
 import IndividualMatchSummaryDialog from "@/components/admin/IndividualMatchSummaryDialog";
 import MatchEventsCard from "@/components/admin/MatchEventsCard";
 import MatchAttemptsCard from "@/components/admin/MatchAttemptsCard";
+import IndividualRankingCard from "@/components/admin/IndividualRankingCard";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
