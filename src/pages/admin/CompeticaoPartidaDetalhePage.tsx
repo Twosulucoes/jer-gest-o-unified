@@ -208,7 +208,18 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!matchId,
   });
 
-  // Teams for this sport event (for collective sports)
+  // Match scores for collective sports
+  const { data: matchScores = [] } = useQuery({
+    queryKey: ["match_scores", matchId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("match_scores" as any).select("*").eq("match_id", matchId!);
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!matchId && isCollective,
+  });
+
+
   const sportEventId = match?.sport_event_id ?? phase?.sport_event_id;
   const { data: teamsForSportEvent = [] } = useQuery({
     queryKey: ["teams_for_match", sportEventId],
