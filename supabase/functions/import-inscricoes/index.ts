@@ -730,9 +730,14 @@ Deno.serve(async (req: Request) => {
 
     const payload = buildCommitPayload(validRows, eventId);
 
+    console.log("import-inscricoes: commit payload stats", {
+      people_to_create: payload.people_to_create.length,
+      enrollments: payload.enrollments.length,
+    });
+
     const { data: rpcResult, error: rpcError } = await serviceClient.rpc(
       "import_inscricoes_batch",
-      { payload: JSON.stringify(payload) }
+      { payload }
     );
 
     if (rpcError) {
