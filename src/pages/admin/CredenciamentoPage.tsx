@@ -130,7 +130,7 @@ export default function CredenciamentoPage() {
           height: 800,
           is_active: true,
           background_url: null,
-          field_config: JSON.parse(JSON.stringify(DEFAULT_FIELD_CONFIG)),
+          field_config: JSON.parse(JSON.stringify(buildDefaultFieldConfig(600, 800))),
           notes: "Modelo padrão gerado automaticamente pelo sistema.",
         })
         .select()
