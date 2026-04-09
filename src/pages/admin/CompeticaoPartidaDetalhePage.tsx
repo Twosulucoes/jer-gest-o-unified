@@ -781,6 +781,18 @@ export default function CompeticaoPartidaDetalhePage() {
         />
       )}
 
+
+      {/* Ranking Card (individual only) */}
+      {!isCollective && (
+        <IndividualRankingCard
+          matchId={matchId!}
+          entries={entries}
+          results={results}
+          individualConfig={individualConfig}
+          getEntryLabel={getEntryLabel}
+        />
+      )}
+
       {/* Results Card (individual / legacy) */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
