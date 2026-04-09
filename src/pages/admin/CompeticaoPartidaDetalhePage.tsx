@@ -25,6 +25,7 @@ import MatchLineupCard from "@/components/admin/MatchLineupCard";
 import MatchOfficialsCard from "@/components/admin/MatchOfficialsCard";
 import MatchPlayerStatsCard from "@/components/admin/MatchPlayerStatsCard";
 import MatchPenaltiesCard from "@/components/admin/MatchPenaltiesCard";
+import MatchAttachmentsCard from "@/components/admin/MatchAttachmentsCard";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
@@ -711,6 +712,16 @@ export default function CompeticaoPartidaDetalhePage() {
         <MatchPenaltiesCard
           matchId={matchId!}
           entries={entries.filter((e) => e.team_id).map((e) => ({ id: e.id, team_id: e.team_id, label: getEntryLabel(e) }))}
+          matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
+          canWrite={canWrite}
+        />
+      )}
+
+      {/* Attachments Card (collective only) */}
+      {isCollective && (
+        <MatchAttachmentsCard
+          matchId={matchId!}
+          eventId={match.event_id}
           matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
           canWrite={canWrite}
         />
