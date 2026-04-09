@@ -179,7 +179,7 @@ export default function CompeticaoPartidaDetalhePage() {
   });
 
   // PSEs linked to entries (any status — for reliable name resolution)
-  const entryPseIds = entries.map((e) => e.participant_sport_event_id);
+  const entryPseIds = entries.map((e) => e.participant_sport_event_id).filter(Boolean);
   const { data: linkedPSEs = [] } = useQuery({
     queryKey: ["linked_pses_for_match", matchId, entryPseIds.length],
     queryFn: async () => {
