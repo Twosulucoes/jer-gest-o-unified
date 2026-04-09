@@ -557,7 +557,6 @@ export default function CompeticaoPartidaDetalhePage() {
           <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)}>
             <ClipboardList className="mr-2 h-4 w-4" />Súmula
           </Button>
-          )}
           {canWrite && (
             <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
               <Pencil className="mr-2 h-4 w-4" />Editar
