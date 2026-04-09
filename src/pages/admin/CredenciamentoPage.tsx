@@ -239,6 +239,15 @@ export default function CredenciamentoPage() {
     return institutionMap.get(del.institution_id)?.name ?? "—";
   };
 
+  // --- Determine participant state ---
+  const getParticipantState = (p: { status: string; id: string }) => {
+    const isCredentialed = p.status === "credentialed";
+    const hasActiveCred = activeCredMap.has(p.id);
+    if (!isCredentialed) return "awaiting";
+    if (isCredentialed && !hasActiveCred) return "ready_to_emit";
+    return "complete";
+  };
+
   // --- Filter & Sort: actionable items first (ready_to_emit > awaiting > complete) ---
   const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, complete: 2 };
 
@@ -365,15 +374,7 @@ export default function CredenciamentoPage() {
     setPreviewParticipantId(participantId);
   };
 
-  // --- Determine participant state ---
-  const getParticipantState = (p: { status: string; id: string }) => {
-    const isCredentialed = p.status === "credentialed";
-    const hasActiveCred = activeCredMap.has(p.id);
-
-    if (!isCredentialed) return "awaiting";
-    if (isCredentialed && !hasActiveCred) return "ready_to_emit";
-    return "complete";
-  };
+  // getParticipantState moved above filter for sort usage
 
   const getStateInfo = (state: string) => {
     switch (state) {
