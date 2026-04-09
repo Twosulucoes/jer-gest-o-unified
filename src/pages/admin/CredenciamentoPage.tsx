@@ -58,14 +58,25 @@ const TYPE_LABELS: Record<string, string> = {
   commission: "Comissão",
 };
 
-const DEFAULT_FIELD_CONFIG = {
-  photo: { x: 240, y: 280, width: 120, height: 150, visible: true },
-  full_name: { x: 300, y: 470, fontSize: 20, fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: 480, visible: true },
-  participant_type: { x: 300, y: 500, fontSize: 13, fontColor: "#555555", align: "center", maxWidth: 400, visible: true },
-  sport_event: { x: 300, y: 530, fontSize: 14, fontColor: "#333333", align: "center", maxWidth: 400, visible: true },
-  institution: { x: 300, y: 560, fontSize: 12, fontColor: "#444444", align: "center", maxWidth: 440, visible: true },
-  credential_code: { x: 300, y: 610, fontSize: 14, fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: 300, visible: true },
-  qr_code: { x: 245, y: 650, width: 110, height: 110, visible: true },
+/** Generate adaptive field positions based on template dimensions */
+const buildDefaultFieldConfig = (w: number, h: number) => {
+  const cx = w / 2; // center x
+  const photoW = Math.round(w * 0.20);
+  const photoH = Math.round(photoW * 1.25);
+  const photoY = Math.round(h * 0.22);
+  const textStart = photoY + photoH + Math.round(h * 0.04);
+  const lineH = Math.round(h * 0.04);
+  const qrSize = Math.round(w * 0.18);
+
+  return {
+    photo: { x: Math.round(cx - photoW / 2), y: photoY, width: photoW, height: photoH, visible: true },
+    full_name: { x: cx, y: textStart, fontSize: Math.round(h * 0.028), fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: Math.round(w * 0.8), visible: true },
+    participant_type: { x: cx, y: textStart + lineH, fontSize: Math.round(h * 0.018), fontColor: "#555555", align: "center", maxWidth: Math.round(w * 0.7), visible: true },
+    sport_event: { x: cx, y: textStart + lineH * 2, fontSize: Math.round(h * 0.02), fontColor: "#333333", align: "center", maxWidth: Math.round(w * 0.7), visible: true },
+    institution: { x: cx, y: textStart + lineH * 3, fontSize: Math.round(h * 0.017), fontColor: "#444444", align: "center", maxWidth: Math.round(w * 0.75), visible: true },
+    credential_code: { x: cx, y: textStart + lineH * 4.5, fontSize: Math.round(h * 0.02), fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: Math.round(w * 0.5), visible: true },
+    qr_code: { x: Math.round(cx - qrSize / 2), y: Math.round(h * 0.82), width: qrSize, height: qrSize, visible: true },
+  };
 };
 
 export default function CredenciamentoPage() {
