@@ -63,7 +63,8 @@ export default function ModalidadesPage() {
         slug: values.slug,
         is_collective: values.is_collective,
         is_paralympic: values.is_paralympic,
-      });
+        match_config: values.match_config ?? {},
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -89,7 +90,8 @@ export default function ModalidadesPage() {
           slug: values.slug,
           is_collective: values.is_collective,
           is_paralympic: values.is_paralympic,
-        })
+          match_config: values.match_config ?? {},
+        } as any)
         .eq("id", id);
       if (error) throw error;
     },
