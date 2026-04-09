@@ -108,27 +108,30 @@ export type Database = {
           created_at: string
           id: string
           match_id: string
-          participant_sport_event_id: string
+          participant_sport_event_id: string | null
           seed: number | null
           side: string
+          team_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
           match_id: string
-          participant_sport_event_id: string
+          participant_sport_event_id?: string | null
           seed?: number | null
           side?: string
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
           match_id?: string
-          participant_sport_event_id?: string
+          participant_sport_event_id?: string | null
           seed?: number | null
           side?: string
+          team_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -144,6 +147,13 @@ export type Database = {
             columns: ["participant_sport_event_id"]
             isOneToOne: false
             referencedRelation: "participant_sport_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_match_entries_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1323,6 +1333,112 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          jersey_number: number | null
+          participant_id: string
+          role: string | null
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          jersey_number?: number | null
+          participant_id: string
+          role?: string | null
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          jersey_number?: number | null
+          participant_id?: string
+          role?: string | null
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          delegation_id: string
+          event_id: string
+          id: string
+          name: string
+          notes: string | null
+          sport_event_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delegation_id: string
+          event_id: string
+          id?: string
+          name: string
+          notes?: string | null
+          sport_event_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delegation_id?: string
+          event_id?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          sport_event_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_delegation_id_fkey"
+            columns: ["delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
             referencedColumns: ["id"]
           },
         ]
