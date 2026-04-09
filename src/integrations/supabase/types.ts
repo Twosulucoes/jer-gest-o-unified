@@ -230,6 +230,7 @@ export type Database = {
           match_number: number | null
           notes: string | null
           phase_id: string
+          sport_event_id: string | null
           start_time: string | null
           status: string
           updated_at: string
@@ -244,6 +245,7 @@ export type Database = {
           match_number?: number | null
           notes?: string | null
           phase_id: string
+          sport_event_id?: string | null
           start_time?: string | null
           status?: string
           updated_at?: string
@@ -258,6 +260,7 @@ export type Database = {
           match_number?: number | null
           notes?: string | null
           phase_id?: string
+          sport_event_id?: string | null
           start_time?: string | null
           status?: string
           updated_at?: string
@@ -283,6 +286,13 @@ export type Database = {
             columns: ["phase_id"]
             isOneToOne: false
             referencedRelation: "competition_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_matches_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
             referencedColumns: ["id"]
           },
           {
