@@ -135,7 +135,7 @@ const navGroups: NavGroup[] = [
     id: "cadastros",
     label: "Cadastros",
     items: [
-      { label: "Locais", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Locais de competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
 ];
