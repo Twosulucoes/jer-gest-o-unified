@@ -72,6 +72,7 @@ export default function MatchConfigEditor({ value, onChange }: MatchConfigEditor
 
   const stats = value.player_stats ?? [];
   const penalties = value.penalties ?? [];
+  const eventTypes = value.event_types ?? [];
 
   const addStat = () => {
     update({ player_stats: [...stats, { key: "", label: "", type: "count" as const, visible: true }] });
@@ -91,6 +92,16 @@ export default function MatchConfigEditor({ value, onChange }: MatchConfigEditor
   };
   const removePenalty = (idx: number) => {
     update({ penalties: penalties.filter((_, i) => i !== idx) });
+  };
+
+  const addEventType = () => {
+    update({ event_types: [...eventTypes, { key: "", label: "", target: "match" as const, visible: true }] });
+  };
+  const updateEventType = (idx: number, patch: Partial<EventTypeConfig>) => {
+    update({ event_types: eventTypes.map((e, i) => (i === idx ? { ...e, ...patch } : e)) });
+  };
+  const removeEventType = (idx: number) => {
+    update({ event_types: eventTypes.filter((_, i) => i !== idx) });
   };
 
   return (
