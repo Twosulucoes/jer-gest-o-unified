@@ -22,7 +22,9 @@ interface FieldConfig {
   height?: number;
   fontSize?: number;
   fontColor?: string;
+  fontWeight?: string;
   align?: string;
+  maxWidth?: number;
   visible: boolean;
 }
 
@@ -41,13 +43,13 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 const DEFAULT_FIELD_CONFIG: FieldConfigMap = {
-  full_name: { x: 300, y: 180, fontSize: 24, fontColor: "#000000", align: "center", visible: true },
-  institution: { x: 300, y: 220, fontSize: 14, fontColor: "#333333", align: "center", visible: true },
-  participant_type: { x: 300, y: 250, fontSize: 12, fontColor: "#666666", align: "center", visible: true },
-  sport_event: { x: 300, y: 270, fontSize: 12, fontColor: "#666666", align: "center", visible: true },
-  credential_code: { x: 300, y: 350, fontSize: 10, fontColor: "#999999", align: "center", visible: true },
-  qr_code: { x: 250, y: 290, width: 100, height: 100, visible: true },
-  photo: { x: 250, y: 40, width: 100, height: 120, visible: false },
+  photo: { x: 240, y: 330, width: 120, height: 140, visible: true },
+  full_name: { x: 300, y: 510, fontSize: 18, fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: 480, visible: true },
+  sport_event: { x: 300, y: 565, fontSize: 14, fontColor: "#333333", align: "center", maxWidth: 400, visible: true },
+  institution: { x: 300, y: 620, fontSize: 12, fontColor: "#333333", align: "center", maxWidth: 440, visible: true },
+  credential_code: { x: 300, y: 700, fontSize: 14, fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: 300, visible: true },
+  participant_type: { x: 300, y: 540, fontSize: 12, fontColor: "#666666", align: "center", visible: false },
+  qr_code: { x: 30, y: 740, width: 110, height: 110, visible: true },
 };
 
 interface Props {
@@ -63,7 +65,7 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
 
   const [name, setName] = useState("");
   const [width, setWidth] = useState(600);
-  const [height, setHeight] = useState(400);
+  const [height, setHeight] = useState(900);
   const [isActive, setIsActive] = useState(true);
   const [notes, setNotes] = useState("");
   const [fieldConfig, setFieldConfig] = useState<FieldConfigMap>(DEFAULT_FIELD_CONFIG);
@@ -85,7 +87,7 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
       } else {
         setName("");
         setWidth(600);
-        setHeight(400);
+        setHeight(900);
         setIsActive(true);
         setNotes("");
         setBackgroundUrl(null);
@@ -292,6 +294,18 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
                                 />
                               </div>
                             </>
+                          )}
+                          {isTextfield(key) && (
+                            <div className="col-span-2">
+                              <Label className="text-xs">Larg. máx. texto</Label>
+                              <Input
+                                type="number"
+                                value={fieldConfig[key]?.maxWidth ?? 0}
+                                onChange={(e) => updateField(key, "maxWidth", Number(e.target.value))}
+                                className="h-8 text-xs"
+                                placeholder="0 = sem limite"
+                              />
+                            </div>
                           )}
                         </div>
                       )}
