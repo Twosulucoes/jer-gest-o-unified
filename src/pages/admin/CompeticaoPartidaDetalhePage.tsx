@@ -800,11 +800,11 @@ export default function CompeticaoPartidaDetalhePage() {
                     <TableRow>
                       <TableHead>Participante</TableHead>
                       <TableHead>Desfecho</TableHead>
-                      <TableHead>Placar</TableHead>
-                      <TableHead>Pos.</TableHead>
-                      <TableHead>Tempo</TableHead>
-                      <TableHead>Distância</TableHead>
-                      <TableHead>Pontos</TableHead>
+                      {showScore && <TableHead>Placar</TableHead>}
+                      {showPosition && <TableHead>Pos.</TableHead>}
+                      {showTime && <TableHead>Tempo</TableHead>}
+                      {showDistance && <TableHead>Distância</TableHead>}
+                      {showPoints && <TableHead>Pontos</TableHead>}
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -816,11 +816,11 @@ export default function CompeticaoPartidaDetalhePage() {
                         <TableRow key={result.id}>
                           <TableCell className="font-medium">{getEntryLabel(entry)}</TableCell>
                           <TableCell>{result.outcome ? (OUTCOME_LABEL[result.outcome] ?? result.outcome) : "—"}</TableCell>
-                          <TableCell className="font-mono">{result.score ?? "—"}</TableCell>
-                          <TableCell className="font-mono">{result.position ?? "—"}</TableCell>
-                          <TableCell className="font-mono text-xs">{result.time_ms ? formatTimeMs(result.time_ms) : "—"}</TableCell>
-                          <TableCell className="font-mono text-xs">{result.distance_cm ? formatDistanceCm(result.distance_cm) : "—"}</TableCell>
-                          <TableCell className="font-mono">{result.points != null ? Number(result.points).toString() : "—"}</TableCell>
+                          {showScore && <TableCell className="font-mono">{result.score ?? "—"}</TableCell>}
+                          {showPosition && <TableCell className="font-mono">{result.position ?? "—"}</TableCell>}
+                          {showTime && <TableCell className="font-mono text-xs">{result.time_ms ? formatTimeMs(result.time_ms) : "—"}</TableCell>}
+                          {showDistance && <TableCell className="font-mono text-xs">{result.distance_cm ? formatDistanceCm(result.distance_cm) : "—"}</TableCell>}
+                          {showPoints && <TableCell className="font-mono">{result.points != null ? Number(result.points).toString() : "—"}</TableCell>}
                           <TableCell>
                             <Badge variant={RESULT_STATUS_VARIANT[result.result_status] ?? "outline"}>
                               {RESULT_STATUS_LABEL[result.result_status] ?? result.result_status}
