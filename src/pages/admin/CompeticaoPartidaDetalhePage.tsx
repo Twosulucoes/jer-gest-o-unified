@@ -156,7 +156,18 @@ export default function CompeticaoPartidaDetalhePage() {
   });
 
   const isCollective = sport?.is_collective ?? false;
-
+  const individualConfig: IndividualConfig | null = !isCollective
+    ? ((sport?.match_config as any)?.individual_config as IndividualConfig | undefined) ?? null
+    : null;
+  // Which result fields are visible for individual sports
+  const rf = individualConfig?.result_fields ?? {};
+  const hasAnyIndividualFields = Object.values(rf).some(Boolean);
+  // If no config or no fields set, fallback to showing all fields
+  const showTime = isCollective || !individualConfig || !hasAnyIndividualFields || !!rf.time;
+  const showDistance = isCollective || !individualConfig || !hasAnyIndividualFields || !!rf.distance;
+  const showPoints = isCollective || !individualConfig || !hasAnyIndividualFields || !!rf.points;
+  const showScore = isCollective || !individualConfig || !hasAnyIndividualFields || !!rf.score;
+  const showPosition = isCollective || !individualConfig || !hasAnyIndividualFields || !!rf.position;
   const { data: venue } = useQuery({
     queryKey: ["venue", match?.venue_id],
     queryFn: async () => {
