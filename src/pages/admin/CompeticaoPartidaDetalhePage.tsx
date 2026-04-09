@@ -554,10 +554,9 @@ export default function CompeticaoPartidaDetalhePage() {
           <p className="text-sm text-muted-foreground mt-0.5">Detalhe da partida/prova</p>
         </div>
         <div className="flex items-center gap-2">
-          {isCollective && (
-            <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)}>
-              <ClipboardList className="mr-2 h-4 w-4" />Súmula
-            </Button>
+          <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)}>
+            <ClipboardList className="mr-2 h-4 w-4" />Súmula
+          </Button>
           )}
           {canWrite && (
             <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
@@ -1051,7 +1050,7 @@ export default function CompeticaoPartidaDetalhePage() {
       </AlertDialog>
 
       {/* Súmula consolidada */}
-      {isCollective && (
+      {isCollective ? (
         <MatchSummaryDialog
           open={summaryOpen}
           onOpenChange={setSummaryOpen}
@@ -1064,6 +1063,22 @@ export default function CompeticaoPartidaDetalhePage() {
           entries={entries}
           matchScores={matchScores}
           matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
+          getEntryLabel={getEntryLabel}
+          groupName={allGroups.find((g: any) => g.id === match.group_id)?.name}
+        />
+      ) : (
+        <IndividualMatchSummaryDialog
+          open={summaryOpen}
+          onOpenChange={setSummaryOpen}
+          matchId={matchId!}
+          match={match}
+          phase={phase}
+          sportEvent={sportEvent}
+          sport={sport}
+          venue={venue}
+          entries={entries}
+          results={results}
+          individualConfig={individualConfig}
           getEntryLabel={getEntryLabel}
           groupName={allGroups.find((g: any) => g.id === match.group_id)?.name}
         />
