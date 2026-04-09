@@ -660,6 +660,21 @@ export default function CredenciamentoPage() {
                   Emitir {selectedReadyToEmit.length} em lote
                 </Button>
               )}
+              {(() => {
+                const selectedComplete = [...selectedIds].filter((id) => 
+                  filtered.find((p) => p.id === id && getParticipantState(p) === "complete")
+                );
+                return selectedComplete.length > 0 ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setBatchLabelIds(selectedComplete)}
+                  >
+                    <Tag className="mr-1.5 h-3.5 w-3.5" />
+                    Etiquetas ({selectedComplete.length})
+                  </Button>
+                ) : null;
+              })()}
             </div>
           )}
 
