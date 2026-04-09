@@ -798,6 +798,10 @@ export default function CredenciamentoPage() {
                                 <Eye className="mr-1.5 h-3.5 w-3.5" />
                                 Ver / Imprimir
                               </Button>
+                              <Button size="sm" variant="outline" onClick={() => setLabelParticipantId(p.id)}>
+                                <Tag className="mr-1.5 h-3.5 w-3.5" />
+                                Etiqueta
+                              </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button size="sm" variant="ghost" disabled={reissueMutation.isPending}>
