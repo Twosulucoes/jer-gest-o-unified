@@ -134,9 +134,28 @@ export default function MatchSummaryDialog({
     enabled: open,
   });
 
+  // Match events (timeline)
+  const { data: matchEvents = [] } = useQuery({
+    queryKey: ["summary_match_events", matchId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_events" as any)
+        .select("*")
+        .eq("match_id", matchId)
+        .order("period", { ascending: true, nullsFirst: true })
+        .order("minute", { ascending: true, nullsFirst: true })
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: open,
+  });
+
   const statConfigs = matchConfig.player_stats?.filter((s) => s.key && s.label && s.visible !== false) ?? [];
   const penaltyConfigs = matchConfig.penalties?.filter((p) => p.key && p.label && p.visible !== false) ?? [];
+  const eventTypeConfigs = matchConfig.event_types?.filter((e) => e.key && e.label && e.visible !== false) ?? [];
   const getPenaltyLabel = (key: string) => penaltyConfigs.find((p) => p.key === key)?.label ?? key;
+  const getEventTypeLabel = (key: string) => eventTypeConfigs.find((e) => e.key === key)?.label ?? key;
 
   const formatDate = (d: string | null) =>
     d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }) : "—";
