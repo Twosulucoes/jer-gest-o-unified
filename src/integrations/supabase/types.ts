@@ -825,6 +825,77 @@ export type Database = {
           },
         ]
       }
+      match_lineups: {
+        Row: {
+          created_at: string
+          id: string
+          is_starter: boolean
+          jersey_number: number | null
+          match_entry_id: string
+          match_id: string
+          participant_id: string
+          position: string | null
+          status: string
+          team_member_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_starter?: boolean
+          jersey_number?: number | null
+          match_entry_id: string
+          match_id: string
+          participant_id: string
+          position?: string | null
+          status?: string
+          team_member_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_starter?: boolean
+          jersey_number?: number | null
+          match_entry_id?: string
+          match_id?: string
+          participant_id?: string
+          position?: string | null
+          status?: string
+          team_member_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_lineups_match_entry_id_fkey"
+            columns: ["match_entry_id"]
+            isOneToOne: false
+            referencedRelation: "competition_match_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_lineups_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_lineups_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_lineups_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_scores: {
         Row: {
           created_at: string
