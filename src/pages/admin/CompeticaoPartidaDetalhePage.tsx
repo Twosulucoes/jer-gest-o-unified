@@ -21,6 +21,7 @@ import {
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
 import CollectiveScoreForm, { type ScoreEntry } from "@/components/admin/CollectiveScoreForm";
 import type { MatchConfig } from "@/components/admin/MatchConfigEditor";
+import MatchLineupCard from "@/components/admin/MatchLineupCard";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
@@ -669,6 +670,19 @@ export default function CompeticaoPartidaDetalhePage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Lineup Cards (collective only) */}
+      {isCollective && entries.filter((e) => e.team_id).map((entry) => (
+        <MatchLineupCard
+          key={`lineup-${entry.id}`}
+          matchId={matchId!}
+          entry={entry}
+          teamName={getEntryLabel(entry)}
+          canWrite={canWrite}
+          peopleMap={peopleMap}
+          participantsMap={participantsMap}
+        />
+      ))}
 
       {/* Results Card (individual / legacy) */}
       <Card>
