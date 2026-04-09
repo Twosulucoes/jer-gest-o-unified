@@ -819,8 +819,9 @@ export default function CredenciamentoPage() {
                 );
               })}
             </TableBody>
-          </Table>
-        </div>
+            </Table>
+          </div>
+        </>
       )}
 
       {/* Preview dialog */}
