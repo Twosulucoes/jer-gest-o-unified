@@ -18,7 +18,9 @@ interface FieldConfig {
   height?: number;
   fontSize?: number;
   fontColor?: string;
+  fontWeight?: string;
   align?: string;
+  maxWidth?: number;
   visible: boolean;
 }
 
@@ -36,7 +38,6 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
 
   const eventId = template?.event_id;
 
-  // Fetch credentialed participants with credentials
   const { data: credentials = [] } = useQuery({
     queryKey: ["preview-credentials", eventId],
     queryFn: async () => {
@@ -105,7 +106,6 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     enabled: instIds.length > 0 && open,
   });
 
-  // Load sport enrollments for selected participant
   const { data: enrollments = [] } = useQuery({
     queryKey: ["preview-enrollments", selectedParticipantId],
     queryFn: async () => {
@@ -139,6 +139,33 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     staff: "Staff",
   };
 
+  /** Draw text that auto-shrinks to fit maxWidth */
+  const drawFittedText = (
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    fc: FieldConfig
+  ) => {
+    const baseFontSize = fc.fontSize ?? 14;
+    const weight = fc.fontWeight ?? "normal";
+    const maxW = fc.maxWidth ?? 0;
+    let fontSize = baseFontSize;
+
+    // Auto-shrink if text overflows maxWidth
+    if (maxW > 0) {
+      ctx.font = `${weight} ${fontSize}px sans-serif`;
+      while (ctx.measureText(text).width > maxW && fontSize > 8) {
+        fontSize -= 1;
+        ctx.font = `${weight} ${fontSize}px sans-serif`;
+      }
+    }
+
+    ctx.font = `${weight} ${fontSize}px sans-serif`;
+    ctx.fillStyle = fc.fontColor ?? "#000000";
+    ctx.textAlign = (fc.align as CanvasTextAlign) ?? "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, fc.x, fc.y, maxW > 0 ? maxW : undefined);
+  };
+
   const renderCanvas = async () => {
     const canvas = canvasRef.current;
     if (!canvas || !template) return;
@@ -148,17 +175,16 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     canvas.width = template.width;
     canvas.height = template.height;
 
-    // Clear
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw background image
+    // Draw background
     if (template.background_url) {
       try {
         const img = await loadImage(template.background_url);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       } catch {
-        // bg failed, draw with white
+        // bg failed
       }
     }
 
@@ -171,22 +197,54 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     const sportEventNames = sportEvents.map((se) => se.name).join(", ");
 
     const useDemo = !participant;
-    const data = {
-      full_name: useDemo ? "NOME DO PARTICIPANTE" : person?.full_name ?? "—",
-      institution: useDemo ? "INSTITUIÇÃO EXEMPLO" : institution?.name ?? "—",
+    const data: Record<string, string> = {
+      full_name: useDemo ? "PAULO SILVA DE SOUZA" : (person?.full_name ?? "—").toUpperCase(),
+      institution: useDemo ? "ESCOLA ESTADUAL MONTEIRO LOBATO" : (institution?.name ?? "—").toUpperCase(),
       participant_type: useDemo ? "Atleta" : TYPE_LABELS[participant?.participant_type ?? ""] ?? participant?.participant_type ?? "—",
-      sport_event: useDemo ? "Futsal / Sub-17 Masculino" : sportEventNames || "—",
-      credential_code: useDemo ? "JER-DEMO-0001" : credential?.credential_code ?? "—",
+      sport_event: useDemo ? "VOLEIBOL" : (sportEventNames || "—").toUpperCase(),
+      credential_code: useDemo ? "RR-2026-0042" : credential?.credential_code ?? "—",
     };
+
+    // Draw photo placeholder or actual photo
+    const photoConfig = fieldConfig.photo;
+    if (photoConfig?.visible) {
+      const photoW = photoConfig.width ?? 120;
+      const photoH = photoConfig.height ?? 140;
+      const photoUrl = person?.photo_url;
+
+      if (photoUrl) {
+        try {
+          const photoImg = await loadImage(photoUrl);
+          // Draw with rounded corners
+          ctx.save();
+          const radius = 8;
+          ctx.beginPath();
+          ctx.moveTo(photoConfig.x + radius, photoConfig.y);
+          ctx.lineTo(photoConfig.x + photoW - radius, photoConfig.y);
+          ctx.quadraticCurveTo(photoConfig.x + photoW, photoConfig.y, photoConfig.x + photoW, photoConfig.y + radius);
+          ctx.lineTo(photoConfig.x + photoW, photoConfig.y + photoH - radius);
+          ctx.quadraticCurveTo(photoConfig.x + photoW, photoConfig.y + photoH, photoConfig.x + photoW - radius, photoConfig.y + photoH);
+          ctx.lineTo(photoConfig.x + radius, photoConfig.y + photoH);
+          ctx.quadraticCurveTo(photoConfig.x, photoConfig.y + photoH, photoConfig.x, photoConfig.y + photoH - radius);
+          ctx.lineTo(photoConfig.x, photoConfig.y + radius);
+          ctx.quadraticCurveTo(photoConfig.x, photoConfig.y, photoConfig.x + radius, photoConfig.y);
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(photoImg, photoConfig.x, photoConfig.y, photoW, photoH);
+          ctx.restore();
+        } catch {
+          drawPhotoPlaceholder(ctx, photoConfig.x, photoConfig.y, photoW, photoH);
+        }
+      } else {
+        drawPhotoPlaceholder(ctx, photoConfig.x, photoConfig.y, photoW, photoH);
+      }
+    }
 
     // Draw text fields
     for (const [key, value] of Object.entries(data)) {
       const fc = fieldConfig[key];
       if (!fc || !fc.visible) continue;
-      ctx.font = `${fc.fontSize ?? 14}px sans-serif`;
-      ctx.fillStyle = fc.fontColor ?? "#000000";
-      ctx.textAlign = (fc.align as CanvasTextAlign) ?? "center";
-      ctx.fillText(value, fc.x, fc.y);
+      drawFittedText(ctx, value, fc);
     }
 
     // Draw QR Code
@@ -195,12 +253,12 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
       const qrValue = useDemo ? "demo-qr-code-12345" : credential?.qr_code_value ?? "no-qr";
       try {
         const qrDataUrl = await QRCode.toDataURL(qrValue, {
-          width: qrConfig.width ?? 100,
+          width: qrConfig.width ?? 110,
           margin: 1,
           color: { dark: "#000000", light: "#ffffff" },
         });
         const qrImg = await loadImage(qrDataUrl);
-        ctx.drawImage(qrImg, qrConfig.x, qrConfig.y, qrConfig.width ?? 100, qrConfig.height ?? 100);
+        ctx.drawImage(qrImg, qrConfig.x, qrConfig.y, qrConfig.width ?? 110, qrConfig.height ?? 110);
       } catch {
         // QR generation failed
       }
@@ -291,6 +349,33 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
       </DialogContent>
     </Dialog>
   );
+}
+
+function drawPhotoPlaceholder(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.fillStyle = "rgba(200, 200, 200, 0.5)";
+  ctx.strokeStyle = "rgba(150, 150, 150, 0.6)";
+  ctx.lineWidth = 1;
+  const r = 8;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#888";
+  ctx.font = "11px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("FOTO", x + w / 2, y + h / 2);
+  ctx.restore();
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
