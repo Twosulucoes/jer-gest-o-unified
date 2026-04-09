@@ -5,7 +5,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Trophy, Users, User, Clock, Ruler, Target } from "lucide-react";
+import { Trophy, Users, User, Clock, Ruler, Target, AlertTriangle, BarChart3 } from "lucide-react";
+import {
+  Tooltip, TooltipContent, TooltipTrigger,
+} from "@/components/ui/tooltip";
+import ParticipantSportHistorySummary from "./ParticipantSportHistorySummary";
 
 interface Props {
   participantId: string;
@@ -38,18 +42,22 @@ interface HistoryRow {
   validated_at: string | null;
   published_at: string | null;
   result_notes: string | null;
+  delegation_id: string | null;
+  delegation_name: string | null;
+  institution_id: string | null;
+  institution_name: string | null;
+  attempts_count: number | null;
+  best_attempt_cm: number | null;
+  best_attempt_ms: number | null;
+  best_attempt_points: number | null;
+  aggregated_stats_json: Record<string, number> | null;
+  penalties_count: number | null;
 }
 
 const OUTCOME_LABELS: Record<string, string> = {
-  win: "Vitória",
-  loss: "Derrota",
-  draw: "Empate",
-  wo_win: "WO (V)",
-  wo_loss: "WO (D)",
-  dsq: "Desclassificado",
-  dns: "Não compareceu",
-  dnf: "Não concluiu",
-  cancelled: "Cancelado",
+  win: "Vitória", loss: "Derrota", draw: "Empate",
+  wo_win: "WO (V)", wo_loss: "WO (D)", dsq: "Desclassificado",
+  dns: "Não compareceu", dnf: "Não concluiu", cancelled: "Cancelado",
 };
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -67,6 +75,14 @@ function formatTimeMs(ms: number): string {
 
 function formatDistanceCm(cm: number): string {
   return cm >= 100 ? `${(cm / 100).toFixed(2)}m` : `${cm}cm`;
+}
+
+function computeSummary(history: HistoryRow[]) {
+  const sportEvents = new Set(history.map(r => r.sport_event_id));
+  const matches = new Set(history.filter(r => r.match_id).map(r => r.match_id));
+  const published = history.filter(r => r.result_status === "publicado").length;
+  const podiums = history.filter(r => r.position != null && r.position >= 1 && r.position <= 3 && r.result_status === "publicado").length;
+  return { totalEvents: sportEvents.size, totalMatches: matches.size, publishedResults: published, podiums };
 }
 
 export default function ParticipantSportHistory({ participantId }: Props) {
@@ -101,7 +117,9 @@ export default function ParticipantSportHistory({ participantId }: Props) {
     );
   }
 
-  // Group by sport_event for better readability
+  const summary = computeSummary(history);
+
+  // Group by sport_event
   const grouped = new Map<string, HistoryRow[]>();
   for (const row of history) {
     const key = row.sport_event_id;
@@ -111,11 +129,13 @@ export default function ParticipantSportHistory({ participantId }: Props) {
 
   return (
     <div className="space-y-6">
+      <ParticipantSportHistorySummary {...summary} />
+
       {Array.from(grouped.entries()).map(([seId, rows]) => {
         const first = rows[0];
         return (
           <div key={seId} className="space-y-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Trophy className="h-4 w-4 text-primary" />
               <h4 className="font-semibold text-sm">{first.sport_event_name}</h4>
               <Badge variant={first.participation_type === "team" ? "secondary" : "outline"} className="text-xs">
@@ -125,6 +145,9 @@ export default function ParticipantSportHistory({ participantId }: Props) {
                   <><User className="h-3 w-3 mr-1" />Individual</>
                 )}
               </Badge>
+              {first.institution_name && (
+                <span className="text-xs text-muted-foreground">• {first.institution_name}</span>
+              )}
             </div>
 
             {rows.some(r => r.match_id) ? (
@@ -157,7 +180,7 @@ export default function ParticipantSportHistory({ participantId }: Props) {
                           {row.outcome ? (OUTCOME_LABELS[row.outcome] ?? row.outcome) : "—"}
                         </TableCell>
                         <TableCell className="text-sm">
-                          <div className="flex gap-2 flex-wrap">
+                          <div className="flex gap-2 flex-wrap items-center">
                             {row.time_ms != null && (
                               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                                 <Clock className="h-3 w-3" />{formatTimeMs(row.time_ms)}
@@ -173,7 +196,44 @@ export default function ParticipantSportHistory({ participantId }: Props) {
                                 <Target className="h-3 w-3" />{Number(row.points).toFixed(1)} pts
                               </span>
                             )}
-                            {!row.time_ms && !row.distance_cm && !row.points && "—"}
+                            {/* Best attempt */}
+                            {row.attempts_count != null && row.attempts_count > 0 && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground border rounded px-1.5 py-0.5">
+                                    🎯 {row.attempts_count} tent.
+                                    {row.best_attempt_cm != null && ` • ${formatDistanceCm(row.best_attempt_cm)}`}
+                                    {row.best_attempt_ms != null && ` • ${formatTimeMs(row.best_attempt_ms)}`}
+                                    {row.best_attempt_points != null && ` • ${Number(row.best_attempt_points).toFixed(1)}pts`}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>Melhor tentativa válida entre {row.attempts_count} registradas</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {/* Stats */}
+                            {row.aggregated_stats_json && Object.keys(row.aggregated_stats_json).length > 0 && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground border rounded px-1.5 py-0.5">
+                                    <BarChart3 className="h-3 w-3" />
+                                    {Object.entries(row.aggregated_stats_json).map(([k, v]) => `${k}: ${v}`).join(", ")}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>Estatísticas individuais na partida</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {/* Penalties */}
+                            {row.penalties_count != null && row.penalties_count > 0 && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 text-xs text-amber-600 border border-amber-300 rounded px-1.5 py-0.5">
+                                    <AlertTriangle className="h-3 w-3" />{row.penalties_count}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>{row.penalties_count} penalidade(s) recebida(s)</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {!row.time_ms && !row.distance_cm && !row.points && !row.attempts_count && !row.aggregated_stats_json && !row.penalties_count && "—"}
                           </div>
                         </TableCell>
                         <TableCell>
