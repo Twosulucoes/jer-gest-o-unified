@@ -18,12 +18,12 @@ import type { Tables } from "@/integrations/supabase/types";
 
 const VENUE_TYPE_OPTIONS = [
   { value: "arena", label: "Arena" },
-  { value: "ginasio", label: "Ginásio" },
-  { value: "campo", label: "Campo" },
-  { value: "piscina", label: "Piscina" },
-  { value: "quadra", label: "Quadra" },
-  { value: "pista", label: "Pista" },
-  { value: "outro", label: "Outro" },
+  { value: "gymnasium", label: "Ginásio" },
+  { value: "field", label: "Campo" },
+  { value: "pool", label: "Piscina" },
+  { value: "court", label: "Quadra" },
+  { value: "track", label: "Pista" },
+  { value: "other", label: "Outro" },
 ];
 
 const venueSchema = z.object({
