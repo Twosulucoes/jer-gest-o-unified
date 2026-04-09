@@ -38,6 +38,52 @@ const RESULT_STATUS_VARIANT: Record<string, "default" | "secondary" | "outline">
   publicado: "secondary",
 };
 
+const OUTCOME_OPTIONS = [
+  { value: "", label: "— Nenhum —" },
+  { value: "win", label: "Vitória" },
+  { value: "loss", label: "Derrota" },
+  { value: "draw", label: "Empate" },
+  { value: "wo_win", label: "WO (vitória)" },
+  { value: "wo_loss", label: "WO (derrota)" },
+  { value: "dsq", label: "Desclassificado" },
+  { value: "dns", label: "Não compareceu (DNS)" },
+  { value: "dnf", label: "Não concluiu (DNF)" },
+  { value: "cancelled", label: "Cancelado" },
+];
+
+const OUTCOME_LABEL: Record<string, string> = Object.fromEntries(
+  OUTCOME_OPTIONS.filter((o) => o.value).map((o) => [o.value, o.label])
+);
+
+type ResultFormEntry = {
+  score: string;
+  position: string;
+  result_text: string;
+  outcome: string;
+  time_ms: string;
+  distance_cm: string;
+  points: string;
+  penalty_notes: string;
+};
+
+const emptyResultForm = (): ResultFormEntry => ({
+  score: "", position: "", result_text: "", outcome: "", time_ms: "", distance_cm: "", points: "", penalty_notes: "",
+});
+
+const formatTimeMs = (ms: number): string => {
+  const totalSecs = Math.floor(ms / 1000);
+  const millis = ms % 1000;
+  const mins = Math.floor(totalSecs / 60);
+  const secs = totalSecs % 60;
+  if (mins > 0) return `${mins}:${secs.toString().padStart(2, "0")}.${millis.toString().padStart(3, "0")}`;
+  return `${secs}.${millis.toString().padStart(3, "0")}s`;
+};
+
+const formatDistanceCm = (cm: number): string => {
+  if (cm >= 100) return `${(cm / 100).toFixed(2)}m`;
+  return `${cm}cm`;
+};
+
 export default function CompeticaoPartidaDetalhePage() {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
@@ -51,7 +97,7 @@ export default function CompeticaoPartidaDetalhePage() {
   const [selectedPSEId, setSelectedPSEId] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
-  const [resultForm, setResultForm] = useState<Record<string, { score: string; position: string; result_text: string }>>({});
+  const [resultForm, setResultForm] = useState<Record<string, ResultFormEntry>>({});
   const [resultNotes, setResultNotes] = useState("");
   const [confirmRemoveEntryId, setConfirmRemoveEntryId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"validate" | "publish" | "unpublish" | null>(null);
@@ -86,6 +132,18 @@ export default function CompeticaoPartidaDetalhePage() {
     },
     enabled: !!phase?.sport_event_id,
   });
+
+  const { data: sport } = useQuery({
+    queryKey: ["sport_for_match", sportEvent?.sport_id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("sports").select("*").eq("id", sportEvent!.sport_id).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sportEvent?.sport_id,
+  });
+
+  const isCollective = sport?.is_collective ?? false;
 
   const { data: venue } = useQuery({
     queryKey: ["venue", match?.venue_id],
@@ -258,7 +316,7 @@ export default function CompeticaoPartidaDetalhePage() {
   const linkedTeamIds = new Set(entries.filter((e) => e.team_id).map((e) => e.team_id));
   const availableToAdd = availablePSE.filter((p) => !linkedPSEIds.has(p.id));
   const availableTeamsToAdd = teamsForSportEvent.filter((t: any) => !linkedTeamIds.has(t.id));
-  const hasTeams = teamsForSportEvent.length > 0;
+  
 
   // Mutations
   const updateMatchMut = useMutation({
@@ -309,7 +367,7 @@ export default function CompeticaoPartidaDetalhePage() {
     mutationFn: async () => {
       if (!user) throw new Error("Usuário não autenticado");
       const upserts = entries.map((entry) => {
-        const form = resultForm[entry.id] || { score: "", position: "", result_text: "" };
+        const form = resultForm[entry.id] || emptyResultForm();
         const existing = resultsMap.get(entry.id);
         return {
           ...(existing ? { id: existing.id } : {}),
@@ -318,13 +376,18 @@ export default function CompeticaoPartidaDetalhePage() {
           score: form.score || null,
           position: form.position ? parseInt(form.position) : null,
           result_text: form.result_text || null,
+          outcome: form.outcome || null,
+          time_ms: form.time_ms ? parseInt(form.time_ms) : null,
+          distance_cm: form.distance_cm ? parseInt(form.distance_cm) : null,
+          points: form.points ? parseFloat(form.points) : null,
+          penalty_notes: form.penalty_notes || null,
           result_status: "resultado_lancado",
           recorded_by: existing?.recorded_by ?? user.id,
           recorded_at: existing?.recorded_at ?? new Date().toISOString(),
           notes: resultNotes || null,
         };
       });
-      const { error } = await supabase.from("competition_match_results").upsert(upserts, { onConflict: "match_entry_id" });
+      const { error } = await supabase.from("competition_match_results").upsert(upserts as any, { onConflict: "match_entry_id" });
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Resultados lançados"); setResultDialogOpen(false); },
@@ -380,13 +443,18 @@ export default function CompeticaoPartidaDetalhePage() {
   });
 
   const openResultDialog = () => {
-    const form: Record<string, { score: string; position: string; result_text: string }> = {};
+    const form: Record<string, ResultFormEntry> = {};
     entries.forEach((entry) => {
       const existing = resultsMap.get(entry.id);
       form[entry.id] = {
         score: existing?.score ?? "",
         position: existing?.position?.toString() ?? "",
         result_text: existing?.result_text ?? "",
+        outcome: (existing as any)?.outcome ?? "",
+        time_ms: (existing as any)?.time_ms?.toString() ?? "",
+        distance_cm: (existing as any)?.distance_cm?.toString() ?? "",
+        points: (existing as any)?.points?.toString() ?? "",
+        penalty_notes: (existing as any)?.penalty_notes ?? "",
       };
     });
     setResultForm(form);
@@ -543,22 +611,28 @@ export default function CompeticaoPartidaDetalhePage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Participante</TableHead>
+                      <TableHead>Desfecho</TableHead>
                       <TableHead>Placar</TableHead>
-                      <TableHead>Posição</TableHead>
-                      <TableHead>Resultado</TableHead>
+                      <TableHead>Pos.</TableHead>
+                      <TableHead>Tempo</TableHead>
+                      <TableHead>Distância</TableHead>
+                      <TableHead>Pontos</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {entries.map((entry) => {
-                      const result = resultsMap.get(entry.id);
+                      const result = resultsMap.get(entry.id) as any;
                       if (!result) return null;
                       return (
                         <TableRow key={result.id}>
                           <TableCell className="font-medium">{getEntryLabel(entry)}</TableCell>
+                          <TableCell>{result.outcome ? (OUTCOME_LABEL[result.outcome] ?? result.outcome) : "—"}</TableCell>
                           <TableCell className="font-mono">{result.score ?? "—"}</TableCell>
                           <TableCell className="font-mono">{result.position ?? "—"}</TableCell>
-                          <TableCell className="text-muted-foreground">{result.result_text ?? "—"}</TableCell>
+                          <TableCell className="font-mono text-xs">{result.time_ms ? formatTimeMs(result.time_ms) : "—"}</TableCell>
+                          <TableCell className="font-mono text-xs">{result.distance_cm ? formatDistanceCm(result.distance_cm) : "—"}</TableCell>
+                          <TableCell className="font-mono">{result.points != null ? Number(result.points).toString() : "—"}</TableCell>
                           <TableCell>
                             <Badge variant={RESULT_STATUS_VARIANT[result.result_status] ?? "outline"}>
                               {RESULT_STATUS_LABEL[result.result_status] ?? result.result_status}
@@ -585,35 +659,60 @@ export default function CompeticaoPartidaDetalhePage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             {entries.map((entry) => {
-              const form = resultForm[entry.id] || { score: "", position: "", result_text: "" };
+              const form: ResultFormEntry = resultForm[entry.id] || emptyResultForm();
+              const isTeamEntry = !!entry.team_id;
+              const updateField = (field: keyof ResultFormEntry, value: string) =>
+                setResultForm((prev) => ({ ...prev, [entry.id]: { ...form, [field]: value } }));
               return (
-                <div key={entry.id} className="space-y-2 border rounded-lg p-3">
+                <div key={entry.id} className="space-y-3 border rounded-lg p-3">
                   <p className="text-sm font-medium">{getEntryLabel(entry)}</p>
-                  <div className="grid grid-cols-3 gap-2">
+                  {/* Outcome */}
+                  <div>
+                    <label className="text-xs text-muted-foreground">Desfecho</label>
+                    <Select value={form.outcome} onValueChange={(v) => updateField("outcome", v === "__none__" ? "" : v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        {OUTCOME_OPTIONS.map((o) => (
+                          <SelectItem key={o.value || "__none__"} value={o.value || "__none__"}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* Collective: score */}
+                  {(isTeamEntry || isCollective) && (
                     <div>
                       <label className="text-xs text-muted-foreground">Placar</label>
-                      <Input
-                        placeholder="Ex: 3x1"
-                        value={form.score}
-                        onChange={(e) => setResultForm((prev) => ({ ...prev, [entry.id]: { ...form, score: e.target.value } }))}
-                      />
+                      <Input placeholder="Ex: 3x1" value={form.score} onChange={(e) => updateField("score", e.target.value)} />
                     </div>
+                  )}
+                  {/* Individual fields */}
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-xs text-muted-foreground">Posição</label>
-                      <Input
-                        type="number"
-                        placeholder="1"
-                        value={form.position}
-                        onChange={(e) => setResultForm((prev) => ({ ...prev, [entry.id]: { ...form, position: e.target.value } }))}
-                      />
+                      <Input type="number" placeholder="1" value={form.position} onChange={(e) => updateField("position", e.target.value)} />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground">Resultado</label>
-                      <Input
-                        placeholder="Vitória, WO..."
-                        value={form.result_text}
-                        onChange={(e) => setResultForm((prev) => ({ ...prev, [entry.id]: { ...form, result_text: e.target.value } }))}
-                      />
+                      <label className="text-xs text-muted-foreground">Pontos</label>
+                      <Input type="number" step="0.001" placeholder="0.000" value={form.points} onChange={(e) => updateField("points", e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Tempo (ms)</label>
+                      <Input type="number" placeholder="Milissegundos" value={form.time_ms} onChange={(e) => updateField("time_ms", e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Distância (cm)</label>
+                      <Input type="number" placeholder="Centímetros" value={form.distance_cm} onChange={(e) => updateField("distance_cm", e.target.value)} />
+                    </div>
+                  </div>
+                  {/* Free text + penalty */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Resultado (texto)</label>
+                      <Input placeholder="Texto livre" value={form.result_text} onChange={(e) => updateField("result_text", e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Penalidades</label>
+                      <Input placeholder="Notas de penalidade" value={form.penalty_notes} onChange={(e) => updateField("penalty_notes", e.target.value)} />
                     </div>
                   </div>
                 </div>
