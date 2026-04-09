@@ -38,6 +38,52 @@ const RESULT_STATUS_VARIANT: Record<string, "default" | "secondary" | "outline">
   publicado: "secondary",
 };
 
+const OUTCOME_OPTIONS = [
+  { value: "", label: "— Nenhum —" },
+  { value: "win", label: "Vitória" },
+  { value: "loss", label: "Derrota" },
+  { value: "draw", label: "Empate" },
+  { value: "wo_win", label: "WO (vitória)" },
+  { value: "wo_loss", label: "WO (derrota)" },
+  { value: "dsq", label: "Desclassificado" },
+  { value: "dns", label: "Não compareceu (DNS)" },
+  { value: "dnf", label: "Não concluiu (DNF)" },
+  { value: "cancelled", label: "Cancelado" },
+];
+
+const OUTCOME_LABEL: Record<string, string> = Object.fromEntries(
+  OUTCOME_OPTIONS.filter((o) => o.value).map((o) => [o.value, o.label])
+);
+
+type ResultFormEntry = {
+  score: string;
+  position: string;
+  result_text: string;
+  outcome: string;
+  time_ms: string;
+  distance_cm: string;
+  points: string;
+  penalty_notes: string;
+};
+
+const emptyResultForm = (): ResultFormEntry => ({
+  score: "", position: "", result_text: "", outcome: "", time_ms: "", distance_cm: "", points: "", penalty_notes: "",
+});
+
+const formatTimeMs = (ms: number): string => {
+  const totalSecs = Math.floor(ms / 1000);
+  const millis = ms % 1000;
+  const mins = Math.floor(totalSecs / 60);
+  const secs = totalSecs % 60;
+  if (mins > 0) return `${mins}:${secs.toString().padStart(2, "0")}.${millis.toString().padStart(3, "0")}`;
+  return `${secs}.${millis.toString().padStart(3, "0")}s`;
+};
+
+const formatDistanceCm = (cm: number): string => {
+  if (cm >= 100) return `${(cm / 100).toFixed(2)}m`;
+  return `${cm}cm`;
+};
+
 export default function CompeticaoPartidaDetalhePage() {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
