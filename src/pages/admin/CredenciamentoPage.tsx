@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   ArrowRight,
   Info,
+  Tag,
 } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
