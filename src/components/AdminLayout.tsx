@@ -125,7 +125,7 @@ const navGroups: NavGroup[] = [
         label: "Alojamento",
         items: [
           { label: "Locais de Alojamento", to: "/admin/alojamento/locais", icon: <Building className="h-4 w-4" />, roles: LODGING_ROLES },
-          { label: "Unidades", to: "/admin/alojamento/unidades", icon: <DoorOpen className="h-4 w-4" />, roles: LODGING_ROLES },
+          { label: "Unidades do alojamento", to: "/admin/alojamento/unidades", icon: <DoorOpen className="h-4 w-4" />, roles: LODGING_ROLES },
           { label: "Ocupação", to: "/admin/alojamento/ocupacao", icon: <KeyRound className="h-4 w-4" />, roles: LODGING_ROLES },
         ],
       },
