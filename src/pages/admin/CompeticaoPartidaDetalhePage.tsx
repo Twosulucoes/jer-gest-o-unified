@@ -19,6 +19,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
+import CollectiveScoreForm, { type ScoreEntry } from "@/components/admin/CollectiveScoreForm";
+import type { MatchConfig } from "@/components/admin/MatchConfigEditor";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
