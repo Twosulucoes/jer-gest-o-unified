@@ -539,11 +539,18 @@ export default function CompeticaoPartidaDetalhePage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">Detalhe da partida/prova</p>
         </div>
-        {canWrite && (
-          <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
-            <Pencil className="mr-2 h-4 w-4" />Editar
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {isCollective && (
+            <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)}>
+              <ClipboardList className="mr-2 h-4 w-4" />Súmula
+            </Button>
+          )}
+          {canWrite && (
+            <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />Editar
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Match info + Status */}
