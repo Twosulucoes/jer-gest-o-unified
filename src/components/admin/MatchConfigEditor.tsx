@@ -19,6 +19,14 @@ export interface PlayerStatConfig {
   required?: boolean;
 }
 
+export interface PenaltyConfig {
+  key: string;
+  label: string;
+  target: "player" | "team";
+  requires_notes?: boolean;
+  visible: boolean;
+}
+
 export interface MatchConfig {
   score_type?: "simple" | "sets" | "quarters" | "halves";
   periods?: number;
@@ -28,6 +36,7 @@ export interface MatchConfig {
   requires_table_officials?: boolean;
   requires_attachments?: boolean;
   player_stats?: PlayerStatConfig[];
+  penalties?: PenaltyConfig[];
 }
 
 const SCORE_TYPES = [
@@ -53,19 +62,26 @@ export default function MatchConfigEditor({ value, onChange }: MatchConfigEditor
   const update = (patch: Partial<MatchConfig>) => onChange({ ...value, ...patch });
 
   const stats = value.player_stats ?? [];
+  const penalties = value.penalties ?? [];
 
   const addStat = () => {
-    const newStats = [...stats, { key: "", label: "", type: "count" as const, visible: true }];
-    update({ player_stats: newStats });
+    update({ player_stats: [...stats, { key: "", label: "", type: "count" as const, visible: true }] });
   };
-
   const updateStat = (idx: number, patch: Partial<PlayerStatConfig>) => {
-    const newStats = stats.map((s, i) => (i === idx ? { ...s, ...patch } : s));
-    update({ player_stats: newStats });
+    update({ player_stats: stats.map((s, i) => (i === idx ? { ...s, ...patch } : s)) });
   };
-
   const removeStat = (idx: number) => {
     update({ player_stats: stats.filter((_, i) => i !== idx) });
+  };
+
+  const addPenalty = () => {
+    update({ penalties: [...penalties, { key: "", label: "", target: "player" as const, visible: true }] });
+  };
+  const updatePenalty = (idx: number, patch: Partial<PenaltyConfig>) => {
+    update({ penalties: penalties.map((p, i) => (i === idx ? { ...p, ...patch } : p)) });
+  };
+  const removePenalty = (idx: number) => {
+    update({ penalties: penalties.filter((_, i) => i !== idx) });
   };
 
   return (
@@ -187,6 +203,67 @@ export default function MatchConfigEditor({ value, onChange }: MatchConfigEditor
               </Select>
             </div>
             <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeStat(idx)}>
+              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      {/* Penalties Configuration */}
+      <div className="space-y-3 pt-2 border-t">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-medium">Penalidades</Label>
+          <Button type="button" variant="outline" size="sm" onClick={addPenalty}>
+            <Plus className="mr-1 h-3 w-3" />Adicionar
+          </Button>
+        </div>
+
+        {penalties.length === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhuma penalidade configurada. Ex: amarelo, vermelho, falta técnica.</p>
+        )}
+
+        {penalties.map((pen, idx) => (
+          <div key={idx} className="grid grid-cols-[1fr_1fr_auto_auto_auto] gap-2 items-end rounded border bg-background p-2">
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Chave</Label>
+              <Input
+                placeholder="amarelo"
+                value={pen.key}
+                onChange={(e) => {
+                  const key = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+                  updatePenalty(idx, { key });
+                }}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Rótulo</Label>
+              <Input
+                placeholder="Cartão Amarelo"
+                value={pen.label}
+                onChange={(e) => updatePenalty(idx, { label: e.target.value })}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Alvo</Label>
+              <Select value={pen.target} onValueChange={(v) => updatePenalty(idx, { target: v as "player" | "team" })}>
+                <SelectTrigger className="h-8 w-24 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="player">Atleta</SelectItem>
+                  <SelectItem value="team">Equipe</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-1 pb-0.5">
+              <Switch
+                checked={!!pen.requires_notes}
+                onCheckedChange={(v) => updatePenalty(idx, { requires_notes: v })}
+                className="scale-75"
+              />
+              <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Obs.</Label>
+            </div>
+            <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removePenalty(idx)}>
               <Trash2 className="h-3.5 w-3.5 text-destructive" />
             </Button>
           </div>
