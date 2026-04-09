@@ -393,6 +393,56 @@ export type Database = {
           },
         ]
       }
+      credential_templates: {
+        Row: {
+          background_url: string | null
+          created_at: string
+          event_id: string
+          field_config: Json
+          height: number
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          updated_at: string
+          width: number
+        }
+        Insert: {
+          background_url?: string | null
+          created_at?: string
+          event_id: string
+          field_config?: Json
+          height?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          updated_at?: string
+          width?: number
+        }
+        Update: {
+          background_url?: string | null
+          created_at?: string
+          event_id?: string
+          field_config?: Json
+          height?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credential_templates_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delegations: {
         Row: {
           chief_email: string | null
