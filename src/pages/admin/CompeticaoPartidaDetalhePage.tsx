@@ -455,7 +455,32 @@ export default function CompeticaoPartidaDetalhePage() {
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
-  const openResultDialog = () => {
+  // Collective score mutation
+  const saveCollectiveScoreMut = useMutation({
+    mutationFn: async ({ scores, notes }: { scores: ScoreEntry[]; notes: string }) => {
+      const upserts = scores.map((s) => {
+        const existing = matchScores.find((ms: any) => ms.match_entry_id === s.match_entry_id);
+        return {
+          ...(existing ? { id: existing.id } : {}),
+          match_id: matchId!,
+          match_entry_id: s.match_entry_id,
+          score_final: s.score_final || null,
+          score_detail: s.score_detail,
+          outcome: s.outcome || null,
+        };
+      });
+      const { error } = await supabase.from("match_scores" as any).upsert(upserts, { onConflict: "match_entry_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["match_scores", matchId] });
+      toast.success("Placar salvo com sucesso");
+      setCollectiveScoreOpen(false);
+    },
+    onError: (e: Error) => toast.error("Erro ao salvar placar: " + e.message),
+  });
+
+
     const form: Record<string, ResultFormEntry> = {};
     entries.forEach((entry) => {
       const existing = resultsMap.get(entry.id);
