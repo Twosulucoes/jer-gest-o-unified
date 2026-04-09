@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
 import MatchConfigEditor, { type MatchConfig } from "./MatchConfigEditor";
+import IndividualConfigEditor, { type IndividualConfig } from "./IndividualConfigEditor";
 
 const sportSchema = z.object({
   event_id: z.string().min(1, "Selecione um evento"),
