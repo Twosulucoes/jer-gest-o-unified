@@ -27,6 +27,7 @@ import MatchPlayerStatsCard from "@/components/admin/MatchPlayerStatsCard";
 import MatchPenaltiesCard from "@/components/admin/MatchPenaltiesCard";
 import MatchAttachmentsCard from "@/components/admin/MatchAttachmentsCard";
 import MatchSummaryDialog from "@/components/admin/MatchSummaryDialog";
+import MatchEventsCard from "@/components/admin/MatchEventsCard";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
