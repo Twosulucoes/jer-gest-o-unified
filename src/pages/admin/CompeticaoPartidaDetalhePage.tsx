@@ -1009,6 +1009,25 @@ export default function CompeticaoPartidaDetalhePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Súmula consolidada */}
+      {isCollective && (
+        <MatchSummaryDialog
+          open={summaryOpen}
+          onOpenChange={setSummaryOpen}
+          matchId={matchId!}
+          match={match}
+          phase={phase}
+          sportEvent={sportEvent}
+          sport={sport}
+          venue={venue}
+          entries={entries}
+          matchScores={matchScores}
+          matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
+          getEntryLabel={getEntryLabel}
+          groupName={allGroups.find((g: any) => g.id === match.group_id)?.name}
+        />
+      )}
     </div>
   );
 }
