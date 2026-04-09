@@ -9,6 +9,7 @@ import {
   Loader2,
   CreditCard,
   XCircle,
+  RefreshCw,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -82,6 +83,24 @@ export default function CredenciamentoPage() {
     },
     enabled: !!selectedEventId,
   });
+
+  // Load active credentials for participants
+  const { data: activeCredentials = [] } = useQuery({
+    queryKey: ["credenciamento-credentials", selectedEventId],
+    queryFn: async () => {
+      if (!selectedEventId) return [];
+      const { data, error } = await supabase
+        .from("participant_credentials")
+        .select("id, participant_id, credential_code, status")
+        .eq("event_id", selectedEventId)
+        .eq("status", "active");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedEventId,
+  });
+
+  const activeCredMap = new Map(activeCredentials.map((c) => [c.participant_id, c]));
 
   // Load people and delegations for display
   const personIds = participants?.map((p) => p.person_id) ?? [];
@@ -189,16 +208,56 @@ export default function CredenciamentoPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
       queryClient.invalidateQueries({ queryKey: ["participant-credentials"] });
       toast.success("Credencial emitida e ativada!");
     },
     onError: (err: Error) => {
-      if (err.message?.includes("uq_participant_event")) {
-        toast.error("Este participante já possui credencial para este evento.");
+      if (err.message?.includes("uq_participant_event_active")) {
+        toast.error("Este participante já possui credencial ativa para este evento.");
       } else {
         toast.error(`Erro: ${err.message}`);
       }
     },
+  });
+
+  const reissueMutation = useMutation({
+    mutationFn: async (participantId: string) => {
+      // 1. Mark existing active credential as 'reissued'
+      const existing = activeCredMap.get(participantId);
+      if (existing) {
+        const { error: revokeErr } = await supabase
+          .from("participant_credentials")
+          .update({ status: "reissued", revoked_at: new Date().toISOString() })
+          .eq("id", existing.id);
+        if (revokeErr) throw revokeErr;
+      }
+
+      // 2. Create new credential
+      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const qrCodeValue = crypto.randomUUID();
+
+      const { error } = await supabase.from("participant_credentials").insert({
+        participant_id: participantId,
+        event_id: selectedEventId,
+        credential_code: credentialCode,
+        qr_code_value: qrCodeValue,
+        status: "active",
+        binding_source: "manual",
+        issued_at: new Date().toISOString(),
+        activated_at: new Date().toISOString(),
+        issued_by: user?.id,
+        activated_by: user?.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
+      queryClient.invalidateQueries({ queryKey: ["participant-credentials"] });
+      toast.success("Credencial reemitida com sucesso! A anterior foi marcada como substituída.");
+    },
+    onError: (err: Error) => toast.error(`Erro na reemissão: ${err.message}`),
   });
 
   const confirmedCount = (participants ?? []).filter((p) => p.status === "confirmed").length;
@@ -322,6 +381,8 @@ export default function CredenciamentoPage() {
                 const person = peopleMap.get(p.person_id);
                 const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
                 const isCredentialed = p.status === "credentialed";
+                const hasActiveCred = activeCredMap.has(p.id);
+                const activeCred = activeCredMap.get(p.id);
 
                 return (
                   <TableRow key={p.id}>
@@ -337,6 +398,11 @@ export default function CredenciamentoPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                      {hasActiveCred && (
+                        <Badge variant="default" className="ml-1 text-xs">
+                          {activeCred?.credential_code}
+                        </Badge>
+                      )}
                     </TableCell>
                     {canCredential && (
                       <TableCell>
@@ -366,7 +432,7 @@ export default function CredenciamentoPage() {
                               </AlertDialogContent>
                             </AlertDialog>
                           )}
-                          {isCredentialed && (
+                          {isCredentialed && !hasActiveCred && (
                             <Button
                               size="sm"
                               onClick={() => emitCredentialMutation.mutate(p.id)}
@@ -379,6 +445,32 @@ export default function CredenciamentoPage() {
                               )}
                               Emitir Credencial
                             </Button>
+                          )}
+                          {isCredentialed && hasActiveCred && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="outline" disabled={reissueMutation.isPending}>
+                                  <RefreshCw className="mr-1 h-3 w-3" />
+                                  Reemitir
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Reemitir credencial</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Reemitir credencial de <strong>{person?.full_name}</strong>?
+                                    A credencial atual ({activeCred?.credential_code}) será marcada como substituída
+                                    e uma nova será gerada com novo código e QR Code.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => reissueMutation.mutate(p.id)}>
+                                    Confirmar reemissão
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           )}
                         </div>
                       </TableCell>
