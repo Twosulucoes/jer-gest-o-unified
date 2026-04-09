@@ -239,14 +239,28 @@ export default function CredenciamentoPage() {
     return institutionMap.get(del.institution_id)?.name ?? "—";
   };
 
-  // --- Filter ---
-  const filtered = (participants ?? []).filter((p) => {
-    if (!searchTerm) return true;
-    const person = peopleMap.get(p.person_id);
-    if (!person) return false;
-    const term = searchTerm.toLowerCase();
-    return person.full_name.toLowerCase().includes(term) || (person.cpf && person.cpf.includes(term));
-  });
+  // --- Filter & Sort: actionable items first (ready_to_emit > awaiting > complete) ---
+  const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, complete: 2 };
+
+  const filtered = (participants ?? [])
+    .filter((p) => {
+      if (!searchTerm) return true;
+      const person = peopleMap.get(p.person_id);
+      if (!person) return false;
+      const term = searchTerm.toLowerCase();
+      return person.full_name.toLowerCase().includes(term) || (person.cpf && person.cpf.includes(term));
+    })
+    .sort((a, b) => {
+      const stateA = getParticipantState(a);
+      const stateB = getParticipantState(b);
+      const prioA = STATE_PRIORITY[stateA] ?? 9;
+      const prioB = STATE_PRIORITY[stateB] ?? 9;
+      if (prioA !== prioB) return prioA - prioB;
+      // Within same state, sort by name
+      const nameA = peopleMap.get(a.person_id)?.full_name ?? "";
+      const nameB = peopleMap.get(b.person_id)?.full_name ?? "";
+      return nameA.localeCompare(nameB);
+    });
 
   // --- Mutations ---
   const credentialMutation = useMutation({
