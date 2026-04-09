@@ -148,20 +148,34 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!matchId,
   });
 
+  // Teams for this sport event (for collective sports)
+  const sportEventId = match?.sport_event_id ?? phase?.sport_event_id;
+  const { data: teamsForSportEvent = [] } = useQuery({
+    queryKey: ["teams_for_match", sportEventId],
+    queryFn: async () => {
+      if (!sportEventId) return [];
+      const { data, error } = await supabase.from("teams").select("*").eq("sport_event_id", sportEventId).eq("status", "active").order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sportEventId,
+  });
+  const teamsMap = new Map(teamsForSportEvent.map((t: any) => [t.id, t]));
+
   // All PSEs for this sport event (for "add participant" dialog — confirmed only)
   const { data: availablePSE = [] } = useQuery({
-    queryKey: ["participant_sport_events_for_match", phase?.sport_event_id],
+    queryKey: ["participant_sport_events_for_match", sportEventId],
     queryFn: async () => {
-      if (!phase?.sport_event_id) return [];
+      if (!sportEventId) return [];
       const { data, error } = await supabase
         .from("participant_sport_events")
         .select("id, participant_id, status")
-        .eq("sport_event_id", phase.sport_event_id)
+        .eq("sport_event_id", sportEventId)
         .eq("status", "confirmed");
       if (error) throw error;
       return data;
     },
-    enabled: !!phase?.sport_event_id,
+    enabled: !!sportEventId,
   });
 
   // PSEs linked to entries (any status — for reliable name resolution)
