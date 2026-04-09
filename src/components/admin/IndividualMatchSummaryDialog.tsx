@@ -217,6 +217,36 @@ export default function IndividualMatchSummaryDialog({
             )}
           </section>
 
+          {/* Attempts */}
+          {attemptsData.length > 0 && (
+            <>
+              <Separator />
+              <section>
+                <h4 className="font-semibold mb-2 flex items-center gap-1.5"><Target className="h-4 w-4" />Tentativas</h4>
+                {entries.map((entry) => {
+                  const ea = attemptsData.filter((a: any) => a.match_entry_id === entry.id);
+                  if (ea.length === 0) return null;
+                  return (
+                    <div key={entry.id} className="mb-3">
+                      <h5 className="font-medium text-xs mb-1">{getEntryLabel(entry)}</h5>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                        {ea.map((a: any) => (
+                          <div key={a.id} className={`text-xs rounded border px-2 py-1 flex items-center gap-1.5 ${!a.is_valid ? "opacity-50 line-through" : ""}`}>
+                            <span className="font-mono font-bold">#{a.attempt_number}</span>
+                            {a.value_cm != null && <span>{formatDistanceCm(a.value_cm)}</span>}
+                            {a.value_ms != null && <span>{formatTimeMs(a.value_ms)}</span>}
+                            {a.value_points != null && <span>{a.value_points} pts</span>}
+                            {!a.is_valid && <Badge variant="destructive" className="text-[8px]">Inv.</Badge>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </section>
+            </>
+          )}
+
           {/* Officials */}
           {officials.length > 0 && (
             <>
