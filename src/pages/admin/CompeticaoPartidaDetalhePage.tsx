@@ -866,31 +866,40 @@ export default function CompeticaoPartidaDetalhePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  {/* Collective: score */}
-                  {(isTeamEntry || isCollective) && (
+                  {/* Score (collective or individual with score config) */}
+                  {(isTeamEntry || isCollective || showScore) && !((!isTeamEntry && !isCollective) && !showScore) && (
+                    showScore || isTeamEntry || isCollective) && (
                     <div>
                       <label className="text-xs text-muted-foreground">Placar</label>
                       <Input placeholder="Ex: 3x1" value={form.score} onChange={(e) => updateField("score", e.target.value)} />
                     </div>
                   )}
-                  {/* Individual fields */}
+                  {/* Adaptive individual fields */}
                   <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-muted-foreground">Posição</label>
-                      <Input type="number" placeholder="1" value={form.position} onChange={(e) => updateField("position", e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Pontos</label>
-                      <Input type="number" step="0.001" placeholder="0.000" value={form.points} onChange={(e) => updateField("points", e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Tempo (ms)</label>
-                      <Input type="number" placeholder="Milissegundos" value={form.time_ms} onChange={(e) => updateField("time_ms", e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Distância (cm)</label>
-                      <Input type="number" placeholder="Centímetros" value={form.distance_cm} onChange={(e) => updateField("distance_cm", e.target.value)} />
-                    </div>
+                    {showPosition && (
+                      <div>
+                        <label className="text-xs text-muted-foreground">Posição</label>
+                        <Input type="number" placeholder="1" value={form.position} onChange={(e) => updateField("position", e.target.value)} />
+                      </div>
+                    )}
+                    {showPoints && (
+                      <div>
+                        <label className="text-xs text-muted-foreground">Pontos</label>
+                        <Input type="number" step="0.001" placeholder="0.000" value={form.points} onChange={(e) => updateField("points", e.target.value)} />
+                      </div>
+                    )}
+                    {showTime && (
+                      <div>
+                        <label className="text-xs text-muted-foreground">Tempo (ms)</label>
+                        <Input type="number" placeholder="Milissegundos" value={form.time_ms} onChange={(e) => updateField("time_ms", e.target.value)} />
+                      </div>
+                    )}
+                    {showDistance && (
+                      <div>
+                        <label className="text-xs text-muted-foreground">Distância (cm)</label>
+                        <Input type="number" placeholder="Centímetros" value={form.distance_cm} onChange={(e) => updateField("distance_cm", e.target.value)} />
+                      </div>
+                    )}
                   </div>
                   {/* Free text + penalty */}
                   <div className="grid grid-cols-2 gap-2">
