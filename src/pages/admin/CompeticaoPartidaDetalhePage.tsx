@@ -727,6 +727,16 @@ export default function CompeticaoPartidaDetalhePage() {
         />
       )}
 
+      {/* Events / Timeline Card (collective only) */}
+      {isCollective && (
+        <MatchEventsCard
+          matchId={matchId!}
+          entries={entries.filter((e) => e.team_id).map((e) => ({ id: e.id, team_id: e.team_id, label: getEntryLabel(e) }))}
+          matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
+          canWrite={canWrite}
+        />
+      )}
+
       {/* Attachments Card (collective only) */}
       {isCollective && (
         <MatchAttachmentsCard
