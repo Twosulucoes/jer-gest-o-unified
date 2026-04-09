@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   ArrowRight,
   Info,
+  Tag,
 } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -51,6 +52,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
+import { SingleLabelDialog, BatchLabelsDialog } from "@/components/admin/CredentialLabelPrint";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -90,6 +92,8 @@ export default function CredenciamentoPage() {
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchProcessing, setBatchProcessing] = useState(false);
+  const [labelParticipantId, setLabelParticipantId] = useState<string | null>(null);
+  const [batchLabelIds, setBatchLabelIds] = useState<string[]>([]);
 
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
@@ -656,6 +660,21 @@ export default function CredenciamentoPage() {
                   Emitir {selectedReadyToEmit.length} em lote
                 </Button>
               )}
+              {(() => {
+                const selectedComplete = [...selectedIds].filter((id) => 
+                  filtered.find((p) => p.id === id && getParticipantState(p) === "complete")
+                );
+                return selectedComplete.length > 0 ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setBatchLabelIds(selectedComplete)}
+                  >
+                    <Tag className="mr-1.5 h-3.5 w-3.5" />
+                    Etiquetas ({selectedComplete.length})
+                  </Button>
+                ) : null;
+              })()}
             </div>
           )}
 
@@ -794,6 +813,10 @@ export default function CredenciamentoPage() {
                                 <Eye className="mr-1.5 h-3.5 w-3.5" />
                                 Ver / Imprimir
                               </Button>
+                              <Button size="sm" variant="outline" onClick={() => setLabelParticipantId(p.id)}>
+                                <Tag className="mr-1.5 h-3.5 w-3.5" />
+                                Etiqueta
+                              </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button size="sm" variant="ghost" disabled={reissueMutation.isPending}>
@@ -844,6 +867,25 @@ export default function CredenciamentoPage() {
           }}
           template={previewTemplate}
           participantId={previewParticipantId ?? undefined}
+        />
+      )}
+      {/* Single label dialog */}
+      {labelParticipantId && (
+        <SingleLabelDialog
+          open={!!labelParticipantId}
+          onOpenChange={(open) => { if (!open) setLabelParticipantId(null); }}
+          participantId={labelParticipantId}
+          eventId={selectedEventId}
+        />
+      )}
+
+      {/* Batch labels dialog */}
+      {batchLabelIds.length > 0 && (
+        <BatchLabelsDialog
+          open={batchLabelIds.length > 0}
+          onOpenChange={(open) => { if (!open) setBatchLabelIds([]); }}
+          participantIds={batchLabelIds}
+          eventId={selectedEventId}
         />
       )}
     </div>
