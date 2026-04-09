@@ -767,6 +767,19 @@ export default function CompeticaoPartidaDetalhePage() {
         />
       )}
 
+      {/* Attempts Card (individual with allows_attempts) */}
+      {!isCollective && individualConfig?.allows_attempts && (
+        <MatchAttemptsCard
+          matchId={matchId!}
+          entries={entries.map((e) => {
+            const pse = e.participant_sport_event_id ? pseMap.get(e.participant_sport_event_id) : null;
+            return { id: e.id, label: getEntryLabel(e), participantId: pse?.participant_id };
+          })}
+          individualConfig={individualConfig}
+          canWrite={canWrite}
+        />
+      )}
+
       {/* Results Card (individual / legacy) */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
