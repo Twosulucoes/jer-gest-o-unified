@@ -4,7 +4,7 @@ import type { IndividualConfig } from "./IndividualConfigEditor";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { CalendarDays, Clock, MapPin, Shield, Paperclip, Printer, User, Trophy } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Shield, Paperclip, Printer, User, Trophy, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface IndividualMatchSummaryDialogProps {
