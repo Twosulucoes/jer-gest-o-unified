@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,10 +16,12 @@ import {
   ArrowRight,
   Info,
   Tag,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
 } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -62,9 +64,10 @@ const TYPE_LABELS: Record<string, string> = {
   commission: "Comissão",
 };
 
-/** Generate adaptive field positions based on template dimensions */
+const PAGE_SIZE = 25;
+
 const buildDefaultFieldConfig = (w: number, h: number) => {
-  const cx = w / 2; // center x
+  const cx = w / 2;
   const photoW = Math.round(w * 0.20);
   const photoH = Math.round(photoW * 1.25);
   const photoY = Math.round(h * 0.22);
@@ -83,11 +86,17 @@ const buildDefaultFieldConfig = (w: number, h: number) => {
   };
 };
 
+type ParticipantState = "awaiting" | "ready_to_emit" | "complete";
+
 export default function CredenciamentoPage() {
   const queryClient = useQueryClient();
   const { hasRole, user } = useAuth();
   const [selectedEventId, setSelectedEventId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterState, setFilterState] = useState("all");
+  const [filterInstitution, setFilterInstitution] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [previewParticipantId, setPreviewParticipantId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -96,6 +105,10 @@ export default function CredenciamentoPage() {
   const [batchLabelIds, setBatchLabelIds] = useState<string[]>([]);
 
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
+
+  // Reset page on filter change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution]);
+  useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }, [selectedEventId]);
 
   // --- Events ---
   const { data: events = [] } = useQuery({
@@ -125,7 +138,6 @@ export default function CredenciamentoPage() {
     enabled: !!selectedEventId,
   });
 
-  // Auto-create default template only after query has fetched and returned null
   const createDefaultTemplateMutation = useMutation({
     mutationFn: async () => {
       const event = events.find((e) => e.id === selectedEventId);
@@ -247,8 +259,13 @@ export default function CredenciamentoPage() {
     return institutionMap.get(del.institution_id)?.name ?? "—";
   };
 
+  const getInstitutionId = (delegationId: string) => {
+    const del = delegationMap.get(delegationId);
+    return del?.institution_id ?? "";
+  };
+
   // --- Determine participant state ---
-  const getParticipantState = (p: { status: string; id: string }) => {
+  const getParticipantState = (p: { status: string; id: string }): ParticipantState => {
     const isCredentialed = p.status === "credentialed";
     const hasActiveCred = activeCredMap.has(p.id);
     if (!isCredentialed) return "awaiting";
@@ -256,28 +273,61 @@ export default function CredenciamentoPage() {
     return "complete";
   };
 
-  // --- Filter & Sort: actionable items first (ready_to_emit > awaiting > complete) ---
+  // --- Institution options for filter ---
+  const institutionOptions = useMemo(() => {
+    const opts = institutions.map((i) => ({ id: i.id, name: i.name }));
+    opts.sort((a, b) => a.name.localeCompare(b.name));
+    return opts;
+  }, [institutions]);
+
+  // --- Unique participant types ---
+  const participantTypeOptions = useMemo(() => {
+    const types = new Set(participants?.map((p) => p.participant_type) ?? []);
+    return [...types].sort();
+  }, [participants]);
+
+  // --- Filter & Sort ---
   const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, complete: 2 };
 
-  const filtered = (participants ?? [])
-    .filter((p) => {
-      if (!searchTerm) return true;
-      const person = peopleMap.get(p.person_id);
-      if (!person) return false;
-      const term = searchTerm.toLowerCase();
-      return person.full_name.toLowerCase().includes(term) || (person.cpf && person.cpf.includes(term));
-    })
-    .sort((a, b) => {
-      const stateA = getParticipantState(a);
-      const stateB = getParticipantState(b);
-      const prioA = STATE_PRIORITY[stateA] ?? 9;
-      const prioB = STATE_PRIORITY[stateB] ?? 9;
-      if (prioA !== prioB) return prioA - prioB;
-      // Within same state, sort by name
-      const nameA = peopleMap.get(a.person_id)?.full_name ?? "";
-      const nameB = peopleMap.get(b.person_id)?.full_name ?? "";
-      return nameA.localeCompare(nameB);
-    });
+  const filtered = useMemo(() => {
+    return (participants ?? [])
+      .filter((p) => {
+        // Search filter
+        if (searchTerm) {
+          const person = peopleMap.get(p.person_id);
+          if (!person) return false;
+          const term = searchTerm.toLowerCase();
+          if (!person.full_name.toLowerCase().includes(term) && !(person.cpf && person.cpf.includes(term))) return false;
+        }
+        // Type filter
+        if (filterType !== "all" && p.participant_type !== filterType) return false;
+        // State filter
+        if (filterState !== "all") {
+          const state = getParticipantState(p);
+          if (state !== filterState) return false;
+        }
+        // Institution filter
+        if (filterInstitution !== "all") {
+          const instId = getInstitutionId(p.delegation_id);
+          if (instId !== filterInstitution) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const stateA = getParticipantState(a);
+        const stateB = getParticipantState(b);
+        const prioA = STATE_PRIORITY[stateA] ?? 9;
+        const prioB = STATE_PRIORITY[stateB] ?? 9;
+        if (prioA !== prioB) return prioA - prioB;
+        const nameA = peopleMap.get(a.person_id)?.full_name ?? "";
+        const nameB = peopleMap.get(b.person_id)?.full_name ?? "";
+        return nameA.localeCompare(nameB);
+      });
+  }, [participants, searchTerm, filterType, filterState, filterInstitution, peopleMap, activeCredMap]);
+
+  // --- Pagination ---
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginatedItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // --- Mutations ---
   const credentialMutation = useMutation({
@@ -294,7 +344,7 @@ export default function CredenciamentoPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
-      toast.success("Participante credenciado! Agora você pode emitir a credencial.");
+      toast.success("Participante credenciado!");
     },
     onError: (err: Error) => toast.error(`Erro ao credenciar: ${err.message}`),
   });
@@ -303,7 +353,6 @@ export default function CredenciamentoPage() {
     mutationFn: async (participantId: string) => {
       const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
       const qrCodeValue = crypto.randomUUID();
-
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: participantId,
         event_id: selectedEventId,
@@ -320,11 +369,11 @@ export default function CredenciamentoPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
-      toast.success("Credencial emitida com sucesso! Clique em 'Ver' para visualizar ou imprimir.");
+      toast.success("Credencial emitida com sucesso!");
     },
     onError: (err: Error) => {
       if (err.message?.includes("uq_participant_event_active")) {
-        toast.error("Este participante já possui credencial ativa para este evento.");
+        toast.error("Este participante já possui credencial ativa.");
       } else {
         toast.error(`Erro ao emitir credencial: ${err.message}`);
       }
@@ -341,10 +390,8 @@ export default function CredenciamentoPage() {
           .eq("id", existing.id);
         if (revokeErr) throw revokeErr;
       }
-
       const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
       const qrCodeValue = crypto.randomUUID();
-
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: participantId,
         event_id: selectedEventId,
@@ -392,67 +439,64 @@ export default function CredenciamentoPage() {
     });
   };
 
-  const awaitingIds = filtered.filter((p) => getParticipantState(p) === "awaiting").map((p) => p.id);
-  const readyToEmitIds = filtered.filter((p) => getParticipantState(p) === "ready_to_emit").map((p) => p.id);
-
-  const selectedAwaiting = [...selectedIds].filter((id) => awaitingIds.includes(id));
-  const selectedReadyToEmit = [...selectedIds].filter((id) => readyToEmitIds.includes(id));
-
-  const toggleSelectAll = () => {
-    const allFilteredIds = filtered.map((p) => p.id);
-    const allSelected = allFilteredIds.every((id) => selectedIds.has(id));
+  const toggleSelectAllPage = () => {
+    const pageIds = paginatedItems.map((p) => p.id);
+    const allSelected = pageIds.every((id) => selectedIds.has(id));
     if (allSelected) {
-      setSelectedIds(new Set());
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageIds.forEach((id) => next.delete(id));
+        return next;
+      });
     } else {
-      setSelectedIds(new Set(allFilteredIds));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageIds.forEach((id) => next.add(id));
+        return next;
+      });
     }
   };
+
+  const awaitingIds = new Set(filtered.filter((p) => getParticipantState(p) === "awaiting").map((p) => p.id));
+  const readyToEmitIds = new Set(filtered.filter((p) => getParticipantState(p) === "ready_to_emit").map((p) => p.id));
+
+  const selectedAwaiting = [...selectedIds].filter((id) => awaitingIds.has(id));
+  const selectedReadyToEmit = [...selectedIds].filter((id) => readyToEmitIds.has(id));
+  const selectedComplete = [...selectedIds].filter((id) => {
+    const p = filtered.find((pp) => pp.id === id);
+    return p && getParticipantState(p) === "complete";
+  });
 
   const handleBatchCredential = async () => {
     if (selectedAwaiting.length === 0) return;
     setBatchProcessing(true);
-    let success = 0;
-    let errors = 0;
+    let success = 0, errors = 0;
     for (const id of selectedAwaiting) {
       const { error } = await supabase
         .from("participants")
-        .update({
-          status: "credentialed",
-          credentialed_at: new Date().toISOString(),
-          credentialed_by: user?.id,
-        })
+        .update({ status: "credentialed", credentialed_at: new Date().toISOString(), credentialed_by: user?.id })
         .eq("id", id);
-      if (error) errors++;
-      else success++;
+      if (error) errors++; else success++;
     }
     setBatchProcessing(false);
     setSelectedIds(new Set());
     queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
-    toast.success(`${success} participante(s) credenciado(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
+    toast.success(`${success} credenciado(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
   };
 
   const handleBatchEmit = async () => {
     if (selectedReadyToEmit.length === 0) return;
     setBatchProcessing(true);
-    let success = 0;
-    let errors = 0;
+    let success = 0, errors = 0;
     for (const id of selectedReadyToEmit) {
       const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
       const qrCodeValue = crypto.randomUUID();
       const { error } = await supabase.from("participant_credentials").insert({
-        participant_id: id,
-        event_id: selectedEventId,
-        credential_code: credentialCode,
-        qr_code_value: qrCodeValue,
-        status: "active",
-        binding_source: "manual",
-        issued_at: new Date().toISOString(),
-        activated_at: new Date().toISOString(),
-        issued_by: user?.id,
-        activated_by: user?.id,
+        participant_id: id, event_id: selectedEventId, credential_code: credentialCode, qr_code_value: qrCodeValue,
+        status: "active", binding_source: "manual", issued_at: new Date().toISOString(), activated_at: new Date().toISOString(),
+        issued_by: user?.id, activated_by: user?.id,
       });
-      if (error) errors++;
-      else success++;
+      if (error) errors++; else success++;
     }
     setBatchProcessing(false);
     setSelectedIds(new Set());
@@ -460,83 +504,59 @@ export default function CredenciamentoPage() {
     toast.success(`${success} credencial(is) emitida(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
   };
 
-
-
   const getStateInfo = (state: string) => {
     switch (state) {
       case "awaiting":
-        return {
-          label: "Aguardando credenciamento",
-          shortLabel: "Aguardando",
-          icon: <Clock className="h-3.5 w-3.5" />,
-          color: "text-yellow-600",
-          bgColor: "bg-yellow-50 border-yellow-200",
-          hint: "Clique em 'Credenciar' para registrar a conferência presencial",
-        };
+        return { label: "Aguardando", icon: <Clock className="h-3.5 w-3.5" />, variant: "outline" as const, className: "border-yellow-300 bg-yellow-50 text-yellow-700" };
       case "ready_to_emit":
-        return {
-          label: "Credenciado — aguardando emissão",
-          shortLabel: "Pronto p/ emissão",
-          icon: <CreditCard className="h-3.5 w-3.5" />,
-          color: "text-blue-600",
-          bgColor: "bg-blue-50 border-blue-200",
-          hint: "Clique em 'Emitir Credencial' para gerar o código e QR Code",
-        };
+        return { label: "Pronto p/ emissão", icon: <CreditCard className="h-3.5 w-3.5" />, variant: "outline" as const, className: "border-blue-300 bg-blue-50 text-blue-700" };
       case "complete":
-        return {
-          label: "Credencial ativa",
-          shortLabel: "Credencial ativa",
-          icon: <ShieldCheck className="h-3.5 w-3.5" />,
-          color: "text-green-600",
-          bgColor: "bg-green-50 border-green-200",
-          hint: "Credencial emitida — visualize, imprima ou reemita se necessário",
-        };
+        return { label: "Credencial ativa", icon: <ShieldCheck className="h-3.5 w-3.5" />, variant: "outline" as const, className: "border-green-300 bg-green-50 text-green-700" };
       default:
-        return { label: "—", shortLabel: "—", icon: null, color: "", bgColor: "", hint: "" };
+        return { label: "—", icon: null, variant: "outline" as const, className: "" };
     }
   };
 
+  const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "";
+
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-5">
       {/* Header */}
       <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Credenciamento e Emissão de Credencial</h1>
+        <h1 className="font-heading text-2xl font-bold text-foreground">Credenciamento</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Registre a presença do participante, emita e gerencie credenciais visuais com QR Code.
+          Registre presença, emita e gerencie credenciais.
         </p>
       </div>
 
       {/* Flow guide */}
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3">
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5">
         <Info className="h-4 w-4 text-muted-foreground shrink-0" />
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           <span className="font-medium text-foreground">Fluxo:</span>
-          <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-yellow-500" />
-            Participante importado
-          </span>
+          <Badge variant="outline" className="border-yellow-300 bg-yellow-50 text-yellow-700 text-[10px] gap-1">
+            <Clock className="h-3 w-3" /> Importado
+          </Badge>
           <ArrowRight className="h-3 w-3" />
-          <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-blue-500" />
-            Credenciado (conferência presencial)
-          </span>
+          <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700 text-[10px] gap-1">
+            <CreditCard className="h-3 w-3" /> Credenciado
+          </Badge>
           <ArrowRight className="h-3 w-3" />
-          <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-green-500" />
-            Credencial emitida (QR Code + código)
-          </span>
+          <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700 text-[10px] gap-1">
+            <ShieldCheck className="h-3 w-3" /> Credencial emitida
+          </Badge>
         </div>
       </div>
 
-      {/* Event selection + search */}
+      {/* Event selection */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">1. Selecione o evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setSelectedIds(new Set()); }}>
+        <CardContent className="pt-5 pb-5">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Evento</label>
+              <Select value={selectedEventId} onValueChange={setSelectedEventId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Escolha o evento..." />
+                  <SelectValue placeholder="Selecione o evento..." />
                 </SelectTrigger>
                 <SelectContent>
                   {events.map((e) => (
@@ -547,8 +567,8 @@ export default function CredenciamentoPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-foreground">2. Busque o participante por nome ou CPF</label>
+            <div className="space-y-1.5 md:col-span-3">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Busca por nome ou CPF</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -561,6 +581,60 @@ export default function CredenciamentoPage() {
               </div>
             </div>
           </div>
+
+          {/* Additional filters */}
+          {selectedEventId && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                  <Filter className="h-3 w-3" /> Tipo
+                </label>
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os tipos</SelectItem>
+                    {participantTypeOptions.map((t) => (
+                      <SelectItem key={t} value={t}>{TYPE_LABELS[t] ?? t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                  <Filter className="h-3 w-3" /> Situação
+                </label>
+                <Select value={filterState} onValueChange={setFilterState}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as situações</SelectItem>
+                    <SelectItem value="awaiting">Aguardando credenciamento</SelectItem>
+                    <SelectItem value="ready_to_emit">Pronto p/ emissão</SelectItem>
+                    <SelectItem value="complete">Credencial ativa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                  <Filter className="h-3 w-3" /> Instituição
+                </label>
+                <Select value={filterInstitution} onValueChange={setFilterInstitution}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as instituições</SelectItem>
+                    {institutionOptions.map((i) => (
+                      <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -568,33 +642,33 @@ export default function CredenciamentoPage() {
       {selectedEventId && participants && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <Card>
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">Participantes no evento</p>
-              <p className="text-2xl font-bold text-foreground">{participants.length}</p>
+            <CardContent className="pt-3 pb-3 px-4">
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Total</p>
+              <p className="text-xl font-bold text-foreground">{participants.length}</p>
             </CardContent>
           </Card>
           <Card className="border-yellow-200">
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">Aguardando credenciamento</p>
-              <p className="text-2xl font-bold text-yellow-600">{confirmedCount}</p>
+            <CardContent className="pt-3 pb-3 px-4">
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Aguardando</p>
+              <p className="text-xl font-bold text-yellow-600">{confirmedCount}</p>
             </CardContent>
           </Card>
           <Card className="border-blue-200">
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">Credenciados (sem credencial)</p>
-              <p className="text-2xl font-bold text-blue-600">{pendingEmission > 0 ? pendingEmission : 0}</p>
+            <CardContent className="pt-3 pb-3 px-4">
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Sem credencial</p>
+              <p className="text-xl font-bold text-blue-600">{pendingEmission > 0 ? pendingEmission : 0}</p>
             </CardContent>
           </Card>
           <Card className="border-green-200">
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">Credenciais emitidas</p>
-              <p className="text-2xl font-bold text-green-600">{credentialsEmittedCount}</p>
+            <CardContent className="pt-3 pb-3 px-4">
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Emitidas</p>
+              <p className="text-xl font-bold text-green-600">{credentialsEmittedCount}</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">Progresso geral</p>
-              <p className="text-2xl font-bold text-primary">
+            <CardContent className="pt-3 pb-3 px-4">
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Progresso</p>
+              <p className="text-xl font-bold text-primary">
                 {participants.length > 0 ? `${Math.round((credentialsEmittedCount / participants.length) * 100)}%` : "—"}
               </p>
             </CardContent>
@@ -602,12 +676,11 @@ export default function CredenciamentoPage() {
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty / Loading states */}
       {!selectedEventId ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <UserCheck className="h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground font-medium">Selecione um evento para começar</p>
-          <p className="text-sm text-muted-foreground mt-1">Escolha o evento no seletor acima para visualizar os participantes e operar o credenciamento.</p>
         </div>
       ) : isLoading ? (
         <div className="space-y-3">
@@ -620,63 +693,54 @@ export default function CredenciamentoPage() {
           <XCircle className="h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground font-medium">Nenhum participante encontrado</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {searchTerm
-              ? "Nenhum participante corresponde à busca. Tente outro nome ou CPF."
-              : "Nenhum participante importado para este evento. Use o módulo de Importação primeiro."}
+            {hasActiveFilters
+              ? "Nenhum resultado para os filtros aplicados. Tente ajustar os filtros."
+              : "Nenhum participante importado para este evento."}
           </p>
+          {hasActiveFilters && (
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }}>
+              Limpar filtros
+            </Button>
+          )}
         </div>
       ) : (
         <>
           {/* Batch action bar */}
           {canCredential && selectedIds.size > 0 && (
-            <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+            <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 flex-wrap">
               <span className="text-sm font-medium text-foreground">
                 {selectedIds.size} selecionado(s)
               </span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setSelectedIds(new Set())}
-              >
-                Limpar seleção
+              <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())}>
+                Limpar
               </Button>
               {selectedAwaiting.length > 0 && (
-                <Button
-                  size="sm"
-                  onClick={handleBatchCredential}
-                  disabled={batchProcessing}
-                >
+                <Button size="sm" onClick={handleBatchCredential} disabled={batchProcessing}>
                   {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
-                  Credenciar {selectedAwaiting.length} em lote
+                  Credenciar ({selectedAwaiting.length})
                 </Button>
               )}
               {selectedReadyToEmit.length > 0 && (
-                <Button
-                  size="sm"
-                  onClick={handleBatchEmit}
-                  disabled={batchProcessing}
-                >
+                <Button size="sm" onClick={handleBatchEmit} disabled={batchProcessing}>
                   {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CreditCard className="mr-1.5 h-3.5 w-3.5" />}
-                  Emitir {selectedReadyToEmit.length} em lote
+                  Emitir ({selectedReadyToEmit.length})
                 </Button>
               )}
-              {(() => {
-                const selectedComplete = [...selectedIds].filter((id) => 
-                  filtered.find((p) => p.id === id && getParticipantState(p) === "complete")
-                );
-                return selectedComplete.length > 0 ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setBatchLabelIds(selectedComplete)}
-                  >
-                    <Tag className="mr-1.5 h-3.5 w-3.5" />
-                    Etiquetas ({selectedComplete.length})
-                  </Button>
-                ) : null;
-              })()}
+              {selectedComplete.length > 0 && (
+                <Button size="sm" variant="outline" onClick={() => setBatchLabelIds(selectedComplete)}>
+                  <Tag className="mr-1.5 h-3.5 w-3.5" />
+                  Etiquetas ({selectedComplete.length})
+                </Button>
+              )}
             </div>
           )}
+
+          {/* Results info + pagination top */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {filtered.length} resultado(s){hasActiveFilters ? " (filtrado)" : ""} — página {currentPage} de {totalPages}
+            </p>
+          </div>
 
           <div className="rounded-lg border bg-card overflow-x-auto">
             <Table>
@@ -685,8 +749,8 @@ export default function CredenciamentoPage() {
                   {canCredential && (
                     <TableHead className="w-10">
                       <Checkbox
-                        checked={filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id))}
-                        onCheckedChange={toggleSelectAll}
+                        checked={paginatedItems.length > 0 && paginatedItems.every((p) => selectedIds.has(p.id))}
+                        onCheckedChange={toggleSelectAllPage}
                       />
                     </TableHead>
                   )}
@@ -695,163 +759,204 @@ export default function CredenciamentoPage() {
                   <TableHead className="hidden lg:table-cell">Instituição</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Situação</TableHead>
-                  {canCredential && <TableHead>Próxima ação</TableHead>}
+                  {canCredential && <TableHead className="text-right">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
-            <TableBody>
-              {filtered.map((p) => {
-                const person = peopleMap.get(p.person_id);
-                const state = getParticipantState(p);
-                const stateInfo = getStateInfo(state);
-                const activeCred = activeCredMap.get(p.id);
+              <TableBody>
+                {paginatedItems.map((p) => {
+                  const person = peopleMap.get(p.person_id);
+                  const state = getParticipantState(p);
+                  const stateInfo = getStateInfo(state);
+                  const activeCred = activeCredMap.get(p.id);
 
-                return (
-                  <TableRow key={p.id} data-state={selectedIds.has(p.id) ? "selected" : undefined}>
-                    {canCredential && (
-                      <TableCell className="w-10">
-                        <Checkbox
-                          checked={selectedIds.has(p.id)}
-                          onCheckedChange={() => toggleSelected(p.id)}
-                        />
-                      </TableCell>
-                    )}
-                    <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground font-mono text-xs">
-                      {person?.cpf ?? "—"}
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">
-                      {getInstitutionName(p.delegation_id)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {TYPE_LABELS[p.participant_type] ?? p.participant_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${stateInfo.color}`}>
-                          {stateInfo.icon}
-                          {stateInfo.shortLabel}
-                        </span>
-                        {activeCred && (
-                          <span className="text-[11px] font-mono text-muted-foreground">
-                            Código: {activeCred.credential_code}
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    {canCredential && (
+                  return (
+                    <TableRow key={p.id} data-state={selectedIds.has(p.id) ? "selected" : undefined}>
+                      {canCredential && (
+                        <TableCell className="w-10">
+                          <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelected(p.id)} />
+                        </TableCell>
+                      )}
                       <TableCell>
-                        <div className="flex gap-1.5 flex-wrap">
-                          {/* State 1: Aguardando → Credenciar */}
-                          {state === "awaiting" && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="sm" disabled={credentialMutation.isPending}>
-                                  <UserCheck className="mr-1.5 h-3.5 w-3.5" />
-                                  Credenciar
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Credenciar participante</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Confirma que <strong>{person?.full_name}</strong> se apresentou presencialmente e foi conferido?
-                                    <br /><br />
-                                    <span className="text-xs text-muted-foreground">
-                                      Após credenciar, o próximo passo será emitir a credencial com QR Code.
-                                    </span>
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => credentialMutation.mutate(p.id)}>
-                                    Sim, credenciar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                        <div>
+                          <span className="font-medium text-sm">{person?.full_name ?? "—"}</span>
+                          {activeCred && (
+                            <span className="block text-[10px] font-mono text-muted-foreground mt-0.5">
+                              {activeCred.credential_code}
+                            </span>
                           )}
-
-                          {/* State 2: Credenciado → Emitir Credencial */}
-                          {state === "ready_to_emit" && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="sm" disabled={emitCredentialMutation.isPending}>
-                                  {emitCredentialMutation.isPending ? (
-                                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                                  ) : (
-                                    <CreditCard className="mr-1.5 h-3.5 w-3.5" />
-                                  )}
-                                  Emitir Credencial
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Emitir credencial</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Emitir credencial para <strong>{person?.full_name}</strong>?
-                                    <br /><br />
-                                    Será gerado um código único e um QR Code para uso durante o evento.
-                                    Após a emissão, você poderá visualizar e imprimir a credencial.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => emitCredentialMutation.mutate(p.id)}>
-                                    Emitir agora
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-
-                          {/* State 3: Credencial emitida → Ver + Reemitir */}
-                          {state === "complete" && (
-                            <>
-                              <Button size="sm" variant="outline" onClick={() => handleOpenPreview(p.id)}>
-                                <Eye className="mr-1.5 h-3.5 w-3.5" />
-                                Ver / Imprimir
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => setLabelParticipantId(p.id)}>
-                                <Tag className="mr-1.5 h-3.5 w-3.5" />
-                                Etiqueta
-                              </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground font-mono text-xs">
+                        {person?.cpf ?? "—"}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
+                        {getInstitutionName(p.delegation_id)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px]">
+                          {TYPE_LABELS[p.participant_type] ?? p.participant_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={stateInfo.variant} className={`text-[10px] gap-1 ${stateInfo.className}`}>
+                          {stateInfo.icon}
+                          {stateInfo.label}
+                        </Badge>
+                      </TableCell>
+                      {canCredential && (
+                        <TableCell>
+                          <div className="flex gap-1.5 justify-end flex-wrap">
+                            {state === "awaiting" && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button size="sm" variant="ghost" disabled={reissueMutation.isPending}>
-                                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                                    2ª Via
+                                  <Button size="sm" className="h-7 text-xs" disabled={credentialMutation.isPending}>
+                                    <UserCheck className="mr-1 h-3 w-3" />
+                                    Credenciar
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Emitir segunda via</AlertDialogTitle>
+                                    <AlertDialogTitle>Credenciar participante</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Reemitir credencial de <strong>{person?.full_name}</strong>?
-                                      <br /><br />
-                                      A credencial atual (<code className="text-xs bg-muted px-1 rounded">{activeCred?.credential_code}</code>) será <strong>invalidada permanentemente</strong> e uma nova será gerada com novo código e QR Code.
+                                      Confirma que <strong>{person?.full_name}</strong> se apresentou presencialmente?
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => reissueMutation.mutate(p.id)}>
-                                      Confirmar segunda via
+                                    <AlertDialogAction onClick={() => credentialMutation.mutate(p.id)}>
+                                      Sim, credenciar
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
+                            )}
+
+                            {state === "ready_to_emit" && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="sm" className="h-7 text-xs" disabled={emitCredentialMutation.isPending}>
+                                    {emitCredentialMutation.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CreditCard className="mr-1 h-3 w-3" />}
+                                    Emitir Credencial
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Emitir credencial</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Emitir credencial para <strong>{person?.full_name}</strong>? Será gerado um código único e QR Code.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => emitCredentialMutation.mutate(p.id)}>
+                                      Emitir agora
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+
+                            {state === "complete" && (
+                              <>
+                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleOpenPreview(p.id)}>
+                                  <Eye className="mr-1 h-3 w-3" />
+                                  Ver
+                                </Button>
+                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setLabelParticipantId(p.id)}>
+                                  <Tag className="mr-1 h-3 w-3" />
+                                  Etiqueta
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button size="sm" variant="ghost" className="h-7 text-xs" disabled={reissueMutation.isPending}>
+                                      <RefreshCw className="mr-1 h-3 w-3" />
+                                      2ª Via
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Emitir segunda via</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Reemitir credencial de <strong>{person?.full_name}</strong>?
+                                        <br /><br />
+                                        A credencial atual (<code className="text-xs bg-muted px-1 rounded">{activeCred?.credential_code}</code>) será <strong>invalidada</strong> e uma nova será gerada.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => reissueMutation.mutate(p.id)}>
+                                        Confirmar segunda via
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
             </Table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-1">
+              <p className="text-xs text-muted-foreground">
+                Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} de {filtered.length}
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((page) => {
+                    if (totalPages <= 7) return true;
+                    if (page === 1 || page === totalPages) return true;
+                    if (Math.abs(page - currentPage) <= 1) return true;
+                    return false;
+                  })
+                  .reduce<(number | "ellipsis")[]>((acc, page, idx, arr) => {
+                    if (idx > 0 && page - (arr[idx - 1] as number) > 1) acc.push("ellipsis");
+                    acc.push(page);
+                    return acc;
+                  }, [])
+                  .map((item, idx) =>
+                    item === "ellipsis" ? (
+                      <span key={`e-${idx}`} className="px-1 text-muted-foreground text-xs">…</span>
+                    ) : (
+                      <Button
+                        key={item}
+                        variant={currentPage === item ? "default" : "outline"}
+                        size="sm"
+                        className="h-8 w-8 p-0 text-xs"
+                        onClick={() => setCurrentPage(item as number)}
+                      >
+                        {item}
+                      </Button>
+                    )
+                  )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -860,10 +965,7 @@ export default function CredenciamentoPage() {
         <CredentialPreviewDialog
           open={!!previewParticipantId}
           onOpenChange={(open) => {
-            if (!open) {
-              setPreviewParticipantId(null);
-              setPreviewTemplate(null);
-            }
+            if (!open) { setPreviewParticipantId(null); setPreviewTemplate(null); }
           }}
           template={previewTemplate}
           participantId={previewParticipantId ?? undefined}
@@ -878,7 +980,6 @@ export default function CredenciamentoPage() {
           eventId={selectedEventId}
         />
       )}
-
       {/* Batch labels dialog */}
       {batchLabelIds.length > 0 && (
         <BatchLabelsDialog
