@@ -19,6 +19,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
+import CollectiveScoreForm, { type ScoreEntry } from "@/components/admin/CollectiveScoreForm";
+import type { MatchConfig } from "@/components/admin/MatchConfigEditor";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
@@ -101,6 +103,7 @@ export default function CompeticaoPartidaDetalhePage() {
   const [resultNotes, setResultNotes] = useState("");
   const [confirmRemoveEntryId, setConfirmRemoveEntryId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"validate" | "publish" | "unpublish" | null>(null);
+  const [collectiveScoreOpen, setCollectiveScoreOpen] = useState(false);
 
   // Fetch match
   const { data: match, isLoading } = useQuery({
@@ -206,7 +209,18 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!matchId,
   });
 
-  // Teams for this sport event (for collective sports)
+  // Match scores for collective sports
+  const { data: matchScores = [] } = useQuery({
+    queryKey: ["match_scores", matchId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("match_scores" as any).select("*").eq("match_id", matchId!);
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!matchId && isCollective,
+  });
+
+
   const sportEventId = match?.sport_event_id ?? phase?.sport_event_id;
   const { data: teamsForSportEvent = [] } = useQuery({
     queryKey: ["teams_for_match", sportEventId],
@@ -442,6 +456,31 @@ export default function CompeticaoPartidaDetalhePage() {
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
+  // Collective score mutation
+  const saveCollectiveScoreMut = useMutation({
+    mutationFn: async ({ scores, notes }: { scores: ScoreEntry[]; notes: string }) => {
+      const upserts = scores.map((s) => {
+        const existing = matchScores.find((ms: any) => ms.match_entry_id === s.match_entry_id);
+        return {
+          ...(existing ? { id: existing.id } : {}),
+          match_id: matchId!,
+          match_entry_id: s.match_entry_id,
+          score_final: s.score_final || null,
+          score_detail: s.score_detail,
+          outcome: s.outcome || null,
+        };
+      });
+      const { error } = await supabase.from("match_scores" as any).upsert(upserts, { onConflict: "match_entry_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["match_scores", matchId] });
+      toast.success("Placar salvo com sucesso");
+      setCollectiveScoreOpen(false);
+    },
+    onError: (e: Error) => toast.error("Erro ao salvar placar: " + e.message),
+  });
+
   const openResultDialog = () => {
     const form: Record<string, ResultFormEntry> = {};
     entries.forEach((entry) => {
@@ -571,7 +610,67 @@ export default function CompeticaoPartidaDetalhePage() {
         </CardContent>
       </Card>
 
-      {/* Results Card */}
+      {/* Collective Score Card */}
+      {isCollective && (
+        <Card>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Placar coletivo</CardTitle>
+            {canWrite && entries.length >= 2 && (
+              <Button size="sm" variant="outline" onClick={() => setCollectiveScoreOpen(true)}>
+                <ClipboardList className="mr-2 h-4 w-4" />{matchScores.length > 0 ? "Editar placar" : "Lançar placar"}
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {matchScores.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Nenhum placar lançado ainda.</p>
+            ) : (
+              <div className="space-y-2">
+                {entries.map((entry) => {
+                  const ms = matchScores.find((s: any) => s.match_entry_id === entry.id);
+                  if (!ms) return null;
+                  const outcomeLabel = ms.outcome ? (OUTCOME_LABEL[ms.outcome] ?? ms.outcome) : null;
+                  return (
+                    <div key={entry.id} className="flex items-center justify-between rounded-lg border p-3">
+                      <span className="font-medium text-sm">{getEntryLabel(entry)}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-bold font-mono">{ms.score_final ?? "—"}</span>
+                        {outcomeLabel && <Badge variant="outline" className="text-xs">{outcomeLabel}</Badge>}
+                        {ms.score_detail && (
+                          <span className="text-xs text-muted-foreground">
+                            ({Object.entries(ms.score_detail as Record<string, string>).map(([k, v]) => `${v}`).join(" / ")})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Collective Score Dialog */}
+      {isCollective && (
+        <Dialog open={collectiveScoreOpen} onOpenChange={setCollectiveScoreOpen}>
+          <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Lançar placar</DialogTitle>
+              <DialogDescription>Registre o placar de cada equipe nesta partida.</DialogDescription>
+            </DialogHeader>
+            <CollectiveScoreForm
+              matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
+              entries={entries.map((e) => ({ id: e.id, label: getEntryLabel(e) }))}
+              existingScores={matchScores}
+              onSubmit={(scores, notes) => saveCollectiveScoreMut.mutate({ scores, notes })}
+              isPending={saveCollectiveScoreMut.isPending}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Results Card (individual / legacy) */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-base">Resultado interno</CardTitle>

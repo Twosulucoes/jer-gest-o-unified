@@ -825,6 +825,54 @@ export type Database = {
           },
         ]
       }
+      match_scores: {
+        Row: {
+          created_at: string
+          id: string
+          match_entry_id: string
+          match_id: string
+          outcome: string | null
+          score_detail: Json | null
+          score_final: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_entry_id: string
+          match_id: string
+          outcome?: string | null
+          score_detail?: Json | null
+          score_final?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_entry_id?: string
+          match_id?: string
+          outcome?: string | null
+          score_detail?: Json | null
+          score_final?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_scores_match_entry_id_fkey"
+            columns: ["match_entry_id"]
+            isOneToOne: true
+            referencedRelation: "competition_match_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_scores_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_consumptions: {
         Row: {
           consumed_at: string
@@ -1318,6 +1366,7 @@ export type Database = {
           id: string
           is_collective: boolean
           is_paralympic: boolean
+          match_config: Json
           name: string
           slug: string
           updated_at: string
@@ -1328,6 +1377,7 @@ export type Database = {
           id?: string
           is_collective?: boolean
           is_paralympic?: boolean
+          match_config?: Json
           name: string
           slug: string
           updated_at?: string
@@ -1338,6 +1388,7 @@ export type Database = {
           id?: string
           is_collective?: boolean
           is_paralympic?: boolean
+          match_config?: Json
           name?: string
           slug?: string
           updated_at?: string

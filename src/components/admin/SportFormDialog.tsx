@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
+import MatchConfigEditor, { type MatchConfig } from "./MatchConfigEditor";
 
 const sportSchema = z.object({
   event_id: z.string().min(1, "Selecione um evento"),
@@ -40,6 +41,7 @@ const sportSchema = z.object({
     .regex(/^[a-z0-9-]+$/, "Apenas letras minúsculas, números e hífens"),
   is_collective: z.boolean(),
   is_paralympic: z.boolean(),
+  match_config: z.any().optional(),
 });
 
 export type SportFormValues = z.infer<typeof sportSchema>;
@@ -71,8 +73,11 @@ export default function SportFormDialog({
       slug: "",
       is_collective: false,
       is_paralympic: false,
+      match_config: {},
     },
   });
+
+  const isCollective = form.watch("is_collective");
 
   useEffect(() => {
     if (sport) {
@@ -82,6 +87,7 @@ export default function SportFormDialog({
         slug: sport.slug,
         is_collective: sport.is_collective,
         is_paralympic: sport.is_paralympic,
+        match_config: (sport as any).match_config ?? {},
       });
     } else {
       form.reset({
@@ -90,6 +96,7 @@ export default function SportFormDialog({
         slug: "",
         is_collective: false,
         is_paralympic: false,
+        match_config: {},
       });
     }
   }, [sport, events, form]);
@@ -109,7 +116,7 @@ export default function SportFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[540px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Editar Modalidade" : "Nova Modalidade"}
@@ -223,6 +230,23 @@ export default function SportFormDialog({
                 )}
               />
             </div>
+
+            {isCollective && (
+              <FormField
+                control={form.control}
+                name="match_config"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <MatchConfigEditor
+                        value={(field.value as MatchConfig) ?? {}}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
 
             <DialogFooter>
               <Button
