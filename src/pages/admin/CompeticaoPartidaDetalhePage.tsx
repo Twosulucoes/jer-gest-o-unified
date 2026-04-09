@@ -47,7 +47,7 @@ export default function CompeticaoPartidaDetalhePage() {
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addEntryOpen, setAddEntryOpen] = useState(false);
-  const [addEntryMode, setAddEntryMode] = useState<"individual" | "team">("individual");
+  const [addEntryType, setAddEntryType] = useState<"individual" | "team">("individual");
   const [selectedPSEId, setSelectedPSEId] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
