@@ -15,8 +15,9 @@ import {
   ShieldCheck,
   ArrowRight,
   Info,
-  CheckSquare,
 } from "lucide-react";
+
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
