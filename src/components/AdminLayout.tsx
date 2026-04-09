@@ -29,6 +29,7 @@ import {
   CalendarDays,
   Layers,
   UsersRound,
+  IdCard,
 } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
