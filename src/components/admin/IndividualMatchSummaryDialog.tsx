@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { IndividualConfig } from "./IndividualConfigEditor";
+import { computeIndividualRanking, getPrimaryRankField, formatRankValue } from "@/lib/individualRanking";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CalendarDays, Clock, MapPin, Shield, Paperclip, Printer, User, Trophy, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
