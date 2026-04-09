@@ -232,6 +232,46 @@ export default function IndividualMatchSummaryDialog({
             )}
           </section>
 
+          {/* Ranking */}
+          {hasRanking && (
+            <>
+              <Separator />
+              <section>
+                <h4 className="font-semibold mb-2 flex items-center gap-1.5">
+                  <Trophy className="h-4 w-4" />Classificação{isHeat ? " da Bateria" : ""}
+                  {rankField && <Badge variant="outline" className="text-[10px] ml-2">Por {RANK_FIELD_LABEL[rankField] ?? rankField}</Badge>}
+                </h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12 p-2">#</TableHead>
+                      <TableHead className="p-2">Atleta</TableHead>
+                      {rankField && rankField !== "score" && <TableHead className="p-2 text-right">{RANK_FIELD_LABEL[rankField]}</TableHead>}
+                      <TableHead className="p-2 w-24">Origem</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ranked.map((item) => (
+                      <TableRow key={item.entryId} className={item.excluded ? "opacity-50" : ""}>
+                        <TableCell className="font-mono font-bold p-2">
+                          {item.excluded ? "—" : item.position != null ? `${item.position}º` : "—"}
+                        </TableCell>
+                        <TableCell className="p-2 font-medium">{item.label}</TableCell>
+                        {rankField && rankField !== "score" && (
+                          <TableCell className="p-2 text-right font-mono">{formatRankValue(item.rankValue, item.rankField)}</TableCell>
+                        )}
+                        <TableCell className="p-2">
+                          {item.source && <Badge variant="outline" className="text-[8px]">{SOURCE_LABEL[item.source] ?? item.source}</Badge>}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {isHeat && <p className="text-[10px] text-muted-foreground mt-1 italic">Classificação desta bateria/série.</p>}
+              </section>
+            </>
+          )}
+
           {/* Attempts */}
           {attemptsData.length > 0 && (
             <>
