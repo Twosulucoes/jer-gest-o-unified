@@ -477,6 +477,7 @@ export default function CredenciamentoPage() {
                     )}
                   </TableRow>
                 );
+              })}
             </TableBody>
           </Table>
         </div>
