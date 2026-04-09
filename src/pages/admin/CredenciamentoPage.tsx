@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,7 @@ import {
   CreditCard,
   XCircle,
   RefreshCw,
+  Eye,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Pendente", variant: "outline" },
@@ -50,11 +52,23 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
   credentialed: { label: "Credenciado", variant: "default" },
 };
 
+const DEFAULT_FIELD_CONFIG = {
+  photo: { x: 240, y: 280, width: 120, height: 150, visible: true },
+  full_name: { x: 300, y: 470, fontSize: 20, fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: 480, visible: true },
+  participant_type: { x: 300, y: 500, fontSize: 13, fontColor: "#555555", align: "center", maxWidth: 400, visible: true },
+  sport_event: { x: 300, y: 530, fontSize: 14, fontColor: "#333333", align: "center", maxWidth: 400, visible: true },
+  institution: { x: 300, y: 560, fontSize: 12, fontColor: "#444444", align: "center", maxWidth: 440, visible: true },
+  credential_code: { x: 300, y: 610, fontSize: 14, fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: 300, visible: true },
+  qr_code: { x: 245, y: 650, width: 110, height: 110, visible: true },
+};
+
 export default function CredenciamentoPage() {
   const queryClient = useQueryClient();
   const { hasRole, user } = useAuth();
   const [selectedEventId, setSelectedEventId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [previewParticipantId, setPreviewParticipantId] = useState<string | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<any>(null);
 
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
@@ -66,6 +80,58 @@ export default function CredenciamentoPage() {
       return data;
     },
   });
+
+  // Auto-ensure a default template exists for the selected event
+  const { data: eventTemplate } = useQuery({
+    queryKey: ["event-default-template", selectedEventId],
+    queryFn: async () => {
+      if (!selectedEventId) return null;
+      // Check for any active template
+      const { data, error } = await supabase
+        .from("credential_templates")
+        .select("*")
+        .eq("event_id", selectedEventId)
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedEventId,
+  });
+
+  // Create default template if none exists
+  const createDefaultTemplateMutation = useMutation({
+    mutationFn: async () => {
+      const event = events.find((e) => e.id === selectedEventId);
+      const { data, error } = await supabase
+        .from("credential_templates")
+        .insert({
+          event_id: selectedEventId,
+          name: `Modelo Padrão — ${event?.name ?? "Evento"}`,
+          width: 600,
+          height: 800,
+          is_active: true,
+          background_url: null,
+          field_config: JSON.parse(JSON.stringify(DEFAULT_FIELD_CONFIG)),
+          notes: "Modelo padrão gerado automaticamente pelo sistema. Substitua a arte de fundo quando desejar.",
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-default-template", selectedEventId] });
+      queryClient.invalidateQueries({ queryKey: ["credential-templates"] });
+    },
+  });
+
+  useEffect(() => {
+    if (selectedEventId && eventTemplate === null && !createDefaultTemplateMutation.isPending) {
+      createDefaultTemplateMutation.mutate();
+    }
+  }, [selectedEventId, eventTemplate]);
 
   const { data: participants, isLoading } = useQuery({
     queryKey: ["credenciamento-participants", selectedEventId],
@@ -84,7 +150,6 @@ export default function CredenciamentoPage() {
     enabled: !!selectedEventId,
   });
 
-  // Load active credentials for participants
   const { data: activeCredentials = [] } = useQuery({
     queryKey: ["credenciamento-credentials", selectedEventId],
     queryFn: async () => {
@@ -102,7 +167,6 @@ export default function CredenciamentoPage() {
 
   const activeCredMap = new Map(activeCredentials.map((c) => [c.participant_id, c]));
 
-  // Load people and delegations for display
   const personIds = participants?.map((p) => p.person_id) ?? [];
   const delegationIds = [...new Set(participants?.map((p) => p.delegation_id) ?? [])];
 
@@ -156,7 +220,6 @@ export default function CredenciamentoPage() {
     return institutionMap.get(del.institution_id)?.name ?? "—";
   };
 
-  // Filter participants
   const filtered = (participants ?? []).filter((p) => {
     if (!searchTerm) return true;
     const person = peopleMap.get(p.person_id);
@@ -223,7 +286,6 @@ export default function CredenciamentoPage() {
 
   const reissueMutation = useMutation({
     mutationFn: async (participantId: string) => {
-      // 1. Mark existing active credential as 'reissued'
       const existing = activeCredMap.get(participantId);
       if (existing) {
         const { error: revokeErr } = await supabase
@@ -233,7 +295,6 @@ export default function CredenciamentoPage() {
         if (revokeErr) throw revokeErr;
       }
 
-      // 2. Create new credential
       const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
       const qrCodeValue = crypto.randomUUID();
 
@@ -262,17 +323,27 @@ export default function CredenciamentoPage() {
 
   const confirmedCount = (participants ?? []).filter((p) => p.status === "confirmed").length;
   const credentialedCount = (participants ?? []).filter((p) => p.status === "credentialed").length;
+  const credentialsEmittedCount = activeCredentials.length;
+
+  const handleOpenPreview = (participantId: string) => {
+    const tmpl = eventTemplate ?? createDefaultTemplateMutation.data;
+    if (!tmpl) {
+      toast.error("Nenhum modelo de credencial disponível para este evento.");
+      return;
+    }
+    setPreviewTemplate(tmpl);
+    setPreviewParticipantId(participantId);
+  };
 
   return (
     <div className="animate-fade-in space-y-6">
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">Credenciamento</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Credenciar participantes importados e emitir credenciais oficiais
+          Credenciar participantes, emitir credenciais e visualizar preview
         </p>
       </div>
 
-      {/* Controls */}
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -308,9 +379,8 @@ export default function CredenciamentoPage() {
         </CardContent>
       </Card>
 
-      {/* Summary */}
       {selectedEventId && participants && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Total</p>
@@ -331,6 +401,12 @@ export default function CredenciamentoPage() {
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4">
+              <p className="text-xs text-muted-foreground">Credenciais</p>
+              <p className="text-2xl font-bold text-blue-600">{credentialsEmittedCount}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Progresso</p>
               <p className="text-2xl font-bold text-primary">
                 {participants.length > 0
@@ -342,7 +418,6 @@ export default function CredenciamentoPage() {
         </div>
       )}
 
-      {/* Table */}
       {!selectedEventId ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <UserCheck className="h-10 w-10 text-muted-foreground mb-3" />
@@ -373,7 +448,7 @@ export default function CredenciamentoPage() {
                 <TableHead>Instituição</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Status</TableHead>
-                {canCredential && <TableHead className="w-[200px]">Ações</TableHead>}
+                {canCredential && <TableHead className="w-[260px]">Ações</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -397,16 +472,19 @@ export default function CredenciamentoPage() {
                       <Badge variant="outline">{p.participant_type === "athlete" ? "Atleta" : p.participant_type}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                      {hasActiveCred && (
-                        <Badge variant="default" className="ml-1 text-xs">
-                          {activeCred?.credential_code}
-                        </Badge>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                        {hasActiveCred && (
+                          <Badge variant="default" className="text-xs w-fit">
+                            {activeCred?.credential_code}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     {canCredential && (
                       <TableCell>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                          {/* Step 1: Credenciar */}
                           {!isCredentialed && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -432,6 +510,7 @@ export default function CredenciamentoPage() {
                               </AlertDialogContent>
                             </AlertDialog>
                           )}
+                          {/* Step 2: Emitir credencial */}
                           {isCredentialed && !hasActiveCred && (
                             <Button
                               size="sm"
@@ -446,6 +525,18 @@ export default function CredenciamentoPage() {
                               Emitir Credencial
                             </Button>
                           )}
+                          {/* Step 3: Preview */}
+                          {hasActiveCred && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenPreview(p.id)}
+                            >
+                              <Eye className="mr-1 h-3 w-3" />
+                              Ver
+                            </Button>
+                          )}
+                          {/* Step 4: Reemitir */}
                           {isCredentialed && hasActiveCred && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -481,6 +572,21 @@ export default function CredenciamentoPage() {
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {/* Preview dialog */}
+      {previewTemplate && (
+        <CredentialPreviewDialog
+          open={!!previewParticipantId}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPreviewParticipantId(null);
+              setPreviewTemplate(null);
+            }
+          }}
+          template={previewTemplate}
+          participantId={previewParticipantId ?? undefined}
+        />
       )}
     </div>
   );

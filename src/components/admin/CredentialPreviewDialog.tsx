@@ -36,7 +36,24 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
   const [selectedParticipantId, setSelectedParticipantId] = useState(fixedParticipantId || "");
   const [_rendering, setRendering] = useState(false);
 
+  // Reset selected participant when fixedParticipantId changes
+  useEffect(() => {
+    if (fixedParticipantId) setSelectedParticipantId(fixedParticipantId);
+  }, [fixedParticipantId]);
+
   const eventId = template?.event_id;
+
+  // Fetch event name for default background
+  const { data: event } = useQuery({
+    queryKey: ["preview-event", eventId],
+    queryFn: async () => {
+      if (!eventId) return null;
+      const { data, error } = await supabase.from("events").select("id, name, year").eq("id", eventId).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!eventId && open,
+  });
 
   const { data: credentials = [] } = useQuery({
     queryKey: ["preview-credentials", eventId],
@@ -133,13 +150,13 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
   });
 
   const TYPE_LABELS: Record<string, string> = {
-    athlete: "Atleta",
-    coach: "Técnico",
-    head_of_delegation: "Chefe de Delegação",
-    staff: "Staff",
+    athlete: "ATLETA",
+    coach: "TÉCNICO",
+    head_of_delegation: "CHEFE DE DELEGAÇÃO",
+    staff: "STAFF",
+    commission: "COMISSÃO",
   };
 
-  /** Draw text that auto-shrinks to fit maxWidth */
   const drawFittedText = (
     ctx: CanvasRenderingContext2D,
     text: string,
@@ -150,7 +167,6 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     const maxW = fc.maxWidth ?? 0;
     let fontSize = baseFontSize;
 
-    // Auto-shrink if text overflows maxWidth
     if (maxW > 0) {
       ctx.font = `${weight} ${fontSize}px sans-serif`;
       while (ctx.measureText(text).width > maxW && fontSize > 8) {
@@ -166,6 +182,57 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     ctx.fillText(text, fc.x, fc.y, maxW > 0 ? maxW : undefined);
   };
 
+  /** Draw a clean default background when no background image is set */
+  const drawDefaultBackground = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+    // Gradient background
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, "#1e3a5f");
+    grad.addColorStop(0.15, "#1e3a5f");
+    grad.addColorStop(0.15, "#f0f4f8");
+    grad.addColorStop(1, "#e8ecf1");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Header bar
+    ctx.fillStyle = "#1e3a5f";
+    ctx.fillRect(0, 0, w, 120);
+
+    // Event name in header
+    const eventName = event?.name ?? "EVENTO ESPORTIVO";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 22px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(eventName.toUpperCase(), w / 2, 50, w - 40);
+
+    // Year subtitle
+    if (event?.year) {
+      ctx.font = "16px sans-serif";
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
+      ctx.fillText(String(event.year), w / 2, 80);
+    }
+
+    // "CREDENCIAL" label
+    ctx.fillStyle = "#1e3a5f";
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillText("CREDENCIAL OFICIAL", w / 2, 145);
+
+    // Subtle border lines
+    ctx.strokeStyle = "#c8d6e5";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(40, 160);
+    ctx.lineTo(w - 40, 160);
+    ctx.stroke();
+
+    // Bottom bar
+    ctx.fillStyle = "#1e3a5f";
+    ctx.fillRect(0, h - 30, w, 30);
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.font = "10px sans-serif";
+    ctx.fillText("Sistema JER Gestão", w / 2, h - 12);
+  };
+
   const renderCanvas = async () => {
     const canvas = canvasRef.current;
     if (!canvas || !template) return;
@@ -178,14 +245,16 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw background
+    // Draw background: custom art or default
     if (template.background_url) {
       try {
         const img = await loadImage(template.background_url);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       } catch {
-        // bg failed
+        drawDefaultBackground(ctx, canvas.width, canvas.height);
       }
+    } else {
+      drawDefaultBackground(ctx, canvas.width, canvas.height);
     }
 
     const fieldConfig = template.field_config as Record<string, FieldConfig>;
@@ -200,35 +269,24 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     const data: Record<string, string> = {
       full_name: useDemo ? "PAULO SILVA DE SOUZA" : (person?.full_name ?? "—").toUpperCase(),
       institution: useDemo ? "ESCOLA ESTADUAL MONTEIRO LOBATO" : (institution?.name ?? "—").toUpperCase(),
-      participant_type: useDemo ? "Atleta" : TYPE_LABELS[participant?.participant_type ?? ""] ?? participant?.participant_type ?? "—",
-      sport_event: useDemo ? "VOLEIBOL" : (sportEventNames || "—").toUpperCase(),
-      credential_code: useDemo ? "RR-2026-0042" : credential?.credential_code ?? "—",
+      participant_type: useDemo ? "ATLETA" : TYPE_LABELS[participant?.participant_type ?? ""] ?? (participant?.participant_type ?? "—").toUpperCase(),
+      sport_event: useDemo ? "VOLEIBOL — MASCULINO SUB-17" : (sportEventNames || "—").toUpperCase(),
+      credential_code: useDemo ? "JER-DEMO-0042" : credential?.credential_code ?? "—",
     };
 
-    // Draw photo placeholder or actual photo
+    // Draw photo
     const photoConfig = fieldConfig.photo;
     if (photoConfig?.visible) {
       const photoW = photoConfig.width ?? 120;
-      const photoH = photoConfig.height ?? 140;
+      const photoH = photoConfig.height ?? 150;
       const photoUrl = person?.photo_url;
 
       if (photoUrl) {
         try {
           const photoImg = await loadImage(photoUrl);
-          // Draw with rounded corners
           ctx.save();
           const radius = 8;
-          ctx.beginPath();
-          ctx.moveTo(photoConfig.x + radius, photoConfig.y);
-          ctx.lineTo(photoConfig.x + photoW - radius, photoConfig.y);
-          ctx.quadraticCurveTo(photoConfig.x + photoW, photoConfig.y, photoConfig.x + photoW, photoConfig.y + radius);
-          ctx.lineTo(photoConfig.x + photoW, photoConfig.y + photoH - radius);
-          ctx.quadraticCurveTo(photoConfig.x + photoW, photoConfig.y + photoH, photoConfig.x + photoW - radius, photoConfig.y + photoH);
-          ctx.lineTo(photoConfig.x + radius, photoConfig.y + photoH);
-          ctx.quadraticCurveTo(photoConfig.x, photoConfig.y + photoH, photoConfig.x, photoConfig.y + photoH - radius);
-          ctx.lineTo(photoConfig.x, photoConfig.y + radius);
-          ctx.quadraticCurveTo(photoConfig.x, photoConfig.y, photoConfig.x + radius, photoConfig.y);
-          ctx.closePath();
+          roundRect(ctx, photoConfig.x, photoConfig.y, photoW, photoH, radius);
           ctx.clip();
           ctx.drawImage(photoImg, photoConfig.x, photoConfig.y, photoW, photoH);
           ctx.restore();
@@ -272,7 +330,7 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
       const timer = setTimeout(renderCanvas, 300);
       return () => clearTimeout(timer);
     }
-  }, [open, template, selectedParticipantId, participants, people, credentials, sportEvents]);
+  }, [open, template, selectedParticipantId, participants, people, credentials, sportEvents, event]);
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
@@ -312,22 +370,24 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-2 max-w-md">
-            <label className="text-sm font-medium">Participante (com credencial emitida)</label>
-            <Select value={selectedParticipantId} onValueChange={setSelectedParticipantId}>
-              <SelectTrigger>
-                <SelectValue placeholder={credentials.length === 0 ? "Nenhuma credencial emitida" : "Selecione ou veja demo"} />
-              </SelectTrigger>
-              <SelectContent>
-                {participantOptions.map((o) => (
-                  <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!selectedParticipantId && (
-              <p className="text-xs text-muted-foreground">Sem seleção, será exibido preview com dados fictícios.</p>
-            )}
-          </div>
+          {!fixedParticipantId && (
+            <div className="space-y-2 max-w-md">
+              <label className="text-sm font-medium">Participante (com credencial emitida)</label>
+              <Select value={selectedParticipantId} onValueChange={setSelectedParticipantId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={credentials.length === 0 ? "Nenhuma credencial emitida" : "Selecione ou veja demo"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {participantOptions.map((o) => (
+                    <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!selectedParticipantId && (
+                <p className="text-xs text-muted-foreground">Sem seleção, será exibido preview com dados fictícios.</p>
+              )}
+            </div>
+          )}
 
           <div className="flex justify-center rounded-lg border bg-muted/30 p-4 overflow-auto">
             <canvas
@@ -351,12 +411,7 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
   );
 }
 
-function drawPhotoPlaceholder(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
-  ctx.save();
-  ctx.fillStyle = "rgba(200, 200, 200, 0.5)";
-  ctx.strokeStyle = "rgba(150, 150, 150, 0.6)";
-  ctx.lineWidth = 1;
-  const r = 8;
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
@@ -368,6 +423,14 @@ function drawPhotoPlaceholder(ctx: CanvasRenderingContext2D, x: number, y: numbe
   ctx.lineTo(x, y + r);
   ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.closePath();
+}
+
+function drawPhotoPlaceholder(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.fillStyle = "rgba(200, 200, 200, 0.5)";
+  ctx.strokeStyle = "rgba(150, 150, 150, 0.6)";
+  ctx.lineWidth = 1;
+  roundRect(ctx, x, y, w, h, 8);
   ctx.fill();
   ctx.stroke();
   ctx.fillStyle = "#888";
