@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, XCircle } from "lucide-react";
+import { Search, Users, XCircle, Trophy } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +30,7 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
 };
 
 export default function ParticipantesPage() {
+  const navigate = useNavigate();
   const [selectedEventId, setSelectedEventId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -261,6 +264,7 @@ export default function ParticipantesPage() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Modalidade / Prova</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -280,6 +284,11 @@ export default function ParticipantesPage() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
                       {getEnrollmentSummary(p.id)}
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/participantes/${p.id}/esportivo`)} title="Histórico esportivo">
+                        <Trophy className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );

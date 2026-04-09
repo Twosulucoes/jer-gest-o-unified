@@ -36,6 +36,7 @@ import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
 import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
 import CompeticaoEquipesPage from "./pages/admin/CompeticaoEquipesPage";
 import ParticipantesPage from "./pages/admin/ParticipantesPage";
+import ParticipanteHistoricoPage from "./pages/admin/ParticipanteHistoricoPage";
 import CredencialModelosPage from "./pages/admin/CredencialModelosPage";
 import NotFound from "./pages/NotFound";
 
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacoesPage /></ProtectedRoute>} />
               <Route path="importacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPage /></ProtectedRoute>} />
               <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipantesPage /></ProtectedRoute>} />
+              <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
               <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoPage /></ProtectedRoute>} />
               <Route path="validacao-qr" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"]}><ValidacaoQRPage /></ProtectedRoute>} />
               {/* Transporte */}
