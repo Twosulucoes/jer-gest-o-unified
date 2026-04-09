@@ -92,6 +92,8 @@ export default function CredenciamentoPage() {
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchProcessing, setBatchProcessing] = useState(false);
+  const [labelParticipantId, setLabelParticipantId] = useState<string | null>(null);
+  const [batchLabelIds, setBatchLabelIds] = useState<string[]>([]);
 
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
