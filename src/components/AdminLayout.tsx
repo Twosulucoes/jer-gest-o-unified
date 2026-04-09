@@ -28,6 +28,7 @@ import {
   Swords,
   CalendarDays,
   Layers,
+  UsersRound,
 } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
