@@ -71,8 +71,12 @@ function StatCard({ label, value, icon, sub, alert }: StatCardProps) {
 }
 
 export default function DashboardPage() {
-  const { profile, roles } = useAuth();
+  const { profile, roles, hasRole } = useAuth();
   const [selectedEventId, setSelectedEventId] = useState("");
+
+  const visibleActions = quickActions.filter((a) => a.roles.some((r) => hasRole(r)));
+  const actionGroups = Array.from(new Set(visibleActions.map((a) => a.group)));
+
 
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
