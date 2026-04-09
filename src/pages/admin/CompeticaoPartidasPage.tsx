@@ -83,13 +83,13 @@ export default function CompeticaoPartidasPage() {
     queryKey: ["competition_matches", selectedEventId, selectedSportEventId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const phaseIds = phases.map((p) => p.id);
-      if (!phaseIds.length) return [];
-      const { data, error } = await supabase.from("competition_matches").select("*").in("phase_id", phaseIds).order("match_date").order("start_time");
+      let q = supabase.from("competition_matches").select("*").eq("event_id", selectedEventId).order("match_date").order("start_time");
+      if (selectedSportEventId) q = q.eq("sport_event_id", selectedSportEventId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedEventId && phases.length > 0,
+    enabled: !!selectedEventId,
   });
 
   const phasesMap = new Map(phases.map((p) => [p.id, p]));
@@ -154,7 +154,7 @@ export default function CompeticaoPartidasPage() {
           <h1 className="font-heading text-2xl font-bold text-foreground">Partidas / Provas</h1>
           <p className="text-sm text-muted-foreground mt-1">Agenda operacional da competição</p>
         </div>
-        {canWrite && selectedEventId && phases.length > 0 && (
+        {canWrite && selectedEventId && (
           <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" />Nova partida
           </Button>
