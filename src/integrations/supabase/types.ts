@@ -934,6 +934,64 @@ export type Database = {
           },
         ]
       }
+      match_player_stats: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          match_lineup_id: string
+          participant_id: string
+          period: number | null
+          stat_key: string
+          stat_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          match_lineup_id: string
+          participant_id: string
+          period?: number | null
+          stat_key: string
+          stat_value?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          match_lineup_id?: string
+          participant_id?: string
+          period?: number | null
+          stat_key?: string
+          stat_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_player_stats_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_player_stats_match_lineup_id_fkey"
+            columns: ["match_lineup_id"]
+            isOneToOne: false
+            referencedRelation: "match_lineups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_player_stats_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_scores: {
         Row: {
           created_at: string
