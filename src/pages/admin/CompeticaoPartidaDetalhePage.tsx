@@ -316,7 +316,7 @@ export default function CompeticaoPartidaDetalhePage() {
   const linkedTeamIds = new Set(entries.filter((e) => e.team_id).map((e) => e.team_id));
   const availableToAdd = availablePSE.filter((p) => !linkedPSEIds.has(p.id));
   const availableTeamsToAdd = teamsForSportEvent.filter((t: any) => !linkedTeamIds.has(t.id));
-  const hasTeams = teamsForSportEvent.length > 0;
+  
 
   // Mutations
   const updateMatchMut = useMutation({
