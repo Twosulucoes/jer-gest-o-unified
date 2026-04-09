@@ -671,6 +671,19 @@ export default function CompeticaoPartidaDetalhePage() {
         </Dialog>
       )}
 
+      {/* Lineup Cards (collective only) */}
+      {isCollective && entries.filter((e) => e.team_id).map((entry) => (
+        <MatchLineupCard
+          key={`lineup-${entry.id}`}
+          matchId={matchId!}
+          entry={entry}
+          teamName={getEntryLabel(entry)}
+          canWrite={canWrite}
+          peopleMap={peopleMap}
+          participantsMap={participantsMap}
+        />
+      ))}
+
       {/* Results Card (individual / legacy) */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
