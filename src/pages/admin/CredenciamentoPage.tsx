@@ -381,6 +381,8 @@ export default function CredenciamentoPage() {
                 const person = peopleMap.get(p.person_id);
                 const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
                 const isCredentialed = p.status === "credentialed";
+                const hasActiveCred = activeCredMap.has(p.id);
+                const activeCred = activeCredMap.get(p.id);
 
                 return (
                   <TableRow key={p.id}>
@@ -396,6 +398,11 @@ export default function CredenciamentoPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                      {hasActiveCred && (
+                        <Badge variant="default" className="ml-1 text-xs">
+                          {activeCred?.credential_code}
+                        </Badge>
+                      )}
                     </TableCell>
                     {canCredential && (
                       <TableCell>
@@ -425,7 +432,7 @@ export default function CredenciamentoPage() {
                               </AlertDialogContent>
                             </AlertDialog>
                           )}
-                          {isCredentialed && (
+                          {isCredentialed && !hasActiveCred && (
                             <Button
                               size="sm"
                               onClick={() => emitCredentialMutation.mutate(p.id)}
@@ -438,6 +445,39 @@ export default function CredenciamentoPage() {
                               )}
                               Emitir Credencial
                             </Button>
+                          )}
+                          {isCredentialed && hasActiveCred && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="outline" disabled={reissueMutation.isPending}>
+                                  <RefreshCw className="mr-1 h-3 w-3" />
+                                  Reemitir
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Reemitir credencial</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Reemitir credencial de <strong>{person?.full_name}</strong>?
+                                    A credencial atual ({activeCred?.credential_code}) será marcada como substituída
+                                    e uma nova será gerada com novo código e QR Code.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => reissueMutation.mutate(p.id)}>
+                                    Confirmar reemissão
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })}
                           )}
                         </div>
                       </TableCell>
