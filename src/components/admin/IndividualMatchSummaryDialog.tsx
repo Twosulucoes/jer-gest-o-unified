@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { IndividualConfig } from "./IndividualConfigEditor";
+import { computeIndividualRanking, getPrimaryRankField, formatRankValue } from "@/lib/individualRanking";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CalendarDays, Clock, MapPin, Shield, Paperclip, Printer, User, Trophy, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -116,6 +118,19 @@ export default function IndividualMatchSummaryDialog({
   const resultsMap = new Map(results.map((r) => [r.match_entry_id, r]));
   const handlePrint = () => window.print();
 
+  // Ranking
+  const rankField = getPrimaryRankField(individualConfig);
+  const ranked = computeIndividualRanking(entries, results, attemptsData, individualConfig, getEntryLabel);
+  const hasRanking = rankField && ranked.some((r) => r.position != null);
+  const isHeat = individualConfig?.match_type === "heat";
+
+  const RANK_FIELD_LABEL: Record<string, string> = {
+    time_ms: "Tempo", distance_cm: "Distância", points: "Pontos", position: "Posição",
+  };
+  const SOURCE_LABEL: Record<string, string> = {
+    result: "Resultado", attempt: "Melhor tentativa", manual_position: "Manual",
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible">
@@ -216,6 +231,46 @@ export default function IndividualMatchSummaryDialog({
               </div>
             )}
           </section>
+
+          {/* Ranking */}
+          {hasRanking && (
+            <>
+              <Separator />
+              <section>
+                <h4 className="font-semibold mb-2 flex items-center gap-1.5">
+                  <Trophy className="h-4 w-4" />Classificação{isHeat ? " da Bateria" : ""}
+                  {rankField && <Badge variant="outline" className="text-[10px] ml-2">Por {RANK_FIELD_LABEL[rankField] ?? rankField}</Badge>}
+                </h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12 p-2">#</TableHead>
+                      <TableHead className="p-2">Atleta</TableHead>
+                      {rankField && rankField !== "score" && <TableHead className="p-2 text-right">{RANK_FIELD_LABEL[rankField]}</TableHead>}
+                      <TableHead className="p-2 w-24">Origem</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ranked.map((item) => (
+                      <TableRow key={item.entryId} className={item.excluded ? "opacity-50" : ""}>
+                        <TableCell className="font-mono font-bold p-2">
+                          {item.excluded ? "—" : item.position != null ? `${item.position}º` : "—"}
+                        </TableCell>
+                        <TableCell className="p-2 font-medium">{item.label}</TableCell>
+                        {rankField && rankField !== "score" && (
+                          <TableCell className="p-2 text-right font-mono">{formatRankValue(item.rankValue, item.rankField)}</TableCell>
+                        )}
+                        <TableCell className="p-2">
+                          {item.source && <Badge variant="outline" className="text-[8px]">{SOURCE_LABEL[item.source] ?? item.source}</Badge>}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {isHeat && <p className="text-[10px] text-muted-foreground mt-1 italic">Classificação desta bateria/série.</p>}
+              </section>
+            </>
+          )}
 
           {/* Attempts */}
           {attemptsData.length > 0 && (
