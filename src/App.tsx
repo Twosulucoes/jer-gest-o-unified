@@ -34,6 +34,7 @@ import CompeticaoAgendaPage from "./pages/admin/CompeticaoAgendaPage";
 import CompeticaoPartidaDetalhePage from "./pages/admin/CompeticaoPartidaDetalhePage";
 import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
 import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
+import ParticipantesPage from "./pages/admin/ParticipantesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="instituicoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><InstituicoesPage /></ProtectedRoute>} />
               <Route path="delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacoesPage /></ProtectedRoute>} />
               <Route path="importacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPage /></ProtectedRoute>} />
+              <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipantesPage /></ProtectedRoute>} />
               <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoPage /></ProtectedRoute>} />
               <Route path="validacao-qr" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"]}><ValidacaoQRPage /></ProtectedRoute>} />
               {/* Transporte */}
