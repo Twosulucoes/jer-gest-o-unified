@@ -17,6 +17,8 @@ import {
   Info,
 } from "lucide-react";
 
+import { Checkbox } from "@/components/ui/checkbox";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +88,8 @@ export default function CredenciamentoPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [previewParticipantId, setPreviewParticipantId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchProcessing, setBatchProcessing] = useState(false);
 
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
@@ -374,7 +378,85 @@ export default function CredenciamentoPage() {
     setPreviewParticipantId(participantId);
   };
 
-  
+  // --- Batch helpers ---
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const awaitingIds = filtered.filter((p) => getParticipantState(p) === "awaiting").map((p) => p.id);
+  const readyToEmitIds = filtered.filter((p) => getParticipantState(p) === "ready_to_emit").map((p) => p.id);
+
+  const selectedAwaiting = [...selectedIds].filter((id) => awaitingIds.includes(id));
+  const selectedReadyToEmit = [...selectedIds].filter((id) => readyToEmitIds.includes(id));
+
+  const toggleSelectAll = () => {
+    const allFilteredIds = filtered.map((p) => p.id);
+    const allSelected = allFilteredIds.every((id) => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allFilteredIds));
+    }
+  };
+
+  const handleBatchCredential = async () => {
+    if (selectedAwaiting.length === 0) return;
+    setBatchProcessing(true);
+    let success = 0;
+    let errors = 0;
+    for (const id of selectedAwaiting) {
+      const { error } = await supabase
+        .from("participants")
+        .update({
+          status: "credentialed",
+          credentialed_at: new Date().toISOString(),
+          credentialed_by: user?.id,
+        })
+        .eq("id", id);
+      if (error) errors++;
+      else success++;
+    }
+    setBatchProcessing(false);
+    setSelectedIds(new Set());
+    queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+    toast.success(`${success} participante(s) credenciado(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
+  };
+
+  const handleBatchEmit = async () => {
+    if (selectedReadyToEmit.length === 0) return;
+    setBatchProcessing(true);
+    let success = 0;
+    let errors = 0;
+    for (const id of selectedReadyToEmit) {
+      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const qrCodeValue = crypto.randomUUID();
+      const { error } = await supabase.from("participant_credentials").insert({
+        participant_id: id,
+        event_id: selectedEventId,
+        credential_code: credentialCode,
+        qr_code_value: qrCodeValue,
+        status: "active",
+        binding_source: "manual",
+        issued_at: new Date().toISOString(),
+        activated_at: new Date().toISOString(),
+        issued_by: user?.id,
+        activated_by: user?.id,
+      });
+      if (error) errors++;
+      else success++;
+    }
+    setBatchProcessing(false);
+    setSelectedIds(new Set());
+    queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
+    toast.success(`${success} credencial(is) emitida(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
+  };
+
+
 
   const getStateInfo = (state: string) => {
     switch (state) {
@@ -448,7 +530,7 @@ export default function CredenciamentoPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">1. Selecione o evento</label>
-              <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setSelectedIds(new Set()); }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Escolha o evento..." />
                 </SelectTrigger>
@@ -540,18 +622,63 @@ export default function CredenciamentoPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead className="hidden md:table-cell">CPF</TableHead>
-                <TableHead className="hidden lg:table-cell">Instituição</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Situação</TableHead>
-                {canCredential && <TableHead>Próxima ação</TableHead>}
-              </TableRow>
-            </TableHeader>
+        <>
+          {/* Batch action bar */}
+          {canCredential && selectedIds.size > 0 && (
+            <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+              <span className="text-sm font-medium text-foreground">
+                {selectedIds.size} selecionado(s)
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                Limpar seleção
+              </Button>
+              {selectedAwaiting.length > 0 && (
+                <Button
+                  size="sm"
+                  onClick={handleBatchCredential}
+                  disabled={batchProcessing}
+                >
+                  {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
+                  Credenciar {selectedAwaiting.length} em lote
+                </Button>
+              )}
+              {selectedReadyToEmit.length > 0 && (
+                <Button
+                  size="sm"
+                  onClick={handleBatchEmit}
+                  disabled={batchProcessing}
+                >
+                  {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CreditCard className="mr-1.5 h-3.5 w-3.5" />}
+                  Emitir {selectedReadyToEmit.length} em lote
+                </Button>
+              )}
+            </div>
+          )}
+
+          <div className="rounded-lg border bg-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {canCredential && (
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id))}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
+                  )}
+                  <TableHead>Nome</TableHead>
+                  <TableHead className="hidden md:table-cell">CPF</TableHead>
+                  <TableHead className="hidden lg:table-cell">Instituição</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Situação</TableHead>
+                  {canCredential && <TableHead>Próxima ação</TableHead>}
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {filtered.map((p) => {
                 const person = peopleMap.get(p.person_id);
@@ -560,7 +687,15 @@ export default function CredenciamentoPage() {
                 const activeCred = activeCredMap.get(p.id);
 
                 return (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} data-state={selectedIds.has(p.id) ? "selected" : undefined}>
+                    {canCredential && (
+                      <TableCell className="w-10">
+                        <Checkbox
+                          checked={selectedIds.has(p.id)}
+                          onCheckedChange={() => toggleSelected(p.id)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground font-mono text-xs">
                       {person?.cpf ?? "—"}
@@ -692,8 +827,9 @@ export default function CredenciamentoPage() {
                 );
               })}
             </TableBody>
-          </Table>
-        </div>
+            </Table>
+          </div>
+        </>
       )}
 
       {/* Preview dialog */}
