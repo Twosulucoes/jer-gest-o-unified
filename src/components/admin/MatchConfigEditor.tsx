@@ -27,6 +27,14 @@ export interface PenaltyConfig {
   visible: boolean;
 }
 
+export interface EventTypeConfig {
+  key: string;
+  label: string;
+  target: "match" | "team" | "player";
+  requires_notes?: boolean;
+  visible: boolean;
+}
+
 export interface MatchConfig {
   score_type?: "simple" | "sets" | "quarters" | "halves";
   periods?: number;
@@ -37,6 +45,7 @@ export interface MatchConfig {
   requires_attachments?: boolean;
   player_stats?: PlayerStatConfig[];
   penalties?: PenaltyConfig[];
+  event_types?: EventTypeConfig[];
 }
 
 const SCORE_TYPES = [
