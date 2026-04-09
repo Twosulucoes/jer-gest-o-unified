@@ -717,6 +717,16 @@ export default function CompeticaoPartidaDetalhePage() {
         />
       )}
 
+      {/* Attachments Card (collective only) */}
+      {isCollective && (
+        <MatchAttachmentsCard
+          matchId={matchId!}
+          eventId={match.event_id}
+          matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
+          canWrite={canWrite}
+        />
+      )}
+
       {/* Results Card (individual / legacy) */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
