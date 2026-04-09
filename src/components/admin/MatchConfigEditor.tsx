@@ -27,6 +27,14 @@ export interface PenaltyConfig {
   visible: boolean;
 }
 
+export interface EventTypeConfig {
+  key: string;
+  label: string;
+  target: "match" | "team" | "player";
+  requires_notes?: boolean;
+  visible: boolean;
+}
+
 export interface MatchConfig {
   score_type?: "simple" | "sets" | "quarters" | "halves";
   periods?: number;
@@ -37,6 +45,7 @@ export interface MatchConfig {
   requires_attachments?: boolean;
   player_stats?: PlayerStatConfig[];
   penalties?: PenaltyConfig[];
+  event_types?: EventTypeConfig[];
 }
 
 const SCORE_TYPES = [
@@ -63,6 +72,7 @@ export default function MatchConfigEditor({ value, onChange }: MatchConfigEditor
 
   const stats = value.player_stats ?? [];
   const penalties = value.penalties ?? [];
+  const eventTypes = value.event_types ?? [];
 
   const addStat = () => {
     update({ player_stats: [...stats, { key: "", label: "", type: "count" as const, visible: true }] });
@@ -82,6 +92,16 @@ export default function MatchConfigEditor({ value, onChange }: MatchConfigEditor
   };
   const removePenalty = (idx: number) => {
     update({ penalties: penalties.filter((_, i) => i !== idx) });
+  };
+
+  const addEventType = () => {
+    update({ event_types: [...eventTypes, { key: "", label: "", target: "match" as const, visible: true }] });
+  };
+  const updateEventType = (idx: number, patch: Partial<EventTypeConfig>) => {
+    update({ event_types: eventTypes.map((e, i) => (i === idx ? { ...e, ...patch } : e)) });
+  };
+  const removeEventType = (idx: number) => {
+    update({ event_types: eventTypes.filter((_, i) => i !== idx) });
   };
 
   return (
@@ -264,6 +284,68 @@ export default function MatchConfigEditor({ value, onChange }: MatchConfigEditor
               <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Obs.</Label>
             </div>
             <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removePenalty(idx)}>
+              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      {/* Event Types Configuration */}
+      <div className="space-y-3 pt-2 border-t">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-medium">Ocorrências / Timeline</Label>
+          <Button type="button" variant="outline" size="sm" onClick={addEventType}>
+            <Plus className="mr-1 h-3 w-3" />Adicionar
+          </Button>
+        </div>
+
+        {eventTypes.length === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhuma ocorrência configurada. Ex: timeout, substituição, início de período.</p>
+        )}
+
+        {eventTypes.map((evt, idx) => (
+          <div key={idx} className="grid grid-cols-[1fr_1fr_auto_auto_auto] gap-2 items-end rounded border bg-background p-2">
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Chave</Label>
+              <Input
+                placeholder="timeout"
+                value={evt.key}
+                onChange={(e) => {
+                  const key = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+                  updateEventType(idx, { key });
+                }}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Rótulo</Label>
+              <Input
+                placeholder="Timeout"
+                value={evt.label}
+                onChange={(e) => updateEventType(idx, { label: e.target.value })}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Alvo</Label>
+              <Select value={evt.target} onValueChange={(v) => updateEventType(idx, { target: v as "match" | "team" | "player" })}>
+                <SelectTrigger className="h-8 w-24 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="match">Partida</SelectItem>
+                  <SelectItem value="team">Equipe</SelectItem>
+                  <SelectItem value="player">Atleta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-1 pb-0.5">
+              <Switch
+                checked={!!evt.requires_notes}
+                onCheckedChange={(v) => updateEventType(idx, { requires_notes: v })}
+                className="scale-75"
+              />
+              <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Obs.</Label>
+            </div>
+            <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeEventType(idx)}>
               <Trash2 className="h-3.5 w-3.5 text-destructive" />
             </Button>
           </div>

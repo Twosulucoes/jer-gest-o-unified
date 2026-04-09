@@ -134,9 +134,28 @@ export default function MatchSummaryDialog({
     enabled: open,
   });
 
+  // Match events (timeline)
+  const { data: matchEvents = [] } = useQuery({
+    queryKey: ["summary_match_events", matchId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_events" as any)
+        .select("*")
+        .eq("match_id", matchId)
+        .order("period", { ascending: true, nullsFirst: true })
+        .order("minute", { ascending: true, nullsFirst: true })
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: open,
+  });
+
   const statConfigs = matchConfig.player_stats?.filter((s) => s.key && s.label && s.visible !== false) ?? [];
   const penaltyConfigs = matchConfig.penalties?.filter((p) => p.key && p.label && p.visible !== false) ?? [];
+  const eventTypeConfigs = matchConfig.event_types?.filter((e) => e.key && e.label && e.visible !== false) ?? [];
   const getPenaltyLabel = (key: string) => penaltyConfigs.find((p) => p.key === key)?.label ?? key;
+  const getEventTypeLabel = (key: string) => eventTypeConfigs.find((e) => e.key === key)?.label ?? key;
 
   const formatDate = (d: string | null) =>
     d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }) : "—";
@@ -352,6 +371,33 @@ export default function MatchSummaryDialog({
                         {pen.period != null && <span className="text-muted-foreground">{matchConfig.period_label ?? "período"} {pen.period}</span>}
                         {pen.minute != null && <span className="text-muted-foreground">{pen.minute}'</span>}
                         {pen.notes && <span className="text-muted-foreground italic">({pen.notes})</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* Timeline / Events */}
+          {matchEvents.length > 0 && (
+            <>
+              <Separator />
+              <section>
+                <h4 className="font-semibold mb-2 flex items-center gap-1.5"><Clock className="h-4 w-4" />Timeline / Ocorrências</h4>
+                <div className="space-y-1">
+                  {matchEvents.map((evt: any) => {
+                    const entryLabel = entries.find((e) => e.id === evt.match_entry_id)
+                      ? getEntryLabel(entries.find((e) => e.id === evt.match_entry_id)!)
+                      : null;
+                    return (
+                      <div key={evt.id} className="flex items-center gap-2 text-xs rounded border p-2">
+                        <Badge variant="outline" className="text-[10px]">{getEventTypeLabel(evt.event_key)}</Badge>
+                        {entryLabel && <span className="font-medium">{entryLabel}</span>}
+                        {evt.participant_id && <span>— {getName(evt.participant_id)}</span>}
+                        {evt.period != null && <span className="text-muted-foreground">{matchConfig.period_label ?? "período"} {evt.period}</span>}
+                        {evt.minute != null && <span className="text-muted-foreground font-mono">{evt.minute}'</span>}
+                        {evt.notes && <span className="text-muted-foreground italic">({evt.notes})</span>}
                       </div>
                     );
                   })}
