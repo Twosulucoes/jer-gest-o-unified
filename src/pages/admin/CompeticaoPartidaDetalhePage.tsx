@@ -710,11 +710,17 @@ export default function CompeticaoPartidaDetalhePage() {
         />
       ))}
 
-      {/* Officials Card (collective only) */}
-      {isCollective && (
+      {/* Officials Card (collective + individual when configured) */}
+      {(isCollective || individualConfig?.requires_referees) && (
         <MatchOfficialsCard
           matchId={matchId!}
-          matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
+          matchConfig={isCollective
+            ? (((sport as any)?.match_config ?? {}) as MatchConfig)
+            : ({
+                requires_referees: individualConfig?.requires_referees ?? false,
+                min_referees: individualConfig?.min_referees ?? 1,
+                requires_table_officials: false,
+              } as MatchConfig)}
           canWrite={canWrite}
         />
       )}
@@ -749,12 +755,14 @@ export default function CompeticaoPartidaDetalhePage() {
         />
       )}
 
-      {/* Attachments Card (collective only) */}
-      {isCollective && (
+      {/* Attachments Card (collective + individual when configured) */}
+      {(isCollective || individualConfig?.requires_attachments) && (
         <MatchAttachmentsCard
           matchId={matchId!}
           eventId={match.event_id}
-          matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
+          matchConfig={isCollective
+            ? (((sport as any)?.match_config ?? {}) as MatchConfig)
+            : ({ requires_attachments: individualConfig?.requires_attachments ?? false } as MatchConfig)}
           canWrite={canWrite}
         />
       )}
