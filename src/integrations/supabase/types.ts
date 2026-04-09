@@ -934,6 +934,77 @@ export type Database = {
           },
         ]
       }
+      match_penalties: {
+        Row: {
+          created_at: string
+          id: string
+          match_entry_id: string | null
+          match_id: string
+          match_lineup_id: string | null
+          minute: number | null
+          notes: string | null
+          participant_id: string | null
+          penalty_key: string
+          period: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_entry_id?: string | null
+          match_id: string
+          match_lineup_id?: string | null
+          minute?: number | null
+          notes?: string | null
+          participant_id?: string | null
+          penalty_key: string
+          period?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_entry_id?: string | null
+          match_id?: string
+          match_lineup_id?: string | null
+          minute?: number | null
+          notes?: string | null
+          participant_id?: string | null
+          penalty_key?: string
+          period?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_penalties_match_entry_id_fkey"
+            columns: ["match_entry_id"]
+            isOneToOne: false
+            referencedRelation: "competition_match_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_penalties_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_penalties_match_lineup_id_fkey"
+            columns: ["match_lineup_id"]
+            isOneToOne: false
+            referencedRelation: "match_lineups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_penalties_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_player_stats: {
         Row: {
           created_at: string
