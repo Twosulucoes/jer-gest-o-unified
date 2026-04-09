@@ -35,6 +35,7 @@ import CompeticaoPartidaDetalhePage from "./pages/admin/CompeticaoPartidaDetalhe
 import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
 import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
 import ParticipantesPage from "./pages/admin/ParticipantesPage";
+import CredencialModelosPage from "./pages/admin/CredencialModelosPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
