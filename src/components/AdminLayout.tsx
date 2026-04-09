@@ -95,6 +95,7 @@ const navGroups: NavGroup[] = [
       { label: "Categorias", to: "/admin/categorias", icon: <ListTree className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Fases", to: "/admin/competicao/fases", icon: <Trophy className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Grupos", to: "/admin/competicao/grupos", icon: <Layers className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Equipes", to: "/admin/competicao/equipes", icon: <UsersRound className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Partidas", to: "/admin/competicao/partidas", icon: <Swords className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Agenda", to: "/admin/competicao/agenda", icon: <CalendarDays className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Resultados", to: "/admin/competicao/resultados", icon: <ClipboardList className="h-4 w-4" />, roles: COMPETITION_ROLES },

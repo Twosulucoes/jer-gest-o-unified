@@ -47,7 +47,9 @@ export default function CompeticaoPartidaDetalhePage() {
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addEntryOpen, setAddEntryOpen] = useState(false);
+  
   const [selectedPSEId, setSelectedPSEId] = useState("");
+  const [selectedTeamId, setSelectedTeamId] = useState("");
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [resultForm, setResultForm] = useState<Record<string, { score: string; position: string; result_text: string }>>({});
   const [resultNotes, setResultNotes] = useState("");
@@ -146,24 +148,38 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!matchId,
   });
 
+  // Teams for this sport event (for collective sports)
+  const sportEventId = match?.sport_event_id ?? phase?.sport_event_id;
+  const { data: teamsForSportEvent = [] } = useQuery({
+    queryKey: ["teams_for_match", sportEventId],
+    queryFn: async () => {
+      if (!sportEventId) return [];
+      const { data, error } = await supabase.from("teams").select("*").eq("sport_event_id", sportEventId).eq("status", "active").order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sportEventId,
+  });
+  const teamsMap = new Map(teamsForSportEvent.map((t: any) => [t.id, t]));
+
   // All PSEs for this sport event (for "add participant" dialog — confirmed only)
   const { data: availablePSE = [] } = useQuery({
-    queryKey: ["participant_sport_events_for_match", phase?.sport_event_id],
+    queryKey: ["participant_sport_events_for_match", sportEventId],
     queryFn: async () => {
-      if (!phase?.sport_event_id) return [];
+      if (!sportEventId) return [];
       const { data, error } = await supabase
         .from("participant_sport_events")
         .select("id, participant_id, status")
-        .eq("sport_event_id", phase.sport_event_id)
+        .eq("sport_event_id", sportEventId)
         .eq("status", "confirmed");
       if (error) throw error;
       return data;
     },
-    enabled: !!phase?.sport_event_id,
+    enabled: !!sportEventId,
   });
 
   // PSEs linked to entries (any status — for reliable name resolution)
-  const entryPseIds = entries.map((e) => e.participant_sport_event_id);
+  const entryPseIds = entries.map((e) => e.participant_sport_event_id).filter(Boolean);
   const { data: linkedPSEs = [] } = useQuery({
     queryKey: ["linked_pses_for_match", matchId, entryPseIds.length],
     queryFn: async () => {
@@ -215,14 +231,20 @@ export default function CompeticaoPartidaDetalhePage() {
   const peopleMap = new Map(people.map((p) => [p.id, p]));
   const resultsMap = new Map(results.map((r) => [r.match_entry_id, r]));
 
-  const getPersonName = (pseId: string) => {
-    const pse = pseMap.get(pseId);
-    if (!pse) return `⚠ PSE não encontrado (${pseId.slice(0, 8)}…)`;
-    const participant = participantsMap.get(pse.participant_id);
-    if (!participant) return `⚠ Participante não encontrado (${pse.participant_id.slice(0, 8)}…)`;
-    const person = peopleMap.get(participant.person_id);
-    if (!person) return `⚠ Pessoa não encontrada (${participant.person_id.slice(0, 8)}…)`;
-    return person.full_name;
+  const getEntryLabel = (entry: any) => {
+    if (entry.team_id) {
+      const team = teamsMap.get(entry.team_id);
+      return team?.name ?? `⚠ Equipe (${entry.team_id.slice(0, 8)}…)`;
+    }
+    if (entry.participant_sport_event_id) {
+      const pse = pseMap.get(entry.participant_sport_event_id);
+      if (!pse) return `⚠ PSE (${entry.participant_sport_event_id.slice(0, 8)}…)`;
+      const participant = participantsMap.get(pse.participant_id);
+      if (!participant) return `⚠ Participante`;
+      const person = peopleMap.get(participant.person_id);
+      return person?.full_name ?? "⚠ Pessoa";
+    }
+    return "—";
   };
 
   const getPersonNameByParticipantId = (participantId: string) => {
@@ -232,8 +254,11 @@ export default function CompeticaoPartidaDetalhePage() {
     return person?.full_name ?? "—";
   };
 
-  const linkedPSEIds = new Set(entries.map((e) => e.participant_sport_event_id));
+  const linkedPSEIds = new Set(entries.filter((e) => e.participant_sport_event_id).map((e) => e.participant_sport_event_id));
+  const linkedTeamIds = new Set(entries.filter((e) => e.team_id).map((e) => e.team_id));
   const availableToAdd = availablePSE.filter((p) => !linkedPSEIds.has(p.id));
+  const availableTeamsToAdd = teamsForSportEvent.filter((t: any) => !linkedTeamIds.has(t.id));
+  const hasTeams = teamsForSportEvent.length > 0;
 
   // Mutations
   const updateMatchMut = useMutation({
@@ -259,11 +284,14 @@ export default function CompeticaoPartidaDetalhePage() {
   });
 
   const addEntryMut = useMutation({
-    mutationFn: async (pseId: string) => {
-      const { error } = await supabase.from("competition_match_entries").insert({ match_id: matchId!, participant_sport_event_id: pseId, side: "participant" });
+    mutationFn: async ({ pseId, teamId }: { pseId?: string; teamId?: string }) => {
+      const payload: any = { match_id: matchId!, side: "participant" };
+      if (pseId) payload.participant_sport_event_id = pseId;
+      if (teamId) payload.team_id = teamId;
+      const { error } = await supabase.from("competition_match_entries").insert(payload);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_entries", matchId] }); toast.success("Participante vinculado"); setSelectedPSEId(""); setAddEntryOpen(false); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_entries", matchId] }); toast.success("Vinculado com sucesso"); setSelectedPSEId(""); setSelectedTeamId(""); setAddEntryOpen(false); },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
@@ -435,7 +463,7 @@ export default function CompeticaoPartidaDetalhePage() {
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-base">Participantes vinculados</CardTitle>
-          {canWrite && availableToAdd.length > 0 && (
+          {canWrite && (availableToAdd.length > 0 || availableTeamsToAdd.length > 0) && (
             <Button size="sm" onClick={() => setAddEntryOpen(true)}><Plus className="mr-2 h-4 w-4" />Vincular</Button>
           )}
         </CardHeader>
@@ -456,7 +484,7 @@ export default function CompeticaoPartidaDetalhePage() {
                 <TableBody>
                   {entries.map((entry) => (
                     <TableRow key={entry.id}>
-                      <TableCell className="font-medium">{getPersonName(entry.participant_sport_event_id)}</TableCell>
+                      <TableCell className="font-medium">{getEntryLabel(entry)}</TableCell>
                       <TableCell className="text-muted-foreground">{entry.side}</TableCell>
                       <TableCell className="font-mono text-sm">{entry.seed ?? "—"}</TableCell>
                       {canWrite && (
@@ -527,7 +555,7 @@ export default function CompeticaoPartidaDetalhePage() {
                       if (!result) return null;
                       return (
                         <TableRow key={result.id}>
-                          <TableCell className="font-medium">{getPersonName(entry.participant_sport_event_id)}</TableCell>
+                          <TableCell className="font-medium">{getEntryLabel(entry)}</TableCell>
                           <TableCell className="font-mono">{result.score ?? "—"}</TableCell>
                           <TableCell className="font-mono">{result.position ?? "—"}</TableCell>
                           <TableCell className="text-muted-foreground">{result.result_text ?? "—"}</TableCell>
@@ -560,7 +588,7 @@ export default function CompeticaoPartidaDetalhePage() {
               const form = resultForm[entry.id] || { score: "", position: "", result_text: "" };
               return (
                 <div key={entry.id} className="space-y-2 border rounded-lg p-3">
-                  <p className="text-sm font-medium">{getPersonName(entry.participant_sport_event_id)}</p>
+                  <p className="text-sm font-medium">{getEntryLabel(entry)}</p>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <label className="text-xs text-muted-foreground">Placar</label>
@@ -609,22 +637,49 @@ export default function CompeticaoPartidaDetalhePage() {
       <Dialog open={addEntryOpen} onOpenChange={setAddEntryOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Vincular participante</DialogTitle>
-            <DialogDescription>Selecione um participante inscrito nesta prova.</DialogDescription>
+            <DialogTitle>Vincular à partida</DialogTitle>
+            <DialogDescription>Selecione um participante individual ou uma equipe.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <Select value={selectedPSEId} onValueChange={setSelectedPSEId}>
-              <SelectTrigger><SelectValue placeholder="Selecione o participante" /></SelectTrigger>
-              <SelectContent>
-                {availableToAdd.map((pse) => (
-                  <SelectItem key={pse.id} value={pse.id}>{getPersonNameByParticipantId(pse.participant_id)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {availableTeamsToAdd.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Equipe</label>
+                <Select value={selectedTeamId} onValueChange={(v) => { setSelectedTeamId(v); setSelectedPSEId(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a equipe" /></SelectTrigger>
+                  <SelectContent>
+                    {availableTeamsToAdd.map((t: any) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {availableToAdd.length > 0 && availableTeamsToAdd.length > 0 && (
+              <div className="text-center text-xs text-muted-foreground">— ou —</div>
+            )}
+            {availableToAdd.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Participante individual</label>
+                <Select value={selectedPSEId} onValueChange={(v) => { setSelectedPSEId(v); setSelectedTeamId(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o participante" /></SelectTrigger>
+                  <SelectContent>
+                    {availableToAdd.map((pse) => (
+                      <SelectItem key={pse.id} value={pse.id}>{getPersonNameByParticipantId(pse.participant_id)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddEntryOpen(false)}>Cancelar</Button>
-            <Button disabled={!selectedPSEId || addEntryMut.isPending} onClick={() => addEntryMut.mutate(selectedPSEId)}>
+            <Button
+              disabled={(!selectedPSEId && !selectedTeamId) || addEntryMut.isPending}
+              onClick={() => {
+                if (selectedTeamId) addEntryMut.mutate({ teamId: selectedTeamId });
+                else if (selectedPSEId) addEntryMut.mutate({ pseId: selectedPSEId });
+              }}
+            >
               {addEntryMut.isPending ? "Salvando..." : "Vincular"}
             </Button>
           </DialogFooter>
