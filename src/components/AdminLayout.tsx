@@ -79,6 +79,8 @@ const navItems: NavItem[] = [
   { label: "Partidas", to: "/admin/competicao/partidas", icon: <Swords className="h-4 w-4" />, roles: COMPETITION_ROLES, section: "Competição" },
   { label: "Agenda", to: "/admin/competicao/agenda", icon: <CalendarDays className="h-4 w-4" />, roles: COMPETITION_ROLES, section: "Competição" },
   { label: "Resultados", to: "/admin/competicao/resultados", icon: <ClipboardList className="h-4 w-4" />, roles: COMPETITION_ROLES, section: "Competição" },
+  // Credenciais
+  { label: "Modelos", to: "/admin/credenciais/modelos", icon: <IdCard className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"], section: "Credenciais" },
 ];
 
 function getRoleLabel(role: AppRole): string {
