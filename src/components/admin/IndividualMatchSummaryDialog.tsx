@@ -98,6 +98,21 @@ export default function IndividualMatchSummaryDialog({
     enabled: open,
   });
 
+  // Attempts
+  const { data: attemptsData = [] } = useQuery({
+    queryKey: ["ind_summary_attempts", matchId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_attempts" as any)
+        .select("*")
+        .eq("match_id", matchId)
+        .order("attempt_number");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: open && !!individualConfig?.allows_attempts,
+  });
+
   const resultsMap = new Map(results.map((r) => [r.match_entry_id, r]));
   const handlePrint = () => window.print();
 
