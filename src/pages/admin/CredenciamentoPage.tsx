@@ -869,6 +869,25 @@ export default function CredenciamentoPage() {
           participantId={previewParticipantId ?? undefined}
         />
       )}
+      {/* Single label dialog */}
+      {labelParticipantId && (
+        <SingleLabelDialog
+          open={!!labelParticipantId}
+          onOpenChange={(open) => { if (!open) setLabelParticipantId(null); }}
+          participantId={labelParticipantId}
+          eventId={selectedEventId}
+        />
+      )}
+
+      {/* Batch labels dialog */}
+      {batchLabelIds.length > 0 && (
+        <BatchLabelsDialog
+          open={batchLabelIds.length > 0}
+          onOpenChange={(open) => { if (!open) setBatchLabelIds([]); }}
+          participantIds={batchLabelIds}
+          eventId={selectedEventId}
+        />
+      )}
     </div>
   );
 }
