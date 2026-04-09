@@ -374,7 +374,7 @@ export default function CredenciamentoPage() {
     setPreviewParticipantId(participantId);
   };
 
-  // getParticipantState moved above filter for sort usage
+  
 
   const getStateInfo = (state: string) => {
     switch (state) {
