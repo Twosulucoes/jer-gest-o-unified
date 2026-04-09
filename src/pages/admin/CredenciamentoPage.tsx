@@ -84,6 +84,24 @@ export default function CredenciamentoPage() {
     enabled: !!selectedEventId,
   });
 
+  // Load active credentials for participants
+  const { data: activeCredentials = [] } = useQuery({
+    queryKey: ["credenciamento-credentials", selectedEventId],
+    queryFn: async () => {
+      if (!selectedEventId) return [];
+      const { data, error } = await supabase
+        .from("participant_credentials")
+        .select("id, participant_id, credential_code, status")
+        .eq("event_id", selectedEventId)
+        .eq("status", "active");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedEventId,
+  });
+
+  const activeCredMap = new Map(activeCredentials.map((c) => [c.participant_id, c]));
+
   // Load people and delegations for display
   const personIds = participants?.map((p) => p.person_id) ?? [];
   const delegationIds = [...new Set(participants?.map((p) => p.delegation_id) ?? [])];
