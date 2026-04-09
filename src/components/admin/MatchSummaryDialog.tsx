@@ -379,6 +379,33 @@ export default function MatchSummaryDialog({
             </>
           )}
 
+          {/* Timeline / Events */}
+          {matchEvents.length > 0 && (
+            <>
+              <Separator />
+              <section>
+                <h4 className="font-semibold mb-2 flex items-center gap-1.5"><Clock className="h-4 w-4" />Timeline / Ocorrências</h4>
+                <div className="space-y-1">
+                  {matchEvents.map((evt: any) => {
+                    const entryLabel = entries.find((e) => e.id === evt.match_entry_id)
+                      ? getEntryLabel(entries.find((e) => e.id === evt.match_entry_id)!)
+                      : null;
+                    return (
+                      <div key={evt.id} className="flex items-center gap-2 text-xs rounded border p-2">
+                        <Badge variant="outline" className="text-[10px]">{getEventTypeLabel(evt.event_key)}</Badge>
+                        {entryLabel && <span className="font-medium">{entryLabel}</span>}
+                        {evt.participant_id && <span>— {getName(evt.participant_id)}</span>}
+                        {evt.period != null && <span className="text-muted-foreground">{matchConfig.period_label ?? "período"} {evt.period}</span>}
+                        {evt.minute != null && <span className="text-muted-foreground font-mono">{evt.minute}'</span>}
+                        {evt.notes && <span className="text-muted-foreground italic">({evt.notes})</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            </>
+          )}
+
           {/* Attachments */}
           {attachments.length > 0 && (
             <>
