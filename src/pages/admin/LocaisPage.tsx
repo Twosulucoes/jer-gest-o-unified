@@ -96,7 +96,7 @@ export default function LocaisPage() {
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Locais</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Locais de competição</h1>
           <p className="text-sm text-muted-foreground mt-1">Gestão de locais e arenas dos Jogos Escolares</p>
         </div>
         {canWrite && (
