@@ -42,15 +42,27 @@ const FIELD_LABELS: Record<string, string> = {
   photo: "Foto",
 };
 
-const DEFAULT_FIELD_CONFIG: FieldConfigMap = {
-  photo: { x: 240, y: 330, width: 120, height: 140, visible: true },
-  full_name: { x: 300, y: 510, fontSize: 18, fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: 480, visible: true },
-  sport_event: { x: 300, y: 565, fontSize: 14, fontColor: "#333333", align: "center", maxWidth: 400, visible: true },
-  institution: { x: 300, y: 620, fontSize: 12, fontColor: "#333333", align: "center", maxWidth: 440, visible: true },
-  credential_code: { x: 300, y: 700, fontSize: 14, fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: 300, visible: true },
-  participant_type: { x: 300, y: 540, fontSize: 12, fontColor: "#666666", align: "center", visible: false },
-  qr_code: { x: 30, y: 740, width: 110, height: 110, visible: true },
+const buildDefaultFieldConfig = (w: number, h: number): FieldConfigMap => {
+  const cx = w / 2;
+  const photoW = Math.round(w * 0.20);
+  const photoH = Math.round(photoW * 1.25);
+  const photoY = Math.round(h * 0.22);
+  const textStart = photoY + photoH + Math.round(h * 0.04);
+  const lineH = Math.round(h * 0.04);
+  const qrSize = Math.round(w * 0.18);
+
+  return {
+    photo: { x: Math.round(cx - photoW / 2), y: photoY, width: photoW, height: photoH, visible: true },
+    full_name: { x: cx, y: textStart, fontSize: Math.round(h * 0.028), fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: Math.round(w * 0.8), visible: true },
+    sport_event: { x: cx, y: textStart + lineH * 2, fontSize: Math.round(h * 0.02), fontColor: "#333333", align: "center", maxWidth: Math.round(w * 0.7), visible: true },
+    institution: { x: cx, y: textStart + lineH * 3, fontSize: Math.round(h * 0.017), fontColor: "#333333", align: "center", maxWidth: Math.round(w * 0.75), visible: true },
+    credential_code: { x: cx, y: textStart + lineH * 4.5, fontSize: Math.round(h * 0.02), fontColor: "#1a1a1a", fontWeight: "bold", align: "center", maxWidth: Math.round(w * 0.5), visible: true },
+    participant_type: { x: cx, y: textStart + lineH, fontSize: Math.round(h * 0.018), fontColor: "#666666", align: "center", visible: false },
+    qr_code: { x: Math.round(cx - qrSize / 2), y: Math.round(h * 0.82), width: qrSize, height: qrSize, visible: true },
+  };
 };
+
+const DEFAULT_FIELD_CONFIG: FieldConfigMap = buildDefaultFieldConfig(600, 900);
 
 interface Props {
   open: boolean;
