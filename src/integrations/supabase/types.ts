@@ -161,10 +161,14 @@ export type Database = {
       competition_match_results: {
         Row: {
           created_at: string
+          distance_cm: number | null
           id: string
           match_entry_id: string
           match_id: string
           notes: string | null
+          outcome: string | null
+          penalty_notes: string | null
+          points: number | null
           position: number | null
           published_at: string | null
           published_by: string | null
@@ -173,16 +177,21 @@ export type Database = {
           result_status: string
           result_text: string | null
           score: string | null
+          time_ms: number | null
           updated_at: string
           validated_at: string | null
           validated_by: string | null
         }
         Insert: {
           created_at?: string
+          distance_cm?: number | null
           id?: string
           match_entry_id: string
           match_id: string
           notes?: string | null
+          outcome?: string | null
+          penalty_notes?: string | null
+          points?: number | null
           position?: number | null
           published_at?: string | null
           published_by?: string | null
@@ -191,16 +200,21 @@ export type Database = {
           result_status?: string
           result_text?: string | null
           score?: string | null
+          time_ms?: number | null
           updated_at?: string
           validated_at?: string | null
           validated_by?: string | null
         }
         Update: {
           created_at?: string
+          distance_cm?: number | null
           id?: string
           match_entry_id?: string
           match_id?: string
           notes?: string | null
+          outcome?: string | null
+          penalty_notes?: string | null
+          points?: number | null
           position?: number | null
           published_at?: string | null
           published_by?: string | null
@@ -209,6 +223,7 @@ export type Database = {
           result_status?: string
           result_text?: string | null
           score?: string | null
+          time_ms?: number | null
           updated_at?: string
           validated_at?: string | null
           validated_by?: string | null
