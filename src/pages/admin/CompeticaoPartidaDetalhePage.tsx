@@ -22,6 +22,7 @@ import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/a
 import CollectiveScoreForm, { type ScoreEntry } from "@/components/admin/CollectiveScoreForm";
 import type { MatchConfig } from "@/components/admin/MatchConfigEditor";
 import MatchLineupCard from "@/components/admin/MatchLineupCard";
+import MatchOfficialsCard from "@/components/admin/MatchOfficialsCard";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
