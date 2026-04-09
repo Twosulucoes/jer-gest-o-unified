@@ -30,6 +30,7 @@ import MatchAttachmentsCard from "@/components/admin/MatchAttachmentsCard";
 import MatchSummaryDialog from "@/components/admin/MatchSummaryDialog";
 import IndividualMatchSummaryDialog from "@/components/admin/IndividualMatchSummaryDialog";
 import MatchEventsCard from "@/components/admin/MatchEventsCard";
+import MatchAttemptsCard from "@/components/admin/MatchAttemptsCard";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
@@ -762,6 +763,19 @@ export default function CompeticaoPartidaDetalhePage() {
           matchConfig={isCollective
             ? (((sport as any)?.match_config ?? {}) as MatchConfig)
             : ({ requires_attachments: individualConfig?.requires_attachments ?? false } as MatchConfig)}
+          canWrite={canWrite}
+        />
+      )}
+
+      {/* Attempts Card (individual with allows_attempts) */}
+      {!isCollective && individualConfig?.allows_attempts && (
+        <MatchAttemptsCard
+          matchId={matchId!}
+          entries={entries.map((e) => {
+            const pse = e.participant_sport_event_id ? pseMap.get(e.participant_sport_event_id) : null;
+            return { id: e.id, label: getEntryLabel(e), participantId: pse?.participant_id };
+          })}
+          individualConfig={individualConfig}
           canWrite={canWrite}
         />
       )}

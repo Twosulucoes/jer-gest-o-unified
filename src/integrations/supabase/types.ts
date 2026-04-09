@@ -869,6 +869,73 @@ export type Database = {
           },
         ]
       }
+      match_attempts: {
+        Row: {
+          attempt_number: number
+          created_at: string
+          id: string
+          is_valid: boolean
+          match_entry_id: string
+          match_id: string
+          notes: string | null
+          participant_id: string
+          updated_at: string
+          value_cm: number | null
+          value_ms: number | null
+          value_points: number | null
+        }
+        Insert: {
+          attempt_number: number
+          created_at?: string
+          id?: string
+          is_valid?: boolean
+          match_entry_id: string
+          match_id: string
+          notes?: string | null
+          participant_id: string
+          updated_at?: string
+          value_cm?: number | null
+          value_ms?: number | null
+          value_points?: number | null
+        }
+        Update: {
+          attempt_number?: number
+          created_at?: string
+          id?: string
+          is_valid?: boolean
+          match_entry_id?: string
+          match_id?: string
+          notes?: string | null
+          participant_id?: string
+          updated_at?: string
+          value_cm?: number | null
+          value_ms?: number | null
+          value_points?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_attempts_match_entry_id_fkey"
+            columns: ["match_entry_id"]
+            isOneToOne: false
+            referencedRelation: "competition_match_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_attempts_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_attempts_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_events: {
         Row: {
           created_at: string
