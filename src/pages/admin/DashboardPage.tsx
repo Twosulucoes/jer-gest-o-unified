@@ -1,16 +1,49 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import type { Database } from "@/integrations/supabase/types";
 import {
   Users, UserCheck, ShieldCheck, Bus, UtensilsCrossed, Building, Trophy,
   CheckCircle2, AlertTriangle, Clock, TrendingUp,
+  Upload, UsersRound, ScanLine, Navigation, ClipboardList, CalendarDays, KeyRound,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
+
+interface QuickAction {
+  label: string;
+  to: string;
+  icon: React.ReactNode;
+  roles: AppRole[];
+  group: string;
+}
+
+const ADMIN_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"];
+const TRANSPORT_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "transporte"];
+const FOOD_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"];
+
+const quickActions: QuickAction[] = [
+  // Preparação
+  { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-5 w-5" />, roles: ["admin", "secretaria"], group: "Preparação" },
+  { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Preparação" },
+  // Credenciamento
+  { label: "Credenciamento", to: "/admin/credenciamento", icon: <UserCheck className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Credenciamento" },
+  { label: "Validação QR", to: "/admin/validacao-qr", icon: <ScanLine className="h-5 w-5" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"], group: "Credenciamento" },
+  // Logística
+  { label: "Viagens", to: "/admin/transporte/viagens", icon: <Navigation className="h-5 w-5" />, roles: TRANSPORT_ROLES, group: "Logística" },
+  { label: "Consumo", to: "/admin/alimentacao/consumo", icon: <ClipboardList className="h-5 w-5" />, roles: FOOD_ROLES, group: "Logística" },
+  { label: "Ocupação", to: "/admin/alojamento/ocupacao", icon: <KeyRound className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Logística" },
+  // Competição
+  { label: "Agenda", to: "/admin/competicao/agenda", icon: <CalendarDays className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Competição" },
+  { label: "Resultados", to: "/admin/competicao/resultados", icon: <ClipboardList className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Competição" },
+];
 
 interface StatCardProps {
   label: string;
@@ -38,8 +71,12 @@ function StatCard({ label, value, icon, sub, alert }: StatCardProps) {
 }
 
 export default function DashboardPage() {
-  const { profile, roles } = useAuth();
+  const { profile, roles, hasRole } = useAuth();
   const [selectedEventId, setSelectedEventId] = useState("");
+
+  const visibleActions = quickActions.filter((a) => a.roles.some((r) => hasRole(r)));
+  const actionGroups = Array.from(new Set(visibleActions.map((a) => a.group)));
+
 
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
@@ -191,6 +228,32 @@ export default function DashboardPage() {
           </Select>
         </div>
       </div>
+
+      {/* Quick Actions */}
+      {visibleActions.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            Acesso Rápido
+          </h2>
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {visibleActions.map((action) => (
+              <Link
+                key={action.to}
+                to={action.to}
+                className="group flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-4 text-center transition-colors hover:border-primary/40 hover:bg-accent"
+              >
+                <div className="text-muted-foreground group-hover:text-primary transition-colors">
+                  {action.icon}
+                </div>
+                <span className="text-sm font-medium text-foreground">{action.label}</span>
+                <span className="text-[10px] text-muted-foreground">{action.group}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Separator />
 
       {!eventId ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
