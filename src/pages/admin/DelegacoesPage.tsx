@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Plus, Pencil, Users } from "lucide-react";
+import { Plus, Pencil, Users, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -176,13 +177,20 @@ export default function DelegacoesPage() {
                     <TableCell>{del.chief_name || "—"}</TableCell>
                     <TableCell>{del.chief_phone || "—"}</TableCell>
                     <TableCell>{del.chief_email || "—"}</TableCell>
-                    {canWrite && (
-                      <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => { setEditingDelegation(del); setDialogOpen(true); }}>
-                          <Pencil className="h-4 w-4" />
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" asChild>
+                          <Link to={`/admin/delegacoes/${del.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
                         </Button>
-                      </TableCell>
-                    )}
+                        {canWrite && (
+                          <Button variant="ghost" size="icon" onClick={() => { setEditingDelegation(del); setDialogOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })}
