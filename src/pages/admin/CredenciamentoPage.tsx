@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,7 +88,7 @@ const buildDefaultFieldConfig = (w: number, h: number) => {
   };
 };
 
-type ParticipantState = "awaiting" | "ready_to_emit" | "complete";
+type ParticipantState = "pending_import" | "awaiting" | "ready_to_emit" | "complete";
 
 export default function CredenciamentoPage() {
   const queryClient = useQueryClient();
@@ -181,7 +182,7 @@ export default function CredenciamentoPage() {
         .select("id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id")
         .eq("event_id", selectedEventId)
         .eq("is_active", true)
-        .in("status", ["confirmed", "credentialed"])
+        .in("status", ["pending", "confirmed", "credentialed"])
         .order("status", { ascending: true })
         .limit(2000);
       if (error) throw error;
@@ -268,6 +269,7 @@ export default function CredenciamentoPage() {
 
   // --- Determine participant state ---
   const getParticipantState = (p: { status: string; id: string }): ParticipantState => {
+    if (p.status === "pending") return "pending_import";
     const isCredentialed = p.status === "credentialed";
     const hasActiveCred = activeCredMap.has(p.id);
     if (!isCredentialed) return "awaiting";
@@ -289,7 +291,7 @@ export default function CredenciamentoPage() {
   }, [participants]);
 
   // --- Filter & Sort ---
-  const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, complete: 2 };
+  const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, pending_import: 2, complete: 3 };
 
   const filtered = useMemo(() => {
     return (participants ?? [])
@@ -346,9 +348,9 @@ export default function CredenciamentoPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
-      toast.success("Participante credenciado!");
+      toast.success("Presença registrada!");
     },
-    onError: (err: Error) => toast.error(`Erro ao credenciar: ${err.message}`),
+    onError: (err: Error) => toast.error(`Erro ao registrar presença: ${err.message}`),
   });
 
   const emitCredentialMutation = useMutation({
@@ -416,6 +418,7 @@ export default function CredenciamentoPage() {
   });
 
   // --- Stats ---
+  const pendingCount = (participants ?? []).filter((p) => p.status === "pending").length;
   const confirmedCount = (participants ?? []).filter((p) => p.status === "confirmed").length;
   const credentialedCount = (participants ?? []).filter((p) => p.status === "credentialed").length;
   const credentialsEmittedCount = activeCredentials.length;
@@ -483,7 +486,7 @@ export default function CredenciamentoPage() {
     setBatchProcessing(false);
     setSelectedIds(new Set());
     queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
-    toast.success(`${success} credenciado(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
+    toast.success(`${success} presença(s) registrada(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
   };
 
   const handleBatchEmit = async () => {
@@ -508,8 +511,10 @@ export default function CredenciamentoPage() {
 
   const getStateInfo = (state: string) => {
     switch (state) {
+      case "pending_import":
+        return { label: "Pendente", icon: <AlertCircle className="h-3.5 w-3.5" />, variant: "outline" as const, className: "border-orange-300 bg-orange-50 text-orange-700" };
       case "awaiting":
-        return { label: "Aguardando", icon: <Clock className="h-3.5 w-3.5" />, variant: "outline" as const, className: "border-yellow-300 bg-yellow-50 text-yellow-700" };
+        return { label: "Confirmado", icon: <Clock className="h-3.5 w-3.5" />, variant: "outline" as const, className: "border-yellow-300 bg-yellow-50 text-yellow-700" };
       case "ready_to_emit":
         return { label: "Pronto p/ emissão", icon: <CreditCard className="h-3.5 w-3.5" />, variant: "outline" as const, className: "border-blue-300 bg-blue-50 text-blue-700" };
       case "complete":
@@ -536,16 +541,21 @@ export default function CredenciamentoPage() {
         <Info className="h-4 w-4 text-muted-foreground shrink-0" />
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           <span className="font-medium text-foreground">Fluxo:</span>
-          <Badge variant="outline" className="border-yellow-300 bg-yellow-50 text-yellow-700 text-[10px] gap-1">
-            <Clock className="h-3 w-3" /> Importado
+          <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700 text-[10px] gap-1">
+            <AlertCircle className="h-3 w-3" /> Pendente
           </Badge>
           <ArrowRight className="h-3 w-3" />
+          <Badge variant="outline" className="border-yellow-300 bg-yellow-50 text-yellow-700 text-[10px] gap-1">
+            <Clock className="h-3 w-3" /> Confirmado
+          </Badge>
+          <ArrowRight className="h-3 w-3" />
+          <span className="text-[10px]">Registrar presença →</span>
           <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700 text-[10px] gap-1">
-            <CreditCard className="h-3 w-3" /> Credenciado
+            <CreditCard className="h-3 w-3" /> Pronto p/ emissão
           </Badge>
           <ArrowRight className="h-3 w-3" />
           <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700 text-[10px] gap-1">
-            <ShieldCheck className="h-3 w-3" /> Credencial emitida
+            <ShieldCheck className="h-3 w-3" /> Credencial ativa
           </Badge>
         </div>
       </div>
@@ -613,7 +623,8 @@ export default function CredenciamentoPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as situações</SelectItem>
-                    <SelectItem value="awaiting">Aguardando credenciamento</SelectItem>
+                    <SelectItem value="pending_import">Pendente</SelectItem>
+                    <SelectItem value="awaiting">Confirmado</SelectItem>
                     <SelectItem value="ready_to_emit">Pronto p/ emissão</SelectItem>
                     <SelectItem value="complete">Credencial ativa</SelectItem>
                   </SelectContent>
@@ -642,16 +653,24 @@ export default function CredenciamentoPage() {
 
       {/* Stats */}
       {selectedEventId && participants && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           <Card>
             <CardContent className="pt-3 pb-3 px-4">
               <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Total</p>
               <p className="text-xl font-bold text-foreground">{participants.length}</p>
             </CardContent>
           </Card>
+          {pendingCount > 0 && (
+            <Card className="border-orange-200">
+              <CardContent className="pt-3 pb-3 px-4">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Pendentes</p>
+                <p className="text-xl font-bold text-orange-600">{pendingCount}</p>
+              </CardContent>
+            </Card>
+          )}
           <Card className="border-yellow-200">
             <CardContent className="pt-3 pb-3 px-4">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Aguardando</p>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Confirmados</p>
               <p className="text-xl font-bold text-yellow-600">{confirmedCount}</p>
             </CardContent>
           </Card>
@@ -721,14 +740,14 @@ export default function CredenciamentoPage() {
                   <AlertDialogTrigger asChild>
                     <Button size="sm" disabled={batchProcessing}>
                       {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
-                      Credenciar ({selectedAwaiting.length})
+                      Registrar presença ({selectedAwaiting.length})
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmar credenciamento em lote</AlertDialogTitle>
+                      <AlertDialogTitle>Confirmar registro de presença em lote</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Você está prestes a credenciar <strong>{selectedAwaiting.length}</strong> participante(s). Esta ação registrará a presença e mudará o status para "Credenciado". Deseja prosseguir?
+                        Você está prestes a registrar presença de <strong>{selectedAwaiting.length}</strong> participante(s). O status será alterado para "Pronto p/ emissão". Deseja prosseguir?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -816,7 +835,12 @@ export default function CredenciamentoPage() {
                       )}
                       <TableCell>
                         <div>
-                          <span className="font-medium text-sm">{person?.full_name ?? "—"}</span>
+                          <Link
+                            to={`/admin/participantes/${p.id}`}
+                            className="font-medium text-sm text-primary hover:underline"
+                          >
+                            {person?.full_name ?? "—"}
+                          </Link>
                           {activeCred && (
                             <span className="block text-[10px] font-mono text-muted-foreground mt-0.5">
                               {activeCred.credential_code}
@@ -844,25 +868,29 @@ export default function CredenciamentoPage() {
                       {canCredential && (
                         <TableCell>
                           <div className="flex gap-1.5 justify-end flex-wrap">
+                            {state === "pending_import" && (
+                              <span className="text-[10px] text-orange-600 italic">Aguardando confirmação</span>
+                            )}
+
                             {state === "awaiting" && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button size="sm" className="h-7 text-xs" disabled={credentialMutation.isPending}>
                                     <UserCheck className="mr-1 h-3 w-3" />
-                                    Credenciar
+                                    Registrar presença
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Credenciar participante</AlertDialogTitle>
+                                    <AlertDialogTitle>Registrar presença</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Confirma que <strong>{person?.full_name}</strong> se apresentou presencialmente?
+                                      Confirma que <strong>{person?.full_name}</strong> se apresentou presencialmente? Após confirmar, será possível emitir a credencial.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                     <AlertDialogAction onClick={() => credentialMutation.mutate(p.id)}>
-                                      Sim, credenciar
+                                      Confirmar presença
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
