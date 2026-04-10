@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  AlertCircle,
 } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
