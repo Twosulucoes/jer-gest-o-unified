@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -351,8 +352,8 @@ export default function CredenciamentoPage() {
 
   const emitCredentialMutation = useMutation({
     mutationFn: async (participantId: string) => {
-      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      const qrCodeValue = crypto.randomUUID();
+      const credentialCode = generateCredentialCode();
+      const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: participantId,
         event_id: selectedEventId,
@@ -390,8 +391,8 @@ export default function CredenciamentoPage() {
           .eq("id", existing.id);
         if (revokeErr) throw revokeErr;
       }
-      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      const qrCodeValue = crypto.randomUUID();
+      const credentialCode = generateCredentialCode();
+      const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: participantId,
         event_id: selectedEventId,
@@ -489,8 +490,8 @@ export default function CredenciamentoPage() {
     setBatchProcessing(true);
     let success = 0, errors = 0;
     for (const id of selectedReadyToEmit) {
-      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      const qrCodeValue = crypto.randomUUID();
+      const credentialCode = generateCredentialCode();
+      const qrCodeValue = generateQrCodeValue(selectedEventId, id, credentialCode);
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: id, event_id: selectedEventId, credential_code: credentialCode, qr_code_value: qrCodeValue,
         status: "active", binding_source: "manual", issued_at: new Date().toISOString(), activated_at: new Date().toISOString(),
