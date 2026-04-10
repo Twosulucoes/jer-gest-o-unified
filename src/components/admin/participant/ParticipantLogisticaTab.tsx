@@ -21,10 +21,6 @@ const PASSENGER_STATUS: Record<string, { label: string; variant: "default" | "se
   cancelled: { label: "Cancelado", variant: "destructive" },
 };
 
-const TRIP_STATUS: Record<string, string> = {
-  scheduled: "Agendada", in_progress: "Em trânsito", completed: "Concluída", cancelled: "Cancelada",
-};
-
 export default function ParticipantLogisticaTab({ participantId, eventId }: Props) {
   // Alojamento
   const { data: lodging = [], isLoading: loadingLodging } = useQuery({
