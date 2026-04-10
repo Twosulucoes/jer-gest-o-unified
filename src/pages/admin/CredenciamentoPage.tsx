@@ -104,7 +104,8 @@ export default function CredenciamentoPage() {
   const [batchProcessing, setBatchProcessing] = useState(false);
   const [labelParticipantId, setLabelParticipantId] = useState<string | null>(null);
   const [batchLabelIds, setBatchLabelIds] = useState<string[]>([]);
-
+  const [batchCredentialConfirmOpen, setBatchCredentialConfirmOpen] = useState(false);
+  const [batchEmitConfirmOpen, setBatchEmitConfirmOpen] = useState(false);
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   // Reset page on filter change
