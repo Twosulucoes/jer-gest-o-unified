@@ -155,7 +155,7 @@ export default function DelegacoesPage() {
                 <TableHead>Chefe</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead>E-mail</TableHead>
-                {canWrite && <TableHead className="w-[60px]" />}
+                <TableHead className="w-[80px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
