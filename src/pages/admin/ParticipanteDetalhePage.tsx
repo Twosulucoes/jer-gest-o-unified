@@ -33,7 +33,7 @@ export default function ParticipanteDetalhePage() {
   const { participantId } = useParams<{ participantId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
 
   const [labelOpen, setLabelOpen] = useState(false);
