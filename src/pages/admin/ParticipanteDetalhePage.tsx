@@ -282,7 +282,7 @@ export default function ParticipanteDetalhePage() {
                 disabled={emitCredentialMutation.isPending}
               >
                 <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                {emitCredentialMutation.isPending ? "Emitindo..." : "Credenciar"}
+                {emitCredentialMutation.isPending ? "Emitindo..." : "Registrar presença e emitir"}
               </Button>
             )}
             {hasCredential && (
