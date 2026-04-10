@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IdCard, Clock, Eye, Tag } from "lucide-react";
+import { IdCard, Clock, Eye, Tag, ScanLine, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Props {
@@ -21,6 +21,21 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
   suspended: { label: "Suspensa", variant: "destructive" },
 };
 
+const SCAN_RESULT_INFO: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
+  valid: { label: "Válido", icon: <CheckCircle className="h-3.5 w-3.5 text-green-600" />, className: "text-green-700" },
+  invalid: { label: "Inválido", icon: <XCircle className="h-3.5 w-3.5 text-destructive" />, className: "text-destructive" },
+  revoked: { label: "Revogada", icon: <XCircle className="h-3.5 w-3.5 text-destructive" />, className: "text-destructive" },
+  not_found: { label: "Não encontrada", icon: <AlertCircle className="h-3.5 w-3.5 text-orange-500" />, className: "text-orange-600" },
+};
+
+const SCAN_POINT_LABELS: Record<string, string> = {
+  general: "Geral",
+  meal: "Alimentação",
+  transport: "Transporte",
+  lodging: "Alojamento",
+  competition: "Competição",
+};
+
 export default function ParticipantCredencialTab({ participantId, eventId, onEmitLabel, onPreviewCredential }: Props) {
   const { data: credentials = [], isLoading } = useQuery({
     queryKey: ["participant_credentials", participantId, eventId],
@@ -34,6 +49,24 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
       if (error) throw error;
       return data;
     },
+  });
+
+  // Scan history for all credentials of this participant
+  const credentialIds = credentials.map(c => c.id);
+  const { data: scans = [] } = useQuery({
+    queryKey: ["credential_scans", participantId, credentialIds],
+    queryFn: async () => {
+      if (!credentialIds.length) return [];
+      const { data, error } = await supabase
+        .from("credential_scans")
+        .select("id, scanned_at, scan_point, scan_result, credential_id")
+        .in("credential_id", credentialIds)
+        .order("scanned_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data;
+    },
+    enabled: credentialIds.length > 0,
   });
 
   if (isLoading) {
@@ -89,6 +122,40 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
                 <span>{new Date(active.activated_at).toLocaleString("pt-BR")}</span>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Scan history */}
+      {scans.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ScanLine className="h-4 w-4" />Últimas Validações
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {scans.map(s => {
+                const info = SCAN_RESULT_INFO[s.scan_result] ?? { label: s.scan_result, icon: null, className: "" };
+                return (
+                  <div key={s.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2">
+                    <div className="flex items-center gap-2">
+                      {info.icon}
+                      <div>
+                        <span className={`font-medium ${info.className}`}>{info.label}</span>
+                        <span className="text-muted-foreground ml-2 text-xs">
+                          {SCAN_POINT_LABELS[s.scan_point] ?? s.scan_point}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(s.scanned_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
