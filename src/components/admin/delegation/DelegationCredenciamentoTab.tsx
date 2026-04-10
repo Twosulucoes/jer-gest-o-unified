@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { ExternalLink, IdCard, Users, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ExternalLink, IdCard, Users, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta", coach: "Técnico", head_of_delegation: "Chefe", staff: "Staff",
@@ -20,6 +21,8 @@ interface Props {
 }
 
 export default function DelegationCredenciamentoTab({ delegationId, eventId }: Props) {
+  const [filter, setFilter] = useState("all");
+
   const { data: participants = [], isLoading } = useQuery({
     queryKey: ["delegation_cred_participants", delegationId],
     queryFn: async () => {
@@ -69,8 +72,18 @@ export default function DelegationCredenciamentoTab({ delegationId, eventId }: P
   const total = participants.length;
   const withCredential = credentials.length;
   const credentialed = participants.filter(p => p.status === "credentialed").length;
-  const pending = participants.filter(p => p.status === "pending" || p.status === "confirmed").length;
+  const readyToCredential = participants.filter(p => (p.status === "confirmed" || p.status === "pending") && !credMap.has(p.id)).length;
+  const cancelled = participants.filter(p => p.status === "cancelled").length;
   const progress = total > 0 ? Math.round((withCredential / total) * 100) : 0;
+
+  const filtered = useMemo(() => {
+    if (filter === "all") return participants;
+    if (filter === "ready") return participants.filter(p => (p.status === "confirmed" || p.status === "pending") && !credMap.has(p.id));
+    if (filter === "active") return participants.filter(p => credMap.has(p.id));
+    if (filter === "without") return participants.filter(p => !credMap.has(p.id) && p.status !== "cancelled");
+    if (filter === "credentialed") return participants.filter(p => p.status === "credentialed");
+    return participants;
+  }, [participants, filter, credMap]);
 
   if (isLoading) {
     return <div className="space-y-3 mt-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>;
@@ -90,19 +103,32 @@ export default function DelegationCredenciamentoTab({ delegationId, eventId }: P
       </Card>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <SummaryCard icon={<Users className="h-4 w-4 text-primary" />} label="Total" value={total} />
-        <SummaryCard icon={<CheckCircle className="h-4 w-4 text-green-600" />} label="Credenciados" value={credentialed} />
-        <SummaryCard icon={<IdCard className="h-4 w-4 text-emerald-600" />} label="Credencial ativa" value={withCredential} />
-        <SummaryCard icon={<Clock className="h-4 w-4 text-amber-600" />} label="Pendentes" value={pending} />
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <SummaryCard icon={<Users className="h-4 w-4 text-primary" />} label="Total" value={total} onClick={() => setFilter("all")} active={filter === "all"} />
+        <SummaryCard icon={<AlertCircle className="h-4 w-4 text-amber-600" />} label="Aptos" value={readyToCredential} onClick={() => setFilter("ready")} active={filter === "ready"} />
+        <SummaryCard icon={<CheckCircle className="h-4 w-4 text-green-600" />} label="Credenciados" value={credentialed} onClick={() => setFilter("credentialed")} active={filter === "credentialed"} />
+        <SummaryCard icon={<IdCard className="h-4 w-4 text-emerald-600" />} label="Credencial ativa" value={withCredential} onClick={() => setFilter("active")} active={filter === "active"} />
+        <SummaryCard icon={<XCircle className="h-4 w-4 text-destructive" />} label="Sem credencial" value={total - withCredential - cancelled} onClick={() => setFilter("without")} active={filter === "without"} />
       </div>
 
+      {/* Filter label */}
+      {filter !== "all" && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs">
+            Filtro: {filter === "ready" ? "Aptos para credenciar" : filter === "active" ? "Com credencial ativa" : filter === "without" ? "Sem credencial" : "Credenciados"}
+          </Badge>
+          <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setFilter("all")}>Limpar</Button>
+        </div>
+      )}
+
       {/* Participant list */}
-      {!participants.length ? (
+      {!filtered.length ? (
         <Card>
           <CardContent className="flex flex-col items-center py-12 text-center">
             <IdCard className="h-10 w-10 text-muted-foreground mb-3" />
-            <p className="text-muted-foreground font-medium">Nenhum participante nesta delegação</p>
+            <p className="text-muted-foreground font-medium">
+              {filter !== "all" ? "Nenhum participante neste filtro" : "Nenhum participante nesta delegação"}
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -118,13 +144,16 @@ export default function DelegationCredenciamentoTab({ delegationId, eventId }: P
               </TableRow>
             </TableHeader>
             <TableBody>
-              {participants.map((p) => {
+              {filtered.map((p) => {
                 const person = peopleMap.get(p.person_id);
                 const cred = credMap.get(p.id);
+                const isReady = (p.status === "confirmed" || p.status === "pending") && !cred;
                 return (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className={isReady ? "bg-amber-50/50 dark:bg-amber-950/10" : undefined}>
                     <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
-                    <TableCell>{TYPE_LABELS[p.participant_type] ?? p.participant_type}</TableCell>
+                    <TableCell>
+                      <span className="text-xs text-muted-foreground">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</span>
+                    </TableCell>
                     <TableCell>
                       {p.status === "credentialed" ? (
                         <Badge variant="default">Credenciado</Badge>
@@ -139,9 +168,13 @@ export default function DelegationCredenciamentoTab({ delegationId, eventId }: P
                     <TableCell>
                       {cred ? (
                         <span className="text-xs font-mono text-green-600">{cred.credential_code}</span>
+                      ) : isReady ? (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300">
+                          <AlertCircle className="h-3 w-3 mr-1" />Apto
+                        </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <XCircle className="h-3 w-3" /> Sem credencial
+                          <XCircle className="h-3 w-3" /> —
                         </span>
                       )}
                     </TableCell>
@@ -159,13 +192,18 @@ export default function DelegationCredenciamentoTab({ delegationId, eventId }: P
           </Table>
         </div>
       )}
+
+      <p className="text-xs text-muted-foreground">{filtered.length} de {total} participante(s)</p>
     </div>
   );
 }
 
-function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+function SummaryCard({ icon, label, value, onClick, active }: { icon: React.ReactNode; label: string; value: number; onClick?: () => void; active?: boolean }) {
   return (
-    <Card>
+    <Card
+      className={`cursor-pointer transition-colors hover:bg-muted/50 ${active ? "ring-2 ring-primary/30 bg-muted/30" : ""}`}
+      onClick={onClick}
+    >
       <CardContent className="flex items-center gap-2.5 p-3">
         {icon}
         <div>
