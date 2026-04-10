@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, XCircle, Trophy } from "lucide-react";
+import { Search, Users, XCircle, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -285,11 +285,11 @@ export default function ParticipantesPage() {
                     <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
                       {getEnrollmentSummary(p.id)}
                     </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/participantes/${p.id}/esportivo`)} title="Histórico esportivo">
-                        <Trophy className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+                     <TableCell className="flex gap-1">
+                       <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/participantes/${p.id}`)} title="Ver participante">
+                         <User className="h-4 w-4 mr-1" />Ver
+                       </Button>
+                     </TableCell>
                   </TableRow>
                 );
               })}
