@@ -119,7 +119,7 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
         <IdCard className="h-10 w-10 opacity-50" />
         <div className="text-center space-y-1">
           <p className="font-medium">Nenhuma credencial emitida</p>
-          <p className="text-sm">Use o botão "Credenciar" no cabeçalho para emitir a primeira credencial deste participante.</p>
+          <p className="text-sm">Use o botão "Registrar presença e emitir" no cabeçalho para emitir a primeira credencial deste participante.</p>
         </div>
       </div>
     );
