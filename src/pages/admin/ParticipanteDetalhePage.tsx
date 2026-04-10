@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, User, IdCard, Bus, Trophy, Printer, CheckCircle, Tag, ArrowLeft, Eye, RefreshCw } from "lucide-react";
+import { Loader2, User, IdCard, Bus, Trophy, CheckCircle, Tag, ArrowLeft, Eye, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
