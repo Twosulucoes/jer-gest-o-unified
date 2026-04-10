@@ -717,16 +717,52 @@ export default function CredenciamentoPage() {
                 Limpar
               </Button>
               {selectedAwaiting.length > 0 && (
-                <Button size="sm" onClick={handleBatchCredential} disabled={batchProcessing}>
-                  {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
-                  Credenciar ({selectedAwaiting.length})
-                </Button>
+                <AlertDialog open={batchCredentialConfirmOpen} onOpenChange={setBatchCredentialConfirmOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" disabled={batchProcessing}>
+                      {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
+                      Credenciar ({selectedAwaiting.length})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar credenciamento em lote</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Você está prestes a credenciar <strong>{selectedAwaiting.length}</strong> participante(s). Esta ação registrará a presença e mudará o status para "Credenciado". Deseja prosseguir?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={(e) => { e.preventDefault(); setBatchCredentialConfirmOpen(false); handleBatchCredential(); }}>
+                        Confirmar ({selectedAwaiting.length})
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
               {selectedReadyToEmit.length > 0 && (
-                <Button size="sm" onClick={handleBatchEmit} disabled={batchProcessing}>
-                  {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CreditCard className="mr-1.5 h-3.5 w-3.5" />}
-                  Emitir ({selectedReadyToEmit.length})
-                </Button>
+                <AlertDialog open={batchEmitConfirmOpen} onOpenChange={setBatchEmitConfirmOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" disabled={batchProcessing}>
+                      {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CreditCard className="mr-1.5 h-3.5 w-3.5" />}
+                      Emitir ({selectedReadyToEmit.length})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar emissão em lote</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Você está prestes a emitir credenciais para <strong>{selectedReadyToEmit.length}</strong> participante(s). Cada um receberá um código único e QR Code. Esta ação não pode ser desfeita facilmente. Deseja prosseguir?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={(e) => { e.preventDefault(); setBatchEmitConfirmOpen(false); handleBatchEmit(); }}>
+                        Emitir ({selectedReadyToEmit.length})
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
               {selectedComplete.length > 0 && (
                 <Button size="sm" variant="outline" onClick={() => setBatchLabelIds(selectedComplete)}>
