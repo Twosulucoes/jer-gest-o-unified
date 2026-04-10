@@ -33,7 +33,7 @@ export default function DelegacaoDetalhePage() {
 
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
-  const { data: delegation, isLoading } = useQuery({
+  const { data: delegation, isLoading, isError } = useQuery({
     queryKey: ["delegation_detail", delegationId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -97,8 +97,16 @@ export default function DelegacaoDetalhePage() {
     );
   }
 
-  if (!delegation) {
-    return <div className="text-center py-12 text-muted-foreground">Delegação não encontrada.</div>;
+  if (isError || !delegation) {
+    return (
+      <div className="text-center py-12 space-y-2">
+        <p className="text-muted-foreground font-medium">Delegação não encontrada</p>
+        <p className="text-sm text-muted-foreground">Verifique o link ou volte para a listagem.</p>
+        <Button variant="outline" size="sm" onClick={() => navigate("/admin/delegacoes")} className="mt-2">
+          <ArrowLeft className="h-3.5 w-3.5 mr-1" />Voltar para Delegações
+        </Button>
+      </div>
+    );
   }
 
   const statusInfo = STATUS_MAP[delegation.status] ?? { label: delegation.status, variant: "outline" as const };
@@ -194,9 +202,11 @@ export default function DelegacaoDetalhePage() {
           <TabsTrigger value="esportivo" className="gap-1.5">
             <Trophy className="h-3.5 w-3.5" />Esportivo
           </TabsTrigger>
-          <TabsTrigger value="credenciamento" className="gap-1.5">
-            <IdCard className="h-3.5 w-3.5" />Credenciamento
-          </TabsTrigger>
+          {canCredential && (
+            <TabsTrigger value="credenciamento" className="gap-1.5">
+              <IdCard className="h-3.5 w-3.5" />Credenciamento
+            </TabsTrigger>
+          )}
           <TabsTrigger value="logistica" className="gap-1.5">
             <Bus className="h-3.5 w-3.5" />Logística
           </TabsTrigger>
@@ -211,9 +221,11 @@ export default function DelegacaoDetalhePage() {
         <TabsContent value="esportivo">
           <DelegationEsportivoTab delegationId={delegation.id} eventId={delegation.event_id} />
         </TabsContent>
-        <TabsContent value="credenciamento">
-          <DelegationCredenciamentoTab delegationId={delegation.id} eventId={delegation.event_id} />
-        </TabsContent>
+        {canCredential && (
+          <TabsContent value="credenciamento">
+            <DelegationCredenciamentoTab delegationId={delegation.id} eventId={delegation.event_id} />
+          </TabsContent>
+        )}
         <TabsContent value="logistica">
           <DelegationLogisticaTab delegationId={delegation.id} eventId={delegation.event_id} />
         </TabsContent>

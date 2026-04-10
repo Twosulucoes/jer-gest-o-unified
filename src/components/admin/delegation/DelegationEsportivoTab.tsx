@@ -52,7 +52,6 @@ export default function DelegationEsportivoTab({ delegationId, eventId }: Props)
     },
   });
 
-  // Get match entries for this delegation's enrollments AND teams
   const enrollmentIds = enrollments.map(e => e.id);
   const teamIds = teams.map(t => t.id);
 
@@ -95,20 +94,19 @@ export default function DelegationEsportivoTab({ delegationId, eventId }: Props)
 
   const isLoading = loadingP || loadingE;
 
-  // Group by sport
   const sportMap = new Map<string, { sport: string; events: Map<string, { name: string; athleteCount: number }>; athletes: Set<string> }>();
   for (const e of enrollments) {
     const sportName = e.sport_events?.sports?.name ?? "Outro";
+    const seEventId = e.sport_event_id;
     const eventName = e.sport_events?.name ?? "";
-    const eventId = e.sport_event_id;
     if (!sportMap.has(sportName)) {
       sportMap.set(sportName, { sport: sportName, events: new Map(), athletes: new Set() });
     }
     const entry = sportMap.get(sportName)!;
-    if (!entry.events.has(eventId)) {
-      entry.events.set(eventId, { name: eventName, athleteCount: 0 });
+    if (!entry.events.has(seEventId)) {
+      entry.events.set(seEventId, { name: eventName, athleteCount: 0 });
     }
-    entry.events.get(eventId)!.athleteCount++;
+    entry.events.get(seEventId)!.athleteCount++;
     entry.athletes.add(e.participant_id);
   }
 
@@ -169,8 +167,10 @@ export default function DelegationEsportivoTab({ delegationId, eventId }: Props)
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Trophy className="h-10 w-10 text-muted-foreground mb-3" />
-            <p className="text-muted-foreground font-medium">Nenhuma inscrição esportiva encontrada</p>
-            <p className="text-sm text-muted-foreground mt-1">Inscreva participantes em provas para visualizar.</p>
+            <p className="text-muted-foreground font-medium">Nenhuma inscrição esportiva registrada</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Os participantes desta delegação ainda não foram inscritos em modalidades ou provas.
+            </p>
           </CardContent>
         </Card>
       ) : (

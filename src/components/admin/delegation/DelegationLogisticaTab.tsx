@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BedDouble, UtensilsCrossed, Bus, MapPin, ExternalLink, Calendar } from "lucide-react";
+import { BedDouble, UtensilsCrossed, Bus, MapPin, ExternalLink, Calendar, PackageOpen } from "lucide-react";
 
 interface Props {
   delegationId: string;
@@ -28,7 +28,6 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
     },
   });
 
-  // Lodging with participant names
   const { data: lodging = [], isLoading: loadingL } = useQuery({
     queryKey: ["delegation_lodging_detail", delegationId, participantIds.length],
     queryFn: async () => {
@@ -44,7 +43,6 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
     enabled: participantIds.length > 0,
   });
 
-  // Meals grouped by date and type
   const { data: meals = [] } = useQuery({
     queryKey: ["delegation_meals_detail", delegationId, participantIds.length],
     queryFn: async () => {
@@ -61,7 +59,6 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
     enabled: participantIds.length > 0,
   });
 
-  // Transport with trip details
   const { data: transport = [] } = useQuery({
     queryKey: ["delegation_transport_detail", delegationId, participantIds.length],
     queryFn: async () => {
@@ -79,7 +76,6 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
 
   const isLoading = loadingP || loadingL;
 
-  // Group lodging by location → unit with count
   const lodgingByLocation = useMemo(() => {
     const map = new Map<string, { location: string; units: Map<string, { count: number; status: Map<string, number> }> }>();
     for (const occ of lodging) {
@@ -95,7 +91,6 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
     return map;
   }, [lodging]);
 
-  // Group meals by date → type
   const mealsByDate = useMemo(() => {
     const map = new Map<string, Map<string, number>>();
     for (const m of meals) {
@@ -108,7 +103,6 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
     return new Map([...map.entries()].sort(([a], [b]) => b.localeCompare(a)));
   }, [meals]);
 
-  // Group transport by trip
   const transportByTrip = useMemo(() => {
     const map = new Map<string, { tripId: string; route: string; departure: string; count: number }>();
     for (const t of transport) {
@@ -125,6 +119,22 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
 
   if (isLoading) {
     return <div className="space-y-3 mt-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</div>;
+  }
+
+  const hasAnyData = lodging.length > 0 || meals.length > 0 || transport.length > 0;
+
+  if (!hasAnyData && participantIds.length === 0) {
+    return (
+      <div className="mt-4">
+        <Card>
+          <CardContent className="flex flex-col items-center py-12 text-center">
+            <PackageOpen className="h-10 w-10 text-muted-foreground mb-3" />
+            <p className="text-muted-foreground font-medium">Nenhum participante nesta delegação</p>
+            <p className="text-sm text-muted-foreground mt-1">Cadastre participantes para visualizar a logística.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -147,7 +157,7 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
           </CardHeader>
           <CardContent>
             {lodgingByLocation.size === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum participante alojado.</p>
+              <p className="text-sm text-muted-foreground">Nenhum participante desta delegação foi alojado ainda. Utilize o módulo de Alojamento para alocar quartos.</p>
             ) : (
               <div className="space-y-3">
                 {Array.from(lodgingByLocation.values()).map(({ location, units }) => (
@@ -177,7 +187,7 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
           </CardContent>
         </Card>
 
-        {/* Alimentação por data */}
+        {/* Alimentação */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -187,7 +197,7 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
           </CardHeader>
           <CardContent>
             {mealsByDate.size === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma refeição registrada.</p>
+              <p className="text-sm text-muted-foreground">Nenhuma refeição registrada para esta delegação. O registro é feito pelo módulo de Alimentação durante o evento.</p>
             ) : (
               <div className="space-y-3">
                 {Array.from(mealsByDate.entries()).slice(0, 7).map(([date, types]) => (
@@ -215,7 +225,7 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
           </CardContent>
         </Card>
 
-        {/* Transporte por viagem */}
+        {/* Transporte */}
         <Card className="md:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -225,7 +235,7 @@ export default function DelegationLogisticaTab({ delegationId, eventId }: Props)
           </CardHeader>
           <CardContent>
             {transportByTrip.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum embarque registrado.</p>
+              <p className="text-sm text-muted-foreground">Nenhum embarque registrado para esta delegação. Viagens e passageiros são gerenciados pelo módulo de Transporte.</p>
             ) : (
               <Table>
                 <TableHeader>
