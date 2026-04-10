@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -103,7 +104,8 @@ export default function CredenciamentoPage() {
   const [batchProcessing, setBatchProcessing] = useState(false);
   const [labelParticipantId, setLabelParticipantId] = useState<string | null>(null);
   const [batchLabelIds, setBatchLabelIds] = useState<string[]>([]);
-
+  const [batchCredentialConfirmOpen, setBatchCredentialConfirmOpen] = useState(false);
+  const [batchEmitConfirmOpen, setBatchEmitConfirmOpen] = useState(false);
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   // Reset page on filter change
@@ -351,8 +353,8 @@ export default function CredenciamentoPage() {
 
   const emitCredentialMutation = useMutation({
     mutationFn: async (participantId: string) => {
-      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      const qrCodeValue = crypto.randomUUID();
+      const credentialCode = generateCredentialCode();
+      const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: participantId,
         event_id: selectedEventId,
@@ -390,8 +392,8 @@ export default function CredenciamentoPage() {
           .eq("id", existing.id);
         if (revokeErr) throw revokeErr;
       }
-      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      const qrCodeValue = crypto.randomUUID();
+      const credentialCode = generateCredentialCode();
+      const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: participantId,
         event_id: selectedEventId,
@@ -489,8 +491,8 @@ export default function CredenciamentoPage() {
     setBatchProcessing(true);
     let success = 0, errors = 0;
     for (const id of selectedReadyToEmit) {
-      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      const qrCodeValue = crypto.randomUUID();
+      const credentialCode = generateCredentialCode();
+      const qrCodeValue = generateQrCodeValue(selectedEventId, id, credentialCode);
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: id, event_id: selectedEventId, credential_code: credentialCode, qr_code_value: qrCodeValue,
         status: "active", binding_source: "manual", issued_at: new Date().toISOString(), activated_at: new Date().toISOString(),
@@ -715,16 +717,52 @@ export default function CredenciamentoPage() {
                 Limpar
               </Button>
               {selectedAwaiting.length > 0 && (
-                <Button size="sm" onClick={handleBatchCredential} disabled={batchProcessing}>
-                  {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
-                  Credenciar ({selectedAwaiting.length})
-                </Button>
+                <AlertDialog open={batchCredentialConfirmOpen} onOpenChange={setBatchCredentialConfirmOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" disabled={batchProcessing}>
+                      {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
+                      Credenciar ({selectedAwaiting.length})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar credenciamento em lote</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Você está prestes a credenciar <strong>{selectedAwaiting.length}</strong> participante(s). Esta ação registrará a presença e mudará o status para "Credenciado". Deseja prosseguir?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={(e) => { e.preventDefault(); setBatchCredentialConfirmOpen(false); handleBatchCredential(); }}>
+                        Confirmar ({selectedAwaiting.length})
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
               {selectedReadyToEmit.length > 0 && (
-                <Button size="sm" onClick={handleBatchEmit} disabled={batchProcessing}>
-                  {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CreditCard className="mr-1.5 h-3.5 w-3.5" />}
-                  Emitir ({selectedReadyToEmit.length})
-                </Button>
+                <AlertDialog open={batchEmitConfirmOpen} onOpenChange={setBatchEmitConfirmOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" disabled={batchProcessing}>
+                      {batchProcessing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CreditCard className="mr-1.5 h-3.5 w-3.5" />}
+                      Emitir ({selectedReadyToEmit.length})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar emissão em lote</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Você está prestes a emitir credenciais para <strong>{selectedReadyToEmit.length}</strong> participante(s). Cada um receberá um código único e QR Code. Esta ação não pode ser desfeita facilmente. Deseja prosseguir?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={(e) => { e.preventDefault(); setBatchEmitConfirmOpen(false); handleBatchEmit(); }}>
+                        Emitir ({selectedReadyToEmit.length})
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
               {selectedComplete.length > 0 && (
                 <Button size="sm" variant="outline" onClick={() => setBatchLabelIds(selectedComplete)}>

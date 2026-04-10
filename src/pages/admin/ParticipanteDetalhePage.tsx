@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, User, IdCard, Bus, Trophy, CheckCircle, Tag, ArrowLeft, Eye, RefreshCw } from "lucide-react";
@@ -134,8 +135,8 @@ export default function ParticipanteDetalhePage() {
   const emitCredentialMutation = useMutation({
     mutationFn: async () => {
       if (!participant || !user) throw new Error("Dados insuficientes");
-      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}`;
-      const qrCodeValue = `jer:${participant.event_id}:${participant.id}:${credentialCode}`;
+      const credentialCode = generateCredentialCode();
+      const qrCodeValue = generateQrCodeValue(participant.event_id, participant.id, credentialCode);
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: participant.id,
         event_id: participant.event_id,
@@ -173,8 +174,8 @@ export default function ParticipanteDetalhePage() {
         .from("participant_credentials")
         .update({ status: "reissued", revoked_at: new Date().toISOString() })
         .eq("id", activeCredential.id);
-      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}`;
-      const qrCodeValue = `jer:${participant.event_id}:${participant.id}:${credentialCode}`;
+      const credentialCode = generateCredentialCode();
+      const qrCodeValue = generateQrCodeValue(participant.event_id, participant.id, credentialCode);
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: participant.id,
         event_id: participant.event_id,
