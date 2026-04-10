@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ExternalLink, IdCard, Users, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
+import { ExternalLink, IdCard, Users, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta", coach: "Técnico", head_of_delegation: "Chefe", staff: "Staff",
