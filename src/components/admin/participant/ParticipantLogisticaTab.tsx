@@ -2,13 +2,28 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bus, UtensilsCrossed, BedDouble } from "lucide-react";
+import { Bus, UtensilsCrossed, BedDouble, Clock, MapPin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Props {
   participantId: string;
   eventId: string;
 }
+
+const LODGING_STATUS: Record<string, string> = {
+  allocated: "Alocado", checked_in: "Check-in", checked_out: "Check-out",
+};
+
+const PASSENGER_STATUS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+  boarded: { label: "Embarcado", variant: "default" },
+  confirmed: { label: "Confirmado", variant: "secondary" },
+  alighted: { label: "Desembarcado", variant: "outline" },
+  cancelled: { label: "Cancelado", variant: "destructive" },
+};
+
+const TRIP_STATUS: Record<string, string> = {
+  scheduled: "Agendada", in_progress: "Em trânsito", completed: "Concluída", cancelled: "Cancelada",
+};
 
 export default function ParticipantLogisticaTab({ participantId, eventId }: Props) {
   // Alojamento
@@ -55,7 +70,7 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
     enabled: locationIds.length > 0,
   });
 
-  // Alimentação - contagem de refeições
+  // Alimentação
   const { data: mealCount } = useQuery({
     queryKey: ["participant_meals_count", participantId],
     queryFn: async () => {
@@ -68,12 +83,71 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
     },
   });
 
+  // Transporte - passageiros
+  const { data: passengers = [], isLoading: loadingTransport } = useQuery({
+    queryKey: ["participant_transport", participantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transport_passengers")
+        .select("id, trip_id, status, boarded_at, alighted_at")
+        .eq("participant_id", participantId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const tripIds = [...new Set(passengers.map(p => p.trip_id))];
+  const { data: trips = [] } = useQuery({
+    queryKey: ["trips_for_participant", tripIds],
+    queryFn: async () => {
+      if (!tripIds.length) return [];
+      const { data, error } = await supabase
+        .from("transport_trips")
+        .select("id, route_id, vehicle_id, scheduled_at, status")
+        .in("id", tripIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: tripIds.length > 0,
+  });
+
+  const routeIds = [...new Set(trips.map(t => t.route_id))];
+  const vehicleIds = [...new Set(trips.filter(t => t.vehicle_id).map(t => t.vehicle_id!))];
+
+  const { data: routes = [] } = useQuery({
+    queryKey: ["routes_for_participant", routeIds],
+    queryFn: async () => {
+      if (!routeIds.length) return [];
+      const { data, error } = await supabase
+        .from("transport_routes")
+        .select("id, name, origin, destination")
+        .in("id", routeIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: routeIds.length > 0,
+  });
+
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ["vehicles_for_participant", vehicleIds],
+    queryFn: async () => {
+      if (!vehicleIds.length) return [];
+      const { data, error } = await supabase
+        .from("transport_vehicles")
+        .select("id, label, plate")
+        .in("id", vehicleIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: vehicleIds.length > 0,
+  });
+
   const unitMap = new Map(units.map(u => [u.id, u]));
   const locationMap = new Map(locations.map(l => [l.id, l]));
-
-  const LODGING_STATUS: Record<string, string> = {
-    allocated: "Alocado", checked_in: "Check-in", checked_out: "Check-out",
-  };
+  const tripMap = new Map(trips.map(t => [t.id, t]));
+  const routeMap = new Map(routes.map(r => [r.id, r]));
+  const vehicleMap = new Map(vehicles.map(v => [v.id, v]));
 
   return (
     <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -131,7 +205,45 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">Dados de transporte serão exibidos aqui.</p>
+          {loadingTransport ? (
+            <Skeleton className="h-8 w-full" />
+          ) : passengers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem viagens registradas.</p>
+          ) : (
+            <div className="space-y-3">
+              {passengers.map(p => {
+                const trip = tripMap.get(p.trip_id);
+                const route = trip ? routeMap.get(trip.route_id) : null;
+                const vehicle = trip?.vehicle_id ? vehicleMap.get(trip.vehicle_id) : null;
+                const pStatus = PASSENGER_STATUS[p.status] ?? { label: p.status, variant: "outline" as const };
+
+                return (
+                  <div key={p.id} className="text-sm space-y-1 border-b last:border-0 pb-2 last:pb-0">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-0.5">
+                        {route && (
+                          <div className="flex items-center gap-1 text-foreground font-medium">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{route.origin} → {route.destination}</span>
+                          </div>
+                        )}
+                        {trip?.scheduled_at && (
+                          <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                            <Clock className="h-3 w-3" />
+                            {new Date(trip.scheduled_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                          </div>
+                        )}
+                        {vehicle && (
+                          <span className="text-xs text-muted-foreground">{vehicle.label} • {vehicle.plate}</span>
+                        )}
+                      </div>
+                      <Badge variant={pStatus.variant} className="text-xs shrink-0 ml-2">{pStatus.label}</Badge>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

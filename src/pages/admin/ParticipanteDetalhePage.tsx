@@ -1,11 +1,14 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Loader2, User, Shield, IdCard, Bus, Trophy, FileText } from "lucide-react";
+import { ArrowLeft, Loader2, User, IdCard, Bus, Trophy, Printer, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import ParticipantResumoTab from "@/components/admin/participant/ParticipantResumoTab";
 import ParticipantHistoricoTab from "@/components/admin/participant/ParticipantHistoricoTab";
 import ParticipantCredencialTab from "@/components/admin/participant/ParticipantCredencialTab";
@@ -81,6 +84,23 @@ export default function ParticipanteDetalhePage() {
     enabled: !!delegation?.institution_id,
   });
 
+  // Active credential for quick actions
+  const { data: activeCredential } = useQuery({
+    queryKey: ["participant_active_cred_header", participantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("participant_credentials")
+        .select("id, status, credential_code")
+        .eq("participant_id", participantId!)
+        .eq("event_id", participant!.event_id)
+        .eq("status", "active")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!participant?.event_id,
+  });
+
   if (loadingParticipant) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -97,14 +117,28 @@ export default function ParticipanteDetalhePage() {
 
   const statusInfo = STATUS_LABELS[participant.status] ?? { label: participant.status, variant: "outline" as const };
   const initials = person?.full_name?.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
+  const canCredential = participant.status === "confirmed" && !activeCredential;
+  const hasCredential = !!activeCredential;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
+      {/* Breadcrumbs */}
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/admin/participantes">Participantes</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{person?.full_name ?? "Detalhe"}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="mt-1 shrink-0">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
         <Avatar className="h-14 w-14 shrink-0">
           <AvatarImage src={person?.photo_url ?? undefined} />
           <AvatarFallback className="text-lg font-semibold">{initials}</AvatarFallback>
@@ -119,6 +153,20 @@ export default function ParticipanteDetalhePage() {
               <span className="text-sm text-muted-foreground">{institution.name}</span>
             )}
           </div>
+        </div>
+
+        {/* Quick actions */}
+        <div className="flex gap-2 shrink-0 flex-wrap">
+          {canCredential && (
+            <Button size="sm" variant="outline" onClick={() => navigate("/admin/credenciamento")}>
+              <CheckCircle className="h-3.5 w-3.5 mr-1" />Credenciar
+            </Button>
+          )}
+          {hasCredential && (
+            <Button size="sm" variant="outline" onClick={() => navigate("/admin/credenciamento")}>
+              <Printer className="h-3.5 w-3.5 mr-1" />Credencial
+            </Button>
+          )}
         </div>
       </div>
 
