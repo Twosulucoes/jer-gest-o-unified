@@ -2,12 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { IdCard, QrCode, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { IdCard, Clock, Eye, Tag } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Props {
   participantId: string;
   eventId: string;
+  onEmitLabel?: () => void;
+  onPreviewCredential?: () => void;
 }
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -18,7 +21,7 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
   suspended: { label: "Suspensa", variant: "destructive" },
 };
 
-export default function ParticipantCredencialTab({ participantId, eventId }: Props) {
+export default function ParticipantCredencialTab({ participantId, eventId, onEmitLabel, onPreviewCredential }: Props) {
   const { data: credentials = [], isLoading } = useQuery({
     queryKey: ["participant_credentials", participantId, eventId],
     queryFn: async () => {
@@ -53,9 +56,23 @@ export default function ParticipantCredencialTab({ participantId, eventId }: Pro
       {active && (
         <Card className="border-primary/30">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <IdCard className="h-4 w-4 text-primary" />Credencial Ativa
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <IdCard className="h-4 w-4 text-primary" />Credencial Ativa
+              </CardTitle>
+              <div className="flex gap-1.5">
+                {onPreviewCredential && (
+                  <Button size="sm" variant="outline" onClick={onPreviewCredential}>
+                    <Eye className="h-3.5 w-3.5 mr-1" />Visualizar
+                  </Button>
+                )}
+                {onEmitLabel && (
+                  <Button size="sm" variant="outline" onClick={onEmitLabel}>
+                    <Tag className="h-3.5 w-3.5 mr-1" />Etiqueta
+                  </Button>
+                )}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex justify-between">
@@ -87,7 +104,14 @@ export default function ParticipantCredencialTab({ participantId, eventId }: Pro
                 const st = STATUS_LABELS[c.status] ?? { label: c.status, variant: "outline" as const };
                 return (
                   <div key={c.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2">
-                    <span className="font-mono text-xs text-muted-foreground">{c.credential_code}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground">{c.credential_code}</span>
+                      {c.revoked_at && (
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(c.revoked_at).toLocaleDateString("pt-BR")}
+                        </span>
+                      )}
+                    </div>
                     <Badge variant={st.variant} className="text-xs">{st.label}</Badge>
                   </div>
                 );

@@ -1,7 +1,8 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, User, IdCard, Bus, Trophy, Printer, CheckCircle } from "lucide-react";
+import { Loader2, User, IdCard, Bus, Trophy, Printer, CheckCircle, Tag, ArrowLeft, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,10 +10,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import ParticipantResumoTab from "@/components/admin/participant/ParticipantResumoTab";
 import ParticipantHistoricoTab from "@/components/admin/participant/ParticipantHistoricoTab";
 import ParticipantCredencialTab from "@/components/admin/participant/ParticipantCredencialTab";
 import ParticipantLogisticaTab from "@/components/admin/participant/ParticipantLogisticaTab";
+import { SingleLabelDialog } from "@/components/admin/CredentialLabelPrint";
+import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta", coach: "Técnico", head_of_delegation: "Chefe Delegação", staff: "Staff",
@@ -27,6 +32,12 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
 export default function ParticipanteDetalhePage() {
   const { participantId } = useParams<{ participantId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const [labelOpen, setLabelOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data: participant, isLoading: loadingParticipant } = useQuery({
     queryKey: ["participant_full", participantId],
@@ -84,13 +95,13 @@ export default function ParticipanteDetalhePage() {
     enabled: !!delegation?.institution_id,
   });
 
-  // Active credential for quick actions
+  // Active credential
   const { data: activeCredential } = useQuery({
     queryKey: ["participant_active_cred_header", participantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("participant_credentials")
-        .select("id, status, credential_code")
+        .select("id, status, credential_code, qr_code_value")
         .eq("participant_id", participantId!)
         .eq("event_id", participant!.event_id)
         .eq("status", "active")
@@ -99,6 +110,62 @@ export default function ParticipanteDetalhePage() {
       return data;
     },
     enabled: !!participant?.event_id,
+  });
+
+  // Credential template for preview
+  const { data: credentialTemplate } = useQuery({
+    queryKey: ["credential_template_active", participant?.event_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("credential_templates")
+        .select("*")
+        .eq("event_id", participant!.event_id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!participant?.event_id,
+  });
+
+  // Credenciar mutation (emit credential inline)
+  const emitCredentialMutation = useMutation({
+    mutationFn: async () => {
+      if (!participant || !user) throw new Error("Dados insuficientes");
+      
+      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}`;
+      const qrCodeValue = `jer:${participant.event_id}:${participant.id}:${credentialCode}`;
+
+      const { error } = await supabase.from("participant_credentials").insert({
+        participant_id: participant.id,
+        event_id: participant.event_id,
+        credential_code: credentialCode,
+        qr_code_value: qrCodeValue,
+        status: "active",
+        binding_source: "manual",
+        activated_at: new Date().toISOString(),
+        activated_by: user.id,
+        issued_at: new Date().toISOString(),
+        issued_by: user.id,
+      });
+      if (error) throw error;
+
+      // Update participant status to credentialed
+      await supabase
+        .from("participants")
+        .update({ status: "credentialed", credentialed_at: new Date().toISOString(), credentialed_by: user.id })
+        .eq("id", participant.id);
+    },
+    onSuccess: () => {
+      toast({ title: "Credencial emitida com sucesso!" });
+      queryClient.invalidateQueries({ queryKey: ["participant_active_cred_header"] });
+      queryClient.invalidateQueries({ queryKey: ["participant_credentials"] });
+      queryClient.invalidateQueries({ queryKey: ["participant_full"] });
+      queryClient.invalidateQueries({ queryKey: ["participant_active_credential"] });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao emitir credencial", description: String(err), variant: "destructive" });
+    },
   });
 
   if (loadingParticipant) {
@@ -117,31 +184,45 @@ export default function ParticipanteDetalhePage() {
 
   const statusInfo = STATUS_LABELS[participant.status] ?? { label: participant.status, variant: "outline" as const };
   const initials = person?.full_name?.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
-  const canCredential = participant.status === "confirmed" && !activeCredential;
+  const canCredential = (participant.status === "confirmed" || participant.status === "pending") && !activeCredential;
   const hasCredential = !!activeCredential;
+
+  // Back navigation - try to go back, fallback to participants list
+  const handleBack = () => {
+    if (location.key !== "default") {
+      navigate(-1);
+    } else {
+      navigate("/admin/participantes");
+    }
+  };
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Breadcrumbs */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/admin/participantes">Participantes</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{person?.full_name ?? "Detalhe"}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      {/* Breadcrumbs + back */}
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0 h-8 w-8">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/admin/participantes">Participantes</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{person?.full_name ?? "Detalhe"}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
 
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Avatar className="h-14 w-14 shrink-0">
+        <Avatar className="h-14 w-14 shrink-0 ring-2 ring-primary/20">
           <AvatarImage src={person?.photo_url ?? undefined} />
-          <AvatarFallback className="text-lg font-semibold">{initials}</AvatarFallback>
+          <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">{initials}</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-bold text-foreground truncate">{person?.full_name ?? "Participante"}</h1>
@@ -150,22 +231,34 @@ export default function ParticipanteDetalhePage() {
             <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
             {!participant.is_active && <Badge variant="destructive">Inativo</Badge>}
             {institution && (
-              <span className="text-sm text-muted-foreground">{institution.name}</span>
+              <span className="text-sm text-muted-foreground">• {institution.name}</span>
             )}
           </div>
         </div>
 
         {/* Quick actions */}
-        <div className="flex gap-2 shrink-0 flex-wrap">
+        <div className="flex gap-1.5 shrink-0 flex-wrap">
           {canCredential && (
-            <Button size="sm" variant="outline" onClick={() => navigate("/admin/credenciamento")}>
-              <CheckCircle className="h-3.5 w-3.5 mr-1" />Credenciar
+            <Button
+              size="sm"
+              onClick={() => emitCredentialMutation.mutate()}
+              disabled={emitCredentialMutation.isPending}
+            >
+              <CheckCircle className="h-3.5 w-3.5 mr-1" />
+              {emitCredentialMutation.isPending ? "Emitindo..." : "Credenciar"}
             </Button>
           )}
           {hasCredential && (
-            <Button size="sm" variant="outline" onClick={() => navigate("/admin/credenciamento")}>
-              <Printer className="h-3.5 w-3.5 mr-1" />Credencial
-            </Button>
+            <>
+              {credentialTemplate && (
+                <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+                  <Eye className="h-3.5 w-3.5 mr-1" />Credencial
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={() => setLabelOpen(true)}>
+                <Tag className="h-3.5 w-3.5 mr-1" />Etiqueta
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -194,12 +287,37 @@ export default function ParticipanteDetalhePage() {
           <ParticipantHistoricoTab participantId={participant.id} />
         </TabsContent>
         <TabsContent value="credencial">
-          <ParticipantCredencialTab participantId={participant.id} eventId={participant.event_id} />
+          <ParticipantCredencialTab
+            participantId={participant.id}
+            eventId={participant.event_id}
+            onEmitLabel={() => setLabelOpen(true)}
+            onPreviewCredential={credentialTemplate ? () => setPreviewOpen(true) : undefined}
+          />
         </TabsContent>
         <TabsContent value="logistica">
           <ParticipantLogisticaTab participantId={participant.id} eventId={participant.event_id} />
         </TabsContent>
       </Tabs>
+
+      {/* Dialogs */}
+      {participantId && participant && (
+        <>
+          <SingleLabelDialog
+            open={labelOpen}
+            onOpenChange={setLabelOpen}
+            participantId={participantId}
+            eventId={participant.event_id}
+          />
+          {credentialTemplate && (
+            <CredentialPreviewDialog
+              open={previewOpen}
+              onOpenChange={setPreviewOpen}
+              template={credentialTemplate}
+              participantId={participantId}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }
