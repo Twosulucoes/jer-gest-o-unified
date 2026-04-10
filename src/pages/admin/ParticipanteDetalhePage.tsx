@@ -10,6 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import ParticipantResumoTab from "@/components/admin/participant/ParticipantResumoTab";
@@ -38,6 +42,7 @@ export default function ParticipanteDetalhePage() {
 
   const [labelOpen, setLabelOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [reissueConfirmOpen, setReissueConfirmOpen] = useState(false);
 
   const { data: participant, isLoading: loadingParticipant } = useQuery({
     queryKey: ["participant_full", participantId],
@@ -95,7 +100,6 @@ export default function ParticipanteDetalhePage() {
     enabled: !!delegation?.institution_id,
   });
 
-  // Active credential
   const { data: activeCredential } = useQuery({
     queryKey: ["participant_active_cred_header", participantId],
     queryFn: async () => {
@@ -112,7 +116,6 @@ export default function ParticipanteDetalhePage() {
     enabled: !!participant?.event_id,
   });
 
-  // Credential template for preview
   const { data: credentialTemplate } = useQuery({
     queryKey: ["credential_template_active", participant?.event_id],
     queryFn: async () => {
@@ -128,14 +131,11 @@ export default function ParticipanteDetalhePage() {
     enabled: !!participant?.event_id,
   });
 
-  // Credenciar mutation (emit credential inline)
   const emitCredentialMutation = useMutation({
     mutationFn: async () => {
       if (!participant || !user) throw new Error("Dados insuficientes");
-      
       const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}`;
       const qrCodeValue = `jer:${participant.event_id}:${participant.id}:${credentialCode}`;
-
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: participant.id,
         event_id: participant.event_id,
@@ -149,8 +149,6 @@ export default function ParticipanteDetalhePage() {
         issued_by: user.id,
       });
       if (error) throw error;
-
-      // Update participant status to credentialed
       await supabase
         .from("participants")
         .update({ status: "credentialed", credentialed_at: new Date().toISOString(), credentialed_by: user.id })
@@ -165,6 +163,43 @@ export default function ParticipanteDetalhePage() {
     },
     onError: (err) => {
       toast({ title: "Erro ao emitir credencial", description: String(err), variant: "destructive" });
+    },
+  });
+
+  const reissueCredentialMutation = useMutation({
+    mutationFn: async () => {
+      if (!participant || !user || !activeCredential) throw new Error("Dados insuficientes");
+      await supabase
+        .from("participant_credentials")
+        .update({ status: "reissued", revoked_at: new Date().toISOString() })
+        .eq("id", activeCredential.id);
+      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}`;
+      const qrCodeValue = `jer:${participant.event_id}:${participant.id}:${credentialCode}`;
+      const { error } = await supabase.from("participant_credentials").insert({
+        participant_id: participant.id,
+        event_id: participant.event_id,
+        credential_code: credentialCode,
+        qr_code_value: qrCodeValue,
+        status: "active",
+        binding_source: "reissue",
+        activated_at: new Date().toISOString(),
+        activated_by: user.id,
+        issued_at: new Date().toISOString(),
+        issued_by: user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "2ª via emitida com sucesso!" });
+      setReissueConfirmOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["participant_active_cred_header"] });
+      queryClient.invalidateQueries({ queryKey: ["participant_credentials"] });
+      queryClient.invalidateQueries({ queryKey: ["participant_active_credential"] });
+      queryClient.invalidateQueries({ queryKey: ["credential_scans"] });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao reemitir credencial", description: String(err), variant: "destructive" });
+      setReissueConfirmOpen(false);
     },
   });
 
@@ -186,51 +221,8 @@ export default function ParticipanteDetalhePage() {
   const initials = person?.full_name?.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
   const canCredential = (participant.status === "confirmed" || participant.status === "pending") && !activeCredential;
   const hasCredential = !!activeCredential;
-
-  // Permission: only admin, secretaria, coordenacao_tecnica can emit/reissue credentials
   const canManageCredentials = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
-  // Reissue mutation
-  const reissueCredentialMutation = useMutation({
-    mutationFn: async () => {
-      if (!participant || !user || !activeCredential) throw new Error("Dados insuficientes");
-
-      // Revoke current
-      await supabase
-        .from("participant_credentials")
-        .update({ status: "reissued", revoked_at: new Date().toISOString() })
-        .eq("id", activeCredential.id);
-
-      // Issue new
-      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}`;
-      const qrCodeValue = `jer:${participant.event_id}:${participant.id}:${credentialCode}`;
-      const { error } = await supabase.from("participant_credentials").insert({
-        participant_id: participant.id,
-        event_id: participant.event_id,
-        credential_code: credentialCode,
-        qr_code_value: qrCodeValue,
-        status: "active",
-        binding_source: "reissue",
-        activated_at: new Date().toISOString(),
-        activated_by: user.id,
-        issued_at: new Date().toISOString(),
-        issued_by: user.id,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({ title: "2ª via emitida com sucesso!" });
-      queryClient.invalidateQueries({ queryKey: ["participant_active_cred_header"] });
-      queryClient.invalidateQueries({ queryKey: ["participant_credentials"] });
-      queryClient.invalidateQueries({ queryKey: ["participant_active_credential"] });
-      queryClient.invalidateQueries({ queryKey: ["credential_scans"] });
-    },
-    onError: (err) => {
-      toast({ title: "Erro ao reemitir credencial", description: String(err), variant: "destructive" });
-    },
-  });
-
-  // Back navigation - try to go back, fallback to participants list
   const handleBack = () => {
     if (location.key !== "default") {
       navigate(-1);
@@ -305,7 +297,7 @@ export default function ParticipanteDetalhePage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => reissueCredentialMutation.mutate()}
+                  onClick={() => setReissueConfirmOpen(true)}
                   disabled={reissueCredentialMutation.isPending}
                 >
                   <RefreshCw className="h-3.5 w-3.5 mr-1" />
@@ -316,6 +308,7 @@ export default function ParticipanteDetalhePage() {
           </div>
         )}
       </div>
+
       {/* Tabs */}
       <Tabs defaultValue="resumo" className="w-full">
         <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
@@ -351,6 +344,34 @@ export default function ParticipanteDetalhePage() {
           <ParticipantLogisticaTab participantId={participant.id} eventId={participant.event_id} />
         </TabsContent>
       </Tabs>
+
+      {/* Reissue confirmation dialog */}
+      <AlertDialog open={reissueConfirmOpen} onOpenChange={setReissueConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar reemissão de credencial</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">Ao confirmar, a credencial ativa atual será <strong>substituída</strong>.</span>
+              <span className="block">• Um novo código e QR Code serão gerados</span>
+              <span className="block">• A credencial anterior ficará com status "Reemitida"</span>
+              <span className="block">• O histórico completo será preservado</span>
+              <span className="block mt-2 text-foreground font-medium">Deseja prosseguir com a 2ª via?</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reissueCredentialMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                reissueCredentialMutation.mutate();
+              }}
+              disabled={reissueCredentialMutation.isPending}
+            >
+              {reissueCredentialMutation.isPending ? "Reemitindo..." : "Confirmar 2ª Via"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Dialogs */}
       {participantId && participant && (
