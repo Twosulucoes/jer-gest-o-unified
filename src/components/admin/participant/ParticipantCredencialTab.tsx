@@ -1,9 +1,11 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IdCard, Clock, Eye, Tag, ScanLine, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { IdCard, Clock, Eye, Tag, ScanLine, CheckCircle, XCircle, AlertCircle, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Props {
@@ -37,6 +39,8 @@ const SCAN_POINT_LABELS: Record<string, string> = {
 };
 
 export default function ParticipantCredencialTab({ participantId, eventId, onEmitLabel, onPreviewCredential }: Props) {
+  const [scanFilter, setScanFilter] = useState<string>("all");
+
   const { data: credentials = [], isLoading } = useQuery({
     queryKey: ["participant_credentials", participantId, eventId],
     queryFn: async () => {
@@ -51,7 +55,6 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
     },
   });
 
-  // Scan history for all credentials of this participant
   const credentialIds = credentials.map(c => c.id);
   const { data: scans = [] } = useQuery({
     queryKey: ["credential_scans", participantId, credentialIds],
@@ -59,15 +62,50 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
       if (!credentialIds.length) return [];
       const { data, error } = await supabase
         .from("credential_scans")
-        .select("id, scanned_at, scan_point, scan_result, credential_id")
+        .select("id, scanned_at, scan_point, scan_result, credential_id, scanned_by")
         .in("credential_id", credentialIds)
         .order("scanned_at", { ascending: false })
-        .limit(20);
+        .limit(30);
       if (error) throw error;
       return data;
     },
     enabled: credentialIds.length > 0,
   });
+
+  // Fetch operator profiles for scans
+  const operatorIds = [...new Set(scans.map(s => s.scanned_by).filter(Boolean))];
+  const { data: operators = [] } = useQuery({
+    queryKey: ["scan_operators", operatorIds],
+    queryFn: async () => {
+      if (!operatorIds.length) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", operatorIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: operatorIds.length > 0,
+  });
+
+  const operatorMap = new Map(operators.map(o => [o.id, o.full_name]));
+
+  // Filter scans
+  const filteredScans = useMemo(() => {
+    if (scanFilter === "all") return scans;
+    // Check if filter is a scan_point or scan_result
+    if (Object.keys(SCAN_POINT_LABELS).includes(scanFilter)) {
+      return scans.filter(s => s.scan_point === scanFilter);
+    }
+    return scans.filter(s => s.scan_result === scanFilter);
+  }, [scans, scanFilter]);
+
+  // Collect unique filter options
+  const filterOptions = useMemo(() => {
+    const points = [...new Set(scans.map(s => s.scan_point))];
+    const results = [...new Set(scans.map(s => s.scan_result))];
+    return { points, results };
+  }, [scans]);
 
   if (isLoading) {
     return <div className="mt-4 space-y-2"><Skeleton className="h-32 w-full" /></div>;
@@ -77,9 +115,12 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
 
   if (credentials.length === 0) {
     return (
-      <div className="mt-4 flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
-        <IdCard className="h-8 w-8" />
-        <p>Nenhuma credencial emitida para este participante.</p>
+      <div className="mt-4 flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
+        <IdCard className="h-10 w-10 opacity-50" />
+        <div className="text-center space-y-1">
+          <p className="font-medium">Nenhuma credencial emitida</p>
+          <p className="text-sm">Use o botão "Credenciar" no cabeçalho para emitir a primeira credencial deste participante.</p>
+        </div>
       </div>
     );
   }
@@ -127,17 +168,52 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
       )}
 
       {/* Scan history */}
-      {scans.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <ScanLine className="h-4 w-4" />Últimas Validações
+              <ScanLine className="h-4 w-4" />Validações
+              {scans.length > 0 && (
+                <Badge variant="secondary" className="text-xs font-normal">{scans.length}</Badge>
+              )}
             </CardTitle>
-          </CardHeader>
-          <CardContent>
+            {scans.length > 1 && (
+              <Select value={scanFilter} onValueChange={setScanFilter}>
+                <SelectTrigger className="w-[160px] h-8 text-xs">
+                  <Filter className="h-3 w-3 mr-1" />
+                  <SelectValue placeholder="Filtrar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {filterOptions.points.length > 1 && filterOptions.points.map(p => (
+                    <SelectItem key={`p-${p}`} value={p}>
+                      📍 {SCAN_POINT_LABELS[p] ?? p}
+                    </SelectItem>
+                  ))}
+                  {filterOptions.results.length > 1 && filterOptions.results.map(r => (
+                    <SelectItem key={`r-${r}`} value={r}>
+                      {r === "valid" ? "✅" : "❌"} {SCAN_RESULT_INFO[r]?.label ?? r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {scans.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Nenhuma validação registrada até o momento.
+            </p>
+          ) : filteredScans.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Nenhum resultado para o filtro selecionado.
+            </p>
+          ) : (
             <div className="space-y-2">
-              {scans.map(s => {
+              {filteredScans.map(s => {
                 const info = SCAN_RESULT_INFO[s.scan_result] ?? { label: s.scan_result, icon: null, className: "" };
+                const operatorName = operatorMap.get(s.scanned_by);
                 return (
                   <div key={s.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2">
                     <div className="flex items-center gap-2">
@@ -147,18 +223,21 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
                         <span className="text-muted-foreground ml-2 text-xs">
                           {SCAN_POINT_LABELS[s.scan_point] ?? s.scan_point}
                         </span>
+                        {operatorName && (
+                          <span className="text-muted-foreground ml-1 text-xs">• {operatorName}</span>
+                        )}
                       </div>
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground shrink-0">
                       {new Date(s.scanned_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
                     </span>
                   </div>
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       {credentials.length > 1 && (
         <Card>

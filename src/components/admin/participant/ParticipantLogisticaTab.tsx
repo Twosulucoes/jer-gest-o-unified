@@ -64,7 +64,7 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
     enabled: locationIds.length > 0,
   });
 
-  // Alimentação — detalhada por refeição
+  // Alimentação
   const { data: meals = [], isLoading: loadingMeals } = useQuery({
     queryKey: ["participant_meals_detail", participantId],
     queryFn: async () => {
@@ -197,7 +197,7 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
           {loadingLodging ? (
             <Skeleton className="h-8 w-full" />
           ) : lodging.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sem alocação registrada.</p>
+            <p className="text-sm text-muted-foreground text-center py-3">Nenhuma alocação de alojamento registrada para este participante.</p>
           ) : (
             <div className="space-y-2">
               {lodging.map(l => {
@@ -233,7 +233,7 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
           {loadingMeals ? (
             <Skeleton className="h-8 w-full" />
           ) : meals.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma refeição registrada.</p>
+            <p className="text-sm text-muted-foreground text-center py-3">Nenhuma refeição consumida registrada até o momento.</p>
           ) : (
             <div className="space-y-1">
               <p className="text-2xl font-bold text-foreground">{meals.length}</p>
@@ -269,7 +269,7 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
           {loadingTransport ? (
             <Skeleton className="h-8 w-full" />
           ) : passengers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sem viagens registradas.</p>
+            <p className="text-sm text-muted-foreground text-center py-3">Nenhuma viagem vinculada a este participante.</p>
           ) : (
             <div className="space-y-3">
               {passengers.map(p => {
