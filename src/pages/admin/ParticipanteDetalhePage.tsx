@@ -187,6 +187,49 @@ export default function ParticipanteDetalhePage() {
   const canCredential = (participant.status === "confirmed" || participant.status === "pending") && !activeCredential;
   const hasCredential = !!activeCredential;
 
+  // Permission: only admin, secretaria, coordenacao_tecnica can emit/reissue credentials
+  const canManageCredentials = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
+
+  // Reissue mutation
+  const reissueCredentialMutation = useMutation({
+    mutationFn: async () => {
+      if (!participant || !user || !activeCredential) throw new Error("Dados insuficientes");
+
+      // Revoke current
+      await supabase
+        .from("participant_credentials")
+        .update({ status: "reissued", revoked_at: new Date().toISOString() })
+        .eq("id", activeCredential.id);
+
+      // Issue new
+      const credentialCode = `JER-${Date.now().toString(36).toUpperCase()}`;
+      const qrCodeValue = `jer:${participant.event_id}:${participant.id}:${credentialCode}`;
+      const { error } = await supabase.from("participant_credentials").insert({
+        participant_id: participant.id,
+        event_id: participant.event_id,
+        credential_code: credentialCode,
+        qr_code_value: qrCodeValue,
+        status: "active",
+        binding_source: "reissue",
+        activated_at: new Date().toISOString(),
+        activated_by: user.id,
+        issued_at: new Date().toISOString(),
+        issued_by: user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "2ª via emitida com sucesso!" });
+      queryClient.invalidateQueries({ queryKey: ["participant_active_cred_header"] });
+      queryClient.invalidateQueries({ queryKey: ["participant_credentials"] });
+      queryClient.invalidateQueries({ queryKey: ["participant_active_credential"] });
+      queryClient.invalidateQueries({ queryKey: ["credential_scans"] });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao reemitir credencial", description: String(err), variant: "destructive" });
+    },
+  });
+
   // Back navigation - try to go back, fallback to participants list
   const handleBack = () => {
     if (location.key !== "default") {
@@ -236,33 +279,43 @@ export default function ParticipanteDetalhePage() {
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className="flex gap-1.5 shrink-0 flex-wrap">
-          {canCredential && (
-            <Button
-              size="sm"
-              onClick={() => emitCredentialMutation.mutate()}
-              disabled={emitCredentialMutation.isPending}
-            >
-              <CheckCircle className="h-3.5 w-3.5 mr-1" />
-              {emitCredentialMutation.isPending ? "Emitindo..." : "Credenciar"}
-            </Button>
-          )}
-          {hasCredential && (
-            <>
-              {credentialTemplate && (
-                <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
-                  <Eye className="h-3.5 w-3.5 mr-1" />Credencial
-                </Button>
-              )}
-              <Button size="sm" variant="outline" onClick={() => setLabelOpen(true)}>
-                <Tag className="h-3.5 w-3.5 mr-1" />Etiqueta
+        {/* Quick actions — permission-gated */}
+        {canManageCredentials && (
+          <div className="flex gap-1.5 shrink-0 flex-wrap">
+            {canCredential && (
+              <Button
+                size="sm"
+                onClick={() => emitCredentialMutation.mutate()}
+                disabled={emitCredentialMutation.isPending}
+              >
+                <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                {emitCredentialMutation.isPending ? "Emitindo..." : "Credenciar"}
               </Button>
-            </>
-          )}
-        </div>
+            )}
+            {hasCredential && (
+              <>
+                {credentialTemplate && (
+                  <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+                    <Eye className="h-3.5 w-3.5 mr-1" />Credencial
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" onClick={() => setLabelOpen(true)}>
+                  <Tag className="h-3.5 w-3.5 mr-1" />Etiqueta
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => reissueCredentialMutation.mutate()}
+                  disabled={reissueCredentialMutation.isPending}
+                >
+                  <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                  {reissueCredentialMutation.isPending ? "Reemitindo..." : "2ª Via"}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       </div>
-
       {/* Tabs */}
       <Tabs defaultValue="resumo" className="w-full">
         <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
