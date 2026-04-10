@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy, Users, Medal } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Trophy, Users, Medal, Swords, CheckCircle2 } from "lucide-react";
 
 interface Props {
   delegationId: string;
@@ -11,7 +12,6 @@ interface Props {
 }
 
 export default function DelegationEsportivoTab({ delegationId, eventId }: Props) {
-  // Get participants of this delegation
   const { data: participantIds = [], isLoading: loadingP } = useQuery({
     queryKey: ["delegation_participant_ids", delegationId],
     queryFn: async () => {
@@ -25,7 +25,6 @@ export default function DelegationEsportivoTab({ delegationId, eventId }: Props)
     },
   });
 
-  // Sport event enrollments
   const { data: enrollments = [], isLoading: loadingE } = useQuery({
     queryKey: ["delegation_enrollments", delegationId, participantIds.length],
     queryFn: async () => {
@@ -40,13 +39,12 @@ export default function DelegationEsportivoTab({ delegationId, eventId }: Props)
     enabled: participantIds.length > 0,
   });
 
-  // Teams
   const { data: teams = [] } = useQuery({
     queryKey: ["delegation_teams", delegationId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, sport_event_id, sport_events(name)")
+        .select("id, name, sport_event_id, sport_events(name, sports(name))")
         .eq("delegation_id", delegationId)
         .eq("event_id", eventId);
       if (error) throw error;
@@ -54,45 +52,71 @@ export default function DelegationEsportivoTab({ delegationId, eventId }: Props)
     },
   });
 
-  // Results (podiums)
-  const { data: results = [] } = useQuery({
-    queryKey: ["delegation_results", delegationId, participantIds.length],
+  // Get match entries for this delegation's enrollments AND teams
+  const enrollmentIds = enrollments.map(e => e.id);
+  const teamIds = teams.map(t => t.id);
+
+  const { data: matchEntries = [] } = useQuery({
+    queryKey: ["delegation_match_entries", delegationId, enrollmentIds.length, teamIds.length],
     queryFn: async () => {
-      if (!participantIds.length) return [];
-      // Get match entries for delegation participants
-      const { data: entries, error: eErr } = await supabase
-        .from("competition_match_entries")
-        .select("id, participant_sport_event_id")
-        .in("participant_sport_event_id", enrollments.map(e => e.id));
-      if (eErr) throw eErr;
-      if (!entries?.length) return [];
-      const { data: res, error: rErr } = await supabase
-        .from("competition_match_results")
-        .select("id, position, result_status, outcome")
-        .in("match_entry_id", entries.map(e => e.id))
-        .eq("result_status", "publicado");
-      if (rErr) throw rErr;
-      return res ?? [];
+      if (!enrollmentIds.length && !teamIds.length) return [];
+      let query = supabase.from("competition_match_entries").select("id, match_id, participant_sport_event_id, team_id");
+      if (enrollmentIds.length && teamIds.length) {
+        query = query.or(`participant_sport_event_id.in.(${enrollmentIds.join(",")}),team_id.in.(${teamIds.join(",")})`);
+      } else if (enrollmentIds.length) {
+        query = query.in("participant_sport_event_id", enrollmentIds);
+      } else {
+        query = query.in("team_id", teamIds);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
     },
-    enabled: enrollments.length > 0,
+    enabled: enrollmentIds.length > 0 || teamIds.length > 0,
+  });
+
+  const matchEntryIds = matchEntries.map(e => e.id);
+  const matchIds = [...new Set(matchEntries.map(e => e.match_id))];
+
+  const { data: results = [] } = useQuery({
+    queryKey: ["delegation_results", delegationId, matchEntryIds.length],
+    queryFn: async () => {
+      if (!matchEntryIds.length) return [];
+      const { data, error } = await supabase
+        .from("competition_match_results")
+        .select("id, position, result_status, outcome, match_entry_id, score")
+        .in("match_entry_id", matchEntryIds)
+        .eq("result_status", "publicado");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: matchEntryIds.length > 0,
   });
 
   const isLoading = loadingP || loadingE;
 
   // Group by sport
-  const sportMap = new Map<string, { sport: string; events: Set<string>; athletes: Set<string> }>();
+  const sportMap = new Map<string, { sport: string; events: Map<string, { name: string; athleteCount: number }>; athletes: Set<string> }>();
   for (const e of enrollments) {
     const sportName = e.sport_events?.sports?.name ?? "Outro";
     const eventName = e.sport_events?.name ?? "";
+    const eventId = e.sport_event_id;
     if (!sportMap.has(sportName)) {
-      sportMap.set(sportName, { sport: sportName, events: new Set(), athletes: new Set() });
+      sportMap.set(sportName, { sport: sportName, events: new Map(), athletes: new Set() });
     }
     const entry = sportMap.get(sportName)!;
-    entry.events.add(eventName);
+    if (!entry.events.has(eventId)) {
+      entry.events.set(eventId, { name: eventName, athleteCount: 0 });
+    }
+    entry.events.get(eventId)!.athleteCount++;
     entry.athletes.add(e.participant_id);
   }
 
-  const podiums = results.filter(r => r.position != null && r.position >= 1 && r.position <= 3).length;
+  const podiums = results.filter(r => r.position != null && r.position >= 1 && r.position <= 3);
+  const gold = podiums.filter(r => r.position === 1).length;
+  const silver = podiums.filter(r => r.position === 2).length;
+  const bronze = podiums.filter(r => r.position === 3).length;
+  const publishedResults = results.length;
 
   if (isLoading) {
     return <div className="space-y-3 mt-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</div>;
@@ -101,12 +125,44 @@ export default function DelegationEsportivoTab({ delegationId, eventId }: Props)
   return (
     <div className="space-y-4 mt-4">
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <SummaryCard icon={<Trophy className="h-4 w-4 text-primary" />} label="Modalidades" value={sportMap.size} />
-        <SummaryCard icon={<Trophy className="h-4 w-4 text-blue-600" />} label="Inscrições" value={enrollments.length} />
-        <SummaryCard icon={<Users className="h-4 w-4 text-green-600" />} label="Equipes" value={teams.length} />
-        <SummaryCard icon={<Medal className="h-4 w-4 text-amber-500" />} label="Pódios" value={podiums} />
+        <SummaryCard icon={<Swords className="h-4 w-4 text-blue-600" />} label="Partidas" value={matchIds.length} />
+        <SummaryCard icon={<CheckCircle2 className="h-4 w-4 text-green-600" />} label="Resultados" value={publishedResults} />
+        <SummaryCard icon={<Users className="h-4 w-4 text-primary" />} label="Equipes" value={teams.length} />
+        <SummaryCard icon={<Medal className="h-4 w-4 text-amber-500" />} label="Pódios" value={podiums.length} />
       </div>
+
+      {/* Medal summary */}
+      {podiums.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-6 justify-center">
+              <div className="text-center">
+                <div className="h-8 w-8 rounded-full bg-amber-400 flex items-center justify-center mx-auto mb-1">
+                  <span className="text-sm font-bold text-amber-900">🥇</span>
+                </div>
+                <p className="text-lg font-bold">{gold}</p>
+                <p className="text-xs text-muted-foreground">Ouro</p>
+              </div>
+              <div className="text-center">
+                <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center mx-auto mb-1">
+                  <span className="text-sm font-bold text-gray-700">🥈</span>
+                </div>
+                <p className="text-lg font-bold">{silver}</p>
+                <p className="text-xs text-muted-foreground">Prata</p>
+              </div>
+              <div className="text-center">
+                <div className="h-8 w-8 rounded-full bg-amber-700/30 flex items-center justify-center mx-auto mb-1">
+                  <span className="text-sm font-bold text-amber-800">🥉</span>
+                </div>
+                <p className="text-lg font-bold">{bronze}</p>
+                <p className="text-xs text-muted-foreground">Bronze</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* By sport */}
       {sportMap.size === 0 ? (
@@ -132,11 +188,14 @@ export default function DelegationEsportivoTab({ delegationId, eventId }: Props)
                   <Badge variant="outline">{athletes.size} atleta{athletes.size !== 1 ? "s" : ""}</Badge>
                   <Badge variant="secondary">{events.size} prova{events.size !== 1 ? "s" : ""}</Badge>
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from(events).slice(0, 5).map(e => (
-                    <span key={e} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">{e}</span>
+                <div className="space-y-1">
+                  {Array.from(events.values()).slice(0, 6).map(e => (
+                    <div key={e.name} className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{e.name}</span>
+                      <span className="text-muted-foreground">{e.athleteCount} inscr.</span>
+                    </div>
                   ))}
-                  {events.size > 5 && <span className="text-xs text-muted-foreground">+{events.size - 5}</span>}
+                  {events.size > 6 && <span className="text-xs text-muted-foreground">+{events.size - 6} provas</span>}
                 </div>
               </CardContent>
             </Card>
@@ -151,13 +210,24 @@ export default function DelegationEsportivoTab({ delegationId, eventId }: Props)
             <CardTitle className="text-base">Equipes da Delegação</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {teams.map((t: any) => (
-                <Badge key={t.id} variant="outline" className="py-1.5 px-3">
-                  {t.name} — {t.sport_events?.name ?? ""}
-                </Badge>
-              ))}
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Equipe</TableHead>
+                  <TableHead>Modalidade</TableHead>
+                  <TableHead>Prova</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {teams.map((t: any) => (
+                  <TableRow key={t.id}>
+                    <TableCell className="font-medium">{t.name}</TableCell>
+                    <TableCell className="text-muted-foreground">{t.sport_events?.sports?.name ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{t.sport_events?.name ?? "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       )}

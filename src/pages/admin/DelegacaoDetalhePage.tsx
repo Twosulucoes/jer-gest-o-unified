@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowLeft, Users, Trophy, IdCard, Bus, LayoutDashboard } from "lucide-react";
+import { Loader2, ArrowLeft, Users, Trophy, IdCard, Bus, LayoutDashboard, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useAuth } from "@/hooks/useAuth";
 
 import DelegationResumoTab from "@/components/admin/delegation/DelegationResumoTab";
 import DelegationParticipantesTab from "@/components/admin/delegation/DelegationParticipantesTab";
@@ -26,6 +28,10 @@ export default function DelegacaoDetalhePage() {
   const { delegationId } = useParams<{ delegationId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { hasRole } = useAuth();
+  const [activeTab, setActiveTab] = useState("resumo");
+
+  const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   const { data: delegation, isLoading } = useQuery({
     queryKey: ["delegation_detail", delegationId],
@@ -155,10 +161,29 @@ export default function DelegacaoDetalhePage() {
             )}
           </div>
         </div>
+
+        {/* Quick actions */}
+        <div className="flex gap-1.5 shrink-0 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => setActiveTab("participantes")}>
+            <Users className="h-3.5 w-3.5 mr-1" />Participantes
+          </Button>
+          {canCredential && (
+            <Button size="sm" variant="outline" onClick={() => setActiveTab("credenciamento")}>
+              <IdCard className="h-3.5 w-3.5 mr-1" />Credenciamento
+            </Button>
+          )}
+          {institution && (
+            <Button size="sm" variant="ghost" asChild>
+              <Link to={`/admin/instituicoes`}>
+                <ExternalLink className="h-3.5 w-3.5 mr-1" />Instituição
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="resumo" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
           <TabsTrigger value="resumo" className="gap-1.5">
             <LayoutDashboard className="h-3.5 w-3.5" />Resumo
