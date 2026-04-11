@@ -2688,6 +2688,7 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      reset_all_data: { Args: { p_confirm?: string }; Returns: Json }
       resolve_prova_slug: {
         Args: { p_event_id: string; p_prova_raw: string; p_sport_id: string }
         Returns: Json
