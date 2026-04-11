@@ -2693,10 +2693,46 @@ export type Database = {
         Args: { p_event_id: string; p_prova_raw: string; p_sport_id: string }
         Returns: Json
       }
+      rpc_generate_groups: {
+        Args: {
+          p_event_id: string
+          p_group_count: number
+          p_phase_id: string
+          p_seed_mode?: string
+          p_sport_event_id: string
+        }
+        Returns: Json
+      }
+      rpc_generate_matches_collective: {
+        Args: {
+          p_event_id: string
+          p_group_id?: string
+          p_phase_id: string
+          p_sport_event_id: string
+        }
+        Returns: Json
+      }
+      rpc_generate_matches_individual: {
+        Args: {
+          p_event_id: string
+          p_heat_size?: number
+          p_phase_id: string
+          p_sport_event_id: string
+        }
+        Returns: Json
+      }
+      rpc_get_competition_summary: {
+        Args: { p_event_id: string; p_sport_event_id: string }
+        Returns: Json
+      }
       rpc_get_rls_policies: { Args: never; Returns: Json }
       rpc_get_schema_columns: { Args: never; Returns: Json }
       rpc_get_schema_constraints: { Args: never; Returns: Json }
       rpc_get_schema_tables: { Args: never; Returns: Json }
+      rpc_list_eligibility_pending: {
+        Args: { p_event_id: string; p_sport_event_id: string }
+        Returns: Json
+      }
       upsert_event_participation_rules: {
         Args: {
           p_event_id: string

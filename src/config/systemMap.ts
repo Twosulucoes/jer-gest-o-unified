@@ -146,6 +146,18 @@ export const systemMap: SystemMapGroup[] = [
     label: "Competição",
     items: [
       {
+        id: "central-competicao",
+        label: "Central da Competição",
+        route: "/admin/competicao/central",
+        pageFile: "src/pages/admin/CompeticaoCentralPage.tsx",
+        description: "Painel único para gerenciar toda a competição: seleção de prova, estrutura (fases/grupos), geração de partidas, lançamento de resultados e pendências de elegibilidade.",
+        roles: ["admin", "secretaria", "coordenacao_tecnica"],
+        status: ModuleStatus.DONE,
+        dataSources: ["competition_matches", "competition_match_entries", "competition_phases", "competition_groups", "teams", "participant_sport_events", "competition_match_results"],
+        gaps: [],
+        nextActions: [],
+      },
+      {
         id: "modalidades",
         label: "Modalidades",
         route: "/admin/modalidades",
