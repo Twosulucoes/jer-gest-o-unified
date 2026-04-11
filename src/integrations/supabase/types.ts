@@ -2608,6 +2608,10 @@ export type Database = {
       }
     }
     Functions: {
+      get_blocking_irregularities: {
+        Args: { p_event_id: string; p_participant_id: string }
+        Returns: Json
+      }
       get_event_participation_rules: {
         Args: { p_event_id: string }
         Returns: Json
@@ -2668,6 +2672,12 @@ export type Database = {
         Returns: boolean
       }
       import_inscricoes_batch: { Args: { payload: Json }; Returns: Json }
+      list_blocked_participants: {
+        Args: { p_event_id: string }
+        Returns: {
+          participant_id: string
+        }[]
+      }
       normalize_prova_slug: { Args: { p: string }; Returns: string }
       normalize_text: { Args: { p: string }; Returns: string }
       recompute_participation_irregularities: {
