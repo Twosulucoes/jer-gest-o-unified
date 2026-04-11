@@ -1,13 +1,13 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ExternalLink, Info, Search } from "lucide-react";
+import { ExternalLink, Info, Search, X } from "lucide-react";
 import {
   getAllItems,
   getStatusSummary,
@@ -26,6 +26,9 @@ function StatusBadge({ status }: { status: ModuleStatus }) {
 }
 
 export default function MapaSistemaPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const routeParam = searchParams.get("route");
+
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -34,6 +37,21 @@ export default function MapaSistemaPage() {
 
   const allItems = useMemo(() => getAllItems(), []);
   const summary = useMemo(() => getStatusSummary(), []);
+
+  // Auto-open detail from ?route= param
+  useEffect(() => {
+    if (routeParam) {
+      const item = allItems.find((i) => i.route === routeParam);
+      if (item) {
+        setDetailItem(item);
+      }
+    }
+  }, [routeParam, allItems]);
+
+  const clearRouteParam = () => {
+    setSearchParams({}, { replace: true });
+    setDetailItem(null);
+  };
 
   const groupOptions = useMemo(() => {
     const labels = new Set<string>();
@@ -72,6 +90,20 @@ export default function MapaSistemaPage() {
           Visão geral de todos os módulos, o que está pronto e o que falta implementar.
         </p>
       </div>
+
+      {/* Route highlight banner */}
+      {routeParam && (
+        <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-md px-4 py-2">
+          <Info className="h-4 w-4 text-primary shrink-0" />
+          <span className="text-sm text-foreground">
+            Mostrando detalhes do módulo <code className="bg-muted px-1 rounded text-xs">{routeParam}</code>
+          </span>
+          <Button variant="ghost" size="sm" onClick={clearRouteParam} className="ml-auto">
+            <X className="h-3.5 w-3.5 mr-1" />
+            Limpar
+          </Button>
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -167,7 +199,10 @@ export default function MapaSistemaPage() {
                 </TableRow>
               )}
               {filtered.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow
+                  key={item.id}
+                  className={routeParam === item.route ? "bg-primary/5" : ""}
+                >
                   <TableCell className="font-medium">{item.label}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground text-xs">
                     {item.groupLabel}
@@ -192,7 +227,15 @@ export default function MapaSistemaPage() {
       </Card>
 
       {/* Detail dialog */}
-      <Dialog open={!!detailItem} onOpenChange={(open) => !open && setDetailItem(null)}>
+      <Dialog
+        open={!!detailItem}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailItem(null);
+            if (routeParam) setSearchParams({}, { replace: true });
+          }
+        }}
+      >
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           {detailItem && (
             <>
@@ -201,6 +244,9 @@ export default function MapaSistemaPage() {
                   {detailItem.label}
                   <StatusBadge status={detailItem.status} />
                 </DialogTitle>
+                <DialogDescription>
+                  {detailItem.groupLabel}
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 text-sm">
                 <div>
