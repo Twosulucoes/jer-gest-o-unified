@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { read, utils } from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -109,6 +110,29 @@ export default function ImportacaoPage() {
     },
   });
 
+  const parseXlsxClientSide = async (f: File): Promise<Record<string, unknown>[]> => {
+    const buffer = await f.arrayBuffer();
+    const workbook = read(new Uint8Array(buffer), { type: "array" });
+
+    // Find the sheet with required columns
+    const REQUIRED = ["NOME", "ESCOLA", "MODALIDADE", "PROVA", "COMPETICAO"];
+    let sheetName = workbook.SheetNames[0];
+    for (const name of workbook.SheetNames) {
+      const sheet = workbook.Sheets[name];
+      const sample = utils.sheet_to_json(sheet, { defval: null, range: 0 }) as Record<string, unknown>[];
+      if (sample.length > 0) {
+        const headers = Object.keys(sample[0]);
+        if (REQUIRED.every((col) => headers.includes(col))) {
+          sheetName = name;
+          break;
+        }
+      }
+    }
+
+    const sheet = workbook.Sheets[sheetName];
+    return utils.sheet_to_json(sheet, { defval: null }) as Record<string, unknown>[];
+  };
+
   const callEdgeFunction = async (mode: "validate" | "commit") => {
     if (!file || !selectedEventId) return;
 
@@ -118,10 +142,8 @@ export default function ImportacaoPage() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("event_id", selectedEventId);
-    formData.append("mode", mode);
+    // Parse XLSX client-side to avoid memory issues in edge function
+    const rows = await parseXlsxClientSide(file);
 
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
     const url = `https://${projectId}.supabase.co/functions/v1/import-inscricoes`;
@@ -131,8 +153,14 @@ export default function ImportacaoPage() {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        "Content-Type": "application/json",
       },
-      body: formData,
+      body: JSON.stringify({
+        rows,
+        event_id: selectedEventId,
+        mode,
+        file_name: file.name,
+      }),
     });
 
     const json = await response.json();

@@ -1,12 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const MAX_ROWS = 3000;
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -23,20 +20,6 @@ function cleanCpf(cpf: string | null | undefined): string | null {
   if (!cpf) return null;
   const cleaned = cpf.replace(/\D/g, "");
   return cleaned.length === 11 ? cleaned : null;
-}
-
-function parseDate(value: unknown): string | null {
-  if (!value) return null;
-  if (value instanceof Date) return value.toISOString().split("T")[0];
-  if (typeof value === "number") {
-    const date = new Date((value - 25569) * 86400 * 1000);
-    return date.toISOString().split("T")[0];
-  }
-  const str = String(value).trim();
-  const brMatch = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-  return null;
 }
 
 function normalizeGender(value: string | null | undefined): string {
@@ -106,36 +89,6 @@ interface RowResult {
   message: string;
 }
 
-// ─── XLSX Parsing ────────────────────────────────────────────────────
-
-const REQUIRED_COLUMNS = ["NOME", "ESCOLA", "MODALIDADE", "PROVA", "COMPETICAO"];
-
-function findDataSheet(workbook: XLSX.WorkBook): string {
-  for (const name of workbook.SheetNames) {
-    const sheet = workbook.Sheets[name];
-    const sample = XLSX.utils.sheet_to_json(sheet, { defval: null, range: 0 }) as RawRow[];
-    if (sample.length > 0) {
-      const headers = Object.keys(sample[0]);
-      if (REQUIRED_COLUMNS.every((col) => headers.includes(col))) return name;
-    }
-  }
-  return workbook.SheetNames[0];
-}
-
-function parseXlsx(buffer: ArrayBuffer): RawRow[] {
-  const workbook = XLSX.read(new Uint8Array(buffer), { type: "array" });
-  const sheetName = findDataSheet(workbook);
-  console.log(`import-inscricoes: using sheet "${sheetName}"`);
-  const sheet = workbook.Sheets[sheetName];
-  return XLSX.utils.sheet_to_json(sheet, { defval: null }) as RawRow[];
-}
-
-function validateHeaders(rawRows: RawRow[]): string[] {
-  if (rawRows.length === 0) return [];
-  const headers = Object.keys(rawRows[0]);
-  return REQUIRED_COLUMNS.filter((col) => !headers.includes(col));
-}
-
 // ─── Column Mapping ──────────────────────────────────────────────────
 
 function deriveParticipantType(userType: string, funcao: string): string {
@@ -146,6 +99,19 @@ function deriveParticipantType(userType: string, funcao: string): string {
   if (ut.includes("comissão técnica") || ut.includes("comissao tecnica")) return "coach";
   if (ut.includes("prestador")) return "staff";
   return "staff";
+}
+
+function parseDate(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === "number") {
+    const date = new Date((value - 25569) * 86400 * 1000);
+    return date.toISOString().split("T")[0];
+  }
+  const str = String(value).trim();
+  const brMatch = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  return null;
 }
 
 function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
@@ -192,10 +158,10 @@ function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
 // ─── Auto-Create Reference Entities ──────────────────────────────────
 
 interface ResolvedMaps {
-  institutions: Map<string, string>;   // slug -> id
-  delegations: Map<string, string>;    // institution_id -> delegation_id
-  sports: Map<string, string>;         // slug -> id
-  categories: Map<string, string>;     // slug -> id
+  institutions: Map<string, string>;
+  delegations: Map<string, string>;
+  sports: Map<string, string>;
+  categories: Map<string, string>;
 }
 
 async function ensureReferenceEntities(
@@ -205,21 +171,18 @@ async function ensureReferenceEntities(
 ): Promise<{ maps: ResolvedMaps; warnings: RowResult[] }> {
   const warnings: RowResult[] = [];
 
-  // 1. Collect unique institutions
-  const uniqueInstitutions = new Map<string, string>(); // slug -> name
+  const uniqueInstitutions = new Map<string, string>();
   for (const r of rows) {
     if (r.institution_slug && !uniqueInstitutions.has(r.institution_slug)) {
       uniqueInstitutions.set(r.institution_slug, r.institution_name);
     }
   }
 
-  // Load existing institutions
   const { data: existingInst } = await supabase
     .from("institutions").select("id, slug").eq("is_active", true);
   const instMap = new Map<string, string>();
   for (const i of existingInst ?? []) instMap.set(i.slug, i.id);
 
-  // Create missing institutions
   for (const [slug, name] of uniqueInstitutions) {
     if (!instMap.has(slug)) {
       const { data, error } = await supabase
@@ -228,27 +191,20 @@ async function ensureReferenceEntities(
         .select("id")
         .single();
       if (error) {
-        // Try to fetch in case of race condition
         const { data: existing } = await supabase
           .from("institutions").select("id").eq("slug", slug).single();
-        if (existing) {
-          instMap.set(slug, existing.id);
-        } else {
-          console.error(`Failed to create institution ${slug}:`, error.message);
-        }
+        if (existing) instMap.set(slug, existing.id);
       } else {
         instMap.set(slug, data.id);
       }
     }
   }
 
-  // 2. Collect unique delegations (institution_id -> event)
   const { data: existingDel } = await supabase
     .from("delegations").select("id, institution_id").eq("event_id", eventId);
   const delMap = new Map<string, string>();
   for (const d of existingDel ?? []) delMap.set(d.institution_id, d.id);
 
-  // Create missing delegations
   for (const [slug] of uniqueInstitutions) {
     const instId = instMap.get(slug);
     if (instId && !delMap.has(instId)) {
@@ -271,8 +227,7 @@ async function ensureReferenceEntities(
     }
   }
 
-  // 3. Collect unique sports
-  const uniqueSports = new Map<string, string>(); // slug -> name
+  const uniqueSports = new Map<string, string>();
   for (const r of rows) {
     if (r.sport_slug && !uniqueSports.has(r.sport_slug)) {
       uniqueSports.set(r.sport_slug, r.sport_name);
@@ -302,7 +257,6 @@ async function ensureReferenceEntities(
     }
   }
 
-  // 4. Collect unique categories (from COMPETICAO)
   const uniqueCategories = new Map<string, { name: string; genderScope: string }>();
   for (const r of rows) {
     if (r.category_slug && !uniqueCategories.has(r.category_slug)) {
@@ -353,26 +307,21 @@ function validateRow(
   const warnings: RowResult[] = [];
   const resolved: Record<string, string | null> = {};
 
-  // Skip non-athletes with no sport data
   const isAthlete = row.participant_type === "athlete";
 
-  // Skip invalid inscription status
   if (row.inscription_status && !["válida", "valida", ""].includes(row.inscription_status.toLowerCase())) {
     warnings.push({ row: row.row_number, field: "STATUS DA INSCRIÇÃO", value: row.inscription_status, code: "INVALID_STATUS", message: `Inscrição com status "${row.inscription_status}" — ignorada` });
     return { errors: [], warnings, resolved: {}, skip: true };
   }
 
-  // Basic fields
   if (!row.full_name) {
     errors.push({ row: row.row_number, field: "NOME", value: "", code: "NAME_MISSING", message: "Nome obrigatório" });
   }
 
-  // For athletes, birth_date is required; for staff it's optional
   if (isAthlete && !row.birth_date) {
     errors.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING", message: "Data de nascimento obrigatória para atletas" });
   }
 
-  // Institution
   const instId = maps.institutions.get(row.institution_slug);
   if (!instId) {
     if (row.institution_slug) {
@@ -388,7 +337,6 @@ function validateRow(
     }
   }
 
-  // Sport (required for athletes)
   if (isAthlete) {
     const sportId = maps.sports.get(row.sport_slug);
     if (!sportId) {
@@ -417,15 +365,12 @@ function validateRow(
       return { errors: [], warnings, resolved: {}, skip: true };
     }
   } else {
-    // Non-athletes: no sport data needed, but they still need delegation
     if (!resolved.delegation_id && !row.institution_slug) {
-      // Try to use delegation_name to find any delegation
       warnings.push({ row: row.row_number, field: "TIPO USUARIO", value: row.user_type, code: "NON_ATHLETE", message: `Tipo "${row.user_type}" sem escola — ignorado` });
       return { errors: [], warnings, resolved: {}, skip: true };
     }
   }
 
-  // Person resolution
   if (row.cpf) {
     const existingId = peopleByCpf.get(row.cpf);
     if (existingId) {
@@ -436,7 +381,6 @@ function validateRow(
     }
   } else {
     if (!isAthlete) {
-      // Staff without CPF — try name match
       warnings.push({ row: row.row_number, field: "CPF", value: null, code: "CPF_MISSING", message: "CPF ausente" });
     }
     if (row.full_name && row.birth_date) {
@@ -507,8 +451,6 @@ function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
         participant_type: row.participant_type,
       });
     } else if (!isAthlete && resolved.delegation_id) {
-      // Non-athletes: create participant without sport enrollment
-      // We still add an enrollment entry but with empty sport data so the RPC creates the participant
       enrollments.push({
         person_key: personKey,
         delegation_id: resolved.delegation_id!,
@@ -529,6 +471,9 @@ function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
 }
 
 // ─── Main Handler ────────────────────────────────────────────────────
+
+const MAX_ROWS = 3000;
+const REQUIRED_COLUMNS = ["NOME", "ESCOLA", "MODALIDADE", "PROVA", "COMPETICAO"];
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -558,14 +503,18 @@ Deno.serve(async (req: Request) => {
     }
     const operatorId = claimsData.claims.sub as string;
 
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const eventId = formData.get("event_id") as string | null;
-    const mode = formData.get("mode") as string | null;
+    // Now accepts JSON body with pre-parsed rows (client-side XLSX parsing)
+    const body = await req.json();
+    const { rows: rawRows, event_id: eventId, mode, file_name: fileName } = body as {
+      rows: RawRow[];
+      event_id: string;
+      mode: string;
+      file_name?: string;
+    };
 
-    if (!file || !eventId || !mode) {
+    if (!rawRows || !eventId || !mode) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: file, event_id, mode" }),
+        JSON.stringify({ error: "Missing required fields: rows, event_id, mode" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -573,6 +522,28 @@ Deno.serve(async (req: Request) => {
     if (mode !== "validate" && mode !== "commit") {
       return new Response(
         JSON.stringify({ error: 'mode must be "validate" or "commit"' }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (rawRows.length === 0) {
+      return new Response(JSON.stringify({ error: "Planilha vazia" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (rawRows.length > MAX_ROWS) {
+      return new Response(
+        JSON.stringify({ error: `Planilha excede o limite de ${MAX_ROWS} linhas (encontradas: ${rawRows.length})` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate headers
+    const headers = Object.keys(rawRows[0]);
+    const missingCols = REQUIRED_COLUMNS.filter((col) => !headers.includes(col));
+    if (missingCols.length > 0) {
+      return new Response(
+        JSON.stringify({ error: `Colunas obrigatórias ausentes: ${missingCols.join(", ")}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -592,54 +563,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const buffer = await file.arrayBuffer();
-    const rawRows = parseXlsx(buffer);
-
-    if (rawRows.length === 0) {
-      return new Response(JSON.stringify({ error: "Planilha vazia" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    if (rawRows.length > MAX_ROWS) {
-      return new Response(
-        JSON.stringify({ error: `Planilha excede o limite de ${MAX_ROWS} linhas (encontradas: ${rawRows.length})` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const missingCols = validateHeaders(rawRows);
-    if (missingCols.length > 0) {
-      return new Response(
-        JSON.stringify({ error: `Colunas obrigatórias ausentes: ${missingCols.join(", ")}` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // Normalize all rows
     const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i));
 
-    // Filter only processable rows (valid status, not blank names)
-    const processableRows = normalizedRows.filter(r => {
-      if (!r.full_name) return false;
-      return true;
-    });
+    const processableRows = normalizedRows.filter(r => !!r.full_name);
 
-    // Auto-create reference entities (institutions, delegations, sports, categories)
-    // In validate mode we only do lookups, in commit mode we create missing ones
-    let maps: ResolvedMaps;
-    const refWarnings: RowResult[] = [];
-
-    if (mode === "commit") {
-      const result = await ensureReferenceEntities(serviceClient, eventId, processableRows);
-      maps = result.maps;
-      refWarnings.push(...result.warnings);
-    } else {
-      // Validate mode: also auto-create so validation is accurate
-      // But we do it anyway because the user needs to see real validation results
-      const result = await ensureReferenceEntities(serviceClient, eventId, processableRows);
-      maps = result.maps;
-      refWarnings.push(...result.warnings);
-    }
+    const result = await ensureReferenceEntities(serviceClient, eventId, processableRows);
+    const maps = result.maps;
+    const refWarnings = result.warnings;
 
     // Load people for dedup
     const { data: peopleData } = await serviceClient
@@ -666,7 +597,6 @@ Deno.serve(async (req: Request) => {
     }
 
     // Preview counts
-    const personActions = validRows.map((r) => r.resolved.person_action);
     const athleteRows = validRows.filter(r => r.row.participant_type === "athlete");
     const sportEventKeys = new Set<string>();
     for (const { row, resolved } of athleteRows) {
@@ -675,7 +605,6 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Count unique people
     const uniquePeopleKeys = new Set<string>();
     for (const { row } of validRows) {
       const key = row.cpf ?? `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
@@ -744,7 +673,7 @@ Deno.serve(async (req: Request) => {
       await serviceClient.from("import_logs").insert({
         event_id: eventId,
         performed_by: operatorId,
-        file_name: file.name,
+        file_name: fileName || "unknown",
         row_count: rawRows.length,
         status: "error",
         error_message: rpcError.message,
@@ -761,7 +690,7 @@ Deno.serve(async (req: Request) => {
     await serviceClient.from("import_logs").insert({
       event_id: eventId,
       performed_by: operatorId,
-      file_name: file.name,
+      file_name: fileName || "unknown",
       row_count: validRows.length,
       status: partialSuccess ? "partial" : "success",
       result_summary: rpcResult,
