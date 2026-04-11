@@ -95,6 +95,7 @@ const navGroups: NavGroup[] = [
     description: "Importa do SIGECOM e corrige inconsistências antes do credenciamento.",
     items: [
       { label: "Importação (SIGECOM)", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] },
+      { label: "Central de Dados", to: "/admin/dados", icon: <DatabaseIcon className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Normalização de Provas", to: "/admin/normalizacao-provas", icon: <FileSearch className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
