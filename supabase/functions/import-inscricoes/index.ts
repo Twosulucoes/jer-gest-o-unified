@@ -511,8 +511,6 @@ function normalizeHeaders(rows: RawRow[]): RawRow[] {
     if (found) headerMap.set(found, canonical);
   }
 
-  if (headerMap.size === 0) return rows;
-
   return rows.map((row) => {
     const newRow: RawRow = { ...row };
     for (const [original, canonical] of headerMap) {
