@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
-import { useAuth } from "@/hooks/useAuth";
-import ModuleHeader from "@/components/admin/ModuleHeader";
+
+
 import RequireActiveEvent from "@/components/admin/RequireActiveEvent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
@@ -183,7 +183,7 @@ function AtletasTab() {
   const eventId = useActiveEventId();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  
   const [search, setSearch] = useState("");
   const [selectedParticipant, setSelectedParticipant] = useState<any>(null);
 
@@ -652,11 +652,13 @@ export default function CentralDadosPage() {
   return (
     <RequireActiveEvent>
       <div className="space-y-6">
-        <ModuleHeader
-          title="Central de Dados"
-          description="Visão consolidada de delegações, atletas, pendências e ações de saneamento."
-          icon={<DatabaseIcon className="h-5 w-5" />}
-        />
+        <div className="flex items-center gap-3 mb-2">
+          <DatabaseIcon className="h-5 w-5 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold">Central de Dados</h1>
+            <p className="text-sm text-muted-foreground">Visão consolidada de delegações, atletas, pendências e ações de saneamento.</p>
+          </div>
+        </div>
 
         <Tabs defaultValue="delegacoes">
           <TabsList className="grid w-full grid-cols-4">
