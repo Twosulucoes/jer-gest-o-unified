@@ -387,7 +387,10 @@ export default function CompeticaoPartidaDetalhePage() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_entries", matchId] }); toast.success("Vinculado com sucesso"); setSelectedPSEId(""); setSelectedTeamId(""); setAddEntryOpen(false); },
-    onError: (e: Error) => toast.error("Erro: " + e.message),
+    onError: (e: Error) => {
+      const friendly = getEligibilityErrorMessage(e);
+      toast.error(friendly ?? "Erro: " + e.message);
+    },
   });
 
   const removeEntryMut = useMutation({
