@@ -171,6 +171,7 @@ export type Database = {
           points: number | null
           position: number | null
           published_at: string | null
+          published_bulletin_id: string | null
           published_by: string | null
           recorded_at: string
           recorded_by: string
@@ -194,6 +195,7 @@ export type Database = {
           points?: number | null
           position?: number | null
           published_at?: string | null
+          published_bulletin_id?: string | null
           published_by?: string | null
           recorded_at?: string
           recorded_by: string
@@ -217,6 +219,7 @@ export type Database = {
           points?: number | null
           position?: number | null
           published_at?: string | null
+          published_bulletin_id?: string | null
           published_by?: string | null
           recorded_at?: string
           recorded_by?: string
@@ -241,6 +244,13 @@ export type Database = {
             columns: ["match_id"]
             isOneToOne: false
             referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_match_results_published_bulletin_id_fkey"
+            columns: ["published_bulletin_id"]
+            isOneToOne: false
+            referencedRelation: "official_bulletins"
             referencedColumns: ["id"]
           },
         ]
@@ -1527,6 +1537,69 @@ export type Database = {
           },
         ]
       }
+      official_bulletins: {
+        Row: {
+          content_md: string
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          number: number
+          published_at: string | null
+          published_by: string | null
+          rectifies_bulletin_id: string | null
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content_md?: string
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          number: number
+          published_at?: string | null
+          published_by?: string | null
+          rectifies_bulletin_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content_md?: string
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          number?: number
+          published_at?: string | null
+          published_by?: string | null
+          rectifies_bulletin_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "official_bulletins_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "official_bulletins_rectifies_bulletin_id_fkey"
+            columns: ["rectifies_bulletin_id"]
+            isOneToOne: false
+            referencedRelation: "official_bulletins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_credentials: {
         Row: {
           activated_at: string | null
@@ -2697,6 +2770,10 @@ export type Database = {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
       }
+      rpc_create_bulletin: {
+        Args: { p_content_md?: string; p_event_id: string; p_title: string }
+        Returns: Json
+      }
       rpc_detect_schedule_conflicts: {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
@@ -2745,9 +2822,22 @@ export type Database = {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
       }
+      rpc_publish_bulletin: { Args: { p_bulletin_id: string }; Returns: Json }
+      rpc_publish_results_for_sport_event: {
+        Args: {
+          p_bulletin_id: string
+          p_event_id: string
+          p_sport_event_id: string
+        }
+        Returns: Json
+      }
       rpc_reprocess_event: { Args: { p_event_id: string }; Returns: Json }
       rpc_sync_collective_teams: {
         Args: { p_event_id: string; p_sport_event_id?: string }
+        Returns: Json
+      }
+      rpc_validate_results_for_sport_event: {
+        Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
       }
       upsert_event_participation_rules: {
