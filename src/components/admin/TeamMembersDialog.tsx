@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, UserMinus } from "lucide-react";
+import { isParticipationLimitError, PARTICIPATION_LIMIT_MESSAGE } from "@/lib/participationLimitError";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -110,7 +111,13 @@ export default function TeamMembersDialog({ open, onOpenChange, team, canWrite }
       setSelectedParticipantId("");
       setNewJersey("");
     },
-    onError: (e: Error) => toast.error("Erro: " + e.message),
+    onError: (e: Error) => {
+      if (isParticipationLimitError(e)) {
+        toast.error(PARTICIPATION_LIMIT_MESSAGE);
+      } else {
+        toast.error("Erro: " + e.message);
+      }
+    },
   });
 
   const toggleActiveMut = useMutation({
