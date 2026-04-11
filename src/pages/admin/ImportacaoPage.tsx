@@ -32,6 +32,7 @@ import { Separator } from "@/components/ui/separator";
 import { useActiveEventId } from "@/contexts/EventContext";
 import ImportErrorsTable from "@/components/admin/ImportErrorsTable";
 import ModuleHeader from "@/components/admin/ModuleHeader";
+import ColumnMappingStep from "@/components/admin/ColumnMappingStep";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -101,6 +102,12 @@ export default function ImportacaoPage() {
   const [commitResult, setCommitResult] = useState<CommitResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ─── Column Mapping State ───────────────────────────────────────
+  const [rawParsedRows, setRawParsedRows] = useState<Record<string, unknown>[]>([]);
+  const [detectedHeaders, setDetectedHeaders] = useState<string[]>([]);
+  const [showMapping, setShowMapping] = useState(false);
+  const [confirmedMapping, setConfirmedMapping] = useState<Record<string, string> | null>(null);
+
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
     queryFn: async () => {
@@ -115,7 +122,6 @@ export default function ImportacaoPage() {
     const buffer = await f.arrayBuffer();
     const workbook = read(new Uint8Array(buffer), { type: "array" });
 
-    // Find the sheet with minimum required columns
     const COLUMN_ALIASES: Record<string, string[]> = {
       "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO", "NOME DO ALUNO", "ALUNO"],
       "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO", "UNIDADE ESCOLAR", "ESCOLA/INSTITUICAO"],
@@ -145,8 +151,64 @@ export default function ImportacaoPage() {
     return utils.sheet_to_json(sheet, { defval: null }) as Record<string, unknown>[];
   };
 
+  /** Apply user mapping: rename source columns to canonical target names */
+  const applyMapping = (rows: Record<string, unknown>[], mapping: Record<string, string>): Record<string, unknown>[] => {
+    // Build reverse map: sourceHeader -> targetKey
+    const reverseMap = new Map<string, string>();
+    for (const [targetKey, sourceHeader] of Object.entries(mapping)) {
+      reverseMap.set(sourceHeader, targetKey);
+    }
+
+    return rows.map((row) => {
+      const newRow: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(row)) {
+        const target = reverseMap.get(key);
+        if (target) {
+          newRow[target] = value;
+        }
+        // Always keep original column too (edge function may use additional fields)
+        newRow[key] = value;
+      }
+      return newRow;
+    });
+  };
+
+  const handleFileSelected = async (f: File) => {
+    try {
+      const rows = await parseXlsxClientSide(f);
+      if (rows.length === 0) {
+        toast.error("Planilha vazia ou sem dados.");
+        return;
+      }
+      const headers = Object.keys(rows[0]);
+      setRawParsedRows(rows);
+      setDetectedHeaders(headers);
+      setShowMapping(true);
+      setConfirmedMapping(null);
+      setValidateResult(null);
+      setCommitResult(null);
+    } catch (err) {
+      toast.error(`Erro ao ler planilha: ${(err as Error).message}`);
+    }
+  };
+
+  const handleMappingConfirm = (mapping: Record<string, string>) => {
+    setConfirmedMapping(mapping);
+    setShowMapping(false);
+    toast.success("Mapeamento confirmado. Agora clique em Validar.");
+  };
+
+  const handleMappingCancel = () => {
+    setShowMapping(false);
+    setFile(null);
+    setRawParsedRows([]);
+    setDetectedHeaders([]);
+    setConfirmedMapping(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const callEdgeFunction = async (mode: "validate" | "commit") => {
-    if (!file || !selectedEventId) return;
+    if (!file || !selectedEventId || !confirmedMapping) return;
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -154,8 +216,8 @@ export default function ImportacaoPage() {
       return;
     }
 
-    // Parse XLSX client-side to avoid memory issues in edge function
-    const rows = await parseXlsxClientSide(file);
+    // Apply mapping to raw parsed rows
+    const rows = applyMapping(rawParsedRows, confirmedMapping);
 
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
     const url = `https://${projectId}.supabase.co/functions/v1/import-inscricoes`;
@@ -232,6 +294,10 @@ export default function ImportacaoPage() {
     setFile(null);
     setValidateResult(null);
     setCommitResult(null);
+    setRawParsedRows([]);
+    setDetectedHeaders([]);
+    setShowMapping(false);
+    setConfirmedMapping(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -240,10 +306,14 @@ export default function ImportacaoPage() {
     setFile(selected);
     setValidateResult(null);
     setCommitResult(null);
+    setConfirmedMapping(null);
+    if (selected) {
+      handleFileSelected(selected);
+    }
   };
 
   const _selectedEvent = events.find((e) => e.id === selectedEventId);
-  const canValidate = !!file && !!selectedEventId && !validating && !committing;
+  const canValidate = !!file && !!selectedEventId && !!confirmedMapping && !validating && !committing;
   const canCommit =
     validateResult &&
     validateResult.summary.errors === 0 &&
@@ -272,7 +342,7 @@ export default function ImportacaoPage() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-primary" />
-            Selecionar evento e planilha
+            1. Selecionar evento e planilha
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -304,22 +374,47 @@ export default function ImportacaoPage() {
               />
             </div>
           </div>
-          <div className="flex gap-3">
-            <Button onClick={handleValidate} disabled={!canValidate} variant="outline">
-              {validating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-              {validating ? "Validando…" : "Validar"}
-            </Button>
-            {commitResult && (
-              <Button onClick={handleReset} variant="ghost">
-                <RotateCcw className="mr-2 h-4 w-4" /> Nova importação
+
+          {/* Mapping status indicator */}
+          {file && confirmedMapping && !showMapping && (
+            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-4 w-4" />
+              Mapeamento confirmado ({Object.keys(confirmedMapping).length} campos mapeados)
+              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setShowMapping(true)}>
+                Editar mapeamento
               </Button>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          {!showMapping && (
+            <div className="flex gap-3">
+              <Button onClick={handleValidate} disabled={!canValidate} variant="outline">
+                {validating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                {validating ? "Validando…" : "Validar"}
+              </Button>
+              {commitResult && (
+                <Button onClick={handleReset} variant="ghost">
+                  <RotateCcw className="mr-2 h-4 w-4" /> Nova importação
+                </Button>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
+      {/* Step 2: Column Mapping */}
+      {showMapping && (
+        <ColumnMappingStep
+          headers={detectedHeaders}
+          sampleRows={rawParsedRows.slice(0, 5)}
+          onConfirm={handleMappingConfirm}
+          onCancel={handleMappingCancel}
+        />
+      )}
+
       {/* Validate result */}
-      {validateResult && !commitResult && (
+      {validateResult && !commitResult && !showMapping && (
         <ValidateResultCard
           validateResult={validateResult}
           committing={committing}
