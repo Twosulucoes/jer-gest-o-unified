@@ -472,7 +472,7 @@ function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
 
 // ─── Main Handler ────────────────────────────────────────────────────
 
-const MAX_ROWS = 3000;
+const MAX_ROWS = 10000;
 const REQUIRED_COLUMNS = ["NOME", "ESCOLA", "MODALIDADE", "PROVA", "COMPETICAO"];
 
 Deno.serve(async (req: Request) => {
