@@ -115,14 +115,24 @@ export default function ImportacaoPage() {
     const workbook = read(new Uint8Array(buffer), { type: "array" });
 
     // Find the sheet with required columns
-    const REQUIRED = ["NOME", "ESCOLA", "MODALIDADE", "PROVA", "COMPETICAO"];
+    const REQUIRED_MAP: Record<string, string[]> = {
+      "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO"],
+      "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO"],
+      "MODALIDADE": ["MODALIDADE", "ESPORTE", "SPORT"],
+      "PROVA": ["PROVA", "EVENTO", "DISCIPLINE"],
+      "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "CATEGORIA", "CATEGORY"],
+    };
+    const normalize = (s: string) => s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const hasCanonical = (headers: string[], aliases: string[]) =>
+      aliases.some((a) => headers.some((h) => normalize(h) === a));
+
     let sheetName = workbook.SheetNames[0];
     for (const name of workbook.SheetNames) {
       const sheet = workbook.Sheets[name];
       const sample = utils.sheet_to_json(sheet, { defval: null, range: 0 }) as Record<string, unknown>[];
       if (sample.length > 0) {
         const headers = Object.keys(sample[0]);
-        if (REQUIRED.every((col) => headers.includes(col))) {
+        if (Object.values(REQUIRED_MAP).every((aliases) => hasCanonical(headers, aliases))) {
           sheetName = name;
           break;
         }
