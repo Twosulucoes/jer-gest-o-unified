@@ -543,12 +543,15 @@ Deno.serve(async (req: Request) => {
 
     // Now accepts JSON body with pre-parsed rows (client-side XLSX parsing)
     const body = await req.json();
-    const { rows: rawRows, event_id: eventId, mode, file_name: fileName } = body as {
+    let { rows: rawRows, event_id: eventId, mode, file_name: fileName } = body as {
       rows: RawRow[];
       event_id: string;
       mode: string;
       file_name?: string;
     };
+
+    // Normalize column headers to canonical names
+    rawRows = normalizeHeaders(rawRows);
 
     if (!rawRows || !eventId || !mode) {
       return new Response(
