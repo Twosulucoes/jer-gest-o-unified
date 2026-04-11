@@ -2745,6 +2745,7 @@ export type Database = {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
       }
+      rpc_reprocess_event: { Args: { p_event_id: string }; Returns: Json }
       rpc_sync_collective_teams: {
         Args: { p_event_id: string; p_sport_event_id?: string }
         Returns: Json
