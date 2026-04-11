@@ -245,7 +245,7 @@ export default function ImportacaoPage() {
         <XCircle className="h-10 w-10 text-destructive mb-3" />
         <p className="text-muted-foreground font-medium">Acesso restrito</p>
         <p className="text-sm text-muted-foreground mt-1">
-          Apenas administradores e secretaria podem importar inscrições.
+          Apenas administradores e secretaria podem realizar importações.
         </p>
       </div>
     );
@@ -254,9 +254,9 @@ export default function ImportacaoPage() {
   return (
     <div className="animate-fade-in space-y-6">
       <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Importar Inscrições</h1>
+        <h1 className="font-heading text-2xl font-bold text-foreground">Importação (SIGECOM)</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Importe atletas e inscrições a partir de uma planilha XLSX
+          Importe aqui a planilha exportada do sistema oficial (SIGECOM) para preparar a base operacional do evento no JER Gestão.
         </p>
       </div>
 
@@ -384,7 +384,7 @@ function ValidateResultCard({
             <SummaryCard label="Pessoas (reusar)" value={validateResult.preview.people_to_reuse} variant="muted" />
             <SummaryCard label="Participantes" value={validateResult.preview.participants_to_create} />
             <SummaryCard label="Provas" value={validateResult.preview.sport_events_to_create} />
-            <SummaryCard label="Inscrições" value={validateResult.preview.enrollments_to_create} />
+            <SummaryCard label="Entradas em provas" value={validateResult.preview.enrollments_to_create} />
             <SummaryCard label="Comissão/Staff" value={validateResult.preview.staff_to_create ?? 0} variant="muted" />
           </div>
         </div>
@@ -501,7 +501,7 @@ function ValidateResultCard({
                         <span className="font-semibold text-foreground">{validateResult.preview.people_to_create}</span>
                       </div>
                       <div className="flex justify-between rounded-md bg-muted px-3 py-1.5 col-span-2">
-                        <span className="text-muted-foreground">Inscrições esportivas</span>
+                        <span className="text-muted-foreground">Entradas em provas</span>
                         <span className="font-semibold text-foreground">{validateResult.preview.enrollments_to_create}</span>
                       </div>
                     </div>
@@ -558,7 +558,7 @@ function CommitResultCard({
             <SummaryCard label="Pessoas" value={r?.created?.people ?? 0} variant="success" />
             <SummaryCard label="Participantes" value={r?.created?.participants ?? 0} variant="success" />
             <SummaryCard label="Provas" value={r?.created?.sport_events ?? 0} variant="success" />
-            <SummaryCard label="Inscrições" value={r?.created?.participant_sport_events ?? 0} variant="success" />
+            <SummaryCard label="Entradas em provas" value={r?.created?.participant_sport_events ?? 0} variant="success" />
           </div>
         </div>
 
@@ -569,7 +569,7 @@ function CommitResultCard({
             <SummaryCard label="Pessoas existentes" value={r?.skipped?.people_existing ?? 0} variant="muted" />
             <SummaryCard label="Participantes existentes" value={r?.skipped?.participants_existing ?? 0} variant="muted" />
             <SummaryCard label="Provas existentes" value={r?.skipped?.sport_events_existing ?? 0} variant="muted" />
-            <SummaryCard label="Inscrições duplicadas" value={r?.skipped?.duplicate_enrollments ?? 0} variant="muted" />
+            <SummaryCard label="Entradas duplicadas" value={r?.skipped?.duplicate_enrollments ?? 0} variant="muted" />
           </div>
         </div>
 
@@ -582,7 +582,7 @@ function CommitResultCard({
             <div className="flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30 p-3 mb-3">
               <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
               <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                Alguns registros foram parcialmente criados. Corrija os dados na planilha e reexecute a importação para completar as inscrições pendentes.
+                Alguns registros foram parcialmente criados. Corrija os dados na planilha e reexecute a importação para completar as entradas pendentes.
               </p>
             </div>
             <Accordion type="single" collapsible defaultValue="errors-preview">

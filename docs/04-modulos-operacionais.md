@@ -1,10 +1,11 @@
 # 04 — Módulos Operacionais
 
-## 1. Importação (✅ Feito)
+## 1. Importação / Espelhamento SIGECOM (✅ Feito)
 - **Página**: `/admin/importacao`
 - **Backend**: Edge function `import-inscricoes` + RPC `import_inscricoes_batch`
-- **Auditoria**: `import_logs`
-- **Comportamento**: idempotente, cria/reutiliza entidades, suporta múltiplas provas por linha
+- **Auditoria**: `import_logs` + `import_row_errors`
+- **Comportamento**: idempotente, tolerante a falhas por linha (Padrão A), cria/reutiliza entidades, suporta múltiplas provas por linha
+- **Nota**: a inscrição oficial é feita no SIGECOM. Este módulo apenas importa/espelha os dados para a base operacional do JER Gestão.
 
 ## 2. Credenciamento (✅ Feito)
 - **Página**: `/admin/credenciamento`

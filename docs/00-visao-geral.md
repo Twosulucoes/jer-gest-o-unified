@@ -2,9 +2,13 @@
 
 ## O que é o JER Gestão
 
-Sistema de **gestão operacional** dos Jogos Escolares de Roraima (JER). Gerencia toda a operação do evento após a fase de inscrição: credenciamento, logística, competição, apuração e publicação de resultados.
+Sistema de **gestão operacional** dos Jogos Escolares de Roraima (JER e JERPA). Gerencia toda a operação do evento após a fase de inscrição: credenciamento, logística, competição, apuração e publicação de resultados.
 
-**Não é sistema de inscrição.** O JER Gestão consome dados importados do sistema externo de inscrições (SEDUC-RR) e materializa automaticamente a estrutura necessária (instituições, delegações, modalidades, categorias, provas).
+## Posicionamento do Sistema
+
+- **Inscrição oficial**: realizada exclusivamente no sistema oficial do evento (SIGECOM), conforme Regulamento Geral (Art. 58–60).
+- **JER Gestão**: importa/espelha os dados do SIGECOM para montar a **base operacional do evento** — usada para execução de campo, rastreabilidade e prestação de contas.
+- **O JER Gestão NÃO substitui o SIGECOM** e NÃO cria inscrições oficiais.
 
 ## Público-alvo
 
@@ -17,12 +21,13 @@ Sistema de **gestão operacional** dos Jogos Escolares de Roraima (JER). Gerenci
 ## Escopo funcional
 
 ```
-Importação → Credenciamento/QR → Logística → Competição → Apuração → Publicação → Evidências
+Importação (SIGECOM) → Credenciamento/QR → Logística → Competição → Apuração → Publicação → Evidências
 ```
 
 ## O que NÃO faz
 
-- Inscrição de participantes (feita no sistema externo)
+- Inscrição de participantes (feita exclusivamente no SIGECOM)
+- Alteração de dados no sistema oficial (SIGECOM)
 - Gestão financeira
 - Comunicação/marketing
 - Streaming/transmissão de jogos
