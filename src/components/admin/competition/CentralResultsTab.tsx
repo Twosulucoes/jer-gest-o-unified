@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Download, PenLine } from "lucide-react";
 import { Link } from "react-router-dom";
 import LaunchResultDialog from "./LaunchResultDialog";
+import ResultGovernancePanel from "./ResultGovernancePanel";
 
 interface Props {
   eventId: string;
@@ -212,6 +213,12 @@ export default function CentralResultsTab({ eventId, sportEventId, isCollective 
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Governance */}
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-3">Governança de Resultados</h3>
+        <ResultGovernancePanel sportEventId={sportEventId} />
       </div>
 
       <LaunchResultDialog
