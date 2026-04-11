@@ -149,6 +149,13 @@ const navGroups: NavGroup[] = [
       { label: "Vínculos Delegação", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
     ],
   },
+  {
+    id: "configuracoes",
+    label: "Configurações",
+    items: [
+      { label: "Parâmetros do Evento", to: "/admin/parametros-evento", icon: <Settings className="h-4 w-4" />, roles: ADMIN_ROLES },
+    ],
+  },
 ];
 
 function getRoleLabel(role: AppRole): string {
