@@ -473,16 +473,29 @@ function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
 // ─── Main Handler ────────────────────────────────────────────────────
 
 const MAX_ROWS = 10000;
-const REQUIRED_COLUMNS_MAP: Record<string, string[]> = {
+const COLUMN_ALIASES: Record<string, string[]> = {
   "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO", "NOME DO ALUNO", "ALUNO"],
   "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO", "UNIDADE ESCOLAR", "ESCOLA/INSTITUICAO"],
   "MODALIDADE": ["MODALIDADE", "ESPORTE", "SPORT", "MOD"],
   "PROVA": ["PROVA", "EVENTO", "DISCIPLINE", "PROVA/EVENTO"],
   "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "COMPETIÇÃO/CATEGORIA", "CATEGORIA", "CATEGORY", "COMP"],
 };
+const REQUIRED_COLUMNS = ["NOME", "ESCOLA", "MODALIDADE", "PROVA"];
 
 function normalizeStr(s: string): string {
-  return s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9 _]/g, "").replace(/\s+/g, " ");
+  return s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9 _/-]/g, " ").replace(/\s+/g, " ");
+}
+
+function deriveCategoryFromProva(prova: string): string {
+  if (isBlank(prova)) return "";
+
+  const normalized = normalizeStr(prova);
+  const ageBand = normalized.match(/\b(\d{1,2}\s*[-/]\s*\d{1,2}\s*ANOS)\b/)?.[1]?.replace(/\s+/g, " ");
+  const schoolBand = normalized.match(/\b(INFANTIL|JUVENIL|MIRIM)\b/)?.[1];
+  const gender = normalized.match(/\b(FEMININO|MASCULINO|MISTO|MISTA)\b/)?.[1];
+
+  const parts = [ageBand ?? schoolBand, gender === "MISTA" ? "MISTO" : gender].filter(Boolean);
+  return parts.join(" ");
 }
 
 function normalizeHeaders(rows: RawRow[]): RawRow[] {
@@ -490,22 +503,13 @@ function normalizeHeaders(rows: RawRow[]): RawRow[] {
   const firstRowKeys = Object.keys(rows[0]);
   const headerMap = new Map<string, string>();
 
-  console.log("[import] incoming headers:", firstRowKeys);
+  for (const [canonical, aliases] of Object.entries(COLUMN_ALIASES)) {
+    if (firstRowKeys.some((key) => normalizeStr(key) === normalizeStr(canonical))) continue;
 
-  for (const [canonical, aliases] of Object.entries(REQUIRED_COLUMNS_MAP)) {
-    // Skip if canonical already exists in headers
-    if (firstRowKeys.includes(canonical)) continue;
-
-    const normalizedAliases = aliases.map(a => normalizeStr(a));
-    const found = firstRowKeys.find(
-      (k) => normalizedAliases.includes(normalizeStr(k))
-    );
-    if (found) {
-      headerMap.set(found, canonical);
-    }
+    const normalizedAliases = aliases.map((alias) => normalizeStr(alias));
+    const found = firstRowKeys.find((key) => normalizedAliases.includes(normalizeStr(key)));
+    if (found) headerMap.set(found, canonical);
   }
-
-  console.log("[import] header mappings:", Object.fromEntries(headerMap));
 
   if (headerMap.size === 0) return rows;
 
@@ -516,11 +520,17 @@ function normalizeHeaders(rows: RawRow[]): RawRow[] {
         newRow[canonical] = newRow[original];
       }
     }
+
+    if ((!("COMPETICAO" in newRow) || isBlank(newRow["COMPETICAO"])) && !isBlank(newRow["PROVA"])) {
+      const derivedCategory = deriveCategoryFromProva(String(newRow["PROVA"]));
+      if (derivedCategory) {
+        newRow["COMPETICAO"] = derivedCategory;
+      }
+    }
+
     return newRow;
   });
 }
-
-const REQUIRED_COLUMNS = Object.keys(REQUIRED_COLUMNS_MAP);
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -550,7 +560,6 @@ Deno.serve(async (req: Request) => {
     }
     const operatorId = claimsData.claims.sub as string;
 
-    // Now accepts JSON body with pre-parsed rows (client-side XLSX parsing)
     const body = await req.json();
     let { rows: rawRows, event_id: eventId, mode, file_name: fileName } = body as {
       rows: RawRow[];
@@ -559,7 +568,6 @@ Deno.serve(async (req: Request) => {
       file_name?: string;
     };
 
-    // Normalize column headers to canonical names
     rawRows = normalizeHeaders(rawRows);
 
     if (!rawRows || !eventId || !mode) {
@@ -588,17 +596,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Validate headers - check canonical names exist after normalization
     const headers = Object.keys(rawRows[0]);
-    const normalizedHeaders = headers.map(h => normalizeStr(h));
+    const normalizedHeaders = headers.map((header) => normalizeStr(header));
     const missingCols = REQUIRED_COLUMNS.filter((col) => {
-      // Check if canonical exists directly or any of its aliases match
       if (headers.includes(col)) return false;
-      const aliases = REQUIRED_COLUMNS_MAP[col] || [col];
-      return !aliases.some(alias => normalizedHeaders.includes(normalizeStr(alias)));
+      const aliases = COLUMN_ALIASES[col] || [col];
+      return !aliases.some((alias) => normalizedHeaders.includes(normalizeStr(alias)));
     });
     if (missingCols.length > 0) {
-      console.log("[import] missing columns:", missingCols, "available headers:", headers);
       return new Response(
         JSON.stringify({ error: `Colunas obrigatórias ausentes: ${missingCols.join(", ")}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -114,17 +114,18 @@ export default function ImportacaoPage() {
     const buffer = await f.arrayBuffer();
     const workbook = read(new Uint8Array(buffer), { type: "array" });
 
-    // Find the sheet with required columns
-    const REQUIRED_MAP: Record<string, string[]> = {
+    // Find the sheet with minimum required columns
+    const COLUMN_ALIASES: Record<string, string[]> = {
       "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO", "NOME DO ALUNO", "ALUNO"],
       "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO", "UNIDADE ESCOLAR", "ESCOLA/INSTITUICAO"],
       "MODALIDADE": ["MODALIDADE", "ESPORTE", "SPORT", "MOD"],
       "PROVA": ["PROVA", "EVENTO", "DISCIPLINE", "PROVA/EVENTO"],
       "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "COMPETIÇÃO/CATEGORIA", "CATEGORIA", "CATEGORY", "COMP"],
     };
-    const normalize = (s: string) => s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9 _]/g, "").replace(/\s+/g, " ");
-    const hasCanonical = (headers: string[], aliases: string[]) =>
-      aliases.some((a) => headers.some((h) => normalize(h) === normalize(a)));
+    const REQUIRED_HEADERS = ["NOME", "ESCOLA", "MODALIDADE", "PROVA"];
+    const normalize = (s: string) => s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9 _/-]/g, " ").replace(/\s+/g, " ");
+    const hasAlias = (headers: string[], aliases: string[]) =>
+      aliases.some((alias) => headers.some((header) => normalize(header) === normalize(alias)));
 
     let sheetName = workbook.SheetNames[0];
     for (const name of workbook.SheetNames) {
@@ -132,7 +133,7 @@ export default function ImportacaoPage() {
       const sample = utils.sheet_to_json(sheet, { defval: null, range: 0 }) as Record<string, unknown>[];
       if (sample.length > 0) {
         const headers = Object.keys(sample[0]);
-        if (Object.values(REQUIRED_MAP).every((aliases) => hasCanonical(headers, aliases))) {
+        if (REQUIRED_HEADERS.every((header) => hasAlias(headers, COLUMN_ALIASES[header] ?? [header]))) {
           sheetName = name;
           break;
         }
