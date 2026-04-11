@@ -2693,6 +2693,14 @@ export type Database = {
         Args: { p_event_id: string; p_prova_raw: string; p_sport_id: string }
         Returns: Json
       }
+      rpc_can_regenerate_matches: {
+        Args: { p_event_id: string; p_sport_event_id: string }
+        Returns: Json
+      }
+      rpc_detect_schedule_conflicts: {
+        Args: { p_event_id: string; p_sport_event_id: string }
+        Returns: Json
+      }
       rpc_generate_groups: {
         Args: {
           p_event_id: string
@@ -2729,6 +2737,10 @@ export type Database = {
       rpc_get_schema_columns: { Args: never; Returns: Json }
       rpc_get_schema_constraints: { Args: never; Returns: Json }
       rpc_get_schema_tables: { Args: never; Returns: Json }
+      rpc_launch_match_result: {
+        Args: { p_event_id: string; p_match_id: string; p_payload: Json }
+        Returns: Json
+      }
       rpc_list_eligibility_pending: {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
