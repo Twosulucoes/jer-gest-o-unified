@@ -140,6 +140,13 @@ const navGroups: NavGroup[] = [
       { label: "Locais de competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
+  {
+    id: "acessos",
+    label: "Acessos",
+    items: [
+      { label: "Vínculos Delegação", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+    ],
+  },
 ];
 
 function getRoleLabel(role: AppRole): string {
