@@ -2,8 +2,8 @@
 
 ## Regras Permanentes
 
-### 1. Base Operacional Oficial
-A planilha de inscrição importada do sistema externo (SEDUC-RR) é a **fonte de verdade**. O JER Gestão materializa automaticamente instituições, delegações, modalidades, categorias e provas a partir desta importação.
+### 1. Base Operacional do Evento
+A inscrição oficial é realizada no sistema oficial (SIGECOM), conforme Regulamento. O JER Gestão **importa/espelha** os dados exportados do SIGECOM para montar a **base operacional do evento**, materializando automaticamente instituições, delegações, modalidades, categorias e provas. Essa base não tem valor regulatório de inscrição — serve exclusivamente para execução de campo.
 
 ### 2. Credencial é Central
 - Toda operação logística e esportiva exige credencial ativa
