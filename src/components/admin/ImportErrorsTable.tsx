@@ -57,6 +57,7 @@ export default function ImportErrorsTable({ eventId, mode, previewErrors }: Impo
       let query = supabase
         .from("import_row_errors")
         .select("id, created_at, row_number, entity, error_code, error_message, payload")
+
         .eq("event_id", eventId)
         .order("created_at", { ascending: false })
         .limit(100);

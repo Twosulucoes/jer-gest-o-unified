@@ -175,7 +175,14 @@ export default function ImportacaoPage() {
         toast.success("Importação concluída sem erros.");
       }
     } catch (err) {
-      toast.error(`Erro na importação: ${(err as Error).message}`);
+      const msg = (err as Error).message;
+      toast.error(`Erro na importação: ${msg}`, {
+        duration: 10000,
+        action: {
+          label: "Nova importação",
+          onClick: handleReset,
+        },
+      });
     } finally {
       setCommitting(false);
     }
@@ -543,6 +550,12 @@ function CommitResultCard({
           <div>
             <div className="grid grid-cols-1 gap-3 mb-3">
               <SummaryCard label="Falhas" value={failedCount} variant="error" />
+            </div>
+            <div className="flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30 p-3 mb-3">
+              <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
+              <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                Alguns registros foram parcialmente criados. Corrija os dados na planilha e reexecute a importação para completar as inscrições pendentes.
+              </p>
             </div>
             <Accordion type="single" collapsible defaultValue="errors-preview">
               <AccordionItem value="errors-preview">
