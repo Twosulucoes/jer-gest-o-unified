@@ -126,10 +126,7 @@ export default function CompeticaoResultadosPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Resultados da Competição</h1>
-        <p className="text-sm text-muted-foreground mt-1">Painel administrativo de resultados por status</p>
-      </div>
+      <ModuleHeader route="/admin/competicao/resultados" />
 
       <Card>
         <CardContent className="pt-6">
