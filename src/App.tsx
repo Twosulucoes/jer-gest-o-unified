@@ -45,6 +45,7 @@ import AcessosDelegacoesPage from "./pages/admin/AcessosDelegacoesPage";
 import ParametrosEventoPage from "./pages/admin/ParametrosEventoPage";
 import IrregularidadesPage from "./pages/admin/IrregularidadesPage";
 import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
+import SchemaValidadorPage from "./pages/admin/SchemaValidadorPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -117,6 +118,8 @@ const App = () => (
               {/* Irregularidades e Normalização */}
               <Route path="irregularidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><IrregularidadesPage /></ProtectedRoute>} />
               <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />
+              {/* Schema Validator */}
+              <Route path="schema/validador" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><SchemaValidadorPage /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
