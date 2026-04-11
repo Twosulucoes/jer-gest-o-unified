@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { useActiveEventId } from "@/contexts/EventContext";
+import { useActiveEventId, useEventContext } from "@/contexts/EventContext";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
