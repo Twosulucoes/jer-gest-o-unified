@@ -162,6 +162,7 @@ const navGroups: NavGroup[] = [
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Normalização de Provas", to: "/admin/normalizacao-provas", icon: <FileSearch className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Validador de Estrutura", to: "/admin/schema/validador", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Mapa do Sistema", to: "/admin/mapa", icon: <Map className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
 ];
