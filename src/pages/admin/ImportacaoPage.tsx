@@ -31,6 +31,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useActiveEventId } from "@/contexts/EventContext";
 import ImportErrorsTable from "@/components/admin/ImportErrorsTable";
+import ModuleHeader from "@/components/admin/ModuleHeader";
 
 // ─── Types ───────────────────────────────────────────────────────────
 

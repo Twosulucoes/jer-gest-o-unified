@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
 import { useActiveEventId } from "@/contexts/EventContext";
+import ModuleHeader from "@/components/admin/ModuleHeader";
 
 export default function CompeticaoPartidasPage() {
   const qc = useQueryClient();

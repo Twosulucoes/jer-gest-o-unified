@@ -68,6 +68,7 @@ import {
 import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
 import { SingleLabelDialog, BatchLabelsDialog } from "@/components/admin/CredentialLabelPrint";
 import { useActiveEventId } from "@/contexts/EventContext";
+import ModuleHeader from "@/components/admin/ModuleHeader";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",

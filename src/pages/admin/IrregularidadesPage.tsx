@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from "sonner";
 import { RefreshCw, AlertTriangle, Search, Eye, CheckCircle, XCircle, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
+import ModuleHeader from "@/components/admin/ModuleHeader";
 
 interface Irregularity {
   id: string;
