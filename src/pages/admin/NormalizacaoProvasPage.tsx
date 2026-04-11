@@ -303,12 +303,12 @@ export default function NormalizacaoProvasPage() {
             </div>
             <div className="space-y-2">
               <Label>Modalidade (opcional)</Label>
-              <Select value={form.sport_id} onValueChange={(v) => setForm((f) => ({ ...f, sport_id: v }))}>
+              <Select value={form.sport_id || "__none__"} onValueChange={(v) => setForm((f) => ({ ...f, sport_id: v === "__none__" ? "" : v }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as modalidades" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as modalidades</SelectItem>
+                  <SelectItem value="__none__">Todas as modalidades</SelectItem>
                   {sports.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
