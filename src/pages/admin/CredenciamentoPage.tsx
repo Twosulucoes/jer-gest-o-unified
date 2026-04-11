@@ -1126,6 +1126,38 @@ export default function CredenciamentoPage() {
           eventId={selectedEventId}
         />
       )}
+      {/* Blocking irregularities dialog */}
+      <Dialog open={!!blockingDialogData} onOpenChange={(open) => { if (!open) setBlockingDialogData(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="h-5 w-5" />
+              Credenciamento bloqueado
+            </DialogTitle>
+            <DialogDescription>
+              <strong>{blockingDialogData?.participantName}</strong> possui irregularidade(s) aberta(s) que impedem o credenciamento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {blockingDialogData?.items?.map((item: any, idx: number) => (
+              <div key={item.id ?? idx} className="rounded border p-3 text-sm space-y-1">
+                <p className="font-medium">{item.message}</p>
+                {item.context?.limit != null && (
+                  <p className="text-xs text-muted-foreground">
+                    Limite: {item.context.limit} — Encontrado: {item.context.count}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlockingDialogData(null)}>Fechar</Button>
+            <Button asChild>
+              <Link to="/admin/irregularidades">Ir para Irregularidades</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
