@@ -50,6 +50,21 @@ Deno.serve(async (req) => {
 
   const sportId = url.searchParams.get("sport_id");
   const sportEventId = url.searchParams.get("sport_event_id");
+  const bulletinNumberStr = url.searchParams.get("bulletin_number");
+
+  // Validate bulletin_number if provided
+  if (bulletinNumberStr) {
+    const n = Number(bulletinNumberStr);
+    if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) {
+      return new Response(
+        JSON.stringify({ error: "bulletin_number inválido" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
