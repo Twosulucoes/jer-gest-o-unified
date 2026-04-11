@@ -330,7 +330,9 @@ export default function CredenciamentoPage() {
         // Type filter
         if (filterType !== "all" && p.participant_type !== filterType) return false;
         // State filter
-        if (filterState !== "all") {
+        if (filterState === "blocked") {
+          if (!blockedParticipantIds.has(p.id)) return false;
+        } else if (filterState !== "all") {
           const state = getParticipantState(p);
           if (state !== filterState) return false;
         }
@@ -351,7 +353,7 @@ export default function CredenciamentoPage() {
         const nameB = peopleMap.get(b.person_id)?.full_name ?? "";
         return nameA.localeCompare(nameB);
       });
-  }, [participants, searchTerm, filterType, filterState, filterInstitution, peopleMap, activeCredMap]);
+  }, [participants, searchTerm, filterType, filterState, filterInstitution, peopleMap, activeCredMap, blockedParticipantIds]);
 
   // --- Pagination ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
