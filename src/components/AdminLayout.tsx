@@ -331,7 +331,13 @@ export default function AdminLayout() {
         </header>
 
         <main className="flex-1 p-4 lg:p-6">
-          <Outlet />
+          {location.pathname === "/admin/eventos" ? (
+            <Outlet />
+          ) : (
+            <RequireActiveEvent>
+              <Outlet />
+            </RequireActiveEvent>
+          )}
         </main>
       </div>
     </div>

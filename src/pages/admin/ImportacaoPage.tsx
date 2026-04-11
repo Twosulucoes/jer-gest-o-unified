@@ -185,7 +185,7 @@ export default function ImportacaoPage() {
     setFile(null);
     setValidateResult(null);
     setCommitResult(null);
-    setSelectedEventId("");
+    // event is managed globally via EventContext
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
