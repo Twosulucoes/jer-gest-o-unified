@@ -143,6 +143,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "competition_match_entries_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
+          },
+          {
             foreignKeyName: "competition_match_entries_participant_sport_event_id_fkey"
             columns: ["participant_sport_event_id"]
             isOneToOne: false
@@ -247,6 +254,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "competition_match_results_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
+          },
+          {
             foreignKeyName: "competition_match_results_published_bulletin_id_fkey"
             columns: ["published_bulletin_id"]
             isOneToOne: false
@@ -327,6 +341,13 @@ export type Database = {
             foreignKeyName: "competition_matches_sport_event_id_fkey"
             columns: ["sport_event_id"]
             isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
             referencedRelation: "sport_events"
             referencedColumns: ["id"]
           },
@@ -380,6 +401,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_phases_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
           },
           {
             foreignKeyName: "competition_phases_sport_event_id_fkey"
@@ -965,6 +993,13 @@ export type Database = {
             referencedRelation: "competition_matches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "match_attachments_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
+          },
         ]
       }
       match_attempts: {
@@ -1024,6 +1059,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "competition_matches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_attempts_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
           },
           {
             foreignKeyName: "match_attempts_participant_id_fkey"
@@ -1088,6 +1130,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "competition_matches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
           },
           {
             foreignKeyName: "match_events_match_lineup_id_fkey"
@@ -1161,6 +1210,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_lineups_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
+          },
+          {
             foreignKeyName: "match_lineups_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: false
@@ -1211,6 +1267,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "competition_matches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_officials_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
           },
         ]
       }
@@ -1270,6 +1333,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_penalties_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
+          },
+          {
             foreignKeyName: "match_penalties_match_lineup_id_fkey"
             columns: ["match_lineup_id"]
             isOneToOne: false
@@ -1326,6 +1396,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "competition_matches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_player_stats_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
           },
           {
             foreignKeyName: "match_player_stats_match_lineup_id_fkey"
@@ -1388,6 +1465,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "competition_matches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_scores_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
           },
         ]
       }
@@ -1721,6 +1805,13 @@ export type Database = {
             foreignKeyName: "participant_sport_events_sport_event_id_fkey"
             columns: ["sport_event_id"]
             isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "participant_sport_events_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
             referencedRelation: "sport_events"
             referencedColumns: ["id"]
           },
@@ -1985,6 +2076,13 @@ export type Database = {
             foreignKeyName: "prova_aliases_sport_id_fkey"
             columns: ["sport_id"]
             isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_id"]
+          },
+          {
+            foreignKeyName: "prova_aliases_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
             referencedRelation: "sports"
             referencedColumns: ["id"]
           },
@@ -2042,6 +2140,13 @@ export type Database = {
             foreignKeyName: "prova_catalog_sport_id_fkey"
             columns: ["sport_id"]
             isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_id"]
+          },
+          {
+            foreignKeyName: "prova_catalog_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
             referencedRelation: "sports"
             referencedColumns: ["id"]
           },
@@ -2093,8 +2198,22 @@ export type Database = {
             foreignKeyName: "sport_event_prova_map_sport_event_id_fkey"
             columns: ["sport_event_id"]
             isOneToOne: true
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "sport_event_prova_map_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: true
             referencedRelation: "sport_events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_event_prova_map_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_id"]
           },
           {
             foreignKeyName: "sport_event_prova_map_sport_id_fkey"
@@ -2153,6 +2272,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_events_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_id"]
           },
           {
             foreignKeyName: "sport_events_sport_id_fkey"
@@ -2303,6 +2429,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
           },
           {
             foreignKeyName: "teams_sport_event_id_fkey"
@@ -2638,6 +2771,45 @@ export type Database = {
       }
     }
     Views: {
+      public_results_view: {
+        Row: {
+          bulletin_number: number | null
+          bulletin_published_at: string | null
+          bulletin_title: string | null
+          category_name: string | null
+          display_name: string | null
+          distance_cm: number | null
+          entry_type: string | null
+          event_id: string | null
+          event_name: string | null
+          event_year: number | null
+          institution_name: string | null
+          match_date: string | null
+          match_id: string | null
+          match_number: number | null
+          outcome: string | null
+          points: number | null
+          position: number | null
+          result_status: string | null
+          score: string | null
+          sport_event_id: string | null
+          sport_event_name: string | null
+          sport_id: string | null
+          sport_name: string | null
+          start_time: string | null
+          time_ms: number | null
+          venue_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vw_participant_sport_history: {
         Row: {
           aggregated_stats_json: Json | null
