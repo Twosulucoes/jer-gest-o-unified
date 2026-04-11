@@ -85,6 +85,9 @@ Deno.serve(async (req) => {
   if (sportEventId && uuidRegex.test(sportEventId)) {
     query = query.eq("sport_event_id", sportEventId);
   }
+  if (bulletinNumberStr) {
+    query = query.eq("bulletin_number", Number(bulletinNumberStr));
+  }
 
   const { data, error } = await query;
 
@@ -98,6 +101,8 @@ Deno.serve(async (req) => {
     );
   }
 
+  const cacheMaxAge = bulletinNumberStr ? 300 : 60;
+
   return new Response(
     JSON.stringify({
       event_id: eventId,
@@ -109,7 +114,7 @@ Deno.serve(async (req) => {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=60",
+        "Cache-Control": `public, max-age=${cacheMaxAge}`,
       },
     }
   );
