@@ -68,6 +68,7 @@ import {
 import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
 import { SingleLabelDialog, BatchLabelsDialog } from "@/components/admin/CredentialLabelPrint";
 import { useActiveEventId } from "@/contexts/EventContext";
+import ModuleHeader from "@/components/admin/ModuleHeader";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -581,13 +582,7 @@ export default function CredenciamentoPage() {
 
   return (
     <div className="animate-fade-in space-y-5">
-      {/* Header */}
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Credenciamento</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Registre presença, emita e gerencie credenciais.
-        </p>
-      </div>
+      <ModuleHeader route="/admin/credenciamento" />
 
       {/* Flow guide */}
       <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5">

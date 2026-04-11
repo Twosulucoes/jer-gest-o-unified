@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from "sonner";
 import { RefreshCw, AlertTriangle, Search, Eye, CheckCircle, XCircle, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
+import ModuleHeader from "@/components/admin/ModuleHeader";
 
 interface Irregularity {
   id: string;
@@ -127,20 +128,15 @@ export default function IrregularidadesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Irregularidades</h1>
-          {activeEvent && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Evento: <strong>{activeEvent.name}</strong> ({activeEvent.year})
-            </p>
-          )}
-        </div>
-        <Button onClick={() => recomputeMutation.mutate()} disabled={recomputeMutation.isPending}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${recomputeMutation.isPending ? "animate-spin" : ""}`} />
-          Recalcular irregularidades
-        </Button>
-      </div>
+      <ModuleHeader
+        route="/admin/irregularidades"
+        actions={
+          <Button onClick={() => recomputeMutation.mutate()} disabled={recomputeMutation.isPending}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${recomputeMutation.isPending ? "animate-spin" : ""}`} />
+            Recalcular irregularidades
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">

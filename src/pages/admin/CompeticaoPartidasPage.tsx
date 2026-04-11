@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
 import { useActiveEventId } from "@/contexts/EventContext";
+import ModuleHeader from "@/components/admin/ModuleHeader";
 
 export default function CompeticaoPartidasPage() {
   const qc = useQueryClient();
@@ -150,17 +151,16 @@ export default function CompeticaoPartidasPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Partidas / Provas</h1>
-          <p className="text-sm text-muted-foreground mt-1">Agenda operacional da competição</p>
-        </div>
-        {canWrite && selectedEventId && (
-          <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
-            <Plus className="mr-2 h-4 w-4" />Nova partida
-          </Button>
-        )}
-      </div>
+      <ModuleHeader
+        route="/admin/competicao/partidas"
+        actions={
+          canWrite && selectedEventId ? (
+            <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
+              <Plus className="mr-2 h-4 w-4" />Nova partida
+            </Button>
+          ) : undefined
+        }
+      />
 
       <Card>
         <CardContent className="pt-6">

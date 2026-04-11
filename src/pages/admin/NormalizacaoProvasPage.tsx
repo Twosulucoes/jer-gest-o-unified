@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Plus, RefreshCw, Pencil, Trash2 } from "lucide-react";
+import ModuleHeader from "@/components/admin/ModuleHeader";
 
 interface ProvaAlias {
   id: string;
@@ -171,31 +172,23 @@ export default function NormalizacaoProvasPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Normalização de Provas</h1>
-          {activeEvent && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Evento: <strong>{activeEvent.name}</strong> ({activeEvent.year})
-            </p>
-          )}
-          <p className="text-sm text-muted-foreground mt-1">
-            Gerencie aliases para resolver variações de nome de prova (ex.: "100M" → "100m").
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => recomputeMutation.mutate()} disabled={recomputeMutation.isPending}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${recomputeMutation.isPending ? "animate-spin" : ""}`} />
-            Reprocessar irregularidades
-          </Button>
-          {canEdit && (
-            <Button onClick={openCreate}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo alias
+      <ModuleHeader
+        route="/admin/normalizacao-provas"
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => recomputeMutation.mutate()} disabled={recomputeMutation.isPending}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${recomputeMutation.isPending ? "animate-spin" : ""}`} />
+              Reprocessar irregularidades
             </Button>
-          )}
-        </div>
-      </div>
+            {canEdit && (
+              <Button onClick={openCreate}>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo alias
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {/* Filter */}
       <div className="flex gap-3">
