@@ -111,7 +111,13 @@ export default function TeamMembersDialog({ open, onOpenChange, team, canWrite }
       setSelectedParticipantId("");
       setNewJersey("");
     },
-    onError: (e: Error) => toast.error("Erro: " + e.message),
+    onError: (e: Error) => {
+      if (isParticipationLimitError(e)) {
+        toast.error(PARTICIPATION_LIMIT_MESSAGE);
+      } else {
+        toast.error("Erro: " + e.message);
+      }
+    },
   });
 
   const toggleActiveMut = useMutation({
