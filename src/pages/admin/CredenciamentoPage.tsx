@@ -22,7 +22,16 @@ import {
   ChevronRight,
   Filter,
   AlertCircle,
+  ShieldAlert,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -109,13 +118,26 @@ export default function CredenciamentoPage() {
   const [batchLabelIds, setBatchLabelIds] = useState<string[]>([]);
   const [batchCredentialConfirmOpen, setBatchCredentialConfirmOpen] = useState(false);
   const [batchEmitConfirmOpen, setBatchEmitConfirmOpen] = useState(false);
+  
+  const [blockingDialogData, setBlockingDialogData] = useState<{ participantName: string; items: any[] } | null>(null);
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution]);
   useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }, [selectedEventId]);
 
-  // --- Events ---
+  // --- Blocked participants ---
+  const { data: blockedParticipantIds = new Set<string>() } = useQuery({
+    queryKey: ["blocked-participants", selectedEventId],
+    queryFn: async () => {
+      if (!selectedEventId) return new Set<string>();
+      const { data, error } = await supabase.rpc("list_blocked_participants", { p_event_id: selectedEventId });
+      if (error) throw error;
+      return new Set<string>((data ?? []).map((r: any) => r.participant_id));
+    },
+    enabled: !!selectedEventId,
+    staleTime: 30_000,
+  });
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
     queryFn: async () => {
@@ -308,7 +330,9 @@ export default function CredenciamentoPage() {
         // Type filter
         if (filterType !== "all" && p.participant_type !== filterType) return false;
         // State filter
-        if (filterState !== "all") {
+        if (filterState === "blocked") {
+          if (!blockedParticipantIds.has(p.id)) return false;
+        } else if (filterState !== "all") {
           const state = getParticipantState(p);
           if (state !== filterState) return false;
         }
@@ -329,7 +353,7 @@ export default function CredenciamentoPage() {
         const nameB = peopleMap.get(b.person_id)?.full_name ?? "";
         return nameA.localeCompare(nameB);
       });
-  }, [participants, searchTerm, filterType, filterState, filterInstitution, peopleMap, activeCredMap]);
+  }, [participants, searchTerm, filterType, filterState, filterInstitution, peopleMap, activeCredMap, blockedParticipantIds]);
 
   // --- Pagination ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -378,7 +402,9 @@ export default function CredenciamentoPage() {
       toast.success("Credencial emitida com sucesso!");
     },
     onError: (err: Error) => {
-      if (err.message?.includes("uq_participant_event_active")) {
+      if (err.message?.includes("irregularidade") || err.message?.includes("Credenciamento bloqueado")) {
+        toast.error("Credenciamento bloqueado: atleta possui irregularidade aberta. Resolva em Irregularidades.");
+      } else if (err.message?.includes("uq_participant_event_active")) {
         toast.error("Este participante já possui credencial ativa.");
       } else {
         toast.error(`Erro ao emitir credencial: ${err.message}`);
@@ -416,8 +442,33 @@ export default function CredenciamentoPage() {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
       toast.success("Credencial reemitida! A anterior foi invalidada.");
     },
-    onError: (err: Error) => toast.error(`Erro na reemissão: ${err.message}`),
+    onError: (err: Error) => {
+      if (err.message?.includes("irregularidade") || err.message?.includes("Credenciamento bloqueado")) {
+        toast.error("Credenciamento bloqueado: atleta possui irregularidade aberta. Resolva em Irregularidades.");
+      } else {
+        toast.error(`Erro na reemissão: ${err.message}`);
+      }
+    },
   });
+
+  // --- Blocking check before emit/reissue ---
+  const checkBlockingAndAct = async (participantId: string, personName: string, action: "emit" | "reissue") => {
+    const { data, error } = await supabase.rpc("get_blocking_irregularities", {
+      p_event_id: selectedEventId,
+      p_participant_id: participantId,
+    });
+    if (error) {
+      toast.error(`Erro ao verificar irregularidades: ${error.message}`);
+      return;
+    }
+    const result = data as any;
+    if (result?.has_blocking) {
+      setBlockingDialogData({ participantName: personName, items: result.items ?? [] });
+      return;
+    }
+    if (action === "emit") emitCredentialMutation.mutate(participantId);
+    else reissueMutation.mutate(participantId);
+  };
 
   // --- Stats ---
   const pendingCount = (participants ?? []).filter((p) => p.status === "pending").length;
@@ -629,6 +680,9 @@ export default function CredenciamentoPage() {
                     <SelectItem value="awaiting">Confirmado</SelectItem>
                     <SelectItem value="ready_to_emit">Pronto p/ emissão</SelectItem>
                     <SelectItem value="complete">Credencial ativa</SelectItem>
+                    {blockedParticipantIds.size > 0 && (
+                      <SelectItem value="blocked">⚠ Irregulares ({blockedParticipantIds.size})</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -862,10 +916,18 @@ export default function CredenciamentoPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={stateInfo.variant} className={`text-[10px] gap-1 ${stateInfo.className}`}>
-                          {stateInfo.icon}
-                          {stateInfo.label}
-                        </Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant={stateInfo.variant} className={`text-[10px] gap-1 ${stateInfo.className}`}>
+                            {stateInfo.icon}
+                            {stateInfo.label}
+                          </Badge>
+                          {blockedParticipantIds.has(p.id) && (
+                            <Badge variant="destructive" className="text-[10px] gap-1">
+                              <ShieldAlert className="h-3 w-3" />
+                              IRREGULAR
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       {canCredential && (
                         <TableCell>
@@ -900,28 +962,35 @@ export default function CredenciamentoPage() {
                             )}
 
                             {state === "ready_to_emit" && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button size="sm" className="h-7 text-xs" disabled={emitCredentialMutation.isPending}>
-                                    {emitCredentialMutation.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CreditCard className="mr-1 h-3 w-3" />}
-                                    Emitir Credencial
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Emitir credencial</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Emitir credencial para <strong>{person?.full_name}</strong>? Será gerado um código único e QR Code.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => emitCredentialMutation.mutate(p.id)}>
-                                      Emitir agora
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              blockedParticipantIds.has(p.id) ? (
+                                <Button size="sm" className="h-7 text-xs" variant="destructive" onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "emit")}>
+                                  <ShieldAlert className="mr-1 h-3 w-3" />
+                                  Bloqueado
+                                </Button>
+                              ) : (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button size="sm" className="h-7 text-xs" disabled={emitCredentialMutation.isPending}>
+                                      {emitCredentialMutation.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CreditCard className="mr-1 h-3 w-3" />}
+                                      Emitir Credencial
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Emitir credencial</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Emitir credencial para <strong>{person?.full_name}</strong>? Será gerado um código único e QR Code.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "emit")}>
+                                        Emitir agora
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )
                             )}
 
                             {state === "complete" && (
@@ -952,7 +1021,7 @@ export default function CredenciamentoPage() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => reissueMutation.mutate(p.id)}>
+                                      <AlertDialogAction onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "reissue")}>
                                         Confirmar segunda via
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
@@ -1057,6 +1126,38 @@ export default function CredenciamentoPage() {
           eventId={selectedEventId}
         />
       )}
+      {/* Blocking irregularities dialog */}
+      <Dialog open={!!blockingDialogData} onOpenChange={(open) => { if (!open) setBlockingDialogData(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="h-5 w-5" />
+              Credenciamento bloqueado
+            </DialogTitle>
+            <DialogDescription>
+              <strong>{blockingDialogData?.participantName}</strong> possui irregularidade(s) aberta(s) que impedem o credenciamento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {blockingDialogData?.items?.map((item: any, idx: number) => (
+              <div key={item.id ?? idx} className="rounded border p-3 text-sm space-y-1">
+                <p className="font-medium">{item.message}</p>
+                {item.context?.limit != null && (
+                  <p className="text-xs text-muted-foreground">
+                    Limite: {item.context.limit} — Encontrado: {item.context.count}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlockingDialogData(null)}>Fechar</Button>
+            <Button asChild>
+              <Link to="/admin/irregularidades">Ir para Irregularidades</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
