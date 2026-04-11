@@ -118,13 +118,26 @@ export default function CredenciamentoPage() {
   const [batchLabelIds, setBatchLabelIds] = useState<string[]>([]);
   const [batchCredentialConfirmOpen, setBatchCredentialConfirmOpen] = useState(false);
   const [batchEmitConfirmOpen, setBatchEmitConfirmOpen] = useState(false);
+  const navigate = useNavigate();
+  const [blockingDialogData, setBlockingDialogData] = useState<{ participantName: string; items: any[] } | null>(null);
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution]);
   useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }, [selectedEventId]);
 
-  // --- Events ---
+  // --- Blocked participants ---
+  const { data: blockedParticipantIds = new Set<string>() } = useQuery({
+    queryKey: ["blocked-participants", selectedEventId],
+    queryFn: async () => {
+      if (!selectedEventId) return new Set<string>();
+      const { data, error } = await supabase.rpc("list_blocked_participants", { p_event_id: selectedEventId });
+      if (error) throw error;
+      return new Set<string>((data ?? []).map((r: any) => r.participant_id));
+    },
+    enabled: !!selectedEventId,
+    staleTime: 30_000,
+  });
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
     queryFn: async () => {
