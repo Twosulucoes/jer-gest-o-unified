@@ -10,6 +10,7 @@ import CentralEnrolledTab from "@/components/admin/competition/CentralEnrolledTa
 import CentralMatchesTab from "@/components/admin/competition/CentralMatchesTab";
 import CentralResultsTab from "@/components/admin/competition/CentralResultsTab";
 import EligibilityPendingPanel from "@/components/admin/competition/EligibilityPendingPanel";
+import CentralAgendaTab from "@/components/admin/competition/CentralAgendaTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function CompeticaoCentralPage() {
@@ -61,6 +62,7 @@ export default function CompeticaoCentralPage() {
               </TabsTrigger>
               <TabsTrigger value="matches">Partidas</TabsTrigger>
               <TabsTrigger value="results">Resultados</TabsTrigger>
+              <TabsTrigger value="agenda">Agenda</TabsTrigger>
               <TabsTrigger value="pending">Pendências</TabsTrigger>
             </TabsList>
 
@@ -88,6 +90,13 @@ export default function CompeticaoCentralPage() {
             </TabsContent>
             <TabsContent value="results">
               <CentralResultsTab
+                eventId={eventId}
+                sportEventId={sportEventId}
+                isCollective={summary?.is_collective ?? false}
+              />
+            </TabsContent>
+            <TabsContent value="agenda">
+              <CentralAgendaTab
                 eventId={eventId}
                 sportEventId={sportEventId}
               />
