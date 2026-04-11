@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 interface ValidationResult {
   result: string;
@@ -49,7 +50,7 @@ const RESULT_CONFIG: Record<string, { label: string; icon: React.ReactNode; colo
 };
 
 export default function ValidacaoQRPage() {
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const selectedEventId = useActiveEventId();
   const [qrInput, setQrInput] = useState("");
   const [scanPoint, setScanPoint] = useState("general");
   const [validating, setValidating] = useState(false);
@@ -137,7 +138,7 @@ export default function ValidacaoQRPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+              <Select value={selectedEventId} onValueChange={() => {}}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>

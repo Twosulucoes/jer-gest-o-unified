@@ -12,13 +12,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 export default function CompeticaoPartidasPage() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const selectedEventId = useActiveEventId();
   const [selectedSportEventId, setSelectedSportEventId] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
@@ -166,7 +167,7 @@ export default function CompeticaoPartidasPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setSelectedSportEventId(""); setCurrentPage(1); }}>
+              <Select value={selectedEventId} onValueChange={(v) => { setSelectedSportEventId(""); setCurrentPage(1); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
               </Select>

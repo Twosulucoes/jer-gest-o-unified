@@ -20,11 +20,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import CredentialTemplateFormDialog from "@/components/admin/CredentialTemplateFormDialog";
 import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 export default function CredencialModelosPage() {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const selectedEventId = useActiveEventId();
   const [formOpen, setFormOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
@@ -87,7 +88,7 @@ export default function CredencialModelosPage() {
         <CardContent className="pt-6">
           <div className="space-y-2 max-w-sm">
             <label className="text-sm font-medium text-foreground">Evento</label>
-            <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+            <Select value={selectedEventId} onValueChange={() => {}}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o evento" />
               </SelectTrigger>

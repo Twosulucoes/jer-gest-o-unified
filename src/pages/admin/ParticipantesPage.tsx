@@ -14,6 +14,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -31,7 +32,7 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
 
 export default function ParticipantesPage() {
   const navigate = useNavigate();
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const selectedEventId = useActiveEventId();
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: events = [] } = useQuery({
@@ -189,7 +190,7 @@ export default function ParticipantesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+              <Select value={selectedEventId} onValueChange={() => {}}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o evento" />
                 </SelectTrigger>

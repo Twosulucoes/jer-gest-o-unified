@@ -58,6 +58,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
 import { SingleLabelDialog, BatchLabelsDialog } from "@/components/admin/CredentialLabelPrint";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -94,7 +95,7 @@ type ParticipantState = "pending_import" | "awaiting" | "ready_to_emit" | "compl
 export default function CredenciamentoPage() {
   const queryClient = useQueryClient();
   const { hasRole, user } = useAuth();
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const selectedEventId = useActiveEventId();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterState, setFilterState] = useState("all");
@@ -567,7 +568,7 @@ export default function CredenciamentoPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Evento</label>
-              <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+              <Select value={selectedEventId} onValueChange={() => {}}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o evento..." />
                 </SelectTrigger>

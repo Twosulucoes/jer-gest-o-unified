@@ -49,6 +49,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 interface ValidateResult {
   status: string;
@@ -93,7 +94,7 @@ export default function ImportacaoPage() {
   const { hasRole } = useAuth();
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
-  const [selectedEventId, setSelectedEventId] = useState<string>("");
+  const selectedEventId = useActiveEventId();
   const [file, setFile] = useState<File | null>(null);
   const [validating, setValidating] = useState(false);
   const [committing, setCommitting] = useState(false);
@@ -242,7 +243,7 @@ export default function ImportacaoPage() {
               <Select
                 value={selectedEventId}
                 onValueChange={(v) => {
-                  setSelectedEventId(v);
+                  ;
                   setValidateResult(null);
                   setCommitResult(null);
                 }}

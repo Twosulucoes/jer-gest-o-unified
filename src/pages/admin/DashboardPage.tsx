@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -72,7 +73,7 @@ function StatCard({ label, value, icon, sub, alert }: StatCardProps) {
 
 export default function DashboardPage() {
   const { profile, roles, hasRole } = useAuth();
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const selectedEventId = useActiveEventId();
 
   const visibleActions = quickActions.filter((a) => a.roles.some((r) => hasRole(r)));
   const actionGroups = Array.from(new Set(visibleActions.map((a) => a.group)));
@@ -100,7 +101,7 @@ export default function DashboardPage() {
   });
 
   // Auto-select first event
-  const eventId = selectedEventId || events[0]?.id || "";
+  const eventId = selectedEventId;
 
   // --- Participants & Credentials ---
   const { data: participantsCount = 0, isLoading: pLoading } = useQuery({
@@ -216,7 +217,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="w-full sm:w-72">
-          <Select value={eventId} onValueChange={setSelectedEventId}>
+          <Select value={eventId} onValueChange={() => {}}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione o evento" />
             </SelectTrigger>
