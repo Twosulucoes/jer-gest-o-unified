@@ -216,18 +216,6 @@ export default function DashboardPage() {
             Bem-vindo, {profile?.full_name || "Usuário"} — {roles.map(getRoleLabel).join(", ") || "Sem perfil"}
           </p>
         </div>
-        <div className="w-full sm:w-72">
-          <Select value={eventId} onValueChange={() => {}}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o evento" />
-            </SelectTrigger>
-            <SelectContent>
-              {events.map((e) => (
-                <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       {/* Quick Actions */}
@@ -256,12 +244,7 @@ export default function DashboardPage() {
 
       <Separator />
 
-      {!eventId ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-          <TrendingUp className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Selecione um evento para ver os indicadores</p>
-        </div>
-      ) : pLoading ? (
+      {pLoading ? (
         <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
         </div>
