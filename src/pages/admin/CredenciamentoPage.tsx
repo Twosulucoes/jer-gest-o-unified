@@ -962,28 +962,35 @@ export default function CredenciamentoPage() {
                             )}
 
                             {state === "ready_to_emit" && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button size="sm" className="h-7 text-xs" disabled={emitCredentialMutation.isPending}>
-                                    {emitCredentialMutation.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CreditCard className="mr-1 h-3 w-3" />}
-                                    Emitir Credencial
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Emitir credencial</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Emitir credencial para <strong>{person?.full_name}</strong>? Será gerado um código único e QR Code.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => emitCredentialMutation.mutate(p.id)}>
-                                      Emitir agora
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              blockedParticipantIds.has(p.id) ? (
+                                <Button size="sm" className="h-7 text-xs" variant="destructive" onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "emit")}>
+                                  <ShieldAlert className="mr-1 h-3 w-3" />
+                                  Bloqueado
+                                </Button>
+                              ) : (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button size="sm" className="h-7 text-xs" disabled={emitCredentialMutation.isPending}>
+                                      {emitCredentialMutation.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CreditCard className="mr-1 h-3 w-3" />}
+                                      Emitir Credencial
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Emitir credencial</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Emitir credencial para <strong>{person?.full_name}</strong>? Será gerado um código único e QR Code.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "emit")}>
+                                        Emitir agora
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )
                             )}
 
                             {state === "complete" && (
