@@ -31,6 +31,7 @@ import {
   UsersRound,
   IdCard,
   ChevronDown,
+  Shield,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -137,6 +138,13 @@ const navGroups: NavGroup[] = [
     label: "Cadastros",
     items: [
       { label: "Locais de competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
+    ],
+  },
+  {
+    id: "acessos",
+    label: "Acessos",
+    items: [
+      { label: "Vínculos Delegação", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
     ],
   },
 ];

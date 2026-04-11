@@ -40,6 +40,7 @@ import ParticipanteHistoricoPage from "./pages/admin/ParticipanteHistoricoPage";
 import ParticipanteDetalhePage from "./pages/admin/ParticipanteDetalhePage";
 import DelegacaoDetalhePage from "./pages/admin/DelegacaoDetalhePage";
 import CredencialModelosPage from "./pages/admin/CredencialModelosPage";
+import AcessosDelegacoesPage from "./pages/admin/AcessosDelegacoesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -104,6 +105,8 @@ const App = () => (
               <Route path="competicao/resultados" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoResultadosPage /></ProtectedRoute>} />
               {/* Credenciais */}
               <Route path="credenciais/modelos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredencialModelosPage /></ProtectedRoute>} />
+              {/* Acessos */}
+              <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
