@@ -245,7 +245,7 @@ export default function ImportacaoPage() {
         <XCircle className="h-10 w-10 text-destructive mb-3" />
         <p className="text-muted-foreground font-medium">Acesso restrito</p>
         <p className="text-sm text-muted-foreground mt-1">
-          Apenas administradores e secretaria podem importar inscrições.
+          Apenas administradores e secretaria podem realizar importações.
         </p>
       </div>
     );
@@ -254,9 +254,9 @@ export default function ImportacaoPage() {
   return (
     <div className="animate-fade-in space-y-6">
       <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Importar Inscrições</h1>
+        <h1 className="font-heading text-2xl font-bold text-foreground">Importação (SIGECOM)</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Importe atletas e inscrições a partir de uma planilha XLSX
+          Importe aqui a planilha exportada do sistema oficial (SIGECOM) para preparar a base operacional do evento no JER Gestão.
         </p>
       </div>
 
