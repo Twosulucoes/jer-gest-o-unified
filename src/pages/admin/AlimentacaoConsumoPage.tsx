@@ -152,11 +152,13 @@ export default function AlimentacaoConsumoPage() {
       qc.invalidateQueries({ queryKey: ["meal_consumptions", selectedWindowId] });
       toast.success("Consumo registrado!");
     },
-    onError: (e: Error) => {
-      if (e.message?.includes("uq_meal_consumption_participant_window")) {
-        toast.error("Participante já consumiu nesta janela.");
+    onError: (e: any) => {
+      const msg = e?.message ?? "";
+      const code = e?.code ?? "";
+      if (code === "23505" || msg.includes("uq_meal_consumption_participant_window") || msg.includes("duplicate key") || msg.includes("unique constraint")) {
+        toast.error("Consumo já registrado para este participante nesta janela.");
       } else {
-        toast.error("Erro: " + e.message);
+        toast.error("Falha ao registrar consumo. Tente novamente.");
       }
     },
   });
