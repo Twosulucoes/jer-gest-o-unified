@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, AlertTriangle } from "lucide-react";
+import { Download, AlertTriangle, UserCheck, ShieldAlert, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Props {
   eventId: string;
@@ -14,12 +15,22 @@ interface Props {
 interface PendingItem {
   pse_id: string;
   participant_id: string;
+  person_id: string;
+  delegation_id: string;
   full_name: string;
+  institution_name: string | null;
   enrollment_status: string;
   has_active_credential: boolean;
   has_blocking_irregularity: boolean;
   irregularity_message: string;
+  reason_code: string;
 }
+
+const REASON_LABELS: Record<string, string> = {
+  NO_CREDENTIAL: "Sem credencial",
+  ENROLLMENT_INVALID: "Inscrição inválida",
+  BLOCKING_IRREGULARITY: "Irregularidade bloqueante",
+};
 
 export default function EligibilityPendingPanel({ eventId, sportEventId }: Props) {
   const { data: pending = [], isLoading } = useQuery({
@@ -36,13 +47,15 @@ export default function EligibilityPendingPanel({ eventId, sportEventId }: Props
 
   const exportCSV = () => {
     if (pending.length === 0) return;
-    const rows = [["Nome", "Status Inscrição", "Credencial Ativa", "Irregularidade Bloqueante", "Mensagem"].join(",")];
+    const rows = [["Nome", "Instituição", "Status Inscrição", "Credencial Ativa", "Irregularidade", "Motivo", "Mensagem"].join(",")];
     for (const p of pending) {
       rows.push([
         `"${p.full_name}"`,
+        `"${p.institution_name ?? ""}"`,
         p.enrollment_status,
         p.has_active_credential ? "Sim" : "Não",
         p.has_blocking_irregularity ? "Sim" : "Não",
+        REASON_LABELS[p.reason_code] ?? p.reason_code,
         `"${p.irregularity_message}"`,
       ].join(","));
     }
@@ -80,35 +93,47 @@ export default function EligibilityPendingPanel({ eventId, sportEventId }: Props
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Inscrição</TableHead>
-                  <TableHead>Credencial</TableHead>
-                  <TableHead>Irregularidade</TableHead>
+                  <TableHead>Instituição</TableHead>
+                  <TableHead>Motivo</TableHead>
                   <TableHead>Detalhe</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pending.map((p) => (
                   <TableRow key={p.pse_id}>
                     <TableCell className="font-medium">{p.full_name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{p.institution_name ?? "—"}</TableCell>
                     <TableCell>
-                      <Badge variant={["confirmed", "approved", "valid", "active"].includes(p.enrollment_status) ? "default" : "destructive"}>
-                        {p.enrollment_status}
+                      <Badge variant={p.reason_code === "BLOCKING_IRREGULARITY" ? "destructive" : "secondary"}>
+                        {REASON_LABELS[p.reason_code] ?? p.reason_code}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={p.has_active_credential ? "default" : "destructive"}>
-                        {p.has_active_credential ? "Ativa" : "Sem credencial"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {p.has_blocking_irregularity ? (
-                        <Badge variant="destructive">Bloqueante</Badge>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">—</span>
-                      )}
                     </TableCell>
                     <TableCell className="text-xs max-w-[200px] truncate">
                       {p.irregularity_message || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {p.reason_code === "NO_CREDENTIAL" && (
+                          <Link to={`/admin/credenciamento?participantId=${p.participant_id}`}>
+                            <Button variant="outline" size="sm" title="Credenciar">
+                              <UserCheck className="h-3.5 w-3.5" />
+                            </Button>
+                          </Link>
+                        )}
+                        {p.reason_code === "BLOCKING_IRREGULARITY" && (
+                          <Link to="/admin/irregularidades">
+                            <Button variant="outline" size="sm" title="Irregularidades">
+                              <ShieldAlert className="h-3.5 w-3.5" />
+                            </Button>
+                          </Link>
+                        )}
+                        <Link to={`/admin/participantes/${p.participant_id}`}>
+                          <Button variant="ghost" size="sm" title="Ver participante">
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                        </Link>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
