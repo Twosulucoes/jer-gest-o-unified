@@ -442,8 +442,33 @@ export default function CredenciamentoPage() {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
       toast.success("Credencial reemitida! A anterior foi invalidada.");
     },
-    onError: (err: Error) => toast.error(`Erro na reemissão: ${err.message}`),
+    onError: (err: Error) => {
+      if (err.message?.includes("irregularidade") || err.message?.includes("Credenciamento bloqueado")) {
+        toast.error("Credenciamento bloqueado: atleta possui irregularidade aberta. Resolva em Irregularidades.");
+      } else {
+        toast.error(`Erro na reemissão: ${err.message}`);
+      }
+    },
   });
+
+  // --- Blocking check before emit/reissue ---
+  const checkBlockingAndAct = async (participantId: string, personName: string, action: "emit" | "reissue") => {
+    const { data, error } = await supabase.rpc("get_blocking_irregularities", {
+      p_event_id: selectedEventId,
+      p_participant_id: participantId,
+    });
+    if (error) {
+      toast.error(`Erro ao verificar irregularidades: ${error.message}`);
+      return;
+    }
+    const result = data as any;
+    if (result?.has_blocking) {
+      setBlockingDialogData({ participantName: personName, items: result.items ?? [] });
+      return;
+    }
+    if (action === "emit") emitCredentialMutation.mutate(participantId);
+    else reissueMutation.mutate(participantId);
+  };
 
   // --- Stats ---
   const pendingCount = (participants ?? []).filter((p) => p.status === "pending").length;
