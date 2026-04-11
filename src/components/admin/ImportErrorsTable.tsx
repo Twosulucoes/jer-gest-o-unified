@@ -57,6 +57,7 @@ export default function ImportErrorsTable({ eventId, mode, previewErrors }: Impo
       let query = supabase
         .from("import_row_errors")
         .select("id, created_at, row_number, entity, error_code, error_message, payload")
+
         .eq("event_id", eventId)
         .order("created_at", { ascending: false })
         .limit(100);
@@ -72,7 +73,7 @@ export default function ImportErrorsTable({ eventId, mode, previewErrors }: Impo
   });
 
   const rows = mode === "preview"
-    ? (previewErrors ?? [])
+    ? (previewErrors ?? []).map((r) => ({ ...r, created_at: undefined as string | undefined }))
     : (fullErrors ?? []).map((r) => ({
         row_number: r.row_number,
         error_code: r.error_code ?? "",
@@ -81,6 +82,7 @@ export default function ImportErrorsTable({ eventId, mode, previewErrors }: Impo
         person_key: r.payload && typeof r.payload === "object" && "person_key" in (r.payload as Record<string, unknown>)
           ? String((r.payload as Record<string, unknown>).person_key)
           : undefined,
+        created_at: r.created_at as string | undefined,
       }));
 
   const filtered = search
@@ -130,6 +132,7 @@ export default function ImportErrorsTable({ eventId, mode, previewErrors }: Impo
                 <TableHead className="w-28">Código</TableHead>
                 <TableHead>Mensagem</TableHead>
                 <TableHead className="w-36">Pessoa</TableHead>
+                {mode === "full" && <TableHead className="w-36">Data</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -148,6 +151,11 @@ export default function ImportErrorsTable({ eventId, mode, previewErrors }: Impo
                   <TableCell className="text-xs text-muted-foreground">
                     {maskPersonKey(r.person_key)}
                   </TableCell>
+                  {mode === "full" && (
+                    <TableCell className="text-xs text-muted-foreground">
+                      {r.created_at ? new Date(r.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—"}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
