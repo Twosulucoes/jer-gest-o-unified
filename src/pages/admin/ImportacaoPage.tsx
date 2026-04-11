@@ -116,15 +116,15 @@ export default function ImportacaoPage() {
 
     // Find the sheet with required columns
     const REQUIRED_MAP: Record<string, string[]> = {
-      "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO"],
-      "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO"],
-      "MODALIDADE": ["MODALIDADE", "ESPORTE", "SPORT"],
-      "PROVA": ["PROVA", "EVENTO", "DISCIPLINE"],
-      "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "CATEGORIA", "CATEGORY"],
+      "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO", "NOME DO ALUNO", "ALUNO"],
+      "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO", "UNIDADE ESCOLAR", "ESCOLA/INSTITUICAO"],
+      "MODALIDADE": ["MODALIDADE", "ESPORTE", "SPORT", "MOD"],
+      "PROVA": ["PROVA", "EVENTO", "DISCIPLINE", "PROVA/EVENTO"],
+      "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "COMPETIÇÃO/CATEGORIA", "CATEGORIA", "CATEGORY", "COMP"],
     };
-    const normalize = (s: string) => s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const normalize = (s: string) => s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9 _]/g, "").replace(/\s+/g, " ");
     const hasCanonical = (headers: string[], aliases: string[]) =>
-      aliases.some((a) => headers.some((h) => normalize(h) === a));
+      aliases.some((a) => headers.some((h) => normalize(h) === normalize(a)));
 
     let sheetName = workbook.SheetNames[0];
     for (const name of workbook.SheetNames) {
