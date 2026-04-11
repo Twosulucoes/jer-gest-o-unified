@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Upload, Download, CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react";
+import { Loader2, Upload, Download, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
@@ -125,7 +125,7 @@ function detectSchemaSheet(workbook: XLSX.WorkBook): string | null {
     const sheet = workbook.Sheets[name];
     const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { header: 1 });
     if (data.length < 2) continue;
-    const headerRow = (data[0] as unknown[]).map((h) => String(h ?? "").toLowerCase().trim());
+    const headerRow = (data[0] as unknown as unknown[]).map((h) => String(h ?? "").toLowerCase().trim());
     const matchCount = headerRow.filter((h) => HEURISTIC_HEADERS.some((hh) => h.includes(hh))).length;
     if (matchCount >= 2) return name;
   }
@@ -336,7 +336,7 @@ export default function SchemaValidadorPage() {
     },
   });
 
-  const { data: schemaConstraints } = useQuery({
+  const { data: _schemaConstraints } = useQuery({
     queryKey: ["schema_constraints"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("rpc_get_schema_constraints");
