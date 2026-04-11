@@ -2692,6 +2692,10 @@ export type Database = {
         Args: { p_event_id: string; p_prova_raw: string; p_sport_id: string }
         Returns: Json
       }
+      rpc_get_rls_policies: { Args: never; Returns: Json }
+      rpc_get_schema_columns: { Args: never; Returns: Json }
+      rpc_get_schema_constraints: { Args: never; Returns: Json }
+      rpc_get_schema_tables: { Args: never; Returns: Json }
       upsert_event_participation_rules: {
         Args: {
           p_event_id: string
