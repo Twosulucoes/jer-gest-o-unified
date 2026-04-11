@@ -2147,6 +2147,35 @@ export type Database = {
           },
         ]
       }
+      user_delegations: {
+        Row: {
+          created_at: string
+          delegation_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delegation_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delegation_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_delegations_delegation_id_fkey"
+            columns: ["delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2315,6 +2344,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_user_delegation_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
