@@ -43,6 +43,8 @@ import DelegacaoDetalhePage from "./pages/admin/DelegacaoDetalhePage";
 import CredencialModelosPage from "./pages/admin/CredencialModelosPage";
 import AcessosDelegacoesPage from "./pages/admin/AcessosDelegacoesPage";
 import ParametrosEventoPage from "./pages/admin/ParametrosEventoPage";
+import IrregularidadesPage from "./pages/admin/IrregularidadesPage";
+import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -112,6 +114,9 @@ const App = () => (
               <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
               {/* Parâmetros */}
               <Route path="parametros-evento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParametrosEventoPage /></ProtectedRoute>} />
+              {/* Irregularidades e Normalização */}
+              <Route path="irregularidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><IrregularidadesPage /></ProtectedRoute>} />
+              <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

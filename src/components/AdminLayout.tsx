@@ -35,6 +35,8 @@ import {
   ChevronDown,
   Shield,
   Settings,
+  AlertTriangle,
+  FileSearch,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -155,6 +157,8 @@ const navGroups: NavGroup[] = [
     label: "Configurações",
     items: [
       { label: "Parâmetros do Evento", to: "/admin/parametros-evento", icon: <Settings className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Normalização de Provas", to: "/admin/normalizacao-provas", icon: <FileSearch className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
 ];
