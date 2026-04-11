@@ -37,7 +37,7 @@ import {
   Settings,
   AlertTriangle,
   FileSearch,
-  Database,
+  Database as DatabaseIcon,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -160,7 +160,7 @@ const navGroups: NavGroup[] = [
       { label: "Parâmetros do Evento", to: "/admin/parametros-evento", icon: <Settings className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Normalização de Provas", to: "/admin/normalizacao-provas", icon: <FileSearch className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Validador de Estrutura", to: "/admin/schema/validador", icon: <Database className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Validador de Estrutura", to: "/admin/schema/validador", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
     ],
   },
 ];
