@@ -612,6 +612,53 @@ export type Database = {
           },
         ]
       }
+      import_row_errors: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity: string | null
+          error_code: string | null
+          error_message: string
+          event_id: string
+          id: string
+          import_log_id: string | null
+          payload: Json | null
+          row_number: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity?: string | null
+          error_code?: string | null
+          error_message: string
+          event_id: string
+          id?: string
+          import_log_id?: string | null
+          payload?: Json | null
+          row_number: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity?: string | null
+          error_code?: string | null
+          error_message?: string
+          event_id?: string
+          id?: string
+          import_log_id?: string | null
+          payload?: Json | null
+          row_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_row_errors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       institutions: {
         Row: {
           city: string | null
