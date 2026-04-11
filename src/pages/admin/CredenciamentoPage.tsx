@@ -653,6 +653,9 @@ export default function CredenciamentoPage() {
                     <SelectItem value="awaiting">Confirmado</SelectItem>
                     <SelectItem value="ready_to_emit">Pronto p/ emissão</SelectItem>
                     <SelectItem value="complete">Credencial ativa</SelectItem>
+                    {blockedParticipantIds.size > 0 && (
+                      <SelectItem value="blocked">⚠ Irregulares ({blockedParticipantIds.size})</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
