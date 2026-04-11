@@ -1,8 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
+import { RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Props {
   eventId: string;
@@ -11,6 +15,8 @@ interface Props {
 }
 
 export default function CentralEnrolledTab({ eventId, sportEventId, isCollective }: Props) {
+  const qc = useQueryClient();
+
   // Individual enrollments
   const { data: enrolled = [], isLoading: loadingEnrolled } = useQuery({
     queryKey: ["central-enrolled", sportEventId],
@@ -42,36 +48,76 @@ export default function CentralEnrolledTab({ eventId, sportEventId, isCollective
     enabled: isCollective,
   });
 
+  const syncMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("rpc_sync_collective_teams", {
+        p_event_id: eventId,
+        p_sport_event_id: sportEventId,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Sincronização concluída",
+        description: `${data.teams_created} equipe(s) criada(s), ${data.members_added} membro(s) adicionado(s), ${data.skipped_count} pulado(s).`,
+      });
+      qc.invalidateQueries({ queryKey: ["central-teams"] });
+      qc.invalidateQueries({ queryKey: ["competition-summary"] });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
   if (isCollective) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          {loadingTeams ? (
-            <p className="text-sm text-muted-foreground">Carregando equipes...</p>
-          ) : teams.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma equipe cadastrada para esta prova.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Equipe</TableHead>
-                  <TableHead>Instituição</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {teams.map((t: any) => (
-                  <TableRow key={t.id}>
-                    <TableCell className="font-medium">{t.name}</TableCell>
-                    <TableCell>{(t.delegations as any)?.institutions?.name ?? "—"}</TableCell>
-                    <TableCell><Badge variant="outline">{t.status}</Badge></TableCell>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Equipes</h3>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => syncMut.mutate()}
+              disabled={syncMut.isPending}
+            >
+              <RefreshCw className={`h-4 w-4 mr-1 ${syncMut.isPending ? "animate-spin" : ""}`} />
+              {syncMut.isPending ? "Sincronizando..." : "Sincronizar equipes"}
+            </Button>
+            <Link to="/admin/competicao/sincronizar-equipes">
+              <Button variant="ghost" size="sm">Ver página completa</Button>
+            </Link>
+          </div>
+        </div>
+
+        <Card>
+          <CardContent className="pt-6">
+            {loadingTeams ? (
+              <p className="text-sm text-muted-foreground">Carregando equipes...</p>
+            ) : teams.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma equipe cadastrada. Use "Sincronizar equipes" para criar automaticamente.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Equipe</TableHead>
+                    <TableHead>Instituição</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {teams.map((t: any) => (
+                    <TableRow key={t.id}>
+                      <TableCell className="font-medium">{t.name}</TableCell>
+                      <TableCell>{(t.delegations as any)?.institutions?.name ?? "—"}</TableCell>
+                      <TableCell><Badge variant="outline">{t.status}</Badge></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
