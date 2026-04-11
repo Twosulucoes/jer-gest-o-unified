@@ -474,29 +474,38 @@ function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
 
 const MAX_ROWS = 10000;
 const REQUIRED_COLUMNS_MAP: Record<string, string[]> = {
-  "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO"],
-  "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO"],
-  "MODALIDADE": ["MODALIDADE", "ESPORTE", "SPORT"],
-  "PROVA": ["PROVA", "EVENTO", "DISCIPLINE"],
-  "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "CATEGORIA", "CATEGORY"],
+  "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO", "NOME DO ALUNO", "ALUNO"],
+  "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO", "UNIDADE ESCOLAR", "ESCOLA/INSTITUICAO"],
+  "MODALIDADE": ["MODALIDADE", "ESPORTE", "SPORT", "MOD"],
+  "PROVA": ["PROVA", "EVENTO", "DISCIPLINE", "PROVA/EVENTO"],
+  "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "COMPETIÇÃO/CATEGORIA", "CATEGORIA", "CATEGORY", "COMP"],
 };
+
+function normalizeStr(s: string): string {
+  return s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9 _]/g, "").replace(/\s+/g, " ");
+}
 
 function normalizeHeaders(rows: RawRow[]): RawRow[] {
   if (rows.length === 0) return rows;
   const firstRowKeys = Object.keys(rows[0]);
   const headerMap = new Map<string, string>();
 
+  console.log("[import] incoming headers:", firstRowKeys);
+
   for (const [canonical, aliases] of Object.entries(REQUIRED_COLUMNS_MAP)) {
-    for (const alias of aliases) {
-      const found = firstRowKeys.find(
-        (k) => k.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === alias
-      );
-      if (found && found !== canonical) {
-        headerMap.set(found, canonical);
-        break;
-      }
+    // Skip if canonical already exists in headers
+    if (firstRowKeys.includes(canonical)) continue;
+
+    const normalizedAliases = aliases.map(a => normalizeStr(a));
+    const found = firstRowKeys.find(
+      (k) => normalizedAliases.includes(normalizeStr(k))
+    );
+    if (found) {
+      headerMap.set(found, canonical);
     }
   }
+
+  console.log("[import] header mappings:", Object.fromEntries(headerMap));
 
   if (headerMap.size === 0) return rows;
 
@@ -579,10 +588,17 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Validate headers
+    // Validate headers - check canonical names exist after normalization
     const headers = Object.keys(rawRows[0]);
-    const missingCols = REQUIRED_COLUMNS.filter((col) => !headers.includes(col));
+    const normalizedHeaders = headers.map(h => normalizeStr(h));
+    const missingCols = REQUIRED_COLUMNS.filter((col) => {
+      // Check if canonical exists directly or any of its aliases match
+      if (headers.includes(col)) return false;
+      const aliases = REQUIRED_COLUMNS_MAP[col] || [col];
+      return !aliases.some(alias => normalizedHeaders.includes(normalizeStr(alias)));
+    });
     if (missingCols.length > 0) {
+      console.log("[import] missing columns:", missingCols, "available headers:", headers);
       return new Response(
         JSON.stringify({ error: `Colunas obrigatórias ausentes: ${missingCols.join(", ")}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
