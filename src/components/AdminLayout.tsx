@@ -247,6 +247,10 @@ export default function AdminLayout() {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+          {/* Event Switcher */}
+          <EventSwitcher />
+          <div className="border-b border-sidebar-border mx-3 mb-2" />
+
           {/* Dashboard — always on top */}
           {isItemVisible(dashboardItem) && (
             <NavItemLink item={dashboardItem} onClick={closeSidebar} />
