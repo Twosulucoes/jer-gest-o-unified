@@ -481,22 +481,31 @@ const REQUIRED_COLUMNS_MAP: Record<string, string[]> = {
   "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "CATEGORIA", "CATEGORY"],
 };
 
+function normalizeStr(s: string): string {
+  return s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9 _]/g, "").replace(/\s+/g, " ");
+}
+
 function normalizeHeaders(rows: RawRow[]): RawRow[] {
   if (rows.length === 0) return rows;
   const firstRowKeys = Object.keys(rows[0]);
   const headerMap = new Map<string, string>();
 
+  console.log("[import] incoming headers:", firstRowKeys);
+
   for (const [canonical, aliases] of Object.entries(REQUIRED_COLUMNS_MAP)) {
-    for (const alias of aliases) {
-      const found = firstRowKeys.find(
-        (k) => k.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === alias
-      );
-      if (found && found !== canonical) {
-        headerMap.set(found, canonical);
-        break;
-      }
+    // Skip if canonical already exists in headers
+    if (firstRowKeys.includes(canonical)) continue;
+
+    const normalizedAliases = aliases.map(a => normalizeStr(a));
+    const found = firstRowKeys.find(
+      (k) => normalizedAliases.includes(normalizeStr(k))
+    );
+    if (found) {
+      headerMap.set(found, canonical);
     }
   }
+
+  console.log("[import] header mappings:", Object.fromEntries(headerMap));
 
   if (headerMap.size === 0) return rows;
 
