@@ -123,14 +123,20 @@ export default function NormalizacaoProvasPage() {
 
   const recomputeMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc("recompute_participation_irregularities", {
+      // 1) Atualizar mapa de provas canônicas
+      const { error: mapError } = await supabase.rpc("refresh_sport_event_prova_map", {
+        p_event_id: activeEventId,
+      });
+      if (mapError) throw mapError;
+
+      // 2) Reprocessar irregularidades usando o mapa atualizado
+      const { error } = await supabase.rpc("recompute_participation_irregularities", {
         p_event_id: activeEventId,
       });
       if (error) throw error;
-      return data;
     },
     onSuccess: () => {
-      toast.success("Irregularidades reprocessadas");
+      toast.success("Mapa de provas atualizado e irregularidades reprocessadas");
       queryClient.invalidateQueries({ queryKey: ["participation-irregularities", activeEventId] });
     },
     onError: (err: Error) => toast.error("Erro: " + err.message),

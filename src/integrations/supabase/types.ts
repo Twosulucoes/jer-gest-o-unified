@@ -1974,6 +1974,64 @@ export type Database = {
           },
         ]
       }
+      sport_event_prova_map: {
+        Row: {
+          event_id: string
+          prova_display: string
+          prova_raw: string
+          prova_raw_normalized: string
+          prova_slug: string
+          sport_event_id: string
+          sport_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          event_id: string
+          prova_display: string
+          prova_raw: string
+          prova_raw_normalized: string
+          prova_slug: string
+          sport_event_id: string
+          sport_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          event_id?: string
+          prova_display?: string
+          prova_raw?: string
+          prova_raw_normalized?: string
+          prova_slug?: string
+          sport_event_id?: string
+          sport_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sport_event_prova_map_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_event_prova_map_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: true
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_event_prova_map_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sport_events: {
         Row: {
           category_id: string
@@ -2613,6 +2671,10 @@ export type Database = {
       normalize_prova_slug: { Args: { p: string }; Returns: string }
       normalize_text: { Args: { p: string }; Returns: string }
       recompute_participation_irregularities: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
+      refresh_sport_event_prova_map: {
         Args: { p_event_id: string }
         Returns: Json
       }
