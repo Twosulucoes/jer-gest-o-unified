@@ -588,10 +588,17 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Validate headers
+    // Validate headers - check canonical names exist after normalization
     const headers = Object.keys(rawRows[0]);
-    const missingCols = REQUIRED_COLUMNS.filter((col) => !headers.includes(col));
+    const normalizedHeaders = headers.map(h => normalizeStr(h));
+    const missingCols = REQUIRED_COLUMNS.filter((col) => {
+      // Check if canonical exists directly or any of its aliases match
+      if (headers.includes(col)) return false;
+      const aliases = REQUIRED_COLUMNS_MAP[col] || [col];
+      return !aliases.some(alias => normalizedHeaders.includes(normalizeStr(alias)));
+    });
     if (missingCols.length > 0) {
+      console.log("[import] missing columns:", missingCols, "available headers:", headers);
       return new Response(
         JSON.stringify({ error: `Colunas obrigatórias ausentes: ${missingCols.join(", ")}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
