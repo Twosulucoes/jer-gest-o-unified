@@ -1021,7 +1021,7 @@ export default function CredenciamentoPage() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => reissueMutation.mutate(p.id)}>
+                                      <AlertDialogAction onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "reissue")}>
                                         Confirmar segunda via
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
