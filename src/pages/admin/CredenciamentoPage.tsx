@@ -889,10 +889,18 @@ export default function CredenciamentoPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={stateInfo.variant} className={`text-[10px] gap-1 ${stateInfo.className}`}>
-                          {stateInfo.icon}
-                          {stateInfo.label}
-                        </Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant={stateInfo.variant} className={`text-[10px] gap-1 ${stateInfo.className}`}>
+                            {stateInfo.icon}
+                            {stateInfo.label}
+                          </Badge>
+                          {blockedParticipantIds.has(p.id) && (
+                            <Badge variant="destructive" className="text-[10px] gap-1">
+                              <ShieldAlert className="h-3 w-3" />
+                              IRREGULAR
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       {canCredential && (
                         <TableCell>
