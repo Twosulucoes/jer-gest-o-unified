@@ -31,6 +31,7 @@ import {
   UsersRound,
   IdCard,
   ChevronDown,
+  Shield,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
