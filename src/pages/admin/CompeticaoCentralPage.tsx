@@ -39,8 +39,8 @@ export default function CompeticaoCentralPage() {
   return (
     <div className="space-y-6">
       <ModuleHeader
+        route="/admin/competicao/central"
         title="Central da Competição"
-        description="Painel único para gerenciar toda a competição: estrutura, inscritos, partidas e resultados."
       />
 
       <SportEventPicker
