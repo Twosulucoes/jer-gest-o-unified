@@ -1720,6 +1720,66 @@ export type Database = {
           },
         ]
       }
+      participation_irregularities: {
+        Row: {
+          context: Json
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          message: string
+          participant_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          rule_code: string
+          severity: string
+          status: string
+        }
+        Insert: {
+          context?: Json
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          message: string
+          participant_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          rule_code: string
+          severity?: string
+          status?: string
+        }
+        Update: {
+          context?: Json
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          message?: string
+          participant_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          rule_code?: string
+          severity?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participation_irregularities_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_irregularities_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       people: {
         Row: {
           birth_date: string
@@ -1808,6 +1868,111 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      prova_aliases: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          prova_display_override: string | null
+          prova_raw_normalized: string
+          prova_slug_override: string
+          sport_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          prova_display_override?: string | null
+          prova_raw_normalized: string
+          prova_slug_override: string
+          sport_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          prova_display_override?: string | null
+          prova_raw_normalized?: string
+          prova_slug_override?: string
+          sport_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prova_aliases_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prova_aliases_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prova_catalog: {
+        Row: {
+          age_band: string | null
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          prova_display: string
+          prova_raw: string
+          prova_raw_normalized: string
+          prova_slug: string
+          sex: string | null
+          sport_id: string
+        }
+        Insert: {
+          age_band?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          prova_display: string
+          prova_raw: string
+          prova_raw_normalized: string
+          prova_slug: string
+          sex?: string | null
+          sport_id: string
+        }
+        Update: {
+          age_band?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          prova_display?: string
+          prova_raw?: string
+          prova_raw_normalized?: string
+          prova_slug?: string
+          sex?: string | null
+          sport_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prova_catalog_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prova_catalog_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sport_events: {
         Row: {
@@ -2445,6 +2610,16 @@ export type Database = {
         Returns: boolean
       }
       import_inscricoes_batch: { Args: { payload: Json }; Returns: Json }
+      normalize_prova_slug: { Args: { p: string }; Returns: string }
+      normalize_text: { Args: { p: string }; Returns: string }
+      recompute_participation_irregularities: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
+      resolve_prova_slug: {
+        Args: { p_event_id: string; p_prova_raw: string; p_sport_id: string }
+        Returns: Json
+      }
       upsert_event_participation_rules: {
         Args: {
           p_event_id: string
