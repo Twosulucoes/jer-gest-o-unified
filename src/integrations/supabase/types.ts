@@ -532,6 +532,47 @@ export type Database = {
           },
         ]
       }
+      event_participation_rules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          max_collective_teams_per_athlete: number
+          max_events_per_individual_sport: number
+          max_individual_sports_per_athlete: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          max_collective_teams_per_athlete?: number
+          max_events_per_individual_sport?: number
+          max_individual_sports_per_athlete?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          max_collective_teams_per_athlete?: number
+          max_events_per_individual_sport?: number
+          max_individual_sports_per_athlete?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participation_rules_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
@@ -2344,6 +2385,10 @@ export type Database = {
       }
     }
     Functions: {
+      get_event_participation_rules: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
       get_participant_sport_history: {
         Args: { _participant_id: string }
         Returns: {
@@ -2400,6 +2445,15 @@ export type Database = {
         Returns: boolean
       }
       import_inscricoes_batch: { Args: { payload: Json }; Returns: Json }
+      upsert_event_participation_rules: {
+        Args: {
+          p_event_id: string
+          p_max_collective_teams_per_athlete: number
+          p_max_events_per_individual_sport: number
+          p_max_individual_sports_per_athlete: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
