@@ -473,7 +473,45 @@ function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
 // ─── Main Handler ────────────────────────────────────────────────────
 
 const MAX_ROWS = 10000;
-const REQUIRED_COLUMNS = ["NOME", "ESCOLA", "MODALIDADE", "PROVA", "COMPETICAO"];
+const REQUIRED_COLUMNS_MAP: Record<string, string[]> = {
+  "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO"],
+  "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO"],
+  "MODALIDADE": ["MODALIDADE", "ESPORTE", "SPORT"],
+  "PROVA": ["PROVA", "EVENTO", "DISCIPLINE"],
+  "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "CATEGORIA", "CATEGORY"],
+};
+
+function normalizeHeaders(rows: RawRow[]): RawRow[] {
+  if (rows.length === 0) return rows;
+  const firstRowKeys = Object.keys(rows[0]);
+  const headerMap = new Map<string, string>();
+
+  for (const [canonical, aliases] of Object.entries(REQUIRED_COLUMNS_MAP)) {
+    for (const alias of aliases) {
+      const found = firstRowKeys.find(
+        (k) => k.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === alias
+      );
+      if (found && found !== canonical) {
+        headerMap.set(found, canonical);
+        break;
+      }
+    }
+  }
+
+  if (headerMap.size === 0) return rows;
+
+  return rows.map((row) => {
+    const newRow: RawRow = { ...row };
+    for (const [original, canonical] of headerMap) {
+      if (!(canonical in newRow) && original in newRow) {
+        newRow[canonical] = newRow[original];
+      }
+    }
+    return newRow;
+  });
+}
+
+const REQUIRED_COLUMNS = Object.keys(REQUIRED_COLUMNS_MAP);
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -505,12 +543,15 @@ Deno.serve(async (req: Request) => {
 
     // Now accepts JSON body with pre-parsed rows (client-side XLSX parsing)
     const body = await req.json();
-    const { rows: rawRows, event_id: eventId, mode, file_name: fileName } = body as {
+    let { rows: rawRows, event_id: eventId, mode, file_name: fileName } = body as {
       rows: RawRow[];
       event_id: string;
       mode: string;
       file_name?: string;
     };
+
+    // Normalize column headers to canonical names
+    rawRows = normalizeHeaders(rawRows);
 
     if (!rawRows || !eventId || !mode) {
       return new Response(
