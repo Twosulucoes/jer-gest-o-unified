@@ -755,18 +755,22 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const failedCount = rpcResult?.failed_count ?? 0;
+    const partialSuccess = failedCount > 0;
+
     await serviceClient.from("import_logs").insert({
       event_id: eventId,
       performed_by: operatorId,
       file_name: file.name,
       row_count: validRows.length,
-      status: "success",
+      status: partialSuccess ? "partial" : "success",
       result_summary: rpcResult,
     });
 
     return new Response(
       JSON.stringify({
-        status: "committed",
+        status: partialSuccess ? "partial" : "committed",
+        partial_success: partialSuccess,
         operator_id: operatorId,
         event_id: eventId,
         timestamp: new Date().toISOString(),
