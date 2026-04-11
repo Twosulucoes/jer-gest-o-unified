@@ -402,7 +402,9 @@ export default function CredenciamentoPage() {
       toast.success("Credencial emitida com sucesso!");
     },
     onError: (err: Error) => {
-      if (err.message?.includes("uq_participant_event_active")) {
+      if (err.message?.includes("irregularidade") || err.message?.includes("Credenciamento bloqueado")) {
+        toast.error("Credenciamento bloqueado: atleta possui irregularidade aberta. Resolva em Irregularidades.");
+      } else if (err.message?.includes("uq_participant_event_active")) {
         toast.error("Este participante já possui credencial ativa.");
       } else {
         toast.error(`Erro ao emitir credencial: ${err.message}`);
