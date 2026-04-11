@@ -1,4 +1,6 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import EventSwitcher from "@/components/admin/EventSwitcher";
+import RequireActiveEvent from "@/components/admin/RequireActiveEvent";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
@@ -246,6 +248,10 @@ export default function AdminLayout() {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+          {/* Event Switcher */}
+          <EventSwitcher />
+          <div className="border-b border-sidebar-border mx-3 mb-2" />
+
           {/* Dashboard — always on top */}
           {isItemVisible(dashboardItem) && (
             <NavItemLink item={dashboardItem} onClick={closeSidebar} />
@@ -325,7 +331,13 @@ export default function AdminLayout() {
         </header>
 
         <main className="flex-1 p-4 lg:p-6">
-          <Outlet />
+          {location.pathname === "/admin/eventos" ? (
+            <Outlet />
+          ) : (
+            <RequireActiveEvent>
+              <Outlet />
+            </RequireActiveEvent>
+          )}
         </main>
       </div>
     </div>

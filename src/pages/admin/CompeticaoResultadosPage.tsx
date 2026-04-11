@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 type ResultStatusFilter = "all" | "sem_resultado" | "resultado_lancado" | "resultado_validado" | "publicado";
 
@@ -26,7 +27,7 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "des
 
 export default function CompeticaoResultadosPage() {
   const navigate = useNavigate();
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const selectedEventId = useActiveEventId();
   const [statusFilter, setStatusFilter] = useState<ResultStatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
@@ -135,7 +136,7 @@ export default function CompeticaoResultadosPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setStatusFilter("all"); setCurrentPage(1); }}>
+              <Select value={selectedEventId} onValueChange={(v) => { setStatusFilter("all"); setCurrentPage(1); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
               </Select>

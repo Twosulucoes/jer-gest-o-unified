@@ -14,11 +14,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 export default function AlimentacaoConsumoPage() {
   const qc = useQueryClient();
   const { user, hasRole } = useAuth();
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const selectedEventId = useActiveEventId();
   const [selectedWindowId, setSelectedWindowId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [qrCode, setQrCode] = useState("");
@@ -179,7 +180,7 @@ export default function AlimentacaoConsumoPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setSelectedWindowId(""); }}>
+              <Select value={selectedEventId} onValueChange={(v) => { setSelectedWindowId(""); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
               </Select>

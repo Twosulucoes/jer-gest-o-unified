@@ -12,13 +12,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TeamFormDialog, { type TeamFormValues } from "@/components/admin/TeamFormDialog";
 import TeamMembersDialog from "@/components/admin/TeamMembersDialog";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 export default function CompeticaoEquipesPage() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const selectedEventId = useActiveEventId();
   const [selectedSportEventId, setSelectedSportEventId] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -126,7 +127,7 @@ export default function CompeticaoEquipesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v); setSelectedSportEventId(""); }}>
+              <Select value={selectedEventId} onValueChange={(v) => { setSelectedSportEventId(""); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>{events.map((e: any) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
               </Select>

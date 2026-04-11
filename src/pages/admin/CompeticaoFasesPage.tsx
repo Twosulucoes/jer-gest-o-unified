@@ -11,13 +11,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CompetitionPhaseFormDialog, { type PhaseFormValues } from "@/components/admin/CompetitionPhaseFormDialog";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 export default function CompeticaoFasesPage() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const selectedEventId = useActiveEventId();
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   const { data: events = [] } = useQuery({
@@ -113,7 +114,7 @@ export default function CompeticaoFasesPage() {
         <CardContent className="pt-6">
           <div className="space-y-2 max-w-xs">
             <label className="text-sm font-medium text-foreground">Evento</label>
-            <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+            <Select value={selectedEventId} onValueChange={() => {}}>
               <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
               <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
             </Select>
