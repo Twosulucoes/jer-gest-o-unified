@@ -155,6 +155,7 @@ function getRoleLabel(role: AppRole): string {
     secretaria: "Secretaria",
     transporte: "Transporte",
     alimentacao: "Alimentação",
+    alojamento: "Alojamento",
     coordenacao_tecnica: "Coord. Técnica",
     delegacao: "Delegação",
   };
