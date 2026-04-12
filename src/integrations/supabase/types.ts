@@ -3005,6 +3005,7 @@ export type Database = {
         Args: { p_event_id: string; p_prova_raw: string; p_sport_id: string }
         Returns: Json
       }
+      rpc_build_preset_rules: { Args: { p_preset_key: string }; Returns: Json }
       rpc_can_regenerate_matches: {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json

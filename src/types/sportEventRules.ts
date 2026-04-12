@@ -1,5 +1,5 @@
 export type RulesFamily = "score" | "sets" | "time" | "mark" | "combat" | "ranking";
-export type RulesFormat = "knockout" | "group_stage" | "round_robin" | "heats" | "heats_final" | "combat_bracket" | "ranking";
+export type RulesFormat = "knockout" | "group_stage" | "round_robin" | "heats" | "heats_final" | "combat_bracket" | "ranking" | "swiss";
 export type ParticipantMode = "individual" | "team" | "pair" | "relay";
 export type ScoreType = "goals" | "points" | "rally_points" | "time_ms" | "distance_cm" | "combat_points" | "placement_points";
 
@@ -46,6 +46,7 @@ export const FORMATS: { value: RulesFormat; label: string }[] = [
   { value: "heats_final", label: "Baterias + Final" },
   { value: "combat_bracket", label: "Chave de combate" },
   { value: "ranking", label: "Ranking direto" },
+  { value: "swiss", label: "Suíço" },
 ];
 
 export const PARTICIPANT_MODES: { value: ParticipantMode; label: string }[] = [
@@ -71,7 +72,7 @@ export const VALID_FORMATS_BY_FAMILY: Record<RulesFamily, RulesFormat[]> = {
   time: ["heats", "heats_final", "ranking"],
   mark: ["heats", "heats_final", "ranking"],
   combat: ["combat_bracket", "knockout"],
-  ranking: ["ranking"],
+  ranking: ["ranking", "swiss"],
 };
 
 export const FAMILY_PRESETS: Record<string, { label: string; rules: SportEventRulesV1 }> = {
