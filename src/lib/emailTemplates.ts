@@ -1,6 +1,7 @@
 const BASE_URL = "https://adm.jers.com.br";
 
-const PRIMARY_COLOR = "#2d7a50"; // hsl(152, 55%, 28%)
+const PRIMARY_COLOR = "#0B2B5A";
+const ACCENT_COLOR = "#0BA3A3";
 const PRIMARY_FOREGROUND = "#ffffff";
 
 function buildHtml(opts: {
@@ -17,44 +18,44 @@ function buildHtml(opts: {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${opts.title}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f6f7fb;font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f6f7fb;">
+<body style="margin:0;padding:0;background-color:#F6F8FC;font-family:'Inter',Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#F6F8FC;">
     <tr>
       <td align="center" style="padding:40px 16px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;border:1px solid #e2e4e9;overflow:hidden;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;border:1px solid #E2E8F0;overflow:hidden;">
           <!-- Header -->
           <tr>
-            <td style="background-color:${PRIMARY_COLOR};padding:28px 32px;text-align:center;">
-              <h1 style="margin:0;font-size:22px;font-weight:700;color:${PRIMARY_FOREGROUND};letter-spacing:0.5px;">JER Gestão</h1>
+            <td style="background:linear-gradient(135deg, ${PRIMARY_COLOR} 0%, #0F5AA6 50%, ${ACCENT_COLOR} 100%);padding:28px 32px;text-align:center;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:${PRIMARY_FOREGROUND};letter-spacing:0.5px;font-family:'Montserrat',Arial,sans-serif;">JER's Gestão</h1>
               <p style="margin:4px 0 0;font-size:13px;color:rgba(255,255,255,0.85);font-weight:400;">Jogos Escolares de Roraima</p>
             </td>
           </tr>
           <!-- Body -->
           <tr>
             <td style="padding:32px 32px 24px;">
-              <p style="margin:0 0 16px;font-size:16px;color:#1a1d23;font-weight:600;">${opts.greeting}</p>
-              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#55575d;">${opts.body}</p>
+              <p style="margin:0 0 16px;font-size:16px;color:#0B1220;font-weight:600;">${opts.greeting}</p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#64748B;">${opts.body}</p>
               <!-- CTA Button -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
                 <tr>
-                  <td style="border-radius:8px;background-color:${PRIMARY_COLOR};">
-                    <a href="${opts.link}" target="_blank" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:${PRIMARY_FOREGROUND};text-decoration:none;border-radius:8px;">${opts.cta}</a>
+                  <td style="border-radius:12px;background:linear-gradient(135deg, #0F5AA6 0%, ${ACCENT_COLOR} 100%);">
+                    <a href="${opts.link}" target="_blank" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:${PRIMARY_FOREGROUND};text-decoration:none;border-radius:12px;">${opts.cta}</a>
                   </td>
                 </tr>
               </table>
               <!-- Fallback link -->
-              <p style="margin:24px 0 0;font-size:12px;line-height:1.5;color:#888;word-break:break-all;">
+              <p style="margin:24px 0 0;font-size:12px;line-height:1.5;color:#94a3b8;word-break:break-all;">
                 Se o botão não funcionar, copie e cole este link no navegador:<br/>
-                <a href="${opts.link}" style="color:${PRIMARY_COLOR};text-decoration:underline;">${opts.link}</a>
+                <a href="${opts.link}" style="color:#0F5AA6;text-decoration:underline;">${opts.link}</a>
               </p>
             </td>
           </tr>
           <!-- Footer -->
           <tr>
-            <td style="padding:20px 32px;border-top:1px solid #eee;background-color:#fafbfc;">
-              <p style="margin:0;font-size:12px;line-height:1.5;color:#999;text-align:center;">
+            <td style="padding:20px 32px;border-top:1px solid #E2E8F0;background-color:#F6F8FC;">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#94a3b8;text-align:center;">
                 Se você não solicitou esta ação, ignore este e-mail.<br/>
-                © JER Gestão — Jogos Escolares de Roraima
+                © JER's Gestão — Jogos Escolares de Roraima
               </p>
             </td>
           </tr>
@@ -78,86 +79,86 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
   {
     id: "confirm",
     label: "Confirmar E-mail",
-    subject: "JER Gestão — Confirme seu e-mail",
+    subject: "JER's Gestão — Confirme seu e-mail",
     html: buildHtml({
       title: "Confirme seu e-mail",
       greeting: "Olá!",
-      body: "Para ativar seu acesso ao <strong>JER Gestão</strong>, confirme seu endereço de e-mail clicando no botão abaixo.",
+      body: "Para ativar seu acesso ao <strong>JER's Gestão</strong>, confirme seu endereço de e-mail clicando no botão abaixo.",
       cta: "Confirmar e-mail",
       link: "{{ .ConfirmationURL }}",
     }),
     text: `Olá!
 
-Para ativar seu acesso ao JER Gestão, confirme seu endereço de e-mail acessando o link abaixo:
+Para ativar seu acesso ao JER's Gestão, confirme seu endereço de e-mail acessando o link abaixo:
 
 {{ .ConfirmationURL }}
 
 Se você não solicitou esta ação, ignore este e-mail.
 
-— JER Gestão · Jogos Escolares de Roraima`,
+— JER's Gestão · Jogos Escolares de Roraima`,
   },
   {
     id: "magic-link",
     label: "Link de Acesso (Magic Link)",
-    subject: "JER Gestão — Link de acesso",
+    subject: "JER's Gestão — Link de acesso",
     html: buildHtml({
       title: "Link de acesso",
       greeting: "Olá!",
-      body: "Você solicitou um link de acesso ao <strong>JER Gestão</strong>. Este link é pessoal e temporário — <strong>não compartilhe</strong> com outras pessoas.",
+      body: "Você solicitou um link de acesso ao <strong>JER's Gestão</strong>. Este link é pessoal e temporário — <strong>não compartilhe</strong> com outras pessoas.",
       cta: "Acessar agora",
       link: "{{ .MagicLink }}",
     }),
     text: `Olá!
 
-Você solicitou um link de acesso ao JER Gestão. Este link é pessoal e temporário — não compartilhe com outras pessoas.
+Você solicitou um link de acesso ao JER's Gestão. Este link é pessoal e temporário — não compartilhe com outras pessoas.
 
 {{ .MagicLink }}
 
 Se você não solicitou esta ação, ignore este e-mail.
 
-— JER Gestão · Jogos Escolares de Roraima`,
+— JER's Gestão · Jogos Escolares de Roraima`,
   },
   {
     id: "recovery",
     label: "Redefinir Senha",
-    subject: "JER Gestão — Redefinição de senha",
+    subject: "JER's Gestão — Redefinição de senha",
     html: buildHtml({
       title: "Redefinição de senha",
       greeting: "Olá!",
-      body: "Recebemos uma solicitação para redefinir a senha da sua conta no <strong>JER Gestão</strong>. Clique no botão abaixo para criar uma nova senha.",
+      body: "Recebemos uma solicitação para redefinir a senha da sua conta no <strong>JER's Gestão</strong>. Clique no botão abaixo para criar uma nova senha.",
       cta: "Redefinir senha",
       link: "{{ .RecoveryURL }}",
     }),
     text: `Olá!
 
-Recebemos uma solicitação para redefinir a senha da sua conta no JER Gestão. Acesse o link abaixo para criar uma nova senha:
+Recebemos uma solicitação para redefinir a senha da sua conta no JER's Gestão. Acesse o link abaixo para criar uma nova senha:
 
 {{ .RecoveryURL }}
 
 Se você não solicitou esta ação, ignore este e-mail.
 
-— JER Gestão · Jogos Escolares de Roraima`,
+— JER's Gestão · Jogos Escolares de Roraima`,
   },
   {
     id: "invite",
     label: "Convite de Acesso",
-    subject: "JER Gestão — Convite de acesso",
+    subject: "JER's Gestão — Convite de acesso",
     html: buildHtml({
       title: "Convite de acesso",
       greeting: "Olá!",
-      body: "Você foi convidado(a) para acessar o <strong>JER Gestão</strong> — sistema dos Jogos Escolares de Roraima. Clique no botão abaixo para aceitar o convite e configurar sua conta.",
+      body: "Você foi convidado(a) para acessar o <strong>JER's Gestão</strong> — sistema dos Jogos Escolares de Roraima. Clique no botão abaixo para aceitar o convite e configurar sua conta.",
       cta: "Aceitar convite",
       link: "{{ .InviteURL }}",
     }),
     text: `Olá!
 
-Você foi convidado(a) para acessar o JER Gestão — sistema dos Jogos Escolares de Roraima. Acesse o link abaixo para aceitar o convite e configurar sua conta:
+Você foi convidado(a) para acessar o JER's Gestão — sistema dos Jogos Escolares de Roraima. Acesse o link abaixo para aceitar o convite e configurar sua conta:
 
 {{ .InviteURL }}
 
 Se você não reconhece este convite, ignore este e-mail.
 
-— JER Gestão · Jogos Escolares de Roraima`,
+— JER's Gestão · Jogos Escolares de Roraima`,
   },
 ];
 

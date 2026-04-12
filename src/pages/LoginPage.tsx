@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -35,13 +35,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, rgba(11,43,90,0.06) 0%, rgba(15,90,166,0.06) 35%, rgba(11,163,163,0.04) 65%, rgba(51,178,73,0.04) 100%), hsl(var(--background))' }}>
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-app-lg">
-            <ShieldCheck className="h-7 w-7 text-primary-foreground" />
-          </div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">JER Gestão</h1>
+          <img
+            src="/brand/logo.png"
+            alt="JER's Gestão"
+            className="mx-auto mb-4 h-20 object-contain dark:hidden"
+          />
+          <img
+            src="/brand/logo-dark.png"
+            alt="JER's Gestão"
+            className="mx-auto mb-4 h-20 object-contain hidden dark:block"
+          />
           <p className="mt-1 text-sm text-muted-foreground">
             Jogos Escolares de Roraima
           </p>

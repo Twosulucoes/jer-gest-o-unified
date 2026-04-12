@@ -2,15 +2,15 @@
 
 export const reportTokens = {
   brand: {
-    primary: '#0B3B8C',
-    primaryLight: '#1A5BC4',
-    secondary: '#F2B705',
-    support: '#1F8A4C',
-    neutral900: '#111827',
-    neutral700: '#374151',
-    neutral500: '#6B7280',
-    neutral200: '#E5E7EB',
-    neutral100: '#F6F7FB',
+    primary: '#0B2B5A',
+    primaryLight: '#0F5AA6',
+    secondary: '#0BA3A3',
+    support: '#33B249',
+    neutral900: '#0B1220',
+    neutral700: '#334155',
+    neutral500: '#64748B',
+    neutral200: '#E2E8F0',
+    neutral100: '#F6F8FC',
     white: '#FFFFFF',
   },
   typography: {
@@ -29,10 +29,10 @@ export const reportTokens = {
     tableRowHeight: 20,
   },
   table: {
-    headerBg: '#0B3B8C',
+    headerBg: '#0B2B5A',
     headerText: '#FFFFFF',
-    rowAltBg: '#F6F7FB',
-    borderColor: '#E5E7EB',
+    rowAltBg: '#F6F8FC',
+    borderColor: '#E2E8F0',
     borderWidth: 0.5,
     zebra: true,
   },

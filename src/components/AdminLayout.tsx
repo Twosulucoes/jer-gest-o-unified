@@ -283,15 +283,11 @@ export default function AdminLayout() {
           {/* Logo */}
           <div className={`flex h-16 items-center border-b border-sidebar-border ${collapsed ? "justify-center px-2" : "justify-between px-4"}`}>
             {collapsed ? (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-heading font-bold text-sm">
-                J
-              </div>
+              <img src="/brand/icon-dark.png" alt="JER's Gestão" className="h-8 w-8 rounded-lg object-contain" />
             ) : (
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-heading font-bold text-sm">
-                  J
-                </div>
-                <span className="font-heading text-base font-bold text-sidebar-foreground">JER Gestão</span>
+                <img src="/brand/icon-dark.png" alt="JER's Gestão" className="h-8 w-8 rounded-lg object-contain" />
+                <span className="font-heading text-base font-bold text-sidebar-foreground">JER's Gestão</span>
               </div>
             )}
             <button onClick={closeSidebar} className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground">
