@@ -162,16 +162,16 @@ Se você não reconhece este convite, ignore este e-mail.
   },
 ];
 
-export const SUPABASE_CHECKLIST = \`## Como configurar no Supabase
+export const SUPABASE_CHECKLIST = `## Como configurar no Supabase
 
 ### 1. Authentication → URL Configuration
-- **Site URL:** \${BASE_URL}
+- **Site URL:** ${BASE_URL}
 - **Additional Redirect URLs:**
-  - \${BASE_URL}/**
-  - \${BASE_URL}/auth/callback
-  - \${BASE_URL}/reset-senha
-  - \${BASE_URL}/confirmar-email
-  - \${BASE_URL}/convite
+  - ${BASE_URL}/**
+  - ${BASE_URL}/auth/callback
+  - ${BASE_URL}/reset-senha
+  - ${BASE_URL}/confirmar-email
+  - ${BASE_URL}/convite
 
 ### 2. Authentication → Email Templates
 Para cada template abaixo, copie o **Subject**, o **HTML Body** e o **Message** (texto puro) e cole na aba correspondente do Supabase:
@@ -180,4 +180,4 @@ Para cada template abaixo, copie o **Subject**, o **HTML Body** e o **Message** 
 - **Magic Link** → Template "Link de Acesso"
 - **Reset Password** → Template "Redefinir Senha"
 - **Invite** → Template "Convite de Acesso"
-\`;
+`;
