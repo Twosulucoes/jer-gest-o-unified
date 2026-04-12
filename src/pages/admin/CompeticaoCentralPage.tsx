@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useSportEventRules } from "@/hooks/useSportEventRules";
+import { useSportEventRules } from "@/hooks/useSportEventRules";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import SportEventPicker from "@/components/admin/competition/SportEventPicker";
 import CompetitionSummaryCards from "@/components/admin/competition/CompetitionSummaryCards";
@@ -33,6 +34,23 @@ export default function CompeticaoCentralPage() {
   const [currentStep, setCurrentStep] = useState("participants");
 
   const { rules, source: rulesSource } = useSportEventRules(eventId, sportEventId);
+
+  // Check release status for selected sport_event
+  const { data: releaseStatus } = useQuery({
+    queryKey: ["release-status", eventId, sportEventId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sport_event_rules")
+        .select("released_at")
+        .eq("event_id", eventId!)
+        .eq("sport_event_id", sportEventId!)
+        .maybeSingle();
+      return { released: data?.released_at != null };
+    },
+    enabled: !!sportEventId,
+  });
+
+  const isReleased = releaseStatus?.released ?? false;
 
   const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
     queryKey: ["competition-summary", eventId, sportEventId],
