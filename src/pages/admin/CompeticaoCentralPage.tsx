@@ -64,6 +64,7 @@ export default function CompeticaoCentralPage() {
               <TabsTrigger value="matches">Partidas</TabsTrigger>
               <TabsTrigger value="results">Resultados</TabsTrigger>
               <TabsTrigger value="agenda">Agenda</TabsTrigger>
+              <TabsTrigger value="bracket">Chaves</TabsTrigger>
               <TabsTrigger value="pending">Pendências</TabsTrigger>
             </TabsList>
 
