@@ -227,6 +227,31 @@ const App = () => (
             <Route path="/pwa/alojamento/pessoa/:id" element={<AlojamentoPessoaPage />} />
             <Route path="/pwa/alojamento/incidentes" element={<AlojamentoIncidentesPage />} />
             <Route path="/pwa/alojamento/incidentes/nova" element={<AlojamentoNovoIncidentePage />} />
+            {/* PWA Transporte */}
+            <Route path="/pwa/transporte" element={<TransporteHomePage />} />
+            <Route path="/pwa/transporte/viagens" element={<TransporteViagensPwaPage />} />
+            <Route path="/pwa/transporte/scan" element={<TransporteScanPage />} />
+            <Route path="/pwa/transporte/embarque" element={<TransporteEmbarquePwaPage />} />
+            <Route path="/pwa/transporte/rotas" element={<TransporteRotasPwaPage />} />
+            {/* PWA Alimentação */}
+            <Route path="/pwa/alimentacao" element={<AlimentacaoHomePage />} />
+            <Route path="/pwa/alimentacao/scan" element={<AlimentacaoScanPage />} />
+            <Route path="/pwa/alimentacao/buscar" element={<AlimentacaoBuscarPwaPage />} />
+            <Route path="/pwa/alimentacao/janelas" element={<AlimentacaoJanelasPwaPage />} />
+            <Route path="/pwa/alimentacao/historico" element={<AlimentacaoHistoricoPage />} />
+            {/* PWA Coordenação Técnica */}
+            <Route path="/pwa/coordenacao-tecnica" element={<CoordenacaoHomePage />} />
+            <Route path="/pwa/coordenacao-tecnica/agenda" element={<CoordenacaoAgendaPage />} />
+            <Route path="/pwa/coordenacao-tecnica/partidas" element={<CoordenacaoPartidasPage />} />
+            <Route path="/pwa/coordenacao-tecnica/partida/:matchId" element={<CoordenacaoPartidaDetalhePage />} />
+            <Route path="/pwa/coordenacao-tecnica/resultados" element={<CoordenacaoResultadosPwaPage />} />
+            <Route path="/pwa/coordenacao-tecnica/estatisticas" element={<CoordenacaoEstatisticasPage />} />
+            {/* PWA Delegação */}
+            <Route path="/pwa/delegacao" element={<DelegacaoHomePage />} />
+            <Route path="/pwa/delegacao/participantes" element={<DelegacaoParticipantesPage />} />
+            <Route path="/pwa/delegacao/agenda" element={<DelegacaoAgendaPage />} />
+            <Route path="/pwa/delegacao/logistica" element={<DelegacaoLogisticaPage />} />
+            <Route path="/pwa/delegacao/locais" element={<DelegacaoLocaisPage />} />
             {/* Public content routes */}
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
