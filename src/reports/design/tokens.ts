@@ -1,15 +1,16 @@
-// Report Design Tokens - aligned with JER Gestão design system (index.css)
+// Report Design Tokens - aligned with JER's Gestão brand identity
 
 export const reportTokens = {
   brand: {
-    primary: '#2D7A4F',       // hsl(152, 55%, 28%)
-    primaryLight: '#3DA366',  // hsl(152, 55%, 45%)
-    secondary: '#E8A800',     // hsl(38, 92%, 50%)
-    neutral900: '#1A2332',    // hsl(224, 28%, 12%)
-    neutral700: '#3D4A5C',
+    primary: '#0B3B8C',
+    primaryLight: '#1A5BC4',
+    secondary: '#F2B705',
+    support: '#1F8A4C',
+    neutral900: '#111827',
+    neutral700: '#374151',
     neutral500: '#6B7280',
     neutral200: '#E5E7EB',
-    neutral100: '#F3F4F6',
+    neutral100: '#F6F7FB',
     white: '#FFFFFF',
   },
   typography: {
@@ -28,9 +29,9 @@ export const reportTokens = {
     tableRowHeight: 20,
   },
   table: {
-    headerBg: '#2D7A4F',
+    headerBg: '#0B3B8C',
     headerText: '#FFFFFF',
-    rowAltBg: '#F9FAFB',
+    rowAltBg: '#F6F7FB',
     borderColor: '#E5E7EB',
     borderWidth: 0.5,
     zebra: true,
