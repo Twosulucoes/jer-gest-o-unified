@@ -5,6 +5,11 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  build: {
+    rollupOptions: {
+      external: ["@capacitor-mlkit/barcode-scanning"],
+    },
+  },
   server: {
     host: "::",
     port: 8080,
