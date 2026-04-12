@@ -76,14 +76,17 @@ export default function CompeticaoCentralPage() {
   const family = rules?.family;
   const format = rules?.format;
 
+  const showStandings = (family === "score" || family === "sets" || family === "time" || family === "mark" || family === "ranking" || family === "swiss");
+
   const steps: WizardStep[] = useMemo(() => [
     { key: "participants", label: summary?.is_collective ? "Equipes" : "Participantes" },
     { key: "structure", label: "Estrutura" },
     { key: "matches", label: getMatchesLabel(family, format) },
     { key: "agenda", label: "Agenda" },
+    { key: "standings", label: "Classificação", hidden: !showStandings },
     { key: "results", label: "Resultados" },
     { key: "pending", label: "Pendências" },
-  ], [summary?.is_collective, family, format]);
+  ], [summary?.is_collective, family, format, showStandings]);
 
   const visibleSteps = steps.filter((s) => !s.hidden);
   const currentIdx = visibleSteps.findIndex((s) => s.key === currentStep);
