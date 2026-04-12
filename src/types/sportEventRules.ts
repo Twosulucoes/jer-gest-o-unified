@@ -1,5 +1,5 @@
 export type RulesFamily = "score" | "sets" | "time" | "mark" | "combat" | "ranking";
-export type RulesFormat = "knockout" | "group_stage" | "round_robin" | "heats" | "heats_final" | "combat_bracket" | "ranking";
+export type RulesFormat = "knockout" | "group_stage" | "round_robin" | "heats" | "heats_final" | "combat_bracket" | "ranking" | "swiss";
 export type ParticipantMode = "individual" | "team" | "pair" | "relay";
 export type ScoreType = "goals" | "points" | "rally_points" | "time_ms" | "distance_cm" | "combat_points" | "placement_points";
 
