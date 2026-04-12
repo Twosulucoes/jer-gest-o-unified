@@ -14,6 +14,7 @@ import CentralResultsTab from "@/components/admin/competition/CentralResultsTab"
 import EligibilityPendingPanel from "@/components/admin/competition/EligibilityPendingPanel";
 import CentralAgendaTab from "@/components/admin/competition/CentralAgendaTab";
 import CentralBracketTab from "@/components/admin/competition/CentralBracketTab";
+import CentralStandingsTab from "@/components/admin/competition/CentralStandingsTab";
 import WizardStepper, { type WizardStep } from "@/components/admin/competition/WizardStepper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
