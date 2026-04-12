@@ -14,6 +14,7 @@ import CentralResultsTab from "@/components/admin/competition/CentralResultsTab"
 import EligibilityPendingPanel from "@/components/admin/competition/EligibilityPendingPanel";
 import CentralAgendaTab from "@/components/admin/competition/CentralAgendaTab";
 import CentralBracketTab from "@/components/admin/competition/CentralBracketTab";
+import CentralStandingsTab from "@/components/admin/competition/CentralStandingsTab";
 import WizardStepper, { type WizardStep } from "@/components/admin/competition/WizardStepper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -72,17 +73,20 @@ export default function CompeticaoCentralPage() {
     (p: any) => p.bracket_config?.format === "knockout_single_elimination" || p.phase_type === "knockout"
   ) || rules?.format === "knockout";
 
-  const family = rules?.family;
-  const format = rules?.format;
+  const family = rules?.family as string | undefined;
+  const format = rules?.format as string | undefined;
+
+  const showStandings = ["score","sets","time","mark","ranking","swiss"].includes(family ?? "");
 
   const steps: WizardStep[] = useMemo(() => [
     { key: "participants", label: summary?.is_collective ? "Equipes" : "Participantes" },
     { key: "structure", label: "Estrutura" },
     { key: "matches", label: getMatchesLabel(family, format) },
     { key: "agenda", label: "Agenda" },
+    { key: "standings", label: "Classificação", hidden: !showStandings },
     { key: "results", label: "Resultados" },
     { key: "pending", label: "Pendências" },
-  ], [summary?.is_collective, family, format]);
+  ], [summary?.is_collective, family, format, showStandings]);
 
   const visibleSteps = steps.filter((s) => !s.hidden);
   const currentIdx = visibleSteps.findIndex((s) => s.key === currentStep);
@@ -197,6 +201,15 @@ export default function CompeticaoCentralPage() {
               <CentralAgendaTab
                 eventId={eventId}
                 sportEventId={sportEventId}
+              />
+            )}
+
+            {currentStep === "standings" && (
+              <CentralStandingsTab
+                eventId={eventId}
+                sportEventId={sportEventId}
+                family={family ?? null}
+                format={format ?? null}
               />
             )}
 
