@@ -229,7 +229,6 @@ export default function CompeticaoGruposPage() {
             </Collapsible>
           ))}
         </div>
-        </div>
       )}
 
       <CompetitionGroupFormDialog
