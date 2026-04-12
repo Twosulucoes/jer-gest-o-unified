@@ -30,7 +30,7 @@ export function useSportEventRules(eventId: string | undefined, sportEventId: st
       const { error } = await supabase.rpc("rpc_upsert_sport_event_rules", {
         p_sport_event_id: sportEventId!,
         p_event_id: eventId ?? null,
-        p_rules: rules as unknown as Record<string, unknown>,
+        p_rules: rules as unknown as Record<string, never>,
         p_is_active: isActive,
       });
       if (error) throw error;
