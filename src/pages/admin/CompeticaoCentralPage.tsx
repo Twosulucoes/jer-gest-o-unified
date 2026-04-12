@@ -8,6 +8,7 @@ import ModuleHeader from "@/components/admin/ModuleHeader";
 import SportEventPicker from "@/components/admin/competition/SportEventPicker";
 import CompetitionSummaryCards from "@/components/admin/competition/CompetitionSummaryCards";
 import CentralStructureTab from "@/components/admin/competition/CentralStructureTab";
+import CentralStructureCollectiveTab from "@/components/admin/competition/CentralStructureCollectiveTab";
 import CentralEnrolledTab from "@/components/admin/competition/CentralEnrolledTab";
 import CentralMatchesTab from "@/components/admin/competition/CentralMatchesTab";
 import CentralResultsTab from "@/components/admin/competition/CentralResultsTab";
