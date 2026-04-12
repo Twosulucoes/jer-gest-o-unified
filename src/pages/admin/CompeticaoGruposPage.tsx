@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import CompetitionGroupFormDialog, { type GroupFormValues } from "@/components/admin/CompetitionGroupFormDialog";
 import GroupStandingsTable from "@/components/admin/competition/GroupStandingsTable";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
+
 import { useActiveEventId } from "@/contexts/EventContext";
 
 export default function CompeticaoGruposPage() {
