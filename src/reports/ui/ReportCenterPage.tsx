@@ -1,9 +1,8 @@
 import { useState, useCallback, useMemo } from "react";
-import { useEvent } from "@/contexts/EventContext";
+import { useEventContext } from "@/contexts/EventContext";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,10 +17,10 @@ import { ReportFiltersPanel } from "./ReportFiltersPanel";
 import { ReportColumnsPicker } from "./ReportColumnsPicker";
 import { ReportPreviewTable } from "./ReportPreviewTable";
 import { ReportPresets } from "./ReportPresets";
-import type { ReportContext, ReportDefinition } from "../core/types";
+import type { ReportContext } from "../core/types";
 
 export default function ReportCenterPage() {
-  const { activeEvent } = useEvent();
+  const { activeEvent } = useEventContext();
   const { user, roles } = useAuth();
   const { toast } = useToast();
 
@@ -124,10 +123,10 @@ export default function ReportCenterPage() {
 
   return (
     <div className="space-y-6">
-      <ModuleHeader
-        title="Central de Relatórios"
-        description="Gere relatórios PDF e Excel com filtros dinâmicos."
-      />
+      <div className="mb-2">
+        <h1 className="text-2xl font-bold tracking-tight">Central de Relatórios</h1>
+        <p className="text-sm text-muted-foreground">Gere relatórios PDF e Excel com filtros dinâmicos.</p>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
