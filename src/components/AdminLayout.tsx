@@ -40,6 +40,7 @@ import {
   Database as DatabaseIcon,
   Map,
   Info,
+  Zap,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
