@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import QrScanner from "@/components/QrScanner";
 
 interface MealWindow {
   id: string;
@@ -18,8 +17,6 @@ export default function AlimentacaoScanPage() {
   const navigate = useNavigate();
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState("");
-  const [code, setCode] = useState("");
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string; restrictions?: string } | null>(null);
 
   useEffect(() => {
@@ -37,25 +34,22 @@ export default function AlimentacaoScanPage() {
     })();
   }, []);
 
-  const handleValidate = async () => {
-    if (!code.trim() || !windowId) return;
-    setLoading(true);
-    setResult(null);
+  const handleDetected = async (rawValue: string) => {
+    const code = rawValue.startsWith("JER:") ? rawValue.slice(4) : rawValue.trim();
+    if (!code || !windowId) return;
+
     try {
-      // Look up participant by credential QR token
       const { data: cred } = await supabase
         .from("participant_credentials" as any)
         .select("participant_id, participant:participants(full_name, food_restrictions)")
-        .eq("qr_token", code.trim())
+        .eq("qr_token", code)
         .single();
 
       if (!cred) {
         setResult({ ok: false, message: "Credencial não encontrada" });
-        setLoading(false);
         return;
       }
 
-      // Check for duplicate consumption in same window
       const { count } = await supabase
         .from("meal_consumptions")
         .select("id", { count: "exact", head: true })
@@ -64,7 +58,6 @@ export default function AlimentacaoScanPage() {
 
       if ((count || 0) > 0) {
         setResult({ ok: false, message: "Refeição já registrada nesta janela" });
-        setLoading(false);
         return;
       }
 
@@ -85,11 +78,8 @@ export default function AlimentacaoScanPage() {
         message: `Consumo registrado: ${(cred as any).participant?.full_name || ""}`,
         restrictions: restrictions || undefined,
       });
-      setCode("");
     } catch {
       setResult({ ok: false, message: "Erro ao registrar consumo" });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -126,18 +116,11 @@ export default function AlimentacaoScanPage() {
           </Select>
         )}
 
-        <div className="flex gap-2">
-          <Input
-            placeholder="Código da credencial"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleValidate()}
-            disabled={!windowId}
-          />
-          <Button onClick={handleValidate} disabled={loading || !code.trim() || !windowId}>
-            Validar
-          </Button>
-        </div>
+        <QrScanner
+          onDetected={handleDetected}
+          allowedPrefixes={["JER:"]}
+          torch
+        />
 
         {result && (
           <Card className={result.ok ? "border-green-500/50" : "border-destructive/50"}>

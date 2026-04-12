@@ -1,14 +1,14 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import QrScanner from "@/components/QrScanner";
 import { rpcResolveQr, rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
-import { ArrowLeft, ScanLine, Keyboard, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, ScanLine, CheckCircle2, XCircle } from "lucide-react";
 
 type ScanMode = "validate" | "checkin" | "checkout";
 
@@ -16,19 +16,19 @@ export default function AlojamentoScanPage() {
   const navigate = useNavigate();
   const { enqueue, isOnline } = useAlojamentoOffline();
   const [mode, setMode] = useState<ScanMode>("checkin");
-  const [manualCode, setManualCode] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [result, setResult] = useState<Record<string, any> | null>(null);
   const facilityId = getSelectedFacility();
 
   const extractToken = (input: string): string | null => {
     const trimmed = input.trim();
     if (trimmed.startsWith("JER-ALJ:")) return trimmed.slice(8);
+    if (trimmed.startsWith("JER:")) return trimmed.slice(4);
     if (trimmed.length >= 8 && trimmed.length <= 20) return trimmed;
     return null;
   };
 
-  const handleScan = useCallback(async (rawValue: string) => {
+  const handleDetected = useCallback(async (rawValue: string) => {
     const token = extractToken(rawValue);
     if (!token) {
       toast.error("Código QR inválido");
@@ -47,7 +47,6 @@ export default function AlojamentoScanPage() {
 
     try {
       if (!isOnline) {
-        // Queue offline
         if (mode === "checkin") {
           enqueue("checkin", { token, facility_id: facilityId, mode: "person_qr" });
           toast.info("Check-in enfileirado (offline)");
@@ -71,7 +70,10 @@ export default function AlojamentoScanPage() {
       setResult(res);
 
       if (res.ok) {
-        toast.success(mode === "validate" ? "QR válido" : mode === "checkin" ? "Check-in realizado!" : "Check-out realizado!");
+        toast.success(
+          mode === "validate" ? "QR válido" :
+          mode === "checkin" ? "Check-in realizado!" : "Check-out realizado!"
+        );
         if (navigator.vibrate) navigator.vibrate(200);
       } else {
         const errorMessages: Record<string, string> = {
@@ -110,29 +112,11 @@ export default function AlojamentoScanPage() {
           </TabsList>
         </Tabs>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Keyboard className="h-4 w-4" />
-              Digitar código
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Input
-              placeholder="JER-ALJ:XXXXXXXXXXXX"
-              value={manualCode}
-              onChange={(e) => setManualCode(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleScan(manualCode)}
-            />
-            <Button
-              className="w-full h-12"
-              disabled={!manualCode.trim() || loading}
-              onClick={() => handleScan(manualCode)}
-            >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Processar"}
-            </Button>
-          </CardContent>
-        </Card>
+        <QrScanner
+          onDetected={handleDetected}
+          allowedPrefixes={["JER-ALJ:", "JER:"]}
+          torch
+        />
 
         {result && (
           <Card className={result.ok ? "border-green-500/50" : "border-destructive/50"}>
@@ -147,7 +131,6 @@ export default function AlojamentoScanPage() {
                   {result.ok ? "Sucesso" : "Bloqueado"}
                 </span>
               </div>
-
               {result.full_name && (
                 <p className="text-foreground font-medium">{result.full_name}</p>
               )}
@@ -157,7 +140,6 @@ export default function AlojamentoScanPage() {
               {result.error && (
                 <p className="text-sm text-destructive">{result.error}: {result.message || ""}</p>
               )}
-
               {result.ok && result.person_id && (
                 <Button
                   variant="outline"
