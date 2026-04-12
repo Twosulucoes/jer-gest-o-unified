@@ -173,6 +173,7 @@ const navGroups: NavGroup[] = [
       { label: "Validador de Estrutura", to: "/admin/schema/validador", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Mapa do Sistema", to: "/admin/mapa", icon: <Map className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Diagnóstico (Competição)", to: "/admin/diagnostico-competicao", icon: <Info className="h-4 w-4" />, roles: ["admin", "coordenacao_tecnica"] as AppRole[] },
+      { label: "Demo (Seeds)", to: "/admin/demo", icon: <Zap className="h-4 w-4" />, roles: ["admin", "coordenacao_tecnica"] as AppRole[] },
     ],
   },
 ];
