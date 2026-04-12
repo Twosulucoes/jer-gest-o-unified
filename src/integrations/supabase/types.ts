@@ -3010,6 +3010,32 @@ export type Database = {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
       }
+      rpc_compute_ranking_simple: {
+        Args: {
+          p_event_id: string
+          p_phase_id?: string
+          p_sport_event_id: string
+        }
+        Returns: Json
+      }
+      rpc_compute_standings_score: {
+        Args: {
+          p_event_id: string
+          p_group_id?: string
+          p_phase_id?: string
+          p_sport_event_id: string
+        }
+        Returns: Json
+      }
+      rpc_compute_standings_sets: {
+        Args: {
+          p_event_id: string
+          p_group_id?: string
+          p_phase_id?: string
+          p_sport_event_id: string
+        }
+        Returns: Json
+      }
       rpc_create_bulletin: {
         Args: { p_content_md?: string; p_event_id: string; p_title: string }
         Returns: Json
@@ -3018,6 +3044,7 @@ export type Database = {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
       }
+      rpc_extract_match_outcome: { Args: { p_match_id: string }; Returns: Json }
       rpc_generate_groups: {
         Args: {
           p_event_id: string
@@ -3059,6 +3086,10 @@ export type Database = {
       }
       rpc_get_competition_summary: {
         Args: { p_event_id: string; p_sport_event_id: string }
+        Returns: Json
+      }
+      rpc_get_group_points_rules: {
+        Args: { p_sport_event_id: string }
         Returns: Json
       }
       rpc_get_knockout_bracket: { Args: { p_phase_id: string }; Returns: Json }
