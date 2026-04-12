@@ -132,7 +132,8 @@ export default function AtletaQrCodePage() {
 
   return (
     <div className="space-y-6">
-      <ModuleHeader title="QR Code do Atleta" description="Gere e gerencie QR Codes públicos dos atletas" />
+      <h1 className="text-2xl font-bold text-foreground">QR Code do Atleta</h1>
+      <p className="text-muted-foreground text-sm">Gere e gerencie QR Codes públicos dos atletas</p>
 
       {/* Search */}
       <Card>
