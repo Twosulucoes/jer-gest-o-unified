@@ -786,6 +786,16 @@ export default function CompeticaoPartidaDetalhePage() {
         />
       )}
 
+      {/* Discipline Card */}
+      {isCollective && entries.length > 0 && (
+        <MatchDisciplineCard
+          matchId={matchId!}
+          eventId={match?.event_id ?? ""}
+          entries={entries}
+          getEntryLabel={getEntryLabel}
+          canWrite={canWrite}
+        />
+      )}
 
       {/* Ranking Card (individual only) */}
       {!isCollective && (
