@@ -1,0 +1,111 @@
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { BracketData, BracketMatch, BracketEntry } from "@/hooks/useKnockoutBracket";
+
+interface Props {
+  data: BracketData | undefined;
+  isLoading: boolean;
+}
+
+function getRoundLabel(roundNum: number, totalRounds: number): string {
+  const fromEnd = totalRounds - roundNum;
+  if (fromEnd === 0) return "Final";
+  if (fromEnd === 1) return "Semifinal";
+  if (fromEnd === 2) return "Quartas";
+  return `Rodada ${roundNum}`;
+}
+
+function EntryLabel({ entry, side }: { entry?: BracketEntry; side: string }) {
+  if (!entry) {
+    return <span className="text-xs text-muted-foreground italic">A definir</span>;
+  }
+  const label = entry.team_name || entry.participant_name || "BYE";
+  return (
+    <div className="flex items-center gap-1.5 min-w-0">
+      {entry.seed && (
+        <span className="text-[10px] font-bold text-muted-foreground shrink-0">[{entry.seed}]</span>
+      )}
+      <span className="text-xs font-medium truncate">{label}</span>
+    </div>
+  );
+}
+
+function MatchCard({ match, totalRounds }: { match: BracketMatch; totalRounds: number }) {
+  const entries = match.entries ?? [];
+  const sideA = entries.find((e) => e.side === "home");
+  const sideB = entries.find((e) => e.side === "away");
+
+  const isBye = match.status === "finished" && entries.length < 2;
+  const isFinished = match.status === "finished" && !isBye;
+
+  return (
+    <Card className={`p-2 w-[200px] border ${isBye ? "border-dashed opacity-60" : ""}`}>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] text-muted-foreground font-mono">#{match.match_number}</span>
+        <Badge
+          variant={isFinished ? "default" : isBye ? "secondary" : "outline"}
+          className="text-[10px] h-4 px-1"
+        >
+          {isBye ? "BYE" : match.status}
+        </Badge>
+      </div>
+      <div className="space-y-1">
+        <div className="p-1 rounded bg-muted/50">
+          <EntryLabel entry={sideA} side="A" />
+        </div>
+        <div className="text-center text-[10px] text-muted-foreground">vs</div>
+        <div className="p-1 rounded bg-muted/50">
+          <EntryLabel entry={sideB} side="B" />
+        </div>
+      </div>
+      {match.match_date && (
+        <p className="text-[10px] text-muted-foreground mt-1">
+          {match.match_date} {match.start_time ?? ""}
+        </p>
+      )}
+      {match.venue_name && (
+        <p className="text-[10px] text-muted-foreground">{match.venue_name}</p>
+      )}
+    </Card>
+  );
+}
+
+export default function BracketView({ data, isLoading }: Props) {
+  if (isLoading) {
+    return (
+      <div className="flex gap-6 overflow-x-auto p-4">
+        {[1, 2, 3].map((r) => (
+          <div key={r} className="space-y-4 min-w-[200px]">
+            <Skeleton className="h-6 w-20" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!data?.rounds || data.rounds.length === 0) {
+    return <p className="text-sm text-muted-foreground">Nenhuma chave gerada para esta fase.</p>;
+  }
+
+  const totalRounds = data.rounds.length;
+
+  return (
+    <div className="flex gap-6 overflow-x-auto pb-4">
+      {data.rounds.map((round) => (
+        <div key={round.round_num} className="flex flex-col gap-3 min-w-[220px]">
+          <h4 className="text-sm font-semibold text-center border-b pb-1">
+            {getRoundLabel(round.round_num, totalRounds)}
+          </h4>
+          <div className="flex flex-col gap-3 justify-around flex-1">
+            {round.matches.map((match) => (
+              <MatchCard key={match.match_id} match={match} totalRounds={totalRounds} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
