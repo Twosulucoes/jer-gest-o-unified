@@ -110,6 +110,8 @@ import DelegacaoAgendaPage from "./pages/pwa/delegacao/DelegacaoAgendaPage";
 import DelegacaoLogisticaPage from "./pages/pwa/delegacao/DelegacaoLogisticaPage";
 import DelegacaoLocaisPage from "./pages/pwa/delegacao/DelegacaoLocaisPage";
 import NotFound from "./pages/NotFound";
+import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
+import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 
 const queryClient = new QueryClient();
 
@@ -205,6 +207,7 @@ const App = () => (
               <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
               {/* Relatórios */}
               <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ReportCenterPage /></ProtectedRoute>} />
+              <Route path="atletas/qrcode" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AtletaQrCodePage /></ProtectedRoute>} />
             </Route>
             {/* PWA Auth pages (public) */}
             <Route path="/pwa/login" element={<PwaLoginPage />} />
@@ -255,6 +258,7 @@ const App = () => (
             {/* Public content routes */}
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
+            <Route path="/a/:token" element={<AtletaPublicProfilePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </EventProvider>

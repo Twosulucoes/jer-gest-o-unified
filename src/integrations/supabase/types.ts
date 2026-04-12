@@ -3481,6 +3481,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_deactivate_athlete_public_token: {
+        Args: { p_athlete_id: string }
+        Returns: undefined
+      }
       admin_list_users: {
         Args: never
         Returns: {
@@ -3491,6 +3495,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_upsert_athlete_public_token: {
+        Args: {
+          p_athlete_id: string
+          p_expires_at?: string
+          p_rotate?: boolean
+        }
+        Returns: Json
+      }
+      generate_public_token: { Args: never; Returns: string }
+      get_athlete_public_profile: { Args: { p_token: string }; Returns: Json }
       get_blocking_irregularities: {
         Args: { p_event_id: string; p_participant_id: string }
         Returns: Json
