@@ -279,6 +279,7 @@ export type Database = {
           match_number: number | null
           notes: string | null
           phase_id: string
+          round_number: number | null
           sport_event_id: string | null
           start_time: string | null
           status: string
@@ -294,6 +295,7 @@ export type Database = {
           match_number?: number | null
           notes?: string | null
           phase_id: string
+          round_number?: number | null
           sport_event_id?: string | null
           start_time?: string | null
           status?: string
@@ -309,6 +311,7 @@ export type Database = {
           match_number?: number | null
           notes?: string | null
           phase_id?: string
+          round_number?: number | null
           sport_event_id?: string | null
           start_time?: string | null
           status?: string
@@ -362,6 +365,7 @@ export type Database = {
       }
       competition_phases: {
         Row: {
+          bracket_config: Json
           created_at: string
           event_id: string
           id: string
@@ -373,6 +377,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bracket_config?: Json
           created_at?: string
           event_id: string
           id?: string
@@ -384,6 +389,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bracket_config?: Json
           created_at?: string
           event_id?: string
           id?: string
@@ -2978,10 +2984,22 @@ export type Database = {
         }
         Returns: Json
       }
+      rpc_generate_matches_knockout: {
+        Args: {
+          p_event_id: string
+          p_force?: boolean
+          p_participants: Json
+          p_phase_id: string
+          p_seeding_mode?: string
+          p_sport_event_id: string
+        }
+        Returns: Json
+      }
       rpc_get_competition_summary: {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
       }
+      rpc_get_knockout_bracket: { Args: { p_phase_id: string }; Returns: Json }
       rpc_get_rls_policies: { Args: never; Returns: Json }
       rpc_get_schema_columns: { Args: never; Returns: Json }
       rpc_get_schema_constraints: { Args: never; Returns: Json }
