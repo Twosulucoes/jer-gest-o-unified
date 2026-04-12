@@ -30,7 +30,6 @@ export default function QrScanner({
   const [loading, setLoading] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const debounceRef = useRef(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
