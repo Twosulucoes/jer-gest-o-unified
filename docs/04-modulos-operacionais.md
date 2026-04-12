@@ -81,9 +81,14 @@
 
 ## 9. Central da Competição (✅ Feito)
 - **Página**: `/admin/competicao/central`
-- **Wizard**: Participantes → Estrutura → Confrontos/Chaves → Agenda → Resultados → Pendências
+- **Wizard**: Participantes → Estrutura → Confrontos/Chaves → Agenda → Classificação → Resultados → Pendências
 - **Integração com regras**: lê `sport_event_rules` e ajusta labels/visibilidade conforme família/formato
 - **Callout**: se sem regras cadastradas, exibe aviso com link para seed em lote
+- **Passo 2 (Estrutura) para coletivas**: wizard com 3 sub-etapas:
+  1. **Definir estrutura**: sugestão automática de grupos baseada na quantidade de equipes (1-3→mata-mata, 4-6→grupo único, 7-10→2 grupos, etc.), com ajuste manual
+  2. **Alocar equipes**: interface de duas colunas (disponíveis × grupos) com botões de mover, sortear e redistribuir. Salva em `group_draw_lots`
+  3. **Revisar e gerar partidas**: preview da quantidade de partidas por grupo (round-robin) e botão para gerar via `rpc_generate_matches_collective`
+- **RPC corrigida**: `rpc_generate_matches_collective` agora lê equipes de `group_draw_lots` por grupo (antes usava todas as equipes em todos os grupos)
 
 ## 10. Apuração e Resultados (🟡 Parcial)
 - **Página**: `/admin/competicao/resultados`
