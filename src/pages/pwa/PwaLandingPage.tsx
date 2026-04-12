@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck } from "lucide-react";
+import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building } from "lucide-react";
 
 interface UserProfile {
   full_name: string | null;
@@ -13,6 +13,7 @@ interface UserProfile {
 const MODULE_CARDS = [
   { role: "transporte", label: "Transporte", icon: Bus, to: "/pwa/transporte", color: "bg-blue-500/10 text-blue-600" },
   { role: "alimentacao", label: "Alimentação", icon: UtensilsCrossed, to: "/pwa/alimentacao", color: "bg-orange-500/10 text-orange-600" },
+  { role: "alojamento", label: "Alojamento", icon: Building, to: "/pwa/alojamento", color: "bg-teal-500/10 text-teal-600" },
   { role: "coordenacao_tecnica", label: "Coord. Técnica", icon: Trophy, to: "/pwa/coordenacao-tecnica", color: "bg-green-500/10 text-green-600" },
   { role: "delegacao", label: "Delegação", icon: Users, to: "/pwa/delegacao", color: "bg-purple-500/10 text-purple-600" },
   { role: "pesquisa", label: "Pesquisa", icon: ClipboardCheck, to: "/pwa/pesquisa/login", color: "bg-pink-500/10 text-pink-600" },
