@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppKPI } from "@/components/app/AppKPI";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { getSelectedFacility, setSelectedFacility } from "@/hooks/useAlojamento";
 import {
-  ScanLine, Search, Building, AlertTriangle, LogOut, ArrowLeft, Wifi, WifiOff, Users, LogIn, LogOutIcon, Percent,
+  ScanLine, Search, Building, AlertTriangle, Wifi, WifiOff, Users, LogIn, LogOutIcon, Percent,
 } from "lucide-react";
 
 interface Facility {
@@ -66,28 +66,31 @@ export default function AlojamentoHomePage() {
     navigate("/pwa/login", { replace: true });
   };
 
+  const actions = [
+    { label: "Scan QR", icon: ScanLine, to: "/pwa/alojamento/scan" },
+    { label: "Buscar", icon: Search, to: "/pwa/alojamento/buscar" },
+    { label: "Ocupação", icon: Building, to: "/pwa/alojamento/ocupacao" },
+    { label: "Ocorrências", icon: AlertTriangle, to: "/pwa/alojamento/incidentes" },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b bg-card px-4 h-14">
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate("/pwa")} className="text-muted-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <Building className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-foreground">Alojamento</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {isOnline ? <Wifi className="h-4 w-4 text-green-500" /> : <WifiOff className="h-4 w-4 text-destructive" />}
-          {pendingCount > 0 && (
-            <span className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
-              {pendingCount} pendência{pendingCount > 1 ? "s" : ""}
-            </span>
-          )}
-          <Button variant="ghost" size="icon" onClick={handleSignOut}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </div>
-      </header>
+      <PwaHeader
+        title="Alojamento"
+        icon={Building}
+        backTo="/pwa"
+        onSignOut={handleSignOut}
+        rightSlot={
+          <div className="flex items-center gap-2">
+            {isOnline ? <Wifi className="h-4 w-4 text-green-400" /> : <WifiOff className="h-4 w-4 text-red-300" />}
+            {pendingCount > 0 && (
+              <span className="text-xs bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-full font-medium">
+                {pendingCount} pendência{pendingCount > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        }
+      />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
         {loading ? (
@@ -113,15 +116,12 @@ export default function AlojamentoHomePage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {[
-            { label: "Scan QR", icon: ScanLine, to: "/pwa/alojamento/scan", color: "text-primary" },
-            { label: "Buscar", icon: Search, to: "/pwa/alojamento/buscar", color: "text-blue-600" },
-            { label: "Ocupação", icon: Building, to: "/pwa/alojamento/ocupacao", color: "text-green-600" },
-            { label: "Ocorrências", icon: AlertTriangle, to: "/pwa/alojamento/incidentes", color: "text-amber-600" },
-          ].map((action) => (
-            <Card key={action.label} className="cursor-pointer hover:bg-accent/50 active:scale-[0.98] transition-all" onClick={() => navigate(action.to)}>
+          {actions.map((action) => (
+            <Card key={action.label} className="cursor-pointer hover:shadow-app-md active:scale-[0.98] transition-all" onClick={() => navigate(action.to)}>
               <CardContent className="p-4 flex flex-col items-center gap-2">
-                <action.icon className={`h-8 w-8 ${action.color}`} />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <action.icon className="h-6 w-6" />
+                </div>
                 <span className="text-sm font-medium">{action.label}</span>
               </CardContent>
             </Card>

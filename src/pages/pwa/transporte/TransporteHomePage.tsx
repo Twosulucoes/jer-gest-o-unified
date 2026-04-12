@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AppKPI } from "@/components/app/AppKPI";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import {
-  ArrowLeft, Bus, LogOut, ScanLine, MapPin, Clock,
+  Bus, ScanLine, MapPin, Clock,
   Users, CheckCircle, Route,
 } from "lucide-react";
 
@@ -45,20 +45,16 @@ export default function TransporteHomePage() {
     navigate("/pwa/login", { replace: true });
   };
 
+  const actions = [
+    { label: "Scan QR", icon: ScanLine, to: "/pwa/transporte/scan" },
+    { label: "Viagens", icon: Clock, to: "/pwa/transporte/viagens" },
+    { label: "Embarque", icon: CheckCircle, to: "/pwa/transporte/embarque" },
+    { label: "Rotas", icon: MapPin, to: "/pwa/transporte/rotas" },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b bg-card px-4 h-14">
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate("/pwa")} className="text-muted-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <Bus className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-foreground">Transporte</span>
-        </div>
-        <Button variant="ghost" size="icon" onClick={handleSignOut}>
-          <LogOut className="h-5 w-5" />
-        </Button>
-      </header>
+      <PwaHeader title="Transporte" icon={Bus} backTo="/pwa" onSignOut={handleSignOut} />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -69,15 +65,12 @@ export default function TransporteHomePage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {[
-            { label: "Scan QR", icon: ScanLine, to: "/pwa/transporte/scan", color: "text-primary" },
-            { label: "Viagens", icon: Clock, to: "/pwa/transporte/viagens", color: "text-blue-600" },
-            { label: "Embarque", icon: CheckCircle, to: "/pwa/transporte/embarque", color: "text-green-600" },
-            { label: "Rotas", icon: MapPin, to: "/pwa/transporte/rotas", color: "text-amber-600" },
-          ].map((action) => (
-            <Card key={action.label} className="cursor-pointer hover:bg-accent/50 active:scale-[0.98] transition-all" onClick={() => navigate(action.to)}>
+          {actions.map((action) => (
+            <Card key={action.label} className="cursor-pointer hover:shadow-app-md active:scale-[0.98] transition-all" onClick={() => navigate(action.to)}>
               <CardContent className="p-4 flex flex-col items-center gap-2">
-                <action.icon className={`h-8 w-8 ${action.color}`} />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <action.icon className="h-6 w-6" />
+                </div>
                 <span className="text-sm font-medium">{action.label}</span>
               </CardContent>
             </Card>

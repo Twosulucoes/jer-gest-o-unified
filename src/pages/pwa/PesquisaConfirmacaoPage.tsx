@@ -8,7 +8,6 @@ export default function PesquisaConfirmacaoPage() {
   const location = useLocation();
   const state = location.state as { submitted?: boolean; isKiosk?: boolean } | null;
 
-  // Auto-redirect kiosk mode after 3s
   useEffect(() => {
     if (state?.isKiosk) {
       const timer = setTimeout(() => navigate('/pwa/pesquisa/home', { replace: true }), 3000);
@@ -19,12 +18,12 @@ export default function PesquisaConfirmacaoPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="text-center space-y-6 max-w-sm">
-        <div className="mx-auto w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-          <CheckCircle2 className="h-10 w-10 text-green-600" />
+        <div className="mx-auto w-20 h-20 rounded-full bg-success/10 flex items-center justify-center">
+          <CheckCircle2 className="h-10 w-10 text-success" />
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-2xl font-heading font-bold text-foreground">
             {state?.submitted ? 'Resposta registrada!' : 'Salva para enviar depois'}
           </h1>
           <p className="text-muted-foreground">
