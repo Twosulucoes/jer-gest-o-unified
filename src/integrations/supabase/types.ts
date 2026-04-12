@@ -2230,6 +2230,67 @@ export type Database = {
           },
         ]
       }
+      sport_event_rules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string | null
+          id: string
+          is_active: boolean
+          rules: Json
+          rules_version: number
+          sport_event_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string | null
+          id?: string
+          is_active?: boolean
+          rules?: Json
+          rules_version?: number
+          sport_event_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string | null
+          id?: string
+          is_active?: boolean
+          rules?: Json
+          rules_version?: number
+          sport_event_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sport_event_rules_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_event_rules_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: true
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "sport_event_rules_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: true
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sport_events: {
         Row: {
           category_id: string
@@ -3004,6 +3065,10 @@ export type Database = {
       rpc_get_schema_columns: { Args: never; Returns: Json }
       rpc_get_schema_constraints: { Args: never; Returns: Json }
       rpc_get_schema_tables: { Args: never; Returns: Json }
+      rpc_get_sport_event_rules: {
+        Args: { p_event_id?: string; p_sport_event_id: string }
+        Returns: Json
+      }
       rpc_kpi_partidas_sem_resultado: {
         Args: { p_event_id: string }
         Returns: Json
@@ -3033,6 +3098,15 @@ export type Database = {
       rpc_sync_collective_teams: {
         Args: { p_event_id: string; p_sport_event_id?: string }
         Returns: Json
+      }
+      rpc_upsert_sport_event_rules: {
+        Args: {
+          p_event_id: string
+          p_is_active?: boolean
+          p_rules: Json
+          p_sport_event_id: string
+        }
+        Returns: undefined
       }
       rpc_validate_results_for_sport_event: {
         Args: { p_event_id: string; p_sport_event_id: string }

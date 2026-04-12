@@ -52,6 +52,7 @@ import MapaSistemaPage from "./pages/admin/MapaSistemaPage";
 import DiagnosticoCompeticaoPage from "./pages/admin/DiagnosticoCompeticaoPage";
 import CentralDadosPage from "./pages/admin/CentralDadosPage";
 import BoletinsPage from "./pages/admin/BoletinsPage";
+import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -117,6 +118,7 @@ const App = () => (
               <Route path="competicao/equipes" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoEquipesPage /></ProtectedRoute>} />
               <Route path="competicao/resultados" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoResultadosPage /></ProtectedRoute>} />
               <Route path="competicao/sincronizar-equipes" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><SincronizarEquipesPage /></ProtectedRoute>} />
+              <Route path="competicao/regras" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><RegrasProvaPage /></ProtectedRoute>} />
               {/* Credenciais */}
               <Route path="credenciais/modelos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredencialModelosPage /></ProtectedRoute>} />
               {/* Acessos */}
