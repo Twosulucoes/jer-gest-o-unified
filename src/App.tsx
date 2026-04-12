@@ -257,6 +257,7 @@ const App = () => (
             {/* Public content routes */}
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
+            <Route path="/a/:token" element={<AtletaPublicProfilePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </EventProvider>
