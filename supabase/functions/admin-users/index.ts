@@ -28,26 +28,29 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "NOT_AUTHENTICATED" }, 401);
     }
 
-    // Create client with caller's JWT to check permissions
-    const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) {
-      return jsonResponse({ error: "NOT_AUTHENTICATED" }, 401);
-    }
-
-    // Check admin/secretaria role
-    const { data: isAdmin } = await callerClient.rpc("is_admin_or_secretaria");
-    if (!isAdmin) {
-      return jsonResponse({ error: "NOT_AUTHORIZED" }, 403);
-    }
-
     // Admin client with service role
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    // Verify caller using admin client
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user: caller }, error: userErr } = await adminClient.auth.getUser(token);
+    if (userErr || !caller) {
+      return jsonResponse({ error: "NOT_AUTHENTICATED" }, 401);
+    }
+
+    // Check admin/secretaria role using admin client (bypasses JWT verification issues)
+    const { data: callerRoles } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", caller.id);
+    
+    const roles = (callerRoles || []).map((r: any) => r.role);
+    if (!roles.includes("admin") && !roles.includes("secretaria")) {
+      return jsonResponse({ error: "NOT_AUTHORIZED" }, 403);
+    }
+
 
     const body = await req.json();
     const { action } = body;
