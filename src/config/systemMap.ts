@@ -485,6 +485,18 @@ export const systemMap: SystemMapGroup[] = [
         gaps: [],
         nextActions: [],
       },
+      {
+        id: "diagnostico-competicao",
+        label: "Diagnóstico (Competição)",
+        route: "/admin/diagnostico-competicao",
+        pageFile: "src/pages/admin/DiagnosticoCompeticaoPage.tsx",
+        description: "Visão auditável de rotas, entidades, tabelas Supabase e KPIs da competição. Exporta JSON completo.",
+        roles: ["admin", "coordenacao_tecnica"],
+        status: ModuleStatus.DONE,
+        dataSources: ["competition_matches", "competition_match_results", "sport_events", "participant_sport_events"],
+        gaps: [],
+        nextActions: [],
+      },
     ],
   },
 ];
