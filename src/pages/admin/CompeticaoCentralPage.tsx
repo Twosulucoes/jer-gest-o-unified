@@ -103,6 +103,13 @@ export default function CompeticaoCentralPage() {
                 sportEventId={sportEventId}
               />
             </TabsContent>
+            <TabsContent value="bracket">
+              <CentralBracketTab
+                eventId={eventId}
+                sportEventId={sportEventId}
+                isCollective={summary?.is_collective ?? false}
+              />
+            </TabsContent>
             <TabsContent value="pending">
               <EligibilityPendingPanel
                 eventId={eventId}
