@@ -1,31 +1,29 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEvent } from "@/contexts/EventContext";
-import ModuleHeader from "@/components/admin/ModuleHeader";
+import { useEventContext } from "@/contexts/EventContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, Play, Trash2, RefreshCw, Copy, Check, Database as DbIcon, Users, Swords, MapPin, Bus, Building } from "lucide-react";
+import { Loader2, Play, Trash2, RefreshCw, Copy, Check, Database as DbIcon, Users, Swords, MapPin, Building } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DemoSeedsPage() {
-  const { activeEventId } = useEvent();
+  const { activeEventId } = useEventContext();
   const queryClient = useQueryClient();
   const [lastResult, setLastResult] = useState<any>(null);
   const [copied, setCopied] = useState(false);
 
-  // Check demo status
   const { data: demoStatus, isLoading: statusLoading } = useQuery({
     queryKey: ["demo-status", activeEventId],
     queryFn: async () => {
       if (!activeEventId) return null;
       const [teams, phases, matches, venues] = await Promise.all([
-        supabase.from("teams").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag", "demo"),
-        supabase.from("competition_phases").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag", "demo"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag", "demo"),
-        supabase.from("venues").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag", "demo"),
+        supabase.from("teams").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag" as any, "demo"),
+        supabase.from("competition_phases").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag" as any, "demo"),
+        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag" as any, "demo"),
+        supabase.from("venues").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag" as any, "demo"),
       ]);
       return {
         hasDemo: (teams.count || 0) > 0 || (phases.count || 0) > 0,
@@ -40,7 +38,7 @@ export default function DemoSeedsPage() {
 
   const seedMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc("seed_event_demo", { p_event_id: activeEventId! });
+      const { data, error } = await supabase.rpc("seed_event_demo" as any, { p_event_id: activeEventId! });
       if (error) throw error;
       return data;
     },
@@ -54,7 +52,7 @@ export default function DemoSeedsPage() {
 
   const resetMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc("reset_demo", { p_event_id: activeEventId! });
+      const { data, error } = await supabase.rpc("reset_demo" as any, { p_event_id: activeEventId! });
       if (error) throw error;
       return data;
     },
@@ -68,7 +66,7 @@ export default function DemoSeedsPage() {
 
   const recreateMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc("seed_event_demo", { p_event_id: activeEventId! });
+      const { data, error } = await supabase.rpc("seed_event_demo" as any, { p_event_id: activeEventId! });
       if (error) throw error;
       return data;
     },
@@ -90,18 +88,19 @@ export default function DemoSeedsPage() {
 
   if (!activeEventId) {
     return (
-      <div>
-        <ModuleHeader title="Demo (Seeds)" description="Selecione um evento ativo para usar os seeds de demonstração." />
+      <div className="p-6">
+        <h1 className="text-xl font-bold">Demo (Seeds)</h1>
+        <p className="text-muted-foreground mt-2">Selecione um evento ativo para usar os seeds de demonstração.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <ModuleHeader
-        title="Demo (Seeds)"
-        description="Crie dados de demonstração completos (competição + logística) para testar o sistema. Dados são rastreáveis e removíveis."
-      />
+      <div>
+        <h1 className="text-xl font-bold">Demo (Seeds)</h1>
+        <p className="text-sm text-muted-foreground">Crie dados de demonstração completos (competição + logística) para testar o sistema.</p>
+      </div>
 
       {/* Status Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -113,7 +112,7 @@ export default function DemoSeedsPage() {
               {statusLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : demoStatus?.hasDemo ? (
-                <Badge variant="default" className="bg-green-600">Ativo</Badge>
+                <Badge className="bg-primary text-primary-foreground">Ativo</Badge>
               ) : (
                 <Badge variant="secondary">Sem demo</Badge>
               )}
