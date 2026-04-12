@@ -33,6 +33,7 @@ import IndividualMatchSummaryDialog from "@/components/admin/IndividualMatchSumm
 import MatchEventsCard from "@/components/admin/MatchEventsCard";
 import MatchAttemptsCard from "@/components/admin/MatchAttemptsCard";
 import IndividualRankingCard from "@/components/admin/IndividualRankingCard";
+import MatchDisciplineCard from "@/components/admin/MatchDisciplineCard";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
@@ -781,6 +782,16 @@ export default function CompeticaoPartidaDetalhePage() {
             return { id: e.id, label: getEntryLabel(e), participantId: pse?.participant_id };
           })}
           individualConfig={individualConfig}
+          canWrite={canWrite}
+        />
+      )}
+      {/* Discipline Card */}
+      {isCollective && entries.length > 0 && (
+        <MatchDisciplineCard
+          matchId={matchId!}
+          eventId={match?.event_id ?? ""}
+          entries={entries}
+          getEntryLabel={getEntryLabel}
           canWrite={canWrite}
         />
       )}

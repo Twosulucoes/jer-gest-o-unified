@@ -3,14 +3,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, Pencil, Layers, Trophy } from "lucide-react";
+import { Plus, Pencil, Layers, Trophy, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CompetitionGroupFormDialog, { type GroupFormValues } from "@/components/admin/CompetitionGroupFormDialog";
+import GroupStandingsTable from "@/components/admin/competition/GroupStandingsTable";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 import { useActiveEventId } from "@/contexts/EventContext";
 
 export default function CompeticaoGruposPage() {
@@ -194,33 +197,37 @@ export default function CompeticaoGruposPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Prova → Fase</TableHead>
-                <TableHead>Grupo/Chave</TableHead>
-                <TableHead>Ordem</TableHead>
-                {canWrite && <TableHead className="w-[60px]" />}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredGroups.map((g) => (
-                <TableRow key={g.id}>
-                  <TableCell className="text-muted-foreground text-sm">{getPhaseLabel(g.phase_id)}</TableCell>
-                  <TableCell className="font-medium">{g.name}</TableCell>
-                  <TableCell className="font-mono text-sm">{g.sort_order}</TableCell>
-                  {canWrite && (
-                    <TableCell>
+        <div className="space-y-4">
+          {filteredGroups.map((g) => (
+            <Collapsible key={g.id}>
+              <div className="rounded-lg border bg-card">
+                <div className="flex items-center justify-between p-3">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <span className="text-muted-foreground text-sm">{getPhaseLabel(g.phase_id)}</span>
+                    <span className="font-medium">{g.name}</span>
+                    <span className="font-mono text-sm text-muted-foreground">{g.sort_order}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {canWrite && (
                       <Button variant="ghost" size="icon" onClick={() => { setEditing(g); setDialogOpen(true); }}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    )}
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <ChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
+                </div>
+                <CollapsibleContent>
+                  <div className="px-3 pb-3">
+                    <GroupStandingsTable groupId={g.id} />
+                  </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          ))}
         </div>
       )}
 
