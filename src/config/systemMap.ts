@@ -146,6 +146,18 @@ export const systemMap: SystemMapGroup[] = [
     label: "Competição",
     items: [
       {
+        id: "pre-validacao",
+        label: "Pré-validação de Provas",
+        route: "/admin/competicao/pre-validacao",
+        pageFile: "src/pages/admin/PreValidacaoPage.tsx",
+        description: "Valida quórum de participantes/equipes por prova e libera provas aptas para a Central da Competição.",
+        roles: ["admin", "secretaria", "coordenacao_tecnica"],
+        status: ModuleStatus.DONE,
+        dataSources: ["sport_events", "participant_sport_events", "teams", "team_members", "sport_event_rules"],
+        gaps: [],
+        nextActions: [],
+      },
+      {
         id: "central-competicao",
         label: "Central da Competição",
         route: "/admin/competicao/central",
