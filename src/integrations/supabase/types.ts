@@ -2212,6 +2212,239 @@ export type Database = {
           },
         ]
       }
+      pesquisa_events: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          event_date: string | null
+          id: string
+          location: string | null
+          name: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          event_date?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          event_date?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      pesquisa_researchers: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          last_login_at: string | null
+          name: string
+          pin_hash: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          last_login_at?: string | null
+          name: string
+          pin_hash: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          last_login_at?: string | null
+          name?: string
+          pin_hash?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pesquisa_researchers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "pesquisa_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pesquisa_sessions: {
+        Row: {
+          created_at: string
+          device_id: string
+          event_id: string
+          expires_at: string
+          id: string
+          last_seen_at: string | null
+          researcher_id: string
+          revoked_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          event_id: string
+          expires_at: string
+          id?: string
+          last_seen_at?: string | null
+          researcher_id: string
+          revoked_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          event_id?: string
+          expires_at?: string
+          id?: string
+          last_seen_at?: string | null
+          researcher_id?: string
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pesquisa_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "pesquisa_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pesquisa_sessions_researcher_id_fkey"
+            columns: ["researcher_id"]
+            isOneToOne: false
+            referencedRelation: "pesquisa_researchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pesquisa_surveys: {
+        Row: {
+          client_uuid: string
+          collected_at: string
+          created_at: string
+          created_by: string | null
+          d1_alimentacao: number
+          d1_infraestrutura: number
+          d1_organizacao: number
+          d1_seguranca: number
+          d1_transporte: number
+          d2_acessibilidade: number
+          d2_igualdade: number
+          d2_inclusao: number
+          d3_aprendizado: number
+          d3_cidadania: number
+          d3_convivencia: number
+          d3_superacao: number
+          device_id: string | null
+          event_id: string
+          id: string
+          mode: string
+          ponto_positivo: string | null
+          researcher_id: string
+          respondent_age: string
+          respondent_gender: string
+          respondent_type: string
+          sugestao: string | null
+        }
+        Insert: {
+          client_uuid: string
+          collected_at?: string
+          created_at?: string
+          created_by?: string | null
+          d1_alimentacao: number
+          d1_infraestrutura: number
+          d1_organizacao: number
+          d1_seguranca: number
+          d1_transporte: number
+          d2_acessibilidade: number
+          d2_igualdade: number
+          d2_inclusao: number
+          d3_aprendizado: number
+          d3_cidadania: number
+          d3_convivencia: number
+          d3_superacao: number
+          device_id?: string | null
+          event_id: string
+          id?: string
+          mode: string
+          ponto_positivo?: string | null
+          researcher_id: string
+          respondent_age: string
+          respondent_gender: string
+          respondent_type: string
+          sugestao?: string | null
+        }
+        Update: {
+          client_uuid?: string
+          collected_at?: string
+          created_at?: string
+          created_by?: string | null
+          d1_alimentacao?: number
+          d1_infraestrutura?: number
+          d1_organizacao?: number
+          d1_seguranca?: number
+          d1_transporte?: number
+          d2_acessibilidade?: number
+          d2_igualdade?: number
+          d2_inclusao?: number
+          d3_aprendizado?: number
+          d3_cidadania?: number
+          d3_convivencia?: number
+          d3_superacao?: number
+          device_id?: string | null
+          event_id?: string
+          id?: string
+          mode?: string
+          ponto_positivo?: string | null
+          researcher_id?: string
+          respondent_age?: string
+          respondent_gender?: string
+          respondent_type?: string
+          sugestao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pesquisa_surveys_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "pesquisa_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pesquisa_surveys_researcher_id_fkey"
+            columns: ["researcher_id"]
+            isOneToOne: false
+            referencedRelation: "pesquisa_researchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -3220,6 +3453,32 @@ export type Database = {
       }
       normalize_prova_slug: { Args: { p: string }; Returns: string }
       normalize_text: { Args: { p: string }; Returns: string }
+      pesquisa_hash_pin: { Args: { pin: string }; Returns: string }
+      pesquisa_login_with_pin: {
+        Args: { p_device_id: string; p_pin: string }
+        Returns: Json
+      }
+      pesquisa_pwa_get_home: { Args: { p_session_id: string }; Returns: Json }
+      pesquisa_pwa_list_recent: {
+        Args: { p_limit?: number; p_session_id: string }
+        Returns: Json
+      }
+      pesquisa_pwa_submit_survey: {
+        Args: { p_payload: Json; p_session_id: string }
+        Returns: Json
+      }
+      pesquisa_revoke_session: {
+        Args: { p_session_id: string }
+        Returns: undefined
+      }
+      pesquisa_touch_session: {
+        Args: { p_session_id: string }
+        Returns: undefined
+      }
+      pesquisa_verify_pin: {
+        Args: { pin: string; pin_hash: string }
+        Returns: boolean
+      }
       recompute_participation_irregularities: {
         Args: { p_event_id: string }
         Returns: Json

@@ -55,6 +55,13 @@ import BoletinsPage from "./pages/admin/BoletinsPage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
+import PesquisaDashboardPage from "./pages/admin/PesquisaDashboardPage";
+import PesquisaEventosPage from "./pages/admin/PesquisaEventosPage";
+import PesquisaPesquisadoresPage from "./pages/admin/PesquisaPesquisadoresPage";
+import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
+import PesquisaHomePage from "./pages/pwa/PesquisaHomePage";
+import PesquisaNovaPage from "./pages/pwa/PesquisaNovaPage";
+import PesquisaConfirmacaoPage from "./pages/pwa/PesquisaConfirmacaoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -138,7 +145,16 @@ const App = () => (
               <Route path="dados" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CentralDadosPage /></ProtectedRoute>} />
               <Route path="boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><BoletinsPage /></ProtectedRoute>} />
               <Route path="demo" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><DemoSeedsPage /></ProtectedRoute>} />
+              {/* Pesquisa */}
+              <Route path="pesquisa" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaDashboardPage /></ProtectedRoute>} />
+              <Route path="pesquisa/eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaEventosPage /></ProtectedRoute>} />
+              <Route path="pesquisa/pesquisadores" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaPesquisadoresPage /></ProtectedRoute>} />
             </Route>
+            {/* PWA Pesquisa (no auth required) */}
+            <Route path="/pwa/pesquisa/login" element={<PesquisaLoginPage />} />
+            <Route path="/pwa/pesquisa/home" element={<PesquisaHomePage />} />
+            <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
+            <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </EventProvider>
