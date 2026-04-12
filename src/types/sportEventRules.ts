@@ -46,6 +46,7 @@ export const FORMATS: { value: RulesFormat; label: string }[] = [
   { value: "heats_final", label: "Baterias + Final" },
   { value: "combat_bracket", label: "Chave de combate" },
   { value: "ranking", label: "Ranking direto" },
+  { value: "swiss", label: "Suíço" },
 ];
 
 export const PARTICIPANT_MODES: { value: ParticipantMode; label: string }[] = [
@@ -71,7 +72,7 @@ export const VALID_FORMATS_BY_FAMILY: Record<RulesFamily, RulesFormat[]> = {
   time: ["heats", "heats_final", "ranking"],
   mark: ["heats", "heats_final", "ranking"],
   combat: ["combat_bracket", "knockout"],
-  ranking: ["ranking"],
+  ranking: ["ranking", "swiss"],
 };
 
 export const FAMILY_PRESETS: Record<string, { label: string; rules: SportEventRulesV1 }> = {
