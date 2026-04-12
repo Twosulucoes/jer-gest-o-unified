@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useEvent } from "@/contexts/EventContext";
-import { useCompetitionDiagnostics, type DiagnosticResult } from "@/hooks/useCompetitionDiagnostics";
+import { useEventContext } from "@/contexts/EventContext";
+import { useCompetitionDiagnostics } from "@/hooks/useCompetitionDiagnostics";
 import { competitionFeatureCatalog } from "@/config/competitionFeatureCatalog";
 
 import { Button } from "@/components/ui/button";
