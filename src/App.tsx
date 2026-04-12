@@ -44,6 +44,7 @@ import ParticipanteDetalhePage from "./pages/admin/ParticipanteDetalhePage";
 import DelegacaoDetalhePage from "./pages/admin/DelegacaoDetalhePage";
 import CredencialModelosPage from "./pages/admin/CredencialModelosPage";
 import AcessosDelegacoesPage from "./pages/admin/AcessosDelegacoesPage";
+import AcessosUsuariosPage from "./pages/admin/AcessosUsuariosPage";
 import ParametrosEventoPage from "./pages/admin/ParametrosEventoPage";
 import IrregularidadesPage from "./pages/admin/IrregularidadesPage";
 import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
@@ -58,10 +59,16 @@ import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
 import PesquisaDashboardPage from "./pages/admin/PesquisaDashboardPage";
 import PesquisaEventosPage from "./pages/admin/PesquisaEventosPage";
 import PesquisaPesquisadoresPage from "./pages/admin/PesquisaPesquisadoresPage";
+// PWA pages
 import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
 import PesquisaHomePage from "./pages/pwa/PesquisaHomePage";
 import PesquisaNovaPage from "./pages/pwa/PesquisaNovaPage";
 import PesquisaConfirmacaoPage from "./pages/pwa/PesquisaConfirmacaoPage";
+import PwaLoginPage from "./pages/pwa/PwaLoginPage";
+import PwaRecoverPage from "./pages/pwa/PwaRecoverPage";
+import PwaSetPasswordPage from "./pages/pwa/PwaSetPasswordPage";
+import PwaLandingPage from "./pages/pwa/PwaLandingPage";
+import PwaModulePage from "./pages/pwa/PwaModulePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -133,6 +140,7 @@ const App = () => (
               <Route path="credenciais/modelos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredencialModelosPage /></ProtectedRoute>} />
               {/* Acessos */}
               <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
+              <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
               {/* Parâmetros */}
               <Route path="parametros-evento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParametrosEventoPage /></ProtectedRoute>} />
               {/* Irregularidades e Normalização */}
@@ -150,7 +158,15 @@ const App = () => (
               <Route path="pesquisa/eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaEventosPage /></ProtectedRoute>} />
               <Route path="pesquisa/pesquisadores" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaPesquisadoresPage /></ProtectedRoute>} />
             </Route>
-            {/* PWA Pesquisa (no auth required) */}
+            {/* PWA Auth pages (public) */}
+            <Route path="/pwa/login" element={<PwaLoginPage />} />
+            <Route path="/pwa/recover" element={<PwaRecoverPage />} />
+            <Route path="/pwa/set-password" element={<PwaSetPasswordPage />} />
+            {/* PWA Landing (requires auth) */}
+            <Route path="/pwa" element={<PwaLandingPage />} />
+            {/* PWA Module pages */}
+            <Route path="/pwa/:module" element={<PwaModulePage />} />
+            {/* PWA Pesquisa (PIN auth, no Supabase Auth) */}
             <Route path="/pwa/pesquisa/login" element={<PesquisaLoginPage />} />
             <Route path="/pwa/pesquisa/home" element={<PesquisaHomePage />} />
             <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />

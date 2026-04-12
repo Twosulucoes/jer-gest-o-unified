@@ -180,6 +180,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Parâmetros do Evento", to: "/admin/parametros-evento", icon: <Settings className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Gestão de Acessos", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Vínculos Delegação", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Validador de Estrutura", to: "/admin/schema/validador", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Mapa do Sistema", to: "/admin/mapa", icon: <Map className="h-4 w-4" />, roles: ADMIN_ROLES },
