@@ -19,11 +19,16 @@ export default function DemoSeedsPage() {
     queryKey: ["demo-status", activeEventId],
     queryFn: async () => {
       if (!activeEventId) return null;
+      const teamsQ = supabase.from("teams").select("id", { count: "exact", head: true }).eq("event_id", activeEventId);
+      const phasesQ = supabase.from("competition_phases").select("id", { count: "exact", head: true }).eq("event_id", activeEventId);
+      const matchesQ = supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId);
+      const venuesQ = supabase.from("venues").select("id", { count: "exact", head: true }).eq("event_id", activeEventId);
+      // @ts-ignore - seed_tag column added by migration
       const [teams, phases, matches, venues] = await Promise.all([
-        supabase.from("teams").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag" as any, "demo"),
-        supabase.from("competition_phases").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag" as any, "demo"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag" as any, "demo"),
-        supabase.from("venues").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("seed_tag" as any, "demo"),
+        teamsQ.eq("seed_tag", "demo"),
+        phasesQ.eq("seed_tag", "demo"),
+        matchesQ.eq("seed_tag", "demo"),
+        venuesQ.eq("seed_tag", "demo"),
       ]);
       return {
         hasDemo: (teams.count || 0) > 0 || (phases.count || 0) > 0,
