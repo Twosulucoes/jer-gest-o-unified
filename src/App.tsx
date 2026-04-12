@@ -59,6 +59,7 @@ import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
 import EmailTemplatesPage from "./pages/admin/EmailTemplatesPage";
 import LinksPage from "./pages/admin/LinksPage";
 import LinkFormPage from "./pages/admin/LinkFormPage";
+import ReportCenterPage from "./reports/ui/ReportCenterPage";
 import LinkPreviewPage from "./pages/admin/LinkPreviewPage";
 import GoRedirectPage from "./pages/public/GoRedirectPage";
 import PublicPagePage from "./pages/public/PublicPagePage";
@@ -177,6 +178,8 @@ const App = () => (
               <Route path="links/novo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
               <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
               <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
+              {/* Relatórios */}
+              <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ReportCenterPage /></ProtectedRoute>} />
             </Route>
             {/* PWA Auth pages (public) */}
             <Route path="/pwa/login" element={<PwaLoginPage />} />
