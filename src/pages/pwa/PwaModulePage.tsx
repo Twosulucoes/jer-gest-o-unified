@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, ArrowLeft, Bus, UtensilsCrossed, Trophy, Users } from "lucide-react";
+import { Loader2, LogOut, ArrowLeft, Bus, UtensilsCrossed, Trophy, Users, Building } from "lucide-react";
 
 const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; allowedRoles: string[]; features: string[] }> = {
   transporte: {
@@ -16,6 +16,12 @@ const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; al
     icon: UtensilsCrossed,
     allowedRoles: ["admin", "secretaria", "alimentacao"],
     features: ["Registro de consumo", "Validação de credencial", "Controle de janelas"],
+  },
+  alojamento: {
+    label: "Alojamento",
+    icon: Building,
+    allowedRoles: ["admin", "secretaria", "alojamento"],
+    features: ["Check-in/out", "Controle de leitos", "Ocorrências", "QR Code"],
   },
   "coordenacao-tecnica": {
     label: "Coordenação Técnica",
