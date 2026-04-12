@@ -2986,6 +2986,14 @@ export type Database = {
       rpc_get_schema_columns: { Args: never; Returns: Json }
       rpc_get_schema_constraints: { Args: never; Returns: Json }
       rpc_get_schema_tables: { Args: never; Returns: Json }
+      rpc_kpi_partidas_sem_resultado: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
+      rpc_kpi_provas_sem_partidas: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
       rpc_launch_match_result: {
         Args: { p_event_id: string; p_match_id: string; p_payload: Json }
         Returns: Json
