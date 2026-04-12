@@ -204,6 +204,15 @@ export default function CompeticaoCentralPage() {
               />
             )}
 
+            {currentStep === "standings" && (
+              <CentralStandingsTab
+                eventId={eventId}
+                sportEventId={sportEventId}
+                family={family ?? null}
+                format={format ?? null}
+              />
+            )}
+
             {currentStep === "results" && (
               <CentralResultsTab
                 eventId={eventId}
