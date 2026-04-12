@@ -84,6 +84,31 @@ import AlojamentoOcupacaoPage2 from "./pages/pwa/alojamento/AlojamentoOcupacaoPa
 import AlojamentoPessoaPage from "./pages/pwa/alojamento/AlojamentoPessoaPage";
 import AlojamentoIncidentesPage from "./pages/pwa/alojamento/AlojamentoIncidentesPage";
 import AlojamentoNovoIncidentePage from "./pages/pwa/alojamento/AlojamentoNovoIncidentePage";
+// PWA Transporte pages
+import TransporteHomePage from "./pages/pwa/transporte/TransporteHomePage";
+import TransporteViagensPage from "./pages/pwa/transporte/TransporteViagensPage";
+import TransporteScanPage from "./pages/pwa/transporte/TransporteScanPage";
+import TransporteEmbarquePwaPage from "./pages/pwa/transporte/TransporteEmbarquePage";
+import TransporteRotasPwaPage from "./pages/pwa/transporte/TransporteRotasPage";
+// PWA Alimentação pages
+import AlimentacaoHomePage from "./pages/pwa/alimentacao/AlimentacaoHomePage";
+import AlimentacaoScanPage from "./pages/pwa/alimentacao/AlimentacaoScanPage";
+import AlimentacaoBuscarPwaPage from "./pages/pwa/alimentacao/AlimentacaoBuscarPage";
+import AlimentacaoJanelasPwaPage from "./pages/pwa/alimentacao/AlimentacaoJanelasPage";
+import AlimentacaoHistoricoPage from "./pages/pwa/alimentacao/AlimentacaoHistoricoPage";
+// PWA Coordenação Técnica pages
+import CoordenacaoHomePage from "./pages/pwa/coordenacao/CoordenacaoHomePage";
+import CoordenacaoAgendaPage from "./pages/pwa/coordenacao/CoordenacaoAgendaPage";
+import CoordenacaoPartidasPage from "./pages/pwa/coordenacao/CoordenacaoPartidasPage";
+import CoordenacaoPartidaDetalhePage from "./pages/pwa/coordenacao/CoordenacaoPartidaDetalhePage";
+import CoordenacaoResultadosPwaPage from "./pages/pwa/coordenacao/CoordenacaoResultadosPage";
+import CoordenacaoEstatisticasPage from "./pages/pwa/coordenacao/CoordenacaoEstatisticasPage";
+// PWA Delegação pages
+import DelegacaoHomePage from "./pages/pwa/delegacao/DelegacaoHomePage";
+import DelegacaoParticipantesPage from "./pages/pwa/delegacao/DelegacaoParticipantesPage";
+import DelegacaoAgendaPage from "./pages/pwa/delegacao/DelegacaoAgendaPage";
+import DelegacaoLogisticaPage from "./pages/pwa/delegacao/DelegacaoLogisticaPage";
+import DelegacaoLocaisPage from "./pages/pwa/delegacao/DelegacaoLocaisPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
