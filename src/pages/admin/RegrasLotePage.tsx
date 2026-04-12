@@ -14,8 +14,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Zap, RefreshCw, Eye, ExternalLink, Settings, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
-import { SPORT_PRESET_CATALOG } from "@/config/sportPresetCatalog";
+import { Zap, RefreshCw, Eye, ExternalLink, Settings, CheckCircle, AlertTriangle, XCircle, Accessibility } from "lucide-react";
+import { SPORT_PRESET_CATALOG, PRESET_CATEGORIES } from "@/config/sportPresetCatalog";
 import { FAMILIES } from "@/types/sportEventRules";
 
 interface SportEventRow {
@@ -31,6 +31,7 @@ interface SportEventRow {
   family: string | null;
   format: string | null;
   has_rules: boolean;
+  is_jerpa: boolean;
 }
 
 interface SeedReport {
@@ -50,6 +51,9 @@ export default function RegrasLotePage() {
   const [filterFamily, setFilterFamily] = useState<string>("all");
   const [filterPreset, setFilterPreset] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterSport, setFilterSport] = useState<string>("all");
+  const [filterJerpa, setFilterJerpa] = useState<string>("all");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
   const [lastReport, setLastReport] = useState<SeedReport | null>(null);
 
   const { data: rows = [], isLoading, error, refetch } = useQuery({
@@ -80,6 +84,7 @@ export default function RegrasLotePage() {
       return (sportEvents || []).map((se: any): SportEventRow => {
         const ruleRow = rulesMap[se.id];
         const rules = ruleRow?.rules as Record<string, unknown> | null;
+        const disPolicy = rules?.disability_policy as Record<string, unknown> | undefined;
         return {
           id: se.id,
           name: se.name,
@@ -93,6 +98,7 @@ export default function RegrasLotePage() {
           family: (rules?.family as string) ?? null,
           format: (rules?.format as string) ?? null,
           has_rules: !!ruleRow,
+          is_jerpa: !!disPolicy?.class_required,
         };
       });
     },
@@ -123,6 +129,12 @@ export default function RegrasLotePage() {
     },
   });
 
+  const sportNames = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach((r) => { if (r.sport_name) set.add(r.sport_name); });
+    return Array.from(set).sort();
+  }, [rows]);
+
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (search && !r.name.toLowerCase().includes(search.toLowerCase()) && !r.sport_name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -130,9 +142,16 @@ export default function RegrasLotePage() {
       if (filterPreset !== "all" && r.preset_key !== filterPreset) return false;
       if (filterStatus === "missing" && r.has_rules) return false;
       if (filterStatus === "configured" && !r.has_rules) return false;
+      if (filterSport !== "all" && r.sport_name !== filterSport) return false;
+      if (filterJerpa === "jerpa" && !r.is_jerpa) return false;
+      if (filterJerpa === "jer" && r.is_jerpa) return false;
+      if (filterCategory !== "all") {
+        const preset = SPORT_PRESET_CATALOG.find((p) => p.key === r.preset_key);
+        if (!preset || preset.category !== filterCategory) return false;
+      }
       return true;
     });
-  }, [rows, search, filterFamily, filterPreset, filterStatus]);
+  }, [rows, search, filterFamily, filterPreset, filterStatus, filterSport, filterJerpa, filterCategory]);
 
   const usedPresets = useMemo(() => {
     const set = new Set<string>();
@@ -144,7 +163,8 @@ export default function RegrasLotePage() {
     const total = rows.length;
     const configured = rows.filter((r) => r.has_rules).length;
     const missing = total - configured;
-    return { total, configured, missing };
+    const jerpa = rows.filter((r) => r.is_jerpa).length;
+    return { total, configured, missing, jerpa };
   }, [rows]);
 
   function getStatusBadge(row: SportEventRow) {
@@ -168,7 +188,7 @@ export default function RegrasLotePage() {
       <ModuleHeader route="/admin/competicao/regras/lote" title="Regras em Lote" />
 
       {/* Stats cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold">{stats.total}</p>
@@ -187,6 +207,12 @@ export default function RegrasLotePage() {
             <p className="text-xs text-muted-foreground">Sem regra</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="pt-4 text-center">
+            <p className="text-2xl font-bold text-blue-600">{stats.jerpa}</p>
+            <p className="text-xs text-muted-foreground">JERPA</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Action buttons */}
@@ -195,28 +221,16 @@ export default function RegrasLotePage() {
           <CardTitle className="text-sm">Ações em Massa</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => seedMutation.mutate({ mode: "missing_only", dryRun: true })}
-            disabled={seedMutation.isPending}
-          >
-            <Eye className="h-4 w-4 mr-1" />
-            Dry Run
+          <Button size="sm" variant="outline" onClick={() => seedMutation.mutate({ mode: "missing_only", dryRun: true })} disabled={seedMutation.isPending}>
+            <Eye className="h-4 w-4 mr-1" />Dry Run
           </Button>
-          <Button
-            size="sm"
-            onClick={() => seedMutation.mutate({ mode: "missing_only", dryRun: false })}
-            disabled={seedMutation.isPending}
-          >
-            <Zap className="h-4 w-4 mr-1" />
-            Gerar (somente faltantes)
+          <Button size="sm" onClick={() => seedMutation.mutate({ mode: "missing_only", dryRun: false })} disabled={seedMutation.isPending}>
+            <Zap className="h-4 w-4 mr-1" />Gerar (somente faltantes)
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button size="sm" variant="destructive" disabled={seedMutation.isPending}>
-                <RefreshCw className="h-4 w-4 mr-1" />
-                Regerar (sobrescrever)
+                <RefreshCw className="h-4 w-4 mr-1" />Regerar (sobrescrever)
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -229,9 +243,7 @@ export default function RegrasLotePage() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => seedMutation.mutate({ mode: "overwrite", dryRun: false })}>
-                  Confirmar
-                </AlertDialogAction>
+                <AlertDialogAction onClick={() => seedMutation.mutate({ mode: "overwrite", dryRun: false })}>Confirmar</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -253,7 +265,7 @@ export default function RegrasLotePage() {
       <div className="flex flex-wrap gap-2">
         <Input placeholder="Buscar prova..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-48" />
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-36"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="missing">Sem regra</SelectItem>
@@ -265,6 +277,28 @@ export default function RegrasLotePage() {
           <SelectContent>
             <SelectItem value="all">Todas famílias</SelectItem>
             {FAMILIES.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterSport} onValueChange={setFilterSport}>
+          <SelectTrigger className="w-44"><SelectValue placeholder="Modalidade" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas modalidades</SelectItem>
+            {sportNames.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterJerpa} onValueChange={setFilterJerpa}>
+          <SelectTrigger className="w-32"><SelectValue placeholder="JER/JERPA" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">JER + JERPA</SelectItem>
+            <SelectItem value="jer">JER</SelectItem>
+            <SelectItem value="jerpa">JERPA</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="w-44"><SelectValue placeholder="Tipo de preset" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os tipos</SelectItem>
+            {PRESET_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterPreset} onValueChange={setFilterPreset}>
@@ -303,7 +337,14 @@ export default function RegrasLotePage() {
               ) : (
                 filtered.map((row) => (
                   <TableRow key={row.id}>
-                    <TableCell className="text-xs font-medium">{row.sport_name}</TableCell>
+                    <TableCell className="text-xs font-medium">
+                      {row.sport_name}
+                      {row.is_jerpa && (
+                        <Badge variant="outline" className="ml-1 text-[9px] border-blue-400 text-blue-600">
+                          <Accessibility className="h-2.5 w-2.5 mr-0.5" />JERPA
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-xs">{row.name}</TableCell>
                     <TableCell className="text-xs">{row.category_name} ({row.gender_scope})</TableCell>
                     <TableCell><Badge variant="outline" className="text-[10px]">{row.preset_key || "—"}</Badge></TableCell>
@@ -330,22 +371,34 @@ export default function RegrasLotePage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            Catálogo de Presets Disponíveis
+            Catálogo de Presets Disponíveis ({SPORT_PRESET_CATALOG.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {SPORT_PRESET_CATALOG.map((preset) => (
-              <div key={preset.key} className="border rounded-md p-3 space-y-1">
-                <p className="text-sm font-medium">{preset.label}</p>
-                <p className="text-xs text-muted-foreground">{preset.description}</p>
-                <div className="flex gap-1">
-                  <Badge variant="outline" className="text-[10px]">{preset.rules.family}</Badge>
-                  <Badge variant="outline" className="text-[10px]">{preset.rules.format}</Badge>
+          {PRESET_CATEGORIES.map((cat) => {
+            const presets = SPORT_PRESET_CATALOG.filter((p) => p.category === cat.value);
+            if (presets.length === 0) return null;
+            return (
+              <div key={cat.value} className="mb-4">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">{cat.label}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {presets.map((preset) => (
+                    <div key={preset.key} className="border rounded-md p-3 space-y-1">
+                      <p className="text-sm font-medium">{preset.label}</p>
+                      <p className="text-xs text-muted-foreground">{preset.description}</p>
+                      <div className="flex gap-1 flex-wrap">
+                        <Badge variant="outline" className="text-[10px]">{preset.rules.family}</Badge>
+                        <Badge variant="outline" className="text-[10px]">{preset.rules.format}</Badge>
+                        {preset.category === "paralimpica" && (
+                          <Badge variant="outline" className="text-[10px] border-blue-400 text-blue-600">JERPA</Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </CardContent>
       </Card>
     </div>
