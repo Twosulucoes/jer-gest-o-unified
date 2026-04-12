@@ -15,6 +15,8 @@ import {
   STATUS_META,
   type SystemMapItem,
 } from "@/config/systemMap";
+import QuickActionsCards from "@/components/admin/mapa/QuickActionsCards";
+import KpiCards from "@/components/admin/mapa/KpiCards";
 
 function StatusBadge({ status }: { status: ModuleStatus }) {
   const meta = STATUS_META[status];
