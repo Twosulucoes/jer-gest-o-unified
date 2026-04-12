@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,11 +8,10 @@ import {
   CheckCircle2, AlertTriangle, Clock, TrendingUp,
   Upload, UsersRound, ScanLine, Navigation, ClipboardList, CalendarDays, KeyRound,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
+import { AppKPI } from "@/components/app/AppKPI";
+import { AppPageHeader } from "@/components/app/AppPageHeader";
 import { useActiveEventId, useEventContext } from "@/contexts/EventContext";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -31,45 +29,24 @@ const TRANSPORT_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"
 const FOOD_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"];
 
 const quickActions: QuickAction[] = [
-  // Preparação
   { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-5 w-5" />, roles: ["admin", "secretaria"], group: "Preparação" },
   { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Preparação" },
-  // Credenciamento
   { label: "Credenciamento", to: "/admin/credenciamento", icon: <UserCheck className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Credenciamento" },
   { label: "Validação QR", to: "/admin/validacao-qr", icon: <ScanLine className="h-5 w-5" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"], group: "Credenciamento" },
-  // Logística
   { label: "Viagens", to: "/admin/transporte/viagens", icon: <Navigation className="h-5 w-5" />, roles: TRANSPORT_ROLES, group: "Logística" },
   { label: "Consumo", to: "/admin/alimentacao/consumo", icon: <ClipboardList className="h-5 w-5" />, roles: FOOD_ROLES, group: "Logística" },
   { label: "Ocupação", to: "/admin/alojamento/ocupacao", icon: <KeyRound className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Logística" },
-  // Competição
   { label: "Agenda", to: "/admin/competicao/agenda", icon: <CalendarDays className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Competição" },
   { label: "Resultados", to: "/admin/competicao/resultados", icon: <ClipboardList className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Competição" },
 ];
 
-interface StatCardProps {
-  label: string;
-  value: number | string;
-  icon: React.ReactNode;
-  sub?: string;
-  alert?: boolean;
-}
-
-function StatCard({ label, value, icon, sub, alert }: StatCardProps) {
-  return (
-    <Card>
-      <CardContent className="pt-4 pb-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className={`text-2xl font-bold ${alert ? "text-destructive" : "text-foreground"}`}>{value}</p>
-            {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
-          </div>
-          <div className="text-muted-foreground">{icon}</div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+const getRoleLabel = (role: string) => {
+  const labels: Record<string, string> = {
+    admin: "Administrador", secretaria: "Secretaria", transporte: "Transporte",
+    alimentacao: "Alimentação", coordenacao_tecnica: "Coordenação Técnica", delegacao: "Delegação",
+  };
+  return labels[role] || role;
+};
 
 export default function DashboardPage() {
   const { profile, roles, hasRole } = useAuth();
@@ -77,20 +54,7 @@ export default function DashboardPage() {
   const { activeEvent } = useEventContext();
 
   const visibleActions = quickActions.filter((a) => a.roles.some((r) => hasRole(r)));
-  const actionGroups = Array.from(new Set(visibleActions.map((a) => a.group)));
-
-
-  const getRoleLabel = (role: string) => {
-    const labels: Record<string, string> = {
-      admin: "Administrador",
-      secretaria: "Secretaria",
-      transporte: "Transporte",
-      alimentacao: "Alimentação",
-      coordenacao_tecnica: "Coordenação Técnica",
-      delegacao: "Delegação",
-    };
-    return labels[role] || role;
-  };
+  const eventId = selectedEventId;
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
@@ -101,10 +65,6 @@ export default function DashboardPage() {
     },
   });
 
-  // Auto-select first event
-  const eventId = selectedEventId;
-
-  // --- Participants & Credentials ---
   const { data: participantsCount = 0, isLoading: pLoading } = useQuery({
     queryKey: ["dash-participants", eventId],
     queryFn: async () => {
@@ -137,7 +97,6 @@ export default function DashboardPage() {
     enabled: !!eventId,
   });
 
-  // --- Transport ---
   const { data: transportData = { trips: 0, passengers: 0 } } = useQuery({
     queryKey: ["dash-transport", eventId],
     queryFn: async () => {
@@ -153,7 +112,6 @@ export default function DashboardPage() {
     enabled: !!eventId,
   });
 
-  // --- Meals ---
   const { data: mealsData = { windows: 0, consumptions: 0 } } = useQuery({
     queryKey: ["dash-meals", eventId],
     queryFn: async () => {
@@ -169,7 +127,6 @@ export default function DashboardPage() {
     enabled: !!eventId,
   });
 
-  // --- Lodging ---
   const { data: lodgingData = { units: 0, capacity: 0, occupied: 0 } } = useQuery({
     queryKey: ["dash-lodging", eventId],
     queryFn: async () => {
@@ -183,7 +140,6 @@ export default function DashboardPage() {
     enabled: !!eventId,
   });
 
-  // --- Competition ---
   const { data: compData = { matches: 0, results: 0, validated: 0, published: 0 } } = useQuery({
     queryKey: ["dash-competition", eventId],
     queryFn: async () => {
@@ -205,158 +161,125 @@ export default function DashboardPage() {
   });
 
   const selectedEvent = events.find(e => e.id === eventId);
+  const isLoading = pLoading;
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            Painel Operacional
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Bem-vindo, {profile?.full_name || "Usuário"} — {roles.map(getRoleLabel).join(", ") || "Sem perfil"}
-          </p>
-        </div>
-      </div>
+      <AppPageHeader
+        title="Painel Operacional"
+        description={`Bem-vindo, ${profile?.full_name || "Usuário"} — ${roles.map(getRoleLabel).join(", ") || "Sem perfil"}`}
+      >
+        {selectedEvent && (
+          <Badge variant={selectedEvent.status === "active" ? "success" : "outline"} className="text-xs">
+            {selectedEvent.status === "active" ? "Ativo" : selectedEvent.status === "draft" ? "Rascunho" : selectedEvent.status}
+          </Badge>
+        )}
+      </AppPageHeader>
 
       {/* Quick Actions */}
       {visibleActions.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Acesso Rápido
           </h2>
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {visibleActions.map((action) => (
               <Link
                 key={action.to}
                 to={action.to}
-                className="group flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-4 text-center transition-colors hover:border-primary/40 hover:bg-accent"
+                className="group flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center transition-all duration-150 hover:shadow-app-md hover:border-primary/30 active:scale-[0.98]"
               >
-                <div className="text-muted-foreground group-hover:text-primary transition-colors">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                   {action.icon}
                 </div>
-                <span className="text-sm font-medium text-foreground">{action.label}</span>
-                <span className="text-[10px] text-muted-foreground">{action.group}</span>
+                <span className="text-xs font-medium text-foreground">{action.label}</span>
+                <span className="text-[10px] text-muted-foreground/60">{action.group}</span>
               </Link>
             ))}
           </div>
         </div>
       )}
 
-      <Separator />
-
-      {pLoading ? (
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
-        </div>
-      ) : (
-        <>
-          {/* Event header */}
-          {selectedEvent && (
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className="text-xs">
-                {selectedEvent.status === "active" ? "Ativo" : selectedEvent.status === "draft" ? "Rascunho" : selectedEvent.status}
-              </Badge>
-              {selectedEvent.start_date && selectedEvent.end_date && (
-                <span className="text-xs text-muted-foreground">
-                  {new Date(selectedEvent.start_date + "T00:00:00").toLocaleDateString("pt-BR")} — {new Date(selectedEvent.end_date + "T00:00:00").toLocaleDateString("pt-BR")}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Section: Credenciamento */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-              <UserCheck className="h-4 w-4" /> Credenciamento
-            </h2>
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
-              <StatCard label="Participantes" value={participantsCount} icon={<Users className="h-5 w-5" />} />
-              <StatCard
-                label="Credenciados"
-                value={credentialedCount}
-                icon={<UserCheck className="h-5 w-5" />}
-                sub={participantsCount > 0 ? `${Math.round((credentialedCount / participantsCount) * 100)}%` : undefined}
-              />
-              <StatCard label="Credenciais emitidas" value={credentialsData.total} icon={<ShieldCheck className="h-5 w-5" />} />
-              <StatCard
-                label="Credenciais ativas"
-                value={credentialsData.active}
-                icon={<CheckCircle2 className="h-5 w-5" />}
-                alert={credentialsData.total > 0 && credentialsData.active < credentialsData.total * 0.5}
-                sub={credentialsData.total > 0 ? `${Math.round((credentialsData.active / credentialsData.total) * 100)}% do total` : undefined}
-              />
-            </div>
+      {/* KPIs */}
+      <div className="space-y-6">
+        {/* Credenciamento */}
+        <section>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+            <UserCheck className="h-3.5 w-3.5" /> Credenciamento
+          </h2>
+          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+            <AppKPI label="Participantes" value={participantsCount} icon={Users} loading={isLoading} />
+            <AppKPI
+              label="Credenciados" value={credentialedCount} icon={UserCheck} loading={isLoading}
+              sub={participantsCount > 0 ? `${Math.round((credentialedCount / participantsCount) * 100)}%` : undefined}
+            />
+            <AppKPI label="Credenciais emitidas" value={credentialsData.total} icon={ShieldCheck} loading={isLoading} />
+            <AppKPI
+              label="Credenciais ativas" value={credentialsData.active} icon={CheckCircle2} loading={isLoading}
+              alert={credentialsData.total > 0 && credentialsData.active < credentialsData.total * 0.5}
+              sub={credentialsData.total > 0 ? `${Math.round((credentialsData.active / credentialsData.total) * 100)}% do total` : undefined}
+            />
           </div>
+        </section>
 
-          <Separator />
-
-          {/* Section: Transporte */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Bus className="h-4 w-4" /> Transporte
-            </h2>
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
-              <StatCard label="Viagens cadastradas" value={transportData.trips} icon={<Bus className="h-5 w-5" />} />
-              <StatCard label="Embarcados (ativos)" value={transportData.passengers} icon={<Users className="h-5 w-5" />} />
-            </div>
+        {/* Transporte */}
+        <section>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Bus className="h-3.5 w-3.5" /> Transporte
+          </h2>
+          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+            <AppKPI label="Viagens" value={transportData.trips} icon={Bus} loading={isLoading} />
+            <AppKPI label="Embarcados" value={transportData.passengers} icon={Users} loading={isLoading} />
           </div>
+        </section>
 
-          <Separator />
-
-          {/* Section: Alimentação */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-              <UtensilsCrossed className="h-4 w-4" /> Alimentação
-            </h2>
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
-              <StatCard label="Janelas ativas" value={mealsData.windows} icon={<Clock className="h-5 w-5" />} />
-              <StatCard label="Consumos registrados" value={mealsData.consumptions} icon={<UtensilsCrossed className="h-5 w-5" />} />
-            </div>
+        {/* Alimentação */}
+        <section>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+            <UtensilsCrossed className="h-3.5 w-3.5" /> Alimentação
+          </h2>
+          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+            <AppKPI label="Janelas ativas" value={mealsData.windows} icon={Clock} loading={isLoading} />
+            <AppKPI label="Consumos" value={mealsData.consumptions} icon={UtensilsCrossed} loading={isLoading} />
           </div>
+        </section>
 
-          <Separator />
-
-          {/* Section: Alojamento */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Building className="h-4 w-4" /> Alojamento
-            </h2>
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
-              <StatCard label="Unidades ativas" value={lodgingData.units} icon={<Building className="h-5 w-5" />} />
-              <StatCard label="Capacidade total" value={lodgingData.capacity} icon={<Users className="h-5 w-5" />} />
-              <StatCard label="Ocupados" value={lodgingData.occupied} icon={<CheckCircle2 className="h-5 w-5" />} />
-              <StatCard
-                label="Vagas livres"
-                value={Math.max(0, lodgingData.capacity - lodgingData.occupied)}
-                icon={<AlertTriangle className="h-5 w-5" />}
-                alert={lodgingData.capacity > 0 && lodgingData.occupied >= lodgingData.capacity * 0.9}
-                sub={lodgingData.capacity > 0 ? `${Math.round(((lodgingData.capacity - lodgingData.occupied) / lodgingData.capacity) * 100)}% disponível` : undefined}
-              />
-            </div>
+        {/* Alojamento */}
+        <section>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Building className="h-3.5 w-3.5" /> Alojamento
+          </h2>
+          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+            <AppKPI label="Unidades ativas" value={lodgingData.units} icon={Building} loading={isLoading} />
+            <AppKPI label="Capacidade total" value={lodgingData.capacity} icon={Users} loading={isLoading} />
+            <AppKPI label="Ocupados" value={lodgingData.occupied} icon={CheckCircle2} loading={isLoading} />
+            <AppKPI
+              label="Vagas livres"
+              value={Math.max(0, lodgingData.capacity - lodgingData.occupied)}
+              icon={AlertTriangle}
+              loading={isLoading}
+              alert={lodgingData.capacity > 0 && lodgingData.occupied >= lodgingData.capacity * 0.9}
+              sub={lodgingData.capacity > 0 ? `${Math.round(((lodgingData.capacity - lodgingData.occupied) / lodgingData.capacity) * 100)}% disponível` : undefined}
+            />
           </div>
+        </section>
 
-          <Separator />
-
-          {/* Section: Competição */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Trophy className="h-4 w-4" /> Competição
-            </h2>
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
-              <StatCard label="Partidas" value={compData.matches} icon={<Trophy className="h-5 w-5" />} />
-              <StatCard label="Resultados lançados" value={compData.results} icon={<CheckCircle2 className="h-5 w-5" />} />
-              <StatCard label="Validados" value={compData.validated} icon={<ShieldCheck className="h-5 w-5" />} />
-              <StatCard
-                label="Publicados"
-                value={compData.published}
-                icon={<TrendingUp className="h-5 w-5" />}
-                sub={compData.results > 0 ? `${Math.round((compData.published / compData.results) * 100)}% dos resultados` : undefined}
-              />
-            </div>
+        {/* Competição */}
+        <section>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Trophy className="h-3.5 w-3.5" /> Competição
+          </h2>
+          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+            <AppKPI label="Partidas" value={compData.matches} icon={Trophy} loading={isLoading} />
+            <AppKPI label="Resultados" value={compData.results} icon={CheckCircle2} loading={isLoading} />
+            <AppKPI label="Validados" value={compData.validated} icon={ShieldCheck} loading={isLoading} />
+            <AppKPI
+              label="Publicados" value={compData.published} icon={TrendingUp} loading={isLoading}
+              sub={compData.results > 0 ? `${Math.round((compData.published / compData.results) * 100)}% dos resultados` : undefined}
+            />
           </div>
-        </>
-      )}
+        </section>
+      </div>
     </div>
   );
 }

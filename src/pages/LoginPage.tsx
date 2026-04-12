@@ -36,9 +36,9 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md animate-fade-in">
+      <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-app-lg">
             <ShieldCheck className="h-7 w-7 text-primary-foreground" />
           </div>
           <h1 className="font-heading text-2xl font-bold text-foreground">JER Gestão</h1>
@@ -47,14 +47,14 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <Card>
-          <CardHeader className="pb-4">
-            <h2 className="font-heading text-lg font-semibold text-card-foreground">Entrar no sistema</h2>
+        <Card className="shadow-app-lg">
+          <CardHeader className="pb-2">
+            <h2 className="font-heading text-base font-semibold text-card-foreground">Entrar no sistema</h2>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
+                <Label htmlFor="email" className="text-xs font-medium">E-mail</Label>
                 <Input
                   id="email"
                   type="email"
@@ -62,10 +62,11 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="email"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password" className="text-xs font-medium">Senha</Label>
                 <Input
                   id="password"
                   type="password"
@@ -73,6 +74,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
@@ -82,6 +84,10 @@ export default function LoginPage() {
             </form>
           </CardContent>
         </Card>
+
+        <p className="mt-6 text-center text-xs text-muted-foreground/60">
+          Sistema restrito a usuários autorizados
+        </p>
       </div>
     </div>
   );
