@@ -57,6 +57,11 @@ import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
 import EmailTemplatesPage from "./pages/admin/EmailTemplatesPage";
+import LinksPage from "./pages/admin/LinksPage";
+import LinkFormPage from "./pages/admin/LinkFormPage";
+import LinkPreviewPage from "./pages/admin/LinkPreviewPage";
+import GoRedirectPage from "./pages/public/GoRedirectPage";
+import PublicPagePage from "./pages/public/PublicPagePage";
 import PesquisaDashboardPage from "./pages/admin/PesquisaDashboardPage";
 import PesquisaEventosPage from "./pages/admin/PesquisaEventosPage";
 import PesquisaPesquisadoresPage from "./pages/admin/PesquisaPesquisadoresPage";
@@ -159,6 +164,11 @@ const App = () => (
               <Route path="pesquisa" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaDashboardPage /></ProtectedRoute>} />
               <Route path="pesquisa/eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaEventosPage /></ProtectedRoute>} />
               <Route path="pesquisa/pesquisadores" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaPesquisadoresPage /></ProtectedRoute>} />
+              {/* Links & Páginas */}
+              <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinksPage /></ProtectedRoute>} />
+              <Route path="links/novo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
+              <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
+              <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
             </Route>
             {/* PWA Auth pages (public) */}
             <Route path="/pwa/login" element={<PwaLoginPage />} />
@@ -173,6 +183,9 @@ const App = () => (
             <Route path="/pwa/pesquisa/home" element={<PesquisaHomePage />} />
             <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
             <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
+            {/* Public content routes */}
+            <Route path="/go/:slug" element={<GoRedirectPage />} />
+            <Route path="/p/:slug" element={<PublicPagePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </EventProvider>

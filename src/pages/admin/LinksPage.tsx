@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Copy, ExternalLink, Eye, Loader2, Search } from "lucide-react";
-import ModuleHeader from "@/components/admin/ModuleHeader";
+
 
 const BASE_URL = "https://adm.jers.com.br";
 
@@ -69,10 +69,10 @@ export default function LinksPage() {
 
   return (
     <div className="space-y-6">
-      <ModuleHeader
-        title="Links & Páginas Públicas"
-        description="Gerencie links externos, redirects e páginas públicas do sistema."
-      />
+      <div className="space-y-1 mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Links & Páginas Públicas</h1>
+        <p className="text-sm text-muted-foreground">Gerencie links externos, redirects e páginas públicas do sistema.</p>
+      </div>
 
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex flex-wrap gap-2 items-center">

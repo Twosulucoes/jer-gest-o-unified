@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Loader2, ArrowLeft, Trash2, Save, Eye } from "lucide-react";
-import ModuleHeader from "@/components/admin/ModuleHeader";
+
 
 function slugify(text: string): string {
   return text
@@ -147,10 +147,10 @@ export default function LinkFormPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <ModuleHeader
-        title={isNew ? "Novo Link / Página" : "Editar Link / Página"}
-        description="Configure os detalhes do conteúdo público."
-      />
+      <div className="space-y-1 mb-6">
+        <h1 className="text-2xl font-bold text-foreground">{isNew ? "Novo Link / Página" : "Editar Link / Página"}</h1>
+        <p className="text-sm text-muted-foreground">Configure os detalhes do conteúdo público.</p>
+      </div>
 
       <Button variant="ghost" size="sm" onClick={() => navigate("/admin/links")} className="gap-2">
         <ArrowLeft className="h-4 w-4" /> Voltar
