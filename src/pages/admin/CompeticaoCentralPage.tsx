@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useSportEventRules } from "@/hooks/useSportEventRules";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import SportEventPicker from "@/components/admin/competition/SportEventPicker";
 import CompetitionSummaryCards from "@/components/admin/competition/CompetitionSummaryCards";
@@ -15,12 +17,21 @@ import CentralBracketTab from "@/components/admin/competition/CentralBracketTab"
 import WizardStepper, { type WizardStep } from "@/components/admin/competition/WizardStepper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Settings } from "lucide-react";
+
+function getMatchesLabel(family?: string, format?: string): string {
+  if (family === "time" || family === "mark") return "Séries/Baterias";
+  if (family === "combat") return "Lutas (Chave)";
+  if (format === "knockout") return "Chaves";
+  return "Confrontos";
+}
 
 export default function CompeticaoCentralPage() {
   const eventId = useActiveEventId();
   const [sportEventId, setSportEventId] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState("participants");
+
+  const { rules, source: rulesSource } = useSportEventRules(eventId, sportEventId);
 
   const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
     queryKey: ["competition-summary", eventId, sportEventId],
@@ -42,7 +53,6 @@ export default function CompeticaoCentralPage() {
     enabled: !!sportEventId,
   });
 
-  // Check if any phase uses knockout (to show bracket step instead of generic matches)
   const { data: phases = [] } = useQuery({
     queryKey: ["central-phases-check", eventId, sportEventId],
     queryFn: async () => {
@@ -60,33 +70,32 @@ export default function CompeticaoCentralPage() {
 
   const hasKnockout = phases.some(
     (p: any) => p.bracket_config?.format === "knockout_single_elimination" || p.phase_type === "knockout"
-  );
-  const hasGroups = phases.some(
-    (p: any) => p.phase_type === "group_stage" || p.phase_type === "round_robin"
-  );
+  ) || rules?.format === "knockout";
+
+  const family = rules?.family;
+  const format = rules?.format;
 
   const steps: WizardStep[] = useMemo(() => [
     { key: "participants", label: summary?.is_collective ? "Equipes" : "Participantes" },
     { key: "structure", label: "Estrutura" },
-    { key: "matches", label: hasKnockout ? "Chaves" : "Confrontos", hidden: false },
+    { key: "matches", label: getMatchesLabel(family, format) },
     { key: "agenda", label: "Agenda" },
     { key: "results", label: "Resultados" },
     { key: "pending", label: "Pendências" },
-  ], [summary?.is_collective, hasKnockout]);
+  ], [summary?.is_collective, family, format]);
 
   const visibleSteps = steps.filter((s) => !s.hidden);
   const currentIdx = visibleSteps.findIndex((s) => s.key === currentStep);
 
-  // Compute completed steps based on data
   const completedSteps = useMemo(() => {
     const completed: string[] = [];
     if (!summary) return completed;
     if (summary.enrolled_count > 0 || summary.teams_count > 0) completed.push("participants");
     if (phases.length > 0) completed.push("structure");
-    if (summary.matches_count > 0) {
-      completed.push("matches");
-      completed.push("agenda");
-    }
+    if (summary.matches_count > 0) completed.push("matches");
+    // Agenda: only if all matches have date+time+venue
+    // For now keep same logic as before (matches > 0)
+    if (summary.matches_count > 0) completed.push("agenda");
     if (summary.matches_count > 0 && summary.matches_no_result === 0) completed.push("results");
     return completed;
   }, [summary, phases.length]);
@@ -116,6 +125,27 @@ export default function CompeticaoCentralPage() {
 
       {sportEventId && (
         <>
+          {/* Rules info bar */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {rulesSource === "default" && (
+              <Alert className="flex-1">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  Sem regras cadastradas: usando padrão.{" "}
+                  <Link to={`/admin/competicao/regras`} className="underline font-medium">
+                    Configurar em Regras por Prova
+                  </Link>
+                </AlertDescription>
+              </Alert>
+            )}
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/admin/competicao/regras">
+                <Settings className="h-4 w-4 mr-1" />
+                Editar regras
+              </Link>
+            </Button>
+          </div>
+
           <CompetitionSummaryCards summary={summary} loading={summaryLoading} />
 
           <WizardStepper
