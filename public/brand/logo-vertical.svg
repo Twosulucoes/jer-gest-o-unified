@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260" width="200" height="260">
+  <!-- Symbol centered -->
+  <g transform="translate(50,10) scale(0.195)">
+    <path d="M64 32 H448 V320 L256 480 L64 320 Z" fill="#0B3B8C"/>
+    <rect x="64" y="32" width="384" height="8" fill="#F2B705"/>
+    <path d="M200 140 H312 V172 H280 V320 Q280 370 256 390 Q232 410 200 410 H170 V378 H200 Q218 378 228 366 Q248 346 248 320 V172 H200 Z" fill="#FFFFFF"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="100" y="210" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-weight="700" font-size="36" fill="#0B3B8C">JER's</text>
+  <text x="100" y="245" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-weight="600" font-size="22" fill="#111827">Gestão</text>
+</svg>

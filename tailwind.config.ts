@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Space Grotesk", "sans-serif"],
+        heading: ["Montserrat", "sans-serif"],
         body: ["Inter", "sans-serif"],
       },
       colors: {
