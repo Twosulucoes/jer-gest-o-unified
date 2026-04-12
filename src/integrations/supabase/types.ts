@@ -2447,6 +2447,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active: boolean
           avatar_url: string | null
           created_at: string
           full_name: string | null
@@ -2454,6 +2455,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active?: boolean
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
@@ -2461,6 +2463,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active?: boolean
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
@@ -3241,6 +3244,13 @@ export type Database = {
             foreignKeyName: "user_roles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "admin_users_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -3298,6 +3308,36 @@ export type Database = {
       }
     }
     Views: {
+      admin_users_view: {
+        Row: {
+          active: boolean | null
+          avatar_url: string | null
+          created_at: string | null
+          full_name: string | null
+          roles: string[] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          roles?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          roles?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       public_results_view: {
         Row: {
           bulletin_number: number | null
@@ -3380,6 +3420,16 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_users: {
+        Args: never
+        Returns: {
+          active: boolean
+          created_at: string
+          full_name: string
+          roles: string[]
+          user_id: string
+        }[]
+      }
       get_blocking_irregularities: {
         Args: { p_event_id: string; p_participant_id: string }
         Returns: Json
@@ -3445,6 +3495,7 @@ export type Database = {
         Returns: boolean
       }
       import_inscricoes_batch: { Args: { payload: Json }; Returns: Json }
+      is_admin_or_secretaria: { Args: never; Returns: boolean }
       list_blocked_participants: {
         Args: { p_event_id: string }
         Returns: {
