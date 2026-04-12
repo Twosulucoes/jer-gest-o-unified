@@ -107,7 +107,13 @@ export default function MapaSistemaPage() {
         </div>
       )}
 
-      {/* Summary cards */}
+      {/* Quick Actions */}
+      <QuickActionsCards />
+
+      {/* KPI Indicators */}
+      <KpiCards />
+
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 pb-4 text-center">
