@@ -159,6 +159,8 @@ function getRoleLabel(role: AppRole): string {
     alojamento: "Alojamento",
     coordenacao_tecnica: "Coord. Técnica",
     delegacao: "Delegação",
+    arbitragem: "Arbitragem",
+    cde: "CDE",
   };
   return labels[role] || role;
 }
