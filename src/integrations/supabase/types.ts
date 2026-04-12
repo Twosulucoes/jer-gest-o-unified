@@ -65,6 +65,8 @@ export type Database = {
           id: string
           name: string
           phase_id: string
+          seed_batch_id: string | null
+          seed_tag: string | null
           sort_order: number
           updated_at: string
         }
@@ -74,6 +76,8 @@ export type Database = {
           id?: string
           name: string
           phase_id: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -83,6 +87,8 @@ export type Database = {
           id?: string
           name?: string
           phase_id?: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -110,6 +116,8 @@ export type Database = {
           match_id: string
           participant_sport_event_id: string | null
           seed: number | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           side: string
           team_id: string | null
           updated_at: string
@@ -120,6 +128,8 @@ export type Database = {
           match_id: string
           participant_sport_event_id?: string | null
           seed?: number | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           side?: string
           team_id?: string | null
           updated_at?: string
@@ -130,6 +140,8 @@ export type Database = {
           match_id?: string
           participant_sport_event_id?: string | null
           seed?: number | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           side?: string
           team_id?: string | null
           updated_at?: string
@@ -185,6 +197,8 @@ export type Database = {
           result_status: string
           result_text: string | null
           score: string | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           time_ms: number | null
           updated_at: string
           validated_at: string | null
@@ -209,6 +223,8 @@ export type Database = {
           result_status?: string
           result_text?: string | null
           score?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           time_ms?: number | null
           updated_at?: string
           validated_at?: string | null
@@ -233,6 +249,8 @@ export type Database = {
           result_status?: string
           result_text?: string | null
           score?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           time_ms?: number | null
           updated_at?: string
           validated_at?: string | null
@@ -280,6 +298,8 @@ export type Database = {
           notes: string | null
           phase_id: string
           round_number: number | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           sport_event_id: string | null
           start_time: string | null
           status: string
@@ -296,6 +316,8 @@ export type Database = {
           notes?: string | null
           phase_id: string
           round_number?: number | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           sport_event_id?: string | null
           start_time?: string | null
           status?: string
@@ -312,6 +334,8 @@ export type Database = {
           notes?: string | null
           phase_id?: string
           round_number?: number | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           sport_event_id?: string | null
           start_time?: string | null
           status?: string
@@ -371,6 +395,8 @@ export type Database = {
           id: string
           name: string
           phase_type: string
+          seed_batch_id: string | null
+          seed_tag: string | null
           sort_order: number
           sport_event_id: string
           status: string
@@ -383,6 +409,8 @@ export type Database = {
           id?: string
           name: string
           phase_type?: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           sort_order?: number
           sport_event_id: string
           status?: string
@@ -395,6 +423,8 @@ export type Database = {
           id?: string
           name?: string
           phase_type?: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           sort_order?: number
           sport_event_id?: string
           status?: string
@@ -532,6 +562,8 @@ export type Database = {
           id: string
           institution_id: string
           notes: string | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           status: string
           updated_at: string
         }
@@ -544,6 +576,8 @@ export type Database = {
           id?: string
           institution_id: string
           notes?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           status?: string
           updated_at?: string
         }
@@ -556,6 +590,8 @@ export type Database = {
           id?: string
           institution_id?: string
           notes?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           status?: string
           updated_at?: string
         }
@@ -757,6 +793,8 @@ export type Database = {
           name: string
           network_type: string
           official_name: string | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           slug: string
           state: string | null
           updated_at: string
@@ -773,6 +811,8 @@ export type Database = {
           name: string
           network_type?: string
           official_name?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           slug: string
           state?: string | null
           updated_at?: string
@@ -789,6 +829,8 @@ export type Database = {
           name?: string
           network_type?: string
           official_name?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           slug?: string
           state?: string | null
           updated_at?: string
@@ -804,6 +846,8 @@ export type Database = {
           is_active: boolean
           name: string
           notes: string | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           updated_at: string
         }
         Insert: {
@@ -814,6 +858,8 @@ export type Database = {
           is_active?: boolean
           name: string
           notes?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
         }
         Update: {
@@ -824,6 +870,8 @@ export type Database = {
           is_active?: boolean
           name?: string
           notes?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -914,6 +962,8 @@ export type Database = {
           location_id: string
           name: string
           notes: string | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           updated_at: string
         }
         Insert: {
@@ -926,6 +976,8 @@ export type Database = {
           location_id: string
           name: string
           notes?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
         }
         Update: {
@@ -938,6 +990,8 @@ export type Database = {
           location_id?: string
           name?: string
           notes?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1435,6 +1489,8 @@ export type Database = {
           outcome: string | null
           score_detail: Json | null
           score_final: string | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           updated_at: string
         }
         Insert: {
@@ -1445,6 +1501,8 @@ export type Database = {
           outcome?: string | null
           score_detail?: Json | null
           score_final?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
         }
         Update: {
@@ -1455,6 +1513,8 @@ export type Database = {
           outcome?: string | null
           score_detail?: Json | null
           score_final?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1536,6 +1596,8 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          seed_batch_id: string | null
+          seed_tag: string | null
           slug: string
           sort_order: number
           updated_at: string
@@ -1546,6 +1608,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           slug: string
           sort_order?: number
           updated_at?: string
@@ -1556,6 +1620,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           slug?: string
           sort_order?: number
           updated_at?: string
@@ -1580,6 +1646,8 @@ export type Database = {
           label: string | null
           location: string | null
           meal_type_id: string
+          seed_batch_id: string | null
+          seed_tag: string | null
           service_date: string
           start_time: string
           updated_at: string
@@ -1593,6 +1661,8 @@ export type Database = {
           label?: string | null
           location?: string | null
           meal_type_id: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           service_date: string
           start_time: string
           updated_at?: string
@@ -1606,6 +1676,8 @@ export type Database = {
           label?: string | null
           location?: string | null
           meal_type_id?: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           service_date?: string
           start_time?: string
           updated_at?: string
@@ -1777,6 +1849,8 @@ export type Database = {
           id: string
           notes: string | null
           participant_id: string
+          seed_batch_id: string | null
+          seed_tag: string | null
           sport_event_id: string
           status: string
           updated_at: string
@@ -1786,6 +1860,8 @@ export type Database = {
           id?: string
           notes?: string | null
           participant_id: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           sport_event_id: string
           status?: string
           updated_at?: string
@@ -1795,6 +1871,8 @@ export type Database = {
           id?: string
           notes?: string | null
           participant_id?: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           sport_event_id?: string
           status?: string
           updated_at?: string
@@ -1835,6 +1913,8 @@ export type Database = {
           notes: string | null
           participant_type: string
           person_id: string
+          seed_batch_id: string | null
+          seed_tag: string | null
           status: string
           updated_at: string
         }
@@ -1849,6 +1929,8 @@ export type Database = {
           notes?: string | null
           participant_type?: string
           person_id: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           status?: string
           updated_at?: string
         }
@@ -1863,6 +1945,8 @@ export type Database = {
           notes?: string | null
           participant_type?: string
           person_id?: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           status?: string
           updated_at?: string
         }
@@ -1967,6 +2051,8 @@ export type Database = {
           phone: string | null
           photo_url: string | null
           rg: string | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           updated_at: string
         }
         Insert: {
@@ -1985,6 +2071,8 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           rg?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
         }
         Update: {
@@ -2003,6 +2091,8 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           rg?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2456,6 +2546,8 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           sport_event_id: string
           status: string
           updated_at: string
@@ -2467,6 +2559,8 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           sport_event_id: string
           status?: string
           updated_at?: string
@@ -2478,6 +2572,8 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           sport_event_id?: string
           status?: string
           updated_at?: string
@@ -2580,6 +2676,8 @@ export type Database = {
           name: string
           notes: string | null
           origin: string | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           updated_at: string
         }
         Insert: {
@@ -2591,6 +2689,8 @@ export type Database = {
           name: string
           notes?: string | null
           origin?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
         }
         Update: {
@@ -2602,6 +2702,8 @@ export type Database = {
           name?: string
           notes?: string | null
           origin?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2627,6 +2729,8 @@ export type Database = {
           notes: string | null
           route_id: string
           scheduled_at: string | null
+          seed_batch_id: string | null
+          seed_tag: string | null
           status: string
           updated_at: string
           vehicle_id: string | null
@@ -2643,6 +2747,8 @@ export type Database = {
           notes?: string | null
           route_id: string
           scheduled_at?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           status?: string
           updated_at?: string
           vehicle_id?: string | null
@@ -2659,6 +2765,8 @@ export type Database = {
           notes?: string | null
           route_id?: string
           scheduled_at?: string | null
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           status?: string
           updated_at?: string
           vehicle_id?: string | null
@@ -2696,6 +2804,8 @@ export type Database = {
           is_active: boolean
           label: string | null
           plate: string
+          seed_batch_id: string | null
+          seed_tag: string | null
           updated_at: string
           vehicle_type: string
         }
@@ -2707,6 +2817,8 @@ export type Database = {
           is_active?: boolean
           label?: string | null
           plate: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
           vehicle_type?: string
         }
@@ -2718,6 +2830,8 @@ export type Database = {
           is_active?: boolean
           label?: string | null
           plate?: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
           vehicle_type?: string
         }
@@ -2801,6 +2915,8 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          seed_batch_id: string | null
+          seed_tag: string | null
           updated_at: string
           venue_type: string
         }
@@ -2812,6 +2928,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
           venue_type?: string
         }
@@ -2823,6 +2941,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          seed_batch_id?: string | null
+          seed_tag?: string | null
           updated_at?: string
           venue_type?: string
         }
@@ -3001,6 +3121,7 @@ export type Database = {
         Returns: Json
       }
       reset_all_data: { Args: { p_confirm?: string }; Returns: Json }
+      reset_demo: { Args: { p_event_id: string }; Returns: Json }
       resolve_prova_slug: {
         Args: { p_event_id: string; p_prova_raw: string; p_sport_id: string }
         Returns: Json
@@ -3148,6 +3269,7 @@ export type Database = {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
       }
+      seed_event_demo: { Args: { p_event_id: string }; Returns: Json }
       unaccent: { Args: { "": string }; Returns: string }
       upsert_event_participation_rules: {
         Args: {
