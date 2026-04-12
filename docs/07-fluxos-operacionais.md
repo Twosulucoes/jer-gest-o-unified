@@ -63,13 +63,48 @@ Janela de serviço aberta (ex: Almoço 11h-13h)
   → Se sim → bloqueia (anti-duplicidade)
 ```
 
-## 6. Competição e Resultado
+## 6. Configuração de Regras por Prova
+
+```
+Coordenação prepara evento
+  → Acessa /admin/competicao/regras/lote
+  → Clica "Gerar regras (somente faltantes)"
+  → RPC seed detecta modalidade por nome e aplica preset
+  → Relatório: 30 criadas, 0 existentes, 2 sem preset (fallback genérico)
+  → Revisão: ajusta manualmente provas específicas
+  → Ou: acessa /admin/competicao/regras para editar prova individual
+  → Seleciona sport_event → aplica preset ou edita form → salva
+```
+
+**Cenário real**: Antes do evento, a coordenação técnica roda o seed automático para gerar regras de todas as provas de uma vez. Depois ajusta manualmente as provas que precisam de configuração especial.
+
+### Presets disponíveis
+| Preset | Detecção por nome | Família |
+|--------|-------------------|---------|
+| FUTSAL | contém "futsal" | score |
+| FUTEBOL_DE_CAMPO | contém "futebol" | score |
+| HANDEBOL | contém "handebol" | score |
+| BASQUETE | contém "basquete" ou "basquetebol" | score |
+| KARATE_KATA | contém "karatê/karate" + "kata" | ranking |
+| KARATE_KUMITE | contém "karatê/karate" + "kumite" | combat |
+| Fallback | não encontrou match | score (genérico) |
+
+## 7. Competição e Resultado
 
 ```
 Coordenação monta chaves/fases por prova
+  → Central da Competição (/admin/competicao/central)
+  → Seleciona prova → sistema carrega regras (sport_event_rules)
+  → Wizard adapta labels conforme família/formato:
+     - score/sets → "Confrontos" / mostra Grupos
+     - time/mark → "Séries/Baterias" / oculta Grupos
+     - combat → "Lutas (Chave)" / oculta Grupos
+     - knockout → "Chaves" / oculta Grupos
   → Cria partidas com entries (equipes ou individuais)
   → No dia: registra lineups, eventos de jogo, placar
   → Pós-jogo: lança resultado (resultado_lancado)
   → Coordenação valida → validado
   → Secretaria publica → publicado (visível ao público)
 ```
+
+**Cenário real**: Na Central, ao selecionar "Futsal Sub-14 Masc", o sistema carrega as regras (W.O. 5×0, fase de grupos, pênaltis no mata-mata) e ajusta a interface automaticamente.

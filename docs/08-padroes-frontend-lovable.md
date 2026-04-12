@@ -14,14 +14,18 @@ src/
 ├── components/
 │   ├── ui/          # shadcn/ui components (não editar manualmente)
 │   ├── admin/       # componentes de páginas admin (dialogs, cards, forms)
+│   │   └── competition/  # componentes de competição (RulesForm, BracketView, etc.)
 │   └── *.tsx        # componentes globais (AdminLayout, ProtectedRoute, NavLink)
-├── hooks/           # hooks customizados (useAuth, useCredentialLookup, use-mobile)
+├── config/          # catálogos e configurações (sportPresetCatalog, systemMap)
+├── contexts/        # contextos React (EventContext)
+├── hooks/           # hooks customizados (useAuth, useSportEventRules, use-mobile)
 ├── integrations/
 │   └── supabase/    # client.ts (auto-generated) + types.ts (read-only)
 ├── lib/             # utilitários (credentialUtils, individualRanking, utils)
 ├── pages/
 │   ├── admin/       # páginas do painel administrativo
 │   └── *.tsx        # páginas raiz (Index, Login, NotFound)
+├── types/           # tipos TypeScript (sportEventRules.ts)
 └── index.css        # design tokens (CSS variables)
 ```
 
@@ -71,3 +75,29 @@ const { data, isLoading } = useQuery({
 - Componentes de dialog: `NomeFormDialog.tsx`
 - Hooks: `useNome.ts`
 - Utilitários: `nomeUtil.ts`
+- Tipos: `nomeTypes.ts` (ex: `sportEventRules.ts`)
+- Catálogos/Config: `nomeCatalog.ts` (ex: `sportPresetCatalog.ts`)
+
+### 6. Hooks Customizados (Padrão)
+```tsx
+// Hook com query + mutation (padrão usado em useSportEventRules)
+export function useNome(id: string | undefined) {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ["nome", id],
+    queryFn: async () => { /* ... */ },
+    enabled: !!id,
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (payload) => { /* ... */ },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["nome", id] });
+      toast.success("Salvo com sucesso");
+    },
+  });
+
+  return { data: query.data, isLoading: query.isLoading, save: mutation.mutate };
+}
+```

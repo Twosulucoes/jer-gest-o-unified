@@ -37,3 +37,22 @@ Trigger de banco impede alocação acima da capacidade da unidade.
 
 ### 10. Evidências e Prestação de Contas
 Documentos e evidências operacionais devem ser vinculados ao contexto correto (evento, módulo, participante) para servir à execução contratual e prestação de contas (OSC).
+
+### 11. Motor de Regras por Prova
+Cada prova (sport_event) deve ter regras parametrizáveis que definem:
+- **Família** — natureza da disputa (score, sets, time, mark, combat, ranking)
+- **Formato** — estrutura competitiva (knockout, group_stage, round_robin, heats, combat_bracket, ranking)
+- **Modo de participação** — individual, equipe, dupla ou revezamento
+- **Pontuação** — tipo de placar (gols, pontos, tempo, distância, combate), best-of, set points
+- **Desempate** — critérios ordenados (confronto direto, saldo, gols pró, etc.)
+- **Políticas de W.O.** — placar automático em caso de desistência (ex: 5×0 no futsal, 20×0 no basquete)
+- **Resolução de empate eliminatório** — penalidades, prorrogação, tiro de 7m
+
+### 12. Presets Esportivos
+O sistema fornece presets pré-configurados por modalidade (Futsal, Futebol, Handebol, Basquete, Karatê Kata, Karatê Kumite) que preenchem automaticamente as regras conforme regulamento. Presets podem ser sobrescritos por edição manual.
+
+### 13. Seed Automático de Regras
+Ao preparar um evento, o sistema pode gerar regras automaticamente para todas as provas usando heurísticas baseadas no nome da modalidade. Suporta modos:
+- **missing_only** — cria regras apenas para provas sem configuração
+- **overwrite** — sobrescreve regras existentes (requer perfil admin)
+- **dry_run** — simula a operação sem persistir, retornando relatório

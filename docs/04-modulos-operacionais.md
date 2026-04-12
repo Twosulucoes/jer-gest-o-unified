@@ -41,16 +41,60 @@
 - **Tabelas**: 13 tabelas (phases, groups, matches, entries, results, scores, lineups, events, penalties, officials, attachments, attempts, player_stats)
 - **Features**: lineup de jogadores, eventos de jogo, placares por período, tentativas (atletismo), estatísticas individuais, anexos
 
-## 8. Apuração e Resultados (🟡 Parcial)
+## 8. Motor de Regras por Prova (✅ Feito)
+- **Página**: `/admin/competicao/regras` — editor individual por prova
+- **Página**: `/admin/competicao/regras/lote` — revisão e seed em massa
+- **Tabela**: `sport_event_rules` (sport_event_id, event_id, rules JSONB, is_active)
+- **RPCs**:
+  - `rpc_get_sport_event_rules` — busca regras ativas ou retorna defaults por família
+  - `rpc_upsert_sport_event_rules` — upsert com validação de família/formato
+  - `rpc_seed_sport_event_rules_for_event` — seed em massa com heurística por nome
+- **Hook**: `useSportEventRules(eventId, sportEventId)` — query + mutation
+- **Componentes**: `RulesPresetPicker`, `RulesForm`, `RulesJsonEditor`
+- **Tipos**: `SportEventRulesV1`, `RulesFamily`, `RulesFormat`, `ParticipantMode`, `ScoreType`
+
+### 8.1 Famílias de Regras
+| Família | Descrição | Formatos compatíveis |
+|---------|-----------|---------------------|
+| `score` | Placar (gols/pontos) | group_stage, round_robin, knockout |
+| `sets` | Sets (best-of) | group_stage, round_robin, knockout |
+| `time` | Tempo (heats) | heats, heats_final, ranking |
+| `mark` | Marca (campo/distância) | heats, heats_final, ranking |
+| `combat` | Combate (lutas) | combat_bracket, knockout |
+| `ranking` | Ranking (sem confronto) | ranking |
+
+### 8.2 Presets Esportivos
+| Preset | Família | W.O. | Pontuação grupo | Desempate eliminatório |
+|--------|---------|------|-----------------|----------------------|
+| FUTSAL | score | 5×0 | V3/E1/D0 | Pênaltis (5 cobranças) |
+| FUTEBOL_DE_CAMPO | score | 5×0 | V3/E1/D0 | Pênaltis (5 cobranças) |
+| HANDEBOL | score | 5×0 | V3/E0/D1 | Prorrogação + Tiro de 7m |
+| BASQUETE | score | 20×0 | V2/D1 | Prorrogação até decisão |
+| KARATE_KATA | ranking | — | — | Nota de juízes |
+| KARATE_KUMITE | combat | — | — | Pontos (2 min, diff 8) |
+
+### 8.3 Seed Automático
+- **RPC**: `rpc_seed_sport_event_rules_for_event(p_event_id, p_mode, p_dry_run)`
+- **Modos**: `missing_only` (padrão), `overwrite` (admin), `dry_run` (simulação)
+- **Heurística**: detecta modalidade por nome (case-insensitive, sem acentos)
+- **Retorno**: relatório JSON com totais por preset, criados, atualizados, ignorados
+
+## 9. Central da Competição (✅ Feito)
+- **Página**: `/admin/competicao/central`
+- **Wizard**: Participantes → Estrutura → Confrontos/Chaves → Agenda → Resultados → Pendências
+- **Integração com regras**: lê `sport_event_rules` e ajusta labels/visibilidade conforme família/formato
+- **Callout**: se sem regras cadastradas, exibe aviso com link para seed em lote
+
+## 10. Apuração e Resultados (🟡 Parcial)
 - **Página**: `/admin/competicao/resultados`
 - **Campos**: `result_status` (resultado_lancado → publicado), `validated_at`, `published_at`
 - **RLS anon**: permite SELECT onde `result_status = 'publicado'`
 - **Gap**: sem workflow explícito validação → publicação no frontend
 
-## 9. Publicação Oficial (🟡 Parcial)
+## 11. Publicação Oficial (🟡 Parcial)
 - **RLS**: funcional para anon
 - **Gap**: sem portal público, sem boletins em PDF
 
-## 10. Evidências / OSC (⛔ Não iniciado)
+## 12. Evidências / OSC (⛔ Não iniciado)
 - **Existente**: bucket `match-attachments` para anexos de partidas
 - **Gap**: sem modelo genérico de evidências vinculadas a contexto operacional
