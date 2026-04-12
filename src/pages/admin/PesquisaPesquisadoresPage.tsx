@@ -133,9 +133,13 @@ export default function PesquisaPesquisadoresPage() {
 
   return (
     <div className="space-y-6">
-      <ModuleHeader title="Pesquisadores" description="Gerencie pesquisadores e PINs de acesso">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Pesquisadores</h1>
+          <p className="text-sm text-muted-foreground">Gerencie pesquisadores e PINs de acesso</p>
+        </div>
         <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" /> Novo Pesquisador</Button>
-      </ModuleHeader>
+      </div>
 
       {isLoading ? <p className="text-muted-foreground">Carregando...</p> : (
         <div className="space-y-3">

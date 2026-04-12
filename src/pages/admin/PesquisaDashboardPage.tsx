@@ -112,7 +112,10 @@ export default function PesquisaDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <ModuleHeader title="Pesquisa de Satisfação" description="Dashboard de resultados da pesquisa" />
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Pesquisa de Satisfação</h1>
+        <p className="text-sm text-muted-foreground">Dashboard de resultados da pesquisa</p>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">

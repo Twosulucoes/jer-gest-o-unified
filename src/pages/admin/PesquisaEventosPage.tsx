@@ -72,9 +72,13 @@ export default function PesquisaEventosPage() {
 
   return (
     <div className="space-y-6">
-      <ModuleHeader title="Eventos da Pesquisa" description="Gerencie os eventos vinculados à pesquisa de satisfação">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Eventos da Pesquisa</h1>
+          <p className="text-sm text-muted-foreground">Gerencie os eventos vinculados à pesquisa de satisfação</p>
+        </div>
         <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" /> Novo Evento</Button>
-      </ModuleHeader>
+      </div>
 
       {isLoading ? <p className="text-muted-foreground">Carregando...</p> : (
         <div className="space-y-3">
