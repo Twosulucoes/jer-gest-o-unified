@@ -110,6 +110,8 @@ import DelegacaoAgendaPage from "./pages/pwa/delegacao/DelegacaoAgendaPage";
 import DelegacaoLogisticaPage from "./pages/pwa/delegacao/DelegacaoLogisticaPage";
 import DelegacaoLocaisPage from "./pages/pwa/delegacao/DelegacaoLocaisPage";
 import NotFound from "./pages/NotFound";
+import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
+import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 
 const queryClient = new QueryClient();
 
