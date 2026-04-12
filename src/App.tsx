@@ -207,6 +207,7 @@ const App = () => (
               <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
               {/* Relatórios */}
               <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ReportCenterPage /></ProtectedRoute>} />
+              <Route path="atletas/qrcode" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AtletaQrCodePage /></ProtectedRoute>} />
             </Route>
             {/* PWA Auth pages (public) */}
             <Route path="/pwa/login" element={<PwaLoginPage />} />
