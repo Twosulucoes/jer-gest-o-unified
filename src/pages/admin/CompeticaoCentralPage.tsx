@@ -144,9 +144,8 @@ export default function CompeticaoCentralPage() {
         }}
       />
 
-      {sportEventId && (
+      {sportEventId && isReleased && (
         <>
-          {/* Rules info bar */}
           <div className="flex items-center gap-2 flex-wrap">
             {rulesSource === "default" && (
               <Alert className="flex-1">
