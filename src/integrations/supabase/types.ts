@@ -3244,13 +3244,6 @@ export type Database = {
             foreignKeyName: "user_roles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "admin_users_view"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "user_roles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -3308,36 +3301,6 @@ export type Database = {
       }
     }
     Views: {
-      admin_users_view: {
-        Row: {
-          active: boolean | null
-          avatar_url: string | null
-          created_at: string | null
-          full_name: string | null
-          roles: string[] | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          active?: boolean | null
-          avatar_url?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          roles?: never
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          avatar_url?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          roles?: never
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       public_results_view: {
         Row: {
           bulletin_number: number | null
