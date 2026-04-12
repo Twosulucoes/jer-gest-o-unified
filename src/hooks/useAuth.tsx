@@ -39,12 +39,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let initialised = false;
+
+    // Restore session from storage first
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!initialised) {
+        initialised = true;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchUserData(session.user.id);
+        }
+        setLoading(false);
+      }
+    });
+
+    // Then listen for subsequent changes (sign-in, sign-out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
+        if (!initialised) {
+          // getSession hasn't resolved yet; let it handle the first state
+          initialised = true;
+        }
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          // Fire-and-forget to avoid blocking the callback
           setTimeout(() => fetchUserData(session.user.id), 0);
         } else {
           setRoles([]);
@@ -53,15 +74,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserData(session.user.id);
-      }
-      setLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, [fetchUserData]);
