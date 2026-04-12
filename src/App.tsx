@@ -109,6 +109,7 @@ import DelegacaoParticipantesPage from "./pages/pwa/delegacao/DelegacaoParticipa
 import DelegacaoAgendaPage from "./pages/pwa/delegacao/DelegacaoAgendaPage";
 import DelegacaoLogisticaPage from "./pages/pwa/delegacao/DelegacaoLogisticaPage";
 import DelegacaoLocaisPage from "./pages/pwa/delegacao/DelegacaoLocaisPage";
+import QrDiagnosticoPage from "./pages/pwa/diagnostico/QrDiagnosticoPage";
 import NotFound from "./pages/NotFound";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
@@ -255,6 +256,8 @@ const App = () => (
             <Route path="/pwa/delegacao/agenda" element={<DelegacaoAgendaPage />} />
             <Route path="/pwa/delegacao/logistica" element={<DelegacaoLogisticaPage />} />
             <Route path="/pwa/delegacao/locais" element={<DelegacaoLocaisPage />} />
+            {/* PWA Diagnóstico */}
+            <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
             {/* Public content routes */}
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
