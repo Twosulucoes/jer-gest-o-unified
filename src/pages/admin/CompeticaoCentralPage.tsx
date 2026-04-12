@@ -73,10 +73,10 @@ export default function CompeticaoCentralPage() {
     (p: any) => p.bracket_config?.format === "knockout_single_elimination" || p.phase_type === "knockout"
   ) || rules?.format === "knockout";
 
-  const family = rules?.family;
-  const format = rules?.format;
+  const family = rules?.family as string | undefined;
+  const format = rules?.format as string | undefined;
 
-  const showStandings = (family === "score" || family === "sets" || family === "time" || family === "mark" || family === "ranking" || family === "swiss");
+  const showStandings = ["score","sets","time","mark","ranking","swiss"].includes(family ?? "");
 
   const steps: WizardStep[] = useMemo(() => [
     { key: "participants", label: summary?.is_collective ? "Equipes" : "Participantes" },
