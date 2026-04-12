@@ -86,7 +86,7 @@ import AlojamentoIncidentesPage from "./pages/pwa/alojamento/AlojamentoIncidente
 import AlojamentoNovoIncidentePage from "./pages/pwa/alojamento/AlojamentoNovoIncidentePage";
 // PWA Transporte pages
 import TransporteHomePage from "./pages/pwa/transporte/TransporteHomePage";
-import TransporteViagensPage from "./pages/pwa/transporte/TransporteViagensPage";
+import TransporteViagensPwaPage from "./pages/pwa/transporte/TransporteViagensPage";
 import TransporteScanPage from "./pages/pwa/transporte/TransporteScanPage";
 import TransporteEmbarquePwaPage from "./pages/pwa/transporte/TransporteEmbarquePage";
 import TransporteRotasPwaPage from "./pages/pwa/transporte/TransporteRotasPage";
