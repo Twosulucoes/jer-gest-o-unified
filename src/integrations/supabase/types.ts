@@ -2768,6 +2768,8 @@ export type Database = {
           event_id: string | null
           id: string
           is_active: boolean
+          released_at: string | null
+          released_by: string | null
           rules: Json
           rules_version: number
           sport_event_id: string
@@ -2780,6 +2782,8 @@ export type Database = {
           event_id?: string | null
           id?: string
           is_active?: boolean
+          released_at?: string | null
+          released_by?: string | null
           rules?: Json
           rules_version?: number
           sport_event_id: string
@@ -2792,6 +2796,8 @@ export type Database = {
           event_id?: string | null
           id?: string
           is_active?: boolean
+          released_at?: string | null
+          released_by?: string | null
           rules?: Json
           rules_version?: number
           sport_event_id?: string

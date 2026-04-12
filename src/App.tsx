@@ -38,6 +38,7 @@ import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
 import CompeticaoEquipesPage from "./pages/admin/CompeticaoEquipesPage";
 import CompeticaoCentralPage from "./pages/admin/CompeticaoCentralPage";
 import SincronizarEquipesPage from "./pages/admin/SincronizarEquipesPage";
+import PreValidacaoPage from "./pages/admin/PreValidacaoPage";
 import ParticipantesPage from "./pages/admin/ParticipantesPage";
 import ParticipanteHistoricoPage from "./pages/admin/ParticipanteHistoricoPage";
 import ParticipanteDetalhePage from "./pages/admin/ParticipanteDetalhePage";
@@ -168,6 +169,7 @@ const App = () => (
               <Route path="alojamento/unidades" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoUnidadesPage /></ProtectedRoute>} />
               <Route path="alojamento/ocupacao" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoOcupacaoPage /></ProtectedRoute>} />
               {/* Competição */}
+              <Route path="competicao/pre-validacao" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><PreValidacaoPage /></ProtectedRoute>} />
               <Route path="competicao/central" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoCentralPage /></ProtectedRoute>} />
               <Route path="competicao/fases" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoFasesPage /></ProtectedRoute>} />
               <Route path="competicao/grupos" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoGruposPage /></ProtectedRoute>} />
