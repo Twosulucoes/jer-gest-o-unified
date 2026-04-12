@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
-// @ts-ignore - queryClient unused removed
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEventContext } from "@/contexts/EventContext";
 import { Input } from "@/components/ui/input";
@@ -11,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Search, QrCode, RotateCw, XCircle, Copy, Download, Printer } from "lucide-react";
 import QRCode from "qrcode";
-import AppPageHeader from "@/components/app/AppPageHeader";
 
 const BASE_URL = window.location.origin;
 
