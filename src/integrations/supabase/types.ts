@@ -2648,6 +2648,47 @@ export type Database = {
         }
         Relationships: []
       }
+      report_presets: {
+        Row: {
+          columns: Json | null
+          created_at: string
+          created_by: string
+          event_id: string | null
+          filters: Json
+          id: string
+          name: string
+          report_id: string
+        }
+        Insert: {
+          columns?: Json | null
+          created_at?: string
+          created_by: string
+          event_id?: string | null
+          filters?: Json
+          id?: string
+          name: string
+          report_id: string
+        }
+        Update: {
+          columns?: Json | null
+          created_at?: string
+          created_by?: string
+          event_id?: string | null
+          filters?: Json
+          id?: string
+          name?: string
+          report_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_presets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sport_event_prova_map: {
         Row: {
           event_id: string
