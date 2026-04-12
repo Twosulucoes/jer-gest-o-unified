@@ -16,7 +16,7 @@ export default function AlojamentoScanPage() {
   const navigate = useNavigate();
   const { enqueue, isOnline } = useAlojamentoOffline();
   const [mode, setMode] = useState<ScanMode>("checkin");
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [result, setResult] = useState<Record<string, any> | null>(null);
   const facilityId = getSelectedFacility();
 
