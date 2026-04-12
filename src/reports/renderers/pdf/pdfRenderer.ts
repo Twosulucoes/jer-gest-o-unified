@@ -12,7 +12,7 @@ export async function renderPdf<Row extends Record<string, unknown>>(
   visibleColumns?: string[],
   eventName?: string
 ): Promise<Blob> {
-  const doc = React.createElement(PdfReportDocument, {
+  const doc = React.createElement(PdfReportDocument as any, {
     report,
     rows,
     filters,
@@ -21,5 +21,5 @@ export async function renderPdf<Row extends Record<string, unknown>>(
     visibleColumns,
     eventName,
   });
-  return await pdf(doc).toBlob();
+  return await pdf(doc as any).toBlob();
 }

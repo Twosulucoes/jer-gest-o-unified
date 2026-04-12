@@ -19,11 +19,11 @@ export function PdfReportDocument<Row extends Record<string, unknown>>({
   report,
   rows,
   filters,
-  ctx,
+  _ctx,
   tokens,
   visibleColumns,
   eventName,
-}: Props<Row>) {
+}: Props<Row> & { _ctx?: ReportContext }) {
   const s = getPdfStyles(tokens);
   const orientation = report.layout?.orientation || 'portrait';
   const now = new Date().toLocaleString('pt-BR');
