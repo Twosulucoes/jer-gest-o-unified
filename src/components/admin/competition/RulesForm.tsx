@@ -168,6 +168,28 @@ export default function RulesForm({ rules, onChange, validationErrors }: Props) 
 
       <Card>
         <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Requisitos Mínimos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <Label className="text-xs">Mínimo de participantes</Label>
+              <Input
+                type="number"
+                min={1}
+                value={rules.minimo_participantes ?? 2}
+                onChange={(e) => update({ minimo_participantes: e.target.value ? Number(e.target.value) : 2 })}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Nº mínimo de atletas/equipes para a prova ser apta a competir
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
           <CardTitle className="text-sm">Observações</CardTitle>
         </CardHeader>
         <CardContent>

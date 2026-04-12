@@ -32,6 +32,7 @@ interface SportEventRow {
   format: string | null;
   has_rules: boolean;
   is_jerpa: boolean;
+  minimo_participantes: number;
 }
 
 interface SeedReport {
@@ -99,6 +100,7 @@ export default function RegrasLotePage() {
           format: (rules?.format as string) ?? null,
           has_rules: !!ruleRow,
           is_jerpa: !!disPolicy?.class_required,
+          minimo_participantes: (rules?.minimo_participantes as number) ?? 2,
         };
       });
     },
@@ -327,13 +329,14 @@ export default function RegrasLotePage() {
                 <TableHead>Preset</TableHead>
                 <TableHead>Família</TableHead>
                 <TableHead>Formato</TableHead>
+                <TableHead className="text-center">Mín.</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhuma prova encontrada</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhuma prova encontrada</TableCell></TableRow>
               ) : (
                 filtered.map((row) => (
                   <TableRow key={row.id}>
@@ -350,6 +353,7 @@ export default function RegrasLotePage() {
                     <TableCell><Badge variant="outline" className="text-[10px]">{row.preset_key || "—"}</Badge></TableCell>
                     <TableCell className="text-xs">{row.family || "—"}</TableCell>
                     <TableCell className="text-xs">{row.format || "—"}</TableCell>
+                    <TableCell className="text-center text-xs font-medium">{row.minimo_participantes}</TableCell>
                     <TableCell>{getStatusBadge(row)}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" asChild>

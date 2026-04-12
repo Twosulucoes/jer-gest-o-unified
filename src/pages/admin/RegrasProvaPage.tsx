@@ -22,6 +22,7 @@ const DEFAULT_RULES: SportEventRulesV1 = {
   scheduling: {},
   tie_breakers: [],
   enrollment_limits: {},
+  minimo_participantes: 2,
 };
 
 export default function RegrasProvaPage() {

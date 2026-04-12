@@ -20,6 +20,7 @@ export interface SportEventRulesV1 {
   };
   tie_breakers: string[];
   enrollment_limits: Record<string, unknown>;
+  minimo_participantes?: number | null;
   notes?: string | null;
   preset_key?: string | null;
 }
