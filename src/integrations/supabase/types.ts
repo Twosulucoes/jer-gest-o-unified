@@ -689,6 +689,45 @@ export type Database = {
         }
         Relationships: []
       }
+      group_draw_lots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          group_id: string
+          seed: number
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          group_id: string
+          seed: number
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          group_id?: string
+          seed?: number
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_draw_lots_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "competition_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_draw_lots_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_logs: {
         Row: {
           created_at: string
@@ -1133,6 +1172,74 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_discipline: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          match_entry_id: string
+          match_id: string
+          red_cards: number
+          updated_at: string
+          updated_by: string | null
+          yellow_cards: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          match_entry_id: string
+          match_id: string
+          red_cards?: number
+          updated_at?: string
+          updated_by?: string | null
+          yellow_cards?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          match_entry_id?: string
+          match_id?: string
+          red_cards?: number
+          updated_at?: string
+          updated_by?: string | null
+          yellow_cards?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_discipline_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_discipline_match_entry_id_fkey"
+            columns: ["match_entry_id"]
+            isOneToOne: false
+            referencedRelation: "competition_match_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_discipline_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_discipline_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
           },
         ]
       }
@@ -3048,6 +3155,7 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      get_group_standings: { Args: { p_group_id: string }; Returns: Json }
       get_participant_sport_history: {
         Args: { _participant_id: string }
         Returns: {
