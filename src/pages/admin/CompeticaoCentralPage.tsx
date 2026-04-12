@@ -34,6 +34,23 @@ export default function CompeticaoCentralPage() {
 
   const { rules, source: rulesSource } = useSportEventRules(eventId, sportEventId);
 
+  // Check release status for selected sport_event
+  const { data: releaseStatus } = useQuery({
+    queryKey: ["release-status", eventId, sportEventId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sport_event_rules")
+        .select("released_at")
+        .eq("event_id", eventId!)
+        .eq("sport_event_id", sportEventId!)
+        .maybeSingle();
+      return { released: data?.released_at != null };
+    },
+    enabled: !!sportEventId,
+  });
+
+  const isReleased = releaseStatus?.released ?? false;
+
   const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
     queryKey: ["competition-summary", eventId, sportEventId],
     queryFn: async () => {
@@ -127,9 +144,8 @@ export default function CompeticaoCentralPage() {
         }}
       />
 
-      {sportEventId && (
+      {sportEventId && isReleased && (
         <>
-          {/* Rules info bar */}
           <div className="flex items-center gap-2 flex-wrap">
             {rulesSource === "default" && (
               <Alert className="flex-1">
