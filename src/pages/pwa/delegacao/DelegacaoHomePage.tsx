@@ -24,7 +24,7 @@ export default function DelegacaoHomePage() {
       if (!(profile as any)?.active) { navigate("/pwa", { replace: true }); return; }
 
       // Try to find delegation linked to user via user_roles or profile metadata
-      const { data: rolesData } = await supabase.from("user_roles").select("role, metadata:role").eq("user_id", session.user.id);
+      await supabase.from("user_roles").select("role").eq("user_id", session.user.id);
       
       // For delegation users, try to find their delegation
       const { data: delegations } = await supabase
