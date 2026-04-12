@@ -3095,6 +3095,10 @@ export type Database = {
         Returns: Json
       }
       rpc_reprocess_event: { Args: { p_event_id: string }; Returns: Json }
+      rpc_seed_sport_event_rules_for_event: {
+        Args: { p_dry_run?: boolean; p_event_id: string; p_mode?: string }
+        Returns: Json
+      }
       rpc_sync_collective_teams: {
         Args: { p_event_id: string; p_sport_event_id?: string }
         Returns: Json
@@ -3112,6 +3116,7 @@ export type Database = {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
       }
+      unaccent: { Args: { "": string }; Returns: string }
       upsert_event_participation_rules: {
         Args: {
           p_event_id: string
