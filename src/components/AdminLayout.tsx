@@ -11,7 +11,7 @@ import {
   Trophy, Swords, CalendarDays, Layers, UsersRound, IdCard, ChevronDown,
   Shield, Settings, AlertTriangle, FileSearch, Database as DatabaseIcon,
   Map, Info, Zap, ClipboardCheck, Mail, ExternalLink, ChevronsLeft,
-  ChevronsRight, User,
+  ChevronsRight, User, FileBarChart,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -145,6 +145,7 @@ const navGroups: NavGroup[] = [
       { label: "Demo", to: "/admin/demo", icon: <Zap className="h-4 w-4" />, roles: ["admin", "coordenacao_tecnica"] as AppRole[] },
       { label: "E-mail", to: "/admin/auth/email-templates", icon: <Mail className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Links", to: "/admin/links", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Relatórios", to: "/admin/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
 ];
