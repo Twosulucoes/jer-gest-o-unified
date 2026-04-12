@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useEvent } from "@/contexts/EventContext";
 import { useCompetitionDiagnostics, type DiagnosticResult } from "@/hooks/useCompetitionDiagnostics";
 import { competitionFeatureCatalog } from "@/config/competitionFeatureCatalog";
-import ModuleHeader from "@/components/admin/ModuleHeader";
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,7 +38,7 @@ function JsonViewer({ data }: { data: unknown }) {
 }
 
 export default function DiagnosticoCompeticaoPage() {
-  const { activeEvent } = useEvent();
+  const { activeEvent } = useEventContext();
   const eventId = activeEvent?.id ?? null;
   const [triggered, setTriggered] = useState(false);
   const navigate = useNavigate();
@@ -72,7 +72,8 @@ export default function DiagnosticoCompeticaoPage() {
 
   return (
     <div className="space-y-6">
-      <ModuleHeader route="/admin/diagnostico-competicao" fallbackTitle="Diagnóstico da Competição" />
+      <h1 className="text-2xl font-bold text-foreground">Diagnóstico da Competição</h1>
+      <p className="text-sm text-muted-foreground">Visão auditável de rotas, entidades, tabelas e KPIs da competição.</p>
 
       {/* Header Actions */}
       <Card>
@@ -242,8 +243,8 @@ export default function DiagnosticoCompeticaoPage() {
                   </div>
                 )}
                 {data.diagnostics.notes.length > 0 && (
-                  <div className="border border-yellow-300 rounded-md p-3 bg-yellow-50 dark:bg-yellow-950/20">
-                    <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400 mb-1">Notas:</p>
+                  <div className="border rounded-md p-3 bg-muted">
+                  <p className="text-sm font-medium mb-1">Notas:</p>
                     <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
                       {data.diagnostics.notes.map((n, i) => <li key={i}>{n}</li>)}
                     </ul>
@@ -251,7 +252,7 @@ export default function DiagnosticoCompeticaoPage() {
                 )}
                 {data.diagnostics.missing.tables.length === 0 && data.diagnostics.notes.length === 0 && (
                   <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
                     Nenhum alerta ou lacuna detectada.
                   </p>
                 )}

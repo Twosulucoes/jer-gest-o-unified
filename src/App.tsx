@@ -49,6 +49,7 @@ import IrregularidadesPage from "./pages/admin/IrregularidadesPage";
 import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
 import SchemaValidadorPage from "./pages/admin/SchemaValidadorPage";
 import MapaSistemaPage from "./pages/admin/MapaSistemaPage";
+import DiagnosticoCompeticaoPage from "./pages/admin/DiagnosticoCompeticaoPage";
 import CentralDadosPage from "./pages/admin/CentralDadosPage";
 import BoletinsPage from "./pages/admin/BoletinsPage";
 import NotFound from "./pages/NotFound";
@@ -128,6 +129,7 @@ const App = () => (
               {/* Schema Validator */}
               <Route path="schema/validador" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><SchemaValidadorPage /></ProtectedRoute>} />
               <Route path="mapa" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><MapaSistemaPage /></ProtectedRoute>} />
+              <Route path="diagnostico-competicao" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><DiagnosticoCompeticaoPage /></ProtectedRoute>} />
               <Route path="dados" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CentralDadosPage /></ProtectedRoute>} />
               <Route path="boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><BoletinsPage /></ProtectedRoute>} />
             </Route>
