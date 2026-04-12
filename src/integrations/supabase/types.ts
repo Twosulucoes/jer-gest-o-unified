@@ -2591,6 +2591,63 @@ export type Database = {
           },
         ]
       }
+      public_content: {
+        Row: {
+          active: boolean
+          content_md: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          destination_url: string | null
+          id: string
+          kind: string
+          open_in_new_tab: boolean
+          slug: string
+          sort_order: number
+          tags: string[] | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+          visibility: string
+        }
+        Insert: {
+          active?: boolean
+          content_md?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          destination_url?: string | null
+          id?: string
+          kind: string
+          open_in_new_tab?: boolean
+          slug: string
+          sort_order?: number
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          visibility?: string
+        }
+        Update: {
+          active?: boolean
+          content_md?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          destination_url?: string | null
+          id?: string
+          kind?: string
+          open_in_new_tab?: boolean
+          slug?: string
+          sort_order?: number
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          visibility?: string
+        }
+        Relationships: []
+      }
       sport_event_prova_map: {
         Row: {
           event_id: string
