@@ -111,7 +111,7 @@ export default function PwaModulePage() {
       <main className="p-4 max-w-md mx-auto space-y-6">
         <div className="rounded-xl border bg-card p-6 text-center space-y-3 shadow-app-sm">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Icon className="h-8 w-8" />
+            {Icon && <Icon className="h-8 w-8" />}
           </div>
           <h2 className="text-lg font-heading font-bold">Em breve</h2>
           <p className="text-sm text-muted-foreground">

@@ -1,10 +1,10 @@
-import { type LucideIcon, ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 interface PwaHeaderProps {
   title: string;
-  icon?: LucideIcon;
+  icon?: React.ElementType;
   backTo?: string;
   onSignOut?: () => void;
   rightSlot?: React.ReactNode;

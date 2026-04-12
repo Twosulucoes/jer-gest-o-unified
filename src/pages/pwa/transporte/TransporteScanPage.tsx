@@ -6,7 +6,7 @@ import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrScanner from "@/components/QrScanner";
 
 export default function TransporteScanPage() {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get("tripId");
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
