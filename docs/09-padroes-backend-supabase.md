@@ -4,9 +4,10 @@
 
 1. **RLS obrigatório** — toda tabela nova deve ter RLS habilitado + policies
 2. **Roles via `has_role()`** — nunca verificar roles diretamente na policy
-3. **SECURITY DEFINER** para funções que bypassam RLS (ex: importação batch)
+3. **SECURITY DEFINER** para funções que bypassam RLS (ex: importação batch, seed de regras)
 4. **Triggers de integridade** — validar event_id cruzado entre entidades relacionadas
 5. **`updated_at` automático** — trigger em toda tabela
+6. **JSONB para configuração flexível** — campos como `rules` em `sport_event_rules` permitem extensão sem migração
 
 ## Checklist para Nova Tabela
 
@@ -37,18 +38,52 @@ CREATE POLICY "Admin full access" ON public.nova_tabela
 -- (repetir para cada perfil aplicável)
 ```
 
+## Checklist para Nova RPC
+
+```sql
+-- 1. Criar função com SECURITY DEFINER se precisar bypassar RLS
+CREATE OR REPLACE FUNCTION public.rpc_nome(p_param uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Validar permissão
+  IF NOT has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'Permissão negada';
+  END IF;
+  -- Lógica...
+END;
+$$;
+
+-- 2. Revogar acesso público e conceder apenas a authenticated
+REVOKE ALL ON FUNCTION public.rpc_nome FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.rpc_nome TO authenticated;
+```
+
 ## Edge Functions
 
 | Função | Arquivo | Descrição |
 |--------|---------|-----------|
 | `import-inscricoes` | `supabase/functions/import-inscricoes/index.ts` | Pré-processa planilha e chama RPC |
 | `validate-qr` | `supabase/functions/validate-qr/index.ts` | Valida QR Code e registra scan |
+| `public-events` | `supabase/functions/public-events/index.ts` | Lista eventos públicos |
+| `public-results` | `supabase/functions/public-results/index.ts` | Resultados publicados |
 
 ### Padrão de Edge Function
 - CORS headers obrigatórios
 - Autenticação via Bearer token
 - Service client para operações privilegiadas
 - Resposta JSON padronizada
+
+## RPCs de Regras
+
+| RPC | Permissão | Descrição |
+|-----|-----------|-----------|
+| `rpc_get_sport_event_rules` | admin, coord_tecnica, secretaria | Retorna regras ou defaults |
+| `rpc_upsert_sport_event_rules` | admin, coord_tecnica | Upsert com validação |
+| `rpc_seed_sport_event_rules_for_event` | admin (overwrite), coord_tecnica (missing_only) | Seed em massa |
 
 ## Migrations
 

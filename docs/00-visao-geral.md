@@ -13,7 +13,7 @@ Sistema de **gestão operacional** dos Jogos Escolares de Roraima (JER e JERPA).
 ## Público-alvo
 
 - **Secretaria** — gestão cadastral, credenciamento, publicação
-- **Coordenação Técnica** — competição, apuração, resultados
+- **Coordenação Técnica** — competição, apuração, resultados, regras por prova
 - **Equipes operacionais** — transporte, alimentação, alojamento
 - **Chefes de delegação** — consulta da própria delegação
 - **Público** — resultados publicados oficialmente
@@ -21,8 +21,17 @@ Sistema de **gestão operacional** dos Jogos Escolares de Roraima (JER e JERPA).
 ## Escopo funcional
 
 ```
-Importação (SIGECOM) → Credenciamento/QR → Logística → Competição → Apuração → Publicação → Evidências
+Importação (SIGECOM) → Credenciamento/QR → Logística → Competição (Regras → Estrutura → Confrontos → Agenda → Resultados) → Publicação → Evidências
 ```
+
+### Módulos implementados
+- ✅ Importação / Espelhamento SIGECOM
+- ✅ Credenciamento + QR Code
+- ✅ Competição (13 tabelas, wizard, lineup, eventos, placares)
+- ✅ Motor de Regras por Prova (famílias, formatos, presets, seed automático)
+- 🟡 Transporte, Alimentação, Alojamento (parciais)
+- 🟡 Apuração e Publicação (parciais)
+- ⛔ Evidências / OSC (não iniciado)
 
 ## O que NÃO faz
 

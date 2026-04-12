@@ -24,7 +24,10 @@ Importação (SIGECOM) → Credenciamento/QR → Logística → Competição →
 - Importação/espelhamento dos dados do sistema oficial (SIGECOM)
 - Credenciamento e emissão de credenciais com QR Code
 - Gestão logística (transporte, alimentação, alojamento)
-- Gestão de competições (fases, partidas, resultados)
+- **Motor de regras por prova** — parametrização de família, formato, pontuação, desempate e políticas de W.O. por modalidade
+- **Presets esportivos** — configurações prontas para Futsal, Futebol, Handebol, Basquete, Karatê (Kata e Kumite)
+- **Seed automático de regras** — geração em massa de regras para todas as provas de um evento com heurística por nome de modalidade
+- Gestão de competições (fases, grupos, partidas, resultados)
 - Apuração e publicação de resultados
 - Registro de evidências operacionais (prestação de contas / OSC)
 
@@ -42,8 +45,10 @@ Importação (SIGECOM) → Credenciamento/QR → Logística → Competição →
 | Termo | Definição |
 |-------|-----------|
 | **Sistema Oficial de Inscrição (SIGECOM)** | Sistema externo onde as inscrições são realizadas conforme Regulamento. Origem regulatória dos dados. |
-| **Base Operacional (JER Gestão)** | Dados importados do SIGECOM + estado operacional gerado no JER Gestão (credenciais, QR, consumo, alojamento, partidas, logs). |
+| **Base Operacional (JER Gestão)** | Dados importados do SIGECOM + estado operacional gerado no JER Gestão (credenciais, QR, consumo, alojamento, partidas, regras, logs). |
 | **Importação / Espelhamento** | Processo técnico que transforma a exportação do SIGECOM em estrutura operacional no JER Gestão. Não constitui inscrição oficial. |
+| **Motor de Regras** | Sistema de parametrização por prova (sport_event) que define família, formato, pontuação, desempate e políticas operacionais. |
+| **Preset Esportivo** | Configuração pré-definida de regras para uma modalidade específica (ex: FUTSAL, BASQUETE, KARATE_KUMITE). |
 | **Publicação Oficial** | Divulgação pública de resultados, somente após validação e autorização da coordenação. |
 | **SEDUC-RR** | Secretaria de Educação de Roraima — órgão responsável pelo JER. |
 
@@ -61,7 +66,16 @@ Para glossário completo, veja [docs/12-glossario.md](docs/12-glossario.md).
 
 Consulte a pasta `/docs` para documentação detalhada:
 - [00 — Visão Geral](docs/00-visao-geral.md)
+- [01 — Arquitetura](docs/01-arquitetura.md)
+- [02 — Modelo de Acesso e Perfis](docs/02-modelo-de-acesso-e-perfis.md)
 - [03 — Regras de Negócio](docs/03-regras-de-negocio.md)
 - [04 — Módulos Operacionais](docs/04-modulos-operacionais.md)
+- [05 — Banco de Dados e RLS](docs/05-banco-de-dados-e-rls.md)
+- [06 — Storage e Evidências](docs/06-storage-e-evidencias.md)
 - [07 — Fluxos Operacionais](docs/07-fluxos-operacionais.md)
+- [08 — Padrões Frontend](docs/08-padroes-frontend-lovable.md)
+- [09 — Padrões Backend](docs/09-padroes-backend-supabase.md)
+- [10 — Publicação e Resultados](docs/10-publicacao-e-resultados.md)
+- [11 — Operação OSC / Prestação de Contas](docs/11-operacao-osc-prestacao-de-contas.md)
+- [12 — Glossário](docs/12-glossario.md)
 - [Importação (SIGECOM)](docs/operacao/importacao-sigecom.md)
