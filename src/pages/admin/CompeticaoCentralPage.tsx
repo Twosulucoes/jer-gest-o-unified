@@ -135,6 +135,10 @@ export default function CompeticaoCentralPage() {
                   <Link to={`/admin/competicao/regras`} className="underline font-medium">
                     Configurar em Regras por Prova
                   </Link>
+                  {" · "}
+                  <Link to={`/admin/competicao/regras/lote`} className="underline font-medium">
+                    Gerar regras em lote
+                  </Link>
                 </AlertDescription>
               </Alert>
             )}
