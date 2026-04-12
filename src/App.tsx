@@ -256,6 +256,8 @@ const App = () => (
             <Route path="/pwa/delegacao/agenda" element={<DelegacaoAgendaPage />} />
             <Route path="/pwa/delegacao/logistica" element={<DelegacaoLogisticaPage />} />
             <Route path="/pwa/delegacao/locais" element={<DelegacaoLocaisPage />} />
+            {/* PWA Diagnóstico */}
+            <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
             {/* Public content routes */}
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
