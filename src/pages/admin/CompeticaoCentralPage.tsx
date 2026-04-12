@@ -190,11 +190,20 @@ export default function CompeticaoCentralPage() {
             )}
 
             {currentStep === "structure" && (
-              <CentralStructureTab
-                eventId={eventId}
-                sportEventId={sportEventId}
-                onChanged={refetchSummary}
-              />
+              summary?.is_collective ? (
+                <CentralStructureCollectiveTab
+                  eventId={eventId}
+                  sportEventId={sportEventId}
+                  onChanged={refetchSummary}
+                  onAdvanceStep={goNext}
+                />
+              ) : (
+                <CentralStructureTab
+                  eventId={eventId}
+                  sportEventId={sportEventId}
+                  onChanged={refetchSummary}
+                />
+              )
             )}
 
             {currentStep === "matches" && (
