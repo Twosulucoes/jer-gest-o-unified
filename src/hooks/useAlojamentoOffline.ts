@@ -94,7 +94,6 @@ export function useAlojamentoOffline() {
     syncingRef.current = true;
 
     const pending = loadQueue().filter((o) => o.status === "pending" || o.status === "failed");
-    let changed = false;
 
     for (const op of pending) {
       const success = await syncOne(op);
@@ -105,7 +104,6 @@ export function useAlojamentoOffline() {
           return next;
         });
         toast.success(`Operação ${op.type} sincronizada`);
-        changed = true;
       } else {
         setQueue((prev) => {
           const next = prev.map((o) =>
@@ -114,7 +112,6 @@ export function useAlojamentoOffline() {
           saveQueue(next);
           return next;
         });
-        changed = true;
       }
     }
     syncingRef.current = false;

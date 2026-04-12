@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { AppKPI } from "@/components/app/AppKPI";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { getSelectedFacility, setSelectedFacility } from "@/hooks/useAlojamento";
 import {
-  ScanLine, Search, Building, AlertTriangle, LogOut, ArrowLeft, Wifi, WifiOff,
+  ScanLine, Search, Building, AlertTriangle, LogOut, ArrowLeft, Wifi, WifiOff, Users, LogIn, LogOutIcon, Percent,
 } from "lucide-react";
 
 interface Facility {
@@ -36,7 +36,7 @@ export default function AlojamentoHomePage() {
       }
       setLoading(false);
     })();
-  }, []);
+  }, [facilityId]);
 
   useEffect(() => {
     if (!facilityId) return;
@@ -106,10 +106,10 @@ export default function AlojamentoHomePage() {
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          <AppKPI title="Hospedados" value={kpis.hospedados} loading={loading} />
-          <AppKPI title="Check-ins hoje" value={kpis.checkinsHoje} loading={loading} />
-          <AppKPI title="Check-outs hoje" value={kpis.checkoutsHoje} loading={loading} />
-          <AppKPI title="Ocupação" value={`${kpis.ocupacao}%`} loading={loading} />
+          <AppKPI label="Hospedados" value={kpis.hospedados} icon={Users} loading={loading} />
+          <AppKPI label="Check-ins hoje" value={kpis.checkinsHoje} icon={LogIn} loading={loading} />
+          <AppKPI label="Check-outs hoje" value={kpis.checkoutsHoje} icon={LogOutIcon} loading={loading} />
+          <AppKPI label="Ocupação" value={`${kpis.ocupacao}%`} icon={Percent} loading={loading} />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
