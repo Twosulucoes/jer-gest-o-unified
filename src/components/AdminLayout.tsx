@@ -43,6 +43,7 @@ import {
   Zap,
   ClipboardCheck,
   Mail,
+  ExternalLink,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
