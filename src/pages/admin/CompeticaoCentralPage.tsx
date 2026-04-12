@@ -11,6 +11,7 @@ import CentralMatchesTab from "@/components/admin/competition/CentralMatchesTab"
 import CentralResultsTab from "@/components/admin/competition/CentralResultsTab";
 import EligibilityPendingPanel from "@/components/admin/competition/EligibilityPendingPanel";
 import CentralAgendaTab from "@/components/admin/competition/CentralAgendaTab";
+import CentralBracketTab from "@/components/admin/competition/CentralBracketTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function CompeticaoCentralPage() {
