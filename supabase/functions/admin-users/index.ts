@@ -51,10 +51,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "NOT_AUTHORIZED" }, 403);
     }
 
-    // Admin client with service role
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
 
     const body = await req.json();
     const { action } = body;
