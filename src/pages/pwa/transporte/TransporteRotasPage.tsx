@@ -19,7 +19,7 @@ export default function TransporteRotasPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("routes").select("id, name, origin, destination").order("name");
+      const { data } = await supabase.from("routes" as any).select("id, name, origin, destination").order("name");
       setRoutes((data as any) || []);
       setLoading(false);
     })();

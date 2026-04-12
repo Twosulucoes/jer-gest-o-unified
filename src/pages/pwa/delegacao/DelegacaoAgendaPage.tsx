@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Calendar } from "lucide-react";
-import { format } from "date-fns";
 
 interface MatchItem {
   id: string;
@@ -24,7 +23,6 @@ export default function DelegacaoAgendaPage() {
 
   useEffect(() => {
     (async () => {
-      // Show upcoming matches (simplified — ideally filter by delegation's teams)
       const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
         .from("competition_matches")

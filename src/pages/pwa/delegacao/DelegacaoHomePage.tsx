@@ -20,35 +20,35 @@ export default function DelegacaoHomePage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate("/pwa/login", { replace: true }); return; }
 
-      const { data: profile } = await supabase.from("profiles").select("active, institution_id").eq("id", session.user.id).single();
-      if (!profile?.active) { navigate("/pwa", { replace: true }); return; }
+      const { data: profile } = await supabase.from("profiles").select("active").eq("id", session.user.id).single();
+      if (!(profile as any)?.active) { navigate("/pwa", { replace: true }); return; }
 
-      // Find delegation for user's institution
-      if (profile.institution_id) {
-        const { data: del } = await supabase
-          .from("delegations")
-          .select("id")
-          .eq("institution_id", profile.institution_id)
-          .eq("status", "ativa")
-          .limit(1)
-          .single();
+      // Try to find delegation linked to user via user_roles or profile metadata
+      const { data: rolesData } = await supabase.from("user_roles").select("role, metadata:role").eq("user_id", session.user.id);
+      
+      // For delegation users, try to find their delegation
+      const { data: delegations } = await supabase
+        .from("delegations")
+        .select("id")
+        .eq("status", "ativa")
+        .limit(1);
 
-        if (del) {
-          setDelegationId(del.id);
+      const del = delegations?.[0];
+      if (del) {
+        setDelegationId(del.id);
 
-          const [partRes, atletasRes, comissaoRes] = await Promise.all([
-            supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", del.id),
-            supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", del.id).eq("participant_type", "atleta"),
-            supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", del.id).in("participant_type", ["tecnico", "dirigente", "apoio"]),
-          ]);
+        const [partRes, atletasRes, comissaoRes] = await Promise.all([
+          supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", del.id),
+          supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", del.id).eq("participant_type", "atleta"),
+          supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", del.id).in("participant_type", ["tecnico", "dirigente", "apoio"]),
+        ]);
 
-          setKpis({
-            participantes: partRes.count || 0,
-            atletas: atletasRes.count || 0,
-            comissao: comissaoRes.count || 0,
-            partidasHoje: 0,
-          });
-        }
+        setKpis({
+          participantes: partRes.count || 0,
+          atletas: atletasRes.count || 0,
+          comissao: comissaoRes.count || 0,
+          partidasHoje: 0,
+        });
       }
       setLoading(false);
     })();

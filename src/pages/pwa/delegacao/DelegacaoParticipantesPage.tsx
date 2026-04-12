@@ -22,13 +22,14 @@ export default function DelegacaoParticipantesPage() {
 
   useEffect(() => {
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      // Get first active delegation (simplified — in production would link to user's institution)
+      const { data: del } = await supabase
+        .from("delegations")
+        .select("id")
+        .eq("status", "ativa")
+        .limit(1)
+        .single();
 
-      const { data: profile } = await supabase.from("profiles").select("institution_id").eq("id", session.user.id).single();
-      if (!profile?.institution_id) { setLoading(false); return; }
-
-      const { data: del } = await supabase.from("delegations").select("id").eq("institution_id", profile.institution_id).eq("status", "ativa").limit(1).single();
       if (!del) { setLoading(false); return; }
 
       const { data } = await supabase

@@ -4,10 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AppKPI } from "@/components/app/AppKPI";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, UtensilsCrossed, LogOut, ScanLine, Search,
-  Clock, Users, CheckCircle, BarChart3,
+  Clock, CheckCircle, BarChart3,
 } from "lucide-react";
 
 export default function AlimentacaoHomePage() {

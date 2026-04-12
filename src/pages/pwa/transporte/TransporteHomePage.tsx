@@ -3,11 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { AppKPI } from "@/components/app/AppKPI";
 import {
-  ArrowLeft, Bus, LogOut, ScanLine, Search, MapPin, Clock,
-  Users, CheckCircle, AlertTriangle, Route,
+  ArrowLeft, Bus, LogOut, ScanLine, MapPin, Clock,
+  Users, CheckCircle, Route,
 } from "lucide-react";
 
 export default function TransporteHomePage() {
@@ -26,9 +25,9 @@ export default function TransporteHomePage() {
       const today = new Date().toISOString().slice(0, 10);
 
       const [tripsRes, vehiclesRes, routesRes] = await Promise.all([
-        supabase.from("trips").select("id", { count: "exact", head: true }).gte("departure_time", today + "T00:00:00"),
-        supabase.from("vehicles").select("id", { count: "exact", head: true }).eq("is_active", true),
-        supabase.from("routes").select("id", { count: "exact", head: true }),
+        supabase.from("trips" as any).select("id", { count: "exact", head: true }).gte("departure_time", today + "T00:00:00"),
+        supabase.from("vehicles" as any).select("id", { count: "exact", head: true }).eq("is_active", true),
+        supabase.from("routes" as any).select("id", { count: "exact", head: true }),
       ]);
 
       setKpis({

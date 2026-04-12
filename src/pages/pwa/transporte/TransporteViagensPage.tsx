@@ -24,7 +24,7 @@ export default function TransporteViagensPage() {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
-        .from("trips")
+        .from("trips" as any)
         .select("id, departure_time, status, vehicle:vehicles(plate, label), route:routes(name)")
         .gte("departure_time", today + "T00:00:00")
         .order("departure_time");
