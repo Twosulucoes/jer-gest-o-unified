@@ -75,13 +75,21 @@ import PwaRecoverPage from "./pages/pwa/PwaRecoverPage";
 import PwaSetPasswordPage from "./pages/pwa/PwaSetPasswordPage";
 import PwaLandingPage from "./pages/pwa/PwaLandingPage";
 import PwaModulePage from "./pages/pwa/PwaModulePage";
+// PWA Alojamento pages
+import AlojamentoHomePage from "./pages/pwa/alojamento/AlojamentoHomePage";
+import AlojamentoScanPage from "./pages/pwa/alojamento/AlojamentoScanPage";
+import AlojamentoBuscarPage from "./pages/pwa/alojamento/AlojamentoBuscarPage";
+import AlojamentoOcupacaoPage2 from "./pages/pwa/alojamento/AlojamentoOcupacaoPage";
+import AlojamentoPessoaPage from "./pages/pwa/alojamento/AlojamentoPessoaPage";
+import AlojamentoIncidentesPage from "./pages/pwa/alojamento/AlojamentoIncidentesPage";
+import AlojamentoNovoIncidentePage from "./pages/pwa/alojamento/AlojamentoNovoIncidentePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const TRANSPORT_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "transporte"] as const;
 const FOOD_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"] as const;
-const LODGING_ROLES = ["admin", "secretaria", "coordenacao_tecnica"] as const;
+const LODGING_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "alojamento"] as const;
 const COMPETITION_ROLES = ["admin", "secretaria", "coordenacao_tecnica"] as const;
 
 const App = () => (
@@ -183,6 +191,14 @@ const App = () => (
             <Route path="/pwa/pesquisa/home" element={<PesquisaHomePage />} />
             <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
             <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
+            {/* PWA Alojamento */}
+            <Route path="/pwa/alojamento" element={<AlojamentoHomePage />} />
+            <Route path="/pwa/alojamento/scan" element={<AlojamentoScanPage />} />
+            <Route path="/pwa/alojamento/buscar" element={<AlojamentoBuscarPage />} />
+            <Route path="/pwa/alojamento/ocupacao" element={<AlojamentoOcupacaoPage2 />} />
+            <Route path="/pwa/alojamento/pessoa/:id" element={<AlojamentoPessoaPage />} />
+            <Route path="/pwa/alojamento/incidentes" element={<AlojamentoIncidentesPage />} />
+            <Route path="/pwa/alojamento/incidentes/nova" element={<AlojamentoNovoIncidentePage />} />
             {/* Public content routes */}
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
