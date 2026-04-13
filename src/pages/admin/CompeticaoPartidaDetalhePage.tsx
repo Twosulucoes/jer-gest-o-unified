@@ -242,8 +242,23 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!matchId && isCollective,
   });
 
+  // Bulletins for publish flow
+  const { data: bulletins = [] } = useQuery({
+    queryKey: ["published-bulletins-match", match?.event_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("official_bulletins")
+        .select("id, number, title, status")
+        .eq("event_id", match!.event_id)
+        .eq("status", "published")
+        .order("number", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!match?.event_id,
+  });
 
-  const sportEventId = match?.sport_event_id ?? phase?.sport_event_id;
+
   const { data: teamsForSportEvent = [] } = useQuery({
     queryKey: ["teams_for_match", sportEventId],
     queryFn: async () => {
