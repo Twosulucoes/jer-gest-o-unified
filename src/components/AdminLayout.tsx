@@ -160,9 +160,11 @@ function getRoleLabel(role: AppRole): string {
     alimentacao: "Alimentação",
     alojamento: "Alojamento",
     coordenacao_tecnica: "Coord. Técnica",
+    coordenador_modalidade: "Coord. Modalidade",
     delegacao: "Delegação",
     arbitragem: "Arbitragem",
     cde: "CDE",
+    mesario: "Mesário",
   };
   return labels[role] || role;
 }

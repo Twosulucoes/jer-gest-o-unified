@@ -17,16 +17,22 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, Key, LogOut as LogOutIcon, Plus, UserPlus, Link2 } from "lucide-react";
+import { Copy, Key, LogOut as LogOutIcon, Plus, UserPlus, Link2, Settings2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SportLinksDialog from "@/components/admin/SportLinksDialog";
 
 const ROLES = [
   { value: "admin", label: "Administrador" },
   { value: "secretaria", label: "Secretaria" },
   { value: "coordenacao_tecnica", label: "Coord. Técnica" },
+  { value: "coordenador_modalidade", label: "Coord. Modalidade" },
   { value: "transporte", label: "Transporte" },
   { value: "alimentacao", label: "Alimentação" },
+  { value: "alojamento", label: "Alojamento" },
   { value: "delegacao", label: "Delegação" },
+  { value: "arbitragem", label: "Arbitragem" },
+  { value: "mesario", label: "Mesário" },
+  { value: "cde", label: "CDE" },
 ];
 
 async function callAdminUsers(action: string, body: Record<string, unknown> = {}) {
@@ -46,6 +52,7 @@ export default function AcessosUsuariosPage() {
   const [inviteRole, setInviteRole] = useState("secretaria");
   const [resetEmail, setResetEmail] = useState("");
   const [resetLink, setResetLink] = useState("");
+  const [sportLinksUser, setSportLinksUser] = useState<{ id: string; name: string } | null>(null);
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-users-list"],
@@ -170,7 +177,17 @@ export default function AcessosUsuariosPage() {
                           onCheckedChange={(active) => setActiveMutation.mutate({ user_id: u.user_id, active })}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="flex gap-1">
+                        {u.roles?.includes("coordenador_modalidade") && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSportLinksUser({ id: u.user_id, name: u.full_name || u.email })}
+                            title="Gerenciar modalidades"
+                          >
+                            <Settings2 className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -250,6 +267,15 @@ export default function AcessosUsuariosPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {sportLinksUser && (
+        <SportLinksDialog
+          open={!!sportLinksUser}
+          onOpenChange={(open) => { if (!open) setSportLinksUser(null); }}
+          userId={sportLinksUser.id}
+          userName={sportLinksUser.name}
+        />
+      )}
     </div>
   );
 }
