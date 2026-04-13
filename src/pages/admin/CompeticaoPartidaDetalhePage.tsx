@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { getEligibilityErrorMessage } from "@/lib/eligibilityError";
-import { ArrowLeft, MapPin, CalendarDays, Clock, Plus, Trash2, Pencil, CheckCircle2, ClipboardList } from "lucide-react";
+import { RESULT_STATUS, RESULT_STATUS_LABEL, RESULT_STATUS_VARIANT } from "@/lib/resultStatus";
+import { ArrowLeft, MapPin, CalendarDays, Clock, Plus, Trash2, Pencil, CheckCircle2, ClipboardList, RefreshCw, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,16 +45,7 @@ const STATUS_OPTIONS = [
   { value: "cancelled", label: "Cancelada" },
 ];
 
-const RESULT_STATUS_LABEL: Record<string, string> = {
-  resultado_lancado: "Lançado",
-  resultado_validado: "Validado",
-  publicado: "Publicado",
-};
-const RESULT_STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
-  resultado_lancado: "outline",
-  resultado_validado: "default",
-  publicado: "secondary",
-};
+// RESULT_STATUS_LABEL and RESULT_STATUS_VARIANT imported from @/lib/resultStatus
 
 const OUTCOME_OPTIONS = [
   { value: "", label: "— Nenhum —" },
