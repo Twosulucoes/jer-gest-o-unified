@@ -33,6 +33,7 @@ import IndividualMatchSummaryDialog from "@/components/admin/IndividualMatchSumm
 import MatchEventsCard from "@/components/admin/MatchEventsCard";
 import MatchAttemptsCard from "@/components/admin/MatchAttemptsCard";
 import IndividualRankingCard from "@/components/admin/IndividualRankingCard";
+import CrossHeatRankingCard from "@/components/admin/CrossHeatRankingCard";
 import MatchDisciplineCard from "@/components/admin/MatchDisciplineCard";
 import MatchUserAssignmentsCard from "@/components/admin/MatchUserAssignmentsCard";
 
@@ -815,6 +816,17 @@ export default function CompeticaoPartidaDetalhePage() {
           results={results}
           individualConfig={individualConfig}
           getEntryLabel={getEntryLabel}
+        />
+      )}
+
+      {/* Cross-heat ranking (individual heats only) */}
+      {!isCollective && phase?.phase_type === "heats" && sportEventId && (
+        <CrossHeatRankingCard
+          matchId={matchId!}
+          eventId={match.event_id}
+          sportEventId={sportEventId}
+          family={(sport?.match_config as any)?.individual_config?.result_fields?.time ? "time" : "mark"}
+          individualConfig={individualConfig}
         />
       )}
 
