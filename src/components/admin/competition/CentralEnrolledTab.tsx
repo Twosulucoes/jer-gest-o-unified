@@ -4,8 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Props {
@@ -64,9 +65,12 @@ export default function CentralEnrolledTab({ eventId, sportEventId, isCollective
       });
       qc.invalidateQueries({ queryKey: ["central-teams"] });
       qc.invalidateQueries({ queryKey: ["competition-summary"] });
+      qc.invalidateQueries({ queryKey: ["collective-step-teams"] });
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
+
+  const activeTeams = isCollective ? teams.filter((t: any) => t.status === "active") : [];
 
   if (isCollective) {
     return (
@@ -88,6 +92,24 @@ export default function CentralEnrolledTab({ eventId, sportEventId, isCollective
             </Link>
           </div>
         </div>
+
+        {/* Inline warning when no active teams */}
+        {!loadingTeams && activeTeams.length === 0 && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between gap-4">
+              <span>
+                Nenhuma equipe confirmada para esta prova.
+                Sincronize as equipes ou verifique a Pré-validação.
+              </span>
+              <Link to="/admin/competicao/pre-validacao">
+                <Button variant="outline" size="sm" className="shrink-0">
+                  Ir para Pré-validação
+                </Button>
+              </Link>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card>
           <CardContent className="pt-6">
