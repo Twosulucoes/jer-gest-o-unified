@@ -1651,6 +1651,58 @@ export type Database = {
           },
         ]
       }
+      match_user_assignments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          match_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          match_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          match_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_user_assignments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
+          },
+        ]
+      }
       meal_consumptions: {
         Row: {
           consumed_at: string
@@ -3352,6 +3404,55 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_sport_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          sport_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          sport_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          sport_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sport_links_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_sport_links_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_id"]
+          },
+          {
+            foreignKeyName: "user_sport_links_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
             referencedColumns: ["id"]
           },
         ]
