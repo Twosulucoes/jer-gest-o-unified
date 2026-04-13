@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Clock, Plus, Trash2 } from "lucide-react";
+import { Clock, Plus, Trash2, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import type { MatchConfig, EventTypeConfig } from "./MatchConfigEditor";
+import MatchLiveMode from "./MatchLiveMode";
 
 interface MatchEventsCardProps {
   matchId: string;
@@ -25,6 +26,7 @@ export default function MatchEventsCard({ matchId, entries, matchConfig, canWrit
   const eventTypes: EventTypeConfig[] = (matchConfig.event_types ?? []).filter((e) => e.key && e.label && e.visible !== false);
 
   const [addOpen, setAddOpen] = useState(false);
+  const [liveMode, setLiveMode] = useState(false);
   const [formEntryId, setFormEntryId] = useState("");
   const [formLineupId, setFormLineupId] = useState("");
   const [formEventKey, setFormEventKey] = useState("");
