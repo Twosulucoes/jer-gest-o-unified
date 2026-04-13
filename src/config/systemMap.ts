@@ -146,6 +146,18 @@ export const systemMap: SystemMapGroup[] = [
     label: "Competição",
     items: [
       {
+        id: "painel-competicao",
+        label: "Painel de Controle da Competição",
+        route: "/admin/competicao/painel",
+        pageFile: "src/pages/admin/CompeticaoPainelPage.tsx",
+        description: "Visão consolidada do progresso de todas as provas do evento: status, etapas concluídas e acesso direto ao wizard.",
+        roles: ["admin", "secretaria", "coordenacao_tecnica"],
+        status: ModuleStatus.DONE,
+        dataSources: ["sport_events", "competition_phases", "competition_groups", "competition_matches", "competition_match_results", "teams", "participant_sport_events", "sport_event_rules"],
+        gaps: [],
+        nextActions: [],
+      },
+      {
         id: "pre-validacao",
         label: "Pré-validação de Provas",
         route: "/admin/competicao/pre-validacao",
