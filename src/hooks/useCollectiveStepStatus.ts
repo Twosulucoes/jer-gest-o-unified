@@ -182,26 +182,28 @@ export function useCollectiveStepStatus(
         published: all.filter((r) => r.result_status === "publicado").length,
       };
     },
-    enabled: !!eventId && !!sportEventId && isCollective,
+    enabled: !!eventId && !!sportEventId && isEnabled,
     staleTime: 30_000,
   });
 
-  const isLoading = loadingTeams || loadingPhases || loadingDrawLots || loadingMatches || loadingResults;
+  const isLoading = loadingTeams || loadingAthletes || loadingPhases || loadingDrawLots || loadingHeatEntries || loadingMatches || loadingResults;
 
   const stepStatus: StepStatusMap = useMemo(() => {
-    if (!isCollective) return {};
+    if (!isEnabled) return {};
 
     const mt = matchStats ?? { total: 0, scheduled: 0, finished: 0 };
     const rs = resultStats ?? { total: 0, launched: 0, published: 0 };
 
-    // Step 1 — Participants/Equipes
-    const step1Completed = activeTeamsCount > 0;
+    // Step 1 — Participants/Equipes/Atletas
+    const step1Completed = isCollective ? activeTeamsCount > 0 : activeAthletesCount > 0;
 
     // Step 2 — Estrutura
-    const step2Completed = phasesCount > 0 && drawLotsCount > 0;
+    const step2Completed = isCollective
+      ? phasesCount > 0 && drawLotsCount > 0
+      : phasesCount > 0 && heatEntriesCount > 0;
     const step2Blocked = !step1Completed;
 
-    // Step 3 — Confrontos
+    // Step 3 — Confrontos/Baterias (for time/mark, heats ARE the matches)
     const step3Completed = mt.total > 0;
     const step3Blocked = !step2Completed;
 
@@ -235,7 +237,7 @@ export function useCollectiveStepStatus(
       results: { status: status(step6Completed, step6Blocked, step6Partial), blockMessage: step6Blocked ? BLOCK_MESSAGES.results : undefined },
       pending: { status: "available" },
     };
-  }, [isCollective, activeTeamsCount, phasesCount, drawLotsCount, matchStats, resultStats]);
+  }, [isEnabled, isCollective, activeTeamsCount, activeAthletesCount, phasesCount, drawLotsCount, heatEntriesCount, matchStats, resultStats]);
 
   const completedCount = useMemo(() => {
     return Object.values(stepStatus).filter((s) => s.status === "completed").length;
