@@ -207,7 +207,7 @@ export default function MatchEventsCard({ matchId, entries, matchConfig, canWrit
                 <Plus className="mr-1 h-3.5 w-3.5" />Registrar
               </Button>
             )}
-          )}
+          </div>
         </CardHeader>
         <CardContent>
           {existingEvents.length === 0 ? (
