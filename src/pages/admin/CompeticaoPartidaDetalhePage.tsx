@@ -888,11 +888,28 @@ export default function CompeticaoPartidaDetalhePage() {
               </Button>
             )}
             {canWrite && hasValidatedReady && !allPublished && (
-              <Button size="sm" variant="default" onClick={() => setConfirmAction("publish")} disabled={publishResultsMut.isPending}>
-                Publicar oficialmente
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select value={publishBulletinId} onValueChange={setPublishBulletinId}>
+                  <SelectTrigger className="w-[220px] h-8 text-xs">
+                    <SelectValue placeholder="Selecione boletim..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bulletins.map((b: any) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> #{b.number} — {b.title}</span>
+                      </SelectItem>
+                    ))}
+                    {bulletins.length === 0 && (
+                      <div className="p-2 text-xs text-muted-foreground">Nenhum boletim publicado.</div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="default" onClick={() => setConfirmAction("publish")} disabled={publishResultsMut.isPending || !publishBulletinId}>
+                  Publicar oficialmente
+                </Button>
+              </div>
             )}
-            {canWrite && hasPublished && (
+            {canWrite && hasPublished && hasRole("admin") && (
               <Button size="sm" variant="destructive" onClick={() => setConfirmAction("unpublish")} disabled={unpublishResultsMut.isPending}>
                 Despublicar
               </Button>
