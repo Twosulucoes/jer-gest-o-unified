@@ -24,9 +24,14 @@ const ROLES = [
   { value: "admin", label: "Administrador" },
   { value: "secretaria", label: "Secretaria" },
   { value: "coordenacao_tecnica", label: "Coord. Técnica" },
+  { value: "coordenador_modalidade", label: "Coord. Modalidade" },
   { value: "transporte", label: "Transporte" },
   { value: "alimentacao", label: "Alimentação" },
+  { value: "alojamento", label: "Alojamento" },
   { value: "delegacao", label: "Delegação" },
+  { value: "arbitragem", label: "Arbitragem" },
+  { value: "mesario", label: "Mesário" },
+  { value: "cde", label: "CDE" },
 ];
 
 async function callAdminUsers(action: string, body: Record<string, unknown> = {}) {

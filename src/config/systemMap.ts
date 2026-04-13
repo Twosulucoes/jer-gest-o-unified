@@ -10,7 +10,7 @@ export const STATUS_META: Record<ModuleStatus, { label: string; emoji: string; c
   [ModuleStatus.NOT_STARTED]: { label: "Não iniciado", emoji: "⛔", color: "bg-red-100 text-red-800 border-red-300" },
 };
 
-export type AppRole = "admin" | "secretaria" | "coordenacao_tecnica" | "transporte" | "alimentacao" | "delegacao";
+export type AppRole = "admin" | "secretaria" | "coordenacao_tecnica" | "coordenador_modalidade" | "transporte" | "alimentacao" | "delegacao" | "alojamento" | "arbitragem" | "cde" | "mesario";
 
 export interface SystemMapItem {
   id: string;
