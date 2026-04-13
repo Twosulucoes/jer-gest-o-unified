@@ -19,6 +19,7 @@ import EligibilityPendingPanel from "@/components/admin/competition/EligibilityP
 import CentralAgendaTab from "@/components/admin/competition/CentralAgendaTab";
 import CentralBracketTab from "@/components/admin/competition/CentralBracketTab";
 import CentralStandingsTab from "@/components/admin/competition/CentralStandingsTab";
+import CrossHeatRankingTab from "@/components/admin/competition/CrossHeatRankingTab";
 import WizardStepper, { type WizardStep } from "@/components/admin/competition/WizardStepper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
@@ -323,12 +324,19 @@ export default function CompeticaoCentralPage() {
             )}
 
             {currentStep === "standings" && (
-              <CentralStandingsTab
-                eventId={eventId}
-                sportEventId={sportEventId}
-                family={family ?? null}
-                format={format ?? null}
-              />
+              isTimeMark ? (
+                <CrossHeatRankingTab
+                  eventId={eventId}
+                  sportEventId={sportEventId!}
+                />
+              ) : (
+                <CentralStandingsTab
+                  eventId={eventId}
+                  sportEventId={sportEventId}
+                  family={family ?? null}
+                  format={format ?? null}
+                />
+              )
             )}
 
             {currentStep === "results" && (

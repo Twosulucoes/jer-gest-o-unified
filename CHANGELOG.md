@@ -5,6 +5,11 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Consolidação de ranking cross-heat para modalidades individuais (time/mark)
+- `CrossHeatRankingCard`: ranking geral exibido na página da partida (bateria) com destaque da bateria atual
+- `CrossHeatRankingTab`: tab de classificação no wizard (Passo 5) com filtros, busca e exportação CSV
+- `useCrossHeatRanking` hook: busca batch de todas as baterias/resultados/tentativas com refresh automático a cada 30s
+- `computeCrossHeatRanking` em individualRanking.ts: ranking consolidado com empates (posição compartilhada) e outcomes ordenados (DSQ > DNS > DNF > WO)
 - Geração automática de baterias (heats) para modalidades individuais de família time e mark (Atletismo, Natação, etc.)
 - Componente `CentralStructureHeatsTab` com wizard de 3 sub-etapas (Definir → Revisar → Confirmar)
 - `useCollectiveStepStatus` agora suporta bloqueio de passos para individuais time/mark
