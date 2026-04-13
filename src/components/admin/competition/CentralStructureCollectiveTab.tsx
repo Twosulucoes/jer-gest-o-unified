@@ -368,7 +368,7 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
   const getTeamById = useCallback((id: string) => teams.find((t) => t.id === id), [teams]);
 
   // ── Loading / empty states ────────────────────────────────
-  if (loadingTeams || loadingPhases) {
+  if (!allQueriesReady) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground p-8">
         <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
