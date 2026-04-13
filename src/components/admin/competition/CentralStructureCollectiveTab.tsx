@@ -436,46 +436,43 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
               </Badge>
             </div>
 
-            {suggestion.groups === 0 ? (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>{suggestion.description}</AlertDescription>
+            </Alert>
+
+            {suggestion.allowKnockout && (
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Com {teams.length} equipe(s), sugerimos mata-mata direto sem fase de grupos.
-                  Use a aba "Chaves" no passo de Confrontos.
+                  Alternativa: você pode pular a fase de grupos e usar mata-mata direto na aba "Chaves" do passo Confrontos.
                 </AlertDescription>
               </Alert>
-            ) : (
-              <>
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>{suggestion.description}</AlertDescription>
-                </Alert>
-
-                <div className="flex items-center gap-3">
-                  <label className="text-sm font-medium">Número de grupos:</label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={Math.max(teams.length, 1)}
-                    value={groupCount}
-                    onChange={(e) => setGroupCount(Math.max(1, Math.min(teams.length, Number(e.target.value))))}
-                    className="w-20"
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    (~{Math.ceil(teams.length / groupCount)} equipes por grupo)
-                  </span>
-                </div>
-
-                <Button onClick={() => createStructureMut.mutate()} disabled={createStructureMut.isPending}>
-                  {createStructureMut.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  ) : (
-                    <Layers className="h-4 w-4 mr-1" />
-                  )}
-                  Confirmar estrutura
-                </Button>
-              </>
             )}
+
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium">Número de grupos:</label>
+              <Input
+                type="number"
+                min={1}
+                max={Math.max(teams.length, 1)}
+                value={groupCount}
+                onChange={(e) => setGroupCount(Math.max(1, Math.min(teams.length, Number(e.target.value))))}
+                className="w-20"
+              />
+              <span className="text-xs text-muted-foreground">
+                (~{Math.ceil(teams.length / groupCount)} equipes por grupo)
+              </span>
+            </div>
+
+            <Button onClick={() => createStructureMut.mutate()} disabled={createStructureMut.isPending}>
+              {createStructureMut.isPending ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Layers className="h-4 w-4 mr-1" />
+              )}
+              Confirmar estrutura
+            </Button>
           </CardContent>
         </Card>
       )}
