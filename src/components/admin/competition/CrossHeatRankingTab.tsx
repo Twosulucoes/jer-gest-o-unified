@@ -5,7 +5,7 @@ import { formatRankValue, getPrimaryRankField } from "@/lib/individualRanking";
 import type { IndividualConfig } from "@/components/admin/IndividualConfigEditor";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Download, AlertTriangle, Info, RefreshCw, CheckCircle2, Search } from "lucide-react";
+import { Download, AlertTriangle, Info, RefreshCw, CheckCircle2, Search } from "lucide-react";
 
 const FIELD_LABEL: Record<string, string> = {
   time_ms: "Tempo",
@@ -157,9 +157,9 @@ export default function CrossHeatRankingTab({ eventId, sportEventId }: Props) {
     <div className="space-y-4">
       {/* Progress banner */}
       {allComplete ? (
-        <Alert className="border-green-500/30 bg-green-500/5">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-700">
+        <Alert className="border-primary/30 bg-primary/5">
+          <CheckCircle2 className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-primary">
             Todas as {totalHeats} baterias com resultados lançados ✅
           </AlertDescription>
         </Alert>
