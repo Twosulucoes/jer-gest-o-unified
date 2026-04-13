@@ -121,7 +121,7 @@ const queryClient = new QueryClient();
 const TRANSPORT_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "transporte"] as const;
 const FOOD_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"] as const;
 const LODGING_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "alojamento"] as const;
-const COMPETITION_ROLES = ["admin", "secretaria", "coordenacao_tecnica"] as const;
+const COMPETITION_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as const;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
