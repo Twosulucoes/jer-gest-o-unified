@@ -52,6 +52,7 @@ export default function AcessosUsuariosPage() {
   const [inviteRole, setInviteRole] = useState("secretaria");
   const [resetEmail, setResetEmail] = useState("");
   const [resetLink, setResetLink] = useState("");
+  const [sportLinksUser, setSportLinksUser] = useState<{ id: string; name: string } | null>(null);
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-users-list"],
