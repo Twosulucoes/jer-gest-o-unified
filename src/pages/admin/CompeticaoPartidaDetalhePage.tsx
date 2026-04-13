@@ -445,7 +445,17 @@ export default function CompeticaoPartidaDetalhePage() {
       const { error } = await supabase.from("competition_match_results").upsert(upserts as any, { onConflict: "match_entry_id" });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Resultados lançados"); setResultDialogOpen(false); },
+    onSuccess: async () => {
+      // Auto-finish match
+      if (match && match.status !== "finished") {
+        await supabase.from("competition_matches").update({ status: "finished", updated_at: new Date().toISOString() }).eq("id", matchId!);
+        qc.invalidateQueries({ queryKey: ["competition_match", matchId] });
+      }
+      qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] });
+      qc.invalidateQueries({ queryKey: ["competition_matches"] });
+      toast.success("Resultados lançados");
+      setResultDialogOpen(false);
+    },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
