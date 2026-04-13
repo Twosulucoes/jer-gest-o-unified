@@ -130,7 +130,7 @@ export default function CompeticaoCentralPage() {
 
   // Legacy completedSteps for individual flow
   const completedSteps = useMemo(() => {
-    if (isCollective) return []; // handled by stepStatus
+    if (isCollective || isTimeMark) return []; // handled by stepStatus
     const completed: string[] = [];
     if (!summary) return completed;
     if (summary.enrolled_count > 0 || summary.teams_count > 0) completed.push("participants");
@@ -141,17 +141,17 @@ export default function CompeticaoCentralPage() {
     return completed;
   }, [summary, phases.length, isCollective]);
 
-  // Handle step click with blocking for collectives
+  // Handle step click with blocking
   const handleStepClick = useCallback((key: string) => {
-    if (isCollective && stepStatus[key]) {
+    if (useWizardStatus && stepStatus[key]) {
       const info = stepStatus[key];
       if (info.status === "blocked" && info.blockMessage) {
         toast.warning(info.blockMessage);
-        return; // Don't navigate
+        return;
       }
     }
     setCurrentStep(key);
-  }, [isCollective, stepStatus]);
+  }, [useWizardStatus, stepStatus]);
 
   // Deep-link validation: redirect if step is blocked
   useEffect(() => {
@@ -159,8 +159,7 @@ export default function CompeticaoCentralPage() {
     const seId = searchParams.get("sport_event_id");
     if (seId) setSportEventId(seId);
     if (step) {
-      if (isCollective && stepStatus[step]?.status === "blocked") {
-        // Find first available step
+      if (useWizardStatus && stepStatus[step]?.status === "blocked") {
         const firstAvailable = visibleSteps.find(
           (s) => !stepStatus[s.key] || stepStatus[s.key].status !== "blocked"
         );
@@ -173,7 +172,7 @@ export default function CompeticaoCentralPage() {
         setCurrentStep(step);
       }
     }
-  }, [searchParams, isCollective, stepStatus, visibleSteps]);
+  }, [searchParams, useWizardStatus, stepStatus, visibleSteps]);
 
   const goNext = () => {
     if (currentIdx < visibleSteps.length - 1) {
@@ -188,8 +187,8 @@ export default function CompeticaoCentralPage() {
     }
   };
 
-  // Progress bar for collectives
-  const progressPercent = isCollective
+  // Progress bar
+  const progressPercent = useWizardStatus
     ? Math.round((completedCount / visibleSteps.length) * 100)
     : 0;
 
