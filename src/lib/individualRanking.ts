@@ -197,3 +197,126 @@ export function formatRankValue(value: number | null, field: RankedEntry["rankFi
   if (field === "position") return `${value}º`;
   return String(value);
 }
+
+/* ──────────────────────────────────────────────────────────
+   Cross-heat ranking: consolidate results across heats
+   ────────────────────────────────────────────────────────── */
+
+export interface CrossHeatEntry {
+  entryId: string;
+  matchId: string;
+  heatName: string;
+  label: string;
+  delegationName: string;
+  position: number | null;
+  rankValue: number | null;
+  rankField: RankedEntry["rankField"];
+  source: RankedEntry["source"];
+  resultStatus: string | null;
+  outcome: string | null;
+  excluded: boolean;
+  isCurrentMatch: boolean;
+}
+
+const OUTCOME_SORT: Record<string, number> = {
+  dsq: 1, dns: 2, dnf: 3, wo_loss: 4, cancelled: 5,
+};
+
+/**
+ * Consolidate ranking across multiple heats for a sport_event.
+ * @param heats – array of { matchId, heatName, entries, results, attempts }
+ * @param family – "time" | "mark"
+ * @param config – IndividualConfig for result_fields
+ * @param getEntryLabel – label resolver
+ * @param getDelegationName – delegation resolver
+ * @param currentMatchId – highlight entries from this match
+ */
+export function computeCrossHeatRanking(
+  heats: Array<{
+    matchId: string;
+    heatName: string;
+    entries: any[];
+    results: any[];
+    attempts: any[];
+  }>,
+  family: "time" | "mark",
+  config: IndividualConfig | null,
+  getEntryLabel: (entry: any) => string,
+  getDelegationName: (entry: any) => string,
+  currentMatchId?: string
+): CrossHeatEntry[] {
+  const field = getPrimaryRankField(config);
+  const items: CrossHeatEntry[] = [];
+
+  for (const heat of heats) {
+    const resultsMap = new Map(heat.results.map((r) => [r.match_entry_id, r]));
+
+    for (const entry of heat.entries) {
+      const result = resultsMap.get(entry.id);
+      const outcome = result?.outcome ?? null;
+      const excluded = outcome ? EXCLUDED_OUTCOMES.has(outcome) : false;
+
+      let value: number | null = null;
+      let source: RankedEntry["source"] = null;
+
+      if (field === "time_ms" || field === "distance_cm" || field === "points") {
+        value = result?.[field] != null ? Number(result[field]) : null;
+        source = value != null ? "result" : null;
+
+        if (config?.allows_attempts && heat.attempts.length > 0) {
+          const best = bestAttemptValue(heat.attempts, entry.id, field);
+          if (best != null) {
+            if (value == null) {
+              value = best;
+              source = "attempt";
+            } else {
+              const isBetter = field === "time_ms" ? best < value : best > value;
+              if (isBetter) { value = best; source = "attempt"; }
+            }
+          }
+        }
+      }
+
+      items.push({
+        entryId: entry.id,
+        matchId: heat.matchId,
+        heatName: heat.heatName,
+        label: getEntryLabel(entry),
+        delegationName: getDelegationName(entry),
+        position: null,
+        rankValue: value,
+        rankField: field,
+        source,
+        resultStatus: result?.result_status ?? null,
+        outcome,
+        excluded,
+        isCurrentMatch: heat.matchId === currentMatchId,
+      });
+    }
+  }
+
+  // Sort: valid entries first, then excluded by outcome category
+  const valid = items.filter((i) => !i.excluded && i.rankValue != null);
+  const noValue = items.filter((i) => !i.excluded && i.rankValue == null);
+  const excludedItems = items.filter((i) => i.excluded);
+
+  // Sort valid entries
+  valid.sort((a, b) => {
+    if (family === "time") return (a.rankValue ?? Infinity) - (b.rankValue ?? Infinity);
+    return (b.rankValue ?? -Infinity) - (a.rankValue ?? -Infinity);
+  });
+
+  // Assign positions with ties
+  let pos = 1;
+  for (let i = 0; i < valid.length; i++) {
+    if (i > 0 && valid[i].rankValue !== valid[i - 1].rankValue) {
+      pos = i + 1;
+    }
+    valid[i].position = pos;
+  }
+
+  // Sort excluded by outcome category
+  excludedItems.sort((a, b) => (OUTCOME_SORT[a.outcome ?? ""] ?? 99) - (OUTCOME_SORT[b.outcome ?? ""] ?? 99));
+
+  return [...valid, ...noValue, ...excludedItems];
+}
