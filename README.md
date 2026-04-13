@@ -33,6 +33,9 @@ Importação (SIGECOM) → Credenciamento/QR → Logística → Competição →
 - **Controle de fluxo do wizard (coletivas)** — passos sequenciais com pré-condições: cada passo só fica acessível quando o anterior está concluído. Visual com estados (concluído/parcial/bloqueado) e barra de progresso. Deep-links respeitam bloqueios.
 - **Agendamento de partidas** — Passo 4 (Agenda) do wizard com agendamento individual (data, hora, local) e em lote (horários sequenciais automáticos), detecção de conflitos de agenda por local/equipe/atleta, e contador de progresso
 - **Perfis especializados** — `coordenador_modalidade` (acesso filtrado por modalidade via `user_sport_links`) e `mesario` (acesso exclusivo a partidas designadas via `match_user_assignments`)
+- **Designação de oficiais** — atribuição de mesários, árbitros, fiscais e anotadores a partidas individuais via `match_user_assignments`, com busca por nome e histórico de atuações
+- **Modo ao vivo (touch-friendly)** — interface de campo para registro de ocorrências em tempo real (gols, cartões, faltas) com botões grandes, placar automático, cronômetro manual, suporte offline (localStorage) e sincronização automática
+- **Link direto para detalhe** — coluna "Detalhe" no Passo 4 (Agenda) do wizard com navegação para `/admin/competicao/partida/:id`
 - Apuração e publicação de resultados
 - Registro de evidências operacionais (prestação de contas / OSC)
 

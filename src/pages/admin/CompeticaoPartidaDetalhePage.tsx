@@ -34,6 +34,7 @@ import MatchEventsCard from "@/components/admin/MatchEventsCard";
 import MatchAttemptsCard from "@/components/admin/MatchAttemptsCard";
 import IndividualRankingCard from "@/components/admin/IndividualRankingCard";
 import MatchDisciplineCard from "@/components/admin/MatchDisciplineCard";
+import MatchUserAssignmentsCard from "@/components/admin/MatchUserAssignmentsCard";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
@@ -104,7 +105,9 @@ export default function CompeticaoPartidaDetalhePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { hasRole, user } = useAuth();
-  const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
+  const canWriteFull = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica") || hasRole("coordenador_modalidade");
+  const canWriteEvents = canWriteFull || hasRole("mesario");
+  const canWrite = canWriteFull;
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addEntryOpen, setAddEntryOpen] = useState(false);
@@ -757,9 +760,16 @@ export default function CompeticaoPartidaDetalhePage() {
           matchId={matchId!}
           entries={entries.filter((e) => e.team_id).map((e) => ({ id: e.id, team_id: e.team_id, label: getEntryLabel(e) }))}
           matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
-          canWrite={canWrite}
+          canWrite={canWriteEvents}
         />
       )}
+
+      {/* User Assignments Card */}
+      <MatchUserAssignmentsCard
+        matchId={matchId!}
+        eventId={match.event_id}
+        canWrite={canWriteFull}
+      />
 
       {/* Attachments Card (collective + individual when configured) */}
       {(isCollective || individualConfig?.requires_attachments) && (

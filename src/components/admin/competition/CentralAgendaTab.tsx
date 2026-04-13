@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +23,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import {
   CalendarIcon, CalendarClock, Loader2, AlertTriangle, Clock, MapPin,
-  Pencil, CalendarPlus, Trash2, ListChecks, XCircle, RefreshCw,
+  Pencil, CalendarPlus, Trash2, ListChecks, XCircle, RefreshCw, ExternalLink,
 } from "lucide-react";
 
 interface Props {
@@ -481,6 +482,7 @@ function formatTime(time: string | null): string {
 
 export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: Props) {
   const { hasRole } = useAuth();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const canEdit = hasRole("admin") || hasRole("coordenacao_tecnica");
 
@@ -692,6 +694,7 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
                 <TableHead>Hora</TableHead>
                 <TableHead>Local</TableHead>
                 {canEdit && <TableHead className="w-[100px]">Ação</TableHead>}
+                <TableHead className="w-[60px]">Detalhe</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -735,6 +738,11 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
                         </Button>
                       </TableCell>
                     )}
+                    <TableCell>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => navigate(`/admin/competicao/partida/${m.id}`)}>
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}
