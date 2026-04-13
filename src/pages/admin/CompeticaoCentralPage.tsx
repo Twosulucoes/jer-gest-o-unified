@@ -308,6 +308,7 @@ export default function CompeticaoCentralPage() {
               <CentralAgendaTab
                 eventId={eventId}
                 sportEventId={sportEventId}
+                onChanged={handleChanged}
               />
             )}
 
