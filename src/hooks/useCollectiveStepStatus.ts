@@ -22,8 +22,10 @@ const BLOCK_MESSAGES: Record<string, string> = {
 export function useCollectiveStepStatus(
   eventId: string | null,
   sportEventId: string | null,
-  isCollective: boolean
+  isCollective: boolean,
+  isTimeMark: boolean = false,
 ) {
+  const isEnabled = isCollective || isTimeMark;
   // Active teams count
   const { data: activeTeamsCount = 0, isLoading: loadingTeams } = useQuery({
     queryKey: ["collective-step-teams", eventId, sportEventId],
@@ -41,6 +43,22 @@ export function useCollectiveStepStatus(
     staleTime: 30_000,
   });
 
+  // Individual athletes count (for time/mark)
+  const { data: activeAthletesCount = 0, isLoading: loadingAthletes } = useQuery({
+    queryKey: ["individual-step-athletes", eventId, sportEventId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("participant_sport_events")
+        .select("id", { count: "exact", head: true })
+        .eq("sport_event_id", sportEventId!)
+        .in("status", ["confirmed", "active", "inscrito"]);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!eventId && !!sportEventId && isTimeMark && !isCollective,
+    staleTime: 30_000,
+  });
+
   // Phases count
   const { data: phasesCount = 0, isLoading: loadingPhases } = useQuery({
     queryKey: ["collective-step-phases", eventId, sportEventId],
@@ -53,7 +71,7 @@ export function useCollectiveStepStatus(
       if (error) throw error;
       return count ?? 0;
     },
-    enabled: !!eventId && !!sportEventId && isCollective,
+    enabled: !!eventId && !!sportEventId && isEnabled,
     staleTime: 30_000,
   });
 
