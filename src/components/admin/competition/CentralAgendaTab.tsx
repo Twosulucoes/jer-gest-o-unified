@@ -482,6 +482,7 @@ function formatTime(time: string | null): string {
 
 export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: Props) {
   const { hasRole } = useAuth();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const canEdit = hasRole("admin") || hasRole("coordenacao_tecnica");
 
