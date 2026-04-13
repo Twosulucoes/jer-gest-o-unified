@@ -41,16 +41,16 @@ function suggestGroupCount(teamCount: number): { groups: number; description: st
   if (teamCount <= 10) {
     const g = 2;
     const perGroup = Math.ceil(teamCount / g);
-    return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.` };
+    return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.`, allowKnockout: false };
   }
   if (teamCount <= 16) {
     const g = teamCount <= 12 ? 3 : 4;
     const perGroup = Math.ceil(teamCount / g);
-    return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.` };
+    return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.`, allowKnockout: false };
   }
   const g = Math.min(Math.ceil(teamCount / 4), 8);
   const perGroup = Math.ceil(teamCount / g);
-  return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.` };
+  return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.`, allowKnockout: false };
 }
 
 function roundRobinCount(n: number) {
