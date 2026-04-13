@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -115,6 +116,10 @@ import QrDiagnosticoPage from "./pages/pwa/diagnostico/QrDiagnosticoPage";
 import NotFound from "./pages/NotFound";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
+// Ao Vivo PWA (lazy loaded)
+const AoVivoLoginPage = lazy(() => import("./pages/aovivo/AoVivoLoginPage"));
+const AoVivoHomePage = lazy(() => import("./pages/aovivo/AoVivoHomePage"));
+const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
 
 const queryClient = new QueryClient();
 
@@ -262,6 +267,10 @@ const App = () => (
             <Route path="/pwa/delegacao/locais" element={<DelegacaoLocaisPage />} />
             {/* PWA Diagnóstico */}
             <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
+            {/* Ao Vivo PWA */}
+            <Route path="/aovivo/login" element={<Suspense fallback={null}><AoVivoLoginPage /></Suspense>} />
+            <Route path="/aovivo" element={<Suspense fallback={null}><AoVivoHomePage /></Suspense>} />
+            <Route path="/aovivo/partida/:matchId" element={<Suspense fallback={null}><AoVivoMatchPage /></Suspense>} />
             {/* Public content routes */}
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />

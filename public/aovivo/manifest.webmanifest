@@ -1,0 +1,14 @@
+{
+  "name": "JER Ao Vivo",
+  "short_name": "JER Ao Vivo",
+  "description": "Registro ao vivo de partidas — JER's 2026",
+  "start_url": "/aovivo",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "/aovivo/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/aovivo/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/aovivo/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable any" }
+  ]
+}

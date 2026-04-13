@@ -36,6 +36,7 @@ Importação (SIGECOM) → Credenciamento/QR → Logística → Competição →
 - **Designação de oficiais** — atribuição de mesários, árbitros, fiscais e anotadores a partidas individuais via `match_user_assignments`, com busca por nome e histórico de atuações
 - **Modo ao vivo (touch-friendly)** — interface de campo para registro de ocorrências em tempo real (gols, cartões, faltas) com botões grandes, placar automático, cronômetro manual, suporte offline (localStorage) e sincronização automática
 - **Link direto para detalhe** — coluna "Detalhe" no Passo 4 (Agenda) do wizard com navegação para `/admin/competicao/partida/:id`
+- **PWA "JER Ao Vivo"** — aplicação web progressiva instalável (`/aovivo`) para mesários registrarem partidas em tempo real no celular, com suporte offline, sincronização automática, interface touch-friendly dark mode, e acesso restrito via `match_user_assignments`
 - Apuração e publicação de resultados
 - Registro de evidências operacionais (prestação de contas / OSC)
 
