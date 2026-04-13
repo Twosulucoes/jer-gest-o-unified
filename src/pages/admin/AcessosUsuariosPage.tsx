@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, Key, LogOut as LogOutIcon, Plus, UserPlus, Link2 } from "lucide-react";
+import { Copy, Key, LogOut as LogOutIcon, Plus, UserPlus, Link2, Settings2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SportLinksDialog from "@/components/admin/SportLinksDialog";
 
 const ROLES = [
   { value: "admin", label: "Administrador" },
