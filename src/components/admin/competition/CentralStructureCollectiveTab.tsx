@@ -134,7 +134,7 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
     },
   });
 
-  const { data: existingGroups = [] } = useQuery({
+  const { data: existingGroups = [], isLoading: loadingGroups } = useQuery({
     queryKey: ["structure-groups", eventId, sportEventId],
     queryFn: async () => {
       if (existingPhases.length === 0) return [];
@@ -150,7 +150,7 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
     enabled: existingPhases.length > 0,
   });
 
-  const { data: existingDrawLots = [] } = useQuery({
+  const { data: existingDrawLots = [], isLoading: loadingDrawLots } = useQuery({
     queryKey: ["structure-draw-lots", existingGroups.map((g) => g.id).join(",")],
     queryFn: async () => {
       if (existingGroups.length === 0) return [];
