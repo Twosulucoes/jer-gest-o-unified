@@ -687,11 +687,18 @@ export default function CompeticaoPartidaDetalhePage() {
         <Card>
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base">Placar coletivo</CardTitle>
-            {canWrite && entries.length >= 2 && (
-              <Button size="sm" variant="outline" onClick={() => setCollectiveScoreOpen(true)}>
-                <ClipboardList className="mr-2 h-4 w-4" />{matchScores.length > 0 ? "Editar placar" : "Lançar placar"}
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {canWrite && matchScores.length > 0 && !results.some((r) => r.match_entry_id && matchScores.some((ms: any) => ms.match_entry_id === r.match_entry_id)) && (
+                <Button size="sm" variant="secondary" onClick={() => syncScoresToResultsMut.mutate()} disabled={syncScoresToResultsMut.isPending}>
+                  <RefreshCw className="mr-2 h-4 w-4" />{syncScoresToResultsMut.isPending ? "Sincronizando..." : "Sincronizar para Resultado Oficial"}
+                </Button>
+              )}
+              {canWrite && entries.length >= 2 && (
+                <Button size="sm" variant="outline" onClick={() => setCollectiveScoreOpen(true)}>
+                  <ClipboardList className="mr-2 h-4 w-4" />{matchScores.length > 0 ? "Editar placar" : "Lançar placar"}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {matchScores.length === 0 ? (
