@@ -108,10 +108,12 @@ export default function CompeticaoCentralPage() {
 
   const showStandings = ["score","sets","time","mark","ranking","swiss"].includes(family ?? "");
 
-  // Collective step status
+  // Step status (collective OR individual time/mark)
   const { stepStatus, isLoading: stepStatusLoading, completedCount } = useCollectiveStepStatus(
-    eventId, sportEventId, isCollective
+    eventId, sportEventId, isCollective, isTimeMark
   );
+
+  const useWizardStatus = isCollective || isTimeMark;
 
   const steps: WizardStep[] = useMemo(() => [
     { key: "participants", label: isCollective ? "Equipes" : "Participantes" },
