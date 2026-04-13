@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEvent } from "@/contexts/EventContext";
+import { useEventContext } from "@/contexts/EventContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,13 +22,13 @@ interface SportLinksDialogProps {
 }
 
 export default function SportLinksDialog({ open, onOpenChange, userId, userName }: SportLinksDialogProps) {
-  const { activeEvent } = useEvent();
+  const { activeEvent } = useEventContext();
   const queryClient = useQueryClient();
   const [selectedSport, setSelectedSport] = useState("");
 
   const eventId = activeEvent?.id;
 
-  const { data: sports = [], isLoading: loadingSports } = useQuery({
+  const { data: sports = [] } = useQuery({
     queryKey: ["sports-for-links", eventId],
     queryFn: async () => {
       if (!eventId) return [];
