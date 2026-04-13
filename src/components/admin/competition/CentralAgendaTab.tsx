@@ -738,6 +738,11 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
                         </Button>
                       </TableCell>
                     )}
+                    <TableCell>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => navigate(`/admin/competicao/partida/${m.id}`)}>
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}
