@@ -167,6 +167,28 @@ export default function MatchEventsCard({ matchId, entries, matchConfig, canWrit
     );
   }
 
+  if (liveMode) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Radio className="h-4 w-4 text-destructive animate-pulse" />Modo ao Vivo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MatchLiveMode
+            matchId={matchId}
+            entries={entries}
+            matchConfig={matchConfig}
+            lineups={lineups}
+            getPlayerName={getPlayerName}
+            onClose={() => setLiveMode(false)}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <>
       <Card>
@@ -174,10 +196,17 @@ export default function MatchEventsCard({ matchId, entries, matchConfig, canWrit
           <CardTitle className="text-base flex items-center gap-2">
             <Clock className="h-4 w-4" />Ocorrências
           </CardTitle>
-          {canWrite && (
-            <Button size="sm" variant="outline" onClick={() => { resetForm(); setAddOpen(true); }}>
-              <Plus className="mr-1 h-3.5 w-3.5" />Registrar
-            </Button>
+          <div className="flex items-center gap-2">
+            {canWrite && (
+              <Button size="sm" variant="outline" onClick={() => setLiveMode(true)}>
+                <Radio className="mr-1 h-3.5 w-3.5" />Modo ao vivo
+              </Button>
+            )}
+            {canWrite && (
+              <Button size="sm" variant="outline" onClick={() => { resetForm(); setAddOpen(true); }}>
+                <Plus className="mr-1 h-3.5 w-3.5" />Registrar
+              </Button>
+            )}
           )}
         </CardHeader>
         <CardContent>
