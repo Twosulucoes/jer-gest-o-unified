@@ -177,7 +177,17 @@ export default function AcessosUsuariosPage() {
                           onCheckedChange={(active) => setActiveMutation.mutate({ user_id: u.user_id, active })}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="flex gap-1">
+                        {u.roles?.includes("coordenador_modalidade") && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSportLinksUser({ id: u.user_id, name: u.full_name || u.email })}
+                            title="Gerenciar modalidades"
+                          >
+                            <Settings2 className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
