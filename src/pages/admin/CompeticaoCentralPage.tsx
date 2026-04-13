@@ -11,6 +11,7 @@ import SportEventPicker from "@/components/admin/competition/SportEventPicker";
 import CompetitionSummaryCards from "@/components/admin/competition/CompetitionSummaryCards";
 import CentralStructureTab from "@/components/admin/competition/CentralStructureTab";
 import CentralStructureCollectiveTab from "@/components/admin/competition/CentralStructureCollectiveTab";
+import CentralStructureHeatsTab from "@/components/admin/competition/CentralStructureHeatsTab";
 import CentralEnrolledTab from "@/components/admin/competition/CentralEnrolledTab";
 import CentralMatchesTab from "@/components/admin/competition/CentralMatchesTab";
 import CentralResultsTab from "@/components/admin/competition/CentralResultsTab";
@@ -103,6 +104,7 @@ export default function CompeticaoCentralPage() {
 
   const family = rules?.family as string | undefined;
   const format = rules?.format as string | undefined;
+  const isTimeMark = family === "time" || family === "mark";
 
   const showStandings = ["score","sets","time","mark","ranking","swiss"].includes(family ?? "");
 
@@ -273,6 +275,13 @@ export default function CompeticaoCentralPage() {
             {currentStep === "structure" && (
               isCollective ? (
                 <CentralStructureCollectiveTab
+                  eventId={eventId}
+                  sportEventId={sportEventId}
+                  onChanged={handleChanged}
+                  onAdvanceStep={goNext}
+                />
+              ) : isTimeMark ? (
+                <CentralStructureHeatsTab
                   eventId={eventId}
                   sportEventId={sportEventId}
                   onChanged={handleChanged}
