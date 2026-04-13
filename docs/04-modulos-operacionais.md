@@ -89,6 +89,13 @@
   2. **Alocar equipes**: interface de duas colunas (disponíveis × grupos) com botões de mover, sortear e redistribuir. Salva em `group_draw_lots`
   3. **Revisar e gerar partidas**: preview da quantidade de partidas por grupo (round-robin) e botão para gerar via `rpc_generate_matches_collective`
 - **RPC corrigida**: `rpc_generate_matches_collective` agora lê equipes de `group_draw_lots` por grupo (antes usava todas as equipes em todos os grupos)
+- **Passo 4 (Agenda)**: agendamento de partidas com:
+  - **Agendamento individual**: modal com date picker, time picker, seletor de local (venues), observações e hora de término opcional
+  - **Agendamento em lote**: define data, local, hora inicial e intervalo em minutos — calcula horários sequenciais com preview antes de confirmar
+  - **Detecção de conflitos**: verifica sobreposição de horário no mesmo local após cada salvamento (alerta não-bloqueante)
+  - **Contador de progresso**: "X de Y partidas agendadas" com badge verde quando 100%
+  - **Permissões**: admin e coordenação técnica podem agendar; secretaria visualiza apenas
+  - **Remoção**: permite remover agendamento com confirmação
 
 ## 10. Apuração e Resultados (🟡 Parcial)
 - **Página**: `/admin/competicao/resultados`
