@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useSportEventRules } from "@/hooks/useSportEventRules";
@@ -30,8 +30,21 @@ function getMatchesLabel(family?: string, format?: string): string {
 
 export default function CompeticaoCentralPage() {
   const eventId = useActiveEventId();
-  const [sportEventId, setSportEventId] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState("participants");
+  const [searchParams] = useSearchParams();
+  const [sportEventId, setSportEventId] = useState<string | null>(
+    searchParams.get("sport_event_id")
+  );
+  const [currentStep, setCurrentStep] = useState(
+    searchParams.get("step") ?? "participants"
+  );
+
+  // Sync from URL params on mount
+  useEffect(() => {
+    const seId = searchParams.get("sport_event_id");
+    const step = searchParams.get("step");
+    if (seId) setSportEventId(seId);
+    if (step) setCurrentStep(step);
+  }, [searchParams]);
 
   const { rules, source: rulesSource } = useSportEventRules(eventId, sportEventId);
 

@@ -28,6 +28,7 @@ Importação (SIGECOM) → Credenciamento/QR → Logística → Competição →
 - **Presets esportivos** — configurações prontas para Futsal, Futebol, Handebol, Basquete, Karatê (Kata e Kumite)
 - **Seed automático de regras** — geração em massa de regras para todas as provas de um evento com heurística por nome de modalidade
 - Gestão de competições (fases, grupos, partidas, resultados)
+- **Painel de Controle da Competição** — visão consolidada do progresso de todas as provas com status automático (Bloqueada/Não Iniciada/Em Andamento/Com Pendência/Concluída), barras de progresso visuais e navegação direta ao wizard
 - **Estrutura de grupos para coletivas** — wizard com sugestão automática, alocação de equipes em grupos e geração de partidas round-robin por grupo
 - Apuração e publicação de resultados
 - Registro de evidências operacionais (prestação de contas / OSC)
