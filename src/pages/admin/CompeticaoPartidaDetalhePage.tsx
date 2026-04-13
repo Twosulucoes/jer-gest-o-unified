@@ -114,6 +114,7 @@ export default function CompeticaoPartidaDetalhePage() {
   const [confirmAction, setConfirmAction] = useState<"validate" | "publish" | "unpublish" | null>(null);
   const [collectiveScoreOpen, setCollectiveScoreOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [publishBulletinId, setPublishBulletinId] = useState("");
 
   // Fetch match
   const { data: match, isLoading } = useQuery({
