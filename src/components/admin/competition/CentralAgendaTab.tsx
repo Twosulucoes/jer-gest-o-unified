@@ -694,6 +694,7 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
                 <TableHead>Hora</TableHead>
                 <TableHead>Local</TableHead>
                 {canEdit && <TableHead className="w-[100px]">Ação</TableHead>}
+                <TableHead className="w-[60px]">Detalhe</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
