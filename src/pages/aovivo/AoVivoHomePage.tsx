@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAoVivoManifest } from "./useAoVivoManifest";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,7 @@ export default function AoVivoHomePage() {
   const { user, profile, signOut, loading: authLoading, hasRole } = useAuth();
   const { activeEvent } = useEventContext();
   const isAdmin = hasRole("admin") || hasRole("coordenacao_tecnica");
+  useAoVivoManifest();
 
   const [showInstall, setShowInstall] = useState(() => {
     return !localStorage.getItem("aovivo_install_dismissed");
