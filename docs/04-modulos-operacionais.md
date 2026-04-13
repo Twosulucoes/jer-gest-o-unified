@@ -102,8 +102,16 @@
   - **Contador de progresso**: "X de Y partidas agendadas" com badge verde quando 100%
   - **Permissões**: admin e coordenação técnica podem agendar; secretaria visualiza apenas
   - **Remoção**: permite remover agendamento com confirmação
+- **Passo 5 (Classificação) para individuais time/mark**: componente `CrossHeatRankingTab` com:
+  - Ranking consolidado de todas as baterias (menor tempo ou maior distância/pontos)
+  - Empates com posição compartilhada, outcomes especiais (DSQ/DNS/DNF/WO) no final
+  - Filtros por bateria e status (classificados/desclassificados)
+  - Campo de busca por nome ou escola
+  - Exportação CSV
+  - Atualização automática a cada 30 segundos
+- **Ranking na página da partida**: `CrossHeatRankingCard` exibido abaixo do ranking individual da bateria, com destaque dos atletas da bateria atual
+- **Lógica**: `computeCrossHeatRanking` em `individualRanking.ts` e `useCrossHeatRanking` hook
 
-## 10. Apuração e Resultados (🟡 Parcial)
 - **Página**: `/admin/competicao/resultados`
 - **Campos**: `result_status` (resultado_lancado → publicado), `validated_at`, `published_at`
 - **RLS anon**: permite SELECT onde `result_status = 'publicado'`
