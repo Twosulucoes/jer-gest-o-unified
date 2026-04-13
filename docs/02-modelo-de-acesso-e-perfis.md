@@ -33,6 +33,7 @@ Armazenados na tabela `user_roles` (nunca em `profiles`). Validados via função
 | Alojamento | ✓ | ✓ | ✓ | — | — | — | — | — | — |
 | Competição | ✓ | ✓ | ✓ | ✓ (filtrado) | — | — | — | — | — |
 | Partida ao vivo | ✓ | ✓ | ✓ | ✓ | ✓ (designada) | — | — | — | — |
+| Designação de oficiais | ✓ | — | ✓ | ✓ | R | — | — | — | — |
 | **Regras por Prova** | **CRUD** | **R** | **CRUD** | **R** | — | — | — | — | — |
 | **Regras em Lote (Seed)** | **✓** | — | **✓** | — | — | — | — | — | — |
 | Resultados (publicados) | ✓ | ✓ | ✓ | R | — | — | — | — | R |
