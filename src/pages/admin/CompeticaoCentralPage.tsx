@@ -242,7 +242,7 @@ export default function CompeticaoCentralPage() {
           <CompetitionSummaryCards summary={summary} loading={summaryLoading} />
 
           {/* Progress indicator for collectives */}
-          {isCollective && !stepStatusLoading && (
+          {useWizardStatus && !stepStatusLoading && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">
@@ -261,7 +261,7 @@ export default function CompeticaoCentralPage() {
             currentStep={currentStep}
             onStepClick={handleStepClick}
             completedSteps={completedSteps}
-            stepStatus={isCollective ? stepStatus : undefined}
+            stepStatus={useWizardStatus ? stepStatus : undefined}
           />
 
           <div className="min-h-[300px]">
