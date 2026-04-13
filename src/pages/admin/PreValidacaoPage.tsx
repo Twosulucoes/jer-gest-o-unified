@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, XCircle, AlertTriangle, Trophy, Users, Search, RefreshCw, Award } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type ValidationStatus = "APTA" | "INAPTA" | "INDIVIDUAL_UNICO";
 
@@ -38,6 +39,124 @@ interface SportEventRow {
   solo_participant_id?: string;
   solo_pse_id?: string;
   family?: string;
+}
+
+function CollectiveReleaseDialog({
+  row,
+  eventId,
+  isPending,
+  onConfirm,
+  onCancel,
+}: {
+  row: SportEventRow;
+  eventId: string;
+  isPending: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const { data: teams, isLoading, isError, refetch: refetchTeams } = useQuery({
+    queryKey: ["release-teams", row.id, eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("teams")
+        .select("id, name, sport_event_id, delegation_id, status, team_members(id, is_active), delegations(institutions(name))")
+        .eq("sport_event_id", row.id)
+        .eq("status", "active")
+        .eq("event_id", eventId);
+      if (error) throw error;
+      return (data ?? []).map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        school: (t.delegations as any)?.institutions?.name ?? "—",
+        activeMembers: (t.team_members ?? []).filter((m: any) => m.is_active).length,
+      }));
+    },
+  });
+
+  const sufficient = (teams ?? []).filter((t) => t.activeMembers >= row.minimo).length;
+  const canConfirm = sufficient > 0;
+
+  return (
+    <Dialog open onOpenChange={() => onCancel()}>
+      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Confirmar liberação</DialogTitle>
+          <DialogDescription>
+            <strong>{row.name}</strong> — {row.sport_name} · {row.category_name}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto space-y-2 py-2">
+          {isLoading && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          )}
+
+          {isError && (
+            <div className="flex flex-col items-center gap-2 py-6 text-center">
+              <XCircle className="h-6 w-6 text-destructive" />
+              <p className="text-sm text-muted-foreground">Erro ao buscar equipes</p>
+              <Button size="sm" variant="outline" onClick={() => refetchTeams()}>
+                <RefreshCw className="h-3.5 w-3.5 mr-1" /> Tentar novamente
+              </Button>
+            </div>
+          )}
+
+          {!isLoading && !isError && teams?.length === 0 && (
+            <div className="flex flex-col items-center gap-2 py-6 text-center">
+              <AlertTriangle className="h-6 w-6 text-warning" />
+              <p className="text-sm text-muted-foreground">
+                Nenhuma equipe encontrada — sincronize as equipes antes de liberar
+              </p>
+            </div>
+          )}
+
+          {!isLoading && !isError && teams && teams.length > 0 && (
+            <div className="rounded-md border divide-y">
+              {teams.map((t) => (
+                <div key={t.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{t.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{t.school}</p>
+                  </div>
+                  <div className="flex items-center gap-2 ml-2 shrink-0">
+                    <span className="text-xs text-muted-foreground">{t.activeMembers} membros</span>
+                    <Badge variant={t.activeMembers >= row.minimo ? "success" : "destructive"} className="text-[10px] px-1.5">
+                      {t.activeMembers >= row.minimo ? "OK" : `< ${row.minimo}`}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {!isLoading && !isError && teams && (
+          <p className="text-xs text-muted-foreground">
+            {teams.length} equipe{teams.length !== 1 ? "s" : ""} confirmada{teams.length !== 1 ? "s" : ""}, {sufficient} com membros suficientes
+          </p>
+        )}
+
+        {!canConfirm && !isLoading && !isError && teams && teams.length > 0 && (
+          <p className="text-xs text-destructive">
+            Nenhuma equipe atingiu o mínimo para esta prova
+          </p>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel}>Cancelar</Button>
+          <Button
+            onClick={onConfirm}
+            disabled={isPending || !canConfirm || isLoading}
+          >
+            {isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+            Confirmar liberação
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default function PreValidacaoPage() {
@@ -592,8 +711,8 @@ export default function PreValidacaoPage() {
         </Card>
       )}
 
-      {/* Confirm Release Dialog */}
-      {confirmDialog?.type === "release" && (
+      {/* Confirm Release Dialog — Individual (simple) */}
+      {confirmDialog?.type === "release" && !confirmDialog.row.is_collective && (
         <Dialog open onOpenChange={() => setConfirmDialog(null)}>
           <DialogContent>
             <DialogHeader>
@@ -614,6 +733,17 @@ export default function PreValidacaoPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Confirm Release Dialog — Collective (expanded with teams) */}
+      {confirmDialog?.type === "release" && confirmDialog.row.is_collective && (
+        <CollectiveReleaseDialog
+          row={confirmDialog.row}
+          eventId={eventId!}
+          isPending={releaseMut.isPending}
+          onConfirm={() => releaseMut.mutate(confirmDialog.row)}
+          onCancel={() => setConfirmDialog(null)}
+        />
       )}
 
       {/* Champion Dialog */}
