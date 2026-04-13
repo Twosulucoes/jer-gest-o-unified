@@ -35,22 +35,22 @@ interface GroupItem {
 }
 
 // ── Helpers ─────────────────────────────────────────────────
-function suggestGroupCount(teamCount: number): { groups: number; description: string } {
-  if (teamCount <= 3) return { groups: 0, description: "Fase única em mata-mata direto (sem grupos)." };
-  if (teamCount <= 6) return { groups: 1, description: `1 grupo único com ${teamCount} equipes — todos contra todos.` };
+function suggestGroupCount(teamCount: number): { groups: number; description: string; allowKnockout: boolean } {
+  if (teamCount <= 3) return { groups: 1, description: `1 grupo único com ${teamCount} equipes — todos contra todos (round-robin).`, allowKnockout: true };
+  if (teamCount <= 6) return { groups: 1, description: `1 grupo único com ${teamCount} equipes — todos contra todos.`, allowKnockout: false };
   if (teamCount <= 10) {
     const g = 2;
     const perGroup = Math.ceil(teamCount / g);
-    return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.` };
+    return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.`, allowKnockout: false };
   }
   if (teamCount <= 16) {
     const g = teamCount <= 12 ? 3 : 4;
     const perGroup = Math.ceil(teamCount / g);
-    return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.` };
+    return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.`, allowKnockout: false };
   }
   const g = Math.min(Math.ceil(teamCount / 4), 8);
   const perGroup = Math.ceil(teamCount / g);
-  return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.` };
+  return { groups: g, description: `${g} grupos com ~${perGroup} equipes cada + eliminatórias entre os melhores.`, allowKnockout: false };
 }
 
 function roundRobinCount(n: number) {
@@ -96,7 +96,7 @@ function SubStepIndicator({ current, labels }: { current: number; labels: string
 export default function CentralStructureCollectiveTab({ eventId, sportEventId, onChanged, onAdvanceStep }: Props) {
   const qc = useQueryClient();
   const [subStep, setSubStep] = useState<1 | 2 | 3>(1);
-  const [groupCount, setGroupCount] = useState(2);
+  const [groupCount, setGroupCount] = useState(1);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [allocation, setAllocation] = useState<Record<string, string[]>>({}); // groupId -> teamId[]
 
@@ -436,46 +436,43 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
               </Badge>
             </div>
 
-            {suggestion.groups === 0 ? (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>{suggestion.description}</AlertDescription>
+            </Alert>
+
+            {suggestion.allowKnockout && (
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Com {teams.length} equipe(s), sugerimos mata-mata direto sem fase de grupos.
-                  Use a aba "Chaves" no passo de Confrontos.
+                  Alternativa: você pode pular a fase de grupos e usar mata-mata direto na aba "Chaves" do passo Confrontos.
                 </AlertDescription>
               </Alert>
-            ) : (
-              <>
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>{suggestion.description}</AlertDescription>
-                </Alert>
-
-                <div className="flex items-center gap-3">
-                  <label className="text-sm font-medium">Número de grupos:</label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={Math.max(teams.length, 1)}
-                    value={groupCount}
-                    onChange={(e) => setGroupCount(Math.max(1, Math.min(teams.length, Number(e.target.value))))}
-                    className="w-20"
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    (~{Math.ceil(teams.length / groupCount)} equipes por grupo)
-                  </span>
-                </div>
-
-                <Button onClick={() => createStructureMut.mutate()} disabled={createStructureMut.isPending}>
-                  {createStructureMut.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  ) : (
-                    <Layers className="h-4 w-4 mr-1" />
-                  )}
-                  Confirmar estrutura
-                </Button>
-              </>
             )}
+
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium">Número de grupos:</label>
+              <Input
+                type="number"
+                min={1}
+                max={Math.max(teams.length, 1)}
+                value={groupCount}
+                onChange={(e) => setGroupCount(Math.max(1, Math.min(teams.length, Number(e.target.value))))}
+                className="w-20"
+              />
+              <span className="text-xs text-muted-foreground">
+                (~{Math.ceil(teams.length / groupCount)} equipes por grupo)
+              </span>
+            </div>
+
+            <Button onClick={() => createStructureMut.mutate()} disabled={createStructureMut.isPending}>
+              {createStructureMut.isPending ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Layers className="h-4 w-4 mr-1" />
+              )}
+              Confirmar estrutura
+            </Button>
           </CardContent>
         </Card>
       )}
