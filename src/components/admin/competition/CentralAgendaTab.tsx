@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +23,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import {
   CalendarIcon, CalendarClock, Loader2, AlertTriangle, Clock, MapPin,
-  Pencil, CalendarPlus, Trash2, ListChecks, XCircle, RefreshCw,
+  Pencil, CalendarPlus, Trash2, ListChecks, XCircle, RefreshCw, ExternalLink,
 } from "lucide-react";
 
 interface Props {

@@ -760,9 +760,16 @@ export default function CompeticaoPartidaDetalhePage() {
           matchId={matchId!}
           entries={entries.filter((e) => e.team_id).map((e) => ({ id: e.id, team_id: e.team_id, label: getEntryLabel(e) }))}
           matchConfig={((sport as any)?.match_config ?? {}) as MatchConfig}
-          canWrite={canWrite}
+          canWrite={canWriteEvents}
         />
       )}
+
+      {/* User Assignments Card */}
+      <MatchUserAssignmentsCard
+        matchId={matchId!}
+        eventId={match.event_id}
+        canWrite={canWriteFull}
+      />
 
       {/* Attachments Card (collective + individual when configured) */}
       {(isCollective || individualConfig?.requires_attachments) && (
