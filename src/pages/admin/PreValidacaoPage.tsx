@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,7 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, XCircle, AlertTriangle, Trophy, Users, Search, RefreshCw, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type ValidationStatus = "APTA" | "INAPTA" | "INDIVIDUAL_UNICO";
+type ValidationStatus = "APTA" | "INAPTA" | "INDIVIDUAL_UNICO" | "CAMPEA_DIRETA";
 
 interface SportEventRow {
   id: string;
@@ -27,6 +28,7 @@ interface SportEventRow {
   gender_scope: string;
   confirmed_count: number;
   team_count: number;
+  eligible_team_count: number;
   max_team_members: number;
   minimo: number;
   status: ValidationStatus;
@@ -39,6 +41,11 @@ interface SportEventRow {
   solo_participant_id?: string;
   solo_pse_id?: string;
   family?: string;
+  // For campeã direta (collective)
+  champion_team_id?: string;
+  champion_team_name?: string;
+  champion_team_school?: string;
+  champion_team_members?: number;
 }
 
 function CollectiveReleaseDialog({
@@ -166,8 +173,9 @@ export default function PreValidacaoPage() {
   const [search, setSearch] = useState("");
   const [sportFilter, setSportFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [confirmDialog, setConfirmDialog] = useState<{ type: "release" | "champion"; row: SportEventRow } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ type: "release" | "champion" | "champion_collective"; row: SportEventRow } | null>(null);
   const [championMark, setChampionMark] = useState("");
+  const [championNotes, setChampionNotes] = useState("");
 
   // Step 1: Auto-sync collective teams
   const syncMut = useMutation({
@@ -229,20 +237,27 @@ export default function PreValidacaoPage() {
         confirmedMap.set(pse.sport_event_id, entry);
       }
 
-      // Fetch teams with member counts
+      // Fetch teams with member counts and delegation info
       const { data: teams, error: teamsErr } = await supabase
         .from("teams")
-        .select("id, sport_event_id, delegation_id, status, team_members(id, is_active)")
+        .select("id, name, sport_event_id, delegation_id, status, team_members(id, is_active), delegations(institutions(name))")
         .eq("event_id", eventId!)
         .eq("status", "active");
       if (teamsErr) throw teamsErr;
 
-      const teamMap = new Map<string, { count: number; maxMembers: number }>();
+      // Build team info per sport_event, tracking eligible teams
+      const teamMap = new Map<string, { count: number; maxMembers: number; eligibleCount: number; teams: any[] }>();
       for (const t of teams ?? []) {
-        const entry = teamMap.get(t.sport_event_id) ?? { count: 0, maxMembers: 0 };
-        const activeMembers = (t.team_members ?? []).filter((m: any) => m.is_active).length;
+        const entry = teamMap.get(t.sport_event_id) ?? { count: 0, maxMembers: 0, eligibleCount: 0, teams: [] };
+        const activeMembers = ((t as any).team_members ?? []).filter((m: any) => m.is_active).length;
         if (activeMembers > 0) entry.count++;
         entry.maxMembers = Math.max(entry.maxMembers, activeMembers);
+        entry.teams.push({
+          id: t.id,
+          name: t.name,
+          school: ((t as any).delegations as any)?.institutions?.name ?? "—",
+          activeMembers,
+        });
         teamMap.set(t.sport_event_id, entry);
       }
 
@@ -257,7 +272,10 @@ export default function PreValidacaoPage() {
         const minimo = rulesJson?.minimo_participantes ?? 2;
         const isCollective = sport?.is_collective === true;
         const confirmed = confirmedMap.get(se.id) ?? { count: 0, participants: [] };
-        const teamInfo = teamMap.get(se.id) ?? { count: 0, maxMembers: 0 };
+        const teamInfo = teamMap.get(se.id) ?? { count: 0, maxMembers: 0, eligibleCount: 0, teams: [] };
+
+        // Count eligible teams (members >= minimo)
+        const eligibleTeams = teamInfo.teams.filter((t: any) => t.activeMembers >= minimo);
 
         let status: ValidationStatus;
         let reason = "";
@@ -266,9 +284,12 @@ export default function PreValidacaoPage() {
           if (teamInfo.count === 0) {
             status = "INAPTA";
             reason = "Nenhuma equipe formada";
-          } else if (teamInfo.maxMembers < minimo) {
+          } else if (eligibleTeams.length === 0) {
             status = "INAPTA";
             reason = `Maior equipe tem ${teamInfo.maxMembers} membros — mínimo: ${minimo}`;
+          } else if (eligibleTeams.length === 1) {
+            status = "CAMPEA_DIRETA";
+            reason = "1 equipe elegível — campeã direta";
           } else {
             status = "APTA";
           }
@@ -297,6 +318,7 @@ export default function PreValidacaoPage() {
           gender_scope: cat?.gender_scope ?? "mixed",
           confirmed_count: confirmed.count,
           team_count: teamInfo.count,
+          eligible_team_count: eligibleTeams.length,
           max_team_members: teamInfo.maxMembers,
           minimo,
           status,
@@ -309,8 +331,16 @@ export default function PreValidacaoPage() {
         // For individual único, fetch athlete info
         if (status === "INDIVIDUAL_UNICO" && confirmed.participants.length === 1) {
           const pse = confirmed.participants[0];
-          row.solo_pse_id = pse.participant_id; // actually participant_id from PSE
-          // We'll fetch names in a secondary pass
+          row.solo_pse_id = pse.participant_id;
+        }
+
+        // For campeã direta, store team info
+        if (status === "CAMPEA_DIRETA" && eligibleTeams.length === 1) {
+          const team = eligibleTeams[0];
+          row.champion_team_id = team.id;
+          row.champion_team_name = team.name;
+          row.champion_team_school = team.school;
+          row.champion_team_members = team.activeMembers;
         }
 
         result.push(row);
@@ -344,7 +374,6 @@ export default function PreValidacaoPage() {
   const releaseMut = useMutation({
     mutationFn: async (row: SportEventRow) => {
       if (!row.rules_id) {
-        // Create rules entry first
         const { error } = await supabase.from("sport_event_rules").insert({
           sport_event_id: row.id,
           event_id: eventId!,
@@ -474,6 +503,98 @@ export default function PreValidacaoPage() {
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
+  // Champion mutation (collective — campeã direta)
+  const championCollectiveMut = useMutation({
+    mutationFn: async ({ row, notes }: { row: SportEventRow; notes: string }) => {
+      // 1. Create phase
+      const { data: phase, error: phaseErr } = await supabase
+        .from("competition_phases")
+        .insert({
+          event_id: eventId!,
+          sport_event_id: row.id,
+          name: "Classificação Direta",
+          phase_type: "direct",
+          status: "completed",
+          sort_order: 0,
+        })
+        .select("id")
+        .single();
+      if (phaseErr) throw phaseErr;
+
+      // 2. Create match
+      const { data: match, error: matchErr } = await supabase
+        .from("competition_matches")
+        .insert({
+          event_id: eventId!,
+          phase_id: phase.id,
+          sport_event_id: row.id,
+          status: "completed",
+          match_number: 1,
+          notes: notes || "Classificação direta — equipe única",
+        })
+        .select("id")
+        .single();
+      if (matchErr) throw matchErr;
+
+      // 3. Create match entry with team_id
+      const { data: entry, error: entryErr } = await supabase
+        .from("competition_match_entries")
+        .insert({
+          match_id: match.id,
+          team_id: row.champion_team_id!,
+          side: "home",
+          seed: 1,
+        })
+        .select("id")
+        .single();
+      if (entryErr) throw entryErr;
+
+      // 4. Create result
+      const { error: resultErr } = await supabase
+        .from("competition_match_results")
+        .insert({
+          match_id: match.id,
+          match_entry_id: entry.id,
+          position: 1,
+          outcome: "win",
+          result_status: "resultado_lancado",
+          recorded_by: user!.id,
+          notes: notes || "Classificação direta — equipe única na prova",
+        });
+      if (resultErr) throw resultErr;
+
+      // 5. Release the sport_event
+      if (row.rules_id) {
+        await supabase
+          .from("sport_event_rules")
+          .update({
+            released_at: new Date().toISOString(),
+            released_by: user?.id,
+            updated_by: user?.id,
+          })
+          .eq("id", row.rules_id);
+      } else {
+        await supabase.from("sport_event_rules").insert({
+          sport_event_id: row.id,
+          event_id: eventId!,
+          rules: { minimo_participantes: row.minimo } as any,
+          is_active: true,
+          released_at: new Date().toISOString(),
+          released_by: user?.id,
+          created_by: user?.id,
+          updated_by: user?.id,
+        });
+      }
+    },
+    onSuccess: () => {
+      toast({ title: "Campeã registrada", description: "Equipe registrada como campeã direta e prova liberada." });
+      qc.invalidateQueries({ queryKey: ["pre-validacao"] });
+      setConfirmDialog(null);
+      setChampionNotes("");
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
   // Derived data
   const sports = useMemo(() => {
     const unique = new Map<string, string>();
@@ -503,6 +624,7 @@ export default function PreValidacaoPage() {
     aptas: rows.filter((r) => r.status === "APTA").length,
     inaptas: rows.filter((r) => r.status === "INAPTA").length,
     unicos: rows.filter((r) => r.status === "INDIVIDUAL_UNICO").length,
+    campeasDiretas: rows.filter((r) => r.status === "CAMPEA_DIRETA").length,
     liberadas: rows.filter((r) => r.released_at).length,
   }), [rows]);
 
@@ -518,6 +640,8 @@ export default function PreValidacaoPage() {
         return <Badge variant="destructive">Inapta</Badge>;
       case "INDIVIDUAL_UNICO":
         return <Badge variant="warning">Individual Único</Badge>;
+      case "CAMPEA_DIRETA":
+        return <Badge variant="warning">Campeã Direta</Badge>;
     }
   };
 
@@ -553,7 +677,7 @@ export default function PreValidacaoPage() {
       />
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-6">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Total de Provas</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold">{totals.total}</p></CardContent>
@@ -569,6 +693,10 @@ export default function PreValidacaoPage() {
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm text-warning">Individual Único</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold text-warning">{totals.unicos}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm text-warning">Campeã Direta</CardTitle></CardHeader>
+          <CardContent><p className="text-2xl font-bold text-warning">{totals.campeasDiretas}</p></CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Liberadas</CardTitle></CardHeader>
@@ -607,6 +735,7 @@ export default function PreValidacaoPage() {
             <SelectItem value="APTA">Apta</SelectItem>
             <SelectItem value="INAPTA">Inapta</SelectItem>
             <SelectItem value="INDIVIDUAL_UNICO">Individual Único</SelectItem>
+            <SelectItem value="CAMPEA_DIRETA">Campeã Direta</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" size="icon" onClick={() => { syncMut.mutate(); }} title="Ressincronizar">
@@ -667,6 +796,11 @@ export default function PreValidacaoPage() {
                           {row.solo_athlete_name} — {row.solo_athlete_school}
                         </p>
                       )}
+                      {row.status === "CAMPEA_DIRETA" && row.champion_team_name && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {row.champion_team_name} — {row.champion_team_school}
+                        </p>
+                      )}
                     </TableCell>
                     <TableCell>
                       {row.released_at ? (
@@ -688,6 +822,15 @@ export default function PreValidacaoPage() {
                         >
                           <Award className="h-3.5 w-3.5 mr-1" />
                           Registrar campeão
+                        </Button>
+                      ) : row.status === "CAMPEA_DIRETA" ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setConfirmDialog({ type: "champion_collective", row })}
+                        >
+                          <Trophy className="h-3.5 w-3.5 mr-1" />
+                          Registrar campeã
                         </Button>
                       ) : row.reason.startsWith("Sem inscrições") ? (
                         <span className="text-xs text-muted-foreground italic">Sem ação</span>
@@ -746,7 +889,7 @@ export default function PreValidacaoPage() {
         />
       )}
 
-      {/* Champion Dialog */}
+      {/* Champion Dialog — Individual */}
       {confirmDialog?.type === "champion" && (
         <Dialog open onOpenChange={() => { setConfirmDialog(null); setChampionMark(""); }}>
           <DialogContent>
@@ -787,6 +930,54 @@ export default function PreValidacaoPage() {
               >
                 {championMut.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
                 Registrar e liberar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Champion Dialog — Collective (Campeã Direta) */}
+      {confirmDialog?.type === "champion_collective" && (
+        <Dialog open onOpenChange={() => { setConfirmDialog(null); setChampionNotes(""); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Registrar como campeã direta</DialogTitle>
+              <DialogDescription>
+                A equipe será registrada como 1º lugar em <strong>{confirmDialog.row.name}</strong> ({confirmDialog.row.sport_name} · {confirmDialog.row.category_name}).
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="rounded-md border p-4 space-y-1">
+                <p className="font-medium">{confirmDialog.row.champion_team_name}</p>
+                <p className="text-sm text-muted-foreground">{confirmDialog.row.champion_team_school}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{confirmDialog.row.champion_team_members} membros ativos</span>
+                  <Badge variant="success" className="text-[10px] px-1.5">
+                    ≥ {confirmDialog.row.minimo}
+                  </Badge>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Observação (opcional)
+                </label>
+                <Textarea
+                  placeholder="Registrar observação sobre a classificação direta..."
+                  value={championNotes}
+                  onChange={(e) => setChampionNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setConfirmDialog(null); setChampionNotes(""); }}>Cancelar</Button>
+              <Button
+                onClick={() => championCollectiveMut.mutate({ row: confirmDialog.row, notes: championNotes })}
+                disabled={championCollectiveMut.isPending}
+              >
+                {championCollectiveMut.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                Registrar como campeã e liberar
               </Button>
             </DialogFooter>
           </DialogContent>
