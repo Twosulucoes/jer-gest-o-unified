@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { getEligibilityErrorMessage } from "@/lib/eligibilityError";
-import { ArrowLeft, MapPin, CalendarDays, Clock, Plus, Trash2, Pencil, CheckCircle2, ClipboardList } from "lucide-react";
+import { RESULT_STATUS, RESULT_STATUS_LABEL, RESULT_STATUS_VARIANT } from "@/lib/resultStatus";
+import { ArrowLeft, MapPin, CalendarDays, Clock, Plus, Trash2, Pencil, CheckCircle2, ClipboardList, RefreshCw, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,16 +45,7 @@ const STATUS_OPTIONS = [
   { value: "cancelled", label: "Cancelada" },
 ];
 
-const RESULT_STATUS_LABEL: Record<string, string> = {
-  resultado_lancado: "Lançado",
-  resultado_validado: "Validado",
-  publicado: "Publicado",
-};
-const RESULT_STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
-  resultado_lancado: "outline",
-  resultado_validado: "default",
-  publicado: "secondary",
-};
+// RESULT_STATUS_LABEL and RESULT_STATUS_VARIANT imported from @/lib/resultStatus
 
 const OUTCOME_OPTIONS = [
   { value: "", label: "— Nenhum —" },
@@ -122,6 +114,7 @@ export default function CompeticaoPartidaDetalhePage() {
   const [confirmAction, setConfirmAction] = useState<"validate" | "publish" | "unpublish" | null>(null);
   const [collectiveScoreOpen, setCollectiveScoreOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [publishBulletinId, setPublishBulletinId] = useState("");
 
   // Fetch match
   const { data: match, isLoading } = useQuery({
@@ -249,8 +242,24 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!matchId && isCollective,
   });
 
+  // Bulletins for publish flow
+  const { data: bulletins = [] } = useQuery({
+    queryKey: ["published-bulletins-match", match?.event_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("official_bulletins")
+        .select("id, number, title, status")
+        .eq("event_id", match!.event_id)
+        .eq("status", "published")
+        .order("number", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!match?.event_id,
+  });
 
   const sportEventId = match?.sport_event_id ?? phase?.sport_event_id;
+
   const { data: teamsForSportEvent = [] } = useQuery({
     queryKey: ["teams_for_match", sportEventId],
     queryFn: async () => {
@@ -436,7 +445,17 @@ export default function CompeticaoPartidaDetalhePage() {
       const { error } = await supabase.from("competition_match_results").upsert(upserts as any, { onConflict: "match_entry_id" });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Resultados lançados"); setResultDialogOpen(false); },
+    onSuccess: async () => {
+      // Auto-finish match
+      if (match && match.status !== "finished") {
+        await supabase.from("competition_matches").update({ status: "finished", updated_at: new Date().toISOString() }).eq("id", matchId!);
+        qc.invalidateQueries({ queryKey: ["competition_match", matchId] });
+      }
+      qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] });
+      qc.invalidateQueries({ queryKey: ["competition_matches"] });
+      toast.success("Resultados lançados");
+      setResultDialogOpen(false);
+    },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
@@ -459,16 +478,18 @@ export default function CompeticaoPartidaDetalhePage() {
   const publishResultsMut = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Usuário não autenticado");
+      if (!publishBulletinId) throw new Error("Selecione um boletim oficial para publicar");
       const ids = results.filter((r) => r.result_status === "resultado_validado").map((r) => r.id);
       if (!ids.length) throw new Error("Nenhum resultado validado para publicar");
       const { error } = await supabase.from("competition_match_results").update({
         result_status: "publicado",
         published_by: user.id,
         published_at: new Date().toISOString(),
-      }).in("id", ids);
+        published_bulletin_id: publishBulletinId,
+      } as any).in("id", ids);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Resultados publicados oficialmente"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Resultados publicados oficialmente"); setPublishBulletinId(""); },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
@@ -486,6 +507,20 @@ export default function CompeticaoPartidaDetalhePage() {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Publicação revertida para validado"); },
     onError: (e: Error) => toast.error("Erro: " + e.message),
+  });
+
+  // Sync match_scores -> competition_match_results
+  const syncScoresToResultsMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("rpc_sync_match_scores_to_results", { p_match_id: matchId! });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] });
+      toast.success(`${data?.synced_count ?? 0} resultado(s) sincronizado(s)`);
+    },
+    onError: (e: Error) => toast.error("Erro ao sincronizar: " + e.message),
   });
 
   // Collective score mutation
@@ -652,11 +687,18 @@ export default function CompeticaoPartidaDetalhePage() {
         <Card>
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base">Placar coletivo</CardTitle>
-            {canWrite && entries.length >= 2 && (
-              <Button size="sm" variant="outline" onClick={() => setCollectiveScoreOpen(true)}>
-                <ClipboardList className="mr-2 h-4 w-4" />{matchScores.length > 0 ? "Editar placar" : "Lançar placar"}
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {canWrite && matchScores.length > 0 && !results.some((r) => r.match_entry_id && matchScores.some((ms: any) => ms.match_entry_id === r.match_entry_id)) && (
+                <Button size="sm" variant="secondary" onClick={() => syncScoresToResultsMut.mutate()} disabled={syncScoresToResultsMut.isPending}>
+                  <RefreshCw className="mr-2 h-4 w-4" />{syncScoresToResultsMut.isPending ? "Sincronizando..." : "Sincronizar para Resultado Oficial"}
+                </Button>
+              )}
+              {canWrite && entries.length >= 2 && (
+                <Button size="sm" variant="outline" onClick={() => setCollectiveScoreOpen(true)}>
+                  <ClipboardList className="mr-2 h-4 w-4" />{matchScores.length > 0 ? "Editar placar" : "Lançar placar"}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {matchScores.length === 0 ? (
@@ -846,11 +888,28 @@ export default function CompeticaoPartidaDetalhePage() {
               </Button>
             )}
             {canWrite && hasValidatedReady && !allPublished && (
-              <Button size="sm" variant="default" onClick={() => setConfirmAction("publish")} disabled={publishResultsMut.isPending}>
-                Publicar oficialmente
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select value={publishBulletinId} onValueChange={setPublishBulletinId}>
+                  <SelectTrigger className="w-[220px] h-8 text-xs">
+                    <SelectValue placeholder="Selecione boletim..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bulletins.map((b: any) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> #{b.number} — {b.title}</span>
+                      </SelectItem>
+                    ))}
+                    {bulletins.length === 0 && (
+                      <div className="p-2 text-xs text-muted-foreground">Nenhum boletim publicado.</div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="default" onClick={() => setConfirmAction("publish")} disabled={publishResultsMut.isPending || !publishBulletinId}>
+                  Publicar oficialmente
+                </Button>
+              </div>
             )}
-            {canWrite && hasPublished && (
+            {canWrite && hasPublished && hasRole("admin") && (
               <Button size="sm" variant="destructive" onClick={() => setConfirmAction("unpublish")} disabled={unpublishResultsMut.isPending}>
                 Despublicar
               </Button>
