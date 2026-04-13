@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, XCircle, AlertTriangle, Trophy, Users, Search, RefreshCw, Award } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type ValidationStatus = "APTA" | "INAPTA" | "INDIVIDUAL_UNICO";
 
