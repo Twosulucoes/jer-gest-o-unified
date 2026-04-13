@@ -170,6 +170,9 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
   const hasExistingStructure = existingPhases.length > 0 && existingGroups.length > 0;
   const hasExistingAllocations = existingDrawLots.length > 0;
 
+  // All dependent queries must finish before we can initialize
+  const allQueriesReady = !loadingTeams && !loadingPhases && !loadingGroups && !loadingDrawLots;
+
   // Auto-detect sub-step based on existing data
   const initialSubStep = useMemo(() => {
     if (hasExistingAllocations) return 3 as const;
@@ -177,9 +180,9 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
     return 1 as const;
   }, [hasExistingStructure, hasExistingAllocations]);
 
-  // Set initial substep once data loads
+  // Set initial substep once ALL data loads
   const [initialized, setInitialized] = useState(false);
-  if (!initialized && !loadingPhases && !loadingTeams) {
+  if (!initialized && allQueriesReady) {
     setSubStep(initialSubStep);
     if (hasExistingAllocations) {
       // Rebuild allocation state from existing draw lots
