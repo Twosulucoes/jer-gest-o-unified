@@ -116,6 +116,10 @@ import QrDiagnosticoPage from "./pages/pwa/diagnostico/QrDiagnosticoPage";
 import NotFound from "./pages/NotFound";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
+// Ao Vivo PWA (lazy loaded)
+const AoVivoLoginPage = lazy(() => import("./pages/aovivo/AoVivoLoginPage"));
+const AoVivoHomePage = lazy(() => import("./pages/aovivo/AoVivoHomePage"));
+const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
 
 const queryClient = new QueryClient();
 
