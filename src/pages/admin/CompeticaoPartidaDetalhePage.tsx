@@ -34,6 +34,7 @@ import MatchEventsCard from "@/components/admin/MatchEventsCard";
 import MatchAttemptsCard from "@/components/admin/MatchAttemptsCard";
 import IndividualRankingCard from "@/components/admin/IndividualRankingCard";
 import MatchDisciplineCard from "@/components/admin/MatchDisciplineCard";
+import MatchUserAssignmentsCard from "@/components/admin/MatchUserAssignmentsCard";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
@@ -104,7 +105,9 @@ export default function CompeticaoPartidaDetalhePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { hasRole, user } = useAuth();
-  const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
+  const canWriteFull = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica") || hasRole("coordenador_modalidade");
+  const canWriteEvents = canWriteFull || hasRole("mesario");
+  const canWrite = canWriteFull;
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addEntryOpen, setAddEntryOpen] = useState(false);
