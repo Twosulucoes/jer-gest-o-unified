@@ -592,8 +592,8 @@ export default function PreValidacaoPage() {
         </Card>
       )}
 
-      {/* Confirm Release Dialog */}
-      {confirmDialog?.type === "release" && (
+      {/* Confirm Release Dialog — Individual (simple) */}
+      {confirmDialog?.type === "release" && !confirmDialog.row.is_collective && (
         <Dialog open onOpenChange={() => setConfirmDialog(null)}>
           <DialogContent>
             <DialogHeader>
@@ -614,6 +614,17 @@ export default function PreValidacaoPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Confirm Release Dialog — Collective (expanded with teams) */}
+      {confirmDialog?.type === "release" && confirmDialog.row.is_collective && (
+        <CollectiveReleaseDialog
+          row={confirmDialog.row}
+          eventId={eventId!}
+          isPending={releaseMut.isPending}
+          onConfirm={() => releaseMut.mutate(confirmDialog.row)}
+          onCancel={() => setConfirmDialog(null)}
+        />
       )}
 
       {/* Champion Dialog */}
