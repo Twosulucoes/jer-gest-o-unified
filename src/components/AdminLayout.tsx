@@ -110,6 +110,7 @@ const navGroups: NavGroup[] = [
   {
     id: "competicao", label: "Competição", description: "Organização e execução da competição.",
     items: [
+      { label: "Painel", to: "/admin/competicao/painel", icon: <LayoutDashboard className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Pré-validação", to: "/admin/competicao/pre-validacao", icon: <ClipboardCheck className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Central", to: "/admin/competicao/central", icon: <Trophy className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Regras por Prova", to: "/admin/competicao/regras", icon: <Settings className="h-4 w-4" />, roles: COMPETITION_ROLES },
