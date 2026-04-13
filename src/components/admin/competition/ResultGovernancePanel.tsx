@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { RESULT_STATUS } from "@/lib/resultStatus";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
@@ -30,9 +30,9 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
         .eq("competition_matches.event_id", eventId)
         .eq("competition_matches.sport_event_id", sportEventId!);
       if (error) throw error;
-      const launched = (data || []).filter(r => r.result_status === "resultado_lancado").length;
-      const validated = (data || []).filter(r => r.result_status === "validated").length;
-      const published = (data || []).filter(r => r.result_status === "publicado").length;
+      const launched = (data || []).filter(r => r.result_status === RESULT_STATUS.LAUNCHED).length;
+      const validated = (data || []).filter(r => r.result_status === RESULT_STATUS.VALIDATED).length;
+      const published = (data || []).filter(r => r.result_status === RESULT_STATUS.PUBLISHED).length;
       return { launched, validated, published, total: (data || []).length };
     },
   });
