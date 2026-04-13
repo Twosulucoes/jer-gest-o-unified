@@ -152,7 +152,7 @@ export function useCollectiveStepStatus(
       const finished = matches.filter((m) => m.status === "finished").length;
       return { total, scheduled, finished };
     },
-    enabled: !!eventId && !!sportEventId && isCollective,
+    enabled: !!eventId && !!sportEventId && isEnabled,
     staleTime: 30_000,
   });
 
