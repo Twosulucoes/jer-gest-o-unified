@@ -478,16 +478,18 @@ export default function CompeticaoPartidaDetalhePage() {
   const publishResultsMut = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Usuário não autenticado");
+      if (!publishBulletinId) throw new Error("Selecione um boletim oficial para publicar");
       const ids = results.filter((r) => r.result_status === "resultado_validado").map((r) => r.id);
       if (!ids.length) throw new Error("Nenhum resultado validado para publicar");
       const { error } = await supabase.from("competition_match_results").update({
         result_status: "publicado",
         published_by: user.id,
         published_at: new Date().toISOString(),
-      }).in("id", ids);
+        published_bulletin_id: publishBulletinId,
+      } as any).in("id", ids);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Resultados publicados oficialmente"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] }); toast.success("Resultados publicados oficialmente"); setPublishBulletinId(""); },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
