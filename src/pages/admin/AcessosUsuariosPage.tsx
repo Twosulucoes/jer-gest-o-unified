@@ -267,6 +267,15 @@ export default function AcessosUsuariosPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {sportLinksUser && (
+        <SportLinksDialog
+          open={!!sportLinksUser}
+          onOpenChange={(open) => { if (!open) setSportLinksUser(null); }}
+          userId={sportLinksUser.id}
+          userName={sportLinksUser.name}
+        />
+      )}
     </div>
   );
 }
