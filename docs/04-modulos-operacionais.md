@@ -88,6 +88,12 @@
   1. **Definir estrutura**: sugestão automática de grupos baseada na quantidade de equipes (1-3→mata-mata, 4-6→grupo único, 7-10→2 grupos, etc.), com ajuste manual
   2. **Alocar equipes**: interface de duas colunas (disponíveis × grupos) com botões de mover, sortear e redistribuir. Salva em `group_draw_lots`
   3. **Revisar e gerar partidas**: preview da quantidade de partidas por grupo (round-robin) e botão para gerar via `rpc_generate_matches_collective`
+- **Passo 2 (Estrutura) para individuais time/mark**: componente `CentralStructureHeatsTab` com 3 sub-etapas:
+  1. **Definir baterias**: define atletas por bateria, preview automático (ex: 40 atletas, 8/bateria → 5 baterias), alerta para baterias com 1 atleta
+  2. **Revisar alocação**: distribuição aleatória equilibrada dos atletas, mover entre baterias, remover e realocar. Salva em `competition_match_entries` (via `participant_sport_event_id`)
+  3. **Confirmar**: resumo com opção de editar ou avançar para Agenda
+- **Persistência heats**: fase `phase_type="heats"` + `bracket_config.match_type="heat"`, cada bateria = 1 `competition_match`, cada atleta = 1 `competition_match_entry`
+- **Step status**: `useCollectiveStepStatus` suporta tanto coletivas quanto individuais time/mark, bloqueando passos subsequentes até que critérios sejam atingidos
 - **RPC corrigida**: `rpc_generate_matches_collective` agora lê equipes de `group_draw_lots` por grupo (antes usava todas as equipes em todos os grupos)
 - **Passo 4 (Agenda)**: agendamento de partidas com:
   - **Agendamento individual**: modal com date picker, time picker, seletor de local (venues), observações e hora de término opcional

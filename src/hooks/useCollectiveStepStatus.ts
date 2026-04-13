@@ -22,8 +22,10 @@ const BLOCK_MESSAGES: Record<string, string> = {
 export function useCollectiveStepStatus(
   eventId: string | null,
   sportEventId: string | null,
-  isCollective: boolean
+  isCollective: boolean,
+  isTimeMark: boolean = false,
 ) {
+  const isEnabled = isCollective || isTimeMark;
   // Active teams count
   const { data: activeTeamsCount = 0, isLoading: loadingTeams } = useQuery({
     queryKey: ["collective-step-teams", eventId, sportEventId],
@@ -41,6 +43,22 @@ export function useCollectiveStepStatus(
     staleTime: 30_000,
   });
 
+  // Individual athletes count (for time/mark)
+  const { data: activeAthletesCount = 0, isLoading: loadingAthletes } = useQuery({
+    queryKey: ["individual-step-athletes", eventId, sportEventId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("participant_sport_events")
+        .select("id", { count: "exact", head: true })
+        .eq("sport_event_id", sportEventId!)
+        .in("status", ["confirmed", "active", "inscrito"]);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!eventId && !!sportEventId && isTimeMark && !isCollective,
+    staleTime: 30_000,
+  });
+
   // Phases count
   const { data: phasesCount = 0, isLoading: loadingPhases } = useQuery({
     queryKey: ["collective-step-phases", eventId, sportEventId],
@@ -53,7 +71,7 @@ export function useCollectiveStepStatus(
       if (error) throw error;
       return count ?? 0;
     },
-    enabled: !!eventId && !!sportEventId && isCollective,
+    enabled: !!eventId && !!sportEventId && isEnabled,
     staleTime: 30_000,
   });
 
@@ -88,6 +106,34 @@ export function useCollectiveStepStatus(
     staleTime: 30_000,
   });
 
+  // Heat entries count (for individual time/mark)
+  const { data: heatEntriesCount = 0, isLoading: loadingHeatEntries } = useQuery({
+    queryKey: ["individual-step-heat-entries", eventId, sportEventId],
+    queryFn: async () => {
+      const { data: phases, error: phErr } = await supabase
+        .from("competition_phases")
+        .select("id")
+        .eq("event_id", eventId!)
+        .eq("sport_event_id", sportEventId!)
+        .eq("phase_type", "heats");
+      if (phErr) throw phErr;
+      if (!phases || phases.length === 0) return 0;
+      const { data: matches } = await supabase
+        .from("competition_matches")
+        .select("id")
+        .in("phase_id", phases.map((p) => p.id));
+      if (!matches || matches.length === 0) return 0;
+      const { count, error } = await supabase
+        .from("competition_match_entries")
+        .select("id", { count: "exact", head: true })
+        .in("match_id", matches.map((m) => m.id));
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!eventId && !!sportEventId && isTimeMark && !isCollective,
+    staleTime: 30_000,
+  });
+
   // Matches stats
   const { data: matchStats, isLoading: loadingMatches } = useQuery({
     queryKey: ["collective-step-matches", eventId, sportEventId],
@@ -106,7 +152,7 @@ export function useCollectiveStepStatus(
       const finished = matches.filter((m) => m.status === "finished").length;
       return { total, scheduled, finished };
     },
-    enabled: !!eventId && !!sportEventId && isCollective,
+    enabled: !!eventId && !!sportEventId && isEnabled,
     staleTime: 30_000,
   });
 
@@ -136,26 +182,28 @@ export function useCollectiveStepStatus(
         published: all.filter((r) => r.result_status === "publicado").length,
       };
     },
-    enabled: !!eventId && !!sportEventId && isCollective,
+    enabled: !!eventId && !!sportEventId && isEnabled,
     staleTime: 30_000,
   });
 
-  const isLoading = loadingTeams || loadingPhases || loadingDrawLots || loadingMatches || loadingResults;
+  const isLoading = loadingTeams || loadingAthletes || loadingPhases || loadingDrawLots || loadingHeatEntries || loadingMatches || loadingResults;
 
   const stepStatus: StepStatusMap = useMemo(() => {
-    if (!isCollective) return {};
+    if (!isEnabled) return {};
 
     const mt = matchStats ?? { total: 0, scheduled: 0, finished: 0 };
     const rs = resultStats ?? { total: 0, launched: 0, published: 0 };
 
-    // Step 1 — Participants/Equipes
-    const step1Completed = activeTeamsCount > 0;
+    // Step 1 — Participants/Equipes/Atletas
+    const step1Completed = isCollective ? activeTeamsCount > 0 : activeAthletesCount > 0;
 
     // Step 2 — Estrutura
-    const step2Completed = phasesCount > 0 && drawLotsCount > 0;
+    const step2Completed = isCollective
+      ? phasesCount > 0 && drawLotsCount > 0
+      : phasesCount > 0 && heatEntriesCount > 0;
     const step2Blocked = !step1Completed;
 
-    // Step 3 — Confrontos
+    // Step 3 — Confrontos/Baterias (for time/mark, heats ARE the matches)
     const step3Completed = mt.total > 0;
     const step3Blocked = !step2Completed;
 
@@ -189,7 +237,7 @@ export function useCollectiveStepStatus(
       results: { status: status(step6Completed, step6Blocked, step6Partial), blockMessage: step6Blocked ? BLOCK_MESSAGES.results : undefined },
       pending: { status: "available" },
     };
-  }, [isCollective, activeTeamsCount, phasesCount, drawLotsCount, matchStats, resultStats]);
+  }, [isEnabled, isCollective, activeTeamsCount, activeAthletesCount, phasesCount, drawLotsCount, heatEntriesCount, matchStats, resultStats]);
 
   const completedCount = useMemo(() => {
     return Object.values(stepStatus).filter((s) => s.status === "completed").length;

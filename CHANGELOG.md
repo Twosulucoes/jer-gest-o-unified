@@ -5,6 +5,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Geração automática de baterias (heats) para modalidades individuais de família time e mark (Atletismo, Natação, etc.)
+- Componente `CentralStructureHeatsTab` com wizard de 3 sub-etapas (Definir → Revisar → Confirmar)
+- `useCollectiveStepStatus` agora suporta bloqueio de passos para individuais time/mark
 - Documentação completa do projeto (README, /docs, CHANGELOG, CONTRIBUTING)
 
 ### Changed
