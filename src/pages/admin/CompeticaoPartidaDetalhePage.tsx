@@ -260,6 +260,7 @@ export default function CompeticaoPartidaDetalhePage() {
 
   const sportEventId = match?.sport_event_id ?? phase?.sport_event_id;
 
+  const { data: teamsForSportEvent = [] } = useQuery({
     queryKey: ["teams_for_match", sportEventId],
     queryFn: async () => {
       if (!sportEventId) return [];
