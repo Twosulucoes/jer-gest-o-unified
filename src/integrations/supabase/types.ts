@@ -290,6 +290,7 @@ export type Database = {
       competition_matches: {
         Row: {
           created_at: string
+          end_time: string | null
           event_id: string
           group_id: string | null
           id: string
@@ -308,6 +309,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          end_time?: string | null
           event_id: string
           group_id?: string | null
           id?: string
@@ -326,6 +328,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          end_time?: string | null
           event_id?: string
           group_id?: string | null
           id?: string

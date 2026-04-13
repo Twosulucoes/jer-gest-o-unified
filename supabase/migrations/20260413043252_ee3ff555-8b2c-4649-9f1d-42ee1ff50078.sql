@@ -1,0 +1,1 @@
+ALTER TABLE public.competition_matches ADD COLUMN end_time TIME WITHOUT TIME ZONE;
