@@ -1,9 +1,11 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useSportEventRules } from "@/hooks/useSportEventRules";
+import { useCollectiveStepStatus } from "@/hooks/useCollectiveStepStatus";
+import { toast } from "sonner";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import SportEventPicker from "@/components/admin/competition/SportEventPicker";
 import CompetitionSummaryCards from "@/components/admin/competition/CompetitionSummaryCards";
@@ -18,6 +20,7 @@ import CentralBracketTab from "@/components/admin/competition/CentralBracketTab"
 import CentralStandingsTab from "@/components/admin/competition/CentralStandingsTab";
 import WizardStepper, { type WizardStep } from "@/components/admin/competition/WizardStepper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Info, Settings } from "lucide-react";
 
@@ -37,14 +40,6 @@ export default function CompeticaoCentralPage() {
   const [currentStep, setCurrentStep] = useState(
     searchParams.get("step") ?? "participants"
   );
-
-  // Sync from URL params on mount
-  useEffect(() => {
-    const seId = searchParams.get("sport_event_id");
-    const step = searchParams.get("step");
-    if (seId) setSportEventId(seId);
-    if (step) setCurrentStep(step);
-  }, [searchParams]);
 
   const { rules, source: rulesSource } = useSportEventRules(eventId, sportEventId);
 
@@ -85,6 +80,8 @@ export default function CompeticaoCentralPage() {
     enabled: !!sportEventId,
   });
 
+  const isCollective = summary?.is_collective ?? false;
+
   const { data: phases = [] } = useQuery({
     queryKey: ["central-phases-check", eventId, sportEventId],
     queryFn: async () => {
@@ -109,38 +106,93 @@ export default function CompeticaoCentralPage() {
 
   const showStandings = ["score","sets","time","mark","ranking","swiss"].includes(family ?? "");
 
+  // Collective step status
+  const { stepStatus, isLoading: stepStatusLoading, completedCount } = useCollectiveStepStatus(
+    eventId, sportEventId, isCollective
+  );
+
   const steps: WizardStep[] = useMemo(() => [
-    { key: "participants", label: summary?.is_collective ? "Equipes" : "Participantes" },
+    { key: "participants", label: isCollective ? "Equipes" : "Participantes" },
     { key: "structure", label: "Estrutura" },
     { key: "matches", label: getMatchesLabel(family, format) },
     { key: "agenda", label: "Agenda" },
     { key: "standings", label: "Classificação", hidden: !showStandings },
     { key: "results", label: "Resultados" },
     { key: "pending", label: "Pendências" },
-  ], [summary?.is_collective, family, format, showStandings]);
+  ], [isCollective, family, format, showStandings]);
 
   const visibleSteps = steps.filter((s) => !s.hidden);
   const currentIdx = visibleSteps.findIndex((s) => s.key === currentStep);
 
+  // Legacy completedSteps for individual flow
   const completedSteps = useMemo(() => {
+    if (isCollective) return []; // handled by stepStatus
     const completed: string[] = [];
     if (!summary) return completed;
     if (summary.enrolled_count > 0 || summary.teams_count > 0) completed.push("participants");
     if (phases.length > 0) completed.push("structure");
     if (summary.matches_count > 0) completed.push("matches");
-    // Agenda: only if all matches have date+time+venue
-    // For now keep same logic as before (matches > 0)
     if (summary.matches_count > 0) completed.push("agenda");
     if (summary.matches_count > 0 && summary.matches_no_result === 0) completed.push("results");
     return completed;
-  }, [summary, phases.length]);
+  }, [summary, phases.length, isCollective]);
+
+  // Handle step click with blocking for collectives
+  const handleStepClick = useCallback((key: string) => {
+    if (isCollective && stepStatus[key]) {
+      const info = stepStatus[key];
+      if (info.status === "blocked" && info.blockMessage) {
+        toast.warning(info.blockMessage);
+        return; // Don't navigate
+      }
+    }
+    setCurrentStep(key);
+  }, [isCollective, stepStatus]);
+
+  // Deep-link validation: redirect if step is blocked
+  useEffect(() => {
+    const step = searchParams.get("step");
+    const seId = searchParams.get("sport_event_id");
+    if (seId) setSportEventId(seId);
+    if (step) {
+      if (isCollective && stepStatus[step]?.status === "blocked") {
+        // Find first available step
+        const firstAvailable = visibleSteps.find(
+          (s) => !stepStatus[s.key] || stepStatus[s.key].status !== "blocked"
+        );
+        const fallback = firstAvailable?.key ?? "participants";
+        setCurrentStep(fallback);
+        if (stepStatus[step]?.blockMessage) {
+          toast.warning(stepStatus[step].blockMessage);
+        }
+      } else {
+        setCurrentStep(step);
+      }
+    }
+  }, [searchParams, isCollective, stepStatus, visibleSteps]);
 
   const goNext = () => {
-    if (currentIdx < visibleSteps.length - 1) setCurrentStep(visibleSteps[currentIdx + 1].key);
+    if (currentIdx < visibleSteps.length - 1) {
+      const nextKey = visibleSteps[currentIdx + 1].key;
+      handleStepClick(nextKey);
+    }
   };
   const goPrev = () => {
-    if (currentIdx > 0) setCurrentStep(visibleSteps[currentIdx - 1].key);
+    if (currentIdx > 0) {
+      const prevKey = visibleSteps[currentIdx - 1].key;
+      handleStepClick(prevKey);
+    }
   };
+
+  // Progress bar for collectives
+  const progressPercent = isCollective
+    ? Math.round((completedCount / visibleSteps.length) * 100)
+    : 0;
+
+  // Refetch step status when summary changes
+  const handleChanged = useCallback(() => {
+    refetchSummary();
+  }, [refetchSummary]);
 
   return (
     <div className="space-y-6">
@@ -186,11 +238,27 @@ export default function CompeticaoCentralPage() {
 
           <CompetitionSummaryCards summary={summary} loading={summaryLoading} />
 
+          {/* Progress indicator for collectives */}
+          {isCollective && !stepStatusLoading && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  Passo {currentIdx + 1} de {visibleSteps.length} — {visibleSteps[currentIdx]?.label ?? ""}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {completedCount} de {visibleSteps.length} concluído(s)
+                </span>
+              </div>
+              <Progress value={progressPercent} className="h-1.5" />
+            </div>
+          )}
+
           <WizardStepper
             steps={steps}
             currentStep={currentStep}
-            onStepClick={setCurrentStep}
+            onStepClick={handleStepClick}
             completedSteps={completedSteps}
+            stepStatus={isCollective ? stepStatus : undefined}
           />
 
           <div className="min-h-[300px]">
@@ -198,23 +266,23 @@ export default function CompeticaoCentralPage() {
               <CentralEnrolledTab
                 eventId={eventId}
                 sportEventId={sportEventId}
-                isCollective={summary?.is_collective ?? false}
+                isCollective={isCollective}
               />
             )}
 
             {currentStep === "structure" && (
-              summary?.is_collective ? (
+              isCollective ? (
                 <CentralStructureCollectiveTab
                   eventId={eventId}
                   sportEventId={sportEventId}
-                  onChanged={refetchSummary}
+                  onChanged={handleChanged}
                   onAdvanceStep={goNext}
                 />
               ) : (
                 <CentralStructureTab
                   eventId={eventId}
                   sportEventId={sportEventId}
-                  onChanged={refetchSummary}
+                  onChanged={handleChanged}
                 />
               )
             )}
@@ -224,14 +292,14 @@ export default function CompeticaoCentralPage() {
                 <CentralBracketTab
                   eventId={eventId}
                   sportEventId={sportEventId}
-                  isCollective={summary?.is_collective ?? false}
+                  isCollective={isCollective}
                 />
               ) : (
                 <CentralMatchesTab
                   eventId={eventId}
                   sportEventId={sportEventId}
-                  isCollective={summary?.is_collective ?? false}
-                  onChanged={refetchSummary}
+                  isCollective={isCollective}
+                  onChanged={handleChanged}
                 />
               )
             )}
@@ -256,7 +324,7 @@ export default function CompeticaoCentralPage() {
               <CentralResultsTab
                 eventId={eventId}
                 sportEventId={sportEventId}
-                isCollective={summary?.is_collective ?? false}
+                isCollective={isCollective}
               />
             )}
 
