@@ -134,7 +134,7 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
     },
   });
 
-  const { data: existingGroups = [] } = useQuery({
+  const { data: existingGroups = [], isLoading: loadingGroups } = useQuery({
     queryKey: ["structure-groups", eventId, sportEventId],
     queryFn: async () => {
       if (existingPhases.length === 0) return [];
@@ -150,7 +150,7 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
     enabled: existingPhases.length > 0,
   });
 
-  const { data: existingDrawLots = [] } = useQuery({
+  const { data: existingDrawLots = [], isLoading: loadingDrawLots } = useQuery({
     queryKey: ["structure-draw-lots", existingGroups.map((g) => g.id).join(",")],
     queryFn: async () => {
       if (existingGroups.length === 0) return [];
@@ -170,6 +170,9 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
   const hasExistingStructure = existingPhases.length > 0 && existingGroups.length > 0;
   const hasExistingAllocations = existingDrawLots.length > 0;
 
+  // All dependent queries must finish before we can initialize
+  const allQueriesReady = !loadingTeams && !loadingPhases && !loadingGroups && !loadingDrawLots;
+
   // Auto-detect sub-step based on existing data
   const initialSubStep = useMemo(() => {
     if (hasExistingAllocations) return 3 as const;
@@ -177,9 +180,9 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
     return 1 as const;
   }, [hasExistingStructure, hasExistingAllocations]);
 
-  // Set initial substep once data loads
+  // Set initial substep once ALL data loads
   const [initialized, setInitialized] = useState(false);
-  if (!initialized && !loadingPhases && !loadingTeams) {
+  if (!initialized && allQueriesReady) {
     setSubStep(initialSubStep);
     if (hasExistingAllocations) {
       // Rebuild allocation state from existing draw lots
@@ -365,7 +368,7 @@ export default function CentralStructureCollectiveTab({ eventId, sportEventId, o
   const getTeamById = useCallback((id: string) => teams.find((t) => t.id === id), [teams]);
 
   // ── Loading / empty states ────────────────────────────────
-  if (loadingTeams || loadingPhases) {
+  if (!allQueriesReady) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground p-8">
         <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
