@@ -96,7 +96,7 @@ function SubStepIndicator({ current, labels }: { current: number; labels: string
 export default function CentralStructureCollectiveTab({ eventId, sportEventId, onChanged, onAdvanceStep }: Props) {
   const qc = useQueryClient();
   const [subStep, setSubStep] = useState<1 | 2 | 3>(1);
-  const [groupCount, setGroupCount] = useState(suggestion.groups || 1);
+  const [groupCount, setGroupCount] = useState(1);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [allocation, setAllocation] = useState<Record<string, string[]>>({}); // groupId -> teamId[]
 
