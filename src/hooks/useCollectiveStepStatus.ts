@@ -106,6 +106,34 @@ export function useCollectiveStepStatus(
     staleTime: 30_000,
   });
 
+  // Heat entries count (for individual time/mark)
+  const { data: heatEntriesCount = 0, isLoading: loadingHeatEntries } = useQuery({
+    queryKey: ["individual-step-heat-entries", eventId, sportEventId],
+    queryFn: async () => {
+      const { data: phases, error: phErr } = await supabase
+        .from("competition_phases")
+        .select("id")
+        .eq("event_id", eventId!)
+        .eq("sport_event_id", sportEventId!)
+        .eq("phase_type", "heats");
+      if (phErr) throw phErr;
+      if (!phases || phases.length === 0) return 0;
+      const { data: matches } = await supabase
+        .from("competition_matches")
+        .select("id")
+        .in("phase_id", phases.map((p) => p.id));
+      if (!matches || matches.length === 0) return 0;
+      const { count, error } = await supabase
+        .from("competition_match_entries")
+        .select("id", { count: "exact", head: true })
+        .in("match_id", matches.map((m) => m.id));
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!eventId && !!sportEventId && isTimeMark && !isCollective,
+    staleTime: 30_000,
+  });
+
   // Matches stats
   const { data: matchStats, isLoading: loadingMatches } = useQuery({
     queryKey: ["collective-step-matches", eventId, sportEventId],
