@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => ({
       },
       manifest: false, // We use our own manifest file
       workbox: {
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6 MB
         navigateFallbackDenylist: [/^\/~oauth/],
         runtimeCaching: [
           {
