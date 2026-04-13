@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_events: {
+        Row: {
+          action: string
+          created_at: string
+          created_by: string | null
+          id: string
+          payload: Json | null
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json | null
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json | null
+          record_id?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -179,6 +209,7 @@ export type Database = {
       }
       competition_match_results: {
         Row: {
+          combat_detail: Json | null
           created_at: string
           distance_cm: number | null
           id: string
@@ -205,6 +236,7 @@ export type Database = {
           validated_by: string | null
         }
         Insert: {
+          combat_detail?: Json | null
           created_at?: string
           distance_cm?: number | null
           id?: string
@@ -231,6 +263,7 @@ export type Database = {
           validated_by?: string | null
         }
         Update: {
+          combat_detail?: Json | null
           created_at?: string
           distance_cm?: number | null
           id?: string
@@ -3857,6 +3890,10 @@ export type Database = {
       }
       rpc_sync_collective_teams: {
         Args: { p_event_id: string; p_sport_event_id?: string }
+        Returns: Json
+      }
+      rpc_sync_match_scores_to_results: {
+        Args: { p_match_id: string }
         Returns: Json
       }
       rpc_upsert_sport_event_rules: {
