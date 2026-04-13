@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useEvent } from "@/contexts/EventContext";
 import { toast } from "sonner";
 import { ArrowLeft, Wifi, WifiOff, Undo2, Play, Pause, RotateCcw, Lock, AlertTriangle } from "lucide-react";
 import type { MatchConfig, EventTypeConfig } from "@/components/admin/MatchConfigEditor";
@@ -28,7 +27,6 @@ export default function AoVivoMatchPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user, loading: authLoading, hasRole } = useAuth();
-  const { activeEvent } = useEvent();
   const isAdmin = hasRole("admin") || hasRole("coordenacao_tecnica");
 
   // Access check
@@ -59,7 +57,6 @@ export default function AoVivoMatchPage() {
     enabled: !!matchId && accessCheck?.allowed,
   });
 
-  // Sport config for match
   const { data: phase } = useQuery({
     queryKey: ["aovivo_phase", match?.phase_id],
     queryFn: async () => {
@@ -100,7 +97,6 @@ export default function AoVivoMatchPage() {
     enabled: !!matchId && accessCheck?.allowed,
   });
 
-  // Team names
   const teamIds = entries.map((e: any) => e.team_id).filter(Boolean);
   const { data: teams = [] } = useQuery({
     queryKey: ["aovivo_teams", teamIds.join(",")],
@@ -129,7 +125,6 @@ export default function AoVivoMatchPage() {
     enabled: !!matchId && accessCheck?.allowed,
   });
 
-  // Player names
   const participantIds = [...new Set(lineups.map((l: any) => l.participant_id))];
   const { data: participants = [] } = useQuery({
     queryKey: ["aovivo_participants", participantIds.length],
@@ -265,9 +260,15 @@ export default function AoVivoMatchPage() {
     onError: (e: Error) => toast.error("Erro ao sincronizar: " + e.message),
   });
 
+  // Auto-sync when coming back online
+  const syncMutRef = useRef(syncMut);
+  syncMutRef.current = syncMut;
+  const localEventsRef = useRef(localEvents);
+  localEventsRef.current = localEvents;
+
   useEffect(() => {
-    if (isOnline && localEvents.some((e) => !e.synced)) {
-      syncMut.mutate();
+    if (isOnline && localEventsRef.current.some((e) => !e.synced)) {
+      syncMutRef.current.mutate();
     }
   }, [isOnline]);
 
@@ -286,7 +287,7 @@ export default function AoVivoMatchPage() {
   const primaryEvents = eventTypes.filter((e) => e.target === "team" || e.target === "player");
   const sideA = entryList[0];
   const sideB = entryList[1];
-  const entryLineups = (entryId: string) => lineups.filter((l: any) => l.match_entry_id === entryId);
+  const getEntryLineups = (entryId: string) => lineups.filter((l: any) => l.match_entry_id === entryId);
 
   const handleEventClick = (entryId: string, eventKey: string) => {
     const evtType = eventTypes.find((e) => e.key === eventKey);
@@ -297,7 +298,6 @@ export default function AoVivoMatchPage() {
     }
   };
 
-  // Auth redirect
   useEffect(() => {
     if (!authLoading && !user) navigate("/aovivo/login");
   }, [authLoading, user, navigate]);
@@ -390,7 +390,6 @@ export default function AoVivoMatchPage() {
       {/* Event buttons grid */}
       {sideA && sideB && (
         <div className="grid grid-cols-2 gap-2 px-3 py-3">
-          {/* Side A buttons */}
           <div className="space-y-2">
             {primaryEvents.map((evt) => (
               <button
@@ -402,7 +401,6 @@ export default function AoVivoMatchPage() {
               </button>
             ))}
           </div>
-          {/* Side B buttons */}
           <div className="space-y-2">
             {primaryEvents.map((evt) => (
               <button
@@ -472,7 +470,7 @@ export default function AoVivoMatchPage() {
               <button onClick={() => setSelectingEvent(null)} className="text-sm text-slate-400">Cancelar</button>
             </div>
             <div className="overflow-y-auto p-3 space-y-1.5">
-              {entryLineups(selectingEvent.entryId).map((l: any) => (
+              {getEntryLineups(selectingEvent.entryId).map((l: any) => (
                 <button
                   key={l.id}
                   onClick={() => addEvent(selectingEvent.entryId, selectingEvent.eventKey, l.id, l.participant_id)}

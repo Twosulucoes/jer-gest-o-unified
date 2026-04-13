@@ -3,11 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useEvent } from "@/contexts/EventContext";
+import { useEventContext } from "@/contexts/EventContext";
 import { LogOut, RefreshCw, Radio, Eye, Info, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { format, isToday, isFuture, isPast, parseISO } from "date-fns";
+import { format, isToday, isFuture, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -20,10 +19,9 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 export default function AoVivoHomePage() {
   const navigate = useNavigate();
   const { user, profile, signOut, loading: authLoading, hasRole } = useAuth();
-  const { activeEvent } = useEvent();
+  const { activeEvent } = useEventContext();
   const isAdmin = hasRole("admin") || hasRole("coordenacao_tecnica");
 
-  // Install banner
   const [showInstall, setShowInstall] = useState(() => {
     return !localStorage.getItem("aovivo_install_dismissed");
   });
@@ -32,20 +30,17 @@ export default function AoVivoHomePage() {
     setShowInstall(false);
   };
 
-  // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/aovivo/login");
     }
   }, [authLoading, user, navigate]);
 
-  // Fetch assigned matches
   const { data: matches = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["aovivo_matches", user?.id, activeEvent?.id],
     queryFn: async () => {
       if (!user?.id || !activeEvent?.id) return [];
 
-      // If admin, fetch all matches for the event
       if (isAdmin) {
         const { data, error } = await supabase
           .from("competition_matches")
@@ -59,7 +54,6 @@ export default function AoVivoHomePage() {
         return (data ?? []).map((m: any) => ({ ...m, role_label: "Supervisão" }));
       }
 
-      // Regular users: fetch via match_user_assignments
       const { data: assignments, error: aErr } = await supabase
         .from("match_user_assignments" as any)
         .select("match_id, role")
@@ -87,7 +81,6 @@ export default function AoVivoHomePage() {
     refetchInterval: 60000,
   });
 
-  // Fetch sport events, sports, categories, venues for labels
   const sportEventIds = [...new Set(matches.map((m: any) => m.sport_event_id).filter(Boolean))];
   const venueIds = [...new Set(matches.map((m: any) => m.venue_id).filter(Boolean))];
 
@@ -147,7 +140,6 @@ export default function AoVivoHomePage() {
     return `${sport} — ${cat}`;
   };
 
-  // Sort: today first, then future, then past
   const sorted = [...matches].sort((a: any, b: any) => {
     const da = a.match_date ? parseISO(a.match_date) : null;
     const db = b.match_date ? parseISO(b.match_date) : null;
@@ -158,11 +150,7 @@ export default function AoVivoHomePage() {
     return da.getTime() - db.getTime();
   });
 
-  // Pull-to-refresh via touchmove
-  const [pulling, setPulling] = useState(false);
-  const handleRefresh = useCallback(() => {
-    refetch();
-  }, [refetch]);
+  const handleRefresh = useCallback(() => { refetch(); }, [refetch]);
 
   if (authLoading) {
     return (
@@ -186,16 +174,10 @@ export default function AoVivoHomePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleRefresh}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
+          <button onClick={handleRefresh} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
             <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
           </button>
-          <button
-            onClick={signOut}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
+          <button onClick={signOut} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
             <LogOut className="h-4 w-4" />
           </button>
         </div>
@@ -241,10 +223,7 @@ export default function AoVivoHomePage() {
             const canEnter = m.status === "scheduled" || m.status === "in_progress";
 
             return (
-              <div
-                key={m.id}
-                className="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3"
-              >
+              <div key={m.id} className="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-sm leading-tight">{getMatchLabel(m)}</p>
