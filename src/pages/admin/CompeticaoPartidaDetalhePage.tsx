@@ -509,6 +509,20 @@ export default function CompeticaoPartidaDetalhePage() {
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
+  // Sync match_scores -> competition_match_results
+  const syncScoresToResultsMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("rpc_sync_match_scores_to_results", { p_match_id: matchId! });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] });
+      toast.success(`${data?.synced_count ?? 0} resultado(s) sincronizado(s)`);
+    },
+    onError: (e: Error) => toast.error("Erro ao sincronizar: " + e.message),
+  });
+
   // Collective score mutation
   const saveCollectiveScoreMut = useMutation({
     mutationFn: async ({ scores, notes }: { scores: ScoreEntry[]; notes: string }) => {
