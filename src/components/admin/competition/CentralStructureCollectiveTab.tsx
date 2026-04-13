@@ -35,9 +35,9 @@ interface GroupItem {
 }
 
 // ── Helpers ─────────────────────────────────────────────────
-function suggestGroupCount(teamCount: number): { groups: number; description: string } {
-  if (teamCount <= 3) return { groups: 0, description: "Fase única em mata-mata direto (sem grupos)." };
-  if (teamCount <= 6) return { groups: 1, description: `1 grupo único com ${teamCount} equipes — todos contra todos.` };
+function suggestGroupCount(teamCount: number): { groups: number; description: string; allowKnockout: boolean } {
+  if (teamCount <= 3) return { groups: 1, description: `1 grupo único com ${teamCount} equipes — todos contra todos (round-robin).`, allowKnockout: true };
+  if (teamCount <= 6) return { groups: 1, description: `1 grupo único com ${teamCount} equipes — todos contra todos.`, allowKnockout: false };
   if (teamCount <= 10) {
     const g = 2;
     const perGroup = Math.ceil(teamCount / g);
