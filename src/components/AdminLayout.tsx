@@ -71,6 +71,7 @@ const navGroups: NavGroup[] = [
     icon: <BadgeCheck className="h-4 w-4" />,
     items: [
       { label: "Busca e Emissão", to: "/admin/credenciamento", icon: <UserCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Credenciamento Externo", to: "/admin/credenciamento-externo", icon: <ScanLine className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Validação QR", to: "/admin/validacao-qr", icon: <ScanLine className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"] as AppRole[] },
       { label: "Modelos de Credencial", to: "/admin/credenciais/modelos", icon: <IdCard className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],

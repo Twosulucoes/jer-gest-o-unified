@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, CheckCircle, ScanLine, Search, User, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
-import ModuleHeader from "@/components/admin/ModuleHeader";
+
 import {
   AlertDialog,
   AlertDialogAction,
