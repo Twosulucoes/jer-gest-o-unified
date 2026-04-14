@@ -11,8 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { Download, RefreshCw, Utensils, AlertTriangle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import ModuleHeader from "@/components/admin/ModuleHeader";
 
 export default function AlimentacaoDashboardPage() {
   const eventId = useActiveEventId();
@@ -220,7 +218,10 @@ export default function AlimentacaoDashboardPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <ModuleHeader title="Dashboard de Alimentação" description="Visão consolidada do consumo de refeições em tempo real" />
+      <div>
+        <h1 className="font-heading text-2xl font-bold text-foreground">Dashboard de Alimentação</h1>
+        <p className="text-sm text-muted-foreground">Visão consolidada do consumo de refeições em tempo real</p>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
@@ -289,8 +290,8 @@ export default function AlimentacaoDashboardPage() {
             {zeroConsumptionCount > 0 && (
               <Card className="border-yellow-300 dark:border-yellow-700">
                 <CardContent className="pt-4 text-center">
-                  <AlertTriangle className="h-5 w-5 mx-auto mb-1 text-yellow-500" />
-                  <p className="text-2xl font-bold text-yellow-600">{zeroConsumptionCount}</p>
+                  <AlertTriangle className="h-5 w-5 mx-auto mb-1 text-destructive" />
+                  <p className="text-2xl font-bold text-destructive">{zeroConsumptionCount}</p>
                   <p className="text-xs text-muted-foreground">Sem refeição hoje</p>
                 </CardContent>
               </Card>
