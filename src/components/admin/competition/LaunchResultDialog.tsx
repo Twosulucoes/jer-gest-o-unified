@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { CheckCircle } from "lucide-react";
+import CombatResultForm, { type CombatResultPayload } from "@/components/admin/CombatResultForm";
+import { isCombatSport } from "@/config/combatSports";
 
 interface MatchEntry {
   id: string;
@@ -32,6 +34,7 @@ interface Props {
   match: MatchForResult | null;
   eventId: string;
   isCollective: boolean;
+  sportEventId?: string;
 }
 
 interface EntryResult {
@@ -50,10 +53,27 @@ function getEntryLabel(entry: MatchEntry): string {
   return pse?.participants?.people?.full_name ?? "—";
 }
 
-export default function LaunchResultDialog({ open, onOpenChange, match, eventId, isCollective }: Props) {
+export default function LaunchResultDialog({ open, onOpenChange, match, eventId, isCollective, sportEventId }: Props) {
   const qc = useQueryClient();
   const entries = match?.competition_match_entries ?? [];
 
+  // Detect combat sport
+  const { data: sportSlug } = useQuery({
+    queryKey: ["sport-slug-for-match", sportEventId],
+    queryFn: async () => {
+      if (!sportEventId) return null;
+      const { data, error } = await supabase
+        .from("sport_events")
+        .select("sports(slug)")
+        .eq("id", sportEventId)
+        .single();
+      if (error) return null;
+      return (data as any)?.sports?.slug ?? null;
+    },
+    enabled: !!sportEventId,
+  });
+
+  const isCombat = isCombatSport(sportSlug);
   const [results, setResults] = useState<Record<string, EntryResult>>({});
 
   const initResults = () => {
