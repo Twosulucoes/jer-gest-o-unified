@@ -135,18 +135,18 @@ export default function LaunchResultDialog({ open, onOpenChange, match, eventId,
   const combatMut = useMutation({
     mutationFn: async (payload: CombatResultPayload) => {
       if (!match) throw new Error("Partida não selecionada");
+      const { data: { user } } = await supabase.auth.getUser();
       const upserts = entries.map((entry) => ({
         match_id: match.id,
         match_entry_id: entry.id,
         outcome: entry.id === payload.winner_entry_id ? "win" : "loss",
         combat_detail: payload.combat_detail,
         result_status: "resultado_lancado",
-        recorded_by: (await supabase.auth.getUser()).data.user?.id,
+        recorded_by: user?.id,
         recorded_at: new Date().toISOString(),
       }));
       const { error } = await supabase.from("competition_match_results").upsert(upserts as any, { onConflict: "match_entry_id" });
       if (error) throw error;
-      // Auto-finish
       await supabase.from("competition_matches").update({ status: "finished" }).eq("id", match.id);
     },
     onSuccess: () => {
