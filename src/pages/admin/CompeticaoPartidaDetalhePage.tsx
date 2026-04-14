@@ -512,7 +512,41 @@ export default function CompeticaoPartidaDetalhePage() {
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
-  // Sync match_scores -> competition_match_results
+  // Combat result mutation
+  const saveCombatResultMut = useMutation({
+    mutationFn: async (payload: CombatResultPayload) => {
+      if (!user) throw new Error("Usuário não autenticado");
+      const upserts = entries.map((entry) => {
+        const existing = resultsMap.get(entry.id);
+        const isWinner = entry.id === payload.winner_entry_id;
+        return {
+          ...(existing ? { id: existing.id } : {}),
+          match_id: matchId!,
+          match_entry_id: entry.id,
+          outcome: isWinner ? "win" : "loss",
+          combat_detail: payload.combat_detail,
+          result_status: "resultado_lancado",
+          recorded_by: existing?.recorded_by ?? user.id,
+          recorded_at: existing?.recorded_at ?? new Date().toISOString(),
+        };
+      });
+      const { error } = await supabase.from("competition_match_results").upsert(upserts as any, { onConflict: "match_entry_id" });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      if (match && match.status !== "finished") {
+        await supabase.from("competition_matches").update({ status: "finished", updated_at: new Date().toISOString() }).eq("id", matchId!);
+        qc.invalidateQueries({ queryKey: ["competition_match", matchId] });
+      }
+      qc.invalidateQueries({ queryKey: ["competition_match_results", matchId] });
+      qc.invalidateQueries({ queryKey: ["competition_matches"] });
+      toast.success("Resultado de combate lançado");
+      setResultDialogOpen(false);
+    },
+    onError: (e: Error) => toast.error("Erro: " + e.message),
+  });
+
+
   const syncScoresToResultsMut = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc("rpc_sync_match_scores_to_results", { p_match_id: matchId! });
