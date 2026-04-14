@@ -553,6 +553,32 @@ export default function AcessosUsuariosPage() {
           userName={sportLinksUser.name}
         />
       )}
+
+      {/* Deactivation Confirmation */}
+      <AlertDialog open={!!deactivateConfirm} onOpenChange={(open) => { if (!open) setDeactivateConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O usuário <strong>{deactivateConfirm?.name}</strong> será desativado e todas as sessões ativas serão invalidadas. Ele não conseguirá acessar o sistema até ser reativado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deactivateConfirm) {
+                  setActiveMutation.mutate({ user_id: deactivateConfirm.user_id, active: false });
+                  setDeactivateConfirm(null);
+                }
+              }}
+            >
+              Desativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
