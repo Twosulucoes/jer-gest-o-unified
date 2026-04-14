@@ -2,14 +2,23 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+async function logAudit(adminClient: any, action: string, recordId: string, createdBy: string, payload?: any) {
+  await adminClient.from("audit_events").insert({
+    action,
+    table_name: "users",
+    record_id: recordId,
+    created_by: createdBy,
+    payload: payload || null,
   });
 }
 
@@ -99,9 +108,14 @@ Deno.serve(async (req) => {
           return jsonResponse({ error: "email and role are required" }, 400);
         }
 
-        const validRoles = ["admin", "secretaria", "transporte", "alimentacao", "coordenacao_tecnica", "delegacao"];
+        const validRoles = ["admin", "secretaria", "transporte", "alimentacao", "alojamento", "coordenacao_tecnica", "coordenador_modalidade", "delegacao", "mesario", "arbitragem", "cde"];
         if (!validRoles.includes(role)) {
           return jsonResponse({ error: "Invalid role" }, 400);
+        }
+
+        // Secretaria cannot create admin or secretaria
+        if (!roles.includes("admin") && (role === "admin" || role === "secretaria")) {
+          return jsonResponse({ error: "Secretaria não pode criar usuários admin ou secretaria" }, 403);
         }
 
         const redirectTo = `${req.headers.get("origin") || supabaseUrl}/pwa/set-password`;
@@ -126,6 +140,9 @@ Deno.serve(async (req) => {
           role,
         }, { onConflict: "user_id,role" });
 
+        // Log audit
+        await logAudit(adminClient, "user_created", userId, caller.id, { email, role, full_name });
+
         return jsonResponse({ success: true, user_id: userId });
       }
 
@@ -135,10 +152,17 @@ Deno.serve(async (req) => {
           return jsonResponse({ error: "user_id and role are required" }, 400);
         }
 
+        // Secretaria cannot assign admin/secretaria
+        if (!roles.includes("admin") && (role === "admin" || role === "secretaria")) {
+          return jsonResponse({ error: "Sem permissão para atribuir este perfil" }, 403);
+        }
+
         // Remove existing roles and set new one
         await adminClient.from("user_roles").delete().eq("user_id", user_id);
         const { error } = await adminClient.from("user_roles").insert({ user_id, role });
         if (error) return jsonResponse({ error: error.message }, 500);
+
+        await logAudit(adminClient, "profile_changed", user_id, caller.id, { new_role: role });
 
         return jsonResponse({ success: true });
       }
@@ -147,6 +171,11 @@ Deno.serve(async (req) => {
         const { user_id, active } = body;
         if (!user_id || typeof active !== "boolean") {
           return jsonResponse({ error: "user_id and active are required" }, 400);
+        }
+
+        // Prevent deactivating self
+        if (user_id === caller.id && !active) {
+          return jsonResponse({ error: "Não é possível desativar seu próprio usuário" }, 400);
         }
 
         const { error } = await adminClient
@@ -159,6 +188,8 @@ Deno.serve(async (req) => {
         if (!active) {
           await adminClient.auth.admin.signOut(user_id);
         }
+
+        await logAudit(adminClient, active ? "user_activated" : "user_deactivated", user_id, caller.id);
 
         return jsonResponse({ success: true });
       }
@@ -189,6 +220,58 @@ Deno.serve(async (req) => {
         return jsonResponse({
           action_link: data.properties?.action_link || null,
         });
+      }
+
+      case "resend_invite": {
+        const { user_id } = body;
+        if (!user_id) return jsonResponse({ error: "user_id is required" }, 400);
+
+        // Get user email
+        const { data: { user: targetUser }, error: getUserErr } = await adminClient.auth.admin.getUserById(user_id);
+        if (getUserErr || !targetUser) return jsonResponse({ error: "Usuário não encontrado" }, 404);
+
+        const redirectTo = `${req.headers.get("origin") || supabaseUrl}/pwa/set-password`;
+        const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(targetUser.email!, { redirectTo });
+        if (inviteErr) return jsonResponse({ error: inviteErr.message }, 500);
+
+        await logAudit(adminClient, "invite_resent", user_id, caller.id, { email: targetUser.email });
+
+        return jsonResponse({ success: true });
+      }
+
+      case "reset_password": {
+        const { user_id } = body;
+        if (!user_id) return jsonResponse({ error: "user_id is required" }, 400);
+
+        const { data: { user: targetUser }, error: getUserErr } = await adminClient.auth.admin.getUserById(user_id);
+        if (getUserErr || !targetUser) return jsonResponse({ error: "Usuário não encontrado" }, 404);
+
+        const redirectTo = `${req.headers.get("origin") || supabaseUrl}/pwa/set-password`;
+        const { data, error: linkErr } = await adminClient.auth.admin.generateLink({
+          type: "recovery",
+          email: targetUser.email!,
+          options: { redirectTo },
+        });
+        if (linkErr) return jsonResponse({ error: linkErr.message }, 500);
+
+        await logAudit(adminClient, "password_reset", user_id, caller.id);
+
+        return jsonResponse({ action_link: data.properties?.action_link || null });
+      }
+
+      case "get_user_audit": {
+        const { user_id } = body;
+        if (!user_id) return jsonResponse({ error: "user_id is required" }, 400);
+
+        const { data: events } = await adminClient
+          .from("audit_events")
+          .select("action, payload, created_at, created_by")
+          .eq("record_id", user_id)
+          .eq("table_name", "users")
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        return jsonResponse({ events: events || [] });
       }
 
       default:

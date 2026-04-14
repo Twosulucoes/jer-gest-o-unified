@@ -9,6 +9,7 @@ import { PwaBrandLogo } from "@/components/pwa/PwaBrandLogo";
 
 export default function PwaSetPasswordPage() {
   const navigate = useNavigate();
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,8 +25,16 @@ export default function PwaSetPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      setError("A senha deve ter no mínimo 6 caracteres.");
+    if (!fullName.trim()) {
+      setError("Nome completo é obrigatório.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("A senha deve ter no mínimo 8 caracteres.");
+      return;
+    }
+    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setError("A senha deve conter pelo menos uma letra maiúscula e um número.");
       return;
     }
     if (password !== confirm) {
@@ -41,6 +50,17 @@ export default function PwaSetPasswordPage() {
       setLoading(false);
       return;
     }
+
+    // Update profile with full name and activate
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("profiles").upsert({
+        id: user.id,
+        full_name: fullName.trim(),
+        active: true,
+      }, { onConflict: "id" });
+    }
+
     setDone(true);
     setLoading(false);
   };
@@ -91,6 +111,10 @@ export default function PwaSetPasswordPage() {
             <p className="text-sm text-muted-foreground mt-1">Escolha uma senha para seu acesso.</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Nome completo *</Label>
+              <Input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="h-12 text-base" autoComplete="name" placeholder="Seu nome completo" />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="password">Nova senha</Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-12 text-base" autoComplete="new-password" />
