@@ -7,6 +7,35 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { PwaBrandLogo } from "@/components/pwa/PwaBrandLogo";
 
+const ROLE_REDIRECT_MAP: Record<string, string> = {
+  admin: "/admin",
+  super_admin: "/admin",
+  secretaria: "/admin",
+  transporte: "/pwa/transporte",
+  alimentacao: "/pwa/alimentacao",
+  alojamento: "/pwa/alojamento",
+  coordenacao_tecnica: "/pwa/coordenacao-tecnica",
+  coordenador_modalidade: "/pwa/coordenacao-tecnica",
+  delegacao: "/pwa/delegacao",
+  mesario: "/aovivo",
+  arbitragem: "/aovivo",
+  pesquisa: "/pwa/pesquisa/login",
+};
+
+function resolveRedirect(roles: string[]): string {
+  // Priority: admin roles first, then specific operational roles
+  for (const role of ["admin", "super_admin", "secretaria"]) {
+    if (roles.includes(role)) return ROLE_REDIRECT_MAP[role];
+  }
+  // Single operational role → go directly
+  const opRoles = roles.filter((r) => ROLE_REDIRECT_MAP[r]);
+  if (opRoles.length === 1) return ROLE_REDIRECT_MAP[opRoles[0]];
+  // Multiple operational roles → landing page to choose
+  if (opRoles.length > 1) return "/pwa";
+  // Fallback
+  return "/pwa";
+}
+
 export default function PwaLoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -26,20 +55,23 @@ export default function PwaLoginPage() {
       return;
     }
 
-    // Check if user is active
     if (data.user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("active")
-        .eq("id", data.user.id)
-        .single();
+      const [profileRes, rolesRes] = await Promise.all([
+        supabase.from("profiles").select("active").eq("id", data.user.id).single(),
+        supabase.from("user_roles").select("role").eq("user_id", data.user.id),
+      ]);
 
-      if (profile && profile.active === false) {
+      if (profileRes.data && profileRes.data.active === false) {
         await supabase.auth.signOut();
         setError("Sua conta está desativada. Entre em contato com o administrador.");
         setLoading(false);
         return;
       }
+
+      const userRoles = (rolesRes.data || []).map((r) => r.role as string);
+      const target = resolveRedirect(userRoles);
+      navigate(target, { replace: true });
+      return;
     }
 
     navigate("/pwa");
@@ -47,7 +79,6 @@ export default function PwaLoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Brand header */}
       <div
         className="relative flex flex-col items-center justify-center px-6 pt-12 pb-8"
         style={{
@@ -59,7 +90,6 @@ export default function PwaLoginPage() {
         <p className="text-primary-foreground/80 text-sm mt-2 font-body">Acesso ao módulo operacional</p>
       </div>
 
-      {/* Form */}
       <div className="flex flex-1 items-start justify-center px-4 pt-8">
         <form onSubmit={handleLogin} className="w-full max-w-sm space-y-5">
           <div className="space-y-2">
