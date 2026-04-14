@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import { resolveExternalCredential } from "@/lib/resolveExternalCredential";
 
 interface MealWindow {
   id: string;
@@ -46,15 +47,42 @@ export default function AlimentacaoScanPage() {
     }
 
     try {
-      const { data: cred } = await supabase
-        .from("participant_credentials" as any)
-        .select("participant_id, participant:participants(full_name, food_restrictions)")
-        .or(`qr_token.eq.${code},credential_code.eq.${code},qr_code_value.eq.${rawValue}`)
-        .eq("status", "active")
-        .limit(1)
-        .maybeSingle();
+      // Try external credential first
+      const extResult = await resolveExternalCredential(code);
+      let participantId: string | null = null;
+      let participantName: string | null = null;
+      let foodRestrictions: string | null = null;
 
-      if (!cred) {
+      if (extResult) {
+        participantId = extResult.participant_id;
+        participantName = extResult.full_name;
+        // Fetch food restrictions
+        const { data: pData } = await supabase
+          .from("participants")
+          .select("food_restrictions")
+          .eq("id", participantId)
+          .maybeSingle();
+        foodRestrictions = (pData as any)?.food_restrictions ?? null;
+      } else {
+        // Fallback to native credential
+        const { data: cred } = await supabase
+          .from("participant_credentials" as any)
+          .select("participant_id, participant:participants(full_name, food_restrictions)")
+          .or(`qr_token.eq.${code},credential_code.eq.${code},qr_code_value.eq.${rawValue}`)
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle();
+
+        if (!cred) {
+          setResult({ ok: false, message: "Credencial não encontrada" });
+          return;
+        }
+        participantId = (cred as any).participant_id;
+        participantName = (cred as any).participant?.full_name || "";
+        foodRestrictions = (cred as any).participant?.food_restrictions || null;
+      }
+
+      if (!participantId) {
         setResult({ ok: false, message: "Credencial não encontrada" });
         return;
       }
@@ -62,7 +90,7 @@ export default function AlimentacaoScanPage() {
       const { count } = await supabase
         .from("meal_consumptions")
         .select("id", { count: "exact", head: true })
-        .eq("participant_id", (cred as any).participant_id)
+        .eq("participant_id", participantId)
         .eq("meal_window_id", windowId);
 
       if ((count || 0) > 0) {
@@ -73,7 +101,7 @@ export default function AlimentacaoScanPage() {
       const { data: { session } } = await supabase.auth.getSession();
 
       const { error } = await supabase.from("meal_consumptions").insert({
-        participant_id: (cred as any).participant_id,
+        participant_id: participantId,
         meal_window_id: windowId,
         method: "qr_scan",
         registered_by: session?.user.id,
@@ -81,11 +109,10 @@ export default function AlimentacaoScanPage() {
 
       if (error) throw error;
 
-      const restrictions = (cred as any).participant?.food_restrictions;
       setResult({
         ok: true,
-        message: `Consumo registrado: ${(cred as any).participant?.full_name || ""}`,
-        restrictions: restrictions || undefined,
+        message: `Consumo registrado: ${participantName || ""}`,
+        restrictions: foodRestrictions || undefined,
       });
       if (navigator.vibrate) navigator.vibrate(200);
     } catch {
