@@ -1902,6 +1902,7 @@ export type Database = {
           event_id: string
           id: string
           number: number
+          pdf_url: string | null
           published_at: string | null
           published_by: string | null
           rectifies_bulletin_id: string | null
@@ -1917,6 +1918,7 @@ export type Database = {
           event_id: string
           id?: string
           number: number
+          pdf_url?: string | null
           published_at?: string | null
           published_by?: string | null
           rectifies_bulletin_id?: string | null
@@ -1932,6 +1934,7 @@ export type Database = {
           event_id?: string
           id?: string
           number?: number
+          pdf_url?: string | null
           published_at?: string | null
           published_by?: string | null
           rectifies_bulletin_id?: string | null
