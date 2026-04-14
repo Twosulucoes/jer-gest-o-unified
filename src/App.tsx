@@ -152,6 +152,22 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
+            {/* Super Admin routes */}
+            <Route
+              path="/super"
+              element={
+                <SuperAdminRoute>
+                  <SuperAdminLayout />
+                </SuperAdminRoute>
+              }
+            >
+              <Route index element={<SuperDashboardPage />} />
+              <Route path="eventos" element={<SuperEventosPage />} />
+              <Route path="logs" element={<SuperLogsPage />} />
+              <Route path="config" element={<SuperConfigPage />} />
+              <Route path="demo" element={<DemoSeedsPage />} />
+              <Route path="validador" element={<SchemaValidadorPage />} />
+            </Route>
             <Route
               path="/admin"
               element={
