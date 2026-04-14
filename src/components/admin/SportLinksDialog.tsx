@@ -63,6 +63,7 @@ export default function SportLinksDialog({ open, onOpenChange, userId, userName 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-sport-links", userId, eventId] });
+      queryClient.invalidateQueries({ queryKey: ["user-sport-links-all"] });
       setSelectedSport("");
       toast.success("Modalidade vinculada");
     },
@@ -76,6 +77,7 @@ export default function SportLinksDialog({ open, onOpenChange, userId, userName 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-sport-links", userId, eventId] });
+      queryClient.invalidateQueries({ queryKey: ["user-sport-links-all"] });
       toast.success("Vínculo removido");
     },
     onError: (err: Error) => toast.error(err.message),
