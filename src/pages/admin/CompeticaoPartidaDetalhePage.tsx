@@ -1009,89 +1009,101 @@ export default function CompeticaoPartidaDetalhePage() {
       <Dialog open={resultDialogOpen} onOpenChange={setResultDialogOpen}>
         <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Lançar resultado</DialogTitle>
-            <DialogDescription>Preencha o resultado de cada participante nesta partida/prova.</DialogDescription>
+            <DialogTitle>{isCombat ? "Lançar resultado de combate" : "Lançar resultado"}</DialogTitle>
+            <DialogDescription>
+              {isCombat
+                ? "Selecione o vencedor e preencha os detalhes do combate."
+                : "Preencha o resultado de cada participante nesta partida/prova."}
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            {entries.map((entry) => {
-              const form: ResultFormEntry = resultForm[entry.id] || emptyResultForm();
-              const isTeamEntry = !!entry.team_id;
-              const updateField = (field: keyof ResultFormEntry, value: string) =>
-                setResultForm((prev) => ({ ...prev, [entry.id]: { ...form, [field]: value } }));
-              return (
-                <div key={entry.id} className="space-y-3 border rounded-lg p-3">
-                  <p className="text-sm font-medium">{getEntryLabel(entry)}</p>
-                  {/* Outcome */}
-                  <div>
-                    <label className="text-xs text-muted-foreground">Desfecho</label>
-                    <Select value={form.outcome} onValueChange={(v) => updateField("outcome", v === "__none__" ? "" : v)}>
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        {OUTCOME_OPTIONS.map((o) => (
-                          <SelectItem key={o.value || "__none__"} value={o.value || "__none__"}>{o.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {/* Score */}
-                  {(isTeamEntry || isCollective || showScore) && (
-                    <div>
-                      <label className="text-xs text-muted-foreground">Placar</label>
-                      <Input placeholder="Ex: 3x1" value={form.score} onChange={(e) => updateField("score", e.target.value)} />
+
+          {isCombat ? (
+            <CombatResultForm
+              entries={entries.map((e) => ({ id: e.id, label: getEntryLabel(e) }))}
+              modality={sport?.slug?.toUpperCase() ?? "COMBAT"}
+              onSubmit={(payload) => saveCombatResultMut.mutate(payload)}
+              isPending={saveCombatResultMut.isPending}
+            />
+          ) : (
+            <>
+              <div className="space-y-4 py-2">
+                {entries.map((entry) => {
+                  const form: ResultFormEntry = resultForm[entry.id] || emptyResultForm();
+                  const isTeamEntry = !!entry.team_id;
+                  const updateField = (field: keyof ResultFormEntry, value: string) =>
+                    setResultForm((prev) => ({ ...prev, [entry.id]: { ...form, [field]: value } }));
+                  return (
+                    <div key={entry.id} className="space-y-3 border rounded-lg p-3">
+                      <p className="text-sm font-medium">{getEntryLabel(entry)}</p>
+                      <div>
+                        <label className="text-xs text-muted-foreground">Desfecho</label>
+                        <Select value={form.outcome} onValueChange={(v) => updateField("outcome", v === "__none__" ? "" : v)}>
+                          <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                          <SelectContent>
+                            {OUTCOME_OPTIONS.map((o) => (
+                              <SelectItem key={o.value || "__none__"} value={o.value || "__none__"}>{o.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {(isTeamEntry || isCollective || showScore) && (
+                        <div>
+                          <label className="text-xs text-muted-foreground">Placar</label>
+                          <Input placeholder="Ex: 3x1" value={form.score} onChange={(e) => updateField("score", e.target.value)} />
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-2">
+                        {showPosition && (
+                          <div>
+                            <label className="text-xs text-muted-foreground">Posição</label>
+                            <Input type="number" placeholder="1" value={form.position} onChange={(e) => updateField("position", e.target.value)} />
+                          </div>
+                        )}
+                        {showPoints && (
+                          <div>
+                            <label className="text-xs text-muted-foreground">Pontos</label>
+                            <Input type="number" step="0.001" placeholder="0.000" value={form.points} onChange={(e) => updateField("points", e.target.value)} />
+                          </div>
+                        )}
+                        {showTime && (
+                          <div>
+                            <label className="text-xs text-muted-foreground">Tempo (ms)</label>
+                            <Input type="number" placeholder="Milissegundos" value={form.time_ms} onChange={(e) => updateField("time_ms", e.target.value)} />
+                          </div>
+                        )}
+                        {showDistance && (
+                          <div>
+                            <label className="text-xs text-muted-foreground">Distância (cm)</label>
+                            <Input type="number" placeholder="Centímetros" value={form.distance_cm} onChange={(e) => updateField("distance_cm", e.target.value)} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-xs text-muted-foreground">Resultado (texto)</label>
+                          <Input placeholder="Texto livre" value={form.result_text} onChange={(e) => updateField("result_text", e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground">Penalidades</label>
+                          <Input placeholder="Notas de penalidade" value={form.penalty_notes} onChange={(e) => updateField("penalty_notes", e.target.value)} />
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  {/* Adaptive individual fields */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {showPosition && (
-                      <div>
-                        <label className="text-xs text-muted-foreground">Posição</label>
-                        <Input type="number" placeholder="1" value={form.position} onChange={(e) => updateField("position", e.target.value)} />
-                      </div>
-                    )}
-                    {showPoints && (
-                      <div>
-                        <label className="text-xs text-muted-foreground">Pontos</label>
-                        <Input type="number" step="0.001" placeholder="0.000" value={form.points} onChange={(e) => updateField("points", e.target.value)} />
-                      </div>
-                    )}
-                    {showTime && (
-                      <div>
-                        <label className="text-xs text-muted-foreground">Tempo (ms)</label>
-                        <Input type="number" placeholder="Milissegundos" value={form.time_ms} onChange={(e) => updateField("time_ms", e.target.value)} />
-                      </div>
-                    )}
-                    {showDistance && (
-                      <div>
-                        <label className="text-xs text-muted-foreground">Distância (cm)</label>
-                        <Input type="number" placeholder="Centímetros" value={form.distance_cm} onChange={(e) => updateField("distance_cm", e.target.value)} />
-                      </div>
-                    )}
-                  </div>
-                  {/* Free text + penalty */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-muted-foreground">Resultado (texto)</label>
-                      <Input placeholder="Texto livre" value={form.result_text} onChange={(e) => updateField("result_text", e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Penalidades</label>
-                      <Input placeholder="Notas de penalidade" value={form.penalty_notes} onChange={(e) => updateField("penalty_notes", e.target.value)} />
-                    </div>
-                  </div>
+                  );
+                })}
+                <div>
+                  <label className="text-sm font-medium text-foreground">Observações gerais</label>
+                  <Textarea placeholder="Observações sobre o resultado..." value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} />
                 </div>
-              );
-            })}
-            <div>
-              <label className="text-sm font-medium text-foreground">Observações gerais</label>
-              <Textarea placeholder="Observações sobre o resultado..." value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResultDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={() => saveResultsMut.mutate()} disabled={saveResultsMut.isPending}>
-              {saveResultsMut.isPending ? "Salvando..." : "Salvar resultado"}
-            </Button>
-          </DialogFooter>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setResultDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={() => saveResultsMut.mutate()} disabled={saveResultsMut.isPending}>
+                  {saveResultsMut.isPending ? "Salvando..." : "Salvar resultado"}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
