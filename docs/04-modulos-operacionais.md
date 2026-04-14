@@ -1,126 +1,159 @@
 # 04 — Módulos Operacionais
 
-## 1. Importação / Espelhamento SIGECOM (✅ Feito)
+> Auditoria atualizada em 2026-04-14
+
+## 1. Importação / Espelhamento SIGECOM (✅ Pronto)
 - **Página**: `/admin/importacao`
 - **Backend**: Edge function `import-inscricoes` + RPC `import_inscricoes_batch`
 - **Auditoria**: `import_logs` + `import_row_errors`
-- **Comportamento**: idempotente, tolerante a falhas por linha (Padrão A), cria/reutiliza entidades, suporta múltiplas provas por linha
-- **Nota**: a inscrição oficial é feita no SIGECOM. Este módulo apenas importa/espelha os dados para a base operacional do JER Gestão.
+- **Comportamento**: idempotente, tolerante a falhas por linha, cria/reutiliza entidades, suporta múltiplas provas por linha
+- **Perfis**: admin, secretaria (importar) | coordenacao_tecnica (visualizar logs)
+- **Estados de UI**: ✅ loading, ✅ vazio, ✅ erro, ✅ sucesso parcial
 
-## 2. Credenciamento (✅ Feito)
+## 2. Credenciamento (✅ Pronto)
 - **Página**: `/admin/credenciamento`
 - **Ações**: check-in (registrar presença), emitir credencial, reemitir (2ª via), batch com confirmação
-- **Labels**: "Registrar presença" (check-in), "Emitir credencial" (geração), "Registrar presença e emitir" (combinado)
+- **Labels**: "Registrar presença", "Emitir credencial", "Registrar presença e emitir"
 - **Status visíveis**: Pendente → Confirmado → Pronto p/ emissão → Credencial ativa
+- **Bloqueios**: bloqueia credenciamento se houver irregularidades pendentes
+- **Perfis**: admin, secretaria, coordenacao_tecnica
+- **Estados de UI**: ✅ loading, ✅ vazio, ✅ erro
 
-## 3. Credencial + QR Code (✅ Feito)
-- **Templates**: `/admin/credenciais/modelos` — CRUD com upload de imagem base e config de campos
+## 3. Credencial + QR Code (✅ Pronto)
+- **Templates**: `/admin/credenciais/modelos` — CRUD com config de campos (🟡 editor visual parcial)
 - **Geração**: client-side Canvas com QR Code via biblioteca `qrcode`
 - **Utilitário**: `credentialUtils.ts` — formato único para `credential_code` e `qr_code_value`
 - **Validação**: Edge function `validate-qr` + tabela `credential_scans`
 - **Reemissão**: invalida anterior (status `reissued`), gera novos códigos
+- **Dados reais**: 378 credenciais emitidas
 
 ## 4. Transporte (🟡 Parcial)
-- **Páginas**: veículos, rotas, viagens, embarque por viagem
+- **Páginas admin**: veículos, rotas, viagens, embarque por viagem
+- **Páginas PWA**: home, viagens, scan, embarque, rotas
 - **Tabelas**: `transport_vehicles`, `transport_routes`, `transport_trips`, `transport_passengers`
-- **Gap**: sem controle de retorno explícito, sem relatórios
+- **Perfis**: admin, secretaria, coordenacao_tecnica, transporte
+- **Implementado**: ✅ CRUD de veículos, rotas, viagens | ✅ Embarque com lista de passageiros
+- **Gaps**: ❌ Sem controle de retorno | ❌ Sem relatórios | ❌ Scan QR no embarque parcial
+- **Dados reais**: 0 viagens cadastradas
 
 ## 5. Alimentação (🟡 Parcial)
-- **Páginas**: tipos de refeição, janelas de serviço, registro de consumo
+- **Páginas admin**: tipos de refeição, janelas de serviço, registro de consumo
+- **Páginas PWA**: home, scan, buscar, janelas, histórico
 - **Tabelas**: `meal_types`, `meal_windows`, `meal_consumptions`
-- **Gap**: ⚠️ sem UNIQUE constraint `(meal_window_id, participant_id)` para evitar duplicidade
+- **Perfis**: admin, secretaria, coordenacao_tecnica, alimentacao
+- **Implementado**: ✅ CRUD tipos/janelas | ✅ Registro de consumo
+- **Gaps**: ⚠️ Sem UNIQUE constraint `(meal_window_id, participant_id)` no banco | ❌ Sem dashboard de consumo em tempo real
+- **Dados reais**: 0 consumos registrados
 
 ## 6. Alojamento (🟡 Parcial)
-- **Páginas**: locais, unidades, ocupação
+- **Páginas admin**: locais, unidades, ocupação
+- **Páginas PWA**: home, scan, buscar, ocupação, pessoa, incidentes
 - **Tabelas**: `lodging_locations`, `lodging_units`, `lodging_occupancies`
 - **Trigger**: `validate_lodging_capacity` impede alocação acima da capacidade
-- **Gap**: sem relatório de ocupação, sem controle temporal de permanência
+- **Perfis**: admin, secretaria, coordenacao_tecnica, alojamento
+- **Implementado**: ✅ CRUD locais/unidades | ✅ Alocação com trigger de capacidade | ✅ PWA com incidentes
+- **Gaps**: ❌ Sem relatório de ocupação | ❌ Sem controle temporal de permanência
+- **Dados reais**: 0 ocupações
 
-## 7. Competição (✅ Feito)
-- **Páginas**: fases, grupos, equipes, partidas, detalhe da partida, agenda, resultados
-- **Tabelas**: 13 tabelas (phases, groups, matches, entries, results, scores, lineups, events, penalties, officials, attachments, attempts, player_stats)
-- **Features**: lineup de jogadores, eventos de jogo, placares por período, tentativas (atletismo), estatísticas individuais, anexos
+## 7. Competição (✅ Pronto — core funcional)
+- **Tabelas**: 15 tabelas (phases, groups, matches, entries, results, scores, lineups, events, penalties, officials, attachments, attempts, player_stats, discipline, match_user_assignments)
+- **Páginas admin**: fases, grupos, equipes, partidas, detalhe da partida, agenda, resultados, central, painel, pré-validação, regras, regras em lote, diagnóstico, sincronizar equipes
+- **Features implementadas**:
+  - ✅ Wizard de 7 passos (coletivas) / 6 passos (individuais time/mark)
+  - ✅ Estrutura automática de grupos com sugestão
+  - ✅ Baterias/séries para individuais (distribuição automática)
+  - ✅ Geração de partidas round-robin por grupo
+  - ✅ Agendamento individual e em lote com detecção de conflitos
+  - ✅ Lineup de jogadores
+  - ✅ Eventos de jogo (gols, cartões, faltas)
+  - ✅ Placar por período (match_scores)
+  - ✅ Tentativas para atletismo (match_attempts)
+  - ✅ Estatísticas individuais (match_player_stats)
+  - ✅ Disciplina (match_discipline)
+  - ✅ Oficiais e designação (match_officials, match_user_assignments)
+  - ✅ Anexos de partida (match_attachments)
+  - ✅ Ranking individual por bateria (IndividualRankingCard)
+  - ✅ Ranking cross-heat consolidado (CrossHeatRankingCard/Tab)
+  - ✅ Standings de grupo (GroupStandingsTable)
+  - ✅ Painel de controle com status automático por prova
+  - ✅ Pré-validação de quórum
+- **Perfis**: admin, secretaria, coordenacao_tecnica, coordenador_modalidade, mesario
+- **Dados reais**: 79 provas, 26 partidas, 17 resultados, 40 equipes
 
-## 8. Motor de Regras por Prova (✅ Feito)
-- **Página**: `/admin/competicao/regras` — editor individual por prova
-- **Página**: `/admin/competicao/regras/lote` — revisão e seed em massa
+## 8. Motor de Regras por Prova (✅ Pronto)
+- **Páginas**: `/admin/competicao/regras` (individual), `/admin/competicao/regras/lote` (massa)
 - **Tabela**: `sport_event_rules` (sport_event_id, event_id, rules JSONB, is_active)
-- **RPCs**:
-  - `rpc_get_sport_event_rules` — busca regras ativas ou retorna defaults por família
-  - `rpc_upsert_sport_event_rules` — upsert com validação de família/formato
-  - `rpc_seed_sport_event_rules_for_event` — seed em massa com heurística por nome
-- **Hook**: `useSportEventRules(eventId, sportEventId)` — query + mutation
-- **Componentes**: `RulesPresetPicker`, `RulesForm`, `RulesJsonEditor`
-- **Tipos**: `SportEventRulesV1`, `RulesFamily`, `RulesFormat`, `ParticipantMode`, `ScoreType`
+- **RPCs**: `rpc_get_sport_event_rules`, `rpc_upsert_sport_event_rules`, `rpc_seed_sport_event_rules_for_event` (seed não existe como RPC, feito via frontend)
+- **Famílias**: score, sets, time, mark, combat, ranking
+- **Presets**: FUTSAL, FUTEBOL_DE_CAMPO, HANDEBOL, BASQUETE, KARATE_KATA, KARATE_KUMITE
+- **Dados reais**: 79 regras cadastradas (100% das provas)
 
-### 8.1 Famílias de Regras
-| Família | Descrição | Formatos compatíveis |
-|---------|-----------|---------------------|
-| `score` | Placar (gols/pontos) | group_stage, round_robin, knockout |
-| `sets` | Sets (best-of) | group_stage, round_robin, knockout |
-| `time` | Tempo (heats) | heats, heats_final, ranking |
-| `mark` | Marca (campo/distância) | heats, heats_final, ranking |
-| `combat` | Combate (lutas) | combat_bracket, knockout |
-| `ranking` | Ranking (sem confronto) | ranking |
+## 9. Resultados e Governança (🟡 Parcial)
+- **Ciclo**: `resultado_lancado` → `resultado_validado` → `publicado`
+- **RPCs**: `rpc_launch_match_result`, `rpc_validate_results_for_sport_event`, `rpc_publish_results_for_sport_event`
+- **Frontend**: LaunchResultDialog (wizard), ResultGovernancePanel (validar/publicar em lote), CentralResultsTab
+- **Publicação**: exige boletim oficial publicado
+- **RLS anon**: `result_status = 'publicado'` permite SELECT para público
+- **Strings canônicas**: `src/lib/resultStatus.ts` — fonte de verdade
+- **Implementado**: ✅ Lançamento pelo wizard | ✅ Validação em lote | ✅ Publicação com boletim | ✅ Auto-finish da partida
+- **Gaps**: ❌ Sem portal público para consulta externa | ❌ Sem geração de boletins em PDF | 🟡 CombatResultForm não integrado automaticamente
 
-### 8.2 Presets Esportivos
-| Preset | Família | W.O. | Pontuação grupo | Desempate eliminatório |
-|--------|---------|------|-----------------|----------------------|
-| FUTSAL | score | 5×0 | V3/E1/D0 | Pênaltis (5 cobranças) |
-| FUTEBOL_DE_CAMPO | score | 5×0 | V3/E1/D0 | Pênaltis (5 cobranças) |
-| HANDEBOL | score | 5×0 | V3/E0/D1 | Prorrogação + Tiro de 7m |
-| BASQUETE | score | 20×0 | V2/D1 | Prorrogação até decisão |
-| KARATE_KATA | ranking | — | — | Nota de juízes |
-| KARATE_KUMITE | combat | — | — | Pontos (2 min, diff 8) |
+## 10. Boletins Oficiais (🟡 Parcial)
+- **Página**: `/admin/boletins`
+- **Tabela**: `official_bulletins` (number, title, status, event_id)
+- **RPCs**: `rpc_create_bulletin`, `rpc_publish_bulletin`
+- **Implementado**: ✅ CRUD de boletins | ✅ Publicação de boletim
+- **Gaps**: ❌ Sem geração de PDF | ❌ Sem vinculação automática de resultados ao boletim
+- **Dados reais**: 4 boletins
 
-### 8.3 Seed Automático
-- **RPC**: `rpc_seed_sport_event_rules_for_event(p_event_id, p_mode, p_dry_run)`
-- **Modos**: `missing_only` (padrão), `overwrite` (admin), `dry_run` (simulação)
-- **Heurística**: detecta modalidade por nome (case-insensitive, sem acentos)
-- **Retorno**: relatório JSON com totais por preset, criados, atualizados, ignorados
+## 11. PWA Operacional (🟡 Parcial)
+- **Módulos**: Alojamento (7 telas), Transporte (5 telas), Alimentação (5 telas), Coordenação (6 telas), Delegação (5 telas)
+- **Auth**: Supabase Auth via PWA Login
+- **Features**: scan QR, busca por nome, ações operacionais
+- **Gaps**: ❌ Sem proteção de rota por perfil nas rotas PWA (verificação é no nível de dados/RLS)
 
-## 9. Central da Competição (✅ Feito)
-- **Página**: `/admin/competicao/central`
-- **Wizard**: Participantes → Estrutura → Confrontos/Chaves → Agenda → Classificação → Resultados → Pendências
-- **Integração com regras**: lê `sport_event_rules` e ajusta labels/visibilidade conforme família/formato
-- **Callout**: se sem regras cadastradas, exibe aviso com link para seed em lote
-- **Passo 2 (Estrutura) para coletivas**: wizard com 3 sub-etapas:
-  1. **Definir estrutura**: sugestão automática de grupos baseada na quantidade de equipes (1-3→mata-mata, 4-6→grupo único, 7-10→2 grupos, etc.), com ajuste manual
-  2. **Alocar equipes**: interface de duas colunas (disponíveis × grupos) com botões de mover, sortear e redistribuir. Salva em `group_draw_lots`
-  3. **Revisar e gerar partidas**: preview da quantidade de partidas por grupo (round-robin) e botão para gerar via `rpc_generate_matches_collective`
-- **Passo 2 (Estrutura) para individuais time/mark**: componente `CentralStructureHeatsTab` com 3 sub-etapas:
-  1. **Definir baterias**: define atletas por bateria, preview automático (ex: 40 atletas, 8/bateria → 5 baterias), alerta para baterias com 1 atleta
-  2. **Revisar alocação**: distribuição aleatória equilibrada dos atletas, mover entre baterias, remover e realocar. Salva em `competition_match_entries` (via `participant_sport_event_id`)
-  3. **Confirmar**: resumo com opção de editar ou avançar para Agenda
-- **Persistência heats**: fase `phase_type="heats"` + `bracket_config.match_type="heat"`, cada bateria = 1 `competition_match`, cada atleta = 1 `competition_match_entry`
-- **Step status**: `useCollectiveStepStatus` suporta tanto coletivas quanto individuais time/mark, bloqueando passos subsequentes até que critérios sejam atingidos
-- **RPC corrigida**: `rpc_generate_matches_collective` agora lê equipes de `group_draw_lots` por grupo (antes usava todas as equipes em todos os grupos)
-- **Passo 4 (Agenda)**: agendamento de partidas com:
-  - **Agendamento individual**: modal com date picker, time picker, seletor de local (venues), observações e hora de término opcional
-  - **Agendamento em lote**: define data, local, hora inicial e intervalo em minutos — calcula horários sequenciais com preview antes de confirmar
-  - **Detecção de conflitos**: verifica sobreposição de horário no mesmo local após cada salvamento (alerta não-bloqueante)
-  - **Contador de progresso**: "X de Y partidas agendadas" com badge verde quando 100%
-  - **Permissões**: admin e coordenação técnica podem agendar; secretaria visualiza apenas
-  - **Remoção**: permite remover agendamento com confirmação
-- **Passo 5 (Classificação) para individuais time/mark**: componente `CrossHeatRankingTab` com:
-  - Ranking consolidado de todas as baterias (menor tempo ou maior distância/pontos)
-  - Empates com posição compartilhada, outcomes especiais (DSQ/DNS/DNF/WO) no final
-  - Filtros por bateria e status (classificados/desclassificados)
-  - Campo de busca por nome ou escola
-  - Exportação CSV
-  - Atualização automática a cada 30 segundos
-- **Ranking na página da partida**: `CrossHeatRankingCard` exibido abaixo do ranking individual da bateria, com destaque dos atletas da bateria atual
-- **Lógica**: `computeCrossHeatRanking` em `individualRanking.ts` e `useCrossHeatRanking` hook
+## 12. PWA Ao Vivo (✅ Pronto)
+- **Rotas**: `/aovivo/login`, `/aovivo`, `/aovivo/partida/:matchId`
+- **Features**: interface touch-friendly, dark mode, suporte offline (localStorage), sincronização automática, cronômetro, placar automático
+- **Acesso**: restrito via `match_user_assignments` (mesários designados)
 
-- **Página**: `/admin/competicao/resultados`
-- **Campos**: `result_status` (resultado_lancado → publicado), `validated_at`, `published_at`
-- **RLS anon**: permite SELECT onde `result_status = 'publicado'`
-- **Gap**: sem workflow explícito validação → publicação no frontend
+## 13. Publicação Oficial (🟡 Parcial)
+- **RLS**: funcional para anon (SELECT WHERE `result_status = 'publicado'`)
+- **Edge Functions**: `public-events` e `public-results`
+- **Gaps**: ❌ Sem portal público para consulta | ❌ Sem boletins PDF | ❌ Sem quadro de medalhas
 
-## 11. Publicação Oficial (🟡 Parcial)
-- **RLS**: funcional para anon
-- **Gap**: sem portal público, sem boletins em PDF
-
-## 12. Evidências / OSC (⛔ Não iniciado)
+## 14. Evidências / OSC (⛔ Não iniciado)
 - **Existente**: bucket `match-attachments` para anexos de partidas
-- **Gap**: sem modelo genérico de evidências vinculadas a contexto operacional
+- **Gaps**: ❌ Sem modelo genérico de evidências | ❌ Sem bucket dedicado | ❌ Sem metadados OSC
+
+## 15. Configurações (✅ Pronto)
+- Parâmetros do Evento: limites de participação por atleta
+- Irregularidades: detecção e resolução
+- Normalização de Provas: mapeamento de aliases
+- Validador de Estrutura: comparação schema vs planilha
+- Mapa do Sistema: visão geral de todos os módulos
+
+## 16. Acessos (🟡 Parcial)
+- **Páginas**: `/admin/acessos/usuarios`, `/admin/acessos/delegacoes`
+- **Tabelas**: `user_roles`, `user_delegations`, `user_sport_links`
+- **Implementado**: ✅ Gestão de perfis por usuário | ✅ Vínculos delegação
+- **Gaps**: ❌ Sem convite por e-mail | ❌ Sem log de alterações de vínculo
+
+## 17. Pesquisa de Satisfação (🟡 Parcial)
+- **Páginas admin**: dashboard, eventos, pesquisadores
+- **Páginas PWA**: login (PIN), home, nova, confirmação
+- **Tabelas**: `pesquisa_events`, `pesquisa_researchers`, `pesquisa_sessions`, `pesquisa_surveys`
+- **Implementado**: ✅ CRUD | ✅ PWA com PIN | ✅ Sessões offline
+- **Gaps**: ❌ Relatórios consolidados
+
+## 18. Links e Páginas Públicas (✅ Pronto)
+- **Páginas admin**: CRUD de links e preview
+- **Rotas públicas**: `/go/:slug` (redirect), `/p/:slug` (página), `/a/:token` (perfil atleta)
+- **Tabela**: `public_content`
+
+## 19. Relatórios (🟡 Parcial)
+- **Página**: `/admin/relatorios`
+- **Engine**: framework de relatórios com filtros, colunas, presets
+- **Renderers**: PDF (@react-pdf/renderer) e Excel (exceljs)
+- **Definições**: `sample.delegationRoster`, `sample.resultsByGroup`
+- **Gaps**: ❌ Poucos relatórios definidos | ❌ Falta relatórios operacionais (transporte, alimentação)

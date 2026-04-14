@@ -1,8 +1,11 @@
 # 12 — Glossário
 
+> Auditoria atualizada em 2026-04-14
+
 | Termo | Definição |
 |-------|-----------|
 | **JER** | Jogos Escolares de Roraima — evento esportivo escolar estadual |
+| **JERPA** | Jogos Escolares Paradesportivos de Roraima |
 | **Evento / Edição** | Uma realização do JER (ex: JER 2025, JER 2026) |
 | **Instituição** | Escola ou entidade participante |
 | **Delegação** | Representação de uma instituição em um evento específico |
@@ -25,7 +28,9 @@
 | **Entry** | Participação em uma partida (pode ser team_id ou participant_sport_event_id) |
 | **Lineup** | Escalação de jogadores para uma partida |
 | **Resultado** | Desfecho de uma partida (score, outcome, position, time) |
-| **Publicação** | Ato de tornar um resultado visível ao público |
+| **Boletim Oficial** | Documento formal que oficializa resultados publicados |
+| **Publicação** | Ato de tornar um resultado visível ao público (requer boletim) |
+| **Governança de Resultado** | Ciclo resultado_lancado → resultado_validado → publicado |
 | **Janela de Serviço (Meal Window)** | Período de atendimento de uma refeição (ex: Almoço 11h-13h) |
 | **Consumo** | Registro de que um participante utilizou uma refeição |
 | **Unidade (Lodging Unit)** | Quarto ou espaço de alojamento com capacidade definida |
@@ -33,17 +38,22 @@
 | **RLS** | Row Level Security — políticas de acesso em nível de linha no PostgreSQL |
 | **OSC** | Organização da Sociedade Civil — contexto de prestação de contas |
 | **SEDUC-RR** | Secretaria de Educação de Roraima — órgão responsável pelo JER |
-| **SIGECOM** | Sistema oficial de inscrição do evento (https://sigecom.mms.inf.br). Origem regulatória dos dados de inscrição |
-| **Base Operacional** | Dados importados do SIGECOM + estado operacional no JER Gestão (credenciais, QR, consumo, partidas, regras, logs) |
-| **Importação / Espelhamento** | Processo técnico que transforma a exportação do SIGECOM em estrutura operacional no JER Gestão. Não constitui inscrição oficial |
+| **SIGECOM** | Sistema oficial de inscrição do evento. Origem regulatória dos dados |
+| **Base Operacional** | Dados importados do SIGECOM + estado operacional no JER Gestão |
+| **Importação / Espelhamento** | Processo técnico que transforma a exportação do SIGECOM em estrutura operacional |
 | **Role / Perfil** | Papel do usuário no sistema (admin, secretaria, transporte...) |
 | **RBAC** | Role-Based Access Control — controle de acesso baseado em perfis |
-| **Motor de Regras** | Sistema de parametrização por prova que define família, formato, pontuação, desempate e políticas operacionais da competição |
-| **Família (Rules Family)** | Natureza da disputa: score (placar), sets (best-of), time (tempo), mark (marca/distância), combat (luta) ou ranking (sem confronto direto) |
-| **Formato (Rules Format)** | Estrutura competitiva da prova: knockout, group_stage, round_robin, heats, heats_final, combat_bracket ou ranking |
-| **Preset Esportivo** | Configuração pré-definida de regras para modalidade específica (ex: FUTSAL, BASQUETE, KARATE_KUMITE), incluindo pontuação de grupo, W.O. e desempate |
-| **Seed de Regras** | Geração automática de regras para todas as provas de um evento, usando heurísticas baseadas em nomes de modalidades |
-| **W.O. (Walkover)** | Vitória por desistência/ausência do adversário, com placar automático definido nas regras (ex: 5×0 no futsal) |
-| **Tie-breaker** | Critério de desempate aplicado sequencialmente (confronto direto, saldo de gols, gols pró, etc.) |
-| **Bracket** | Chave eliminatória visualizada em formato de árvore de confrontos |
-| **Bye** | Folga automática atribuída quando o número de participantes não é potência de 2 |
+| **Motor de Regras** | Sistema de parametrização por prova (família, formato, pontuação, desempate) |
+| **Família (Rules Family)** | Natureza da disputa: score, sets, time, mark, combat ou ranking |
+| **Formato (Rules Format)** | Estrutura competitiva: knockout, group_stage, round_robin, heats, heats_final, combat_bracket ou ranking |
+| **Preset Esportivo** | Configuração pré-definida de regras para modalidade específica |
+| **Seed de Regras** | Geração automática de regras para todas as provas de um evento |
+| **W.O. (Walkover)** | Vitória por desistência/ausência, com placar automático |
+| **Tie-breaker** | Critério de desempate aplicado sequencialmente |
+| **Bracket** | Chave eliminatória em formato de árvore |
+| **Bye** | Folga automática quando número de participantes não é potência de 2 |
+| **Cross-heat Ranking** | Ranking consolidado de atletas de todas as baterias de uma prova |
+| **Bateria / Série (Heat)** | Grupo de atletas que competem juntos em uma rodada de prova individual |
+| **combat_detail** | Campo JSONB em competition_match_results para detalhes de combate |
+| **PWA** | Progressive Web App — aplicação web instalável no celular |
+| **Ao Vivo** | PWA para mesários registrarem partidas em tempo real |

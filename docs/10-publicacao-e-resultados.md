@@ -1,5 +1,7 @@
 # 10 — Publicação e Resultados
 
+> Auditoria atualizada em 2026-04-14
+
 ## Ciclo de Vida do Resultado
 
 ```
@@ -91,6 +93,12 @@ Componente: `CombatResultForm` (renderizado quando `family='combat'`)
 
 `audit_events` registra ações relevantes de governança.
 
+## Dados Reais (2026-04-14)
+
+- 17 resultados lançados
+- 4 boletins oficiais cadastrados
+- 0 registros em audit_events
+
 ## Status Atual
 
 - ✅ RPCs padronizadas com strings canônicas
@@ -103,3 +111,4 @@ Componente: `CombatResultForm` (renderizado quando `family='combat'`)
 - 🟡 CombatResultForm não integrado automaticamente na página da partida (requer detecção de family)
 - ⛔ Sem portal público para consulta externa
 - ⛔ Sem geração de boletins oficiais em PDF
+- ⛔ Sem quadro de medalhas

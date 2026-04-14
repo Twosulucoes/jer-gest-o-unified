@@ -6,10 +6,42 @@ Gerencia toda a operação do evento **após a fase de inscrição**: credenciam
 
 ---
 
+## Status dos Módulos (Auditoria 2026-04-14)
+
+| Módulo | Status | Completude |
+|--------|--------|-----------|
+| **Preparação** (Eventos, Instituições, Delegações, Importação, Participantes) | ✅ Pronto | 100% |
+| **Credenciamento** (Check-in, Emissão, QR, Validação) | ✅ Pronto | 95% |
+| **Modelos de Credencial** | 🟡 Parcial | 70% |
+| **Competição — Central/Wizard** (Fases, Grupos, Estrutura, Confrontos, Agenda) | ✅ Pronto | 90% |
+| **Competição — Motor de Regras** (Presets, Seed, Editor) | ✅ Pronto | 100% |
+| **Competição — Resultados e Governança** (Lançamento, Validação, Publicação) | 🟡 Parcial | 75% |
+| **Competição — Classificação** (Standings coletivas, Ranking individual/cross-heat) | ✅ Pronto | 85% |
+| **Competição — Combate** (combat_detail JSONB, CombatResultForm) | 🟡 Parcial | 40% |
+| **Competição — Página da Partida** (Lineup, Eventos, Placar, Oficiais, Anexos) | ✅ Pronto | 90% |
+| **Painel de Controle da Competição** | ✅ Pronto | 100% |
+| **Logística — Transporte** (Veículos, Rotas, Viagens, Embarque) | 🟡 Parcial | 60% |
+| **Logística — Alimentação** (Tipos, Janelas, Consumo) | 🟡 Parcial | 70% |
+| **Logística — Alojamento** (Locais, Unidades, Ocupação) | 🟡 Parcial | 65% |
+| **PWA Operacional** (Alojamento, Transporte, Alimentação, Coordenação, Delegação) | 🟡 Parcial | 70% |
+| **PWA Ao Vivo** (Mesário touch-friendly, dark mode, offline) | ✅ Pronto | 90% |
+| **Publicação Oficial** (RLS anon, Edge Functions) | 🟡 Parcial | 40% |
+| **Evidências / OSC** | ⚪ Não iniciado | 0% |
+| **Configurações** (Parâmetros, Irregularidades, Normalização, Validador, Mapa) | ✅ Pronto | 100% |
+| **Acessos e Perfis** (Usuários, Delegações, Sport Links) | 🟡 Parcial | 70% |
+| **Pesquisa de Satisfação** | 🟡 Parcial | 60% |
+| **Links e Páginas Públicas** | ✅ Pronto | 85% |
+| **Relatórios** | 🟡 Parcial | 50% |
+| **Boletins Oficiais** | 🟡 Parcial | 60% |
+
+**Resumo**: 63 tabelas no banco, 29 RPCs, 4 Edge Functions, 28+ rotas admin, 25+ rotas PWA, 11 perfis de acesso.
+
+---
+
 ## Posicionamento do Sistema
 
-1. **A inscrição oficial acontece no sistema oficial do evento (SIGECOM)**, conforme Regulamento Geral (Art. 58–60). Endereço: https://sigecom.mms.inf.br/login
-2. **O JER Gestão NÃO substitui o sistema oficial de inscrição.** Ele importa/espelha os dados exportados do SIGECOM para viabilizar a operação de campo (credenciamento, logística, competição, apuração interna, evidências).
+1. **A inscrição oficial acontece no sistema oficial do evento (SIGECOM)**, conforme Regulamento Geral (Art. 58–60).
+2. **O JER Gestão NÃO substitui o sistema oficial de inscrição.** Ele importa/espelha os dados exportados do SIGECOM para viabilizar a operação de campo.
 3. **Após importados, os dados no JER Gestão constituem a "base operacional do evento"** — usada para rastreabilidade e execução de campo, mas sem valor regulatório de inscrição.
 
 ---
@@ -24,21 +56,20 @@ Importação (SIGECOM) → Credenciamento/QR → Logística → Competição →
 - Importação/espelhamento dos dados do sistema oficial (SIGECOM)
 - Credenciamento e emissão de credenciais com QR Code
 - Gestão logística (transporte, alimentação, alojamento)
-- **Motor de regras por prova** — parametrização de família, formato, pontuação, desempate e políticas de W.O. por modalidade
-- **Presets esportivos** — configurações prontas para Futsal, Futebol, Handebol, Basquete, Karatê (Kata e Kumite)
-- **Seed automático de regras** — geração em massa de regras para todas as provas de um evento com heurística por nome de modalidade
+- Motor de regras por prova — parametrização de família, formato, pontuação, desempate e políticas de W.O.
+- Presets esportivos — configurações prontas para Futsal, Futebol, Handebol, Basquete, Karatê
+- Seed automático de regras — geração em massa para todas as provas de um evento
 - Gestão de competições (fases, grupos, partidas, resultados)
-- **Painel de Controle da Competição** — visão consolidada do progresso de todas as provas com status automático (Bloqueada/Não Iniciada/Em Andamento/Com Pendência/Concluída), barras de progresso visuais e navegação direta ao wizard
-- **Estrutura de grupos para coletivas** — wizard com sugestão automática, alocação de equipes em grupos e geração de partidas round-robin por grupo
-- **Controle de fluxo do wizard (coletivas)** — passos sequenciais com pré-condições: cada passo só fica acessível quando o anterior está concluído. Visual com estados (concluído/parcial/bloqueado) e barra de progresso. Deep-links respeitam bloqueios.
-- **Agendamento de partidas** — Passo 4 (Agenda) do wizard com agendamento individual (data, hora, local) e em lote (horários sequenciais automáticos), detecção de conflitos de agenda por local/equipe/atleta, e contador de progresso
-- **Perfis especializados** — `coordenador_modalidade` (acesso filtrado por modalidade via `user_sport_links`) e `mesario` (acesso exclusivo a partidas designadas via `match_user_assignments`)
-- **Designação de oficiais** — atribuição de mesários, árbitros, fiscais e anotadores a partidas individuais via `match_user_assignments`, com busca por nome e histórico de atuações
-- **Modo ao vivo (touch-friendly)** — interface de campo para registro de ocorrências em tempo real (gols, cartões, faltas) com botões grandes, placar automático, cronômetro manual, suporte offline (localStorage) e sincronização automática
-- **Link direto para detalhe** — coluna "Detalhe" no Passo 4 (Agenda) do wizard com navegação para `/admin/competicao/partida/:id`
-- **PWA "JER Ao Vivo"** — aplicação web progressiva instalável (`/aovivo`) para mesários registrarem partidas em tempo real no celular, com suporte offline, sincronização automática, interface touch-friendly dark mode, e acesso restrito via `match_user_assignments`
+- Painel de Controle da Competição — visão consolidada do progresso
+- Estrutura de grupos para coletivas — wizard com sugestão automática
+- Baterias/séries para individuais — distribuição automática de atletas
+- Ranking cross-heat — consolidação de resultados de todas as baterias
+- Agendamento de partidas — individual e em lote com detecção de conflitos
+- Perfis especializados — coordenador_modalidade e mesário com acessos filtrados
+- Designação de oficiais — mesários, árbitros, fiscais, anotadores
+- Modo ao vivo (touch-friendly) — PWA para mesários em campo
+- Governança de resultados — ciclo lançado → validado → publicado com boletim oficial
 - Apuração e publicação de resultados
-- Registro de evidências operacionais (prestação de contas / OSC)
 
 ### O que NÃO faz
 - Inscrição de participantes (feita exclusivamente no SIGECOM)
@@ -49,27 +80,20 @@ Importação (SIGECOM) → Credenciamento/QR → Logística → Competição →
 
 ---
 
-## Glossário
-
-| Termo | Definição |
-|-------|-----------|
-| **Sistema Oficial de Inscrição (SIGECOM)** | Sistema externo onde as inscrições são realizadas conforme Regulamento. Origem regulatória dos dados. |
-| **Base Operacional (JER Gestão)** | Dados importados do SIGECOM + estado operacional gerado no JER Gestão (credenciais, QR, consumo, alojamento, partidas, regras, logs). |
-| **Importação / Espelhamento** | Processo técnico que transforma a exportação do SIGECOM em estrutura operacional no JER Gestão. Não constitui inscrição oficial. |
-| **Motor de Regras** | Sistema de parametrização por prova (sport_event) que define família, formato, pontuação, desempate e políticas operacionais. |
-| **Preset Esportivo** | Configuração pré-definida de regras para uma modalidade específica (ex: FUTSAL, BASQUETE, KARATE_KUMITE). |
-| **Publicação Oficial** | Divulgação pública de resultados, somente após validação e autorização da coordenação. |
-| **SEDUC-RR** | Secretaria de Educação de Roraima — órgão responsável pelo JER. |
-
-Para glossário completo, veja [docs/12-glossario.md](docs/12-glossario.md).
-
----
-
 ## Stack Técnica
 
-- **Frontend**: React 18 + Vite + TypeScript + Tailwind CSS + shadcn/ui
+- **Frontend**: React 18 + Vite 5 + TypeScript 5 + Tailwind CSS v3 + shadcn/ui
 - **Backend**: Supabase (PostgreSQL + Auth + Edge Functions + Storage)
 - **Infraestrutura**: Lovable.dev
+- **PWA**: Capacitor (Android/iOS) + vite-plugin-pwa
+
+## Banco de Dados
+
+- **63 tabelas** no schema `public`, todas com RLS habilitado
+- **29 RPCs** (regras, competição, governança, importação, standings, etc.)
+- **4 Edge Functions** (import-inscricoes, validate-qr, public-events, public-results)
+- **13+ triggers** de integridade referencial
+- **2 buckets** de storage (credential-templates, match-attachments)
 
 ## Documentação
 
@@ -88,3 +112,10 @@ Consulte a pasta `/docs` para documentação detalhada:
 - [11 — Operação OSC / Prestação de Contas](docs/11-operacao-osc-prestacao-de-contas.md)
 - [12 — Glossário](docs/12-glossario.md)
 - [Importação (SIGECOM)](docs/operacao/importacao-sigecom.md)
+
+## Deploy
+
+1. **Preview**: https://id-preview--02caebf9-e7e0-4dff-bce8-2d8c1fecc666.lovable.app
+2. **Produção**: https://joyful-sports-hub.lovable.app
+3. **Supabase**: Projeto conectado via Lovable Cloud
+4. **Variáveis de ambiente**: `.env` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`
