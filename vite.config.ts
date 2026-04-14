@@ -6,6 +6,9 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  optimizeDeps: {
+    exclude: ["@capacitor-mlkit/barcode-scanning"],
+  },
   build: {
     rollupOptions: {
       external: ["@capacitor-mlkit/barcode-scanning"],
