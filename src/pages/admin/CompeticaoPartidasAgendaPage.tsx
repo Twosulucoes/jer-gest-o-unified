@@ -189,6 +189,18 @@ export default function CompeticaoPartidasAgendaPage() {
     </div>
   );
 
+  if (isCoordModalidade && mySportIds && mySportIds.length === 0) {
+    return (
+      <div className="animate-fade-in space-y-6">
+        <ModuleHeader route="/admin/competicao/partidas-agenda" />
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>Você não tem modalidades atribuídas. Contate o administrador para vincular modalidades ao seu perfil.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in space-y-6">
       <ModuleHeader
