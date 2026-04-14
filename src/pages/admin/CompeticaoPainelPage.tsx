@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -167,6 +168,7 @@ const STEP_COLORS: Record<string, string> = {
 export default function CompeticaoPainelPage() {
   const eventId = useActiveEventId();
   const navigate = useNavigate();
+  const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
   const [search, setSearch] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -175,13 +177,17 @@ export default function CompeticaoPainelPage() {
 
   // ── Query 1: Sport events + rules ────────────────────────
   const { data: provas = [], isLoading } = useQuery({
-    queryKey: ["painel-competicao", eventId],
-    enabled: !!eventId,
+    queryKey: ["painel-competicao", eventId, mySportIds],
+    enabled: !!eventId && (!isCoordModalidade || !loadingSportLinks),
     staleTime: 30_000,
     queryFn: async () => {
       // Parallel fetches
+      let seQuery = supabase.from("sport_events").select("id, name, sport_id, category_id, sports(name, is_collective), categories(name, gender_scope)").eq("event_id", eventId!).eq("is_active", true).order("name");
+      if (mySportIds && mySportIds.length > 0) seQuery = seQuery.in("sport_id", mySportIds);
+      if (mySportIds && mySportIds.length === 0) return []; // coord without links
+
       const [seRes, rulesRes, phasesRes, groupsRes, matchesRes, resultsRes, teamsRes, enrolledRes] = await Promise.all([
-        supabase.from("sport_events").select("id, name, sport_id, category_id, sports(name, is_collective), categories(name, gender_scope)").eq("event_id", eventId!).eq("is_active", true).order("name"),
+        seQuery,
         supabase.from("sport_event_rules").select("sport_event_id, released_at").eq("event_id", eventId!),
         supabase.from("competition_phases").select("id, sport_event_id").eq("event_id", eventId!),
         supabase.from("competition_groups").select("id, phase_id").eq("event_id", eventId!),
@@ -346,6 +352,18 @@ export default function CompeticaoPainelPage() {
       case "com_pendencia": return <AlertTriangle className="h-3.5 w-3.5" />;
       case "concluida": return <Eye className="h-3.5 w-3.5" />;
     }
+  }
+
+  if (isCoordModalidade && mySportIds && mySportIds.length === 0) {
+    return (
+      <div className="space-y-6">
+        <ModuleHeader route="/admin/competicao/painel" title="Painel de Controle da Competição" />
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>Você não tem modalidades atribuídas. Contate o administrador para vincular modalidades ao seu perfil.</AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   // ── Render ───────────────────────────────────────────────

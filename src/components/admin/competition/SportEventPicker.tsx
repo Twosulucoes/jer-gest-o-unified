@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -19,15 +20,19 @@ interface Props {
 }
 
 export default function SportEventPicker({ eventId, value, onChange }: Props) {
+  const { sportIds: mySportIds } = useUserSportLinks();
+
   const { data: sportEvents = [], isLoading } = useQuery({
-    queryKey: ["sport-events-picker", eventId],
+    queryKey: ["sport-events-picker", eventId, mySportIds],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("sport_events")
         .select("id, name, slug, sport_id, category_id, sports(name, is_collective), categories(name)")
         .eq("event_id", eventId)
         .eq("is_active", true)
         .order("name");
+      if (mySportIds && mySportIds.length > 0) q = q.in("sport_id", mySportIds);
+      const { data, error } = await q;
       if (error) throw error;
 
       // Fetch release status from sport_event_rules in the same query batch

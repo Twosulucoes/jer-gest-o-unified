@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Trophy, Eye } from "lucide-react";
@@ -8,9 +8,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+
 import { useNavigate } from "react-router-dom";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 
 type ResultStatusFilter = "all" | "sem_resultado" | "resultado_lancado" | "resultado_validado" | "publicado";
@@ -29,6 +31,7 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "des
 export default function CompeticaoResultadosPage() {
   const navigate = useNavigate();
   const selectedEventId = useActiveEventId();
+  const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
   const [statusFilter, setStatusFilter] = useState<ResultStatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
@@ -40,17 +43,6 @@ export default function CompeticaoResultadosPage() {
       if (error) throw error;
       return data;
     },
-  });
-
-  const { data: matches = [], isLoading: loadingMatches } = useQuery({
-    queryKey: ["competition_matches_results_overview", selectedEventId],
-    queryFn: async () => {
-      if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("competition_matches").select("*").eq("event_id", selectedEventId).order("match_date").order("start_time");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedEventId,
   });
 
   const { data: phases = [] } = useQuery({
@@ -65,14 +57,34 @@ export default function CompeticaoResultadosPage() {
   });
 
   const { data: sportEvents = [] } = useQuery({
-    queryKey: ["sport_events", selectedEventId],
+    queryKey: ["sport_events", selectedEventId, mySportIds],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("sport_events").select("*").eq("event_id", selectedEventId);
+      let q = supabase.from("sport_events").select("*").eq("event_id", selectedEventId);
+      if (mySportIds && mySportIds.length > 0) q = q.in("sport_id", mySportIds);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedEventId,
+    enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
+  });
+
+  const sportEventIds = sportEvents.map((se: any) => se.id);
+
+  const { data: matches = [], isLoading: loadingMatches } = useQuery({
+    queryKey: ["competition_matches_results_overview", selectedEventId, sportEventIds],
+    queryFn: async () => {
+      if (!selectedEventId) return [];
+      if (mySportIds && mySportIds.length === 0) return [];
+      let q = supabase.from("competition_matches").select("*").eq("event_id", selectedEventId).order("match_date").order("start_time");
+      if (mySportIds && mySportIds.length > 0 && sportEventIds.length > 0) {
+        q = q.in("sport_event_id", sportEventIds);
+      }
+      const { data, error } = await q;
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
   });
 
   const matchIds = matches.map((m) => m.id);

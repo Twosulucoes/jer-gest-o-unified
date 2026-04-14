@@ -5,8 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import ModuleHeader from "@/components/admin/ModuleHeader";
-import { Plus, Pencil, Swords, CalendarDays, MapPin, Eye, Filter, List, Calendar } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Pencil, Swords, CalendarDays, MapPin, Eye, Filter, List, Calendar, AlertTriangle } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +31,7 @@ export default function CompeticaoPartidasAgendaPage() {
   const navigate = useNavigate();
   const { hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
+  const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem("partidas-view") as ViewMode) || "list");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -43,14 +46,16 @@ export default function CompeticaoPartidasAgendaPage() {
   useEffect(() => { localStorage.setItem("partidas-view", viewMode); }, [viewMode]);
 
   const { data: sportEvents = [] } = useQuery({
-    queryKey: ["sport_events", selectedEventId],
+    queryKey: ["sport_events", selectedEventId, mySportIds],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("sport_events").select("*").eq("event_id", selectedEventId).order("name");
+      let q = supabase.from("sport_events").select("*").eq("event_id", selectedEventId).order("name");
+      if (mySportIds && mySportIds.length > 0) q = q.in("sport_id", mySportIds);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedEventId,
+    enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
   });
 
   const { data: phases = [] } = useQuery({
@@ -86,17 +91,26 @@ export default function CompeticaoPartidasAgendaPage() {
     enabled: !!selectedEventId,
   });
 
+  // Filter matches — if coordenador_modalidade, restrict to sport_events from linked sports
+  const sportEventIds = sportEvents.map((se: any) => se.id);
+
   const { data: matches = [], isLoading } = useQuery({
-    queryKey: ["competition_matches", selectedEventId, selectedSportEventId],
+    queryKey: ["competition_matches", selectedEventId, selectedSportEventId, mySportIds],
     queryFn: async () => {
       if (!selectedEventId) return [];
       let q = supabase.from("competition_matches").select("*").eq("event_id", selectedEventId).order("match_date").order("start_time");
-      if (selectedSportEventId) q = q.eq("sport_event_id", selectedSportEventId);
+      if (selectedSportEventId) {
+        q = q.eq("sport_event_id", selectedSportEventId);
+      } else if (mySportIds && mySportIds.length > 0 && sportEventIds.length > 0) {
+        q = q.in("sport_event_id", sportEventIds);
+      } else if (mySportIds && mySportIds.length === 0) {
+        return []; // coordenador without links
+      }
       const { data, error } = await q;
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedEventId,
+    enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
   });
 
   const phasesMap = new Map(phases.map((p) => [p.id, p]));
@@ -174,6 +188,18 @@ export default function CompeticaoPartidasAgendaPage() {
       {selectedEventId && <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou cadastre partidas.</p>}
     </div>
   );
+
+  if (isCoordModalidade && mySportIds && mySportIds.length === 0) {
+    return (
+      <div className="animate-fade-in space-y-6">
+        <ModuleHeader route="/admin/competicao/partidas-agenda" />
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>Você não tem modalidades atribuídas. Contate o administrador para vincular modalidades ao seu perfil.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in space-y-6">
