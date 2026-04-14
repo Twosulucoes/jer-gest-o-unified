@@ -25,14 +25,14 @@ Gerencia toda a operação do evento **após a fase de inscrição**: credenciam
 | **Logística — Alojamento** (Locais, Unidades, Ocupação) | 🟡 Parcial | 65% |
 | **PWA Operacional** (Alojamento, Transporte, Alimentação, Coordenação, Delegação) | 🟡 Parcial | 70% |
 | **PWA Ao Vivo** (Mesário touch-friendly, dark mode, offline) | ✅ Pronto | 90% |
-| **Publicação Oficial** (RLS anon, Edge Functions) | 🟡 Parcial | 40% |
+| **Publicação Oficial** (Portal público, Edge Functions, PDF boletins) | 🟡 Parcial | 65% |
 | **Evidências / OSC** | ⚪ Não iniciado | 0% |
 | **Configurações** (Parâmetros, Irregularidades, Normalização, Validador, Mapa) | ✅ Pronto | 100% |
-| **Acessos e Perfis** (Usuários, Delegações, Sport Links) | 🟡 Parcial | 70% |
+| **Acessos e Perfis** (Usuários, Delegações, Sport Links, PWA Guards) | ✅ Pronto | 85% |
 | **Pesquisa de Satisfação** | 🟡 Parcial | 60% |
 | **Links e Páginas Públicas** | ✅ Pronto | 85% |
 | **Relatórios** | 🟡 Parcial | 50% |
-| **Boletins Oficiais** | 🟡 Parcial | 60% |
+| **Boletins Oficiais** (Criação, publicação, geração PDF) | 🟡 Parcial | 70% |
 
 **Resumo**: 63 tabelas no banco, 29 RPCs, 4 Edge Functions, 28+ rotas admin, 25+ rotas PWA, 11 perfis de acesso.
 
