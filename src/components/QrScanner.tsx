@@ -123,7 +123,7 @@ export default function QrScanner({
     setScanning(false);
   }, [stopMediaStream]);
 
-  const startWebScan = useCallback(async (preferredDeviceId?: string) => {
+  const startWebScan = useCallback(async () => {
     setLoading(true);
     setPermissionDenied(false);
     setScanning(true);
@@ -142,9 +142,7 @@ export default function QrScanner({
       scannerRef.current = scanner;
 
       await scanner.start(
-        preferredDeviceId
-          ? { deviceId: { exact: preferredDeviceId } }
-          : { facingMode: "environment" },
+        { facingMode: "environment" },
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
