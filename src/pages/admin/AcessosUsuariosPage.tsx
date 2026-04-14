@@ -363,7 +363,7 @@ export default function AcessosUsuariosPage() {
             <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancelar</Button>
             <Button
               onClick={() => inviteMutation.mutate()}
-              disabled={!inviteEmail || inviteMutation.isPending}
+              disabled={!inviteEmail || !inviteName || inviteName.trim().length < 3 || inviteMutation.isPending}
             >
               <UserPlus className="mr-2 h-4 w-4" />
               {inviteMutation.isPending ? "Enviando..." : "Enviar Convite"}
