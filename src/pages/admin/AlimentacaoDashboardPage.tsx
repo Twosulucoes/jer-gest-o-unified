@@ -288,7 +288,7 @@ export default function AlimentacaoDashboardPage() {
               </Card>
             ))}
             {zeroConsumptionCount > 0 && (
-              <Card className="border-yellow-300 dark:border-yellow-700">
+              <Card className="border-destructive/50">
                 <CardContent className="pt-4 text-center">
                   <AlertTriangle className="h-5 w-5 mx-auto mb-1 text-destructive" />
                   <p className="text-2xl font-bold text-destructive">{zeroConsumptionCount}</p>
