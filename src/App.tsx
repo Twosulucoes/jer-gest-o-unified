@@ -7,7 +7,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { EventProvider } from "@/contexts/EventContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import SuperAdminRoute from "@/components/SuperAdminRoute";
 import AdminLayout from "@/components/AdminLayout";
+import SuperAdminLayout from "@/components/SuperAdminLayout";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/admin/DashboardPage";
@@ -63,6 +65,10 @@ import BoletinsPage from "./pages/admin/BoletinsPage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
+import SuperDashboardPage from "./pages/super/SuperDashboardPage";
+import SuperEventosPage from "./pages/super/SuperEventosPage";
+import SuperLogsPage from "./pages/super/SuperLogsPage";
+import SuperConfigPage from "./pages/super/SuperConfigPage";
 import EmailTemplatesPage from "./pages/admin/EmailTemplatesPage";
 import LinksPage from "./pages/admin/LinksPage";
 import LinkFormPage from "./pages/admin/LinkFormPage";
@@ -146,6 +152,22 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
+            {/* Super Admin routes */}
+            <Route
+              path="/super"
+              element={
+                <SuperAdminRoute>
+                  <SuperAdminLayout />
+                </SuperAdminRoute>
+              }
+            >
+              <Route index element={<SuperDashboardPage />} />
+              <Route path="eventos" element={<SuperEventosPage />} />
+              <Route path="logs" element={<SuperLogsPage />} />
+              <Route path="config" element={<SuperConfigPage />} />
+              <Route path="demo" element={<DemoSeedsPage />} />
+              <Route path="validador" element={<SchemaValidadorPage />} />
+            </Route>
             <Route
               path="/admin"
               element={

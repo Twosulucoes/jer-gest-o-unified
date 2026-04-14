@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import EventSwitcher from "@/components/admin/EventSwitcher";
 import RequireActiveEvent from "@/components/admin/RequireActiveEvent";
 import { useAuth } from "@/hooks/useAuth";
@@ -155,6 +155,7 @@ const navGroups: NavGroup[] = [
 function getRoleLabel(role: AppRole): string {
   const labels: Record<AppRole, string> = {
     admin: "Administrador",
+    super_admin: "Super Admin",
     secretaria: "Secretaria",
     transporte: "Transporte",
     alimentacao: "Alimentação",
@@ -406,8 +407,11 @@ export default function AdminLayout() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                <button className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
                   <User className="h-4 w-4" />
+                  {hasRole("super_admin") && (
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-[7px] font-bold text-black">S</span>
+                  )}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -416,6 +420,14 @@ export default function AdminLayout() {
                   {primaryRole && <p className="text-xs text-muted-foreground">{getRoleLabel(primaryRole)}</p>}
                 </div>
                 <DropdownMenuSeparator />
+                {hasRole("super_admin") && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/super" className="cursor-pointer">
+                      <Shield className="mr-2 h-4 w-4 text-amber-500" />
+                      Painel Super
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair
