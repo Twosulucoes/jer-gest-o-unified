@@ -52,14 +52,19 @@ export default function PwaLandingPage() {
         return;
       }
 
-      const isAdminOrSec = roles.some((r) => r === "admin" || r === "secretaria");
-      if (!isAdminOrSec && roles.length === 1) {
-        const card = MODULE_CARDS.find((c) => c.role === roles[0]);
-        if (card) {
-          navigate(card.to, { replace: true });
-          return;
-        }
+      // Admin/secretaria → redirect to admin panel
+      if (roles.some((r) => r === "admin" || r === "secretaria" || r === "super_admin")) {
+        navigate("/admin", { replace: true });
+        return;
       }
+
+      // Single operational role → go directly to module
+      const opCards = MODULE_CARDS.filter((c) => roles.includes(c.role));
+      if (opCards.length === 1) {
+        navigate(opCards[0].to, { replace: true });
+        return;
+      }
+
       setLoading(false);
     })();
   }, [navigate]);
@@ -93,14 +98,11 @@ export default function PwaLandingPage() {
 
   if (!profile) return null;
 
-  const isAdminOrSec = profile.roles.some((r) => r === "admin" || r === "secretaria");
-  const visibleCards = isAdminOrSec
-    ? MODULE_CARDS
-    : MODULE_CARDS.filter((c) => profile.roles.includes(c.role));
+  // Only show modules the user has access to
+  const visibleCards = MODULE_CARDS.filter((c) => profile.roles.includes(c.role));
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Brand banner */}
       <div
         className="px-5 pt-6 pb-5"
         style={{
@@ -124,26 +126,31 @@ export default function PwaLandingPage() {
         </div>
       </div>
 
-      {/* Modules */}
       <div className="p-4 max-w-md mx-auto space-y-4 -mt-3">
         <div className="bg-card rounded-xl border shadow-app-md p-4 space-y-3">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Módulos disponíveis
+            Seus módulos
           </h2>
-          <div className="grid gap-3">
-            {visibleCards.map((card) => (
-              <button
-                key={card.role}
-                onClick={() => navigate(card.to)}
-                className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:shadow-app-md transition-all text-left active:scale-[0.98]"
-              >
-                <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} text-white shadow-app-sm`}>
-                  <card.icon className="h-6 w-6" />
-                </div>
-                <span className="text-base font-medium text-foreground">{card.label}</span>
-              </button>
-            ))}
-          </div>
+          {visibleCards.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground text-sm">
+              Nenhum módulo atribuído à sua conta.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {visibleCards.map((card) => (
+                <button
+                  key={card.role}
+                  onClick={() => navigate(card.to)}
+                  className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:shadow-app-md transition-all text-left active:scale-[0.98]"
+                >
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} text-white shadow-app-sm`}>
+                    <card.icon className="h-6 w-6" />
+                  </div>
+                  <span className="text-base font-medium text-foreground">{card.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
