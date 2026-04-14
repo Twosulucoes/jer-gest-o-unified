@@ -172,7 +172,10 @@ export default function CredenciamentoExternoPage() {
 
   return (
     <div className="space-y-6">
-      <ModuleHeader title="Credenciamento Externo" description="Vincular credenciais físicas pré-impressas aos participantes" />
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Credenciamento Externo</h1>
+        <p className="text-sm text-muted-foreground">Vincular credenciais físicas pré-impressas aos participantes</p>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Search */}
