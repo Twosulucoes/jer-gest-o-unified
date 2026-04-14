@@ -25,6 +25,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Copy, Key, LogOut as LogOutIcon, UserPlus, Settings2, Search,
   Mail, ShieldCheck, ShieldX, Clock, User as UserIcon, RefreshCw,
 } from "lucide-react";
