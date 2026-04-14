@@ -447,9 +447,13 @@ export default function AcessosUsuariosPage() {
                   <span className="text-sm">{selectedUser.active ? "Desativar usuário" : "Ativar usuário"}</span>
                   <Switch
                     checked={selectedUser.active}
-                    onCheckedChange={(active) =>
-                      setActiveMutation.mutate({ user_id: selectedUser.user_id, active })
-                    }
+                    onCheckedChange={(active) => {
+                      if (!active) {
+                        setDeactivateConfirm({ user_id: selectedUser.user_id, name: selectedUser.full_name || selectedUser.email });
+                      } else {
+                        setActiveMutation.mutate({ user_id: selectedUser.user_id, active: true });
+                      }
+                    }}
                   />
                 </div>
 
