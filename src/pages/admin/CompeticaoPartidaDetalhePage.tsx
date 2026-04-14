@@ -37,6 +37,8 @@ import IndividualRankingCard from "@/components/admin/IndividualRankingCard";
 import CrossHeatRankingCard from "@/components/admin/CrossHeatRankingCard";
 import MatchDisciplineCard from "@/components/admin/MatchDisciplineCard";
 import MatchUserAssignmentsCard from "@/components/admin/MatchUserAssignmentsCard";
+import CombatResultForm, { type CombatResultPayload } from "@/components/admin/CombatResultForm";
+import { isCombatSport } from "@/config/combatSports";
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Agendada" },
@@ -158,6 +160,7 @@ export default function CompeticaoPartidaDetalhePage() {
   });
 
   const isCollective = sport?.is_collective ?? false;
+  const isCombat = isCombatSport(sport?.slug);
   const individualConfig: IndividualConfig | null = !isCollective
     ? ((sport?.match_config as any)?.individual_config as IndividualConfig | undefined) ?? null
     : null;
