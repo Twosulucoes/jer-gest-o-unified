@@ -1,7 +1,7 @@
 # Menus e Status de Implementação — JER Gestão
 
 > Fonte única de verdade: `src/config/systemMap.ts`
-> Sempre atualizar esse arquivo ao criar ou alterar telas.
+> Auditoria atualizada em 2026-04-14
 
 ## Critérios de Classificação
 
@@ -32,6 +32,9 @@
 ### Competição
 | Módulo | Rota | Status |
 |--------|------|--------|
+| Painel de Controle | `/admin/competicao/painel` | ✅ Feito |
+| Pré-validação | `/admin/competicao/pre-validacao` | ✅ Feito |
+| Central da Competição | `/admin/competicao/central` | ✅ Feito |
 | Modalidades | `/admin/modalidades` | ✅ Feito |
 | Categorias | `/admin/categorias` | ✅ Feito |
 | Fases | `/admin/competicao/fases` | 🟡 Parcial |
@@ -40,6 +43,9 @@
 | Partidas | `/admin/competicao/partidas` | 🟡 Parcial |
 | Agenda | `/admin/competicao/agenda` | 🟡 Parcial |
 | Resultados | `/admin/competicao/resultados` | 🟡 Parcial |
+| Regras por Prova | `/admin/competicao/regras` | ✅ Feito |
+| Regras em Lote | `/admin/competicao/regras/lote` | ✅ Feito |
+| Diagnóstico | `/admin/diagnostico-competicao` | ✅ Feito |
 
 ### Logística › Transporte
 | Módulo | Rota | Status |
@@ -70,6 +76,7 @@
 ### Acessos
 | Módulo | Rota | Status |
 |--------|------|--------|
+| Gestão de Usuários | `/admin/acessos/usuarios` | ✅ Feito |
 | Vínculos Delegação | `/admin/acessos/delegacoes` | 🟡 Parcial |
 
 ### Configurações
@@ -81,9 +88,32 @@
 | Validador de Estrutura | `/admin/schema/validador` | ✅ Feito |
 | Mapa do Sistema | `/admin/mapa` | ✅ Feito |
 
+### Extras
+| Módulo | Rota | Status |
+|--------|------|--------|
+| Boletins Oficiais | `/admin/boletins` | 🟡 Parcial |
+| Central de Dados | `/admin/dados` | ✅ Feito |
+| Demo Seeds | `/admin/demo` | ✅ Feito |
+| Email Templates | `/admin/auth/email-templates` | ✅ Feito |
+| Pesquisa (Dashboard) | `/admin/pesquisa` | 🟡 Parcial |
+| Links | `/admin/links` | ✅ Feito |
+| Relatórios | `/admin/relatorios` | 🟡 Parcial |
+| QR Atleta | `/admin/atletas/qrcode` | ✅ Feito |
+
 ## Resumo
 
-- **Total**: 30 módulos
-- **✅ Feitos**: 18
-- **🟡 Parciais**: 12
-- **⛔ Não iniciados**: 0
+- **Total de rotas admin**: 38
+- **✅ Feitas**: 23
+- **🟡 Parciais**: 15
+- **⛔ Não iniciadas**: 0
+
+### PWA (28 rotas)
+- Alojamento: 7 telas
+- Transporte: 5 telas
+- Alimentação: 5 telas
+- Coordenação: 6 telas
+- Delegação: 5 telas
+- Pesquisa: 4 telas (auth por PIN)
+- Ao Vivo: 3 telas (lazy loaded)
+- Diagnóstico: 1 tela
+- Auth: 3 telas (login, recover, set-password)
