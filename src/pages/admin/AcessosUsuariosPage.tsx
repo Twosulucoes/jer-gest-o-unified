@@ -97,6 +97,9 @@ export default function AcessosUsuariosPage() {
   // Sport links
   const [sportLinksUser, setSportLinksUser] = useState<{ id: string; name: string } | null>(null);
 
+  // Deactivation confirmation
+  const [deactivateConfirm, setDeactivateConfirm] = useState<{ user_id: string; name: string } | null>(null);
+
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-users-list"],
     queryFn: async () => {
