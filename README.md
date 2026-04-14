@@ -113,6 +113,21 @@ Consulte a pasta `/docs` para documentação detalhada:
 - [12 — Glossário](docs/12-glossario.md)
 - [Importação (SIGECOM)](docs/operacao/importacao-sigecom.md)
 
+## Validação Pré-Deploy (Testes E2E)
+
+Scripts automatizados que validam os fluxos completos de prova coletiva e individual:
+
+```bash
+# Configurar credenciais
+export SUPABASE_URL="https://dfzjrijdcskncrwaiykr.supabase.co"
+export SUPABASE_SERVICE_KEY="<service-role-key>"
+
+# Executar suite completa com limpeza
+npx tsx scripts/run-e2e-tests.ts --cleanup
+```
+
+Documentação detalhada: [Executar Testes E2E](docs/checklists/executar-testes-e2e.md)
+
 ## Deploy
 
 1. **Preview**: https://id-preview--02caebf9-e7e0-4dff-bce8-2d8c1fecc666.lovable.app
