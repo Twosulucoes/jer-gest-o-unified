@@ -45,25 +45,6 @@ export default function CompeticaoResultadosPage() {
     },
   });
 
-  const sportEventIds = sportEvents.map((se: any) => se.id);
-
-  const { data: matches = [], isLoading: loadingMatches } = useQuery({
-    queryKey: ["competition_matches_results_overview", selectedEventId, mySportIds],
-    queryFn: async () => {
-      if (!selectedEventId) return [];
-      let q = supabase.from("competition_matches").select("*").eq("event_id", selectedEventId).order("match_date").order("start_time");
-      if (mySportIds && mySportIds.length > 0 && sportEventIds.length > 0) {
-        q = q.in("sport_event_id", sportEventIds);
-      } else if (mySportIds && mySportIds.length === 0) {
-        return [];
-      }
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
-  });
-
   const { data: phases = [] } = useQuery({
     queryKey: ["competition_phases", selectedEventId],
     queryFn: async () => {
@@ -81,6 +62,24 @@ export default function CompeticaoResultadosPage() {
       if (!selectedEventId) return [];
       let q = supabase.from("sport_events").select("*").eq("event_id", selectedEventId);
       if (mySportIds && mySportIds.length > 0) q = q.in("sport_id", mySportIds);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
+  });
+
+  const sportEventIds = sportEvents.map((se: any) => se.id);
+
+  const { data: matches = [], isLoading: loadingMatches } = useQuery({
+    queryKey: ["competition_matches_results_overview", selectedEventId, sportEventIds],
+    queryFn: async () => {
+      if (!selectedEventId) return [];
+      if (mySportIds && mySportIds.length === 0) return [];
+      let q = supabase.from("competition_matches").select("*").eq("event_id", selectedEventId).order("match_date").order("start_time");
+      if (mySportIds && mySportIds.length > 0 && sportEventIds.length > 0) {
+        q = q.in("sport_event_id", sportEventIds);
+      }
       const { data, error } = await q;
       if (error) throw error;
       return data;
