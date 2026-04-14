@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, Pencil, Trophy, Layers } from "lucide-react";
+import { Plus, Pencil, Trophy, Layers, Zap, ZapOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -145,6 +145,7 @@ export default function CompeticaoFasesPage() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Ordem</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-center">Auto</TableHead>
                 {canWrite && <TableHead className="w-[60px]" />}
               </TableRow>
             </TableHeader>
@@ -156,6 +157,20 @@ export default function CompeticaoFasesPage() {
                   <TableCell>{phaseTypeLabel(p.phase_type)}</TableCell>
                   <TableCell>{p.sort_order}</TableCell>
                   <TableCell><Badge variant={statusVariant(p.status)}>{statusLabel(p.status)}</Badge></TableCell>
+                  <TableCell className="text-center">
+                    {canWrite ? (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={async () => {
+                        const { error } = await supabase.from("competition_phases").update({ auto_transition: !p.auto_transition } as any).eq("id", p.id);
+                        if (error) { toast.error(error.message); return; }
+                        qc.invalidateQueries({ queryKey: ["competition_phases"] });
+                        toast.success(p.auto_transition ? "Auto-transição desabilitada" : "Auto-transição habilitada");
+                      }}>
+                        {p.auto_transition ? <Zap className="h-4 w-4 text-primary" /> : <ZapOff className="h-4 w-4 text-muted-foreground" />}
+                      </Button>
+                    ) : (
+                      p.auto_transition ? <Zap className="h-4 w-4 text-primary mx-auto" /> : <ZapOff className="h-4 w-4 text-muted-foreground mx-auto" />
+                    )}
+                  </TableCell>
                   {canWrite && (
                     <TableCell>
                       <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setDialogOpen(true); }}>
