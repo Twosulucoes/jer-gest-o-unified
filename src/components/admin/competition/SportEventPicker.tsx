@@ -20,7 +20,7 @@ interface Props {
 }
 
 export default function SportEventPicker({ eventId, value, onChange }: Props) {
-  const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
+  const { sportIds: mySportIds } = useUserSportLinks();
 
   const { data: sportEvents = [], isLoading } = useQuery({
     queryKey: ["sport-events-picker", eventId, mySportIds],
@@ -32,6 +32,7 @@ export default function SportEventPicker({ eventId, value, onChange }: Props) {
         .eq("is_active", true)
         .order("name");
       if (mySportIds && mySportIds.length > 0) q = q.in("sport_id", mySportIds);
+      const { data, error } = await q;
       if (error) throw error;
 
       // Fetch release status from sport_event_rules in the same query batch
