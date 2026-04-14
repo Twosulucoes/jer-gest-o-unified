@@ -78,10 +78,22 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data: any) => {
+    onSuccess: async (data: any) => {
       toast.success(`${data.published_count} resultado(s) publicado(s).`);
       setSelectedBulletinId("");
       queryClient.invalidateQueries({ queryKey: ["governance-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["competition_phases"] });
+      // Check phase transitions
+      if (sportEventId) {
+        try {
+          const { data: transResult } = await supabase.rpc("check_phase_transitions", { p_sport_event_id: sportEventId });
+          const transitions = (transResult as any)?.transitions || [];
+          for (const t of transitions) {
+            if (t.action === "completed") toast.info(`Fase "${t.phase_name}" concluída automaticamente.`);
+            if (t.action === "started") toast.info(`Fase "${t.phase_name}" iniciada automaticamente.`);
+          }
+        } catch {}
+      }
     },
     onError: (e: any) => toast.error(e.message),
   });
