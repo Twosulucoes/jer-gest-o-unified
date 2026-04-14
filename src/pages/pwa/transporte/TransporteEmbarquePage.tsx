@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveExternalCredential } from "@/lib/resolveExternalCredential";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,22 +56,36 @@ export default function TransporteEmbarquePage() {
     if (!token || !tripId) return;
 
     try {
-      // Look up credential
-      const { data: cred } = await supabase
-        .from("participant_credentials" as any)
-        .select("participant_id, participant:participants(full_name)")
-        .or(`qr_token.eq.${token},credential_code.eq.${token},qr_code_value.eq.${rawValue}`)
-        .eq("status", "active")
-        .limit(1)
-        .maybeSingle();
+      let participantId: string | null = null;
+      let name = "Participante";
 
-      if (!cred) {
+      // Try external credential first
+      const extResult = await resolveExternalCredential(token);
+      if (extResult) {
+        participantId = extResult.participant_id;
+        name = extResult.full_name || name;
+      } else {
+        // Fallback to native credential
+        const { data: cred } = await supabase
+          .from("participant_credentials" as any)
+          .select("participant_id, participant:participants(full_name)")
+          .or(`qr_token.eq.${token},credential_code.eq.${token},qr_code_value.eq.${rawValue}`)
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle();
+
+        if (!cred) {
+          toast.error("Credencial não encontrada no sistema");
+          return;
+        }
+        participantId = (cred as any).participant_id;
+        name = (cred as any).participant?.full_name || name;
+      }
+
+      if (!participantId) {
         toast.error("Credencial não encontrada no sistema");
         return;
       }
-
-      const participantId = (cred as any).participant_id;
-      const name = (cred as any).participant?.full_name || "Participante";
 
       // Check if in this trip
       const passenger = passengers.find(p => p.participant_id === participantId);

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { rpcResolveQr, rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
+import { resolveExternalCredential } from "@/lib/resolveExternalCredential";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { ArrowLeft, ScanLine, CheckCircle2, XCircle } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
