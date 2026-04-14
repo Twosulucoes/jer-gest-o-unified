@@ -728,6 +728,60 @@ export type Database = {
         }
         Relationships: []
       }
+      external_credentials: {
+        Row: {
+          created_at: string
+          credential_code: string
+          event_id: string
+          id: string
+          linked_at: string
+          linked_by_user_id: string | null
+          notes: string | null
+          participant_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credential_code: string
+          event_id: string
+          id?: string
+          linked_at?: string
+          linked_by_user_id?: string | null
+          notes?: string | null
+          participant_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credential_code?: string
+          event_id?: string
+          id?: string
+          linked_at?: string
+          linked_by_user_id?: string | null
+          notes?: string | null
+          participant_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_credentials_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_credentials_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_draw_lots: {
         Row: {
           created_at: string
