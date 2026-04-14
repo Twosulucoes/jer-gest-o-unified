@@ -25,6 +25,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Copy, Key, LogOut as LogOutIcon, UserPlus, Settings2, Search,
   Mail, ShieldCheck, ShieldX, Clock, User as UserIcon, RefreshCw,
 } from "lucide-react";
@@ -92,6 +96,9 @@ export default function AcessosUsuariosPage() {
 
   // Sport links
   const [sportLinksUser, setSportLinksUser] = useState<{ id: string; name: string } | null>(null);
+
+  // Deactivation confirmation
+  const [deactivateConfirm, setDeactivateConfirm] = useState<{ user_id: string; name: string } | null>(null);
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-users-list"],
@@ -335,8 +342,8 @@ export default function AcessosUsuariosPage() {
               <Input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} type="email" placeholder="usuario@email.com" />
             </div>
             <div className="space-y-1">
-              <Label>Nome completo</Label>
-              <Input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Nome completo" />
+              <Label>Nome completo *</Label>
+              <Input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Nome completo (mín. 3 caracteres)" />
             </div>
             <div className="space-y-1">
               <Label>Perfil *</Label>
@@ -356,7 +363,7 @@ export default function AcessosUsuariosPage() {
             <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancelar</Button>
             <Button
               onClick={() => inviteMutation.mutate()}
-              disabled={!inviteEmail || inviteMutation.isPending}
+              disabled={!inviteEmail || !inviteName || inviteName.trim().length < 3 || inviteMutation.isPending}
             >
               <UserPlus className="mr-2 h-4 w-4" />
               {inviteMutation.isPending ? "Enviando..." : "Enviar Convite"}
@@ -440,9 +447,13 @@ export default function AcessosUsuariosPage() {
                   <span className="text-sm">{selectedUser.active ? "Desativar usuário" : "Ativar usuário"}</span>
                   <Switch
                     checked={selectedUser.active}
-                    onCheckedChange={(active) =>
-                      setActiveMutation.mutate({ user_id: selectedUser.user_id, active })
-                    }
+                    onCheckedChange={(active) => {
+                      if (!active) {
+                        setDeactivateConfirm({ user_id: selectedUser.user_id, name: selectedUser.full_name || selectedUser.email });
+                      } else {
+                        setActiveMutation.mutate({ user_id: selectedUser.user_id, active: true });
+                      }
+                    }}
                   />
                 </div>
 
@@ -542,6 +553,32 @@ export default function AcessosUsuariosPage() {
           userName={sportLinksUser.name}
         />
       )}
+
+      {/* Deactivation Confirmation */}
+      <AlertDialog open={!!deactivateConfirm} onOpenChange={(open) => { if (!open) setDeactivateConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O usuário <strong>{deactivateConfirm?.name}</strong> será desativado e todas as sessões ativas serão invalidadas. Ele não conseguirá acessar o sistema até ser reativado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deactivateConfirm) {
+                  setActiveMutation.mutate({ user_id: deactivateConfirm.user_id, active: false });
+                  setDeactivateConfirm(null);
+                }
+              }}
+            >
+              Desativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

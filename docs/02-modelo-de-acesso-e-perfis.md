@@ -88,3 +88,42 @@ CREATE POLICY "Secretaria can read" ON tabela
 - `coordenador_modalidade` acessa apenas provas das modalidades vinculadas via `user_sport_links`
 - `mesario` acessa apenas partidas designadas via `match_user_assignments`
 - Seed com `overwrite` requer perfil `admin`
+- Usuário com `profiles.active = false` é bloqueado no login (admin e PWA)
+
+## Gestão de Usuários Operacionais
+
+### Página de Gestão
+- URL: `/admin/acessos/usuarios`
+- Acesso: `admin` e `secretaria`
+- Funcionalidades: listagem com filtros, convite, alteração de perfil, ativar/desativar, reenviar convite, resetar senha, histórico de auditoria
+
+### Fluxo de Convite
+1. Admin acessa `/admin/acessos/usuarios` → clica "Novo Usuário"
+2. Preenche email, nome completo (obrigatório, mín. 3 caracteres), perfil
+3. Sistema chama Edge Function `admin-users` (action: `invite_user`)
+4. Supabase Auth envia email com link de ativação → redirect para `/pwa/set-password`
+5. Usuário acessa link, define nome completo e senha (mín. 8 chars, 1 maiúscula, 1 número)
+6. Conta ativada: `profiles.active = true`
+7. Usuário faz login no PWA e acessa módulo conforme perfil
+
+### Edge Function: admin-users
+- **Ações**: `list_users`, `invite_user`, `set_role`, `set_active`, `revoke_sessions`, `resend_invite`, `reset_password`, `get_user_audit`
+- **Permissão**: apenas `admin` e `secretaria` (via service role)
+- **Restrição**: `secretaria` não pode criar/atribuir perfis `admin` ou `secretaria`
+- **Auditoria**: todas as ações são registradas em `audit_events`
+
+### Como Reenviar Convite
+1. Acesse `/admin/acessos/usuarios`
+2. Clique no usuário com status "Convite pendente"
+3. No drawer lateral, clique "Reenviar Convite"
+
+### Como Desativar Usuário
+1. Acesse `/admin/acessos/usuarios`
+2. Clique no usuário
+3. No drawer, desative o switch "Desativar usuário"
+4. Confirme no diálogo de confirmação
+5. Sessões ativas são invalidadas automaticamente
+
+### Como Trocar Perfil
+1. No drawer do usuário, altere o select de "Perfil"
+2. A alteração é salva automaticamente e registrada em `audit_events`

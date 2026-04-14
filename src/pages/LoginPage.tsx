@@ -19,7 +19,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       toast({
@@ -27,7 +27,24 @@ export default function LoginPage() {
         description: error.message,
         variant: "destructive",
       });
-    } else {
+    } else if (data.user) {
+      // Check if user is active
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("active")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profile && profile.active === false) {
+        await supabase.auth.signOut();
+        toast({
+          title: "Conta desativada",
+          description: "Sua conta está desativada. Entre em contato com o administrador.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
       navigate("/admin");
     }
 

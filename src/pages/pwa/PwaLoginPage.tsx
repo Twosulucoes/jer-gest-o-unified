@@ -19,12 +19,29 @@ export default function PwaLoginPage() {
     setLoading(true);
     setError("");
 
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
     if (authError) {
       setError("Email ou senha inválidos.");
       setLoading(false);
       return;
     }
+
+    // Check if user is active
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("active")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profile && profile.active === false) {
+        await supabase.auth.signOut();
+        setError("Sua conta está desativada. Entre em contato com o administrador.");
+        setLoading(false);
+        return;
+      }
+    }
+
     navigate("/pwa");
   };
 
