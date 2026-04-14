@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
-import QrScanner from "@/components/QrScanner";
+import { toast } from "sonner";
+import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 
 interface MealWindow {
   id: string;
@@ -17,6 +19,7 @@ export default function AlimentacaoScanPage() {
   const navigate = useNavigate();
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string; restrictions?: string } | null>(null);
 
   useEffect(() => {
@@ -34,16 +37,22 @@ export default function AlimentacaoScanPage() {
     })();
   }, []);
 
-  const handleDetected = async (rawValue: string) => {
+  const handleScan = async (rawValue: string) => {
+    setScannerOpen(false);
     const code = rawValue.startsWith("JER:") ? rawValue.slice(4) : rawValue.trim();
-    if (!code || !windowId) return;
+    if (!code || !windowId) {
+      if (!windowId) toast.error("Selecione uma janela de refeição primeiro");
+      return;
+    }
 
     try {
       const { data: cred } = await supabase
         .from("participant_credentials" as any)
         .select("participant_id, participant:participants(full_name, food_restrictions)")
-        .eq("qr_token", code)
-        .single();
+        .or(`qr_token.eq.${code},credential_code.eq.${code},qr_code_value.eq.${rawValue}`)
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle();
 
       if (!cred) {
         setResult({ ok: false, message: "Credencial não encontrada" });
@@ -66,7 +75,7 @@ export default function AlimentacaoScanPage() {
       const { error } = await supabase.from("meal_consumptions").insert({
         participant_id: (cred as any).participant_id,
         meal_window_id: windowId,
-        method: "qr",
+        method: "qr_scan",
         registered_by: session?.user.id,
       });
 
@@ -78,6 +87,7 @@ export default function AlimentacaoScanPage() {
         message: `Consumo registrado: ${(cred as any).participant?.full_name || ""}`,
         restrictions: restrictions || undefined,
       });
+      if (navigator.vibrate) navigator.vibrate(200);
     } catch {
       setResult({ ok: false, message: "Erro ao registrar consumo" });
     }
@@ -85,12 +95,17 @@ export default function AlimentacaoScanPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate("/pwa/alimentacao")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <ScanLine className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Scan Refeição</span>
+      <header className="flex items-center justify-between border-b bg-card px-4 h-14">
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate("/pwa/alimentacao")} className="text-muted-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <ScanLine className="h-5 w-5 text-primary" />
+          <span className="font-semibold text-foreground">Scan Refeição</span>
+        </div>
+        <Button size="sm" onClick={() => setScannerOpen(true)} disabled={!windowId}>
+          <ScanLine className="h-4 w-4 mr-1" /> Scan
+        </Button>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-4">
@@ -116,12 +131,6 @@ export default function AlimentacaoScanPage() {
           </Select>
         )}
 
-        <QrScanner
-          onDetected={handleDetected}
-          allowedPrefixes={["JER:"]}
-          torch
-        />
-
         {result && (
           <Card className={result.ok ? "border-green-500/50" : "border-destructive/50"}>
             <CardContent className="p-4 space-y-2">
@@ -138,7 +147,25 @@ export default function AlimentacaoScanPage() {
             </CardContent>
           </Card>
         )}
+
+        <Button
+          variant="outline"
+          className="w-full min-h-[44px]"
+          onClick={() => setScannerOpen(true)}
+          disabled={!windowId}
+        >
+          <ScanLine className="h-4 w-4 mr-2" />
+          Escanear QR Code
+        </Button>
       </main>
+
+      <QrCodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScan}
+        allowedPrefixes={["JER:", "jer:"]}
+        title="Scan Refeição"
+      />
     </div>
   );
 }

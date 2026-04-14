@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import QrScanner from "@/components/QrScanner";
 import { rpcResolveQr, rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { ArrowLeft, ScanLine, CheckCircle2, XCircle } from "lucide-react";
+import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 
 type ScanMode = "validate" | "checkin" | "checkout";
 
@@ -16,7 +16,7 @@ export default function AlojamentoScanPage() {
   const navigate = useNavigate();
   const { enqueue, isOnline } = useAlojamentoOffline();
   const [mode, setMode] = useState<ScanMode>("checkin");
-  const [_loading, setLoading] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [result, setResult] = useState<Record<string, any> | null>(null);
   const facilityId = getSelectedFacility();
 
@@ -28,7 +28,8 @@ export default function AlojamentoScanPage() {
     return null;
   };
 
-  const handleDetected = useCallback(async (rawValue: string) => {
+  const handleScan = useCallback(async (rawValue: string) => {
+    setScannerOpen(false);
     const token = extractToken(rawValue);
     if (!token) {
       toast.error("Código QR inválido");
@@ -41,9 +42,8 @@ export default function AlojamentoScanPage() {
       return;
     }
 
-    setLoading(true);
-    setResult(null);
     const deviceId = getDeviceId();
+    setResult(null);
 
     try {
       if (!isOnline) {
@@ -54,7 +54,6 @@ export default function AlojamentoScanPage() {
           enqueue("checkout", { token, facility_id: facilityId });
           toast.info("Check-out enfileirado (offline)");
         }
-        setLoading(false);
         return;
       }
 
@@ -88,19 +87,22 @@ export default function AlojamentoScanPage() {
       }
     } catch (err: any) {
       toast.error("Erro ao processar: " + (err.message || "desconhecido"));
-    } finally {
-      setLoading(false);
     }
   }, [mode, facilityId, isOnline, enqueue, navigate]);
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate("/pwa/alojamento")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <ScanLine className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Scanner</span>
+      <header className="flex items-center justify-between border-b bg-card px-4 h-14">
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate("/pwa/alojamento")} className="text-muted-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <ScanLine className="h-5 w-5 text-primary" />
+          <span className="font-semibold text-foreground">Scanner</span>
+        </div>
+        <Button size="sm" onClick={() => setScannerOpen(true)}>
+          <ScanLine className="h-4 w-4 mr-1" /> Scan
+        </Button>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-4">
@@ -112,11 +114,13 @@ export default function AlojamentoScanPage() {
           </TabsList>
         </Tabs>
 
-        <QrScanner
-          onDetected={handleDetected}
-          allowedPrefixes={["JER-ALJ:", "JER:"]}
-          torch
-        />
+        <Button
+          className="w-full min-h-[44px]"
+          onClick={() => setScannerOpen(true)}
+        >
+          <ScanLine className="h-5 w-5 mr-2" />
+          Escanear QR Code
+        </Button>
 
         {result && (
           <Card className={result.ok ? "border-green-500/50" : "border-destructive/50"}>
@@ -154,6 +158,14 @@ export default function AlojamentoScanPage() {
           </Card>
         )}
       </main>
+
+      <QrCodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScan}
+        allowedPrefixes={["JER-ALJ:", "JER:", "jer:"]}
+        title={`Scanner — ${mode === "checkin" ? "Check-in" : mode === "checkout" ? "Check-out" : "Validar"}`}
+      />
     </div>
   );
 }
