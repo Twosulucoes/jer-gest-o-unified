@@ -246,7 +246,7 @@ function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: 
       <button
         onClick={(e) => {
           e.stopPropagation();
-          navigate(`/admin/mapa?route=${encodeURIComponent(item.to)}`);
+          navigate(`/admin/sistema/diagnostico?route=${encodeURIComponent(item.to)}`);
         }}
         className="opacity-0 group-hover:opacity-50 hover:!opacity-100 p-1 transition-opacity text-sidebar-foreground/40"
         title="O que é isto?"
