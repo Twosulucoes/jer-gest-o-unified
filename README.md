@@ -15,14 +15,14 @@ Gerencia toda a operação do evento **após a fase de inscrição**: credenciam
 | **Modelos de Credencial** | 🟡 Parcial | 70% |
 | **Competição — Central/Wizard** (Fases, Grupos, Estrutura, Confrontos, Agenda) | ✅ Pronto | 90% |
 | **Competição — Motor de Regras** (Presets, Seed, Editor) | ✅ Pronto | 100% |
-| **Competição — Resultados e Governança** (Lançamento, Validação, Publicação) | 🟡 Parcial | 75% |
+| **Competição — Resultados e Governança** (Lançamento, Validação, Publicação, Auto-transição) | ✅ Pronto | 100% |
 | **Competição — Classificação** (Standings coletivas, Ranking individual/cross-heat) | ✅ Pronto | 85% |
 | **Competição — Combate** (combat_detail JSONB, CombatResultForm, auto-detecção) | ✅ Pronto | 90% |
 | **Competição — Página da Partida** (Lineup, Eventos, Placar, Oficiais, Anexos) | ✅ Pronto | 90% |
 | **Painel de Controle da Competição** | ✅ Pronto | 100% |
-| **Logística — Transporte** (Veículos, Rotas, Viagens, Embarque) | 🟡 Parcial | 60% |
-| **Logística — Alimentação** (Tipos, Janelas, Consumo, Dashboard tempo real) | ✅ Pronto | 95% |
-| **Logística — Alojamento** (Locais, Unidades, Ocupação) | 🟡 Parcial | 65% |
+| **Logística — Transporte** (Veículos, Rotas, Viagens, Embarque, Relatórios) | ✅ Pronto | 85% |
+| **Logística — Alimentação** (Tipos, Janelas, Consumo, Dashboard, Relatórios) | ✅ Pronto | 100% |
+| **Logística — Alojamento** (Locais, Unidades, Ocupação, Relatórios) | ✅ Pronto | 85% |
 | **PWA Operacional** (Alojamento, Transporte, Alimentação, Coordenação, Delegação) | 🟡 Parcial | 70% |
 | **PWA Ao Vivo** (Mesário touch-friendly, dark mode, offline) | ✅ Pronto | 90% |
 | **Publicação Oficial** (Portal público, Edge Functions, PDF boletins) | 🟡 Parcial | 65% |
@@ -31,7 +31,7 @@ Gerencia toda a operação do evento **após a fase de inscrição**: credenciam
 | **Acessos e Perfis** (Usuários, Delegações, Sport Links, PWA Guards) | ✅ Pronto | 85% |
 | **Pesquisa de Satisfação** | 🟡 Parcial | 60% |
 | **Links e Páginas Públicas** | ✅ Pronto | 85% |
-| **Relatórios** | 🟡 Parcial | 50% |
+| **Relatórios** (Central + Transporte + Alimentação + Alojamento) | ✅ Pronto | 100% |
 | **Boletins Oficiais** (Criação, publicação, geração PDF) | 🟡 Parcial | 70% |
 
 **Resumo**: 63 tabelas no banco, 29 RPCs, 4 Edge Functions, 28+ rotas admin, 25+ rotas PWA, 11 perfis de acesso.
