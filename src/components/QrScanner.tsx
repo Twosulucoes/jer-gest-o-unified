@@ -193,34 +193,9 @@ export default function QrScanner({
       return;
     }
 
-    try {
-      const warmupStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false,
-      });
-
-      const [track] = warmupStream.getVideoTracks();
-      const preferredDeviceId = track?.getSettings?.().deviceId;
-      stopMediaStream(warmupStream);
-
-      await startWebScan(preferredDeviceId);
-    } catch (err: any) {
-      const denied =
-        err?.name === "NotAllowedError" ||
-        err?.name === "SecurityError" ||
-        err?.message?.includes("Permission");
-
-      setPermissionDenied(denied);
-      const msg = denied
-        ? "Permissão de câmera negada. Habilite o acesso nas configurações do navegador." 
-        : err?.name === "NotFoundError"
-          ? "Nenhuma câmera encontrada neste dispositivo."
-          : err?.message || "Erro ao preparar câmera";
-
-      toast.error(msg);
-      onError?.(msg);
-    }
-  }, [loading, onError, scanning, startNativeScan, startWebScan, stopMediaStream]);
+    // Start html5-qrcode directly without warmup stream (avoids locking camera on mobile)
+    await startWebScan();
+  }, [loading, onError, scanning, startNativeScan, startWebScan]);
 
   // Auto-start
   useEffect(() => {
