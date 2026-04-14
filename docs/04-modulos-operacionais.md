@@ -27,32 +27,32 @@
 - **Reemissão**: invalida anterior (status `reissued`), gera novos códigos
 - **Dados reais**: 378 credenciais emitidas
 
-## 4. Transporte (🟡 Parcial)
-- **Páginas admin**: veículos, rotas, viagens, embarque por viagem
+## 4. Transporte (✅ Pronto — 85%)
+- **Páginas admin**: veículos, rotas, viagens, embarque por viagem, **relatórios** (`/admin/transporte/relatorios`)
 - **Páginas PWA**: home, viagens, scan, embarque, rotas
 - **Tabelas**: `transport_vehicles`, `transport_routes`, `transport_trips`, `transport_passengers`
 - **Perfis**: admin, secretaria, coordenacao_tecnica, transporte
-- **Implementado**: ✅ CRUD de veículos, rotas, viagens | ✅ Embarque com lista de passageiros
-- **Gaps**: ❌ Sem controle de retorno | ❌ Sem relatórios | ❌ Scan QR no embarque parcial
+- **Implementado**: ✅ CRUD de veículos, rotas, viagens | ✅ Embarque com lista de passageiros | ✅ Relatório exportável CSV com filtros por data/rota/veículo
+- **Gaps**: ❌ Sem controle de retorno | ⚠️ Scan QR no embarque parcial
 - **Dados reais**: 0 viagens cadastradas
 
-## 5. Alimentação (🟡 Parcial)
-- **Páginas admin**: tipos de refeição, janelas de serviço, registro de consumo
+## 5. Alimentação (✅ Pronto — 100%)
+- **Páginas admin**: tipos de refeição, janelas de serviço, registro de consumo, **dashboard tempo real** (`/admin/alimentacao/dashboard`), **relatórios** (`/admin/alimentacao/relatorios`)
 - **Páginas PWA**: home, scan, buscar, janelas, histórico
 - **Tabelas**: `meal_types`, `meal_windows`, `meal_consumptions`
 - **Perfis**: admin, secretaria, coordenacao_tecnica, alimentacao
-- **Implementado**: ✅ CRUD tipos/janelas | ✅ Registro de consumo
-- **Gaps**: ⚠️ Sem UNIQUE constraint `(meal_window_id, participant_id)` no banco | ❌ Sem dashboard de consumo em tempo real
+- **Implementado**: ✅ CRUD tipos/janelas | ✅ Registro de consumo | ✅ Dashboard com auto-refresh 30s | ✅ Relatório exportável CSV com totalizadores por delegação e tipo
+- **Gaps**: Nenhum bloqueante
 - **Dados reais**: 0 consumos registrados
 
-## 6. Alojamento (🟡 Parcial)
-- **Páginas admin**: locais, unidades, ocupação
+## 6. Alojamento (✅ Pronto — 85%)
+- **Páginas admin**: locais, unidades, ocupação, **relatórios** (`/admin/alojamento/relatorios`)
 - **Páginas PWA**: home, scan, buscar, ocupação, pessoa, incidentes
 - **Tabelas**: `lodging_locations`, `lodging_units`, `lodging_occupancies`
 - **Trigger**: `validate_lodging_capacity` impede alocação acima da capacidade
 - **Perfis**: admin, secretaria, coordenacao_tecnica, alojamento
-- **Implementado**: ✅ CRUD locais/unidades | ✅ Alocação com trigger de capacidade | ✅ PWA com incidentes
-- **Gaps**: ❌ Sem relatório de ocupação | ❌ Sem controle temporal de permanência
+- **Implementado**: ✅ CRUD locais/unidades | ✅ Alocação com trigger de capacidade | ✅ PWA com incidentes | ✅ Relatório com gráfico de ocupação e exportação CSV
+- **Gaps**: ❌ Sem controle temporal de permanência
 - **Dados reais**: 0 ocupações
 
 ## 7. Competição (✅ Pronto — core funcional)
@@ -77,6 +77,7 @@
   - ✅ Standings de grupo (GroupStandingsTable)
   - ✅ Painel de controle com status automático por prova
   - ✅ Pré-validação de quórum
+  - ✅ **Transição automática de fases**: quando todos os resultados de uma fase são publicados, a fase muda para `finished` e a próxima inicia automaticamente. Controlado por `auto_transition` (boolean) em `competition_phases`. Trigger `trg_check_phase_on_result_publish` + RPC `check_phase_transitions`. Registra audit_events.
 - **Perfis**: admin, secretaria, coordenacao_tecnica, coordenador_modalidade, mesario
 - **Dados reais**: 79 provas, 26 partidas, 17 resultados, 40 equipes
 
