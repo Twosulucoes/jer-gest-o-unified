@@ -4,6 +4,8 @@
 
 Os módulos PWA operacionais (Transporte, Alimentação, Alojamento) possuem scanner QR integrado via câmera do dispositivo para leitura de credenciais de participantes.
 
+> **Nota**: Cada módulo PWA é isolado via `PwaModuleLayout`. O scanner funciona dentro do módulo específico do operador — não há navegação entre módulos.
+
 ## Componente
 
 `src/components/pwa/QrCodeScanner.tsx` — Scanner fullscreen compartilhado.
@@ -41,14 +43,15 @@ Prefixos aceitos:
 - `JER-ALJ:` — alojamento
 - `jer:` — formato canônico
 
-## Onde Testar
+## Onde Testar (por módulo isolado)
 
-| Módulo | URL | Ação |
-|--------|-----|------|
-| Transporte - Embarque | `/pwa/transporte/embarque?tripId=...` | Botão "Scan" no header |
-| Transporte - Scan | `/pwa/transporte/scan` | Botão "Escanear QR Code" |
-| Alimentação | `/pwa/alimentacao/scan` | Botão "Escanear QR Code" |
-| Alojamento | `/pwa/alojamento/scan` | Botão "Scan" no header |
+| Módulo | URL | Perfil necessário | Ação |
+|--------|-----|-------------------|------|
+| Transporte - Scan | `/pwa/transporte/scan` | `transporte` | Botão "Escanear QR Code" |
+| Alimentação - Scan | `/pwa/alimentacao/scan` | `alimentacao` | Botão "Escanear QR Code" |
+| Alojamento - Scan | `/pwa/alojamento/scan` | `alojamento` | Botão "Scan" no header |
+
+> **Importante**: Cada URL só é acessível com o perfil correto. Operador de transporte não consegue acessar `/pwa/alimentacao/scan`.
 
 ## Troubleshooting
 
