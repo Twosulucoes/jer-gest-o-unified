@@ -118,13 +118,13 @@ export default function CompeticaoCentralPage() {
 
   const steps: WizardStep[] = useMemo(() => [
     { key: "participants", label: isCollective ? "Equipes" : "Participantes" },
-    { key: "structure", label: "Estrutura" },
-    { key: "matches", label: getMatchesLabel(family, format) },
+    { key: "structure", label: isTimeMark ? "Baterias / Séries" : "Estrutura" },
+    { key: "matches", label: getMatchesLabel(family, format), hidden: isTimeMark },
     { key: "agenda", label: "Agenda" },
     { key: "standings", label: "Classificação", hidden: !showStandings },
     { key: "results", label: "Resultados" },
     { key: "pending", label: "Pendências" },
-  ], [isCollective, family, format, showStandings]);
+  ], [isCollective, family, format, showStandings, isTimeMark]);
 
   const visibleSteps = steps.filter((s) => !s.hidden);
   const currentIdx = visibleSteps.findIndex((s) => s.key === currentStep);
