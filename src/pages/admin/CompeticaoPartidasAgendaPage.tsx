@@ -5,8 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import ModuleHeader from "@/components/admin/ModuleHeader";
-import { Plus, Pencil, Swords, CalendarDays, MapPin, Eye, Filter, List, Calendar } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Pencil, Swords, CalendarDays, MapPin, Eye, Filter, List, Calendar, AlertTriangle } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +31,7 @@ export default function CompeticaoPartidasAgendaPage() {
   const navigate = useNavigate();
   const { hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
+  const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem("partidas-view") as ViewMode) || "list");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -43,14 +46,16 @@ export default function CompeticaoPartidasAgendaPage() {
   useEffect(() => { localStorage.setItem("partidas-view", viewMode); }, [viewMode]);
 
   const { data: sportEvents = [] } = useQuery({
-    queryKey: ["sport_events", selectedEventId],
+    queryKey: ["sport_events", selectedEventId, mySportIds],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("sport_events").select("*").eq("event_id", selectedEventId).order("name");
+      let q = supabase.from("sport_events").select("*").eq("event_id", selectedEventId).order("name");
+      if (mySportIds && mySportIds.length > 0) q = q.in("sport_id", mySportIds);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedEventId,
+    enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
   });
 
   const { data: phases = [] } = useQuery({
