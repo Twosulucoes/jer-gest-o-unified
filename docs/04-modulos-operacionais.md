@@ -27,22 +27,22 @@
 - **Reemissão**: invalida anterior (status `reissued`), gera novos códigos
 - **Dados reais**: 378 credenciais emitidas
 
-## 4. Transporte (🟡 Parcial)
-- **Páginas admin**: veículos, rotas, viagens, embarque por viagem
+## 4. Transporte (✅ Pronto — 85%)
+- **Páginas admin**: veículos, rotas, viagens, embarque por viagem, **relatórios** (`/admin/transporte/relatorios`)
 - **Páginas PWA**: home, viagens, scan, embarque, rotas
 - **Tabelas**: `transport_vehicles`, `transport_routes`, `transport_trips`, `transport_passengers`
 - **Perfis**: admin, secretaria, coordenacao_tecnica, transporte
-- **Implementado**: ✅ CRUD de veículos, rotas, viagens | ✅ Embarque com lista de passageiros
-- **Gaps**: ❌ Sem controle de retorno | ❌ Sem relatórios | ❌ Scan QR no embarque parcial
+- **Implementado**: ✅ CRUD de veículos, rotas, viagens | ✅ Embarque com lista de passageiros | ✅ Relatório exportável CSV com filtros por data/rota/veículo
+- **Gaps**: ❌ Sem controle de retorno | ⚠️ Scan QR no embarque parcial
 - **Dados reais**: 0 viagens cadastradas
 
-## 5. Alimentação (🟡 Parcial)
-- **Páginas admin**: tipos de refeição, janelas de serviço, registro de consumo
+## 5. Alimentação (✅ Pronto — 100%)
+- **Páginas admin**: tipos de refeição, janelas de serviço, registro de consumo, **dashboard tempo real** (`/admin/alimentacao/dashboard`), **relatórios** (`/admin/alimentacao/relatorios`)
 - **Páginas PWA**: home, scan, buscar, janelas, histórico
 - **Tabelas**: `meal_types`, `meal_windows`, `meal_consumptions`
 - **Perfis**: admin, secretaria, coordenacao_tecnica, alimentacao
-- **Implementado**: ✅ CRUD tipos/janelas | ✅ Registro de consumo
-- **Gaps**: ⚠️ Sem UNIQUE constraint `(meal_window_id, participant_id)` no banco | ❌ Sem dashboard de consumo em tempo real
+- **Implementado**: ✅ CRUD tipos/janelas | ✅ Registro de consumo | ✅ Dashboard com auto-refresh 30s | ✅ Relatório exportável CSV com totalizadores por delegação e tipo
+- **Gaps**: Nenhum bloqueante
 - **Dados reais**: 0 consumos registrados
 
 ## 6. Alojamento (🟡 Parcial)
