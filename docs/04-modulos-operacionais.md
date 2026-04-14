@@ -45,14 +45,14 @@
 - **Gaps**: Nenhum bloqueante
 - **Dados reais**: 0 consumos registrados
 
-## 6. Alojamento (🟡 Parcial)
-- **Páginas admin**: locais, unidades, ocupação
+## 6. Alojamento (✅ Pronto — 85%)
+- **Páginas admin**: locais, unidades, ocupação, **relatórios** (`/admin/alojamento/relatorios`)
 - **Páginas PWA**: home, scan, buscar, ocupação, pessoa, incidentes
 - **Tabelas**: `lodging_locations`, `lodging_units`, `lodging_occupancies`
 - **Trigger**: `validate_lodging_capacity` impede alocação acima da capacidade
 - **Perfis**: admin, secretaria, coordenacao_tecnica, alojamento
-- **Implementado**: ✅ CRUD locais/unidades | ✅ Alocação com trigger de capacidade | ✅ PWA com incidentes
-- **Gaps**: ❌ Sem relatório de ocupação | ❌ Sem controle temporal de permanência
+- **Implementado**: ✅ CRUD locais/unidades | ✅ Alocação com trigger de capacidade | ✅ PWA com incidentes | ✅ Relatório com gráfico de ocupação e exportação CSV
+- **Gaps**: ❌ Sem controle temporal de permanência
 - **Dados reais**: 0 ocupações
 
 ## 7. Competição (✅ Pronto — core funcional)
