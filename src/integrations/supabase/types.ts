@@ -425,6 +425,7 @@ export type Database = {
       }
       competition_phases: {
         Row: {
+          auto_transition: boolean
           bracket_config: Json
           created_at: string
           event_id: string
@@ -439,6 +440,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_transition?: boolean
           bracket_config?: Json
           created_at?: string
           event_id: string
@@ -453,6 +455,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_transition?: boolean
           bracket_config?: Json
           created_at?: string
           event_id?: string
@@ -3647,6 +3650,10 @@ export type Database = {
           p_expires_at?: string
           p_rotate?: boolean
         }
+        Returns: Json
+      }
+      check_phase_transitions: {
+        Args: { p_sport_event_id: string }
         Returns: Json
       }
       generate_public_token: { Args: never; Returns: string }
