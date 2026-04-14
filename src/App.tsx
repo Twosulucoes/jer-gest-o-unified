@@ -27,6 +27,7 @@ import TransporteEmbarquePage from "./pages/admin/TransporteEmbarquePage";
 import AlimentacaoTiposPage from "./pages/admin/AlimentacaoTiposPage";
 import AlimentacaoJanelasPage from "./pages/admin/AlimentacaoJanelasPage";
 import AlimentacaoConsumoPage from "./pages/admin/AlimentacaoConsumoPage";
+import AlimentacaoDashboardPage from "./pages/admin/AlimentacaoDashboardPage";
 import AlojamentoLocaisPage from "./pages/admin/AlojamentoLocaisPage";
 import AlojamentoUnidadesPage from "./pages/admin/AlojamentoUnidadesPage";
 import AlojamentoOcupacaoPage from "./pages/admin/AlojamentoOcupacaoPage";
@@ -173,6 +174,7 @@ const App = () => (
               <Route path="alimentacao/tipos" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoTiposPage /></ProtectedRoute>} />
               <Route path="alimentacao/janelas" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoJanelasPage /></ProtectedRoute>} />
               <Route path="alimentacao/consumo" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoConsumoPage /></ProtectedRoute>} />
+              <Route path="alimentacao/dashboard" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoDashboardPage /></ProtectedRoute>} />
               {/* Alojamento */}
               <Route path="alojamento/locais" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoLocaisPage /></ProtectedRoute>} />
               <Route path="alojamento/unidades" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoUnidadesPage /></ProtectedRoute>} />
