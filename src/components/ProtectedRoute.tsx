@@ -31,6 +31,11 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
+  // super_admin bypasses role checks (full access)
+  if (hasRole("super_admin")) {
+    return <>{children}</>;
+  }
+
   // If specific roles required, check at least one matches
   if (allowedRoles && allowedRoles.length > 0) {
     const authorized = allowedRoles.some((r) => hasRole(r));
