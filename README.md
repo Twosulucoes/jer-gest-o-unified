@@ -17,11 +17,11 @@ Gerencia toda a operação do evento **após a fase de inscrição**: credenciam
 | **Competição — Motor de Regras** (Presets, Seed, Editor) | ✅ Pronto | 100% |
 | **Competição — Resultados e Governança** (Lançamento, Validação, Publicação) | 🟡 Parcial | 75% |
 | **Competição — Classificação** (Standings coletivas, Ranking individual/cross-heat) | ✅ Pronto | 85% |
-| **Competição — Combate** (combat_detail JSONB, CombatResultForm) | 🟡 Parcial | 40% |
+| **Competição — Combate** (combat_detail JSONB, CombatResultForm, auto-detecção) | ✅ Pronto | 90% |
 | **Competição — Página da Partida** (Lineup, Eventos, Placar, Oficiais, Anexos) | ✅ Pronto | 90% |
 | **Painel de Controle da Competição** | ✅ Pronto | 100% |
 | **Logística — Transporte** (Veículos, Rotas, Viagens, Embarque) | 🟡 Parcial | 60% |
-| **Logística — Alimentação** (Tipos, Janelas, Consumo) | 🟡 Parcial | 70% |
+| **Logística — Alimentação** (Tipos, Janelas, Consumo, Dashboard tempo real) | ✅ Pronto | 95% |
 | **Logística — Alojamento** (Locais, Unidades, Ocupação) | 🟡 Parcial | 65% |
 | **PWA Operacional** (Alojamento, Transporte, Alimentação, Coordenação, Delegação) | 🟡 Parcial | 70% |
 | **PWA Ao Vivo** (Mesário touch-friendly, dark mode, offline) | ✅ Pronto | 90% |
