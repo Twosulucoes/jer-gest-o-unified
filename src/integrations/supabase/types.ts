@@ -3031,6 +3031,30 @@ export type Database = {
           },
         ]
       }
+      system_config: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       team_members: {
         Row: {
           created_at: string
@@ -3751,6 +3775,7 @@ export type Database = {
       }
       import_inscricoes_batch: { Args: { payload: Json }; Returns: Json }
       is_admin_or_secretaria: { Args: never; Returns: boolean }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       list_blocked_participants: {
         Args: { p_event_id: string }
         Returns: {
