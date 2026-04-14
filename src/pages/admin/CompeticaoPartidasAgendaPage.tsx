@@ -91,17 +91,26 @@ export default function CompeticaoPartidasAgendaPage() {
     enabled: !!selectedEventId,
   });
 
+  // Filter matches — if coordenador_modalidade, restrict to sport_events from linked sports
+  const sportEventIds = sportEvents.map((se: any) => se.id);
+
   const { data: matches = [], isLoading } = useQuery({
-    queryKey: ["competition_matches", selectedEventId, selectedSportEventId],
+    queryKey: ["competition_matches", selectedEventId, selectedSportEventId, mySportIds],
     queryFn: async () => {
       if (!selectedEventId) return [];
       let q = supabase.from("competition_matches").select("*").eq("event_id", selectedEventId).order("match_date").order("start_time");
-      if (selectedSportEventId) q = q.eq("sport_event_id", selectedSportEventId);
+      if (selectedSportEventId) {
+        q = q.eq("sport_event_id", selectedSportEventId);
+      } else if (mySportIds && mySportIds.length > 0 && sportEventIds.length > 0) {
+        q = q.in("sport_event_id", sportEventIds);
+      } else if (mySportIds && mySportIds.length === 0) {
+        return []; // coordenador without links
+      }
       const { data, error } = await q;
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedEventId,
+    enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
   });
 
   const phasesMap = new Map(phases.map((p) => [p.id, p]));
