@@ -155,6 +155,7 @@ const navGroups: NavGroup[] = [
 function getRoleLabel(role: AppRole): string {
   const labels: Record<AppRole, string> = {
     admin: "Administrador",
+    super_admin: "Super Admin",
     secretaria: "Secretaria",
     transporte: "Transporte",
     alimentacao: "Alimentação",
