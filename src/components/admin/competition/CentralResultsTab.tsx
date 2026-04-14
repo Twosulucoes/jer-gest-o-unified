@@ -227,6 +227,7 @@ export default function CentralResultsTab({ eventId, sportEventId, isCollective 
         match={selectedMatch}
         eventId={eventId}
         isCollective={isCollective}
+        sportEventId={sportEventId}
       />
     </div>
   );
