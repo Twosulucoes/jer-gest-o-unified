@@ -342,8 +342,8 @@ export default function AcessosUsuariosPage() {
               <Input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} type="email" placeholder="usuario@email.com" />
             </div>
             <div className="space-y-1">
-              <Label>Nome completo</Label>
-              <Input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Nome completo" />
+              <Label>Nome completo *</Label>
+              <Input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Nome completo (mín. 3 caracteres)" />
             </div>
             <div className="space-y-1">
               <Label>Perfil *</Label>
