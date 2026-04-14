@@ -77,6 +77,7 @@
   - ✅ Standings de grupo (GroupStandingsTable)
   - ✅ Painel de controle com status automático por prova
   - ✅ Pré-validação de quórum
+  - ✅ **Transição automática de fases**: quando todos os resultados de uma fase são publicados, a fase muda para `finished` e a próxima inicia automaticamente. Controlado por `auto_transition` (boolean) em `competition_phases`. Trigger `trg_check_phase_on_result_publish` + RPC `check_phase_transitions`. Registra audit_events.
 - **Perfis**: admin, secretaria, coordenacao_tecnica, coordenador_modalidade, mesario
 - **Dados reais**: 79 provas, 26 partidas, 17 resultados, 40 equipes
 
