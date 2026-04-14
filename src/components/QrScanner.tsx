@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +23,7 @@ export default function QrScanner({
   torch = false,
   showManualEntry = true,
 }: QrScannerProps) {
+  const scannerRegionId = useId().replace(/:/g, "-");
   const [scanning, setScanning] = useState(false);
   const [manualMode, setManualMode] = useState(false);
   const [manualCode, setManualCode] = useState("");
@@ -32,6 +33,10 @@ export default function QrScanner({
   const debounceRef = useRef(false);
   const scannerRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  const stopMediaStream = useCallback((stream?: MediaStream | null) => {
+    stream?.getTracks().forEach((track) => track.stop());
+  }, []);
 
   const validatePayload = useCallback(
     (raw: string): boolean => {
@@ -91,7 +96,9 @@ export default function QrScanner({
         // User cancelled — no error
         return;
       }
-      const msg = err.message || "Erro ao abrir scanner nativo";
+      const msg = err?.message?.includes("barcode-scanning")
+        ? "Scanner nativo não sincronizado. Atualize o app com npx cap sync."
+        : err.message || "Erro ao abrir scanner nativo";
       toast.error(msg);
       onError?.(msg);
     }
@@ -109,31 +116,35 @@ export default function QrScanner({
       // ignore
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
+      stopMediaStream(streamRef.current);
       streamRef.current = null;
     }
+    setLoading(false);
     setScanning(false);
-  }, []);
+  }, [stopMediaStream]);
 
-  const startWebScan = useCallback(async () => {
+  const startWebScan = useCallback(async (preferredDeviceId?: string) => {
     setLoading(true);
     setPermissionDenied(false);
+    setScanning(true);
+
     try {
+      await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
       const { Html5Qrcode } = await import("html5-qrcode");
 
-      const scannerId = "qr-scanner-region";
       // Ensure container exists
-      const container = document.getElementById(scannerId);
+      const container = document.getElementById(scannerRegionId);
       if (!container) {
-        setLoading(false);
-        return;
+        throw new Error("Área do scanner não encontrada");
       }
 
-      const scanner = new Html5Qrcode(scannerId);
+      const scanner = new Html5Qrcode(scannerRegionId);
       scannerRef.current = scanner;
 
       await scanner.start(
-        { facingMode: "environment" },
+        preferredDeviceId
+          ? { deviceId: { exact: preferredDeviceId } }
+          : { facingMode: "environment" },
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
@@ -151,7 +162,7 @@ export default function QrScanner({
       setScanning(true);
       setLoading(false);
     } catch (err: any) {
-      setLoading(false);
+      await stopWebScan();
       if (
         err?.message?.includes("Permission") ||
         err?.message?.includes("NotAllowed") ||
@@ -164,21 +175,58 @@ export default function QrScanner({
       }
       onError?.(err.message || "Erro ao iniciar câmera");
     }
-  }, [handleDetected, onError, stopWebScan]);
+  }, [handleDetected, onError, scannerRegionId, stopWebScan]);
 
-  const startScan = useCallback(() => {
+  const startScan = useCallback(async () => {
+    if (loading || scanning) return;
+
     if (isNativeApp()) {
-      startNativeScan();
-    } else {
-      startWebScan();
+      await startNativeScan();
+      return;
     }
-  }, [startNativeScan, startWebScan]);
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const msg = "Este dispositivo não oferece suporte ao acesso à câmera.";
+      setPermissionDenied(true);
+      toast.error(msg);
+      onError?.(msg);
+      return;
+    }
+
+    try {
+      const warmupStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+
+      const [track] = warmupStream.getVideoTracks();
+      const preferredDeviceId = track?.getSettings?.().deviceId;
+      stopMediaStream(warmupStream);
+
+      await startWebScan(preferredDeviceId);
+    } catch (err: any) {
+      const denied =
+        err?.name === "NotAllowedError" ||
+        err?.name === "SecurityError" ||
+        err?.message?.includes("Permission");
+
+      setPermissionDenied(denied);
+      const msg = denied
+        ? "Permissão de câmera negada. Habilite o acesso nas configurações do navegador." 
+        : err?.name === "NotFoundError"
+          ? "Nenhuma câmera encontrada neste dispositivo."
+          : err?.message || "Erro ao preparar câmera";
+
+      toast.error(msg);
+      onError?.(msg);
+    }
+  }, [loading, onError, scanning, startNativeScan, startWebScan, stopMediaStream]);
 
   // Auto-start
   useEffect(() => {
-    if (autoStart) startScan();
+    if (autoStart) void startScan();
     return () => {
-      stopWebScan();
+      void stopWebScan();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -230,13 +278,13 @@ export default function QrScanner({
                 <p className="text-sm text-muted-foreground text-center">
                   Aponte a câmera para o QR Code
                 </p>
-                <Button onClick={startScan} className="h-12 px-8" size="lg">
+                <Button onClick={() => void startScan()} className="h-12 px-8" size="lg">
                   <Camera className="h-5 w-5 mr-2" />
                   Iniciar câmera
                 </Button>
                 {permissionDenied && (
                   <p className="text-xs text-destructive text-center">
-                    Câmera bloqueada. Verifique as permissões do navegador e tente novamente.
+                    Câmera bloqueada. Habilite a permissão no navegador ou no app e tente novamente.
                   </p>
                 )}
               </div>
@@ -251,8 +299,8 @@ export default function QrScanner({
 
             {/* Web scanner render target */}
             <div
-              id="qr-scanner-region"
-              className={scanning && !isNativeApp() ? "w-full aspect-square rounded-lg overflow-hidden" : "hidden"}
+              id={scannerRegionId}
+              className={scanning && !isNativeApp() ? "w-full aspect-square rounded-lg overflow-hidden bg-muted" : "hidden"}
             />
 
             {scanning && (
