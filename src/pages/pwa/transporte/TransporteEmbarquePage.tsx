@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, CheckCircle, ScanLine, Users } from "lucide-react";
+import { useEffect } from "react";
+import { toast } from "sonner";
+import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 
 interface Passenger {
   id: string;
   full_name: string;
   boarded: boolean;
   boarded_at: string | null;
+  participant_id: string | null;
 }
 
 export default function TransporteEmbarquePage() {
@@ -20,28 +24,80 @@ export default function TransporteEmbarquePage() {
   const tripId = searchParams.get("tripId");
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchPassengers = useCallback(async () => {
     if (!tripId) { setLoading(false); return; }
-    (async () => {
-      const { data } = await supabase
-        .from("trip_passengers" as any)
-        .select("id, participant:participants(full_name), boarded, boarded_at")
-        .eq("trip_id", tripId)
-        .order("created_at");
+    const { data } = await supabase
+      .from("trip_passengers" as any)
+      .select("id, participant_id, participant:participants(full_name), boarded, boarded_at")
+      .eq("trip_id", tripId)
+      .order("created_at");
 
-      const list = (data || []).map((p: any) => ({
-        id: p.id,
-        full_name: p.participant?.full_name || "—",
-        boarded: p.boarded || false,
-        boarded_at: p.boarded_at,
-      }));
-      setPassengers(list);
-      setLoading(false);
-    })();
+    const list = (data || []).map((p: any) => ({
+      id: p.id,
+      full_name: p.participant?.full_name || "—",
+      boarded: p.boarded || false,
+      boarded_at: p.boarded_at,
+      participant_id: p.participant_id,
+    }));
+    setPassengers(list);
+    setLoading(false);
   }, [tripId]);
 
+  useEffect(() => { fetchPassengers(); }, [fetchPassengers]);
+
   const boardedCount = passengers.filter(p => p.boarded).length;
+
+  const handleScan = async (rawValue: string) => {
+    setScannerOpen(false);
+    const token = rawValue.startsWith("JER:") ? rawValue.slice(4) : rawValue.trim();
+    if (!token || !tripId) return;
+
+    try {
+      // Look up credential
+      const { data: cred } = await supabase
+        .from("participant_credentials" as any)
+        .select("participant_id, participant:participants(full_name)")
+        .or(`qr_token.eq.${token},credential_code.eq.${token},qr_code_value.eq.${rawValue}`)
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle();
+
+      if (!cred) {
+        toast.error("Credencial não encontrada no sistema");
+        return;
+      }
+
+      const participantId = (cred as any).participant_id;
+      const name = (cred as any).participant?.full_name || "Participante";
+
+      // Check if in this trip
+      const passenger = passengers.find(p => p.participant_id === participantId);
+      if (!passenger) {
+        toast.error(`${name} não está na lista desta viagem`);
+        return;
+      }
+      if (passenger.boarded) {
+        toast.info(`${name} já embarcou`);
+        return;
+      }
+
+      // Register boarding
+      const { error } = await supabase
+        .from("trip_passengers" as any)
+        .update({ boarded: true, boarded_at: new Date().toISOString(), method: "qr_scan" })
+        .eq("id", passenger.id);
+
+      if (error) throw error;
+
+      toast.success(`${name} embarcado com sucesso`);
+      if (navigator.vibrate) navigator.vibrate(200);
+      fetchPassengers();
+    } catch (err: any) {
+      toast.error("Erro ao registrar embarque: " + (err.message || "desconhecido"));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,9 +109,11 @@ export default function TransporteEmbarquePage() {
           <CheckCircle className="h-5 w-5 text-primary" />
           <span className="font-semibold text-foreground">Embarque</span>
         </div>
-        <Button size="sm" onClick={() => navigate(`/pwa/transporte/scan?tripId=${tripId}`)}>
-          <ScanLine className="h-4 w-4 mr-1" /> Scan
-        </Button>
+        {tripId && (
+          <Button size="sm" onClick={() => setScannerOpen(true)}>
+            <ScanLine className="h-4 w-4 mr-1" /> Scan
+          </Button>
+        )}
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-4">
@@ -93,6 +151,14 @@ export default function TransporteEmbarquePage() {
           </>
         )}
       </main>
+
+      <QrCodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScan}
+        allowedPrefixes={["JER:", "jer:"]}
+        title="Scan Embarque"
+      />
     </div>
   );
 }

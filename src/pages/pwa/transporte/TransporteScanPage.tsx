@@ -1,20 +1,22 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ScanLine, CheckCircle, XCircle } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
-import QrScanner from "@/components/QrScanner";
+import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 
 export default function TransporteScanPage() {
   const _navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get("tripId");
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
-  const handleDetected = async (rawValue: string) => {
+  const handleScan = (rawValue: string) => {
+    setScannerOpen(false);
     const token = rawValue.startsWith("JER:") ? rawValue.slice(4) : rawValue.trim();
     if (!token) return;
-
     setResult({ ok: true, message: "Embarque registrado com sucesso" });
   };
 
@@ -27,11 +29,10 @@ export default function TransporteScanPage() {
       />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
-        <QrScanner
-          onDetected={handleDetected}
-          allowedPrefixes={["JER:"]}
-          torch
-        />
+        <Button className="w-full min-h-[44px]" onClick={() => setScannerOpen(true)}>
+          <ScanLine className="h-5 w-5 mr-2" />
+          Escanear QR Code
+        </Button>
 
         {result && (
           <Card className={result.ok ? "border-success/50" : "border-destructive/50"}>
@@ -46,6 +47,14 @@ export default function TransporteScanPage() {
           </Card>
         )}
       </main>
+
+      <QrCodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScan}
+        allowedPrefixes={["JER:", "jer:"]}
+        title="Scan Embarque"
+      />
     </div>
   );
 }
