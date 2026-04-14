@@ -74,7 +74,6 @@ export default function SuperAdminLayout() {
   const { profile, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const location = useLocation();
 
   const closeSidebar = () => setSidebarOpen(false);
 
