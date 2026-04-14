@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useEventContext } from "@/contexts/EventContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Copy, Key, LogOut as LogOutIcon, UserPlus, Settings2, Search,
-  Mail, ShieldCheck, ShieldX, Clock, User as UserIcon, RefreshCw,
+  Mail, ShieldCheck, ShieldX, Clock, User as UserIcon, RefreshCw, Trophy,
 } from "lucide-react";
 import SportLinksDialog from "@/components/admin/SportLinksDialog";
 
@@ -74,7 +75,9 @@ async function callAdminUsers(action: string, body: Record<string, unknown> = {}
 export default function AcessosUsuariosPage() {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
+  const { activeEvent } = useEventContext();
   const isAdmin = hasRole("admin");
+  const eventId = activeEvent?.id;
 
   // Filters
   const [search, setSearch] = useState("");
@@ -106,6 +109,53 @@ export default function AcessosUsuariosPage() {
       const result = await callAdminUsers("list_users");
       return result.users || [];
     },
+  });
+
+  // Fetch sport links for all coordenador_modalidade users
+  const coordUserIds = useMemo(() =>
+    users.filter((u: any) => u.roles?.includes("coordenador_modalidade")).map((u: any) => u.user_id),
+    [users]
+  );
+
+  const { data: allSportLinks = [] } = useQuery({
+    queryKey: ["user-sport-links-all", eventId, coordUserIds],
+    queryFn: async () => {
+      if (!eventId || coordUserIds.length === 0) return [];
+      const { data } = await supabase
+        .from("user_sport_links")
+        .select("id, user_id, sport_id, sports(name)")
+        .eq("event_id", eventId)
+        .in("user_id", coordUserIds);
+      return data || [];
+    },
+    enabled: !!eventId && coordUserIds.length > 0,
+  });
+
+  // Group sport links by user_id for quick lookup
+  const sportLinksByUser = useMemo(() => {
+    const map: Record<string, { sport_id: string; name: string }[]> = {};
+    for (const link of allSportLinks) {
+      const uid = (link as any).user_id;
+      if (!map[uid]) map[uid] = [];
+      map[uid].push({ sport_id: (link as any).sport_id, name: (link as any).sports?.name || "—" });
+    }
+    return map;
+  }, [allSportLinks]);
+
+  // Drawer-specific sport links query
+  const selectedUserIsCoord = selectedUser?.roles?.includes("coordenador_modalidade");
+  const { data: drawerSportLinks = [], isLoading: loadingDrawerLinks } = useQuery({
+    queryKey: ["user-sport-links", selectedUser?.user_id, eventId],
+    queryFn: async () => {
+      if (!eventId || !selectedUser?.user_id) return [];
+      const { data } = await supabase
+        .from("user_sport_links")
+        .select("id, sport_id, sports(name)")
+        .eq("user_id", selectedUser.user_id)
+        .eq("event_id", eventId);
+      return data || [];
+    },
+    enabled: drawerOpen && !!eventId && !!selectedUser?.user_id && !!selectedUserIsCoord,
   });
 
   const filteredUsers = useMemo(() => {
@@ -296,6 +346,8 @@ export default function AcessosUsuariosPage() {
             <TableBody>
               {filteredUsers.map((u: any) => {
                 const status = statusLabel(u);
+                const isCoord = u.roles?.includes("coordenador_modalidade");
+                const userSports = isCoord ? (sportLinksByUser[u.user_id] || []) : [];
                 return (
                   <TableRow
                     key={u.user_id}
@@ -305,13 +357,24 @@ export default function AcessosUsuariosPage() {
                     <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">{u.email}</TableCell>
                     <TableCell>
-                      {u.roles?.length > 0 ? (
-                        <Badge variant={roleBadgeVariant(u.roles[0])}>
-                          {ROLES.find((r) => r.value === u.roles[0])?.label || u.roles[0]}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">Sem perfil</span>
-                      )}
+                      <div className="space-y-1">
+                        {u.roles?.length > 0 ? (
+                          <Badge variant={roleBadgeVariant(u.roles[0])}>
+                            {ROLES.find((r) => r.value === u.roles[0])?.label || u.roles[0]}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">Sem perfil</span>
+                        )}
+                        {isCoord && userSports.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {userSports.map((s) => (
+                              <Badge key={s.sport_id} variant="secondary" className="text-[10px] px-1.5 py-0">
+                                {s.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={status.variant}>{status.text}</Badge>
@@ -425,7 +488,7 @@ export default function AcessosUsuariosPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                {selectedUser.roles?.includes("coordenador_modalidade") && (
+                {selectedUserIsCoord && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -437,6 +500,38 @@ export default function AcessosUsuariosPage() {
                   </Button>
                 )}
               </div>
+
+              {/* Modalidades Vinculadas */}
+              {selectedUserIsCoord && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <Label className="font-semibold flex items-center gap-2">
+                      <Trophy className="h-4 w-4" />
+                      Modalidades Vinculadas
+                    </Label>
+                    {!eventId ? (
+                      <p className="text-xs text-muted-foreground">Selecione um evento ativo para ver modalidades.</p>
+                    ) : loadingDrawerLinks ? (
+                      <div className="space-y-1">
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-6 w-1/2" />
+                      </div>
+                    ) : drawerSportLinks.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Nenhuma modalidade vinculada ainda.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {drawerSportLinks.map((l: any) => (
+                          <Badge key={l.id} variant="secondary" className="gap-1">
+                            <Trophy className="h-3 w-3" />
+                            {l.sports?.name || "—"}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               <Separator />
 
