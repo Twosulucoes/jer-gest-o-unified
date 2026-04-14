@@ -37,8 +37,7 @@ import TransporteRelatoriosPage from "./pages/admin/TransporteRelatoriosPage";
 import AlimentacaoRelatoriosPage from "./pages/admin/AlimentacaoRelatoriosPage";
 import AlojamentoRelatoriosPage from "./pages/admin/AlojamentoRelatoriosPage";
 import CompeticaoFasesPage from "./pages/admin/CompeticaoFasesPage";
-import CompeticaoPartidasPage from "./pages/admin/CompeticaoPartidasPage";
-import CompeticaoAgendaPage from "./pages/admin/CompeticaoAgendaPage";
+import CompeticaoPartidasAgendaPage from "./pages/admin/CompeticaoPartidasAgendaPage";
 import CompeticaoPartidaDetalhePage from "./pages/admin/CompeticaoPartidaDetalhePage";
 import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
 import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
@@ -60,6 +59,7 @@ import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
 import SchemaValidadorPage from "./pages/admin/SchemaValidadorPage";
 import MapaSistemaPage from "./pages/admin/MapaSistemaPage";
 import DiagnosticoCompeticaoPage from "./pages/admin/DiagnosticoCompeticaoPage";
+import SistemaDiagnosticoPage from "./pages/admin/SistemaDiagnosticoPage";
 import CentralDadosPage from "./pages/admin/CentralDadosPage";
 import BoletinsPage from "./pages/admin/BoletinsPage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
@@ -213,8 +213,9 @@ const App = () => (
               <Route path="competicao/central" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoCentralPage /></ProtectedRoute>} />
               <Route path="competicao/fases" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoFasesPage /></ProtectedRoute>} />
               <Route path="competicao/grupos" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoGruposPage /></ProtectedRoute>} />
-              <Route path="competicao/partidas" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidasPage /></ProtectedRoute>} />
-              <Route path="competicao/agenda" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoAgendaPage /></ProtectedRoute>} />
+              <Route path="competicao/partidas" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidasAgendaPage /></ProtectedRoute>} />
+              <Route path="competicao/agenda" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidasAgendaPage /></ProtectedRoute>} />
+              <Route path="competicao/partidas-agenda" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidasAgendaPage /></ProtectedRoute>} />
               <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />
               <Route path="competicao/equipes" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoEquipesPage /></ProtectedRoute>} />
               <Route path="competicao/resultados" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoResultadosPage /></ProtectedRoute>} />
@@ -233,8 +234,9 @@ const App = () => (
               <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />
               {/* Schema Validator */}
               <Route path="schema/validador" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><SchemaValidadorPage /></ProtectedRoute>} />
-              <Route path="mapa" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><MapaSistemaPage /></ProtectedRoute>} />
-              <Route path="diagnostico-competicao" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><DiagnosticoCompeticaoPage /></ProtectedRoute>} />
+              <Route path="mapa" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
+              <Route path="diagnostico-competicao" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
+              <Route path="sistema/diagnostico" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
               <Route path="dados" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CentralDadosPage /></ProtectedRoute>} />
               <Route path="boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><BoletinsPage /></ProtectedRoute>} />
               <Route path="demo" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><DemoSeedsPage /></ProtectedRoute>} />

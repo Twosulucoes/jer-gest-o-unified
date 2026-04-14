@@ -8,10 +8,11 @@ import {
   LayoutDashboard, Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree,
   Building2, Users, Upload, UserCheck, ScanLine, Bus, Route, Navigation,
   UtensilsCrossed, Clock, ClipboardList, Building, DoorOpen, KeyRound,
-  Trophy, Swords, CalendarDays, Layers, UsersRound, IdCard, ChevronDown,
-  Shield, Settings, AlertTriangle, FileSearch, Database as DatabaseIcon,
-  Map, Info, Zap, ClipboardCheck, Mail, ExternalLink, ChevronsLeft,
-  ChevronsRight, User, FileBarChart,
+  Trophy, Swords, UsersRound, IdCard, ChevronDown,
+  Shield, Settings, AlertTriangle, FileSearch, FileBarChart,
+  Info, Zap, ClipboardCheck, ExternalLink, ChevronsLeft,
+  ChevronsRight, User, FolderOpen, BadgeCheck, Truck, MessageSquare, Cog,
+  Home,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -33,6 +34,7 @@ interface NavGroup {
   id: string;
   label: string;
   description: string;
+  icon: React.ReactNode;
   items: NavItem[];
   subGroups?: { label: string; items: NavItem[] }[];
 }
@@ -46,39 +48,50 @@ const COMPETITION_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnic
 const dashboardItem: NavItem = {
   label: "Dashboard",
   to: "/admin",
-  icon: <LayoutDashboard className="h-4 w-4" />,
+  icon: <Home className="h-4 w-4" />,
   roles: "all",
 };
 
 const navGroups: NavGroup[] = [
   {
     id: "preparacao", label: "Preparação", description: "Cadastros base do evento ativo.",
+    icon: <FolderOpen className="h-4 w-4" />,
     items: [
       { label: "Eventos", to: "/admin/eventos", icon: <Calendar className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Instituições", to: "/admin/instituicoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Delegações", to: "/admin/delegacoes", icon: <Users className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-4 w-4" />, roles: ADMIN_ROLES },
-    ],
-  },
-  {
-    id: "importacao", label: "Importação", description: "Importa do SIGECOM e corrige inconsistências.",
-    items: [
-      { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] },
-      { label: "Central de Dados", to: "/admin/dados", icon: <DatabaseIcon className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Normalização", to: "/admin/normalizacao-provas", icon: <FileSearch className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
   {
     id: "credenciamento", label: "Credenciamento", description: "Emissão e validação de credenciais.",
+    icon: <BadgeCheck className="h-4 w-4" />,
     items: [
-      { label: "Credenciamento", to: "/admin/credenciamento", icon: <UserCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Validação QR", to: "/admin/validacao-qr", icon: <ScanLine className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"] },
-      { label: "Modelos", to: "/admin/credenciais/modelos", icon: <IdCard className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Busca e Emissão", to: "/admin/credenciamento", icon: <UserCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Validação QR", to: "/admin/validacao-qr", icon: <ScanLine className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"] as AppRole[] },
+      { label: "Modelos de Credencial", to: "/admin/credenciais/modelos", icon: <IdCard className="h-4 w-4" />, roles: ADMIN_ROLES },
+    ],
+  },
+  {
+    id: "competicao", label: "Competição", description: "Organização e execução da competição.",
+    icon: <Trophy className="h-4 w-4" />,
+    items: [
+      { label: "Painel de Controle", to: "/admin/competicao/painel", icon: <LayoutDashboard className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Pré-validação", to: "/admin/competicao/pre-validacao", icon: <ClipboardCheck className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Central da Competição", to: "/admin/competicao/central", icon: <Trophy className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Partidas e Agenda", to: "/admin/competicao/partidas-agenda", icon: <Swords className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Regras por Prova", to: "/admin/competicao/regras", icon: <Settings className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Regras em Lote", to: "/admin/competicao/regras/lote", icon: <Zap className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Resultados", to: "/admin/competicao/resultados", icon: <ClipboardList className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Boletins Oficiais", to: "/admin/boletins", icon: <FileSearch className="h-4 w-4" />, roles: COMPETITION_ROLES },
     ],
   },
   {
     id: "logistica", label: "Logística", description: "Transporte, alimentação e alojamento.",
+    icon: <Truck className="h-4 w-4" />,
     items: [],
     subGroups: [
       {
@@ -92,9 +105,10 @@ const navGroups: NavGroup[] = [
       {
         label: "Alimentação",
         items: [
-          { label: "Refeições", to: "/admin/alimentacao/tipos", icon: <UtensilsCrossed className="h-4 w-4" />, roles: FOOD_ROLES },
-          { label: "Janelas", to: "/admin/alimentacao/janelas", icon: <Clock className="h-4 w-4" />, roles: FOOD_ROLES },
+          { label: "Tipos de Refeição", to: "/admin/alimentacao/tipos", icon: <UtensilsCrossed className="h-4 w-4" />, roles: FOOD_ROLES },
+          { label: "Janelas de Serviço", to: "/admin/alimentacao/janelas", icon: <Clock className="h-4 w-4" />, roles: FOOD_ROLES },
           { label: "Consumo", to: "/admin/alimentacao/consumo", icon: <ClipboardList className="h-4 w-4" />, roles: FOOD_ROLES },
+          { label: "Dashboard", to: "/admin/alimentacao/dashboard", icon: <LayoutDashboard className="h-4 w-4" />, roles: FOOD_ROLES },
         ],
       },
       {
@@ -108,46 +122,49 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    id: "competicao", label: "Competição", description: "Organização e execução da competição.",
+    id: "relatorios", label: "Relatórios", description: "Relatórios consolidados por módulo.",
+    icon: <FileBarChart className="h-4 w-4" />,
     items: [
-      { label: "Painel", to: "/admin/competicao/painel", icon: <LayoutDashboard className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Pré-validação", to: "/admin/competicao/pre-validacao", icon: <ClipboardCheck className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Central", to: "/admin/competicao/central", icon: <Trophy className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Regras por Prova", to: "/admin/competicao/regras", icon: <Settings className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Regras em Lote", to: "/admin/competicao/regras/lote", icon: <Zap className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Modalidades", to: "/admin/modalidades", icon: <Dumbbell className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Categorias", to: "/admin/categorias", icon: <ListTree className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Equipes", to: "/admin/competicao/equipes", icon: <UsersRound className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Fases", to: "/admin/competicao/fases", icon: <Trophy className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Grupos", to: "/admin/competicao/grupos", icon: <Layers className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Partidas", to: "/admin/competicao/partidas", icon: <Swords className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Agenda", to: "/admin/competicao/agenda", icon: <CalendarDays className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Resultados", to: "/admin/competicao/resultados", icon: <ClipboardList className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Boletins", to: "/admin/boletins", icon: <FileSearch className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Competição", to: "/admin/relatorios", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Transporte", to: "/admin/transporte/relatorios", icon: <Bus className="h-4 w-4" />, roles: TRANSPORT_ROLES },
+      { label: "Alimentação", to: "/admin/alimentacao/relatorios", icon: <UtensilsCrossed className="h-4 w-4" />, roles: FOOD_ROLES },
+      { label: "Alojamento", to: "/admin/alojamento/relatorios", icon: <Building className="h-4 w-4" />, roles: LODGING_ROLES },
     ],
   },
   {
-    id: "pesquisa", label: "Pesquisa", description: "Pesquisa de satisfação.",
+    id: "pesquisa", label: "Pesquisa de Satisfação", description: "Pesquisa de satisfação.",
+    icon: <MessageSquare className="h-4 w-4" />,
     items: [
       { label: "Dashboard", to: "/admin/pesquisa", icon: <ClipboardCheck className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Eventos", to: "/admin/pesquisa/eventos", icon: <Calendar className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Eventos de Pesquisa", to: "/admin/pesquisa/eventos", icon: <Calendar className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Pesquisadores", to: "/admin/pesquisa/pesquisadores", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
     ],
   },
   {
-    id: "configuracoes", label: "Configurações", description: "Parâmetros e ferramentas.",
+    id: "acessos", label: "Acessos", description: "Gestão de usuários e vínculos.",
+    icon: <Users className="h-4 w-4" />,
     items: [
-      { label: "Parâmetros", to: "/admin/parametros-evento", icon: <Settings className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Locais", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Acessos", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Delegações", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Validador", to: "/admin/schema/validador", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Mapa", to: "/admin/mapa", icon: <Map className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Diagnóstico", to: "/admin/diagnostico-competicao", icon: <Info className="h-4 w-4" />, roles: ["admin", "coordenacao_tecnica"] as AppRole[] },
-      { label: "Demo", to: "/admin/demo", icon: <Zap className="h-4 w-4" />, roles: ["admin", "coordenacao_tecnica"] as AppRole[] },
-      { label: "E-mail", to: "/admin/auth/email-templates", icon: <Mail className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Links", to: "/admin/links", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Relatórios", to: "/admin/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Usuários Operacionais", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Links Externos", to: "/admin/links", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Vínculos Delegação", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+    ],
+  },
+  {
+    id: "configuracoes", label: "Configurações", description: "Parâmetros e cadastros do evento.",
+    icon: <Settings className="h-4 w-4" />,
+    items: [
+      { label: "Parâmetros do Evento", to: "/admin/parametros-evento", icon: <Settings className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Modalidades", to: "/admin/modalidades", icon: <Dumbbell className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Categorias", to: "/admin/categorias", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
+    ],
+  },
+  {
+    id: "sistema", label: "Sistema", description: "Ferramentas de diagnóstico e manutenção.",
+    icon: <Cog className="h-4 w-4" />,
+    items: [
+      { label: "Diagnóstico do Sistema", to: "/admin/sistema/diagnostico", icon: <Info className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Demo/Seeds", to: "/admin/demo", icon: <Zap className="h-4 w-4" />, roles: ["admin", "coordenacao_tecnica"] as AppRole[] },
     ],
   },
 ];
@@ -229,7 +246,7 @@ function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: 
       <button
         onClick={(e) => {
           e.stopPropagation();
-          navigate(`/admin/mapa?route=${encodeURIComponent(item.to)}`);
+          navigate(`/admin/sistema/diagnostico?route=${encodeURIComponent(item.to)}`);
         }}
         className="opacity-0 group-hover:opacity-50 hover:!opacity-100 p-1 transition-opacity text-sidebar-foreground/40"
         title="O que é isto?"
