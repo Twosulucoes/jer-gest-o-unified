@@ -147,21 +147,3 @@
 .transport-landscape {
   min-height: 100dvh;
 }
-
-@media (orientation: portrait) and (max-width: 768px) {
-  .transport-landscape::after {
-    content: "Gire o dispositivo para horizontal";
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: hsl(var(--background));
-    color: hsl(var(--muted-foreground));
-    font-size: 1rem;
-    font-weight: 600;
-    text-align: center;
-    padding: 2rem;
-  }
-}
