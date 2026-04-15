@@ -5404,6 +5404,10 @@ export type Database = {
         Returns: Json
       }
       seed_event_demo: { Args: { p_event_id: string }; Returns: Json }
+      seed_jer_2026_core_rules: {
+        Args: { p_event_id_text: string }
+        Returns: undefined
+      }
       unaccent: { Args: { "": string }; Returns: string }
       upsert_event_participation_rules: {
         Args: {
