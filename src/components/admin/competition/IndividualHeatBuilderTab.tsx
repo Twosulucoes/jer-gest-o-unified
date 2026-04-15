@@ -382,6 +382,7 @@ export default function IndividualHeatBuilderTab({ eventId, sportEventId, onChan
       qc.invalidateQueries({ queryKey: ["heats-phases"] });
       qc.invalidateQueries({ queryKey: ["heats-matches"] });
       qc.invalidateQueries({ queryKey: ["competition-summary"] });
+      qc.invalidateQueries({ queryKey: ["dispute-publish-status"] });
       setIsEditMode(false);
       onChanged();
     },
