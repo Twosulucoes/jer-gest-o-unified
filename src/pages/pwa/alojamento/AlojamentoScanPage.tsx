@@ -165,7 +165,6 @@ export default function AlojamentoScanPage() {
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleScan}
-        allowedPrefixes={["JER-ALJ:", "JER:", "jer:"]}
         title={`Scanner — ${mode === "checkin" ? "Check-in" : mode === "checkout" ? "Check-out" : "Validar"}`}
       />
     </div>
