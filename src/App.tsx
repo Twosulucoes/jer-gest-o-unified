@@ -335,11 +335,7 @@ const App = () => (
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
             <Route path="/a/:token" element={<AtletaPublicProfilePage />} />
-            {/* Evento Rules Center (public/admin, lazy loaded) */}
-            <Route path="/eventos/:eventSlug/regras" element={<Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando...</div>}><EventoRegrasPage /></Suspense>} />
-            <Route path="/eventos/:eventSlug/modalidades" element={<Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando...</div>}><EventoModalidadesPage /></Suspense>} />
-            <Route path="/eventos/:eventSlug/qualificacao" element={<Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando...</div>}><EventoQualificacaoPage /></Suspense>} />
-            <Route path="/eventos/:eventSlug/assistente-inscricao" element={<Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando...</div>}><EventoAssistenteInscricaoPage /></Suspense>} />
+            {/* Evento Rules Center routes removed — consolidated into /admin/regras-evento */}
             <Route path="*" element={<NotFound />} />
           </Routes>
           </EventProvider>
