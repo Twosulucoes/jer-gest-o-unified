@@ -320,6 +320,7 @@ const App = () => (
             <Route path="/pwa/delegacao/locais" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoLocaisPage /></PwaRouteGuard>} />
             {/* PWA Diagnóstico */}
             <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
+            <Route path="/pwa/debug" element={<PwaDebugPage />} />
             {/* Ao Vivo PWA — qualquer autenticado */}
             <Route path="/aovivo/login" element={<Suspense fallback={null}><AoVivoLoginPage /></Suspense>} />
             <Route path="/aovivo" element={<Suspense fallback={null}><AoVivoHomePage /></Suspense>} />
