@@ -212,6 +212,18 @@ export const systemMap: SystemMapGroup[] = [
         nextActions: [],
       },
       {
+        id: "regras-evento",
+        label: "Regras do Evento",
+        route: "/admin/regras-evento",
+        pageFile: "src/pages/admin/RegrasEventoPage.tsx",
+        description: "Painel centralizado das regras gerais da edição: identificação, categorias, modalidades, limites, classificação, regras operacionais, pontuação e publicação/versionamento.",
+        roles: ["admin", "secretaria", "coordenacao_tecnica"],
+        status: ModuleStatus.PARTIAL,
+        dataSources: ["event_edition_rules", "event_rules_audit_log", "events", "categories", "sports"],
+        gaps: ["Ainda depende de consolidação com regras por prova e documentação operacional"],
+        nextActions: ["Ampliar cobertura das regras e cruzamentos com módulos consumidores"],
+      },
+      {
         id: "modalidades",
         label: "Modalidades",
         route: "/admin/modalidades",

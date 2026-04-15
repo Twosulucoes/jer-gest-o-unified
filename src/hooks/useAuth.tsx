@@ -30,52 +30,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabase.from("profiles").select("full_name, avatar_url").eq("id", userId).single(),
     ]);
 
-    if (rolesRes.data) {
-      setRoles(rolesRes.data.map((r) => r.role));
-    }
-    if (profileRes.data) {
-      setProfile(profileRes.data);
-    }
+    return {
+      roles: (rolesRes.data ?? []).map((r) => r.role),
+      profile: profileRes.data ?? null,
+    };
   }, []);
 
   useEffect(() => {
-    let initialised = false;
+    let isMounted = true;
 
-    // Restore session from storage first
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!initialised) {
-        initialised = true;
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchUserData(session.user.id);
-        }
+    const applySession = async (nextSession: Session | null) => {
+      if (!isMounted) return;
+
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (!nextSession?.user) {
+        setRoles([]);
+        setProfile(null);
         setLoading(false);
+        return;
       }
+
+      try {
+        const userData = await fetchUserData(nextSession.user.id);
+        if (!isMounted) return;
+        setRoles(userData.roles);
+        setProfile(userData.profile);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void applySession(nextSession);
     });
 
-    // Then listen for subsequent changes (sign-in, sign-out, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!initialised) {
-          // getSession hasn't resolved yet; let it handle the first state
-          initialised = true;
-        }
-        setSession(session);
-        setUser(session?.user ?? null);
+    void supabase.auth.getSession().then(({ data: { session: nextSession } }) => {
+      void applySession(nextSession);
+    });
 
-        if (session?.user) {
-          // Fire-and-forget to avoid blocking the callback
-          setTimeout(() => fetchUserData(session.user.id), 0);
-        } else {
-          setRoles([]);
-          setProfile(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [fetchUserData]);
 
   const signOut = useCallback(async () => {
@@ -86,10 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   }, []);
 
-  const hasRole = useCallback(
-    (role: AppRole) => roles.includes(role),
-    [roles]
-  );
+  const hasRole = useCallback((role: AppRole) => roles.includes(role), [roles]);
 
   return (
     <AuthContext.Provider value={{ user, session, roles, profile, loading, signOut, hasRole }}>
