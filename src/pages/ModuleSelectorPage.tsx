@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Loader2, Truck, UtensilsCrossed, Building, Users, Clipboard, Shield, LogOut,
+  Loader2, UtensilsCrossed, Users, Clipboard, Shield, LogOut,
   LayoutDashboard, Bus, Bed, Trophy, ScanLine,
 } from "lucide-react";
 
