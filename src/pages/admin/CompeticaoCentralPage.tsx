@@ -14,6 +14,7 @@ import CentralStructureCollectiveTab from "@/components/admin/competition/Centra
 import CentralStructureHeatsTab from "@/components/admin/competition/CentralStructureHeatsTab";
 import CentralParticipantsTab from "@/components/admin/competition/CentralParticipantsTab";
 import CentralMatchesTab from "@/components/admin/competition/CentralMatchesTab";
+import DisputeBuilderTab from "@/components/admin/competition/DisputeBuilderTab";
 import CentralResultsTab from "@/components/admin/competition/CentralResultsTab";
 import EligibilityPendingPanel from "@/components/admin/competition/EligibilityPendingPanel";
 import CentralAgendaTab from "@/components/admin/competition/CentralAgendaTab";
@@ -119,6 +120,7 @@ export default function CompeticaoCentralPage() {
   const steps: WizardStep[] = useMemo(() => [
     { key: "participants", label: isCollective ? "Equipes" : "Participantes" },
     { key: "structure", label: isTimeMark ? "Baterias / Séries" : "Estrutura" },
+    { key: "builder", label: "Montador de Disputas", hidden: !isCollective },
     { key: "matches", label: getMatchesLabel(family, format), hidden: isTimeMark },
     { key: "agenda", label: "Agenda" },
     { key: "standings", label: "Classificação", hidden: !showStandings },
