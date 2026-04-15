@@ -1,6 +1,7 @@
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut, ArrowLeftRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 interface PwaHeaderProps {
   title: string;
@@ -12,6 +13,8 @@ interface PwaHeaderProps {
 
 export function PwaHeader({ title, icon: Icon, backTo, onSignOut, rightSlot }: PwaHeaderProps) {
   const navigate = useNavigate();
+  const { roles } = useAuth();
+  const showSwitcher = roles.length >= 2;
 
   return (
     <header className="relative overflow-hidden border-b bg-primary text-primary-foreground">
@@ -35,6 +38,11 @@ export function PwaHeader({ title, icon: Icon, backTo, onSignOut, rightSlot }: P
         </div>
         <div className="flex items-center gap-2">
           {rightSlot}
+          {showSwitcher && (
+            <Button variant="ghost" size="icon" onClick={() => navigate("/selecionar-modulo")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" title="Trocar módulo">
+              <ArrowLeftRight className="h-5 w-5" />
+            </Button>
+          )}
           {onSignOut && (
             <Button variant="ghost" size="icon" onClick={onSignOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
               <LogOut className="h-5 w-5" />

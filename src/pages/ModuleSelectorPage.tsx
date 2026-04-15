@@ -3,28 +3,93 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Truck, UtensilsCrossed, Building, Users, Clipboard, Shield, LogOut } from "lucide-react";
+import {
+  Loader2, UtensilsCrossed, Users, Clipboard, Shield, LogOut,
+  LayoutDashboard, Bus, Bed, Trophy, ScanLine,
+} from "lucide-react";
 
 interface ModuleOption {
-  role: string;
+  roles: string[];
   label: string;
   description: string;
   icon: React.ElementType;
   path: string;
+  gradient: string;
 }
 
 const MODULE_OPTIONS: ModuleOption[] = [
-  { role: "admin", label: "Administração", description: "Painel administrativo completo", icon: Shield, path: "/admin" },
-  { role: "secretaria", label: "Secretaria", description: "Gestão administrativa", icon: Shield, path: "/admin" },
-  { role: "coordenacao_tecnica", label: "Coord. Técnica", description: "Coordenação de modalidades", icon: Clipboard, path: "/admin" },
-  { role: "coordenador_modalidade", label: "Coord. Modalidade", description: "Gestão da modalidade", icon: Clipboard, path: "/admin" },
-  { role: "cde", label: "CDE", description: "Comissão disciplinar", icon: Shield, path: "/admin" },
-  { role: "transporte", label: "Transporte", description: "Embarque e viagens", icon: Truck, path: "/pwa/transporte" },
-  { role: "alimentacao", label: "Alimentação", description: "Registro de refeições", icon: UtensilsCrossed, path: "/pwa/alimentacao" },
-  { role: "alojamento", label: "Alojamento", description: "Check-in e hospedagem", icon: Building, path: "/pwa/alojamento" },
-  { role: "delegacao", label: "Delegação", description: "Gestão da delegação", icon: Users, path: "/pwa/delegacao" },
-  { role: "mesario", label: "Ao Vivo", description: "Registro de partidas", icon: Clipboard, path: "/aovivo" },
-  { role: "arbitragem", label: "Arbitragem", description: "Painel de arbitragem", icon: Clipboard, path: "/aovivo" },
+  {
+    roles: ["admin", "secretaria", "coordenacao_tecnica"],
+    label: "Administração",
+    description: "Gestão completa do evento",
+    icon: LayoutDashboard,
+    path: "/admin",
+    gradient: "from-[hsl(214,78%,21%)] to-[hsl(212,84%,36%)]",
+  },
+  {
+    roles: ["coordenador_modalidade"],
+    label: "Coord. Modalidade",
+    description: "Gestão da modalidade",
+    icon: Trophy,
+    path: "/admin",
+    gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]",
+  },
+  {
+    roles: ["transporte"],
+    label: "Transporte",
+    description: "Gerenciar embarques e viagens",
+    icon: Bus,
+    path: "/pwa/transporte",
+    gradient: "from-[hsl(212,84%,36%)] to-[hsl(214,78%,21%)]",
+  },
+  {
+    roles: ["alimentacao"],
+    label: "Alimentação",
+    description: "Registrar consumo de refeições",
+    icon: UtensilsCrossed,
+    path: "/pwa/alimentacao",
+    gradient: "from-[hsl(174,87%,34%)] to-[hsl(212,84%,36%)]",
+  },
+  {
+    roles: ["alojamento"],
+    label: "Alojamento",
+    description: "Gerenciar check-in e ocupação",
+    icon: Bed,
+    path: "/pwa/alojamento",
+    gradient: "from-[hsl(133,55%,45%)] to-[hsl(174,87%,34%)]",
+  },
+  {
+    roles: ["delegacao"],
+    label: "Delegação",
+    description: "Área da delegação",
+    icon: Users,
+    path: "/pwa/delegacao",
+    gradient: "from-[hsl(174,87%,34%)] to-[hsl(133,55%,45%)]",
+  },
+  {
+    roles: ["mesario"],
+    label: "Ao Vivo",
+    description: "Registro de partidas",
+    icon: ScanLine,
+    path: "/aovivo",
+    gradient: "from-[hsl(214,78%,21%)] to-[hsl(212,84%,36%)]",
+  },
+  {
+    roles: ["arbitragem"],
+    label: "Arbitragem",
+    description: "Painel de arbitragem",
+    icon: Shield,
+    path: "/aovivo",
+    gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]",
+  },
+  {
+    roles: ["cde"],
+    label: "CDE",
+    description: "Comissão disciplinar",
+    icon: Clipboard,
+    path: "/admin",
+    gradient: "from-[hsl(0,72%,51%)] to-[hsl(214,78%,21%)]",
+  },
 ];
 
 export default function ModuleSelectorPage() {
@@ -51,10 +116,9 @@ export default function ModuleSelectorPage() {
       setUserName(profileRes.data?.full_name || session.user.email || "");
 
       // If single role, redirect directly
-      if (roles.length <= 1) {
-        const target = roles.length === 1
-          ? (MODULE_OPTIONS.find(m => m.role === roles[0])?.path || "/pwa")
-          : "/pwa";
+      const available = MODULE_OPTIONS.filter(m => m.roles.some(r => roles.includes(r)));
+      if (available.length <= 1) {
+        const target = available.length === 1 ? available[0].path : "/pwa";
         navigate(target, { replace: true });
         return;
       }
@@ -68,12 +132,26 @@ export default function ModuleSelectorPage() {
     navigate("/login", { replace: true });
   };
 
-  const availableModules = MODULE_OPTIONS.filter(m => userRoles.includes(m.role));
+  const availableModules = MODULE_OPTIONS.filter(m => m.roles.some(r => userRoles.includes(r)));
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (availableModules.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="text-center space-y-4 max-w-sm">
+          <h2 className="text-xl font-bold text-destructive">Sem permissões</h2>
+          <p className="text-muted-foreground">Seu usuário não tem permissões configuradas. Contate o administrador.</p>
+          <Button variant="outline" onClick={handleSignOut} className="h-12">
+            <LogOut className="mr-2 h-4 w-4" /> Sair
+          </Button>
+        </div>
       </div>
     );
   }
@@ -86,26 +164,26 @@ export default function ModuleSelectorPage() {
           "linear-gradient(135deg, rgba(11,43,90,0.06) 0%, rgba(15,90,166,0.06) 35%, rgba(11,163,163,0.04) 65%, rgba(51,178,73,0.04) 100%), hsl(var(--background))",
       }}
     >
-      <div className="max-w-lg mx-auto space-y-6 animate-fade-in">
+      <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
         <div className="text-center">
           <img src="/brand/logo.png" alt="JER's Gestão" className="mx-auto mb-4 h-16 object-contain dark:hidden" />
           <img src="/brand/logo-dark.png" alt="JER's Gestão" className="mx-auto mb-4 h-16 object-contain hidden dark:block" />
-          <h1 className="font-heading text-xl font-bold text-foreground">Selecionar módulo</h1>
+          <h1 className="font-heading text-xl font-bold text-foreground">Selecione o módulo</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Olá, <span className="font-medium">{userName}</span>! Escolha o módulo que deseja acessar.
+            Olá, <span className="font-medium">{userName}</span>! Você tem acesso a múltiplos módulos. Escolha onde deseja trabalhar:
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {availableModules.map((mod) => (
+          {availableModules.map((mod, idx) => (
             <Card
-              key={mod.role}
+              key={`${mod.label}-${idx}`}
               className="cursor-pointer hover:shadow-app-md active:scale-[0.98] transition-all border-2 hover:border-primary/30"
               onClick={() => navigate(mod.path)}
             >
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-                  <mod.icon className="h-5 w-5" />
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${mod.gradient} text-white shadow-app-sm shrink-0`}>
+                  <mod.icon className="h-6 w-6" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">{mod.label}</p>
