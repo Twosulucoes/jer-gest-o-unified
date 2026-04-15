@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useAuth } from "@/hooks/useAuth";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,8 +14,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Zap, RefreshCw, Eye, ExternalLink, Settings, CheckCircle, AlertTriangle, XCircle, Accessibility } from "lucide-react";
+import { Zap, RefreshCw, Eye, ExternalLink, Settings, CheckCircle, AlertTriangle, XCircle, Accessibility, Info, Pencil, Bot } from "lucide-react";
 import { SPORT_PRESET_CATALOG, PRESET_CATEGORIES } from "@/config/sportPresetCatalog";
 import { FAMILIES } from "@/types/sportEventRules";
 
@@ -33,6 +35,7 @@ interface SportEventRow {
   has_rules: boolean;
   is_jerpa: boolean;
   minimo_participantes: number;
+  was_manually_edited: boolean;
 }
 
 interface SeedReport {
@@ -45,9 +48,20 @@ interface SeedReport {
   dry_run: boolean;
 }
 
+type PermLevel = "full" | "edit" | "view" | "none";
+
+function usePermLevel(): PermLevel {
+  const { hasRole } = useAuth();
+  if (hasRole("admin")) return "full";
+  if (hasRole("coordenacao_tecnica" as any)) return "edit";
+  if (hasRole("secretaria" as any)) return "view";
+  return "none";
+}
+
 export default function RegrasLotePage() {
   const eventId = useActiveEventId();
   const queryClient = useQueryClient();
+  const perm = usePermLevel();
   const [search, setSearch] = useState("");
   const [filterFamily, setFilterFamily] = useState<string>("all");
   const [filterPreset, setFilterPreset] = useState<string>("all");
@@ -56,6 +70,9 @@ export default function RegrasLotePage() {
   const [filterJerpa, setFilterJerpa] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [lastReport, setLastReport] = useState<SeedReport | null>(null);
+
+  const canEdit = perm === "full" || perm === "edit";
+  const canOverwrite = perm === "full";
 
   const { data: rows = [], isLoading, error, refetch } = useQuery({
     queryKey: ["batch-rules-list", eventId],
@@ -73,7 +90,7 @@ export default function RegrasLotePage() {
       if (seIds.length > 0) {
         const { data: rulesRows } = await supabase
           .from("sport_event_rules")
-          .select("sport_event_id, rules, is_active")
+          .select("sport_event_id, rules, is_active, updated_at, created_at")
           .in("sport_event_id", seIds);
         if (rulesRows) {
           for (const r of rulesRows) {
@@ -86,6 +103,7 @@ export default function RegrasLotePage() {
         const ruleRow = rulesMap[se.id];
         const rules = ruleRow?.rules as Record<string, unknown> | null;
         const disPolicy = rules?.disability_policy as Record<string, unknown> | undefined;
+        const wasEdited = ruleRow ? (ruleRow.updated_at !== ruleRow.created_at) : false;
         return {
           id: se.id,
           name: se.name,
@@ -101,6 +119,7 @@ export default function RegrasLotePage() {
           has_rules: !!ruleRow,
           is_jerpa: !!disPolicy?.class_required,
           minimo_participantes: (rules?.minimo_participantes as number) ?? 2,
+          was_manually_edited: wasEdited,
         };
       });
     },
@@ -144,6 +163,7 @@ export default function RegrasLotePage() {
       if (filterPreset !== "all" && r.preset_key !== filterPreset) return false;
       if (filterStatus === "missing" && r.has_rules) return false;
       if (filterStatus === "configured" && !r.has_rules) return false;
+      if (filterStatus === "fallback" && (r.has_rules || !r.preset_key)) return false;
       if (filterSport !== "all" && r.sport_name !== filterSport) return false;
       if (filterJerpa === "jerpa" && !r.is_jerpa) return false;
       if (filterJerpa === "jer" && r.is_jerpa) return false;
@@ -166,13 +186,31 @@ export default function RegrasLotePage() {
     const configured = rows.filter((r) => r.has_rules).length;
     const missing = total - configured;
     const jerpa = rows.filter((r) => r.is_jerpa).length;
-    return { total, configured, missing, jerpa };
+    const pct = total > 0 ? Math.round((configured / total) * 100) : 0;
+    return { total, configured, missing, jerpa, pct };
   }, [rows]);
 
   function getStatusBadge(row: SportEventRow) {
     if (!row.has_rules) return <Badge variant="destructive" className="text-xs"><XCircle className="h-3 w-3 mr-1" />Sem regra</Badge>;
     if (row.is_active === false) return <Badge variant="secondary" className="text-xs"><AlertTriangle className="h-3 w-3 mr-1" />Inativa</Badge>;
     return <Badge variant="default" className="text-xs"><CheckCircle className="h-3 w-3 mr-1" />Configurada</Badge>;
+  }
+
+  function getOriginBadge(row: SportEventRow) {
+    if (!row.has_rules) return null;
+    if (row.was_manually_edited) {
+      return <Badge variant="outline" className="text-[9px] border-amber-400 text-amber-600"><Pencil className="h-2.5 w-2.5 mr-0.5" />Manual</Badge>;
+    }
+    return <Badge variant="outline" className="text-[9px] border-green-400 text-green-600"><Bot className="h-2.5 w-2.5 mr-0.5" />Seed</Badge>;
+  }
+
+  if (perm === "none") {
+    return (
+      <div className="space-y-6">
+        <ModuleHeader route="/admin/competicao/regras/lote" title="Regras em Lote" />
+        <Alert variant="destructive"><AlertDescription>Acesso negado. Perfil sem permissão para visualizar regras.</AlertDescription></Alert>
+      </div>
+    );
   }
 
   if (error) {
@@ -189,68 +227,84 @@ export default function RegrasLotePage() {
     <div className="space-y-6">
       <ModuleHeader route="/admin/competicao/regras/lote" title="Regras em Lote" />
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4 text-center">
-            <p className="text-2xl font-bold">{stats.total}</p>
-            <p className="text-xs text-muted-foreground">Provas</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 text-center">
-            <p className="text-2xl font-bold text-green-600">{stats.configured}</p>
-            <p className="text-xs text-muted-foreground">Configuradas</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 text-center">
-            <p className="text-2xl font-bold text-destructive">{stats.missing}</p>
-            <p className="text-xs text-muted-foreground">Sem regra</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 text-center">
-            <p className="text-2xl font-bold text-blue-600">{stats.jerpa}</p>
-            <p className="text-xs text-muted-foreground">JERPA</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Boletim info */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription className="text-xs">
+          Sistema de disputa definitivo será confirmado em Boletim Oficial antes da Reunião Técnica.
+        </AlertDescription>
+      </Alert>
 
-      {/* Action buttons */}
+      {/* Coverage panel */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Ações em Massa</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Cobertura de Regras</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => seedMutation.mutate({ mode: "missing_only", dryRun: true })} disabled={seedMutation.isPending}>
-            <Eye className="h-4 w-4 mr-1" />Dry Run
-          </Button>
-          <Button size="sm" onClick={() => seedMutation.mutate({ mode: "missing_only", dryRun: false })} disabled={seedMutation.isPending}>
-            <Zap className="h-4 w-4 mr-1" />Gerar (somente faltantes)
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" variant="destructive" disabled={seedMutation.isPending}>
-                <RefreshCw className="h-4 w-4 mr-1" />Regerar (sobrescrever)
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Sobrescrever regras existentes?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Isto vai substituir TODAS as regras existentes para as {stats.total} provas do evento.
-                  As configurações manuais serão perdidas. Esta ação requer perfil admin.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => seedMutation.mutate({ mode: "overwrite", dryRun: false })}>Confirmar</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+        <CardContent className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span>{stats.configured} de {stats.total} provas configuradas</span>
+            <span className="font-bold">{stats.pct}%</span>
+          </div>
+          <Progress value={stats.pct} className="h-3" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+            <div className="text-center">
+              <p className="text-2xl font-bold">{stats.total}</p>
+              <p className="text-xs text-muted-foreground">Provas</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{stats.configured}</p>
+              <p className="text-xs text-muted-foreground">Configuradas</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-destructive">{stats.missing}</p>
+              <p className="text-xs text-muted-foreground">Sem regra</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{stats.jerpa}</p>
+              <p className="text-xs text-muted-foreground">JERPA</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Action buttons */}
+      {canEdit && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Ações em Massa</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => seedMutation.mutate({ mode: "missing_only", dryRun: true })} disabled={seedMutation.isPending}>
+              <Eye className="h-4 w-4 mr-1" />Dry Run
+            </Button>
+            <Button size="sm" onClick={() => seedMutation.mutate({ mode: "missing_only", dryRun: false })} disabled={seedMutation.isPending}>
+              <Zap className="h-4 w-4 mr-1" />Gerar (somente faltantes)
+            </Button>
+            {canOverwrite && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive" disabled={seedMutation.isPending}>
+                    <RefreshCw className="h-4 w-4 mr-1" />Regerar (sobrescrever)
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Sobrescrever regras existentes?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Isto vai substituir TODAS as regras existentes para as {stats.total} provas do evento.
+                      As configurações manuais serão perdidas. Esta ação requer perfil admin.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => seedMutation.mutate({ mode: "overwrite", dryRun: false })}>Confirmar</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Report */}
       {lastReport && (
@@ -330,16 +384,19 @@ export default function RegrasLotePage() {
                 <TableHead>Família</TableHead>
                 <TableHead>Formato</TableHead>
                 <TableHead className="text-center">Mín.</TableHead>
+                <TableHead>Origem</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhuma prova encontrada</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                  {rows.length === 0 ? "Nenhuma prova cadastrada para este evento." : "Nenhuma prova encontrada com os filtros selecionados."}
+                </TableCell></TableRow>
               ) : (
                 filtered.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow key={row.id} className={!row.has_rules ? "bg-destructive/5" : undefined}>
                     <TableCell className="text-xs font-medium">
                       {row.sport_name}
                       {row.is_jerpa && (
@@ -354,6 +411,7 @@ export default function RegrasLotePage() {
                     <TableCell className="text-xs">{row.family || "—"}</TableCell>
                     <TableCell className="text-xs">{row.format || "—"}</TableCell>
                     <TableCell className="text-center text-xs font-medium">{row.minimo_participantes}</TableCell>
+                    <TableCell>{getOriginBadge(row)}</TableCell>
                     <TableCell>{getStatusBadge(row)}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" asChild>
