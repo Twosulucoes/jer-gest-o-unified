@@ -19,7 +19,7 @@ interface QrCodeScannerProps {
   isOpen: boolean;
   allowedPrefixes?: string[];
   title?: string;
-  /** When true, scanner stays open and restarts camera after each scan (default: false) */
+  /** When true, scanner keeps camera active after each scan for continuous operation */
   continuous?: boolean;
 }
 
@@ -43,23 +43,23 @@ export default function QrCodeScanner({
 
   const scannerRef = useRef<any>(null);
   const debounceRef = useRef(false);
-  const lastScannedRef = useRef<string>("");
+  const lastScannedRef = useRef("");
   const containerId = useRef(`qr-scanner-${Math.random().toString(36).slice(2, 8)}`).current;
   const hintTimer = useRef<ReturnType<typeof setTimeout>>();
   const mountedRef = useRef(true);
+
+  // Keep callbacks in refs to avoid stale closures inside html5-qrcode
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
+  const continuousRef = useRef(continuous);
+  continuousRef.current = continuous;
+  const allowedPrefixesRef = useRef(allowedPrefixes);
+  allowedPrefixesRef.current = allowedPrefixes;
 
   useEffect(() => {
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
   }, []);
-
-  const isValidPayload = useCallback(
-    (raw: string) => {
-      if (!allowedPrefixes?.length) return true;
-      return allowedPrefixes.some((p) => raw.toUpperCase().startsWith(p.toUpperCase()));
-    },
-    [allowedPrefixes],
-  );
 
   const stopScanner = useCallback(async () => {
     clearTimeout(hintTimer.current);
@@ -72,6 +72,47 @@ export default function QrCodeScanner({
       }
     } catch { /* ignore */ }
   }, []);
+
+  const isValidPayload = useCallback(
+    (raw: string) => {
+      const prefs = allowedPrefixesRef.current;
+      if (!prefs?.length) return true;
+      return prefs.some((p) => raw.toUpperCase().startsWith(p.toUpperCase()));
+    },
+    [],
+  );
+
+  const handleDetected = useCallback(
+    (raw: string) => {
+      if (debounceRef.current) return;
+      if (!isValidPayload(raw)) {
+        toast.error("Código inválido — QR não reconhecido pelo sistema");
+        return;
+      }
+      // Prevent duplicate fire for same code
+      if (raw === lastScannedRef.current) return;
+
+      debounceRef.current = true;
+      lastScannedRef.current = raw;
+      if (navigator.vibrate) navigator.vibrate(100);
+
+      if (!continuousRef.current) {
+        void stopScanner();
+      }
+
+      onScanRef.current(raw);
+
+      setTimeout(() => {
+        debounceRef.current = false;
+        lastScannedRef.current = "";
+      }, 2500);
+    },
+    [isValidPayload, stopScanner],
+  );
+
+  // Keep handleDetected in a ref for the html5-qrcode callback
+  const handleDetectedRef = useRef(handleDetected);
+  handleDetectedRef.current = handleDetected;
 
   const startScanner = useCallback(
     async (front: boolean) => {
@@ -87,19 +128,17 @@ export default function QrCodeScanner({
       await stopScanner();
 
       try {
-        // Wait for DOM to be ready
-        await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
-        // Extra frame to ensure container is painted
-        await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+        // Wait for DOM renders
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
         if (!mountedRef.current) return;
 
-        const container = document.getElementById(containerId);
+        let container = document.getElementById(containerId);
         if (!container) {
-          // Retry once after a short delay
-          await new Promise<void>((resolve) => setTimeout(resolve, 200));
-          const retryContainer = document.getElementById(containerId);
-          if (!retryContainer) {
+          await new Promise<void>((r) => setTimeout(r, 250));
+          container = document.getElementById(containerId);
+          if (!container) {
             throw new Error("Contêiner de vídeo não encontrado. Tente novamente.");
           }
         }
@@ -110,18 +149,9 @@ export default function QrCodeScanner({
 
         await scanner.start(
           { facingMode: front ? "user" : "environment" },
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1,
-            disableFlip: false,
-          },
-          (decodedText) => {
-            handleDetected(decodedText);
-          },
-          () => {
-            // continuous scanning — ignore non-detections
-          },
+          { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1, disableFlip: false },
+          (decodedText) => handleDetectedRef.current(decodedText),
+          () => { /* continuous scan */ },
         );
 
         if (mountedRef.current) {
@@ -134,15 +164,11 @@ export default function QrCodeScanner({
         await stopScanner();
         if (!mountedRef.current) return;
         setState("error");
-        if (
-          err?.name === "NotAllowedError" ||
-          err?.message?.includes("Permission") ||
-          err?.message?.includes("NotAllowed")
-        ) {
+        if (err?.name === "NotAllowedError" || err?.message?.includes("Permission") || err?.message?.includes("NotAllowed")) {
           setErrorMsg(
             "Acesso à câmera negado. Habilite nas configurações do navegador:\n\n" +
-              "Android Chrome: Configurações → Privacidade → Câmera\n" +
-              "iOS Safari: Ajustes → Safari → Câmera",
+            "Android Chrome: Configurações → Privacidade → Câmera\n" +
+            "iOS Safari: Ajustes → Safari → Câmera",
           );
         } else if (err?.name === "NotFoundError" || err?.message?.includes("NotFound")) {
           setErrorMsg("Câmera não encontrada neste dispositivo.");
@@ -152,36 +178,6 @@ export default function QrCodeScanner({
       }
     },
     [containerId, stopScanner],
-  );
-
-  const handleDetected = useCallback(
-    (raw: string) => {
-      if (debounceRef.current) return;
-      if (!isValidPayload(raw)) {
-        toast.error("Código inválido — QR não reconhecido pelo sistema");
-        return;
-      }
-
-      // Prevent same code from triggering twice rapidly
-      if (raw === lastScannedRef.current) return;
-
-      debounceRef.current = true;
-      lastScannedRef.current = raw;
-      if (navigator.vibrate) navigator.vibrate(100);
-
-      if (!continuous) {
-        // Single-shot mode: stop scanner and delegate to parent
-        void stopScanner();
-      }
-
-      onScan(raw);
-
-      setTimeout(() => {
-        debounceRef.current = false;
-        lastScannedRef.current = "";
-      }, 2500);
-    },
-    [onScan, isValidPayload, continuous, stopScanner],
   );
 
   const startNativeScan = useCallback(async () => {
@@ -197,7 +193,7 @@ export default function QrCodeScanner({
       setState("active");
       const result = await BarcodeScanner.scan();
       if (result.barcodes.length > 0) {
-        handleDetected(result.barcodes[0].rawValue);
+        handleDetectedRef.current(result.barcodes[0].rawValue);
       }
       setState("idle");
     } catch (err: any) {
@@ -208,9 +204,9 @@ export default function QrCodeScanner({
       setState("error");
       setErrorMsg(err?.message || "Erro no scanner nativo");
     }
-  }, [handleDetected]);
+  }, []);
 
-  // Auto-start when opened
+  // Auto-start on open
   useEffect(() => {
     if (!isOpen) {
       void stopScanner();
@@ -225,14 +221,13 @@ export default function QrCodeScanner({
     if (isNativeApp()) {
       void startNativeScan();
     } else {
-      // Auto-start camera on web
+      // Auto-start camera when scanner opens (web)
       void startScanner(false);
     }
 
-    return () => {
-      void stopScanner();
-    };
-  }, [isOpen, startNativeScan, stopScanner, startScanner]);
+    return () => { void stopScanner(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const flipCamera = useCallback(async () => {
     const next = !useFront;
@@ -246,9 +241,7 @@ export default function QrCodeScanner({
       if (videoEl?.srcObject) {
         const track = (videoEl.srcObject as MediaStream).getVideoTracks()[0];
         const next = !torchOn;
-        await (track as MediaStreamTrack & { applyConstraints: (c: MediaTrackConstraints) => Promise<void> }).applyConstraints({
-          advanced: [{ torch: next } as any],
-        });
+        await (track as any).applyConstraints({ advanced: [{ torch: next } as any] });
         setTorchOn(next);
       }
     } catch {
@@ -259,7 +252,7 @@ export default function QrCodeScanner({
   const handleManualSubmit = () => {
     const val = manualCode.trim();
     if (!val) return;
-    handleDetected(val);
+    handleDetectedRef.current(val);
     setManualCode("");
   };
 
@@ -310,10 +303,14 @@ export default function QrCodeScanner({
               </div>
             )}
 
-            {/* Always render the container so html5-qrcode can find it */}
+            {/* Container always in DOM for html5-qrcode to find it */}
             <div
               id={containerId}
-              className={state === "active" || state === "requesting" ? "w-full max-w-md aspect-square rounded-lg overflow-hidden bg-black relative" : "w-0 h-0 overflow-hidden"}
+              className={
+                state === "active" || state === "requesting"
+                  ? "w-full max-w-md aspect-square rounded-lg overflow-hidden bg-black relative"
+                  : "w-0 h-0 overflow-hidden"
+              }
             />
 
             {hintVisible && state === "active" && (
