@@ -129,6 +129,7 @@ import DelegacaoAgendaPage from "./pages/pwa/delegacao/DelegacaoAgendaPage";
 import DelegacaoLogisticaPage from "./pages/pwa/delegacao/DelegacaoLogisticaPage";
 import DelegacaoLocaisPage from "./pages/pwa/delegacao/DelegacaoLocaisPage";
 import QrDiagnosticoPage from "./pages/pwa/diagnostico/QrDiagnosticoPage";
+import PwaDebugPage from "./pages/pwa/PwaDebugPage";
 import NotFound from "./pages/NotFound";
 import PwaRouteGuard from "./components/pwa/PwaRouteGuard";
 import PwaAcessoNegadoPage from "./pages/pwa/PwaAcessoNegadoPage";
