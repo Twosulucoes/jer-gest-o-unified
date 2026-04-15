@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, CheckCircle, ScanLine, Users, ShieldAlert, Square } from "lucide-react";
+import { ArrowLeft, ScanLine, Users, ShieldAlert, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import { TripInfoCard } from "@/components/pwa/transporte/TripInfoCard";
+import { FinishTripDialog } from "@/components/pwa/transporte/FinishTripDialog";
+import { ManualBoardingDialog } from "@/components/pwa/transporte/ManualBoardingDialog";
 
 interface Passenger {
   id: string;
@@ -16,6 +19,17 @@ interface Passenger {
   boarded: boolean;
   boarded_at: string | null;
   participant_id: string | null;
+  is_manual?: boolean;
+  manual_name?: string | null;
+}
+
+interface TripInfo {
+  routeName?: string;
+  origin?: string | null;
+  destination?: string | null;
+  scheduledAt?: string | null;
+  vehicleLabel?: string;
+  vehiclePlate?: string;
 }
 
 export default function TransporteEmbarquePage() {
@@ -27,10 +41,24 @@ export default function TransporteEmbarquePage() {
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [loading, setLoading] = useState(true);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [finishOpen, setFinishOpen] = useState(false);
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [finishing, setFinishing] = useState(false);
+  const [tripInfo, setTripInfo] = useState<TripInfo>({});
 
-  // Validate driver ownership
+  // Force landscape orientation
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="viewport"]');
+    const original = meta?.getAttribute("content") || "";
+    if (meta) meta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1");
+    try { (screen.orientation as any)?.lock?.("landscape").catch(() => {}); } catch {}
+    return () => {
+      if (meta) meta.setAttribute("content", original || "width=device-width, initial-scale=1.0");
+      try { screen.orientation?.unlock?.(); } catch {}
+    };
+  }, []);
+
   useEffect(() => {
     (async () => {
       if (!tripId) { setAuthorized(false); setLoading(false); return; }
@@ -39,15 +67,24 @@ export default function TransporteEmbarquePage() {
 
       const { data: trip } = await supabase
         .from("transport_trips")
-        .select("assigned_driver_id")
+        .select("assigned_driver_id, scheduled_at, transport_routes(name, origin, destination), transport_vehicles(label, plate)")
         .eq("id", tripId)
         .single();
 
-      if (!trip || trip.assigned_driver_id !== session.user.id) {
+      if (!trip || (trip as any).assigned_driver_id !== session.user.id) {
         setAuthorized(false);
         setLoading(false);
         return;
       }
+
+      setTripInfo({
+        routeName: (trip as any).transport_routes?.name,
+        origin: (trip as any).transport_routes?.origin,
+        destination: (trip as any).transport_routes?.destination,
+        scheduledAt: (trip as any).scheduled_at,
+        vehicleLabel: (trip as any).transport_vehicles?.label,
+        vehiclePlate: (trip as any).transport_vehicles?.plate,
+      });
       setAuthorized(true);
     })();
   }, [tripId, navigate]);
@@ -56,16 +93,18 @@ export default function TransporteEmbarquePage() {
     if (!tripId || authorized !== true) { setLoading(false); return; }
     const { data } = await supabase
       .from("transport_passengers")
-      .select("id, participant_id, status, boarded_at, participants(full_name)")
+      .select("id, participant_id, status, boarded_at, is_manual, manual_name, participants(full_name)")
       .eq("trip_id", tripId)
       .order("created_at");
 
     const list = ((data as any) || []).map((p: any) => ({
       id: p.id,
-      full_name: p.participants?.full_name || "—",
+      full_name: p.is_manual ? (p.manual_name || "Manual") : (p.participants?.full_name || "—"),
       boarded: p.status === "boarded",
       boarded_at: p.boarded_at,
       participant_id: p.participant_id,
+      is_manual: p.is_manual,
+      manual_name: p.manual_name,
     }));
     setPassengers(list);
     setLoading(false);
@@ -75,16 +114,15 @@ export default function TransporteEmbarquePage() {
 
   const boardedCount = passengers.filter(p => p.boarded).length;
 
-  const handleFinish = async () => {
-    if (!confirm("Finalizar viagem? Esta ação não pode ser desfeita.")) return;
+  const handleFinish = async (hasIncidents: boolean, notes: string) => {
     setFinishing(true);
     try {
       const { error } = await supabase
         .from("transport_trips")
-        .update({ trip_status: "completed" })
+        .update({ trip_status: "completed", has_incidents: hasIncidents, notes: notes || null } as any)
         .eq("id", tripId!);
       if (error) throw error;
-      toast.success("Viagem finalizada!");
+      toast.success("Viagem finalizada com sucesso!");
       navigate("/pwa/transporte", { replace: true });
     } catch (err: any) {
       toast.error("Erro: " + (err.message || "desconhecido"));
@@ -115,34 +153,21 @@ export default function TransporteEmbarquePage() {
           .limit(1)
           .maybeSingle();
 
-        if (!cred) {
-          toast.error("Credencial não encontrada no sistema");
-          return;
-        }
+        if (!cred) { toast.error("Credencial não encontrada"); return; }
         participantId = (cred as any).participant_id;
         name = (cred as any).participants?.full_name || name;
       }
 
-      if (!participantId) {
-        toast.error("Credencial não encontrada no sistema");
-        return;
-      }
+      if (!participantId) { toast.error("Credencial não encontrada"); return; }
 
       const passenger = passengers.find(p => p.participant_id === participantId);
-      if (!passenger) {
-        toast.error(`${name} não está na lista desta viagem`);
-        return;
-      }
-      if (passenger.boarded) {
-        toast.info(`${name} já embarcou`);
-        return;
-      }
+      if (!passenger) { toast.error(`${name} não está na lista desta viagem`); return; }
+      if (passenger.boarded) { toast.info(`${name} já embarcou`); return; }
 
       const { error } = await supabase
         .from("transport_passengers")
         .update({ status: "boarded", boarded_at: new Date().toISOString() })
         .eq("id", passenger.id);
-
       if (error) throw error;
 
       toast.success(`${name} embarcado com sucesso`);
@@ -155,7 +180,7 @@ export default function TransporteEmbarquePage() {
 
   if (authorized === false) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center transport-landscape">
         <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
         <h2 className="text-lg font-bold text-foreground mb-2">Acesso Bloqueado</h2>
         <p className="text-muted-foreground text-sm mb-6">
@@ -169,71 +194,86 @@ export default function TransporteEmbarquePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b bg-card px-4 h-14">
+    <div className="min-h-screen bg-background transport-landscape">
+      {/* Header */}
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b bg-primary text-primary-foreground px-4 h-12">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate("/pwa/transporte")} className="text-muted-foreground">
+          <button onClick={() => navigate("/pwa/transporte")} className="text-primary-foreground/70 hover:text-primary-foreground">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <CheckCircle className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-foreground">Embarque</span>
+          <span className="font-heading font-semibold tracking-tight text-sm">Embarque</span>
         </div>
-        <div className="flex gap-2">
-          {tripId && (
-            <>
-              <Button size="sm" variant="destructive" onClick={handleFinish} disabled={finishing}>
-                <Square className="h-4 w-4 mr-1" /> Finalizar
-              </Button>
-              <Button size="sm" onClick={() => setScannerOpen(true)}>
-                <ScanLine className="h-4 w-4 mr-1" /> Scan
-              </Button>
-            </>
-          )}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 text-xs bg-primary-foreground/10 rounded-full px-2.5 py-1">
+            <Users className="h-3.5 w-3.5" />
+            <span className="font-bold">{boardedCount}</span>
+            <span className="opacity-70">|</span>
+            <span>{passengers.length} esperados</span>
+          </div>
+          <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setManualOpen(true)}>
+            <UserPlus className="h-3.5 w-3.5 mr-1" /> Manual
+          </Button>
+          <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setScannerOpen(true)}>
+            <ScanLine className="h-3.5 w-3.5 mr-1" /> Scan
+          </Button>
+          <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={() => setFinishOpen(true)}>
+            Finalizar
+          </Button>
         </div>
       </header>
 
-      <main className="p-4 max-w-md mx-auto space-y-4">
-        {!tripId && (
-          <div className="text-center py-8 text-muted-foreground">
-            Selecione uma viagem na tela inicial
-          </div>
+      <main className="p-3 max-w-4xl mx-auto space-y-3">
+        {/* Trip Info */}
+        {tripId && !loading && (
+          <TripInfoCard
+            routeName={tripInfo.routeName}
+            origin={tripInfo.origin}
+            destination={tripInfo.destination}
+            scheduledAt={tripInfo.scheduledAt}
+            vehicleLabel={tripInfo.vehicleLabel}
+            vehiclePlate={tripInfo.vehiclePlate}
+          />
         )}
 
-        {tripId && (
-          <>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Users className="h-4 w-4" />
-              <span>{boardedCount}/{passengers.length} embarcados</span>
-            </div>
+        {loading && <div className="grid grid-cols-2 gap-2">{[1,2,3,4].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>}
 
-            {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full" />)}
-
-            {!loading && passengers.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">Nenhum passageiro nesta viagem</div>
-            )}
-
-            <div className="space-y-2">
-              {passengers.map((p) => (
-                <Card key={p.id}>
-                  <CardContent className="p-3 flex items-center justify-between">
-                    <span className="text-sm font-medium">{p.full_name}</span>
-                    <Badge variant={p.boarded ? "default" : "outline"}>
-                      {p.boarded ? "Embarcado" : "Pendente"}
-                    </Badge>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </>
+        {!loading && passengers.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground text-sm">Nenhum passageiro nesta viagem</div>
         )}
+
+        {/* Passenger grid - 2 columns for landscape */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {passengers.map((p) => (
+            <Card key={p.id} className={p.boarded ? "border-primary/30 bg-primary/5" : ""}>
+              <CardContent className="p-2.5 flex items-center justify-between">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-medium truncate">{p.full_name}</span>
+                  {p.is_manual && <span className="text-[10px] text-muted-foreground">Embarque manual</span>}
+                </div>
+                <Badge variant={p.boarded ? "default" : "outline"} className="text-[10px] shrink-0">
+                  {p.boarded ? "Embarcado" : "Pendente"}
+                </Badge>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </main>
 
-      <QrCodeScanner
-        isOpen={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        onScan={handleScan}
-        title="Scan Embarque"
-      />
+      <QrCodeScanner isOpen={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} title="Scan Embarque" />
+
+      {tripId && (
+        <>
+          <ManualBoardingDialog open={manualOpen} onOpenChange={setManualOpen} tripId={tripId} onSuccess={fetchPassengers} />
+          <FinishTripDialog
+            open={finishOpen}
+            onOpenChange={setFinishOpen}
+            boardedCount={boardedCount}
+            totalCount={passengers.length}
+            finishing={finishing}
+            onConfirm={handleFinish}
+          />
+        </>
+      )}
     </div>
   );
 }
