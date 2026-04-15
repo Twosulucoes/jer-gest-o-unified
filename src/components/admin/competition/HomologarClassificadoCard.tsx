@@ -42,10 +42,10 @@ export default function HomologarClassificadoCard({
   onHomologated,
 }: Props) {
   const qc = useQueryClient();
-  const { user, role } = useAuth();
+  const { hasRole } = useAuth();
   const [homologated, setHomologated] = useState(false);
 
-  const canHomologate = role === "admin" || role === "coordenacao_tecnica" || role === "coordenador_modalidade";
+  const canHomologate = hasRole("admin") || hasRole("coordenacao_tecnica") || hasRole("coordenador_modalidade");
 
   // Count apt participants for this sport_event
   const { data, isLoading, error } = useQuery({
@@ -71,9 +71,9 @@ export default function HomologarClassificadoCard({
         // Check enrolled PSEs with active enrollment
         const { data: pses, error } = await supabase
           .from("participant_sport_events")
-          .select("id, enrollment_status, participants(id, people(full_name), delegation_id, delegations(institutions(name)))")
+          .select("id, status, participants(id, people(full_name), delegation_id, delegations(institutions(name)))")
           .eq("sport_event_id", sportEventId)
-          .eq("enrollment_status", "confirmed");
+          .eq("status", "confirmed");
         if (error) throw error;
         const items: AptItem[] = (pses ?? []).map((p: any) => ({
           id: p.id,
