@@ -81,6 +81,11 @@ import LinkFormPage from "./pages/admin/LinkFormPage";
 import ReportCenterPage from "./reports/ui/ReportCenterPage";
 import LinkPreviewPage from "./pages/admin/LinkPreviewPage";
 import GoRedirectPage from "./pages/public/GoRedirectPage";
+// Evento Rules Center pages (lazy)
+const EventoRegrasPage = lazy(() => import("./pages/eventos/EventoRegrasPage"));
+const EventoModalidadesPage = lazy(() => import("./pages/eventos/EventoModalidadesPage"));
+const EventoQualificacaoPage = lazy(() => import("./pages/eventos/EventoQualificacaoPage"));
+const EventoAssistenteInscricaoPage = lazy(() => import("./pages/eventos/EventoAssistenteInscricaoPage"));
 import PublicPagePage from "./pages/public/PublicPagePage";
 import PesquisaDashboardPage from "./pages/admin/PesquisaDashboardPage";
 import PesquisaEventosPage from "./pages/admin/PesquisaEventosPage";
