@@ -12,16 +12,7 @@ import { Shield, Clock, Save } from "lucide-react";
 import { SECTION_CATALOG, GROUP_LABELS, type SectionDef } from "@/components/admin/regras/sectionCatalog";
 import RegrasJsonViewer from "@/components/admin/regras/RegrasJsonViewer";
 import RegrasEdicaoTab from "@/components/admin/regras/RegrasEdicaoTab";
-import RegrasCategoriaTab from "@/components/admin/regras/RegrasCategoriaTab";
-import RegrasModalidadesTab from "@/components/admin/regras/RegrasModalidadesTab";
-import RegrasLimitesTab from "@/components/admin/regras/RegrasLimitesTab";
-import RegrasClassificacaoTab from "@/components/admin/regras/RegrasClassificacaoTab";
-import RegrasOperacionaisTab from "@/components/admin/regras/RegrasOperacionaisTab";
-import RegrasPontuacaoTab from "@/components/admin/regras/RegrasPontuacaoTab";
 import RegrasPublicacaoTab from "@/components/admin/regras/RegrasPublicacaoTab";
-
-// Sections that have dedicated editor tabs
-const EDITABLE_SECTIONS = new Set(["edition"]);
 
 export default function RegrasEventoPage() {
   const eventId = useActiveEventId();
