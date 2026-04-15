@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import DisputePublishControl from "./DisputePublishControl";
 
 // ── Types ───────────────────────────────────────────────────
 interface Props {
