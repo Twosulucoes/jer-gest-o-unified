@@ -8,6 +8,7 @@ import { AppKPI } from "@/components/app/AppKPI";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { getSelectedFacility, setSelectedFacility } from "@/hooks/useAlojamento";
+import { AlojamentoDuplicateAlert } from "@/components/pwa/alojamento/AlojamentoDuplicateAlert";
 import {
   ScanLine, Search, Building, AlertTriangle, Wifi, WifiOff, Users, LogIn, LogOutIcon, Percent,
 } from "lucide-react";
@@ -108,6 +109,8 @@ export default function AlojamentoHomePage() {
             </SelectContent>
           </Select>
         )}
+
+        {facilityId && <AlojamentoDuplicateAlert facilityId={facilityId} />}
 
         <div className="grid grid-cols-2 gap-3">
           <AppKPI label="Hospedados" value={kpis.hospedados} icon={Users} loading={loading} />
