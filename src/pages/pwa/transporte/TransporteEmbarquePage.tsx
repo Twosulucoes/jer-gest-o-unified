@@ -296,6 +296,9 @@ export default function TransporteEmbarquePage() {
           <Button size="sm" variant="secondary" className="h-8 text-xs flex-1" onClick={() => setScannerOpen(true)}>
             <ScanLine className="h-3.5 w-3.5 mr-1" /> Scan
           </Button>
+          <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={() => navigate(`/pwa/transporte/viagem/${tripId}/passageiros`)}>
+            <Users className="h-3.5 w-3.5" />
+          </Button>
           <Button size="sm" variant="destructive" className="h-8 text-xs flex-1" onClick={() => setFinishOpen(true)}>
             Finalizar
           </Button>

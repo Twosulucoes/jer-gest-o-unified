@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { TripInfoCard } from "@/components/pwa/transporte/TripInfoCard";
-import { ArrowLeft, Download, Search, Phone, X, UserCircle, ShieldAlert, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Search, Phone, X, ShieldAlert, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface PassengerRow {
