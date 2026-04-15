@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useActiveEventId, useEventContext } from "@/contexts/EventContext";
-import { useAuth } from "@/hooks/useAuth";
+
 import { useEventEditionRules, usePermLevel, type EventRulesSections } from "@/hooks/useEventEditionRules";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,7 +57,7 @@ export default function RegrasEventoPage() {
     logAudit("geral", "update", "Regras atualizadas");
   }, [draft, save, logAudit]);
 
-  const isDraft = status === "draft" || !status;
+  
   const hasUnsavedChanges = initialized && JSON.stringify(draft) !== JSON.stringify(sections);
 
   if (perm === "none") {
