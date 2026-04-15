@@ -629,7 +629,13 @@ export default function DisputeBuilderTab({ eventId, sportEventId, onChanged }: 
         </div>
       </div>
 
-      {!isEditMode && groups.length === 0 && (
+      {/* Publish control */}
+      <DisputePublishControl
+        eventId={eventId}
+        sportEventId={sportEventId}
+        onPublished={onChanged}
+      />
+
         <Alert>
           <AlertDescription>
             Nenhuma disputa montada. Clique em "Editar" para começar a criar grupos e confrontos manualmente.
