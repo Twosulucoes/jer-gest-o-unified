@@ -98,11 +98,11 @@
 ## 9. Resultados e Governança (🟡 Parcial)
 - **Ciclo**: `resultado_lancado` → `resultado_validado` → `publicado`
 - **RPCs**: `rpc_launch_match_result`, `rpc_validate_results_for_sport_event`, `rpc_publish_results_for_sport_event`
-- **Frontend**: LaunchResultDialog (wizard), ResultGovernancePanel (validar/publicar em lote), CentralResultsTab, **MatchResultInlineCard** (inline no montador), **WinnerProgressionPanel** (drag-and-drop para próxima fase)
+- **Frontend**: LaunchResultDialog (wizard), ResultGovernancePanel (validar/publicar em lote), CentralResultsTab, **MatchResultInlineCard** (inline no montador), **WinnerProgressionPanel** (drag-and-drop para próxima fase), **HomologarClassificadoCard** (classificação direta de único apto)
 - **Publicação**: exige boletim oficial publicado
 - **RLS anon**: `result_status = 'publicado'` permite SELECT para público
 - **Strings canônicas**: `src/lib/resultStatus.ts` — fonte de verdade
-- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento inline por confronto | ✅ Progressão manual de vencedores | ✅ Validação em lote | ✅ Publicação com boletim | ✅ Auto-finish da partida | ✅ Auditoria de resultados e movimentações
+- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento inline por confronto | ✅ Progressão manual de vencedores | ✅ Validação em lote | ✅ Publicação com boletim | ✅ Auto-finish da partida | ✅ Auditoria de resultados e movimentações | ✅ Homologação de classificado direto (único apto)
 - **Gaps**: ❌ Sem portal público para consulta externa | ❌ Sem geração de boletins em PDF | 🟡 CombatResultForm não integrado automaticamente
 
 ## 10. Boletins Oficiais (🟡 Parcial)
