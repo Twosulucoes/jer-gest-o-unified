@@ -220,7 +220,9 @@ export default function QrCodeScanner({
     if (isNativeApp()) {
       startNativeScan();
     } else {
-      startScanner(false);
+      // Don't auto-start — show idle state with button so camera permission
+      // is triggered from a user gesture (required by mobile browsers)
+      setState("idle");
     }
     return () => {
       stopScanner();
