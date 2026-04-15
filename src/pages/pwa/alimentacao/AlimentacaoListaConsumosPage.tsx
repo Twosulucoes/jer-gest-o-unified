@@ -138,6 +138,18 @@ export default function AlimentacaoListaConsumosPage() {
     return Array.from(m.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [consumptions]);
 
+  // Detect duplicates: participants appearing >1 time in selected window (or all windows)
+  const duplicateParticipantIds = useMemo(() => {
+    const source = windowFilter !== "all"
+      ? consumptions.filter(c => c.meal_window_id === windowFilter)
+      : consumptions;
+    const countMap = new Map<string, number>();
+    source.forEach(c => countMap.set(c.participant_id, (countMap.get(c.participant_id) || 0) + 1));
+    const dups = new Set<string>();
+    countMap.forEach((count, pid) => { if (count > 1) dups.add(pid); });
+    return dups;
+  }, [consumptions, windowFilter]);
+
   const filtered = useMemo(() => {
     return consumptions.filter(c => {
       if (windowFilter !== "all" && c.meal_window_id !== windowFilter) return false;
@@ -254,6 +266,16 @@ export default function AlimentacaoListaConsumosPage() {
           <span className="font-semibold text-foreground">{filtered.length}</span> consumos registrados
         </p>
 
+        {duplicateParticipantIds.size > 0 && (
+          <div className="rounded-lg border border-yellow-500/40 bg-yellow-50 dark:bg-yellow-950/30 px-3 py-2.5 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
+            <span className="text-xs text-yellow-800 dark:text-yellow-200">
+              ℹ️ <span className="font-semibold">{duplicateParticipantIds.size} participante{duplicateParticipantIds.size > 1 ? "s" : ""}</span>{" "}
+              consumiu mais de uma vez {windowFilter !== "all" ? "nesta janela" : "hoje"}
+            </span>
+          </div>
+        )}
+
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -307,7 +329,12 @@ export default function AlimentacaoListaConsumosPage() {
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{c.full_name}</p>
-                      {c.delegation_name && <p className="text-xs text-muted-foreground truncate">{c.delegation_name}</p>}
+                      <div className="flex items-center gap-1">
+                        {c.delegation_name && <p className="text-xs text-muted-foreground truncate">{c.delegation_name}</p>}
+                        {duplicateParticipantIds.has(c.participant_id) && (
+                          <Badge variant="warning" className="text-[10px] px-1 shrink-0">⚠️ Duplicado</Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
 
