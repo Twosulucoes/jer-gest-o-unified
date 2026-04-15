@@ -133,6 +133,13 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    id: "ocorrencias", label: "Ocorrências", description: "Central de ocorrências operacionais.",
+    icon: <AlertTriangle className="h-4 w-4" />,
+    items: [
+      { label: "Todas as Ocorrências", to: "/admin/ocorrencias", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
+    ],
+  },
+  {
     id: "pesquisa", label: "Pesquisa de Satisfação", description: "Pesquisa de satisfação.",
     icon: <MessageSquare className="h-4 w-4" />,
     items: [
