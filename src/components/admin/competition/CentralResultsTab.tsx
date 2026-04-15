@@ -5,11 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Download, PenLine } from "lucide-react";
+import { ExternalLink, Download, PenLine, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import LaunchResultDialog from "./LaunchResultDialog";
 import ResultGovernancePanel from "./ResultGovernancePanel";
-
 interface Props {
   eventId: string;
   sportEventId: string;
@@ -154,11 +154,43 @@ export default function CentralResultsTab({ eventId, sportEventId, isCollective 
 
       {/* Launched results section */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <h3 className="text-lg font-semibold">Resultados Lançados</h3>
-          <Button variant="outline" size="sm" onClick={exportCSV} disabled={matchesWithResults.length === 0}>
-            <Download className="h-4 w-4 mr-1" /> Exportar CSV
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  const { data, error } = await supabase.functions.invoke("public-results", {
+                    method: "GET",
+                    headers: { "Content-Type": "application/json" },
+                    body: null,
+                  });
+                  // functions.invoke doesn't support GET query params well, use fetch directly
+                  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-results?event_id=${eventId}&sport_event_id=${sportEventId}`;
+                  const res = await fetch(url, {
+                    headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+                  });
+                  const json = await res.json();
+                  console.log("[PublicResults] Response:", json);
+                  if (!res.ok) {
+                    toast.error(`Erro: ${json.error || res.statusText}`);
+                  } else {
+                    toast.success(`API pública OK — ${json.items?.length ?? 0} resultado(s) publicados`);
+                  }
+                } catch (err: any) {
+                  console.error("[PublicResults] Error:", err);
+                  toast.error(`Falha ao consultar API pública: ${err.message}`);
+                }
+              }}
+            >
+              <Globe className="h-4 w-4 mr-1" /> Testar API Pública
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportCSV} disabled={matchesWithResults.length === 0}>
+              <Download className="h-4 w-4 mr-1" /> Exportar CSV
+            </Button>
+          </div>
         </div>
 
         <Card>
