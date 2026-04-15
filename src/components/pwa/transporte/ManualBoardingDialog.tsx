@@ -72,13 +72,14 @@ export function ManualBoardingDialog({
 
       const { error } = await supabase.from("transport_passengers").insert({
         trip_id: tripId,
+        participant_id: "00000000-0000-0000-0000-000000000000",
         status: "boarded",
         boarded_at: new Date().toISOString(),
         is_manual: true,
         manual_name: name.trim(),
         manual_cpf: cpf.trim() || null,
         identity_photo_url: photoUrl,
-      });
+      } as any);
 
       if (error) throw error;
 
