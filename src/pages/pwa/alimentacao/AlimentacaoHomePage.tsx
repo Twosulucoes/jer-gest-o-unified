@@ -6,13 +6,16 @@ import { AppKPI } from "@/components/app/AppKPI";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import {
   UtensilsCrossed, ScanLine, Search,
-  Clock, CheckCircle, BarChart3,
+  Clock, CheckCircle, BarChart3, AlertTriangle,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FoodIncidentDialog } from "@/components/pwa/alimentacao/FoodIncidentDialog";
 
 export default function AlimentacaoHomePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ consumosHoje: 0, janelasAbertas: 0, tiposRefeicao: 0, totalJanelas: 0 });
+  const [incidentOpen, setIncidentOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -56,7 +59,17 @@ export default function AlimentacaoHomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PwaHeader title="Alimentação" icon={UtensilsCrossed} backTo="/pwa" onSignOut={handleSignOut} />
+      <PwaHeader
+        title="Alimentação"
+        icon={UtensilsCrossed}
+        backTo="/pwa"
+        onSignOut={handleSignOut}
+        rightSlot={
+          <Button variant="ghost" size="icon" className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => setIncidentOpen(true)}>
+            <AlertTriangle className="h-5 w-5" />
+          </Button>
+        }
+      />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -79,6 +92,8 @@ export default function AlimentacaoHomePage() {
           ))}
         </div>
       </main>
+
+      <FoodIncidentDialog open={incidentOpen} onOpenChange={setIncidentOpen} />
     </div>
   );
 }
