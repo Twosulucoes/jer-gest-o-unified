@@ -19,6 +19,8 @@ interface QrCodeScannerProps {
   isOpen: boolean;
   allowedPrefixes?: string[];
   title?: string;
+  /** When true, scanner keeps camera active after each scan for continuous operation */
+  continuous?: boolean;
 }
 
 type ScanState = "requesting" | "active" | "error" | "idle";
@@ -29,6 +31,7 @@ export default function QrCodeScanner({
   isOpen,
   allowedPrefixes,
   title = "Scanner QR",
+  continuous = false,
 }: QrCodeScannerProps) {
   const [state, setState] = useState<ScanState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -40,15 +43,43 @@ export default function QrCodeScanner({
 
   const scannerRef = useRef<any>(null);
   const debounceRef = useRef(false);
+  const lastScannedRef = useRef("");
   const containerId = useRef(`qr-scanner-${Math.random().toString(36).slice(2, 8)}`).current;
   const hintTimer = useRef<ReturnType<typeof setTimeout>>();
+  const mountedRef = useRef(true);
+
+  // Keep callbacks in refs to avoid stale closures inside html5-qrcode
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
+  const continuousRef = useRef(continuous);
+  continuousRef.current = continuous;
+  const allowedPrefixesRef = useRef(allowedPrefixes);
+  allowedPrefixesRef.current = allowedPrefixes;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  const stopScanner = useCallback(async () => {
+    clearTimeout(hintTimer.current);
+    try {
+      if (scannerRef.current) {
+        const scanner = scannerRef.current;
+        scannerRef.current = null;
+        try { await scanner.stop(); } catch { /* ignore */ }
+        try { await scanner.clear(); } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   const isValidPayload = useCallback(
     (raw: string) => {
-      if (!allowedPrefixes?.length) return true;
-      return allowedPrefixes.some((p) => raw.startsWith(p));
+      const prefs = allowedPrefixesRef.current;
+      if (!prefs?.length) return true;
+      return prefs.some((p) => raw.toUpperCase().startsWith(p.toUpperCase()));
     },
-    [allowedPrefixes],
+    [],
   );
 
   const handleDetected = useCallback(
@@ -58,37 +89,30 @@ export default function QrCodeScanner({
         toast.error("Código inválido — QR não reconhecido pelo sistema");
         return;
       }
+      // Prevent duplicate fire for same code
+      if (raw === lastScannedRef.current) return;
+
       debounceRef.current = true;
+      lastScannedRef.current = raw;
       if (navigator.vibrate) navigator.vibrate(100);
-      onScan(raw);
+
+      if (!continuousRef.current) {
+        void stopScanner();
+      }
+
+      onScanRef.current(raw);
+
       setTimeout(() => {
         debounceRef.current = false;
-      }, 2000);
+        lastScannedRef.current = "";
+      }, 2500);
     },
-    [onScan, isValidPayload],
+    [isValidPayload, stopScanner],
   );
 
-  const stopScanner = useCallback(async () => {
-    clearTimeout(hintTimer.current);
-    try {
-      if (scannerRef.current) {
-        const scanner = scannerRef.current;
-        scannerRef.current = null;
-        try {
-          await scanner.stop();
-        } catch {
-          // ignore
-        }
-        try {
-          await scanner.clear();
-        } catch {
-          // ignore
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
+  // Keep handleDetected in a ref for the html5-qrcode callback
+  const handleDetectedRef = useRef(handleDetected);
+  handleDetectedRef.current = handleDetected;
 
   const startScanner = useCallback(
     async (front: boolean) => {
@@ -104,9 +128,20 @@ export default function QrCodeScanner({
       await stopScanner();
 
       try {
-        await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
-        const container = document.getElementById(containerId);
-        if (!container) throw new Error("Contêiner de vídeo não encontrado. Tente novamente.");
+        // Wait for DOM renders
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+        if (!mountedRef.current) return;
+
+        let container = document.getElementById(containerId);
+        if (!container) {
+          await new Promise<void>((r) => setTimeout(r, 250));
+          container = document.getElementById(containerId);
+          if (!container) {
+            throw new Error("Contêiner de vídeo não encontrado. Tente novamente.");
+          }
+        }
 
         const { Html5Qrcode } = await import("html5-qrcode");
         const scanner = new Html5Qrcode(containerId, { verbose: false });
@@ -114,35 +149,26 @@ export default function QrCodeScanner({
 
         await scanner.start(
           { facingMode: front ? "user" : "environment" },
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1,
-            disableFlip: false,
-          },
-          (decodedText) => {
-            void stopScanner();
-            handleDetected(decodedText);
-          },
-          () => {
-            // leitura contínua
-          },
+          { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1, disableFlip: false },
+          (decodedText) => handleDetectedRef.current(decodedText),
+          () => { /* continuous scan */ },
         );
 
-        setState("active");
-        hintTimer.current = setTimeout(() => setHintVisible(true), 120_000);
+        if (mountedRef.current) {
+          setState("active");
+          hintTimer.current = setTimeout(() => {
+            if (mountedRef.current) setHintVisible(true);
+          }, 120_000);
+        }
       } catch (err: any) {
         await stopScanner();
+        if (!mountedRef.current) return;
         setState("error");
-        if (
-          err?.name === "NotAllowedError" ||
-          err?.message?.includes("Permission") ||
-          err?.message?.includes("NotAllowed")
-        ) {
+        if (err?.name === "NotAllowedError" || err?.message?.includes("Permission") || err?.message?.includes("NotAllowed")) {
           setErrorMsg(
             "Acesso à câmera negado. Habilite nas configurações do navegador:\n\n" +
-              "Android Chrome: Configurações → Privacidade → Câmera\n" +
-              "iOS Safari: Ajustes → Safari → Câmera",
+            "Android Chrome: Configurações → Privacidade → Câmera\n" +
+            "iOS Safari: Ajustes → Safari → Câmera",
           );
         } else if (err?.name === "NotFoundError" || err?.message?.includes("NotFound")) {
           setErrorMsg("Câmera não encontrada neste dispositivo.");
@@ -151,7 +177,7 @@ export default function QrCodeScanner({
         }
       }
     },
-    [containerId, handleDetected, stopScanner],
+    [containerId, stopScanner],
   );
 
   const startNativeScan = useCallback(async () => {
@@ -167,7 +193,7 @@ export default function QrCodeScanner({
       setState("active");
       const result = await BarcodeScanner.scan();
       if (result.barcodes.length > 0) {
-        handleDetected(result.barcodes[0].rawValue);
+        handleDetectedRef.current(result.barcodes[0].rawValue);
       }
       setState("idle");
     } catch (err: any) {
@@ -178,8 +204,9 @@ export default function QrCodeScanner({
       setState("error");
       setErrorMsg(err?.message || "Erro no scanner nativo");
     }
-  }, [handleDetected]);
+  }, []);
 
+  // Auto-start on open
   useEffect(() => {
     if (!isOpen) {
       void stopScanner();
@@ -187,19 +214,20 @@ export default function QrCodeScanner({
       setManualMode(false);
       setTorchOn(false);
       setHintVisible(false);
+      lastScannedRef.current = "";
       return;
     }
 
     if (isNativeApp()) {
       void startNativeScan();
     } else {
-      setState("idle");
+      // Auto-start camera when scanner opens (web)
+      void startScanner(false);
     }
 
-    return () => {
-      void stopScanner();
-    };
-  }, [isOpen, startNativeScan, stopScanner]);
+    return () => { void stopScanner(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const flipCamera = useCallback(async () => {
     const next = !useFront;
@@ -213,9 +241,7 @@ export default function QrCodeScanner({
       if (videoEl?.srcObject) {
         const track = (videoEl.srcObject as MediaStream).getVideoTracks()[0];
         const next = !torchOn;
-        await (track as MediaStreamTrack & { applyConstraints: (c: MediaTrackConstraints) => Promise<void> }).applyConstraints({
-          advanced: [{ torch: next } as any],
-        });
+        await (track as any).applyConstraints({ advanced: [{ torch: next } as any] });
         setTorchOn(next);
       }
     } catch {
@@ -226,7 +252,7 @@ export default function QrCodeScanner({
   const handleManualSubmit = () => {
     const val = manualCode.trim();
     if (!val) return;
-    handleDetected(val);
+    handleDetectedRef.current(val);
     setManualCode("");
   };
 
@@ -277,9 +303,14 @@ export default function QrCodeScanner({
               </div>
             )}
 
+            {/* Container always in DOM for html5-qrcode to find it */}
             <div
               id={containerId}
-              className={state === "active" || state === "requesting" ? "w-full max-w-md aspect-square rounded-lg overflow-hidden bg-black relative" : "hidden"}
+              className={
+                state === "active" || state === "requesting"
+                  ? "w-full max-w-md aspect-square rounded-lg overflow-hidden bg-black relative"
+                  : "w-0 h-0 overflow-hidden"
+              }
             />
 
             {hintVisible && state === "active" && (
