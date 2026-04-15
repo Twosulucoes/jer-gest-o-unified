@@ -119,6 +119,12 @@ export default function RegrasEventoPage() {
       return <RegrasLimitesParticipacaoEditor eventId={eventId} />;
     }
 
+    // Centro de Regras consolidated tabs
+    if (activeSection === "centro_regras") return <RegrasCentroTab />;
+    if (activeSection === "catalogo_modalidades") return <RegrasCatalogoModalidadesTab />;
+    if (activeSection === "qualificacao") return <RegrasQualificacaoTab />;
+    if (activeSection === "assistente_inscricao") return <RegrasAssistenteInscricaoTab />;
+
     // For all other sections, use the generic JSON viewer
     const sectionDef = SECTION_CATALOG.find((s) => s.key === activeSection);
     if (!sectionDef) return null;
