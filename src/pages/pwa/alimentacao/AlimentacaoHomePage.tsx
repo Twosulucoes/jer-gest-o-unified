@@ -6,8 +6,10 @@ import { AppKPI } from "@/components/app/AppKPI";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import {
   UtensilsCrossed, ScanLine, Search,
-  Clock, CheckCircle, BarChart3,
+  Clock, CheckCircle, BarChart3, AlertTriangle,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FoodIncidentDialog } from "@/components/pwa/alimentacao/FoodIncidentDialog";
 
 export default function AlimentacaoHomePage() {
   const navigate = useNavigate();
