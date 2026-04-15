@@ -3236,6 +3236,10 @@ export type Database = {
           boarded_by: string | null
           created_at: string
           id: string
+          identity_photo_url: string | null
+          is_manual: boolean
+          manual_cpf: string | null
+          manual_name: string | null
           notes: string | null
           participant_id: string
           status: string
@@ -3249,6 +3253,10 @@ export type Database = {
           boarded_by?: string | null
           created_at?: string
           id?: string
+          identity_photo_url?: string | null
+          is_manual?: boolean
+          manual_cpf?: string | null
+          manual_name?: string | null
           notes?: string | null
           participant_id: string
           status?: string
@@ -3262,6 +3270,10 @@ export type Database = {
           boarded_by?: string | null
           created_at?: string
           id?: string
+          identity_photo_url?: string | null
+          is_manual?: boolean
+          manual_cpf?: string | null
+          manual_name?: string | null
           notes?: string | null
           participant_id?: string
           status?: string
@@ -3346,6 +3358,7 @@ export type Database = {
           driver_name: string | null
           driver_phone: string | null
           event_id: string
+          has_incidents: boolean
           id: string
           notes: string | null
           route_id: string
@@ -3367,6 +3380,7 @@ export type Database = {
           driver_name?: string | null
           driver_phone?: string | null
           event_id: string
+          has_incidents?: boolean
           id?: string
           notes?: string | null
           route_id: string
@@ -3388,6 +3402,7 @@ export type Database = {
           driver_name?: string | null
           driver_phone?: string | null
           event_id?: string
+          has_incidents?: boolean
           id?: string
           notes?: string | null
           route_id?: string
