@@ -59,7 +59,7 @@
 - **Tabelas**: 15 tabelas (phases, groups, matches, entries, results, scores, lineups, events, penalties, officials, attachments, attempts, player_stats, discipline, match_user_assignments)
 - **Páginas admin**: fases, grupos, equipes, partidas, detalhe da partida, agenda, resultados, central, painel, pré-validação, regras, regras em lote, diagnóstico, sincronizar equipes
 - **Features implementadas**:
-  - ✅ Wizard de 7 passos (coletivas) / 6 passos (individuais time/mark)
+  - ✅ Wizard de 8 passos (coletivas) / 7 passos (individuais time/mark) — inclui aba Auditoria
   - ✅ Estrutura automática de grupos com sugestão
   - ✅ Baterias/séries para individuais (distribuição automática)
   - ✅ Geração de partidas round-robin por grupo
@@ -80,6 +80,7 @@
   - ✅ **Transição automática de fases**: quando todos os resultados de uma fase são publicados, a fase muda para `finished` e a próxima inicia automaticamente.
   - ✅ **Resultado inline por confronto**: `MatchResultInlineCard` permite lançar resultado, placar e vencedor diretamente no montador de disputas, com status: agendado, em andamento, encerrado, homologado, cancelado.
   - ✅ **Progressão manual de vencedores**: `WinnerProgressionPanel` exibe vencedores de fases anteriores como itens arrastáveis para slots da próxima fase (drag and drop via @dnd-kit). Trilha de origem visível.
+  - ✅ **Aba Auditoria**: `CentralAuditTab` — linha do tempo de ações por modalidade com filtros por tipo (montagem, resultado, publicação, homologação, progressão, agenda) e período. Exibe autor, data/hora e resumo legível. Exportável em CSV.
 - **Perfis**: admin, secretaria, coordenacao_tecnica, coordenador_modalidade, mesario
 - **Dados reais**: 79 provas, 26 partidas, 17 resultados, 40 equipes
 
