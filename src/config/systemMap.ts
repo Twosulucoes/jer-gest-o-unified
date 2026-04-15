@@ -480,6 +480,18 @@ export const systemMap: SystemMapGroup[] = [
     label: "Configurações",
     items: [
       {
+        id: "regras-evento",
+        label: "Regras do Evento",
+        route: "/admin/regras-evento",
+        pageFile: "src/pages/admin/RegrasEventoPage.tsx",
+        description: "Painel centralizado com todas as regras do evento: edição, categorias, modalidades, limites, classificação, operacionais, pontuação e publicação com versionamento e auditoria.",
+        roles: ["admin", "secretaria", "coordenacao_tecnica"],
+        status: ModuleStatus.DONE,
+        dataSources: ["event_edition_rules", "event_rules_audit_log"],
+        gaps: [],
+        nextActions: [],
+      },
+      {
         id: "parametros-evento",
         label: "Parâmetros do Evento",
         route: "/admin/parametros-evento",
