@@ -209,14 +209,18 @@ export type Database = {
       }
       competition_match_results: {
         Row: {
+          awarded_entry_id: string | null
           combat_detail: Json | null
           created_at: string
           distance_cm: number | null
           id: string
+          justification_notes: string | null
           match_entry_id: string
           match_id: string
           notes: string | null
+          official_start_at: string | null
           outcome: string | null
+          penalized_entry_id: string | null
           penalty_notes: string | null
           points: number | null
           position: number | null
@@ -225,25 +229,34 @@ export type Database = {
           published_by: string | null
           recorded_at: string
           recorded_by: string
+          restart_announced_at: string | null
           result_status: string
           result_text: string | null
+          result_type: string | null
           score: string | null
           seed_batch_id: string | null
           seed_tag: string | null
           time_ms: number | null
+          transport_exception_confirmed: boolean | null
           updated_at: string
           validated_at: string | null
           validated_by: string | null
+          wo_deadline_at: string | null
+          wxo_deadline_at: string | null
         }
         Insert: {
+          awarded_entry_id?: string | null
           combat_detail?: Json | null
           created_at?: string
           distance_cm?: number | null
           id?: string
+          justification_notes?: string | null
           match_entry_id: string
           match_id: string
           notes?: string | null
+          official_start_at?: string | null
           outcome?: string | null
+          penalized_entry_id?: string | null
           penalty_notes?: string | null
           points?: number | null
           position?: number | null
@@ -252,25 +265,34 @@ export type Database = {
           published_by?: string | null
           recorded_at?: string
           recorded_by: string
+          restart_announced_at?: string | null
           result_status?: string
           result_text?: string | null
+          result_type?: string | null
           score?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           time_ms?: number | null
+          transport_exception_confirmed?: boolean | null
           updated_at?: string
           validated_at?: string | null
           validated_by?: string | null
+          wo_deadline_at?: string | null
+          wxo_deadline_at?: string | null
         }
         Update: {
+          awarded_entry_id?: string | null
           combat_detail?: Json | null
           created_at?: string
           distance_cm?: number | null
           id?: string
+          justification_notes?: string | null
           match_entry_id?: string
           match_id?: string
           notes?: string | null
+          official_start_at?: string | null
           outcome?: string | null
+          penalized_entry_id?: string | null
           penalty_notes?: string | null
           points?: number | null
           position?: number | null
@@ -279,15 +301,20 @@ export type Database = {
           published_by?: string | null
           recorded_at?: string
           recorded_by?: string
+          restart_announced_at?: string | null
           result_status?: string
           result_text?: string | null
+          result_type?: string | null
           score?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           time_ms?: number | null
+          transport_exception_confirmed?: boolean | null
           updated_at?: string
           validated_at?: string | null
           validated_by?: string | null
+          wo_deadline_at?: string | null
+          wxo_deadline_at?: string | null
         }
         Relationships: [
           {
@@ -591,6 +618,105 @@ export type Database = {
           },
         ]
       }
+      delegation_requests: {
+        Row: {
+          created_at: string
+          deadline_snapshot: string | null
+          decision_at: string | null
+          decision_by_user_id: string | null
+          decision_notes: string | null
+          delegation_id: string
+          event_id: string
+          food_donation_kg: number | null
+          id: number
+          payload_json: Json | null
+          request_type: string
+          requested_at: string
+          requested_by_user_id: string | null
+          status: string
+          target_participant_id: string | null
+          target_sport_event_id: string | null
+          technical_meeting_at_snapshot: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deadline_snapshot?: string | null
+          decision_at?: string | null
+          decision_by_user_id?: string | null
+          decision_notes?: string | null
+          delegation_id: string
+          event_id: string
+          food_donation_kg?: number | null
+          id?: number
+          payload_json?: Json | null
+          request_type: string
+          requested_at?: string
+          requested_by_user_id?: string | null
+          status: string
+          target_participant_id?: string | null
+          target_sport_event_id?: string | null
+          technical_meeting_at_snapshot?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deadline_snapshot?: string | null
+          decision_at?: string | null
+          decision_by_user_id?: string | null
+          decision_notes?: string | null
+          delegation_id?: string
+          event_id?: string
+          food_donation_kg?: number | null
+          id?: number
+          payload_json?: Json | null
+          request_type?: string
+          requested_at?: string
+          requested_by_user_id?: string | null
+          status?: string
+          target_participant_id?: string | null
+          target_sport_event_id?: string | null
+          technical_meeting_at_snapshot?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_delegation_requests_delegation"
+            columns: ["delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_delegation_requests_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_delegation_requests_target_participant"
+            columns: ["target_participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_delegation_requests_target_sport_event"
+            columns: ["target_sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "fk_delegation_requests_target_sport_event"
+            columns: ["target_sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delegations: {
         Row: {
           chief_email: string | null
@@ -651,16 +777,236 @@ export type Database = {
           },
         ]
       }
+      disciplinary_cases: {
+        Row: {
+          case_type: string
+          complainant_participant_id: string | null
+          created_at: string
+          decision_summary: string | null
+          event_id: string
+          evidence_notes: string | null
+          facts: string | null
+          id: number
+          minutes_after_event: number | null
+          opened_at: string
+          source_incident_id: string | null
+          source_match_id: string | null
+          status: string
+          target_delegation_id: string | null
+          target_participant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          case_type: string
+          complainant_participant_id?: string | null
+          created_at?: string
+          decision_summary?: string | null
+          event_id: string
+          evidence_notes?: string | null
+          facts?: string | null
+          id?: number
+          minutes_after_event?: number | null
+          opened_at?: string
+          source_incident_id?: string | null
+          source_match_id?: string | null
+          status?: string
+          target_delegation_id?: string | null
+          target_participant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          case_type?: string
+          complainant_participant_id?: string | null
+          created_at?: string
+          decision_summary?: string | null
+          event_id?: string
+          evidence_notes?: string | null
+          facts?: string | null
+          id?: number
+          minutes_after_event?: number | null
+          opened_at?: string
+          source_incident_id?: string | null
+          source_match_id?: string | null
+          status?: string
+          target_delegation_id?: string | null
+          target_participant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_disciplinary_cases_complainant"
+            columns: ["complainant_participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_disciplinary_cases_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_disciplinary_cases_incident"
+            columns: ["source_incident_id"]
+            isOneToOne: false
+            referencedRelation: "operational_incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_disciplinary_cases_match"
+            columns: ["source_match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_disciplinary_cases_match"
+            columns: ["source_match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
+          },
+          {
+            foreignKeyName: "fk_disciplinary_cases_target_delegation"
+            columns: ["target_delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_disciplinary_cases_target_participant"
+            columns: ["target_participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disciplinary_sanctions: {
+        Row: {
+          case_id: number
+          created_at: string
+          ends_at: string | null
+          id: number
+          sanction_type: string
+          scope_json: Json | null
+          starts_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          case_id: number
+          created_at?: string
+          ends_at?: string | null
+          id?: number
+          sanction_type: string
+          scope_json?: Json | null
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          case_id?: number
+          created_at?: string
+          ends_at?: string | null
+          id?: number
+          sanction_type?: string
+          scope_json?: Json | null
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disciplinary_sanctions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "disciplinary_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_requirements: {
+        Row: {
+          created_at: string
+          disability_type: string | null
+          document_type: string
+          event_id: string
+          event_type: string | null
+          hard_block: boolean
+          id: number
+          is_external_technician: boolean | null
+          is_required: boolean
+          notes: string | null
+          requirement_group: string | null
+          role_type: string | null
+          satisfaction_mode: string | null
+          updated_at: string
+          uses_lodging: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          disability_type?: string | null
+          document_type: string
+          event_id: string
+          event_type?: string | null
+          hard_block?: boolean
+          id?: number
+          is_external_technician?: boolean | null
+          is_required?: boolean
+          notes?: string | null
+          requirement_group?: string | null
+          role_type?: string | null
+          satisfaction_mode?: string | null
+          updated_at?: string
+          uses_lodging?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          disability_type?: string | null
+          document_type?: string
+          event_id?: string
+          event_type?: string | null
+          hard_block?: boolean
+          id?: number
+          is_external_technician?: boolean | null
+          is_required?: boolean
+          notes?: string | null
+          requirement_group?: string | null
+          role_type?: string | null
+          satisfaction_mode?: string | null
+          updated_at?: string
+          uses_lodging?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_document_requirements_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_edition_rules: {
         Row: {
           created_at: string
           created_by: string | null
+          effective_from: string | null
+          effective_to: string | null
           event_id: string
           id: string
+          is_active: boolean | null
           notes: string | null
+          precedence_json: Json | null
           published_at: string | null
           published_by: string | null
+          regulation_date: string | null
+          regulation_name: string | null
+          rule_version: string | null
+          rules_snapshot_json: Json | null
+          scope: string | null
           sections: Json
+          source_document_ref: string | null
           status: string
           updated_at: string
           updated_by: string | null
@@ -669,12 +1015,22 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
           event_id: string
           id?: string
+          is_active?: boolean | null
           notes?: string | null
+          precedence_json?: Json | null
           published_at?: string | null
           published_by?: string | null
+          regulation_date?: string | null
+          regulation_name?: string | null
+          rule_version?: string | null
+          rules_snapshot_json?: Json | null
+          scope?: string | null
           sections?: Json
+          source_document_ref?: string | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -683,12 +1039,22 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
           event_id?: string
           id?: string
+          is_active?: boolean | null
           notes?: string | null
+          precedence_json?: Json | null
           published_at?: string | null
           published_by?: string | null
+          regulation_date?: string | null
+          regulation_name?: string | null
+          rule_version?: string | null
+          rules_snapshot_json?: Json | null
+          scope?: string | null
           sections?: Json
+          source_document_ref?: string | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -706,34 +1072,109 @@ export type Database = {
       }
       event_participation_rules: {
         Row: {
+          alcohol_and_smoking_prohibited: boolean | null
+          both_genders_with_lodging_requires_each_gender_responsible:
+            | boolean
+            | null
+          children_under_12_forbidden_in_official_lodging: boolean | null
           created_at: string
           created_by: string | null
+          credential_second_copy_max_hours: number | null
           event_id: string
+          female_official_required_even_without_female_athletes: boolean | null
+          food_donation_kg: number | null
+          image_assignment_required: boolean | null
+          jerpa_registration_end: string | null
+          jerpa_registration_start: string | null
+          jers_registration_end: string | null
+          jers_registration_start: string | null
           max_collective_teams_per_athlete: number
           max_events_per_individual_sport: number
           max_individual_sports_per_athlete: number
+          max_jerpa_modalities_per_athlete: number | null
+          max_jers_collective_modalities_per_athlete: number | null
+          max_jers_individual_modalities_per_athlete: number | null
+          medical_fitness_report_required: boolean | null
+          min_female_official_required: boolean | null
+          national_no_show_ban_years: number | null
+          protest_deadline_minutes: number | null
+          staff_jerpa_per_wheelchair_athlete: number | null
+          student_enrollment_deadline: string | null
           updated_at: string
           updated_by: string | null
+          weapons_prohibited: boolean | null
+          wo_minutes: number | null
+          wxo_minutes: number | null
         }
         Insert: {
+          alcohol_and_smoking_prohibited?: boolean | null
+          both_genders_with_lodging_requires_each_gender_responsible?:
+            | boolean
+            | null
+          children_under_12_forbidden_in_official_lodging?: boolean | null
           created_at?: string
           created_by?: string | null
+          credential_second_copy_max_hours?: number | null
           event_id: string
+          female_official_required_even_without_female_athletes?: boolean | null
+          food_donation_kg?: number | null
+          image_assignment_required?: boolean | null
+          jerpa_registration_end?: string | null
+          jerpa_registration_start?: string | null
+          jers_registration_end?: string | null
+          jers_registration_start?: string | null
           max_collective_teams_per_athlete?: number
           max_events_per_individual_sport?: number
           max_individual_sports_per_athlete?: number
+          max_jerpa_modalities_per_athlete?: number | null
+          max_jers_collective_modalities_per_athlete?: number | null
+          max_jers_individual_modalities_per_athlete?: number | null
+          medical_fitness_report_required?: boolean | null
+          min_female_official_required?: boolean | null
+          national_no_show_ban_years?: number | null
+          protest_deadline_minutes?: number | null
+          staff_jerpa_per_wheelchair_athlete?: number | null
+          student_enrollment_deadline?: string | null
           updated_at?: string
           updated_by?: string | null
+          weapons_prohibited?: boolean | null
+          wo_minutes?: number | null
+          wxo_minutes?: number | null
         }
         Update: {
+          alcohol_and_smoking_prohibited?: boolean | null
+          both_genders_with_lodging_requires_each_gender_responsible?:
+            | boolean
+            | null
+          children_under_12_forbidden_in_official_lodging?: boolean | null
           created_at?: string
           created_by?: string | null
+          credential_second_copy_max_hours?: number | null
           event_id?: string
+          female_official_required_even_without_female_athletes?: boolean | null
+          food_donation_kg?: number | null
+          image_assignment_required?: boolean | null
+          jerpa_registration_end?: string | null
+          jerpa_registration_start?: string | null
+          jers_registration_end?: string | null
+          jers_registration_start?: string | null
           max_collective_teams_per_athlete?: number
           max_events_per_individual_sport?: number
           max_individual_sports_per_athlete?: number
+          max_jerpa_modalities_per_athlete?: number | null
+          max_jers_collective_modalities_per_athlete?: number | null
+          max_jers_individual_modalities_per_athlete?: number | null
+          medical_fitness_report_required?: boolean | null
+          min_female_official_required?: boolean | null
+          national_no_show_ban_years?: number | null
+          protest_deadline_minutes?: number | null
+          staff_jerpa_per_wheelchair_athlete?: number | null
+          student_enrollment_deadline?: string | null
           updated_at?: string
           updated_by?: string | null
+          weapons_prohibited?: boolean | null
+          wo_minutes?: number | null
+          wxo_minutes?: number | null
         }
         Relationships: [
           {
@@ -1076,6 +1517,143 @@ export type Database = {
         }
         Relationships: []
       }
+      jerpa_functional_classifications: {
+        Row: {
+          board_name: string | null
+          classification_date: string | null
+          classification_location: string | null
+          classification_status: string
+          classifier_names: Json | null
+          created_at: string
+          disability_type: string
+          event_id: string
+          functional_class_code: string | null
+          id: number
+          is_provisional: boolean
+          medical_document_id: number | null
+          notes: string | null
+          participant_id: string
+          previous_classification_document_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          board_name?: string | null
+          classification_date?: string | null
+          classification_location?: string | null
+          classification_status: string
+          classifier_names?: Json | null
+          created_at?: string
+          disability_type: string
+          event_id: string
+          functional_class_code?: string | null
+          id?: number
+          is_provisional?: boolean
+          medical_document_id?: number | null
+          notes?: string | null
+          participant_id: string
+          previous_classification_document_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          board_name?: string | null
+          classification_date?: string | null
+          classification_location?: string | null
+          classification_status?: string
+          classifier_names?: Json | null
+          created_at?: string
+          disability_type?: string
+          event_id?: string
+          functional_class_code?: string | null
+          id?: number
+          is_provisional?: boolean
+          medical_document_id?: number | null
+          notes?: string | null
+          participant_id?: string
+          previous_classification_document_id?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_jerpa_fc_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_jerpa_fc_medical_document"
+            columns: ["medical_document_id"]
+            isOneToOne: false
+            referencedRelation: "participant_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_jerpa_fc_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_jerpa_fc_previous_document"
+            columns: ["previous_classification_document_id"]
+            isOneToOne: false
+            referencedRelation: "participant_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jerpa_support_needs: {
+        Row: {
+          accessibility_notes: string | null
+          created_at: string
+          event_id: string
+          id: number
+          is_wheelchair_user: boolean | null
+          needs_functional_support: boolean | null
+          needs_guide_athlete: boolean | null
+          participant_id: string
+          updated_at: string
+        }
+        Insert: {
+          accessibility_notes?: string | null
+          created_at?: string
+          event_id: string
+          id?: number
+          is_wheelchair_user?: boolean | null
+          needs_functional_support?: boolean | null
+          needs_guide_athlete?: boolean | null
+          participant_id: string
+          updated_at?: string
+        }
+        Update: {
+          accessibility_notes?: string | null
+          created_at?: string
+          event_id?: string
+          id?: number
+          is_wheelchair_user?: boolean | null
+          needs_functional_support?: boolean | null
+          needs_guide_athlete?: boolean | null
+          participant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_jerpa_support_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_jerpa_support_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lodging_locations: {
         Row: {
           address: string | null
@@ -1190,15 +1768,90 @@ export type Database = {
           },
         ]
       }
+      lodging_supervisions: {
+        Row: {
+          created_at: string
+          delegation_id: string
+          ended_at: string | null
+          event_id: string
+          id: number
+          location_id: string | null
+          notes: string | null
+          responsible_gender: string | null
+          responsible_participant_id: string
+          started_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delegation_id: string
+          ended_at?: string | null
+          event_id: string
+          id?: number
+          location_id?: string | null
+          notes?: string | null
+          responsible_gender?: string | null
+          responsible_participant_id: string
+          started_at?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delegation_id?: string
+          ended_at?: string | null
+          event_id?: string
+          id?: number
+          location_id?: string | null
+          notes?: string | null
+          responsible_gender?: string | null
+          responsible_participant_id?: string
+          started_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_lodging_supervisions_delegation"
+            columns: ["delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_lodging_supervisions_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_lodging_supervisions_location"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_lodging_supervisions_responsible"
+            columns: ["responsible_participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lodging_units: {
         Row: {
+          accessible_features_json: Json | null
           capacity: number
           created_at: string
           event_id: string
           gender_restriction: string
+          gender_zone: string | null
           id: string
+          is_accessible: boolean | null
           is_active: boolean
           location_id: string
+          min_age_policy: string | null
           name: string
           notes: string | null
           seed_batch_id: string | null
@@ -1206,13 +1859,17 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accessible_features_json?: Json | null
           capacity?: number
           created_at?: string
           event_id: string
           gender_restriction?: string
+          gender_zone?: string | null
           id?: string
+          is_accessible?: boolean | null
           is_active?: boolean
           location_id: string
+          min_age_policy?: string | null
           name: string
           notes?: string | null
           seed_batch_id?: string | null
@@ -1220,13 +1877,17 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accessible_features_json?: Json | null
           capacity?: number
           created_at?: string
           event_id?: string
           gender_restriction?: string
+          gender_zone?: string | null
           id?: string
+          is_accessible?: boolean | null
           is_active?: boolean
           location_id?: string
+          min_age_policy?: string | null
           name?: string
           notes?: string | null
           seed_batch_id?: string | null
@@ -2193,18 +2854,25 @@ export type Database = {
           binding_source: string
           created_at: string
           credential_code: string
+          credential_type: string | null
           event_id: string
           external_participant_id: string | null
           external_registration_id: string | null
           external_system: string
+          function_label: string | null
           id: string
+          is_active: boolean | null
           issued_at: string | null
           issued_by: string | null
+          last_reissue_request_id: number | null
           last_validated_at: string | null
           participant_id: string
+          printed_snapshot_json: Json | null
           qr_code_value: string
           raw_payload: Json | null
+          reissued_count: number | null
           revoked_at: string | null
+          revoked_reason: string | null
           status: string
           updated_at: string
         }
@@ -2214,18 +2882,25 @@ export type Database = {
           binding_source?: string
           created_at?: string
           credential_code: string
+          credential_type?: string | null
           event_id: string
           external_participant_id?: string | null
           external_registration_id?: string | null
           external_system?: string
+          function_label?: string | null
           id?: string
+          is_active?: boolean | null
           issued_at?: string | null
           issued_by?: string | null
+          last_reissue_request_id?: number | null
           last_validated_at?: string | null
           participant_id: string
+          printed_snapshot_json?: Json | null
           qr_code_value: string
           raw_payload?: Json | null
+          reissued_count?: number | null
           revoked_at?: string | null
+          revoked_reason?: string | null
           status?: string
           updated_at?: string
         }
@@ -2235,18 +2910,25 @@ export type Database = {
           binding_source?: string
           created_at?: string
           credential_code?: string
+          credential_type?: string | null
           event_id?: string
           external_participant_id?: string | null
           external_registration_id?: string | null
           external_system?: string
+          function_label?: string | null
           id?: string
+          is_active?: boolean | null
           issued_at?: string | null
           issued_by?: string | null
+          last_reissue_request_id?: number | null
           last_validated_at?: string | null
           participant_id?: string
+          printed_snapshot_json?: Json | null
           qr_code_value?: string
           raw_payload?: Json | null
+          reissued_count?: number | null
           revoked_at?: string | null
+          revoked_reason?: string | null
           status?: string
           updated_at?: string
         }
@@ -2267,12 +2949,240 @@ export type Database = {
           },
         ]
       }
-      participant_sport_events: {
+      participant_documents: {
         Row: {
           created_at: string
-          id: string
+          document_type: string
+          event_id: string
+          expires_at: string | null
+          file_url: string | null
+          id: number
+          mime_type: string | null
           notes: string | null
           participant_id: string
+          status: string
+          storage_path: string | null
+          updated_at: string
+          validated_at: string | null
+          validated_by_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          event_id: string
+          expires_at?: string | null
+          file_url?: string | null
+          id?: number
+          mime_type?: string | null
+          notes?: string | null
+          participant_id: string
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          validated_at?: string | null
+          validated_by_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          event_id?: string
+          expires_at?: string | null
+          file_url?: string | null
+          id?: number
+          mime_type?: string | null
+          notes?: string | null
+          participant_id?: string
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          validated_at?: string | null
+          validated_by_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_participant_documents_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participant_documents_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participant_event_roles: {
+        Row: {
+          assigned_by_user_id: string | null
+          change_reason: string | null
+          created_at: string
+          delegation_id: string | null
+          ended_at: string | null
+          event_id: string
+          food_donation_kg: number | null
+          id: number
+          is_active: boolean
+          participant_id: string
+          role_type: string
+          source_request_id: number | null
+          started_at: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by_user_id?: string | null
+          change_reason?: string | null
+          created_at?: string
+          delegation_id?: string | null
+          ended_at?: string | null
+          event_id: string
+          food_donation_kg?: number | null
+          id?: number
+          is_active?: boolean
+          participant_id: string
+          role_type: string
+          source_request_id?: number | null
+          started_at?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by_user_id?: string | null
+          change_reason?: string | null
+          created_at?: string
+          delegation_id?: string | null
+          ended_at?: string | null
+          event_id?: string
+          food_donation_kg?: number | null
+          id?: number
+          is_active?: boolean
+          participant_id?: string
+          role_type?: string
+          source_request_id?: number | null
+          started_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_participant_event_roles_delegation"
+            columns: ["delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participant_event_roles_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participant_event_roles_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participant_event_roles_request"
+            columns: ["source_request_id"]
+            isOneToOne: false
+            referencedRelation: "delegation_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participant_national_eligibility: {
+        Row: {
+          created_at: string
+          eligibility_status: string
+          evaluated_at: string | null
+          evaluated_by_user_id: string | null
+          event_id: string
+          id: number
+          national_event_type: string
+          participant_id: string
+          reason_code: string | null
+          rule_snapshot_json: Json | null
+          sport_event_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          eligibility_status: string
+          evaluated_at?: string | null
+          evaluated_by_user_id?: string | null
+          event_id: string
+          id?: number
+          national_event_type: string
+          participant_id: string
+          reason_code?: string | null
+          rule_snapshot_json?: Json | null
+          sport_event_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          eligibility_status?: string
+          evaluated_at?: string | null
+          evaluated_by_user_id?: string | null
+          event_id?: string
+          id?: number
+          national_event_type?: string
+          participant_id?: string
+          reason_code?: string | null
+          rule_snapshot_json?: Json | null
+          sport_event_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_participant_national_eligibility_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participant_national_eligibility_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participant_national_eligibility_sport_event"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "fk_participant_national_eligibility_sport_event"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participant_sport_events: {
+        Row: {
+          block_reason_code: string | null
+          category_rule_code: string | null
+          created_at: string
+          gender_snapshot: string | null
+          id: string
+          is_blocked_by_documentation: boolean | null
+          is_nationally_eligible: boolean | null
+          notes: string | null
+          participant_id: string
+          proof_or_weight_snapshot: Json | null
+          registration_source: string | null
+          registration_status: string | null
           seed_batch_id: string | null
           seed_tag: string | null
           sport_event_id: string
@@ -2280,10 +3190,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          block_reason_code?: string | null
+          category_rule_code?: string | null
           created_at?: string
+          gender_snapshot?: string | null
           id?: string
+          is_blocked_by_documentation?: boolean | null
+          is_nationally_eligible?: boolean | null
           notes?: string | null
           participant_id: string
+          proof_or_weight_snapshot?: Json | null
+          registration_source?: string | null
+          registration_status?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           sport_event_id: string
@@ -2291,10 +3209,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          block_reason_code?: string | null
+          category_rule_code?: string | null
           created_at?: string
+          gender_snapshot?: string | null
           id?: string
+          is_blocked_by_documentation?: boolean | null
+          is_nationally_eligible?: boolean | null
           notes?: string | null
           participant_id?: string
+          proof_or_weight_snapshot?: Json | null
+          registration_source?: string | null
+          registration_status?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           sport_event_id?: string
@@ -2327,64 +3253,94 @@ export type Database = {
       }
       participants: {
         Row: {
+          active_status: string | null
+          biological_sex: string | null
+          birth_date: string | null
           coach_name: string | null
           coach_phone: string | null
           created_at: string
           credentialed_at: string | null
           credentialed_by: string | null
           delegation_id: string
+          disability_type: string | null
+          eja_flag: boolean | null
+          enrollment_date: string | null
           event_id: string
           guardian_name: string | null
           guardian_phone: string | null
           id: string
           is_active: boolean
+          national_ban_until: string | null
           notes: string | null
           participant_type: string
           person_id: string
+          regular_attendance_confirmed: boolean | null
+          school_role_label: string | null
           seed_batch_id: string | null
           seed_tag: string | null
           status: string
           updated_at: string
+          wheelchair_user_flag: boolean | null
         }
         Insert: {
+          active_status?: string | null
+          biological_sex?: string | null
+          birth_date?: string | null
           coach_name?: string | null
           coach_phone?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id: string
+          disability_type?: string | null
+          eja_flag?: boolean | null
+          enrollment_date?: string | null
           event_id: string
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string
           is_active?: boolean
+          national_ban_until?: string | null
           notes?: string | null
           participant_type?: string
           person_id: string
+          regular_attendance_confirmed?: boolean | null
+          school_role_label?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string
           updated_at?: string
+          wheelchair_user_flag?: boolean | null
         }
         Update: {
+          active_status?: string | null
+          biological_sex?: string | null
+          birth_date?: string | null
           coach_name?: string | null
           coach_phone?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string
+          disability_type?: string | null
+          eja_flag?: boolean | null
+          enrollment_date?: string | null
           event_id?: string
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string
           is_active?: boolean
+          national_ban_until?: string | null
           notes?: string | null
           participant_type?: string
           person_id?: string
+          regular_attendance_confirmed?: boolean | null
+          school_role_label?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string
           updated_at?: string
+          wheelchair_user_flag?: boolean | null
         }
         Relationships: [
           {
@@ -2774,6 +3730,80 @@ export type Database = {
           },
         ]
       }
+      phase_qualification_rules: {
+        Row: {
+          auto_qualify_if_registered_teams_eq: number | null
+          base_slots: number | null
+          created_at: string
+          event_id: string
+          host_scope_code: string
+          id: number
+          phase_id: string | null
+          priority_order: number | null
+          reallocate_to_scope_code: string | null
+          special_rule_json: Json | null
+          sport_event_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          auto_qualify_if_registered_teams_eq?: number | null
+          base_slots?: number | null
+          created_at?: string
+          event_id: string
+          host_scope_code: string
+          id?: number
+          phase_id?: string | null
+          priority_order?: number | null
+          reallocate_to_scope_code?: string | null
+          special_rule_json?: Json | null
+          sport_event_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auto_qualify_if_registered_teams_eq?: number | null
+          base_slots?: number | null
+          created_at?: string
+          event_id?: string
+          host_scope_code?: string
+          id?: number
+          phase_id?: string | null
+          priority_order?: number | null
+          reallocate_to_scope_code?: string | null
+          special_rule_json?: Json | null
+          sport_event_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_phase_qualification_rules_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_phase_qualification_rules_phase"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "competition_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_phase_qualification_rules_sport_event"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "fk_phase_qualification_rules_sport_event"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           active: boolean
@@ -3092,44 +4122,95 @@ export type Database = {
       }
       sport_event_rules: {
         Row: {
+          allowed_genders: string | null
+          allows_external_technician: boolean | null
+          change_category_hours_before_technical_meeting: number | null
           created_at: string
           created_by: string | null
+          discipline_type: string | null
           event_id: string | null
           id: string
+          institution_max_female: number | null
+          institution_max_male: number | null
           is_active: boolean
+          is_official_for_national_selection: boolean | null
+          national_eligibility_rule_json: Json | null
+          national_event_type: string | null
+          notes: string | null
           released_at: string | null
           released_by: string | null
+          requires_cref_for_technician: boolean | null
+          requires_school_authorization_for_external_technician: boolean | null
           rules: Json
           rules_version: number
+          selection_method: string | null
+          selection_rule_json: Json | null
           sport_event_id: string
+          substitution_cap: number | null
+          team_max_size: number | null
+          team_min_size: number | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          allowed_genders?: string | null
+          allows_external_technician?: boolean | null
+          change_category_hours_before_technical_meeting?: number | null
           created_at?: string
           created_by?: string | null
+          discipline_type?: string | null
           event_id?: string | null
           id?: string
+          institution_max_female?: number | null
+          institution_max_male?: number | null
           is_active?: boolean
+          is_official_for_national_selection?: boolean | null
+          national_eligibility_rule_json?: Json | null
+          national_event_type?: string | null
+          notes?: string | null
           released_at?: string | null
           released_by?: string | null
+          requires_cref_for_technician?: boolean | null
+          requires_school_authorization_for_external_technician?: boolean | null
           rules?: Json
           rules_version?: number
+          selection_method?: string | null
+          selection_rule_json?: Json | null
           sport_event_id: string
+          substitution_cap?: number | null
+          team_max_size?: number | null
+          team_min_size?: number | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          allowed_genders?: string | null
+          allows_external_technician?: boolean | null
+          change_category_hours_before_technical_meeting?: number | null
           created_at?: string
           created_by?: string | null
+          discipline_type?: string | null
           event_id?: string | null
           id?: string
+          institution_max_female?: number | null
+          institution_max_male?: number | null
           is_active?: boolean
+          is_official_for_national_selection?: boolean | null
+          national_eligibility_rule_json?: Json | null
+          national_event_type?: string | null
+          notes?: string | null
           released_at?: string | null
           released_by?: string | null
+          requires_cref_for_technician?: boolean | null
+          requires_school_authorization_for_external_technician?: boolean | null
           rules?: Json
           rules_version?: number
+          selection_method?: string | null
+          selection_rule_json?: Json | null
           sport_event_id?: string
+          substitution_cap?: number | null
+          team_max_size?: number | null
+          team_min_size?: number | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -3266,6 +4347,77 @@ export type Database = {
           },
         ]
       }
+      state_selection_callups: {
+        Row: {
+          called_up_at: string | null
+          created_at: string
+          event_id: string
+          id: number
+          national_ban_until: string | null
+          participant_id: string
+          selection_origin: string
+          selection_percentage_group: string | null
+          sport_event_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          called_up_at?: string | null
+          created_at?: string
+          event_id: string
+          id?: number
+          national_ban_until?: string | null
+          participant_id: string
+          selection_origin: string
+          selection_percentage_group?: string | null
+          sport_event_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          called_up_at?: string | null
+          created_at?: string
+          event_id?: string
+          id?: number
+          national_ban_until?: string | null
+          participant_id?: string
+          selection_origin?: string
+          selection_percentage_group?: string | null
+          sport_event_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_state_selection_callups_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_state_selection_callups_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_state_selection_callups_sport_event"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "fk_state_selection_callups_sport_event"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_config: {
         Row: {
           created_at: string
@@ -3340,42 +4492,60 @@ export type Database = {
       }
       teams: {
         Row: {
+          category_code: string | null
           created_at: string
           delegation_id: string
           event_id: string
+          gender: string | null
           id: string
           name: string
           notes: string | null
+          origin_scope_code: string | null
+          qualified_from_phase_id: string | null
+          qualified_rule_snapshot_json: Json | null
           seed_batch_id: string | null
           seed_tag: string | null
           sport_event_id: string
           status: string
+          team_type: string | null
           updated_at: string
         }
         Insert: {
+          category_code?: string | null
           created_at?: string
           delegation_id: string
           event_id: string
+          gender?: string | null
           id?: string
           name: string
           notes?: string | null
+          origin_scope_code?: string | null
+          qualified_from_phase_id?: string | null
+          qualified_rule_snapshot_json?: Json | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           sport_event_id: string
           status?: string
+          team_type?: string | null
           updated_at?: string
         }
         Update: {
+          category_code?: string | null
           created_at?: string
           delegation_id?: string
           event_id?: string
+          gender?: string | null
           id?: string
           name?: string
           notes?: string | null
+          origin_scope_code?: string | null
+          qualified_from_phase_id?: string | null
+          qualified_rule_snapshot_json?: Json | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           sport_event_id?: string
           status?: string
+          team_type?: string | null
           updated_at?: string
         }
         Relationships: [

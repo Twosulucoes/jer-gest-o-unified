@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  // If already authenticated, redirect immediately
+  const { user: currentUser, roles: currentRoles, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && currentUser && currentRoles.length > 0) {
+      const target = resolveRedirect(currentRoles);
+      navigate(target, { replace: true });
+    }
+  }, [authLoading, currentUser, currentRoles, navigate]);
 
   // Recovery modal
   const [recoverOpen, setRecoverOpen] = useState(false);
