@@ -2,7 +2,7 @@ import { SPORT_PRESET_CATALOG, PRESET_CATEGORIES } from "@/config/sportPresetCat
 import type { SportEventRulesV1 } from "@/types/sportEventRules";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { Sparkles } from "lucide-react";
 
 interface Props {
