@@ -22,6 +22,8 @@ async function logAudit(adminClient: any, action: string, recordId: string, crea
   });
 }
 
+const VALID_ROLES = ["admin", "secretaria", "transporte", "alimentacao", "alojamento", "coordenacao_tecnica", "coordenador_modalidade", "delegacao", "mesario", "arbitragem", "cde"];
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -103,18 +105,24 @@ Deno.serve(async (req) => {
       }
 
       case "invite_user": {
-        const { email, full_name, role } = body;
-        if (!email || !role) {
-          return jsonResponse({ error: "email and role are required" }, 400);
+        const { email, full_name, role: singleRole, roles: multiRoles } = body;
+        // Support both single role (legacy) and multiple roles
+        const targetRoles: string[] = multiRoles && Array.isArray(multiRoles) && multiRoles.length > 0
+          ? multiRoles
+          : singleRole ? [singleRole] : [];
+
+        if (!email || targetRoles.length === 0) {
+          return jsonResponse({ error: "email and at least one role are required" }, 400);
         }
 
-        const validRoles = ["admin", "secretaria", "transporte", "alimentacao", "alojamento", "coordenacao_tecnica", "coordenador_modalidade", "delegacao", "mesario", "arbitragem", "cde"];
-        if (!validRoles.includes(role)) {
-          return jsonResponse({ error: "Invalid role" }, 400);
+        for (const r of targetRoles) {
+          if (!VALID_ROLES.includes(r)) {
+            return jsonResponse({ error: `Invalid role: ${r}` }, 400);
+          }
         }
 
         // Secretaria cannot create admin or secretaria
-        if (!roles.includes("admin") && (role === "admin" || role === "secretaria")) {
+        if (!roles.includes("admin") && targetRoles.some(r => r === "admin" || r === "secretaria")) {
           return jsonResponse({ error: "Secretaria não pode criar usuários admin ou secretaria" }, 403);
         }
 
@@ -134,14 +142,16 @@ Deno.serve(async (req) => {
           active: true,
         }, { onConflict: "id" });
 
-        // Insert role (ignore if exists)
-        await adminClient.from("user_roles").upsert({
-          user_id: userId,
-          role,
-        }, { onConflict: "user_id,role" });
+        // Insert all roles
+        for (const r of targetRoles) {
+          await adminClient.from("user_roles").upsert({
+            user_id: userId,
+            role: r,
+          }, { onConflict: "user_id,role" });
+        }
 
         // Log audit
-        await logAudit(adminClient, "user_created", userId, caller.id, { email, role, full_name });
+        await logAudit(adminClient, "user_created", userId, caller.id, { email, roles: targetRoles, full_name });
 
         return jsonResponse({ success: true, user_id: userId });
       }
@@ -163,6 +173,34 @@ Deno.serve(async (req) => {
         if (error) return jsonResponse({ error: error.message }, 500);
 
         await logAudit(adminClient, "profile_changed", user_id, caller.id, { new_role: role });
+
+        return jsonResponse({ success: true });
+      }
+
+      case "set_roles": {
+        const { user_id, roles: newRoles } = body;
+        if (!user_id || !Array.isArray(newRoles) || newRoles.length === 0) {
+          return jsonResponse({ error: "user_id and at least one role are required" }, 400);
+        }
+
+        for (const r of newRoles) {
+          if (!VALID_ROLES.includes(r)) {
+            return jsonResponse({ error: `Invalid role: ${r}` }, 400);
+          }
+        }
+
+        // Secretaria cannot assign admin/secretaria
+        if (!roles.includes("admin") && newRoles.some((r: string) => r === "admin" || r === "secretaria")) {
+          return jsonResponse({ error: "Sem permissão para atribuir perfis admin ou secretaria" }, 403);
+        }
+
+        // Remove existing roles and insert all new ones
+        await adminClient.from("user_roles").delete().eq("user_id", user_id);
+        const inserts = newRoles.map((r: string) => ({ user_id, role: r }));
+        const { error } = await adminClient.from("user_roles").insert(inserts);
+        if (error) return jsonResponse({ error: error.message }, 500);
+
+        await logAudit(adminClient, "roles_changed", user_id, caller.id, { new_roles: newRoles });
 
         return jsonResponse({ success: true });
       }
