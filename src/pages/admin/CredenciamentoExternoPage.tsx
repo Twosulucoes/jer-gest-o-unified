@@ -391,7 +391,7 @@ export default function CredenciamentoExternoPage() {
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {p.ext_cred_id ? (
-                      <Badge variant="default" className="text-[10px] bg-green-600 hover:bg-green-700">✓ Vinculada</Badge>
+                      <Badge variant="default" className="text-[10px]">✓ Vinculada</Badge>
                     ) : (
                       <Badge variant="secondary" className="text-[10px]">Pendente</Badge>
                     )}
