@@ -461,6 +461,7 @@ export default function IndividualHeatBuilderTab({ eventId, sportEventId, onChan
         onPublished={onChanged}
       />
 
+      {!isEditMode && heats.length === 0 && (
         <Alert>
           <AlertDescription>
             Nenhuma bateria montada. Clique em "Editar" para criar baterias e alocar atletas manualmente.
