@@ -129,6 +129,7 @@ import DelegacaoAgendaPage from "./pages/pwa/delegacao/DelegacaoAgendaPage";
 import DelegacaoLogisticaPage from "./pages/pwa/delegacao/DelegacaoLogisticaPage";
 import DelegacaoLocaisPage from "./pages/pwa/delegacao/DelegacaoLocaisPage";
 import QrDiagnosticoPage from "./pages/pwa/diagnostico/QrDiagnosticoPage";
+import PwaDebugPage from "./pages/pwa/PwaDebugPage";
 import NotFound from "./pages/NotFound";
 import PwaRouteGuard from "./components/pwa/PwaRouteGuard";
 import PwaAcessoNegadoPage from "./pages/pwa/PwaAcessoNegadoPage";
@@ -319,6 +320,7 @@ const App = () => (
             <Route path="/pwa/delegacao/locais" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoLocaisPage /></PwaRouteGuard>} />
             {/* PWA Diagnóstico */}
             <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
+            <Route path="/pwa/debug" element={<PwaDebugPage />} />
             {/* Ao Vivo PWA — qualquer autenticado */}
             <Route path="/aovivo/login" element={<Suspense fallback={null}><AoVivoLoginPage /></Suspense>} />
             <Route path="/aovivo" element={<Suspense fallback={null}><AoVivoHomePage /></Suspense>} />
