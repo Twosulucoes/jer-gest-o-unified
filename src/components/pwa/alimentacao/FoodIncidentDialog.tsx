@@ -85,7 +85,7 @@ export function FoodIncidentDialog({
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, phone")
+        .select("full_name")
         .eq("id", session.user.id)
         .single();
 
@@ -114,7 +114,7 @@ export function FoodIncidentDialog({
         reference_label: referenceLabel,
         reported_by_user_id: session.user.id,
         reporter_name: profile?.full_name ?? null,
-        reporter_phone: (profile as any)?.phone ?? null,
+        reporter_phone: null,
         incident_description: description.trim(),
         incident_status: "pending",
       });
