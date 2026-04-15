@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import DisputePublishControl from "./DisputePublishControl";
 
 // ── Types ───────────────────────────────────────────────────
 interface Props {
@@ -346,6 +347,21 @@ export default function IndividualHeatBuilderTab({ eventId, sportEventId, onChan
         matchNum++;
       }
 
+      // Mark disputes_updated_at on all phases
+      const { data: allPhases } = await supabase
+        .from("competition_phases")
+        .select("id")
+        .eq("event_id", eventId)
+        .eq("sport_event_id", sportEventId);
+      if (allPhases && allPhases.length > 0) {
+        for (const ph of allPhases) {
+          await supabase
+            .from("competition_phases")
+            .update({ disputes_updated_at: new Date().toISOString() })
+            .eq("id", ph.id);
+        }
+      }
+
       // Audit
       await supabase.from("audit_events").insert({
         table_name: "competition_matches",
@@ -366,6 +382,7 @@ export default function IndividualHeatBuilderTab({ eventId, sportEventId, onChan
       qc.invalidateQueries({ queryKey: ["heats-phases"] });
       qc.invalidateQueries({ queryKey: ["heats-matches"] });
       qc.invalidateQueries({ queryKey: ["competition-summary"] });
+      qc.invalidateQueries({ queryKey: ["dispute-publish-status"] });
       setIsEditMode(false);
       onChanged();
     },
@@ -436,6 +453,13 @@ export default function IndividualHeatBuilderTab({ eventId, sportEventId, onChan
           )}
         </div>
       </div>
+
+      {/* Publish control */}
+      <DisputePublishControl
+        eventId={eventId}
+        sportEventId={sportEventId}
+        onPublished={onChanged}
+      />
 
       {!isEditMode && heats.length === 0 && (
         <Alert>
