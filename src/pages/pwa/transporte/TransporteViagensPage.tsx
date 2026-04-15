@@ -24,12 +24,18 @@ export default function TransporteViagensPage() {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
-        .from("trips" as any)
-        .select("id, departure_time, status, vehicle:vehicles(plate, label), route:routes(name)")
-        .gte("departure_time", today + "T00:00:00")
-        .order("departure_time");
+        .from("transport_trips")
+        .select("id, scheduled_at, status, transport_vehicles(plate, label), transport_routes(name)")
+        .gte("scheduled_at", today + "T00:00:00")
+        .order("scheduled_at");
 
-      setTrips((data as any) || []);
+      setTrips((data as any)?.map((t: any) => ({
+        id: t.id,
+        departure_time: t.scheduled_at,
+        status: t.status,
+        vehicle: t.transport_vehicles,
+        route: t.transport_routes,
+      })) || []);
       setLoading(false);
     })();
   }, []);
