@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { useEventBySlug, useQualificationRules, useConsolidatedSportEventRules } from "@/hooks/useEventRulesCenter";
+import { useEventBySlug, useQualificationRules } from "@/hooks/useEventRulesCenter";
 import { RuleJsonAccordion } from "@/components/regras/RuleJsonAccordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

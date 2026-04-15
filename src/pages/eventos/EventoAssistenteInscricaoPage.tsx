@@ -1,17 +1,15 @@
 import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useEventBySlug, useConsolidatedSportEventRules, useEventParticipationRules } from "@/hooks/useEventRulesCenter";
-import { RuleStatusBadge, DisciplineTypeBadge, ManualConfirmationBadge } from "@/components/regras/RuleBadges";
+import { RuleStatusBadge, DisciplineTypeBadge } from "@/components/regras/RuleBadges";
 import { RuleWarningCallout } from "@/components/regras/RuleWarningCallout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ClipboardCheck, HelpCircle, AlertTriangle, Info, Check, X } from "lucide-react";
+import { ClipboardCheck, HelpCircle, Info, Check, X } from "lucide-react";
 import { humanizeDisciplineType } from "@/lib/rulesTransform";
-import type { RuleSportEventView } from "@/types/rulesSportEvent";
 
 export default function EventoAssistenteInscricaoPage() {
   const { eventSlug = "jer-2026" } = useParams();

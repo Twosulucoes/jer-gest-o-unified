@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useEventBySlug, useConsolidatedSportEventRules, useQualificationRules, useRuleSummary, useEventParticipationRules } from "@/hooks/useEventRulesCenter";
 import { RuleInfoCard } from "@/components/regras/RuleInfoCard";
 import { RuleStatusBadge, DisciplineTypeBadge, ManualConfirmationBadge } from "@/components/regras/RuleBadges";
-import { RuleWarningCallout } from "@/components/regras/RuleWarningCallout";
+
 import { SportEventRuleDrawer } from "@/components/regras/SportEventRuleDrawer";
 import { RuleJsonAccordion } from "@/components/regras/RuleJsonAccordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Download, BookOpen, Users, Trophy, AlertTriangle, ShieldAlert, Eye } from "lucide-react";
+import { Search, Download, BookOpen, Users, Trophy, ShieldAlert, Eye } from "lucide-react";
 import { humanizeDisciplineType } from "@/lib/rulesTransform";
 import type { RuleSportEventView } from "@/types/rulesSportEvent";
 
