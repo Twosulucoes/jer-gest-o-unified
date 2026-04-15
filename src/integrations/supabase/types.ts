@@ -5408,6 +5408,10 @@ export type Database = {
         Args: { p_event_id_text: string }
         Returns: undefined
       }
+      seed_jer_2026_sport_event_and_phase_rules_v21: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
       unaccent: { Args: { "": string }; Returns: string }
       upsert_event_participation_rules: {
         Args: {
