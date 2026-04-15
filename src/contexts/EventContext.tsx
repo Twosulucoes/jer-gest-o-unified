@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { useAuth } from "@/hooks/useAuth";
 
 const STORAGE_KEY = "jer_active_event_id";
 
@@ -18,6 +19,7 @@ const EventContext = createContext<EventContextValue | undefined>(undefined);
 
 export function EventProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
+  const { user, loading: authLoading } = useAuth();
   const [activeEventId, setActiveEventIdState] = useState<string | null>(() => {
     try {
       return localStorage.getItem(STORAGE_KEY);
@@ -26,8 +28,8 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
     }
   });
 
-  const { data: events = [], isLoading: eventsLoading } = useQuery({
-    queryKey: ["events"],
+  const { data: events = [], isLoading: isEventsLoading } = useQuery({
+    queryKey: ["events", user?.id ?? "anonymous"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
@@ -36,8 +38,11 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       return data;
     },
+    enabled: !authLoading && !!user,
     staleTime: 5 * 60 * 1000,
   });
+
+  const eventsLoading = authLoading || (!!user && isEventsLoading);
 
   // Validate stored event_id still exists
   useEffect(() => {
