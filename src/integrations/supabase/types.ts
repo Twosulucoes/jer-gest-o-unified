@@ -3315,7 +3315,7 @@ export type Database = {
           manual_cpf: string | null
           manual_name: string | null
           notes: string | null
-          participant_id: string
+          participant_id: string | null
           status: string
           trip_id: string
           updated_at: string
@@ -3332,7 +3332,7 @@ export type Database = {
           manual_cpf?: string | null
           manual_name?: string | null
           notes?: string | null
-          participant_id: string
+          participant_id?: string | null
           status?: string
           trip_id: string
           updated_at?: string
@@ -3349,7 +3349,7 @@ export type Database = {
           manual_cpf?: string | null
           manual_name?: string | null
           notes?: string | null
-          participant_id?: string
+          participant_id?: string | null
           status?: string
           trip_id?: string
           updated_at?: string
