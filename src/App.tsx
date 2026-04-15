@@ -45,6 +45,7 @@ import CompeticaoPartidaDetalhePage from "./pages/admin/CompeticaoPartidaDetalhe
 import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
 import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
 import CompeticaoEquipesPage from "./pages/admin/CompeticaoEquipesPage";
+// NOTE: CompeticaoPartidasPage and CompeticaoAgendaPage removed — consolidated into CompeticaoPartidasAgendaPage
 import CompeticaoCentralPage from "./pages/admin/CompeticaoCentralPage";
 import SincronizarEquipesPage from "./pages/admin/SincronizarEquipesPage";
 import PreValidacaoPage from "./pages/admin/PreValidacaoPage";
@@ -56,13 +57,12 @@ import DelegacaoDetalhePage from "./pages/admin/DelegacaoDetalhePage";
 import CredencialModelosPage from "./pages/admin/CredencialModelosPage";
 import AcessosDelegacoesPage from "./pages/admin/AcessosDelegacoesPage";
 import AcessosUsuariosPage from "./pages/admin/AcessosUsuariosPage";
-import ParametrosEventoPage from "./pages/admin/ParametrosEventoPage";
+// ParametrosEventoPage removed — consolidated into RegrasEventoPage
 import IrregularidadesPage from "./pages/admin/IrregularidadesPage";
 import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
 import SchemaValidadorPage from "./pages/admin/SchemaValidadorPage";
 import OcorrenciasPage from "./pages/admin/OcorrenciasPage";
-import MapaSistemaPage from "./pages/admin/MapaSistemaPage";
-import DiagnosticoCompeticaoPage from "./pages/admin/DiagnosticoCompeticaoPage";
+// MapaSistemaPage and DiagnosticoCompeticaoPage accessed only via SistemaDiagnosticoPage
 import SistemaDiagnosticoPage from "./pages/admin/SistemaDiagnosticoPage";
 import CentralDadosPage from "./pages/admin/CentralDadosPage";
 import BoletinsPage from "./pages/admin/BoletinsPage";
