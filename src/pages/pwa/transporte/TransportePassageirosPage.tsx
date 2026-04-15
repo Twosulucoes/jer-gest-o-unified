@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { TripInfoCard } from "@/components/pwa/transporte/TripInfoCard";
+import { DelegationAlertBanner } from "@/components/pwa/transporte/DelegationAlertBanner";
 import { ArrowLeft, Download, Search, Phone, X, ShieldAlert, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -157,6 +158,14 @@ export default function TransportePassageirosPage() {
   const boardedCount = passengers.filter(p => p.status === "boarded").length;
   const pendingCount = passengers.filter(p => p.status !== "boarded" && p.status !== "no_show").length;
 
+  const delegationCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    passengers.forEach(p => {
+      if (p.delegation_name) map.set(p.delegation_name, (map.get(p.delegation_name) || 0) + 1);
+    });
+    return Array.from(map.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  }, [passengers]);
+
   // Actions
   const handleNoShow = async (p: PassengerRow) => {
     setConfirmNoShow(null);
@@ -243,6 +252,13 @@ export default function TransportePassageirosPage() {
               <span className="mx-1 opacity-40">|</span>
               <span className="font-bold text-yellow-300">{pendingCount}</span>
               <span className="opacity-70"> falta</span>
+              {delegationCounts.length > 1 && (
+                <>
+                  <span className="mx-1 opacity-40">|</span>
+                  <span className="font-bold text-orange-300">{delegationCounts.length}</span>
+                  <span className="opacity-70"> deleg</span>
+                </>
+              )}
             </span>
           </div>
         </div>
@@ -254,6 +270,9 @@ export default function TransportePassageirosPage() {
       </header>
 
       <main className="p-3 max-w-4xl mx-auto space-y-3">
+        {/* Delegation alert */}
+        {!loading && <DelegationAlertBanner delegationCounts={delegationCounts} />}
+
         {/* Trip info */}
         {tripId && !loading && (
           <TripInfoCard routeName={tripInfo.routeName} origin={tripInfo.origin} destination={tripInfo.destination} scheduledAt={tripInfo.scheduledAt} vehicleLabel={tripInfo.vehicleLabel} vehiclePlate={tripInfo.vehiclePlate} />

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { TripInfoCard } from "@/components/pwa/transporte/TripInfoCard";
 import { FinishTripDialog } from "@/components/pwa/transporte/FinishTripDialog";
 import { ManualBoardingDialog } from "@/components/pwa/transporte/ManualBoardingDialog";
+import { DelegationAlertBanner } from "@/components/pwa/transporte/DelegationAlertBanner";
 
 interface Passenger {
   id: string;
@@ -103,7 +104,7 @@ export default function TransporteEmbarquePage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("transport_passengers")
-      .select("id, participant_id, status, boarded_at, is_manual, manual_name, participant:participants(person:people(full_name))")
+      .select("id, participant_id, status, boarded_at, is_manual, manual_name, participant:participants(person:people(full_name), delegation:delegations(institution:institutions(name)))")
       .eq("trip_id", tripId)
       .order("created_at");
 
@@ -123,6 +124,7 @@ export default function TransporteEmbarquePage() {
       participant_id: p.participant_id,
       is_manual: p.is_manual,
       manual_name: p.manual_name,
+      delegation_name: p.participant?.delegation?.institution?.name || null,
     }));
 
     setPassengers(list);
@@ -134,6 +136,15 @@ export default function TransporteEmbarquePage() {
   }, [fetchPassengers, authorized]);
 
   const boardedCount = passengers.filter((p) => p.boarded).length;
+
+  const delegationCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    passengers.forEach(p => {
+      const name = (p as any).delegation_name;
+      if (name) map.set(name, (map.get(name) || 0) + 1);
+    });
+    return Array.from(map.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  }, [passengers]);
 
   const handleFinish = async (hasIncidents: boolean, notes: string) => {
     setFinishing(true);
@@ -306,6 +317,8 @@ export default function TransporteEmbarquePage() {
       </header>
 
       <main className="p-3 max-w-4xl mx-auto space-y-3">
+        {!loading && <DelegationAlertBanner delegationCounts={delegationCounts} />}
+
         {tripId && !loading && (
           <TripInfoCard
             routeName={tripInfo.routeName}
