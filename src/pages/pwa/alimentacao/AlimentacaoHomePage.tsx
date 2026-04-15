@@ -55,6 +55,7 @@ export default function AlimentacaoHomePage() {
     { label: "Buscar", icon: Search, to: "/pwa/alimentacao/buscar" },
     { label: "Janelas", icon: Clock, to: "/pwa/alimentacao/janelas" },
     { label: "Histórico", icon: BarChart3, to: "/pwa/alimentacao/historico" },
+    { label: "Lista de Consumos", icon: UtensilsCrossed, to: "/pwa/alimentacao/lista-consumos" },
   ];
 
   return (
