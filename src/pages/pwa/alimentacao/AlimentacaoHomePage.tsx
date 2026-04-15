@@ -59,12 +59,17 @@ export default function AlimentacaoHomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PwaHeader title="Alimentação" icon={UtensilsCrossed} backTo="/pwa" onSignOut={handleSignOut}>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setIncidentOpen(true)}>
-          <AlertTriangle className="h-4 w-4 text-destructive" />
-          <span className="hidden sm:inline">Ocorrência</span>
-        </Button>
-      </PwaHeader>
+      <PwaHeader
+        title="Alimentação"
+        icon={UtensilsCrossed}
+        backTo="/pwa"
+        onSignOut={handleSignOut}
+        rightSlot={
+          <Button variant="ghost" size="icon" className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => setIncidentOpen(true)}>
+            <AlertTriangle className="h-5 w-5" />
+          </Button>
+        }
+      />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
         <div className="grid grid-cols-2 gap-3">
