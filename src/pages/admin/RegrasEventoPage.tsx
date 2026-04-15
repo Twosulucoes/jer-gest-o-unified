@@ -1,7 +1,8 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, lazy, Suspense } from "react";
 import { useActiveEventId, useEventContext } from "@/contexts/EventContext";
 import { useEventEditionRules, usePermLevel, type EventRulesSections } from "@/hooks/useEventEditionRules";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
