@@ -84,9 +84,13 @@
 ## 8. Motor de Regras por Prova (✅ Pronto)
 - **Páginas**: `/admin/competicao/regras` (individual), `/admin/competicao/regras/lote` (massa)
 - **Tabela**: `sport_event_rules` (sport_event_id, event_id, rules JSONB, is_active)
-- **RPCs**: `rpc_get_sport_event_rules`, `rpc_upsert_sport_event_rules`, `rpc_seed_sport_event_rules_for_event` (seed não existe como RPC, feito via frontend)
+- **RPCs**: `rpc_get_sport_event_rules`, `rpc_upsert_sport_event_rules`, `rpc_seed_sport_event_rules_for_event`
 - **Famílias**: score, sets, time, mark, combat, ranking
-- **Presets**: FUTSAL, FUTEBOL_DE_CAMPO, HANDEBOL, BASQUETE, KARATE_KATA, KARATE_KUMITE
+- **Catálogo**: 22 presets em 6 categorias (coletivas, combate, tempo/marca, sets, ranking, paralímpicas). Arquivo: `src/config/sportPresetCatalog.ts`
+- **Presets JER**: FUTSAL, FUTEBOL, HANDEBOL, BASQUETEBOL, VOLEIBOL, VOLEI_DE_PRAIA_12_14, VOLEI_DE_PRAIA_15_17, JUDO, KARATE_KATA, KARATE_KUMITE, TAEKWONDO, WRESTLING, ATLETISMO_PISTA, ATLETISMO_CAMPO, ATLETISMO_COMBINADAS, NATACAO, CICLISMO, BADMINTON, TENIS_DE_MESA, TIRO_COM_ARCO, XADREZ, GINASTICA_RITMICA
+- **Presets JERPA**: ATLETISMO_PARALIMPICO, NATACAO_PARALIMPICA, TENIS_DE_MESA_PARALIMPICO, PARABADMINTON, BOCHA_PARALIMPICA
+- **Interface lote**: painel de cobertura com barra de progresso, filtros por modalidade/família/status/JER-JERPA/categoria, indicador visual de origem (seed vs manual), controle de permissão por perfil
+- **Permissões**: admin (total), coordenacao_tecnica (editar + seed missing_only), secretaria (somente visualização)
 - **Dados reais**: 79 regras cadastradas (100% das provas)
 
 ## 9. Resultados e Governança (🟡 Parcial)
