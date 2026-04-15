@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScanLine, CheckCircle, XCircle } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
-import { resolveExternalCredential } from "@/lib/resolveExternalCredential";
+import { resolveQrCredential } from "@/lib/resolveQrCredential";
 
 export default function TransporteScanPage() {
   const _navigate = useNavigate();
@@ -16,15 +16,17 @@ export default function TransporteScanPage() {
 
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
-    const token = rawValue.startsWith("JER:") ? rawValue.slice(4) : rawValue.trim();
-    if (!token) return;
+    if (!rawValue.trim()) return;
 
-    // Try external credential
-    const extResult = await resolveExternalCredential(token);
-    if (extResult) {
-      setResult({ ok: true, message: `Embarque registrado: ${extResult.full_name || ""}` });
-    } else {
-      setResult({ ok: true, message: "Embarque registrado com sucesso" });
+    try {
+      const resolved = await resolveQrCredential(rawValue);
+      if (resolved) {
+        setResult({ ok: true, message: `Embarque registrado: ${resolved.full_name || "Participante identificado"}` });
+      } else {
+        setResult({ ok: false, message: "Credencial não encontrada ou inativa" });
+      }
+    } catch (err: any) {
+      setResult({ ok: false, message: `Erro ao validar: ${err.message || "desconhecido"}` });
     }
   };
 

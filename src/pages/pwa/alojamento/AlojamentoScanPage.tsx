@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { rpcResolveQr, rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
-// Note: Alojamento uses server-side RPCs for token resolution.
-// External credentials would need RPC-level integration for full support.
+import { extractQrToken } from "@/lib/resolveQrCredential";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { ArrowLeft, ScanLine, CheckCircle2, XCircle } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
@@ -22,17 +21,9 @@ export default function AlojamentoScanPage() {
   const [result, setResult] = useState<Record<string, any> | null>(null);
   const facilityId = getSelectedFacility();
 
-  const extractToken = (input: string): string | null => {
-    const trimmed = input.trim();
-    if (trimmed.startsWith("JER-ALJ:")) return trimmed.slice(8);
-    if (trimmed.startsWith("JER:")) return trimmed.slice(4);
-    if (trimmed.length >= 8 && trimmed.length <= 20) return trimmed;
-    return null;
-  };
-
   const handleScan = useCallback(async (rawValue: string) => {
     setScannerOpen(false);
-    const token = extractToken(rawValue);
+    const token = extractQrToken(rawValue);
     if (!token) {
       toast.error("Código QR inválido");
       return;
