@@ -841,43 +841,85 @@ export default function DisputeBuilderTab({ eventId, sportEventId, onChanged }: 
       {/* View mode */}
       {!isEditMode && groups.length > 0 && (
         <div className="space-y-4">
-          {groups.map((g) => (
-            <Card key={g.id}>
-              <CardHeader className="py-3 px-4">
-                <CardTitle className="text-sm">{g.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 space-y-3">
-                {g.teamIds.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {g.teamIds.map((tid) => {
-                      const team = getTeam(tid);
-                      return team ? (
-                        <Badge key={tid} variant="outline" className="text-[10px]">
-                          {team.name}
-                        </Badge>
-                      ) : null;
-                    })}
-                  </div>
-                )}
-                {g.matches.length > 0 && (
-                  <div className="space-y-1">
-                    {g.matches.map((slot, idx) => (
-                      <div key={slot.id} className="flex items-center gap-2 text-xs">
-                        <span className="text-muted-foreground w-5 text-right">{idx + 1}.</span>
-                        <span className="font-medium">
-                          {slot.homeTeamId ? getTeam(slot.homeTeamId)?.name ?? "?" : "TBD"}
-                        </span>
-                        <span className="text-muted-foreground">vs</span>
-                        <span className="font-medium">
-                          {slot.awayTeamId ? getTeam(slot.awayTeamId)?.name ?? "?" : "TBD"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+          {groups.map((g) => {
+            // Build inline match data
+            const inlineMatches: InlineMatchData[] = g.matches.map((slot) => {
+              const dbMatch = existingData?.matches?.find((m: any) => m.id === slot.dbMatchId);
+              const results = (dbMatch as any)?.competition_match_results ?? [];
+              const entries = (dbMatch as any)?.competition_match_entries ?? [];
+              const winResult = results.find((r: any) => r.outcome === "win");
+
+              const homeEntry = entries.find((e: any) => e.side === "home");
+              const awayEntry = entries.find((e: any) => e.side === "away");
+              const homeResult = results.find((r: any) => r.match_entry_id === homeEntry?.id);
+              const awayResult = results.find((r: any) => r.match_entry_id === awayEntry?.id);
+
+              return {
+                matchId: slot.dbMatchId ?? slot.id,
+                matchNumber: slot.matchNumber,
+                status: dbMatch?.status ?? "scheduled",
+                entries: [
+                  homeEntry && {
+                    entryId: homeEntry.id,
+                    teamId: homeEntry.team_id,
+                    teamName: homeEntry.teams?.name ?? getTeam(slot.homeTeamId ?? "")?.name ?? "TBD",
+                    institution: "",
+                    side: "home",
+                  },
+                  awayEntry && {
+                    entryId: awayEntry.id,
+                    teamId: awayEntry.team_id,
+                    teamName: awayEntry.teams?.name ?? getTeam(slot.awayTeamId ?? "")?.name ?? "TBD",
+                    institution: "",
+                    side: "away",
+                  },
+                ].filter(Boolean) as any[],
+                winnerEntryId: winResult?.match_entry_id ?? null,
+                scoreHome: homeResult?.score ?? null,
+                scoreAway: awayResult?.score ?? null,
+              };
+            });
+
+            return (
+              <Card key={g.id}>
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-sm">{g.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 space-y-3">
+                  {g.teamIds.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {g.teamIds.map((tid) => {
+                        const team = getTeam(tid);
+                        return team ? (
+                          <Badge key={tid} variant="outline" className="text-[10px]">
+                            {team.name}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                  {inlineMatches.length > 0 && (
+                    <div className="space-y-1">
+                      {inlineMatches.map((im) => (
+                        <MatchResultInlineCard
+                          key={im.matchId}
+                          match={im}
+                          canEdit={true}
+                          onResultSaved={() => {
+                            qc.invalidateQueries({ queryKey: ["dispute-builder-existing"] });
+                            qc.invalidateQueries({ queryKey: ["winner-progression"] });
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {/* Winner progression panel */}
+          <WinnerProgressionPanel eventId={eventId} sportEventId={sportEventId} />
         </div>
       )}
     </div>
