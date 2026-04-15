@@ -23,7 +23,7 @@ export default function PwaRouteGuard({ children, allowedRoles }: PwaRouteGuardP
   }
 
   if (!user) {
-    return <Navigate to="/pwa/login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // If specific roles required, check. Admin always passes.
