@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -29,6 +30,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Copy, Key, LogOut as LogOutIcon, UserPlus, Settings2, Search,
   Mail, ShieldCheck, ShieldX, Clock, User as UserIcon, RefreshCw, Trophy,
@@ -72,9 +76,13 @@ async function callAdminUsers(action: string, body: Record<string, unknown> = {}
   return data;
 }
 
+function RoleLabel({ value }: { value: string }) {
+  return ROLES.find((r) => r.value === value)?.label || value;
+}
+
 export default function AcessosUsuariosPage() {
   const queryClient = useQueryClient();
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const { activeEvent } = useEventContext();
   const isAdmin = hasRole("admin");
   const eventId = activeEvent?.id;
@@ -88,11 +96,13 @@ export default function AcessosUsuariosPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
-  const [inviteRole, setInviteRole] = useState("transporte");
+  const [inviteRoles, setInviteRoles] = useState<string[]>([]);
 
   // User detail drawer
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerRoles, setDrawerRoles] = useState<string[]>([]);
+  const [drawerRolesDirty, setDrawerRolesDirty] = useState(false);
   const [resetLink, setResetLink] = useState("");
   const [auditEvents, setAuditEvents] = useState<any[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
@@ -143,7 +153,7 @@ export default function AcessosUsuariosPage() {
   }, [allSportLinks]);
 
   // Drawer-specific sport links query
-  const selectedUserIsCoord = selectedUser?.roles?.includes("coordenador_modalidade");
+  const selectedUserIsCoord = drawerRoles.includes("coordenador_modalidade");
   const { data: drawerSportLinks = [], isLoading: loadingDrawerLinks } = useQuery({
     queryKey: ["user-sport-links", selectedUser?.user_id, eventId],
     queryFn: async () => {
@@ -184,6 +194,8 @@ export default function AcessosUsuariosPage() {
 
   const openDrawer = async (u: any) => {
     setSelectedUser(u);
+    setDrawerRoles(u.roles || []);
+    setDrawerRolesDirty(false);
     setDrawerOpen(true);
     setResetLink("");
     setLoadingAudit(true);
@@ -197,15 +209,30 @@ export default function AcessosUsuariosPage() {
     }
   };
 
+  const toggleDrawerRole = (role: string) => {
+    setDrawerRoles((prev) => {
+      const next = prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role];
+      return next;
+    });
+    setDrawerRolesDirty(true);
+  };
+
+  const toggleInviteRole = (role: string) => {
+    setInviteRoles((prev) =>
+      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
+    );
+  };
+
   // Mutations
-  const setRoleMutation = useMutation({
-    mutationFn: (params: { user_id: string; role: string }) =>
-      callAdminUsers("set_role", params),
-    onSuccess: () => {
+  const setRolesMutation = useMutation({
+    mutationFn: (params: { user_id: string; roles: string[] }) =>
+      callAdminUsers("set_roles", params),
+    onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users-list"] });
-      toast.success("Perfil atualizado");
+      toast.success("Perfis atualizados com sucesso");
+      setDrawerRolesDirty(false);
       if (selectedUser) {
-        setSelectedUser((prev: any) => prev ? { ...prev, roles: [setRoleMutation.variables?.role] } : null);
+        setSelectedUser((prev: any) => prev ? { ...prev, roles: vars.roles } : null);
       }
     },
     onError: (err: Error) => toast.error(err.message),
@@ -233,14 +260,18 @@ export default function AcessosUsuariosPage() {
 
   const inviteMutation = useMutation({
     mutationFn: () =>
-      callAdminUsers("invite_user", { email: inviteEmail, full_name: inviteName || undefined, role: inviteRole }),
+      callAdminUsers("invite_user", {
+        email: inviteEmail,
+        full_name: inviteName || undefined,
+        roles: inviteRoles,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users-list"] });
       toast.success("Convite enviado!");
       setInviteOpen(false);
       setInviteEmail("");
       setInviteName("");
-      setInviteRole("transporte");
+      setInviteRoles([]);
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -262,7 +293,20 @@ export default function AcessosUsuariosPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const availableInviteRoles = isAdmin ? ROLES : OPERATIONAL_ROLES;
+  const availableRoles = isAdmin ? ROLES : OPERATIONAL_ROLES;
+
+  const handleSaveDrawerRoles = () => {
+    if (!selectedUser) return;
+    if (drawerRoles.length === 0) {
+      toast.error("Selecione pelo menos um perfil");
+      return;
+    }
+    if (selectedUser.user_id === user?.id && drawerRoles.length === 0) {
+      toast.error("Você não pode remover todos os seus próprios perfis");
+      return;
+    }
+    setRolesMutation.mutate({ user_id: selectedUser.user_id, roles: drawerRoles });
+  };
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -337,7 +381,7 @@ export default function AcessosUsuariosPage() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Perfil</TableHead>
+                <TableHead>Perfis</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Criado em</TableHead>
                 <TableHead>Último acesso</TableHead>
@@ -346,7 +390,8 @@ export default function AcessosUsuariosPage() {
             <TableBody>
               {filteredUsers.map((u: any) => {
                 const status = statusLabel(u);
-                const isCoord = u.roles?.includes("coordenador_modalidade");
+                const userRoles: string[] = u.roles || [];
+                const isCoord = userRoles.includes("coordenador_modalidade");
                 const userSports = isCoord ? (sportLinksByUser[u.user_id] || []) : [];
                 return (
                   <TableRow
@@ -358,12 +403,34 @@ export default function AcessosUsuariosPage() {
                     <TableCell className="text-muted-foreground text-sm">{u.email}</TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        {u.roles?.length > 0 ? (
-                          <Badge variant={roleBadgeVariant(u.roles[0])}>
-                            {ROLES.find((r) => r.value === u.roles[0])?.label || u.roles[0]}
+                        {userRoles.length === 0 ? (
+                          <span className="text-muted-foreground text-xs">Sem perfil</span>
+                        ) : userRoles.length === 1 ? (
+                          <Badge variant={roleBadgeVariant(userRoles[0])}>
+                            <RoleLabel value={userRoles[0]} />
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground text-xs">Sem perfil</span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1">
+                                  <Badge variant={roleBadgeVariant(userRoles[0])}>
+                                    <RoleLabel value={userRoles[0]} />
+                                  </Badge>
+                                  <Badge variant="outline" className="text-[10px] px-1.5">
+                                    +{userRoles.length - 1} mais
+                                  </Badge>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="space-y-0.5">
+                                  {userRoles.map((r: string) => (
+                                    <div key={r} className="text-xs"><RoleLabel value={r} /></div>
+                                  ))}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                         {isCoord && userSports.length > 0 && (
                           <div className="flex flex-wrap gap-1">
@@ -395,7 +462,7 @@ export default function AcessosUsuariosPage() {
 
       {/* Invite Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Convidar novo usuário</DialogTitle>
           </DialogHeader>
@@ -408,25 +475,30 @@ export default function AcessosUsuariosPage() {
               <Label>Nome completo *</Label>
               <Input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Nome completo (mín. 3 caracteres)" />
             </div>
-            <div className="space-y-1">
-              <Label>Perfil *</Label>
-              <Select value={inviteRole} onValueChange={setInviteRole}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableInviteRoles.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2">
+              <Label className="font-semibold">Perfis de Acesso *</Label>
+              <p className="text-xs text-muted-foreground">Selecione todos os módulos que este usuário pode acessar</p>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {availableRoles.map((r) => (
+                  <label key={r.value} className="flex items-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-muted/50 transition-colors">
+                    <Checkbox
+                      checked={inviteRoles.includes(r.value)}
+                      onCheckedChange={() => toggleInviteRole(r.value)}
+                    />
+                    <span className="text-sm">{r.label}</span>
+                  </label>
+                ))}
+              </div>
+              {inviteRoles.length === 0 && (
+                <p className="text-xs text-destructive">Selecione pelo menos um perfil</p>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancelar</Button>
             <Button
               onClick={() => inviteMutation.mutate()}
-              disabled={!inviteEmail || !inviteName || inviteName.trim().length < 3 || inviteMutation.isPending}
+              disabled={!inviteEmail || !inviteName || inviteName.trim().length < 3 || inviteRoles.length === 0 || inviteMutation.isPending}
             >
               <UserPlus className="mr-2 h-4 w-4" />
               {inviteMutation.isPending ? "Enviando..." : "Enviar Convite"}
@@ -470,24 +542,37 @@ export default function AcessosUsuariosPage() {
 
               <Separator />
 
-              {/* Role */}
-              <div className="space-y-2">
-                <Label className="font-semibold">Perfil</Label>
-                <Select
-                  value={selectedUser.roles?.[0] || ""}
-                  onValueChange={(role) => {
-                    setRoleMutation.mutate({ user_id: selectedUser.user_id, role });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(isAdmin ? ROLES : OPERATIONAL_ROLES).map((r) => (
-                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Roles - Multi-select checkboxes */}
+              <div className="space-y-3">
+                <div>
+                  <Label className="font-semibold text-base">Perfis de Acesso</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">Selecione todos os módulos que este usuário pode acessar</p>
+                </div>
+                <div className="space-y-1.5">
+                  {availableRoles.map((r) => (
+                    <label key={r.value} className="flex items-center gap-2 cursor-pointer rounded-md border p-2.5 hover:bg-muted/50 transition-colors">
+                      <Checkbox
+                        checked={drawerRoles.includes(r.value)}
+                        onCheckedChange={() => toggleDrawerRole(r.value)}
+                      />
+                      <span className="text-sm">{r.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {drawerRoles.length === 0 && (
+                  <p className="text-xs text-destructive">Selecione pelo menos um perfil</p>
+                )}
+                {drawerRolesDirty && (
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    disabled={drawerRoles.length === 0 || setRolesMutation.isPending}
+                    onClick={handleSaveDrawerRoles}
+                  >
+                    <ShieldCheck className="h-4 w-4 mr-2" />
+                    {setRolesMutation.isPending ? "Salvando..." : "Salvar Perfis"}
+                  </Button>
+                )}
                 {selectedUserIsCoord && (
                   <Button
                     variant="outline"
