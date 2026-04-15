@@ -110,14 +110,13 @@ export default function AlojamentoHomePage() {
           </Select>
         )}
 
+        {facilityId && <AlojamentoDuplicateAlert facilityId={facilityId} />}
+
         <div className="grid grid-cols-2 gap-3">
-          {facilityId && <div className="col-span-2"><AlojamentoDuplicateAlert facilityId={facilityId} /></div>}
           <AppKPI label="Hospedados" value={kpis.hospedados} icon={Users} loading={loading} />
           <AppKPI label="Check-ins hoje" value={kpis.checkinsHoje} icon={LogIn} loading={loading} />
           <AppKPI label="Check-outs hoje" value={kpis.checkoutsHoje} icon={LogOutIcon} loading={loading} />
           <AppKPI label="Ocupação" value={`${kpis.ocupacao}%`} icon={Percent} loading={loading} />
-        </div>
-
         </div>
 
         <div className="grid grid-cols-2 gap-3">
