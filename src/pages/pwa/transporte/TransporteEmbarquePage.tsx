@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { format } from "date-fns";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveExternalCredential } from "@/lib/resolveExternalCredential";
@@ -137,8 +138,8 @@ export default function TransporteEmbarquePage() {
           // Try to get reporter profile
           const { data: profile } = await supabase
             .from("profiles")
-            .select("display_name, phone")
-            .eq("user_id", userId)
+            .select("full_name")
+            .eq("id", userId)
             .maybeSingle();
 
           const label = [
@@ -152,8 +153,8 @@ export default function TransporteEmbarquePage() {
             reference_id: tripId!,
             reference_label: label,
             reported_by_user_id: userId,
-            reporter_name: (profile as any)?.display_name || null,
-            reporter_phone: (profile as any)?.phone || null,
+            reporter_name: (profile as any)?.full_name || null,
+            reporter_phone: null,
             incident_description: notes,
           });
         }
