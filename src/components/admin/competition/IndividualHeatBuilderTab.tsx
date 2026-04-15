@@ -346,6 +346,21 @@ export default function IndividualHeatBuilderTab({ eventId, sportEventId, onChan
         matchNum++;
       }
 
+      // Mark disputes_updated_at on all phases
+      const { data: allPhases } = await supabase
+        .from("competition_phases")
+        .select("id")
+        .eq("event_id", eventId)
+        .eq("sport_event_id", sportEventId);
+      if (allPhases && allPhases.length > 0) {
+        for (const ph of allPhases) {
+          await supabase
+            .from("competition_phases")
+            .update({ disputes_updated_at: new Date().toISOString() })
+            .eq("id", ph.id);
+        }
+      }
+
       // Audit
       await supabase.from("audit_events").insert({
         table_name: "competition_matches",
