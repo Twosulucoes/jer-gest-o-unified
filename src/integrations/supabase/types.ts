@@ -2220,11 +2220,15 @@ export type Database = {
       }
       participants: {
         Row: {
+          coach_name: string | null
+          coach_phone: string | null
           created_at: string
           credentialed_at: string | null
           credentialed_by: string | null
           delegation_id: string
           event_id: string
+          guardian_name: string | null
+          guardian_phone: string | null
           id: string
           is_active: boolean
           notes: string | null
@@ -2236,11 +2240,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          coach_name?: string | null
+          coach_phone?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id: string
           event_id: string
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           is_active?: boolean
           notes?: string | null
@@ -2252,11 +2260,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          coach_name?: string | null
+          coach_phone?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string
           event_id?: string
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           is_active?: boolean
           notes?: string | null
