@@ -192,13 +192,17 @@ export default function RulesForm({ rules, onChange, validationErrors }: Props) 
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Observações</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <Textarea
             value={rules.notes ?? ""}
             onChange={(e) => update({ notes: e.target.value || null })}
             placeholder="Notas livres sobre a regra..."
             rows={3}
           />
+          <div className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-3 text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2">
+            <span className="shrink-0 mt-0.5">ℹ️</span>
+            <span>Sistema de disputa definitivo será confirmado em Boletim Oficial antes da Reunião Técnica.</span>
+          </div>
         </CardContent>
       </Card>
     </div>

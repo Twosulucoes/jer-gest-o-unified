@@ -49,7 +49,15 @@ Cada prova (sport_event) deve ter regras parametrizáveis que definem:
 - **Resolução de empate eliminatório** — penalidades, prorrogação, tiro de 7m
 
 ### 12. Presets Esportivos
-O sistema fornece presets pré-configurados por modalidade (Futsal, Futebol, Handebol, Basquete, Karatê Kata, Karatê Kumite) que preenchem automaticamente as regras conforme regulamento. Presets podem ser sobrescritos por edição manual.
+O sistema fornece **22 presets** pré-configurados organizados em 6 categorias:
+- **Coletivas** (7): Futsal, Futebol de Campo, Handebol, Basquetebol, Voleibol, Vôlei de Praia 12–14, Vôlei de Praia 15–17
+- **Combate** (5): Judô, Karatê Kata, Karatê Kumite, Taekwondo, Wrestling
+- **Tempo/Marca** (5): Atletismo Pista, Atletismo Campo, Atletismo Combinadas, Natação, Ciclismo
+- **Sets/Confronto Técnico** (3): Badminton, Tênis de Mesa, Tiro com Arco
+- **Ranking/Nota** (2): Xadrez (suíço), Ginástica Rítmica
+- **Paralímpicas JERPA** (5): Atletismo Paralímpico, Natação Paralímpica, Tênis de Mesa Paralímpico, Parabadminton, Bocha Paralímpica
+
+Cada preset inclui: família, formato, modo de participação, tipo de pontuação, critérios de desempate, política de W.O., resolução de empate eliminatório e mínimo de participantes. Presets podem ser sobrescritos por edição manual. Catálogo definido em `src/config/sportPresetCatalog.ts`.
 
 ### 13. Seed Automático de Regras
 Ao preparar um evento, o sistema pode gerar regras automaticamente para todas as provas usando heurísticas baseadas no nome da modalidade. Suporta modos:
