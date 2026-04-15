@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import {
   CalendarIcon, CalendarClock, Loader2, AlertTriangle, Clock, MapPin,
   Pencil, CalendarPlus, Trash2, ListChecks, XCircle, RefreshCw, ExternalLink,
+  Filter, Check, X, Save,
 } from "lucide-react";
 
 interface Props {
@@ -43,7 +44,9 @@ interface MatchRow {
   venue_address: string | null;
   notes: string | null;
   phase_name: string;
+  phase_id: string;
   group_name: string | null;
+  group_id: string | null;
   round_number: number | null;
   side_a: string;
   side_b: string;
@@ -57,7 +60,88 @@ interface Venue {
   city: string | null;
 }
 
-// ─── Schedule Match Dialog ───────────────────────────────────────────────────
+// ─── Inline Quick Editor ────────────────────────────────────────────────────
+
+function InlineScheduleEditor({
+  match,
+  venues,
+  eventId,
+  onSaved,
+  onCancel,
+}: {
+  match: MatchRow;
+  venues: Venue[];
+  eventId: string;
+  onSaved: () => void;
+  onCancel: () => void;
+}) {
+  const [date, setDate] = useState(match.match_date ?? "");
+  const [startTime, setStartTime] = useState(match.start_time?.slice(0, 5) ?? "");
+  const [venueId, setVenueId] = useState(match.venue_id ?? "");
+
+  const saveMut = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("competition_matches")
+        .update({
+          match_date: date || null,
+          start_time: startTime || null,
+          venue_id: venueId || null,
+        })
+        .eq("id", match.id);
+      if (error) throw error;
+
+      // Audit
+      await supabase.from("audit_events").insert({
+        table_name: "competition_matches",
+        record_id: match.id,
+        action: "schedule_inline_edit",
+        payload: { match_date: date, start_time: startTime, venue_id: venueId },
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Agendamento salvo" });
+      onSaved();
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  return (
+    <>
+      <TableCell className="p-1">
+        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-8 text-xs w-[130px]" />
+      </TableCell>
+      <TableCell className="p-1">
+        <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="h-8 text-xs w-[90px]" />
+      </TableCell>
+      <TableCell className="p-1">
+        <Select value={venueId || "__none__"} onValueChange={(v) => setVenueId(v === "__none__" ? "" : v)}>
+          <SelectTrigger className="h-8 text-xs w-[160px]">
+            <SelectValue placeholder="Local" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">Nenhum</SelectItem>
+            {venues.map((v) => (
+              <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </TableCell>
+      <TableCell className="p-1">
+        <div className="flex gap-1">
+          <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+            {saveMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+          </Button>
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onCancel}>
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </TableCell>
+    </>
+  );
+}
+
+// ─── Schedule Match Dialog (full) ───────────────────────────────────────────
 
 function ScheduleMatchDialog({
   match,
@@ -72,7 +156,6 @@ function ScheduleMatchDialog({
   onSaved: () => void;
   onClose: () => void;
 }) {
-  const { user } = useAuth();
   const isAlreadyScheduled = !!(match.match_date && match.start_time && match.venue_id);
 
   const [date, setDate] = useState<Date | undefined>(
@@ -103,7 +186,15 @@ function ScheduleMatchDialog({
         .eq("id", match.id);
       if (error) throw error;
 
-      // Check for conflicts at same venue + date
+      // Audit
+      await supabase.from("audit_events").insert({
+        table_name: "competition_matches",
+        record_id: match.id,
+        action: "schedule_edit",
+        payload: { match_date: matchDate, start_time: startTime, venue_id: venueId },
+      });
+
+      // Check for conflicts
       const { data: conflicts } = await supabase
         .from("competition_matches")
         .select("id, match_number, start_time, end_time")
@@ -141,6 +232,13 @@ function ScheduleMatchDialog({
         .update({ match_date: null, start_time: null, end_time: null, venue_id: null })
         .eq("id", match.id);
       if (error) throw error;
+
+      await supabase.from("audit_events").insert({
+        table_name: "competition_matches",
+        record_id: match.id,
+        action: "schedule_remove",
+        payload: {},
+      });
     },
     onSuccess: () => {
       toast({ title: "Agendamento removido" });
@@ -166,7 +264,6 @@ function ScheduleMatchDialog({
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Date */}
             <div className="space-y-2">
               <Label>Data *</Label>
               <Popover>
@@ -191,19 +288,16 @@ function ScheduleMatchDialog({
               </Popover>
             </div>
 
-            {/* Start time */}
             <div className="space-y-2">
               <Label>Hora de início *</Label>
               <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
             </div>
 
-            {/* End time */}
             <div className="space-y-2">
               <Label>Hora de término (opcional)</Label>
               <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
             </div>
 
-            {/* Venue */}
             <div className="space-y-2">
               <Label>Local *</Label>
               <Select value={venueId} onValueChange={setVenueId}>
@@ -225,7 +319,6 @@ function ScheduleMatchDialog({
               </Select>
             </div>
 
-            {/* Notes */}
             <div className="space-y-2">
               <Label>Observações (opcional)</Label>
               <Textarea
@@ -236,7 +329,6 @@ function ScheduleMatchDialog({
               />
             </div>
 
-            {/* Conflict warning */}
             {conflictWarning && (
               <Alert className="border-warning/50 bg-warning/5">
                 <AlertTriangle className="h-4 w-4 text-warning" />
@@ -266,7 +358,6 @@ function ScheduleMatchDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Remove confirmation */}
       {showRemoveConfirm && (
         <AlertDialog open onOpenChange={() => setShowRemoveConfirm(false)}>
           <AlertDialogContent>
@@ -338,6 +429,13 @@ function BatchScheduleDialog({
           .eq("id", item.id);
         if (error) throw error;
       }
+
+      await supabase.from("audit_events").insert({
+        table_name: "competition_matches",
+        record_id: eventId,
+        action: "schedule_batch",
+        payload: { count: preview.length, match_date: matchDate, venue_id: venueId },
+      });
     },
     onSuccess: () => {
       toast({ title: "Agendamento em lote concluído", description: `${preview.length} partidas agendadas.` });
@@ -360,7 +458,6 @@ function BatchScheduleDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Date */}
           <div className="space-y-2">
             <Label>Data *</Label>
             <Popover>
@@ -385,7 +482,6 @@ function BatchScheduleDialog({
             </Popover>
           </div>
 
-          {/* Venue */}
           <div className="space-y-2">
             <Label>Local *</Label>
             <Select value={venueId} onValueChange={setVenueId}>
@@ -403,13 +499,10 @@ function BatchScheduleDialog({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* Start time */}
             <div className="space-y-2">
               <Label>Hora da primeira partida *</Label>
               <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
             </div>
-
-            {/* Interval */}
             <div className="space-y-2">
               <Label>Intervalo (min)</Label>
               <Input
@@ -422,7 +515,6 @@ function BatchScheduleDialog({
             </div>
           </div>
 
-          {/* Preview */}
           {preview.length > 0 && (
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Preview</Label>
@@ -484,10 +576,17 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
   const { hasRole } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const canEdit = hasRole("admin") || hasRole("coordenacao_tecnica");
+  const canEdit = hasRole("admin") || hasRole("coordenacao_tecnica") || hasRole("coordenador_modalidade");
 
   const [editMatch, setEditMatch] = useState<MatchRow | null>(null);
   const [showBatch, setShowBatch] = useState(false);
+  const [inlineEditId, setInlineEditId] = useState<string | null>(null);
+
+  // Filters
+  const [filterPhase, setFilterPhase] = useState<string>("__all__");
+  const [filterGroup, setFilterGroup] = useState<string>("__all__");
+  const [filterSchedule, setFilterSchedule] = useState<string>("__all__");
+  const [filterStatus, setFilterStatus] = useState<string>("__all__");
 
   // Fetch venues
   const { data: venues = [] } = useQuery({
@@ -508,7 +607,6 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
   const { data: matches = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["agenda-matches", eventId, sportEventId],
     queryFn: async () => {
-      // Fetch matches
       const { data: rawMatches, error: mErr } = await supabase
         .from("competition_matches")
         .select(`
@@ -523,7 +621,6 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
         .order("match_number");
       if (mErr) throw mErr;
 
-      // Fetch entries for all matches
       const matchIds = (rawMatches ?? []).map((m: any) => m.id);
       if (matchIds.length === 0) return [];
 
@@ -538,7 +635,6 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
         .in("match_id", matchIds);
       if (eErr) throw eErr;
 
-      // Group entries by match
       const entryMap = new Map<string, any[]>();
       for (const e of entries ?? []) {
         const list = entryMap.get(e.match_id) ?? [];
@@ -569,7 +665,9 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
           venue_address: (m.venues as any)?.address ?? null,
           notes: m.notes,
           phase_name: (m.competition_phases as any)?.name ?? "—",
+          phase_id: m.phase_id,
           group_name: (m.competition_groups as any)?.name ?? null,
+          group_id: m.group_id,
           round_number: m.round_number,
           side_a: getName(sideA),
           side_b: getName(sideB),
@@ -597,13 +695,47 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
     (conflicts?.team_conflicts?.length ?? 0) +
     (conflicts?.participant_conflicts?.length ?? 0);
 
-  // Counts
+  // Derive unique phases and groups for filters
+  const phaseOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    matches.forEach((m) => { if (m.phase_id) map.set(m.phase_id, m.phase_name); });
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [matches]);
+
+  const groupOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    matches.forEach((m) => { if (m.group_id && m.group_name) map.set(m.group_id, m.group_name); });
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [matches]);
+
+  // Apply filters
+  const filteredMatches = useMemo(() => {
+    return matches.filter((m) => {
+      if (filterPhase !== "__all__" && m.phase_id !== filterPhase) return false;
+      if (filterGroup !== "__all__" && m.group_id !== filterGroup) return false;
+      if (filterSchedule === "scheduled" && !(m.match_date && m.start_time && m.venue_id)) return false;
+      if (filterSchedule === "unscheduled" && (m.match_date && m.start_time && m.venue_id)) return false;
+      if (filterStatus !== "__all__" && m.status !== filterStatus) return false;
+      return true;
+    });
+  }, [matches, filterPhase, filterGroup, filterSchedule, filterStatus]);
+
   const scheduled = matches.filter((m) => m.match_date && m.start_time && m.venue_id);
   const unscheduled = matches.filter((m) => !m.match_date || !m.start_time || !m.venue_id);
   const allScheduled = matches.length > 0 && unscheduled.length === 0;
   const noneScheduled = matches.length > 0 && scheduled.length === 0;
 
+  const hasActiveFilters = filterPhase !== "__all__" || filterGroup !== "__all__" || filterSchedule !== "__all__" || filterStatus !== "__all__";
+
+  const clearFilters = () => {
+    setFilterPhase("__all__");
+    setFilterGroup("__all__");
+    setFilterSchedule("__all__");
+    setFilterStatus("__all__");
+  };
+
   const handleSaved = useCallback(() => {
+    setInlineEditId(null);
     refetch();
     qc.invalidateQueries({ queryKey: ["schedule-conflicts", eventId, sportEventId] });
     onChanged?.();
@@ -640,7 +772,7 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
       <div className="flex flex-col items-center gap-3 py-12 text-center">
         <CalendarClock className="h-10 w-10 text-muted-foreground opacity-50" />
         <p className="text-muted-foreground">
-          Nenhuma partida encontrada. Volte ao Passo 3 e gere as partidas primeiro.
+          Nenhuma partida encontrada. Volte ao passo anterior e gere as partidas/baterias primeiro.
         </p>
       </div>
     );
@@ -652,12 +784,17 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <CalendarClock className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">Agenda</h3>
-          {allScheduled && <Badge variant="success">Todas agendadas ✅</Badge>}
+          <h3 className="text-lg font-semibold">Agenda da Modalidade</h3>
+          {allScheduled && <Badge variant="default" className="bg-green-600">Todas agendadas ✅</Badge>}
           {!allScheduled && matches.length > 0 && (
             <span className="text-sm text-muted-foreground">
-              {scheduled.length} de {matches.length} partidas agendadas
+              {scheduled.length}/{matches.length} agendadas
             </span>
+          )}
+          {unscheduled.length > 0 && (
+            <Badge variant="destructive" className="text-xs">
+              {unscheduled.length} sem agendamento
+            </Badge>
           )}
           {totalConflicts > 0 && (
             <Badge variant="destructive">{totalConflicts} conflito(s)</Badge>
@@ -671,12 +808,80 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
         )}
       </div>
 
+      {/* Filters */}
+      <Card>
+        <CardContent className="py-3 px-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Select value={filterPhase} onValueChange={setFilterPhase}>
+              <SelectTrigger className="h-8 w-[150px] text-xs">
+                <SelectValue placeholder="Fase" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todas as fases</SelectItem>
+                {phaseOptions.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {groupOptions.length > 0 && (
+              <Select value={filterGroup} onValueChange={setFilterGroup}>
+                <SelectTrigger className="h-8 w-[150px] text-xs">
+                  <SelectValue placeholder="Grupo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos os grupos</SelectItem>
+                  {groupOptions.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            <Select value={filterSchedule} onValueChange={setFilterSchedule}>
+              <SelectTrigger className="h-8 w-[160px] text-xs">
+                <SelectValue placeholder="Agendamento" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos</SelectItem>
+                <SelectItem value="scheduled">Agendadas</SelectItem>
+                <SelectItem value="unscheduled">Sem agendamento</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-8 w-[140px] text-xs">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos status</SelectItem>
+                <SelectItem value="scheduled">Agendada</SelectItem>
+                <SelectItem value="in_progress">Em andamento</SelectItem>
+                <SelectItem value="finished">Finalizada</SelectItem>
+                <SelectItem value="cancelled">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearFilters}>
+                <X className="h-3 w-3 mr-1" /> Limpar
+              </Button>
+            )}
+
+            <span className="text-xs text-muted-foreground ml-auto">
+              {filteredMatches.length} de {matches.length}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Callout: none scheduled */}
       {noneScheduled && (
         <Alert className="border-warning/50 bg-warning/5">
           <AlertTriangle className="h-4 w-4 text-warning" />
           <AlertDescription className="text-sm">
-            Nenhuma partida foi agendada ainda. Clique em "Agendar" para definir data e local.
+            Nenhuma partida foi agendada ainda. Clique em "Agendar" ou use a edição rápida na linha.
           </AlertDescription>
         </Alert>
       )}
@@ -684,70 +889,118 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[60px]">#</TableHead>
-                <TableHead>Fase / Grupo</TableHead>
-                <TableHead>Confronto</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Hora</TableHead>
-                <TableHead>Local</TableHead>
-                {canEdit && <TableHead className="w-[100px]">Ação</TableHead>}
-                <TableHead className="w-[60px]">Detalhe</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {matches.map((m) => {
-                const isScheduled = !!(m.match_date && m.start_time && m.venue_id);
-                return (
-                  <TableRow key={m.id}>
-                    <TableCell className="font-mono text-xs">{m.match_number ?? "—"}</TableCell>
-                    <TableCell className="text-sm">
-                      {m.phase_name}
-                      {m.group_name && <span className="text-muted-foreground"> · {m.group_name}</span>}
-                    </TableCell>
-                    <TableCell className="text-sm font-medium">
-                      {m.side_a} <span className="text-muted-foreground mx-1">vs</span> {m.side_b}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {m.match_date ? (
-                        formatDateBR(m.match_date)
-                      ) : (
-                        <span className="text-destructive text-xs">Não agendada</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {m.start_time ? formatTime(m.start_time) : "—"}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {m.venue_name ?? "—"}
-                    </TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant={isScheduled ? "ghost" : "secondary"}
-                          onClick={() => setEditMatch(m)}
-                        >
-                          {isScheduled ? (
-                            <><Pencil className="h-3.5 w-3.5 mr-1" /> Editar</>
-                          ) : (
-                            <><CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar</>
-                          )}
-                        </Button>
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => navigate(`/admin/competicao/partida/${m.id}`)}>
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </Button>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]">#</TableHead>
+                  <TableHead>Fase / Grupo</TableHead>
+                  <TableHead>Confronto</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Hora</TableHead>
+                  <TableHead>Local</TableHead>
+                  {canEdit && <TableHead className="w-[120px]">Ação</TableHead>}
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredMatches.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={canEdit ? 8 : 7} className="text-center text-muted-foreground py-8">
+                      Nenhum resultado para os filtros aplicados.
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredMatches.map((m) => {
+                    const isScheduled = !!(m.match_date && m.start_time && m.venue_id);
+                    const isInlineEdit = inlineEditId === m.id;
+
+                    return (
+                      <TableRow key={m.id} className={cn(!isScheduled && "bg-destructive/5")}>
+                        <TableCell className="font-mono text-xs">{m.match_number ?? "—"}</TableCell>
+                        <TableCell className="text-sm">
+                          {m.phase_name}
+                          {m.group_name && <span className="text-muted-foreground"> · {m.group_name}</span>}
+                        </TableCell>
+                        <TableCell className="text-sm font-medium">
+                          {m.side_a} <span className="text-muted-foreground mx-1">vs</span> {m.side_b}
+                        </TableCell>
+
+                        {isInlineEdit ? (
+                          <InlineScheduleEditor
+                            match={m}
+                            venues={venues}
+                            eventId={eventId}
+                            onSaved={handleSaved}
+                            onCancel={() => setInlineEditId(null)}
+                          />
+                        ) : (
+                          <>
+                            <TableCell className="text-sm">
+                              {m.match_date ? (
+                                formatDateBR(m.match_date)
+                              ) : (
+                                <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px]">
+                                  <Clock className="h-3 w-3 mr-0.5" /> Sem data
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {m.start_time ? formatTime(m.start_time) : (
+                                <span className="text-muted-foreground text-xs">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {m.venue_name ? (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                                  {m.venue_name}
+                                </span>
+                              ) : (
+                                <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px]">
+                                  <MapPin className="h-3 w-3 mr-0.5" /> Sem local
+                                </Badge>
+                              )}
+                            </TableCell>
+                            {canEdit && (
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 text-xs"
+                                    onClick={() => setInlineEditId(m.id)}
+                                    title="Edição rápida"
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant={isScheduled ? "ghost" : "secondary"}
+                                    className="h-7 text-xs"
+                                    onClick={() => setEditMatch(m)}
+                                  >
+                                    {isScheduled ? "Editar" : (
+                                      <><CalendarPlus className="h-3 w-3 mr-1" /> Agendar</>
+                                    )}
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            )}
+                            <TableCell>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => navigate(`/admin/competicao/partida/${m.id}`)}>
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </Button>
+                            </TableCell>
+                          </>
+                        )}
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
