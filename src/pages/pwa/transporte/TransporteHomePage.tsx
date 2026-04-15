@@ -35,15 +35,13 @@ export default function TransporteHomePage() {
   const [search, setSearch] = useState("");
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
 
-  // Force landscape
+  // Lock viewport scale only
   useEffect(() => {
     const meta = document.querySelector('meta[name="viewport"]');
     const original = meta?.getAttribute("content") || "";
-    if (meta) meta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1");
-    try { (screen.orientation as any)?.lock?.("landscape").catch(() => {}); } catch {}
+    if (meta) meta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no");
     return () => {
       if (meta) meta.setAttribute("content", original || "width=device-width, initial-scale=1.0");
-      try { screen.orientation?.unlock?.(); } catch {}
     };
   }, []);
 
@@ -197,7 +195,7 @@ export default function TransporteHomePage() {
   );
 
   return (
-    <div className="min-h-screen bg-background transport-landscape">
+    <div className="min-h-screen bg-background">
       <PwaHeader title="Transporte" icon={Bus} backTo="/pwa" onSignOut={handleSignOut} />
 
       <main className="p-3 max-w-5xl mx-auto space-y-3">
