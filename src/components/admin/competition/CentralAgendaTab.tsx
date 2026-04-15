@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import {
   CalendarIcon, CalendarClock, Loader2, AlertTriangle, Clock, MapPin,
   Pencil, CalendarPlus, Trash2, ListChecks, XCircle, RefreshCw, ExternalLink,
-  Filter, Check, X, Save,
+  Filter, Check, X,
 } from "lucide-react";
 
 interface Props {
