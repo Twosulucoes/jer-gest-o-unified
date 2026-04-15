@@ -58,6 +58,7 @@ import ParametrosEventoPage from "./pages/admin/ParametrosEventoPage";
 import IrregularidadesPage from "./pages/admin/IrregularidadesPage";
 import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
 import SchemaValidadorPage from "./pages/admin/SchemaValidadorPage";
+import OcorrenciasPage from "./pages/admin/OcorrenciasPage";
 import MapaSistemaPage from "./pages/admin/MapaSistemaPage";
 import DiagnosticoCompeticaoPage from "./pages/admin/DiagnosticoCompeticaoPage";
 import SistemaDiagnosticoPage from "./pages/admin/SistemaDiagnosticoPage";
@@ -255,6 +256,8 @@ const App = () => (
               {/* Relatórios */}
               <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ReportCenterPage /></ProtectedRoute>} />
               <Route path="atletas/qrcode" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AtletaQrCodePage /></ProtectedRoute>} />
+              {/* Ocorrências */}
+              <Route path="ocorrencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><OcorrenciasPage /></ProtectedRoute>} />
             </Route>
             {/* PWA Auth pages (public) */}
             <Route path="/pwa/login" element={<PwaLoginPage />} />

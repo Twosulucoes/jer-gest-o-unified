@@ -8,10 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, AlertTriangle } from "lucide-react";
 
 interface FinishTripDialogProps {
   open: boolean;
@@ -30,22 +27,13 @@ export function FinishTripDialog({
   finishing,
   onConfirm,
 }: FinishTripDialogProps) {
-  const [noProblems, setNoProblems] = useState<string>("yes");
-  const [incidents, setIncidents] = useState("");
-  const [additionalNotes, setAdditionalNotes] = useState("");
+  const [notes, setNotes] = useState("");
 
   const missing = totalCount - boardedCount;
-  const hasIncidents = noProblems === "no";
-  const canSubmit = !hasIncidents || incidents.trim().length > 0;
+  const hasIncidents = notes.trim().length > 0;
 
   const handleConfirm = () => {
-    const allNotes = [
-      hasIncidents ? `OCORRÊNCIAS: ${incidents.trim()}` : null,
-      additionalNotes.trim() ? `OBS: ${additionalNotes.trim()}` : null,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-    onConfirm(hasIncidents, allNotes);
+    onConfirm(hasIncidents, notes.trim());
   };
 
   return (
@@ -74,55 +62,26 @@ export function FinishTripDialog({
             </div>
           </div>
 
-          {/* Radio */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Viagem ocorreu sem problemas?</Label>
-            <RadioGroup value={noProblems} onValueChange={setNoProblems} className="flex gap-4">
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="yes" id="rYes" />
-                <Label htmlFor="rYes" className="flex items-center gap-1 cursor-pointer">
-                  <CheckCircle className="h-4 w-4 text-primary" /> Sim
-                </Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="no" id="rNo" />
-                <Label htmlFor="rNo" className="flex items-center gap-1 cursor-pointer">
-                  <AlertTriangle className="h-4 w-4 text-destructive" /> Não
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {hasIncidents && (
-            <div className="space-y-1">
-              <Label className="text-sm">
-                Descreva as ocorrências <Badge variant="destructive" className="text-[10px] ml-1">Obrigatório</Badge>
-              </Label>
-              <Textarea
-                value={incidents}
-                onChange={(e) => setIncidents(e.target.value)}
-                placeholder="Relate o que aconteceu..."
-                rows={3}
-              />
-            </div>
-          )}
-
-          <div className="space-y-1">
-            <Label className="text-sm">Observações adicionais</Label>
+          {/* Single field for incidents/notes */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Ocorrências e Observações (opcional)</Label>
+            <p className="text-xs text-muted-foreground">
+              Relate problemas, incidentes ou informações importantes desta viagem
+            </p>
             <Textarea
-              value={additionalNotes}
-              onChange={(e) => setAdditionalNotes(e.target.value)}
-              placeholder="Informações extras (opcional)"
-              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Descreva ocorrências ou observações..."
+              rows={4}
             />
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={finishing}>
+        <DialogFooter className="flex flex-col gap-3 sm:flex-row">
+          <Button variant="outline" className="h-12 text-base" onClick={() => onOpenChange(false)} disabled={finishing}>
             Cancelar
           </Button>
-          <Button onClick={handleConfirm} disabled={finishing || !canSubmit}>
+          <Button className="h-12 text-base" onClick={handleConfirm} disabled={finishing}>
             {finishing ? "Finalizando..." : "Confirmar Finalização"}
           </Button>
         </DialogFooter>

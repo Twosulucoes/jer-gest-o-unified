@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { format } from "date-fns";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveExternalCredential } from "@/lib/resolveExternalCredential";
@@ -120,6 +121,45 @@ export default function TransporteEmbarquePage() {
         .update({ trip_status: "completed", has_incidents: hasIncidents, notes: notes || null } as any)
         .eq("id", tripId!);
       if (error) throw error;
+
+      // Create incident record if notes were provided
+      if (hasIncidents && notes) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
+
+        // Get event_id from trip
+        const { data: tripData } = await supabase
+          .from("transport_trips")
+          .select("event_id")
+          .eq("id", tripId!)
+          .single();
+
+        if (tripData && userId) {
+          // Try to get reporter profile
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", userId)
+            .maybeSingle();
+
+          const label = [
+            tripInfo.routeName ? `Rota ${tripInfo.origin || ""} → ${tripInfo.destination || tripInfo.routeName}` : "Viagem",
+            tripInfo.scheduledAt ? format(new Date(tripInfo.scheduledAt), "HH:mm") : "",
+          ].filter(Boolean).join(", ");
+
+          await supabase.from("operational_incidents").insert({
+            event_id: (tripData as any).event_id,
+            module: "transporte" as any,
+            reference_id: tripId!,
+            reference_label: label,
+            reported_by_user_id: userId,
+            reporter_name: (profile as any)?.full_name || null,
+            reporter_phone: null,
+            incident_description: notes,
+          });
+        }
+      }
+
       toast.success("Viagem finalizada com sucesso!");
       navigate("/pwa/transporte", { replace: true });
     } catch (err: any) {
