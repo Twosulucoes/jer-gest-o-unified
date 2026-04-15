@@ -308,6 +308,7 @@ export default function CompeticaoCentralPage() {
               />
             )}
 
+            {currentStep === "matches" && (
               hasKnockout ? (
                 <CentralBracketTab
                   eventId={eventId}
