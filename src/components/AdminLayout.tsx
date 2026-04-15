@@ -43,7 +43,7 @@ const ADMIN_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"];
 const TRANSPORT_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "transporte"];
 const FOOD_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"];
 const LODGING_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"];
-const COMPETITION_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"];
+const COMPETITION_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"];
 
 const dashboardItem: NavItem = {
   label: "Dashboard",
@@ -80,12 +80,13 @@ const navGroups: NavGroup[] = [
     id: "competicao", label: "Competição", description: "Organização e execução da competição.",
     icon: <Trophy className="h-4 w-4" />,
     items: [
-      { label: "Painel de Controle", to: "/admin/competicao/painel", icon: <LayoutDashboard className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Pré-validação", to: "/admin/competicao/pre-validacao", icon: <ClipboardCheck className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Minhas Modalidades", to: "/admin/competicao/painel", icon: <Dumbbell className="h-4 w-4" />, roles: ["coordenador_modalidade"] as AppRole[] },
+      { label: "Painel de Controle", to: "/admin/competicao/painel", icon: <LayoutDashboard className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
+      { label: "Pré-validação", to: "/admin/competicao/pre-validacao", icon: <ClipboardCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
       { label: "Central da Competição", to: "/admin/competicao/central", icon: <Trophy className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Partidas e Agenda", to: "/admin/competicao/partidas", icon: <Swords className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Regras por Prova", to: "/admin/competicao/regras", icon: <Settings className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Regras em Lote", to: "/admin/competicao/regras/lote", icon: <Zap className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Regras por Prova", to: "/admin/competicao/regras", icon: <Settings className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
+      { label: "Regras em Lote", to: "/admin/competicao/regras/lote", icon: <Zap className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
       { label: "Resultados", to: "/admin/competicao/resultados", icon: <ClipboardList className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Boletins Oficiais", to: "/admin/boletins", icon: <FileSearch className="h-4 w-4" />, roles: COMPETITION_ROLES },
     ],
