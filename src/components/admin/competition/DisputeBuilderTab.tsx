@@ -28,6 +28,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import DisputePublishControl from "./DisputePublishControl";
+import MatchResultInlineCard, { type InlineMatchData } from "./MatchResultInlineCard";
+import WinnerProgressionPanel from "./WinnerProgressionPanel";
 
 // ── Types ───────────────────────────────────────────────────
 interface Props {
