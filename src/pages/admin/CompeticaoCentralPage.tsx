@@ -300,7 +300,14 @@ export default function CompeticaoCentralPage() {
               )
             )}
 
-            {currentStep === "matches" && (
+            {currentStep === "builder" && (
+              <DisputeBuilderTab
+                eventId={eventId}
+                sportEventId={sportEventId}
+                onChanged={handleChanged}
+              />
+            )}
+
               hasKnockout ? (
                 <CentralBracketTab
                   eventId={eventId}
