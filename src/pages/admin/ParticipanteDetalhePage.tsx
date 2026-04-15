@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, User, IdCard, Bus, Trophy, CheckCircle, Tag, ArrowLeft, Eye, RefreshCw } from "lucide-react";
+import { Loader2, User, IdCard, Bus, Trophy, CheckCircle, Tag, ArrowLeft, Eye, RefreshCw, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,6 +21,7 @@ import ParticipantResumoTab from "@/components/admin/participant/ParticipantResu
 import ParticipantHistoricoTab from "@/components/admin/participant/ParticipantHistoricoTab";
 import ParticipantCredencialTab from "@/components/admin/participant/ParticipantCredencialTab";
 import ParticipantLogisticaTab from "@/components/admin/participant/ParticipantLogisticaTab";
+import ParticipantRastreamentoTab from "@/components/admin/participant/ParticipantRastreamentoTab";
 import { SingleLabelDialog } from "@/components/admin/CredentialLabelPrint";
 import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
 
@@ -325,6 +326,9 @@ export default function ParticipanteDetalhePage() {
           <TabsTrigger value="logistica" className="gap-1.5">
             <Bus className="h-3.5 w-3.5" />Logística
           </TabsTrigger>
+          <TabsTrigger value="rastreamento" className="gap-1.5">
+            <Activity className="h-3.5 w-3.5" />Rastreamento
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="resumo">
@@ -343,6 +347,9 @@ export default function ParticipanteDetalhePage() {
         </TabsContent>
         <TabsContent value="logistica">
           <ParticipantLogisticaTab participantId={participant.id} eventId={participant.event_id} />
+        </TabsContent>
+        <TabsContent value="rastreamento">
+          <ParticipantRastreamentoTab participantId={participant.id} eventId={participant.event_id} />
         </TabsContent>
       </Tabs>
 
