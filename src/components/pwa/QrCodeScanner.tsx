@@ -14,15 +14,10 @@ import {
 } from "lucide-react";
 
 interface QrCodeScannerProps {
-  /** Called with the raw QR payload on successful detection */
   onScan: (payload: string) => void;
-  /** Called when user closes the scanner */
   onClose: () => void;
-  /** Controls visibility */
   isOpen: boolean;
-  /** Allowed QR prefixes — rejects codes that don't match */
   allowedPrefixes?: string[];
-  /** Title shown in the header */
   title?: string;
 }
 
@@ -48,16 +43,14 @@ export default function QrCodeScanner({
   const containerId = useRef(`qr-scanner-${Math.random().toString(36).slice(2, 8)}`).current;
   const hintTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  // Validate prefix
   const isValidPayload = useCallback(
     (raw: string) => {
       if (!allowedPrefixes?.length) return true;
       return allowedPrefixes.some((p) => raw.startsWith(p));
     },
-    [allowedPrefixes]
+    [allowedPrefixes],
   );
 
-  // Handle detected code
   const handleDetected = useCallback(
     (raw: string) => {
       if (debounceRef.current) return;
@@ -72,74 +65,55 @@ export default function QrCodeScanner({
         debounceRef.current = false;
       }, 2000);
     },
-    [onScan, isValidPayload]
+    [onScan, isValidPayload],
   );
 
-  // Stop scanner safely
   const stopScanner = useCallback(async () => {
+    clearTimeout(hintTimer.current);
     try {
       if (scannerRef.current) {
-        const s = scannerRef.current;
+        const scanner = scannerRef.current;
         scannerRef.current = null;
-        try { await s.stop(); } catch { /* may already be stopped */ }
-        try { s.clear(); } catch { /* ignore */ }
+        try {
+          await scanner.stop();
+        } catch {
+          // ignore
+        }
+        try {
+          await scanner.clear();
+        } catch {
+          // ignore
+        }
       }
-    } catch { /* ignore */ }
-    clearTimeout(hintTimer.current);
-  }, []);
-
-  // Start web scanner
-  // Pre-request camera permission to preserve user gesture context
-  const preRequestCamera = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      // Stop immediately — we just needed to trigger the permission prompt within gesture context
-      stream.getTracks().forEach((t) => t.stop());
-      return true;
     } catch {
-      return false;
+      // ignore
     }
   }, []);
 
   const startScanner = useCallback(
-    async (front: boolean, skipPermission = false) => {
-      setState("requesting");
-      setErrorMsg("");
-      setHintVisible(false);
-
-      // Request camera permission directly (preserving gesture context)
-      if (!skipPermission) {
-        const granted = await preRequestCamera();
-        if (!granted) {
-          setState("error");
-          setErrorMsg(
-            "Acesso à câmera negado. Habilite nas configurações do navegador:\n\n" +
-            "Android Chrome: Configurações → Privacidade → Câmera\n" +
-            "iOS Safari: Ajustes → Safari → Câmera"
-          );
-          return;
-        }
-      }
-
-      // Small delay to ensure DOM container exists
-      await new Promise((r) => setTimeout(r, 50));
-
-      const container = document.getElementById(containerId);
-      if (!container) {
+    async (front: boolean) => {
+      if (!navigator.mediaDevices?.getUserMedia) {
         setState("error");
-        setErrorMsg("Contêiner de vídeo não encontrado. Tente novamente.");
+        setErrorMsg("Este dispositivo não oferece suporte ao acesso à câmera.");
         return;
       }
 
+      setState("requesting");
+      setErrorMsg("");
+      setHintVisible(false);
+      await stopScanner();
+
       try {
+        await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+        const container = document.getElementById(containerId);
+        if (!container) throw new Error("Contêiner de vídeo não encontrado. Tente novamente.");
+
         const { Html5Qrcode } = await import("html5-qrcode");
         const scanner = new Html5Qrcode(containerId, { verbose: false });
         scannerRef.current = scanner;
 
-        const facingMode = front ? "user" : "environment";
-
         await scanner.start(
-          { facingMode },
+          { facingMode: front ? "user" : "environment" },
           {
             fps: 10,
             qrbox: { width: 250, height: 250 },
@@ -147,18 +121,18 @@ export default function QrCodeScanner({
             disableFlip: false,
           },
           (decodedText) => {
+            void stopScanner();
             handleDetected(decodedText);
           },
           () => {
-            // continuous scan — ignore failures
-          }
+            // leitura contínua
+          },
         );
 
         setState("active");
-
-        // Show hint after 2 minutes of no detection
         hintTimer.current = setTimeout(() => setHintVisible(true), 120_000);
       } catch (err: any) {
+        await stopScanner();
         setState("error");
         if (
           err?.name === "NotAllowedError" ||
@@ -167,8 +141,8 @@ export default function QrCodeScanner({
         ) {
           setErrorMsg(
             "Acesso à câmera negado. Habilite nas configurações do navegador:\n\n" +
-            "Android Chrome: Configurações → Privacidade → Câmera\n" +
-            "iOS Safari: Ajustes → Safari → Câmera"
+              "Android Chrome: Configurações → Privacidade → Câmera\n" +
+              "iOS Safari: Ajustes → Safari → Câmera",
           );
         } else if (err?.name === "NotFoundError" || err?.message?.includes("NotFound")) {
           setErrorMsg("Câmera não encontrada neste dispositivo.");
@@ -177,10 +151,9 @@ export default function QrCodeScanner({
         }
       }
     },
-    [containerId, handleDetected, preRequestCamera]
+    [containerId, handleDetected, stopScanner],
   );
 
-  // Native scan (Capacitor MLKit)
   const startNativeScan = useCallback(async () => {
     setState("requesting");
     try {
@@ -207,45 +180,42 @@ export default function QrCodeScanner({
     }
   }, [handleDetected]);
 
-  // Auto-start when opened
   useEffect(() => {
     if (!isOpen) {
-      stopScanner();
+      void stopScanner();
       setState("idle");
       setManualMode(false);
       setTorchOn(false);
       setHintVisible(false);
       return;
     }
+
     if (isNativeApp()) {
-      startNativeScan();
+      void startNativeScan();
     } else {
-      // Don't auto-start — show idle state with button so camera permission
-      // is triggered from a user gesture (required by mobile browsers)
       setState("idle");
     }
-    return () => {
-      stopScanner();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
 
-  // Camera flip
+    return () => {
+      void stopScanner();
+    };
+  }, [isOpen, startNativeScan, stopScanner]);
+
   const flipCamera = useCallback(async () => {
-    await stopScanner();
     const next = !useFront;
     setUseFront(next);
-    startScanner(next);
-  }, [useFront, stopScanner, startScanner]);
+    await startScanner(next);
+  }, [useFront, startScanner]);
 
-  // Torch toggle
   const toggleTorch = useCallback(async () => {
     try {
-      const videoEl = document.querySelector(`#${containerId} video`) as HTMLVideoElement;
+      const videoEl = document.querySelector(`#${containerId} video`) as HTMLVideoElement | null;
       if (videoEl?.srcObject) {
         const track = (videoEl.srcObject as MediaStream).getVideoTracks()[0];
         const next = !torchOn;
-        await (track as any).applyConstraints({ advanced: [{ torch: next }] });
+        await (track as MediaStreamTrack & { applyConstraints: (c: MediaTrackConstraints) => Promise<void> }).applyConstraints({
+          advanced: [{ torch: next } as any],
+        });
         setTorchOn(next);
       }
     } catch {
@@ -253,7 +223,6 @@ export default function QrCodeScanner({
     }
   }, [torchOn, containerId]);
 
-  // Manual submit
   const handleManualSubmit = () => {
     const val = manualCode.trim();
     if (!val) return;
@@ -261,9 +230,8 @@ export default function QrCodeScanner({
     setManualCode("");
   };
 
-  // Close handler
   const handleClose = useCallback(() => {
-    stopScanner();
+    void stopScanner();
     onClose();
   }, [stopScanner, onClose]);
 
@@ -271,7 +239,6 @@ export default function QrCodeScanner({
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
-      {/* Header */}
       <header className="flex items-center justify-between px-4 h-14 border-b bg-card shrink-0">
         <div className="flex items-center gap-2">
           <Camera className="h-5 w-5 text-primary" />
@@ -285,15 +252,13 @@ export default function QrCodeScanner({
       <main className="flex-1 flex flex-col items-center justify-center p-4 overflow-auto">
         {!manualMode && (
           <>
-            {/* Requesting */}
             {state === "requesting" && (
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Solicitando acesso à câmera…</p>
+                <p className="text-sm text-muted-foreground">Abrindo câmera…</p>
               </div>
             )}
 
-            {/* Error */}
             {state === "error" && (
               <div className="flex flex-col items-center gap-4 max-w-sm text-center">
                 <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -301,14 +266,10 @@ export default function QrCodeScanner({
                 </div>
                 <p className="text-sm text-foreground whitespace-pre-line">{errorMsg}</p>
                 <div className="flex gap-3">
-                  <Button onClick={() => startScanner(useFront)} className="min-h-[44px]">
+                  <Button onClick={() => void startScanner(useFront)} className="min-h-[44px]">
                     Tentar Novamente
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setManualMode(true)}
-                    className="min-h-[44px]"
-                  >
+                  <Button variant="outline" onClick={() => setManualMode(true)} className="min-h-[44px]">
                     <Keyboard className="h-4 w-4 mr-2" />
                     Digitar Código
                   </Button>
@@ -316,48 +277,33 @@ export default function QrCodeScanner({
               </div>
             )}
 
-            {/* Scanner viewport */}
             <div
               id={containerId}
-              className={
-                state === "active" || state === "requesting"
-                  ? "w-full max-w-md aspect-square rounded-lg overflow-hidden bg-black relative"
-                  : "hidden"
-              }
+              className={state === "active" || state === "requesting" ? "w-full max-w-md aspect-square rounded-lg overflow-hidden bg-black relative" : "hidden"}
             />
 
-            {/* Hint after 2 min */}
             {hintVisible && state === "active" && (
-              <p className="text-xs text-amber-500 mt-2 text-center animate-pulse">
+              <p className="text-xs text-warning mt-2 text-center animate-pulse">
                 Aponte para o QR code da credencial
               </p>
             )}
 
-            {/* Controls */}
             {state === "active" && (
               <div className="flex items-center justify-center gap-4 mt-4">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={flipCamera}
-                  className="min-w-[44px] min-h-[44px]"
-                  title="Alternar câmera"
-                >
+                <Button variant="outline" size="icon" onClick={() => void flipCamera()} className="min-w-[44px] min-h-[44px]" title="Alternar câmera">
                   <SwitchCamera className="h-5 w-5" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={toggleTorch}
-                  className="min-w-[44px] min-h-[44px]"
-                  title="Lanterna"
-                >
-                  <Flashlight className={`h-5 w-5 ${torchOn ? "text-yellow-500" : ""}`} />
+                <Button variant="outline" size="icon" onClick={() => void toggleTorch()} className="min-w-[44px] min-h-[44px]" title="Lanterna">
+                  <Flashlight className={`h-5 w-5 ${torchOn ? "text-primary" : ""}`} />
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => { stopScanner(); setManualMode(true); }}
+                  onClick={() => {
+                    void stopScanner();
+                    setManualMode(true);
+                    setState("idle");
+                  }}
                   className="min-w-[44px] min-h-[44px]"
                   title="Digitar código"
                 >
@@ -366,13 +312,12 @@ export default function QrCodeScanner({
               </div>
             )}
 
-            {/* Idle state — shouldn't show normally since auto-start */}
             {state === "idle" && (
               <div className="flex flex-col items-center gap-4">
                 <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <Camera className="h-10 w-10 text-primary" />
                 </div>
-                <Button onClick={() => startScanner(useFront)} className="h-12 px-8 min-h-[44px]">
+                <Button onClick={() => void startScanner(useFront)} className="h-12 px-8 min-h-[44px]">
                   <Camera className="h-5 w-5 mr-2" />
                   Iniciar câmera
                 </Button>
@@ -381,7 +326,6 @@ export default function QrCodeScanner({
           </>
         )}
 
-        {/* Manual entry */}
         {manualMode && (
           <div className="w-full max-w-sm space-y-4">
             <div className="flex items-center justify-between">
@@ -394,7 +338,7 @@ export default function QrCodeScanner({
                 size="sm"
                 onClick={() => {
                   setManualMode(false);
-                  startScanner(useFront);
+                  void startScanner(useFront);
                 }}
               >
                 Usar câmera
@@ -408,11 +352,7 @@ export default function QrCodeScanner({
               autoFocus
               className="h-12 text-base"
             />
-            <Button
-              className="w-full h-12 min-h-[44px]"
-              disabled={!manualCode.trim()}
-              onClick={handleManualSubmit}
-            >
+            <Button className="w-full h-12 min-h-[44px]" disabled={!manualCode.trim()} onClick={handleManualSubmit}>
               Processar
             </Button>
           </div>
