@@ -14,7 +14,6 @@ import RegrasJsonViewer from "@/components/admin/regras/RegrasJsonViewer";
 import RegrasEdicaoTab from "@/components/admin/regras/RegrasEdicaoTab";
 import RegrasPublicacaoTab from "@/components/admin/regras/RegrasPublicacaoTab";
 import RegrasLimitesParticipacaoEditor from "@/components/admin/regras/RegrasLimitesParticipacaoEditor";
-import RegrasPublicacaoTab from "@/components/admin/regras/RegrasPublicacaoTab";
 
 export default function RegrasEventoPage() {
   const eventId = useActiveEventId();
