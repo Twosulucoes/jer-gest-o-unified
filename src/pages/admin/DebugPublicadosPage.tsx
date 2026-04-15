@@ -4,7 +4,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { AppPageHeader } from "@/components/app/AppPageHeader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 interface PublishedRow {

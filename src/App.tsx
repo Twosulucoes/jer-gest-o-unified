@@ -69,6 +69,7 @@ import BoletinsPage from "./pages/admin/BoletinsPage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
+import DebugPublicadosPage from "./pages/admin/DebugPublicadosPage";
 import SuperDashboardPage from "./pages/super/SuperDashboardPage";
 import SuperEventosPage from "./pages/super/SuperEventosPage";
 import SuperLogsPage from "./pages/super/SuperLogsPage";
