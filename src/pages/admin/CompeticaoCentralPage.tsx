@@ -15,6 +15,7 @@ import CentralStructureHeatsTab from "@/components/admin/competition/CentralStru
 import CentralParticipantsTab from "@/components/admin/competition/CentralParticipantsTab";
 import CentralMatchesTab from "@/components/admin/competition/CentralMatchesTab";
 import DisputeBuilderTab from "@/components/admin/competition/DisputeBuilderTab";
+import IndividualHeatBuilderTab from "@/components/admin/competition/IndividualHeatBuilderTab";
 import CentralResultsTab from "@/components/admin/competition/CentralResultsTab";
 import EligibilityPendingPanel from "@/components/admin/competition/EligibilityPendingPanel";
 import CentralAgendaTab from "@/components/admin/competition/CentralAgendaTab";
@@ -120,7 +121,7 @@ export default function CompeticaoCentralPage() {
   const steps: WizardStep[] = useMemo(() => [
     { key: "participants", label: isCollective ? "Equipes" : "Participantes" },
     { key: "structure", label: isTimeMark ? "Baterias / Séries" : "Estrutura" },
-    { key: "builder", label: "Montador de Disputas", hidden: !isCollective },
+    { key: "builder", label: isCollective ? "Montador de Disputas" : "Montador de Provas", hidden: !isCollective && !isTimeMark },
     { key: "matches", label: getMatchesLabel(family, format), hidden: isTimeMark },
     { key: "agenda", label: "Agenda" },
     { key: "standings", label: "Classificação", hidden: !showStandings },
@@ -301,11 +302,19 @@ export default function CompeticaoCentralPage() {
             )}
 
             {currentStep === "builder" && (
-              <DisputeBuilderTab
-                eventId={eventId}
-                sportEventId={sportEventId}
-                onChanged={handleChanged}
-              />
+              isCollective ? (
+                <DisputeBuilderTab
+                  eventId={eventId}
+                  sportEventId={sportEventId}
+                  onChanged={handleChanged}
+                />
+              ) : (
+                <IndividualHeatBuilderTab
+                  eventId={eventId}
+                  sportEventId={sportEventId}
+                  onChanged={handleChanged}
+                />
+              )
             )}
 
             {currentStep === "matches" && (
