@@ -55,6 +55,29 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
     }
   }, [activeEventId, events]);
 
+  useEffect(() => {
+    if (eventsLoading || activeEventId || events.length === 0) return;
+
+    const preferredEvent = [...events].sort((a, b) => {
+      const activeStatus = a.status === "active" ? 1 : 0;
+      const nextActiveStatus = b.status === "active" ? 1 : 0;
+      if (activeStatus !== nextActiveStatus) return nextActiveStatus - activeStatus;
+      return b.year - a.year;
+    })[0];
+
+    if (!preferredEvent) return;
+
+    setActiveEventIdState(preferredEvent.id);
+    try { localStorage.setItem(STORAGE_KEY, preferredEvent.id); } catch {}
+  }, [activeEventId, events, eventsLoading]);
+
+  useEffect(() => {
+    if (authLoading || user) return;
+
+    setActiveEventIdState(null);
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  }, [authLoading, user]);
+
   const setActiveEventId = useCallback(
     (id: string) => {
       setActiveEventIdState(id);
