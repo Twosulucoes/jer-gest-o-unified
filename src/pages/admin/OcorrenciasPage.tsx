@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useEvent } from "@/contexts/EventContext";
-import { ModuleHeader } from "@/components/admin/ModuleHeader";
+import { useEventContext } from "@/contexts/EventContext";
+import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { AlertTriangle, Search, Phone, Calendar, Filter } from "lucide-react";
+import { AlertTriangle, Search, Phone, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -48,7 +48,7 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
 };
 
 export default function OcorrenciasPage() {
-  const { activeEvent } = useEvent();
+  const { activeEvent } = useEventContext();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -69,8 +69,8 @@ export default function OcorrenciasPage() {
       .eq("event_id", activeEvent.id)
       .order("created_at", { ascending: false });
 
-    if (filterModule !== "all") query = query.eq("module", filterModule);
-    if (filterStatus !== "all") query = query.eq("incident_status", filterStatus);
+    if (filterModule !== "all") query = query.eq("module", filterModule as any);
+    if (filterStatus !== "all") query = query.eq("incident_status", filterStatus as any);
 
     const { data, error } = await query;
     if (error) console.error(error);
