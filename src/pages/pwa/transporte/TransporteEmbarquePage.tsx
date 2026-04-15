@@ -48,7 +48,6 @@ export default function TransporteEmbarquePage() {
   const [finishing, setFinishing] = useState(false);
   const [tripInfo, setTripInfo] = useState<TripInfo>({});
 
-  // Use dynamic viewport height
   useEffect(() => {
     const meta = document.querySelector('meta[name="viewport"]');
     const original = meta?.getAttribute("content") || "";
@@ -60,9 +59,16 @@ export default function TransporteEmbarquePage() {
 
   useEffect(() => {
     (async () => {
-      if (!tripId) { setAuthorized(false); setLoading(false); return; }
+      if (!tripId) {
+        setAuthorized(false);
+        setLoading(false);
+        return;
+      }
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/pwa/login", { replace: true }); return; }
+      if (!session) {
+        navigate("/pwa/login", { replace: true });
+        return;
+      }
 
       const { data: trip } = await supabase
         .from("transport_trips")
@@ -89,34 +95,49 @@ export default function TransporteEmbarquePage() {
   }, [tripId, navigate]);
 
   const fetchPassengers = useCallback(async () => {
-    if (!tripId || authorized !== true) { setLoading(false); return; }
-    const { data } = await supabase
+    if (!tripId || authorized !== true) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const { data, error } = await supabase
       .from("transport_passengers")
-      .select("id, participant_id, status, boarded_at, is_manual, manual_name, participants(full_name)")
+      .select("id, participant_id, status, boarded_at, is_manual, manual_name, participant:participants(person:people(full_name))")
       .eq("trip_id", tripId)
       .order("created_at");
 
+    if (error) {
+      console.error("Erro ao buscar passageiros", error);
+      toast.error("Erro ao carregar passageiros da viagem");
+      setPassengers([]);
+      setLoading(false);
+      return;
+    }
+
     const list = ((data as any) || []).map((p: any) => ({
       id: p.id,
-      full_name: p.is_manual ? (p.manual_name || "Manual") : (p.participants?.full_name || "—"),
+      full_name: p.is_manual ? (p.manual_name || "Manual") : (p.participant?.person?.full_name || "—"),
       boarded: p.status === "boarded",
       boarded_at: p.boarded_at,
       participant_id: p.participant_id,
       is_manual: p.is_manual,
       manual_name: p.manual_name,
     }));
+
     setPassengers(list);
     setLoading(false);
   }, [tripId, authorized]);
 
-  useEffect(() => { if (authorized === true) fetchPassengers(); }, [fetchPassengers, authorized]);
+  useEffect(() => {
+    if (authorized === true) void fetchPassengers();
+  }, [fetchPassengers, authorized]);
 
-  const boardedCount = passengers.filter(p => p.boarded).length;
+  const boardedCount = passengers.filter((p) => p.boarded).length;
 
   const handleFinish = async (hasIncidents: boolean, notes: string) => {
     setFinishing(true);
     try {
-      // Fetch driver phone from profiles
       const { data: { session } } = await supabase.auth.getSession();
       let driverPhone: string | null = null;
       if (session?.user?.id) {
@@ -134,11 +155,8 @@ export default function TransporteEmbarquePage() {
         .eq("id", tripId!);
       if (error) throw error;
 
-      // Create incident record if notes were provided
       if (hasIncidents && notes) {
         const userId = session?.user?.id;
-
-        // Get event_id from trip
         const { data: tripData } = await supabase
           .from("transport_trips")
           .select("event_id")
@@ -146,7 +164,6 @@ export default function TransporteEmbarquePage() {
           .single();
 
         if (tripData && userId) {
-          // Try to get reporter profile
           const { data: profile } = await supabase
             .from("profiles")
             .select("full_name")
@@ -194,24 +211,37 @@ export default function TransporteEmbarquePage() {
         participantId = extResult.participant_id;
         name = extResult.full_name || name;
       } else {
-        const { data: cred } = await supabase
+        const { data: cred, error } = await supabase
           .from("participant_credentials")
-          .select("participant_id, participants(full_name)")
+          .select("participant_id, participant:participants(person:people(full_name))")
           .or(`qr_token.eq.${token},credential_code.eq.${token},qr_code_value.eq.${rawValue}`)
           .eq("status", "active")
           .limit(1)
           .maybeSingle();
 
-        if (!cred) { toast.error("Credencial não encontrada"); return; }
+        if (error) throw error;
+        if (!cred) {
+          toast.error("Credencial não encontrada");
+          return;
+        }
         participantId = (cred as any).participant_id;
-        name = (cred as any).participants?.full_name || name;
+        name = (cred as any).participant?.person?.full_name || name;
       }
 
-      if (!participantId) { toast.error("Credencial não encontrada"); return; }
+      if (!participantId) {
+        toast.error("Credencial não encontrada");
+        return;
+      }
 
-      const passenger = passengers.find(p => p.participant_id === participantId);
-      if (!passenger) { toast.error(`${name} não está na lista desta viagem`); return; }
-      if (passenger.boarded) { toast.info(`${name} já embarcou`); return; }
+      const passenger = passengers.find((p) => p.participant_id === participantId);
+      if (!passenger) {
+        toast.error(`${name} não está na lista desta viagem`);
+        return;
+      }
+      if (passenger.boarded) {
+        toast.info(`${name} já embarcou`);
+        return;
+      }
 
       const { error } = await supabase
         .from("transport_passengers")
@@ -221,7 +251,7 @@ export default function TransporteEmbarquePage() {
 
       toast.success(`${name} embarcado com sucesso`);
       if (navigator.vibrate) navigator.vibrate(200);
-      fetchPassengers();
+      await fetchPassengers();
     } catch (err: any) {
       toast.error("Erro ao registrar embarque: " + (err.message || "desconhecido"));
     }
@@ -244,7 +274,6 @@ export default function TransporteEmbarquePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-30 border-b bg-primary text-primary-foreground px-3 py-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -274,7 +303,6 @@ export default function TransporteEmbarquePage() {
       </header>
 
       <main className="p-3 max-w-4xl mx-auto space-y-3">
-        {/* Trip Info */}
         {tripId && !loading && (
           <TripInfoCard
             routeName={tripInfo.routeName}
@@ -286,13 +314,12 @@ export default function TransporteEmbarquePage() {
           />
         )}
 
-        {loading && <div className="grid grid-cols-2 gap-2">{[1,2,3,4].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>}
+        {loading && <div className="grid grid-cols-2 gap-2">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>}
 
         {!loading && passengers.length === 0 && (
           <div className="text-center py-8 text-muted-foreground text-sm">Nenhum passageiro nesta viagem</div>
         )}
 
-        {/* Passenger grid - 2 columns for landscape */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {passengers.map((p) => (
             <Card key={p.id} className={p.boarded ? "border-primary/30 bg-primary/5" : ""}>
