@@ -455,6 +455,10 @@ export type Database = {
           auto_transition: boolean
           bracket_config: Json
           created_at: string
+          disputes_published_at: string | null
+          disputes_published_by: string | null
+          disputes_unpublished_reason: string | null
+          disputes_updated_at: string | null
           event_id: string
           id: string
           name: string
@@ -470,6 +474,10 @@ export type Database = {
           auto_transition?: boolean
           bracket_config?: Json
           created_at?: string
+          disputes_published_at?: string | null
+          disputes_published_by?: string | null
+          disputes_unpublished_reason?: string | null
+          disputes_updated_at?: string | null
           event_id: string
           id?: string
           name: string
@@ -485,6 +493,10 @@ export type Database = {
           auto_transition?: boolean
           bracket_config?: Json
           created_at?: string
+          disputes_published_at?: string | null
+          disputes_published_by?: string | null
+          disputes_unpublished_reason?: string | null
+          disputes_updated_at?: string | null
           event_id?: string
           id?: string
           name?: string
