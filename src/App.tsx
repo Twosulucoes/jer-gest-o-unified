@@ -81,6 +81,11 @@ import LinkFormPage from "./pages/admin/LinkFormPage";
 import ReportCenterPage from "./reports/ui/ReportCenterPage";
 import LinkPreviewPage from "./pages/admin/LinkPreviewPage";
 import GoRedirectPage from "./pages/public/GoRedirectPage";
+// Evento Rules Center pages (lazy)
+const EventoRegrasPage = lazy(() => import("./pages/eventos/EventoRegrasPage"));
+const EventoModalidadesPage = lazy(() => import("./pages/eventos/EventoModalidadesPage"));
+const EventoQualificacaoPage = lazy(() => import("./pages/eventos/EventoQualificacaoPage"));
+const EventoAssistenteInscricaoPage = lazy(() => import("./pages/eventos/EventoAssistenteInscricaoPage"));
 import PublicPagePage from "./pages/public/PublicPagePage";
 import PesquisaDashboardPage from "./pages/admin/PesquisaDashboardPage";
 import PesquisaEventosPage from "./pages/admin/PesquisaEventosPage";
@@ -334,6 +339,11 @@ const App = () => (
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
             <Route path="/a/:token" element={<AtletaPublicProfilePage />} />
+            {/* Evento Rules Center (public/admin, lazy loaded) */}
+            <Route path="/eventos/:eventSlug/regras" element={<Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando...</div>}><EventoRegrasPage /></Suspense>} />
+            <Route path="/eventos/:eventSlug/modalidades" element={<Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando...</div>}><EventoModalidadesPage /></Suspense>} />
+            <Route path="/eventos/:eventSlug/qualificacao" element={<Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando...</div>}><EventoQualificacaoPage /></Suspense>} />
+            <Route path="/eventos/:eventSlug/assistente-inscricao" element={<Suspense fallback={<div className="p-8 text-center text-muted-foreground">Carregando...</div>}><EventoAssistenteInscricaoPage /></Suspense>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </EventProvider>
