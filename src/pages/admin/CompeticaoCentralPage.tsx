@@ -12,7 +12,7 @@ import CompetitionSummaryCards from "@/components/admin/competition/CompetitionS
 import CentralStructureTab from "@/components/admin/competition/CentralStructureTab";
 import CentralStructureCollectiveTab from "@/components/admin/competition/CentralStructureCollectiveTab";
 import CentralStructureHeatsTab from "@/components/admin/competition/CentralStructureHeatsTab";
-import CentralEnrolledTab from "@/components/admin/competition/CentralEnrolledTab";
+import CentralParticipantsTab from "@/components/admin/competition/CentralParticipantsTab";
 import CentralMatchesTab from "@/components/admin/competition/CentralMatchesTab";
 import CentralResultsTab from "@/components/admin/competition/CentralResultsTab";
 import EligibilityPendingPanel from "@/components/admin/competition/EligibilityPendingPanel";
@@ -267,7 +267,7 @@ export default function CompeticaoCentralPage() {
 
           <div className="min-h-[300px]">
             {currentStep === "participants" && (
-              <CentralEnrolledTab
+              <CentralParticipantsTab
                 eventId={eventId}
                 sportEventId={sportEventId}
                 isCollective={isCollective}
