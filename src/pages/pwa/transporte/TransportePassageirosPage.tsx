@@ -270,6 +270,9 @@ export default function TransportePassageirosPage() {
       </header>
 
       <main className="p-3 max-w-4xl mx-auto space-y-3">
+        {/* Delegation alert */}
+        {!loading && <DelegationAlertBanner delegationCounts={delegationCounts} />}
+
         {/* Trip info */}
         {tripId && !loading && (
           <TripInfoCard routeName={tripInfo.routeName} origin={tripInfo.origin} destination={tripInfo.destination} scheduledAt={tripInfo.scheduledAt} vehicleLabel={tripInfo.vehicleLabel} vehiclePlate={tripInfo.vehiclePlate} />
