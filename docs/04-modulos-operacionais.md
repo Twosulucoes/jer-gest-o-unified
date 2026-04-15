@@ -77,7 +77,9 @@
   - ✅ Standings de grupo (GroupStandingsTable)
   - ✅ Painel de controle com status automático por prova
   - ✅ Pré-validação de quórum
-  - ✅ **Transição automática de fases**: quando todos os resultados de uma fase são publicados, a fase muda para `finished` e a próxima inicia automaticamente. Controlado por `auto_transition` (boolean) em `competition_phases`. Trigger `trg_check_phase_on_result_publish` + RPC `check_phase_transitions`. Registra audit_events.
+  - ✅ **Transição automática de fases**: quando todos os resultados de uma fase são publicados, a fase muda para `finished` e a próxima inicia automaticamente.
+  - ✅ **Resultado inline por confronto**: `MatchResultInlineCard` permite lançar resultado, placar e vencedor diretamente no montador de disputas, com status: agendado, em andamento, encerrado, homologado, cancelado.
+  - ✅ **Progressão manual de vencedores**: `WinnerProgressionPanel` exibe vencedores de fases anteriores como itens arrastáveis para slots da próxima fase (drag and drop via @dnd-kit). Trilha de origem visível.
 - **Perfis**: admin, secretaria, coordenacao_tecnica, coordenador_modalidade, mesario
 - **Dados reais**: 79 provas, 26 partidas, 17 resultados, 40 equipes
 
@@ -96,11 +98,11 @@
 ## 9. Resultados e Governança (🟡 Parcial)
 - **Ciclo**: `resultado_lancado` → `resultado_validado` → `publicado`
 - **RPCs**: `rpc_launch_match_result`, `rpc_validate_results_for_sport_event`, `rpc_publish_results_for_sport_event`
-- **Frontend**: LaunchResultDialog (wizard), ResultGovernancePanel (validar/publicar em lote), CentralResultsTab
+- **Frontend**: LaunchResultDialog (wizard), ResultGovernancePanel (validar/publicar em lote), CentralResultsTab, **MatchResultInlineCard** (inline no montador), **WinnerProgressionPanel** (drag-and-drop para próxima fase)
 - **Publicação**: exige boletim oficial publicado
 - **RLS anon**: `result_status = 'publicado'` permite SELECT para público
 - **Strings canônicas**: `src/lib/resultStatus.ts` — fonte de verdade
-- **Implementado**: ✅ Lançamento pelo wizard | ✅ Validação em lote | ✅ Publicação com boletim | ✅ Auto-finish da partida
+- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento inline por confronto | ✅ Progressão manual de vencedores | ✅ Validação em lote | ✅ Publicação com boletim | ✅ Auto-finish da partida | ✅ Auditoria de resultados e movimentações
 - **Gaps**: ❌ Sem portal público para consulta externa | ❌ Sem geração de boletins em PDF | 🟡 CombatResultForm não integrado automaticamente
 
 ## 10. Boletins Oficiais (🟡 Parcial)
