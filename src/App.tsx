@@ -226,8 +226,8 @@ const App = () => (
               <Route path="competicao/fases" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoFasesPage /></ProtectedRoute>} />
               <Route path="competicao/grupos" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoGruposPage /></ProtectedRoute>} />
               <Route path="competicao/partidas" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidasAgendaPage /></ProtectedRoute>} />
-              <Route path="competicao/agenda" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidasAgendaPage /></ProtectedRoute>} />
-              <Route path="competicao/partidas-agenda" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidasAgendaPage /></ProtectedRoute>} />
+              <Route path="competicao/agenda" element={<Navigate to="/admin/competicao/partidas" replace />} />
+              <Route path="competicao/partidas-agenda" element={<Navigate to="/admin/competicao/partidas" replace />} />
               <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />
               <Route path="competicao/equipes" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoEquipesPage /></ProtectedRoute>} />
               <Route path="competicao/resultados" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoResultadosPage /></ProtectedRoute>} />
@@ -239,16 +239,16 @@ const App = () => (
               {/* Acessos */}
               <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
               <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
-              {/* Parâmetros */}
-              <Route path="parametros-evento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParametrosEventoPage /></ProtectedRoute>} />
+              {/* Parâmetros — consolidated into regras-evento */}
+              <Route path="parametros-evento" element={<Navigate to="/admin/regras-evento" replace />} />
               <Route path="regras-evento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegrasEventoPage /></ProtectedRoute>} />
               {/* Irregularidades e Normalização */}
               <Route path="irregularidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><IrregularidadesPage /></ProtectedRoute>} />
               <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />
               {/* Schema Validator */}
               <Route path="schema/validador" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><SchemaValidadorPage /></ProtectedRoute>} />
-              <Route path="mapa" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
-              <Route path="diagnostico-competicao" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
+              <Route path="mapa" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
+              <Route path="diagnostico-competicao" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
               <Route path="sistema/diagnostico" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
               <Route path="dados" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CentralDadosPage /></ProtectedRoute>} />
               <Route path="boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><BoletinsPage /></ProtectedRoute>} />
