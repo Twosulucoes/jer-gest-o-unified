@@ -357,7 +357,7 @@ export default function CompeticaoPainelPage() {
   if (isCoordModalidade && mySportIds && mySportIds.length === 0) {
     return (
       <div className="space-y-6">
-        <ModuleHeader route="/admin/competicao/painel" title="Painel de Controle da Competição" />
+        <ModuleHeader route="/admin/competicao/painel" title="Minhas Modalidades" />
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>Você não tem modalidades atribuídas. Contate o administrador para vincular modalidades ao seu perfil.</AlertDescription>
@@ -371,7 +371,7 @@ export default function CompeticaoPainelPage() {
     <div className="space-y-6">
       <ModuleHeader
         route="/admin/competicao/painel"
-        title="Painel de Controle da Competição"
+        title={isCoordModalidade ? "Minhas Modalidades" : "Painel de Controle da Competição"}
       />
 
       {/* KPI Cards */}
