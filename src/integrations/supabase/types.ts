@@ -3338,9 +3338,11 @@ export type Database = {
       transport_trips: {
         Row: {
           arrived_at: string | null
+          assigned_driver_id: string | null
           created_at: string
           created_by: string | null
           departed_at: string | null
+          driver_checked_in_at: string | null
           driver_name: string | null
           driver_phone: string | null
           event_id: string
@@ -3351,14 +3353,17 @@ export type Database = {
           seed_batch_id: string | null
           seed_tag: string | null
           status: string
+          trip_status: string
           updated_at: string
           vehicle_id: string | null
         }
         Insert: {
           arrived_at?: string | null
+          assigned_driver_id?: string | null
           created_at?: string
           created_by?: string | null
           departed_at?: string | null
+          driver_checked_in_at?: string | null
           driver_name?: string | null
           driver_phone?: string | null
           event_id: string
@@ -3369,14 +3374,17 @@ export type Database = {
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string
+          trip_status?: string
           updated_at?: string
           vehicle_id?: string | null
         }
         Update: {
           arrived_at?: string | null
+          assigned_driver_id?: string | null
           created_at?: string
           created_by?: string | null
           departed_at?: string | null
+          driver_checked_in_at?: string | null
           driver_name?: string | null
           driver_phone?: string | null
           event_id?: string
@@ -3387,6 +3395,7 @@ export type Database = {
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string
+          trip_status?: string
           updated_at?: string
           vehicle_id?: string | null
         }
