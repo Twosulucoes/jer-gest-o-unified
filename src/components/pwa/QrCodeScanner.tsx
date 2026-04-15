@@ -89,14 +89,40 @@ export default function QrCodeScanner({
   }, []);
 
   // Start web scanner
+  // Pre-request camera permission to preserve user gesture context
+  const preRequestCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      // Stop immediately — we just needed to trigger the permission prompt within gesture context
+      stream.getTracks().forEach((t) => t.stop());
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const startScanner = useCallback(
-    async (front: boolean) => {
+    async (front: boolean, skipPermission = false) => {
       setState("requesting");
       setErrorMsg("");
       setHintVisible(false);
 
-      // Wait for DOM to render the container
-      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 100)));
+      // Request camera permission directly (preserving gesture context)
+      if (!skipPermission) {
+        const granted = await preRequestCamera();
+        if (!granted) {
+          setState("error");
+          setErrorMsg(
+            "Acesso à câmera negado. Habilite nas configurações do navegador:\n\n" +
+            "Android Chrome: Configurações → Privacidade → Câmera\n" +
+            "iOS Safari: Ajustes → Safari → Câmera"
+          );
+          return;
+        }
+      }
+
+      // Small delay to ensure DOM container exists
+      await new Promise((r) => setTimeout(r, 50));
 
       const container = document.getElementById(containerId);
       if (!container) {
@@ -151,7 +177,7 @@ export default function QrCodeScanner({
         }
       }
     },
-    [containerId, handleDetected]
+    [containerId, handleDetected, preRequestCamera]
   );
 
   // Native scan (Capacitor MLKit)
@@ -194,7 +220,9 @@ export default function QrCodeScanner({
     if (isNativeApp()) {
       startNativeScan();
     } else {
-      startScanner(false);
+      // Don't auto-start — show idle state with button so camera permission
+      // is triggered from a user gesture (required by mobile browsers)
+      setState("idle");
     }
     return () => {
       stopScanner();
