@@ -15,6 +15,7 @@ export default function AlimentacaoHomePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ consumosHoje: 0, janelasAbertas: 0, tiposRefeicao: 0, totalJanelas: 0 });
+  const [incidentOpen, setIncidentOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -58,7 +59,12 @@ export default function AlimentacaoHomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PwaHeader title="Alimentação" icon={UtensilsCrossed} backTo="/pwa" onSignOut={handleSignOut} />
+      <PwaHeader title="Alimentação" icon={UtensilsCrossed} backTo="/pwa" onSignOut={handleSignOut}>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setIncidentOpen(true)}>
+          <AlertTriangle className="h-4 w-4 text-destructive" />
+          <span className="hidden sm:inline">Ocorrência</span>
+        </Button>
+      </PwaHeader>
 
       <main className="p-4 max-w-md mx-auto space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -81,6 +87,8 @@ export default function AlimentacaoHomePage() {
           ))}
         </div>
       </main>
+
+      <FoodIncidentDialog open={incidentOpen} onOpenChange={setIncidentOpen} />
     </div>
   );
 }
