@@ -178,7 +178,7 @@ export default function TransporteEmbarquePage() {
 
   if (authorized === false) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center transport-landscape">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
         <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
         <h2 className="text-lg font-bold text-foreground mb-2">Acesso Bloqueado</h2>
         <p className="text-muted-foreground text-sm mb-6">
@@ -192,29 +192,31 @@ export default function TransporteEmbarquePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background transport-landscape">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b bg-primary text-primary-foreground px-4 h-12">
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate("/pwa/transporte")} className="text-primary-foreground/70 hover:text-primary-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <span className="font-heading font-semibold tracking-tight text-sm">Embarque</span>
-        </div>
-        <div className="flex items-center gap-1.5">
+      <header className="sticky top-0 z-30 border-b bg-primary text-primary-foreground px-3 py-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate("/pwa/transporte")} className="text-primary-foreground/70 hover:text-primary-foreground">
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <span className="font-heading font-semibold tracking-tight text-sm">Embarque</span>
+          </div>
           <div className="flex items-center gap-1 text-xs bg-primary-foreground/10 rounded-full px-2.5 py-1">
             <Users className="h-3.5 w-3.5" />
             <span className="font-bold">{boardedCount}</span>
-            <span className="opacity-70">|</span>
-            <span>{passengers.length} esperados</span>
+            <span className="opacity-70">/</span>
+            <span>{passengers.length}</span>
           </div>
-          <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setManualOpen(true)}>
+        </div>
+        <div className="flex items-center gap-2 mt-2">
+          <Button size="sm" variant="secondary" className="h-8 text-xs flex-1" onClick={() => setManualOpen(true)}>
             <UserPlus className="h-3.5 w-3.5 mr-1" /> Manual
           </Button>
-          <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setScannerOpen(true)}>
+          <Button size="sm" variant="secondary" className="h-8 text-xs flex-1" onClick={() => setScannerOpen(true)}>
             <ScanLine className="h-3.5 w-3.5 mr-1" /> Scan
           </Button>
-          <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={() => setFinishOpen(true)}>
+          <Button size="sm" variant="destructive" className="h-8 text-xs flex-1" onClick={() => setFinishOpen(true)}>
             Finalizar
           </Button>
         </div>

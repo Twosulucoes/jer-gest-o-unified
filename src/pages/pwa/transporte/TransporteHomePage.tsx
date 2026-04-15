@@ -197,7 +197,7 @@ export default function TransporteHomePage() {
   );
 
   return (
-    <div className="min-h-screen bg-background transport-landscape">
+    <div className="min-h-screen bg-background">
       <PwaHeader title="Transporte" icon={Bus} backTo="/pwa" onSignOut={handleSignOut} />
 
       <main className="p-3 max-w-5xl mx-auto space-y-3">
