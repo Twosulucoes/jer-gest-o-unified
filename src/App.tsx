@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +12,8 @@ import AdminLayout from "@/components/AdminLayout";
 import SuperAdminLayout from "@/components/SuperAdminLayout";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import ModuleSelectorPage from "./pages/ModuleSelectorPage";
 import DashboardPage from "./pages/admin/DashboardPage";
 import EventosPage from "./pages/admin/EventosPage";
 import ModalidadesPage from "./pages/admin/ModalidadesPage";
@@ -86,8 +88,7 @@ import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
 import PesquisaHomePage from "./pages/pwa/PesquisaHomePage";
 import PesquisaNovaPage from "./pages/pwa/PesquisaNovaPage";
 import PesquisaConfirmacaoPage from "./pages/pwa/PesquisaConfirmacaoPage";
-import PwaLoginPage from "./pages/pwa/PwaLoginPage";
-import PwaRecoverPage from "./pages/pwa/PwaRecoverPage";
+// PwaLoginPage removed — unified login at /login
 import PwaSetPasswordPage from "./pages/pwa/PwaSetPasswordPage";
 import PwaLandingPage from "./pages/pwa/PwaLandingPage";
 import PwaModulePage from "./pages/pwa/PwaModulePage";
@@ -157,6 +158,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+            <Route path="/selecionar-modulo" element={<ModuleSelectorPage />} />
             {/* Super Admin routes */}
             <Route
               path="/super"
@@ -262,9 +265,9 @@ const App = () => (
               {/* Ocorrências */}
               <Route path="ocorrencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><OcorrenciasPage /></ProtectedRoute>} />
             </Route>
-            {/* PWA Auth pages (public) */}
-            <Route path="/pwa/login" element={<PwaLoginPage />} />
-            <Route path="/pwa/recover" element={<PwaRecoverPage />} />
+            {/* PWA Auth — redirect old login paths to unified login */}
+            <Route path="/pwa/login" element={<Navigate to="/login" replace />} />
+            <Route path="/pwa/recover" element={<Navigate to="/login" replace />} />
             <Route path="/pwa/set-password" element={<PwaSetPasswordPage />} />
             {/* PWA Landing (requires auth) */}
             <Route path="/pwa" element={<PwaLandingPage />} />
