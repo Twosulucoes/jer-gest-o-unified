@@ -210,33 +210,16 @@ export default function TransporteEmbarquePage() {
 
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
-    const token = rawValue.startsWith("JER:") ? rawValue.slice(4) : rawValue.trim();
-    if (!token || !tripId) return;
+    if (!rawValue.trim() || !tripId) return;
 
     try {
       let participantId: string | null = null;
       let name = "Participante";
 
-      const extResult = await resolveExternalCredential(token);
-      if (extResult) {
-        participantId = extResult.participant_id;
-        name = extResult.full_name || name;
-      } else {
-        const { data: cred, error } = await supabase
-          .from("participant_credentials")
-          .select("participant_id, participant:participants(person:people(full_name))")
-          .or(`qr_token.eq.${token},credential_code.eq.${token},qr_code_value.eq.${rawValue}`)
-          .eq("status", "active")
-          .limit(1)
-          .maybeSingle();
-
-        if (error) throw error;
-        if (!cred) {
-          toast.error("Credencial não encontrada");
-          return;
-        }
-        participantId = (cred as any).participant_id;
-        name = (cred as any).participant?.person?.full_name || name;
+      const resolved = await resolveQrCredential(rawValue);
+      if (resolved) {
+        participantId = resolved.participant_id;
+        name = resolved.full_name || name;
       }
 
       if (!participantId) {
