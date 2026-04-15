@@ -3314,6 +3314,7 @@ export type Database = {
           is_manual: boolean
           manual_cpf: string | null
           manual_name: string | null
+          no_show: boolean
           notes: string | null
           participant_id: string | null
           status: string
@@ -3331,6 +3332,7 @@ export type Database = {
           is_manual?: boolean
           manual_cpf?: string | null
           manual_name?: string | null
+          no_show?: boolean
           notes?: string | null
           participant_id?: string | null
           status?: string
@@ -3348,6 +3350,7 @@ export type Database = {
           is_manual?: boolean
           manual_cpf?: string | null
           manual_name?: string | null
+          no_show?: boolean
           notes?: string | null
           participant_id?: string | null
           status?: string

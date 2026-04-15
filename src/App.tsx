@@ -106,6 +106,7 @@ import TransporteViagensPwaPage from "./pages/pwa/transporte/TransporteViagensPa
 import TransporteScanPage from "./pages/pwa/transporte/TransporteScanPage";
 import TransporteEmbarquePwaPage from "./pages/pwa/transporte/TransporteEmbarquePage";
 import TransporteRotasPwaPage from "./pages/pwa/transporte/TransporteRotasPage";
+import TransportePassageirosPage from "./pages/pwa/transporte/TransportePassageirosPage";
 // PWA Alimentação pages
 import AlimentacaoHomePage from "./pages/pwa/alimentacao/AlimentacaoHomePage";
 import AlimentacaoScanPage from "./pages/pwa/alimentacao/AlimentacaoScanPage";
@@ -292,6 +293,7 @@ const App = () => (
             <Route path="/pwa/transporte/embarque" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteEmbarquePwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/transporte/embarque/:tripId" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteEmbarquePwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/transporte/rotas" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteRotasPwaPage /></PwaRouteGuard>} />
+            <Route path="/pwa/transporte/viagem/:tripId/passageiros" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransportePassageirosPage /></PwaRouteGuard>} />
             {/* PWA Alimentação — perfil alimentacao */}
             <Route path="/pwa/alimentacao" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoHomePage /></PwaRouteGuard>} />
             <Route path="/pwa/alimentacao/scan" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoScanPage /></PwaRouteGuard>} />
