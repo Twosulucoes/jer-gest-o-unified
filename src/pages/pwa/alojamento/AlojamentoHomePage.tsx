@@ -70,6 +70,7 @@ export default function AlojamentoHomePage() {
     { label: "Scan QR", icon: ScanLine, to: "/pwa/alojamento/scan" },
     { label: "Buscar", icon: Search, to: "/pwa/alojamento/buscar" },
     { label: "Ocupação", icon: Building, to: "/pwa/alojamento/ocupacao" },
+    { label: "Lista Completa", icon: Users, to: "/pwa/alojamento/lista-completa" },
     { label: "Ocorrências", icon: AlertTriangle, to: "/pwa/alojamento/incidentes" },
   ];
 
