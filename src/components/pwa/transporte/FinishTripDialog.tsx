@@ -64,14 +64,14 @@ export function FinishTripDialog({
 
           {/* Single field for incidents/notes */}
           <div className="space-y-1.5">
-            <Label className="text-sm font-medium">Ocorrências e Observações (opcional)</Label>
+            <Label className="text-sm font-medium">Ocorrências e Observações</Label>
             <p className="text-xs text-muted-foreground">
-              Relate problemas, incidentes ou informações importantes desta viagem
+              (opcional — relate problemas ou informações importantes)
             </p>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Descreva ocorrências ou observações..."
+              placeholder="Descreva ocorrências, problemas ou observações sobre a viagem..."
               rows={4}
             />
           </div>
