@@ -5,6 +5,17 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Centro de Regras do Evento: 4 páginas públicas em `/eventos/:eventSlug/` (regras, modalidades, qualificação, assistente-inscrição)
+- Componentes compartilhados de badges regulatórios: `RuleStatusBadge`, `EligibilityBadge`, `SelectionMethodBadge`, `DisciplineTypeBadge`
+- `SportEventRuleDrawer`: drawer lateral com resumo regulatório, campos estruturados e JSON bruto
+- `RuleWarningCallout`: alertas visuais para confirmação manual, somente estadual, não elegível
+- `RuleJsonAccordion`: accordion para auditoria de JSONs estruturados
+- Hook `useEventRulesCenter`: consolidação de `sport_event_rules` + `sport_events` + `sports` + `categories`
+- Tipo `RuleSportEventView`: view derivada com campos calculados (national_flow_status, institution_limit_summary, etc.)
+- Utilitários em `rulesTransform.ts`: parseAllowedGenders, buildNationalFlowStatus, buildSelectionMethodLabel, etc.
+- Filtros por tipo de disciplina, status nacional, busca textual e exportação CSV em todas as tabelas
+- Mapa de Qualificação com agrupamento por modalidade/sede/prioridade e regras especiais expansíveis
+- Assistente Operacional de Inscrição com painel de regras, restrições e elegibilidade nacional por modalidade
 - Consolidação de ranking cross-heat para modalidades individuais (time/mark)
 - `CrossHeatRankingCard`: ranking geral exibido na página da partida (bateria) com destaque da bateria atual
 - `CrossHeatRankingTab`: tab de classificação no wizard (Passo 5) com filtros, busca e exportação CSV
