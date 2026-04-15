@@ -136,7 +136,6 @@ export default function TransporteEmbarquePage() {
 
       // Create incident record if notes were provided
       if (hasIncidents && notes) {
-        const { data: { session } } = await supabase.auth.getSession();
         const userId = session?.user?.id;
 
         // Get event_id from trip
