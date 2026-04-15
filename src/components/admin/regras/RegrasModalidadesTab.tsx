@@ -43,10 +43,8 @@ export default function RegrasModalidadesTab({ sections, onChange, onSave, isSav
   const [filterType, setFilterType] = useState("all");
   const [filterJerpa, setFilterJerpa] = useState("all");
 
-  if (isLoading) return <div className="space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-40 w-full" /></div>;
-
   const canEdit = perm === "full" || perm === "edit";
-  const sports = sections.sports ?? [];
+  const sports = useMemo(() => sections.sports ?? [], [sections.sports]);
 
   const filtered = useMemo(() => {
     return sports.filter((s) => {

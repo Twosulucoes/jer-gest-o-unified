@@ -212,15 +212,15 @@ export function useEventEditionRules(eventId: string | undefined) {
       const newVersion = existing ? existing.version + 1 : 1;
       const { error } = await supabase
         .from("event_edition_rules")
-        .insert({
+        .insert([{
           event_id: eventId!,
           version: newVersion,
           status: "draft",
-          sections: existing?.sections ?? {},
+          sections: (existing?.sections ?? {}) as any,
           notes: null,
           created_by: user?.id ?? null,
           updated_by: user?.id ?? null,
-        });
+        }]);
       if (error) throw error;
     },
     onSuccess: () => {
