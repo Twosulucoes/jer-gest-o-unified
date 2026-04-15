@@ -99,6 +99,7 @@ import AlojamentoOcupacaoPage2 from "./pages/pwa/alojamento/AlojamentoOcupacaoPa
 import AlojamentoPessoaPage from "./pages/pwa/alojamento/AlojamentoPessoaPage";
 import AlojamentoIncidentesPage from "./pages/pwa/alojamento/AlojamentoIncidentesPage";
 import AlojamentoNovoIncidentePage from "./pages/pwa/alojamento/AlojamentoNovoIncidentePage";
+import AlojamentoListaCompletaPage from "./pages/pwa/alojamento/AlojamentoListaCompletaPage";
 // PWA Transporte pages
 import TransporteHomePage from "./pages/pwa/transporte/TransporteHomePage";
 import TransporteViagensPwaPage from "./pages/pwa/transporte/TransporteViagensPage";
@@ -282,6 +283,7 @@ const App = () => (
             <Route path="/pwa/alojamento/pessoa/:id" element={<PwaRouteGuard allowedRoles={["alojamento"]}><AlojamentoPessoaPage /></PwaRouteGuard>} />
             <Route path="/pwa/alojamento/incidentes" element={<PwaRouteGuard allowedRoles={["alojamento"]}><AlojamentoIncidentesPage /></PwaRouteGuard>} />
             <Route path="/pwa/alojamento/incidentes/nova" element={<PwaRouteGuard allowedRoles={["alojamento"]}><AlojamentoNovoIncidentePage /></PwaRouteGuard>} />
+            <Route path="/pwa/alojamento/lista-completa" element={<PwaRouteGuard allowedRoles={["alojamento"]}><AlojamentoListaCompletaPage /></PwaRouteGuard>} />
             {/* PWA Transporte — perfil transporte */}
             <Route path="/pwa/transporte" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteHomePage /></PwaRouteGuard>} />
             <Route path="/pwa/transporte/viagens" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteViagensPwaPage /></PwaRouteGuard>} />
