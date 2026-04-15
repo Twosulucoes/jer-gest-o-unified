@@ -47,15 +47,13 @@ export default function TransporteEmbarquePage() {
   const [finishing, setFinishing] = useState(false);
   const [tripInfo, setTripInfo] = useState<TripInfo>({});
 
-  // Force landscape orientation
+  // Use dynamic viewport height
   useEffect(() => {
     const meta = document.querySelector('meta[name="viewport"]');
     const original = meta?.getAttribute("content") || "";
-    if (meta) meta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1");
-    try { (screen.orientation as any)?.lock?.("landscape").catch(() => {}); } catch {}
+    if (meta) meta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no");
     return () => {
-      if (meta) meta.setAttribute("content", original || "width=device-width, initial-scale=1.0");
-      try { screen.orientation?.unlock?.(); } catch {}
+      if (meta) meta.setAttribute("content", original || "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
     };
   }, []);
 
