@@ -371,7 +371,7 @@ export default function CompeticaoPainelPage() {
     <div className="space-y-6">
       <ModuleHeader
         route="/admin/competicao/painel"
-        title={isCoordOnly ? "Minhas Modalidades" : "Painel de Controle da Competição"}
+        title={isCoordModalidade ? "Minhas Modalidades" : "Painel de Controle da Competição"}
       />
 
       {/* KPI Cards */}
