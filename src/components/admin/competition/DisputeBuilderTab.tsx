@@ -215,7 +215,8 @@ export default function DisputeBuilderTab({ eventId, sportEventId, onChanged }: 
         .from("competition_matches")
         .select(`
           id, match_number, group_id, phase_id, status,
-          competition_match_entries(id, side, team_id)
+          competition_match_entries(id, side, team_id, teams(name), participant_sport_events(participants(person_id, people(full_name)))),
+          competition_match_results(match_entry_id, outcome, score)
         `)
         .eq("event_id", eventId)
         .eq("sport_event_id", sportEventId)
