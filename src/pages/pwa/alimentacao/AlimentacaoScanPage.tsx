@@ -190,7 +190,6 @@ export default function AlimentacaoScanPage() {
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleScan}
-        allowedPrefixes={["JER:", "jer:"]}
         title="Scan Refeição"
       />
     </div>

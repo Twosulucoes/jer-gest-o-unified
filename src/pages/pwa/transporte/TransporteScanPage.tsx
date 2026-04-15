@@ -60,7 +60,6 @@ export default function TransporteScanPage() {
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleScan}
-        allowedPrefixes={["JER:", "jer:"]}
         title="Scan Embarque"
       />
     </div>
