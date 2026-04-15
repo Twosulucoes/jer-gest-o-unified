@@ -112,6 +112,7 @@ import AlimentacaoScanPage from "./pages/pwa/alimentacao/AlimentacaoScanPage";
 import AlimentacaoBuscarPwaPage from "./pages/pwa/alimentacao/AlimentacaoBuscarPage";
 import AlimentacaoJanelasPwaPage from "./pages/pwa/alimentacao/AlimentacaoJanelasPage";
 import AlimentacaoHistoricoPage from "./pages/pwa/alimentacao/AlimentacaoHistoricoPage";
+import AlimentacaoListaConsumosPage from "./pages/pwa/alimentacao/AlimentacaoListaConsumosPage";
 // PWA Coordenação Técnica pages
 import CoordenacaoHomePage from "./pages/pwa/coordenacao/CoordenacaoHomePage";
 import CoordenacaoAgendaPage from "./pages/pwa/coordenacao/CoordenacaoAgendaPage";
@@ -297,6 +298,7 @@ const App = () => (
             <Route path="/pwa/alimentacao/buscar" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoBuscarPwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/alimentacao/janelas" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoJanelasPwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/alimentacao/historico" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoHistoricoPage /></PwaRouteGuard>} />
+            <Route path="/pwa/alimentacao/lista-consumos" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoListaConsumosPage /></PwaRouteGuard>} />
             {/* PWA Coordenação Técnica — perfil coordenacao_tecnica */}
             <Route path="/pwa/coordenacao-tecnica" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/agenda" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoAgendaPage /></PwaRouteGuard>} />
