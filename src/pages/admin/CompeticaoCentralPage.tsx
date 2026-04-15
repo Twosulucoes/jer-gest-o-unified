@@ -22,6 +22,7 @@ import CentralAgendaTab from "@/components/admin/competition/CentralAgendaTab";
 import CentralBracketTab from "@/components/admin/competition/CentralBracketTab";
 import CentralStandingsTab from "@/components/admin/competition/CentralStandingsTab";
 import CrossHeatRankingTab from "@/components/admin/competition/CrossHeatRankingTab";
+import CentralAuditTab from "@/components/admin/competition/CentralAuditTab";
 import WizardStepper, { type WizardStep } from "@/components/admin/competition/WizardStepper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
@@ -127,6 +128,7 @@ export default function CompeticaoCentralPage() {
     { key: "standings", label: "Classificação", hidden: !showStandings },
     { key: "results", label: "Resultados" },
     { key: "pending", label: "Pendências" },
+    { key: "audit", label: "Auditoria" },
   ], [isCollective, family, format, showStandings, isTimeMark]);
 
   const visibleSteps = steps.filter((s) => !s.hidden);
@@ -368,6 +370,13 @@ export default function CompeticaoCentralPage() {
 
             {currentStep === "pending" && (
               <EligibilityPendingPanel
+                eventId={eventId}
+                sportEventId={sportEventId}
+              />
+            )}
+
+            {currentStep === "audit" && (
+              <CentralAuditTab
                 eventId={eventId}
                 sportEventId={sportEventId}
               />
