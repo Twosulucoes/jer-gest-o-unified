@@ -284,6 +284,7 @@ const App = () => (
             <Route path="/pwa/transporte/viagens" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteViagensPwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/transporte/scan" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteScanPage /></PwaRouteGuard>} />
             <Route path="/pwa/transporte/embarque" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteEmbarquePwaPage /></PwaRouteGuard>} />
+            <Route path="/pwa/transporte/embarque/:tripId" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteEmbarquePwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/transporte/rotas" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteRotasPwaPage /></PwaRouteGuard>} />
             {/* PWA Alimentação — perfil alimentacao */}
             <Route path="/pwa/alimentacao" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoHomePage /></PwaRouteGuard>} />
