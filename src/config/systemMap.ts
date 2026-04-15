@@ -34,6 +34,24 @@ export interface SystemMapGroup {
 
 export const systemMap: SystemMapGroup[] = [
   {
+    id: "dashboard",
+    label: "Dashboard",
+    items: [
+      {
+        id: "dashboard",
+        label: "Dashboard",
+        route: "/admin",
+        pageFile: "src/pages/admin/DashboardPage.tsx",
+        description: "Painel principal do administrador com visão geral do evento ativo, KPIs e atalhos rápidos.",
+        roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"],
+        status: ModuleStatus.DONE,
+        dataSources: ["events"],
+        gaps: [],
+        nextActions: [],
+      },
+    ],
+  },
+  {
     id: "preparacao",
     label: "Preparação",
     items: [
@@ -136,6 +154,18 @@ export const systemMap: SystemMapGroup[] = [
         roles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"],
         status: ModuleStatus.DONE,
         dataSources: ["credential_scans", "participant_credentials", "participants", "people"],
+        gaps: [],
+        nextActions: [],
+      },
+      {
+        id: "credenciamento-externo",
+        label: "Credenciamento Externo",
+        route: "/admin/credenciamento-externo",
+        pageFile: "src/pages/admin/CredenciamentoExternoPage.tsx",
+        description: "Vinculação de credenciais físicas externas (QR pré-impresso) aos participantes do evento.",
+        roles: ["admin", "secretaria", "coordenacao_tecnica"],
+        status: ModuleStatus.DONE,
+        dataSources: ["external_credentials", "participants"],
         gaps: [],
         nextActions: [],
       },
