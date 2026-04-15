@@ -68,6 +68,7 @@ import CentralDadosPage from "./pages/admin/CentralDadosPage";
 import BoletinsPage from "./pages/admin/BoletinsPage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
+import RegrasEventoPage from "./pages/admin/RegrasEventoPage";
 import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
 import DebugPublicadosPage from "./pages/admin/DebugPublicadosPage";
 import SuperDashboardPage from "./pages/super/SuperDashboardPage";
@@ -240,6 +241,7 @@ const App = () => (
               <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
               {/* Parâmetros */}
               <Route path="parametros-evento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParametrosEventoPage /></ProtectedRoute>} />
+              <Route path="regras-evento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegrasEventoPage /></ProtectedRoute>} />
               {/* Irregularidades e Normalização */}
               <Route path="irregularidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><IrregularidadesPage /></ProtectedRoute>} />
               <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />

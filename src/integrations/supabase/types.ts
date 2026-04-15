@@ -651,6 +651,59 @@ export type Database = {
           },
         ]
       }
+      event_edition_rules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          notes: string | null
+          published_at: string | null
+          published_by: string | null
+          sections: Json
+          status: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          notes?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          sections?: Json
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          notes?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          sections?: Json
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_edition_rules_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_participation_rules: {
         Row: {
           created_at: string
@@ -687,6 +740,60 @@ export type Database = {
             foreignKeyName: "event_participation_rules_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_rules_audit_log: {
+        Row: {
+          action: string
+          changes_summary: string | null
+          edition_rules_id: string | null
+          event_id: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          performed_at: string
+          performed_by: string | null
+          section: string
+        }
+        Insert: {
+          action: string
+          changes_summary?: string | null
+          edition_rules_id?: string | null
+          event_id: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          performed_at?: string
+          performed_by?: string | null
+          section: string
+        }
+        Update: {
+          action?: string
+          changes_summary?: string | null
+          edition_rules_id?: string | null
+          event_id?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          performed_at?: string
+          performed_by?: string | null
+          section?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_rules_audit_log_edition_rules_id_fkey"
+            columns: ["edition_rules_id"]
+            isOneToOne: false
+            referencedRelation: "event_edition_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_rules_audit_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
