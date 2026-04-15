@@ -116,15 +116,26 @@ export default function TransporteEmbarquePage() {
   const handleFinish = async (hasIncidents: boolean, notes: string) => {
     setFinishing(true);
     try {
+      // Fetch driver phone from profiles
+      const { data: { session } } = await supabase.auth.getSession();
+      let driverPhone: string | null = null;
+      if (session?.user?.id) {
+        const { data: driverProfile } = await supabase
+          .from("profiles")
+          .select("phone")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        driverPhone = (driverProfile as any)?.phone || null;
+      }
+
       const { error } = await supabase
         .from("transport_trips")
-        .update({ trip_status: "completed", has_incidents: hasIncidents, notes: notes || null } as any)
+        .update({ trip_status: "completed", has_incidents: hasIncidents, notes: notes || null, driver_phone: driverPhone } as any)
         .eq("id", tripId!);
       if (error) throw error;
 
       // Create incident record if notes were provided
       if (hasIncidents && notes) {
-        const { data: { session } } = await supabase.auth.getSession();
         const userId = session?.user?.id;
 
         // Get event_id from trip
