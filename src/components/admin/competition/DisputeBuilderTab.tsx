@@ -636,6 +636,7 @@ export default function DisputeBuilderTab({ eventId, sportEventId, onChanged }: 
         onPublished={onChanged}
       />
 
+      {!isEditMode && groups.length === 0 && (
         <Alert>
           <AlertDescription>
             Nenhuma disputa montada. Clique em "Editar" para começar a criar grupos e confrontos manualmente.
