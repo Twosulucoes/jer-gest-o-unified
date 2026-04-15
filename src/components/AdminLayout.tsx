@@ -83,7 +83,7 @@ const navGroups: NavGroup[] = [
       { label: "Painel de Controle", to: "/admin/competicao/painel", icon: <LayoutDashboard className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Pré-validação", to: "/admin/competicao/pre-validacao", icon: <ClipboardCheck className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Central da Competição", to: "/admin/competicao/central", icon: <Trophy className="h-4 w-4" />, roles: COMPETITION_ROLES },
-      { label: "Partidas e Agenda", to: "/admin/competicao/partidas-agenda", icon: <Swords className="h-4 w-4" />, roles: COMPETITION_ROLES },
+      { label: "Partidas e Agenda", to: "/admin/competicao/partidas", icon: <Swords className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Regras por Prova", to: "/admin/competicao/regras", icon: <Settings className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Regras em Lote", to: "/admin/competicao/regras/lote", icon: <Zap className="h-4 w-4" />, roles: COMPETITION_ROLES },
       { label: "Resultados", to: "/admin/competicao/resultados", icon: <ClipboardList className="h-4 w-4" />, roles: COMPETITION_ROLES },
@@ -161,7 +161,6 @@ const navGroups: NavGroup[] = [
     id: "configuracoes", label: "Configurações", description: "Parâmetros e cadastros do evento.",
     icon: <Settings className="h-4 w-4" />,
     items: [
-      { label: "Parâmetros do Evento", to: "/admin/parametros-evento", icon: <Settings className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Regras do Evento", to: "/admin/regras-evento", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Modalidades", to: "/admin/modalidades", icon: <Dumbbell className="h-4 w-4" />, roles: ADMIN_ROLES },

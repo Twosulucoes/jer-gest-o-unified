@@ -13,6 +13,7 @@ import { SECTION_CATALOG, GROUP_LABELS, type SectionDef } from "@/components/adm
 import RegrasJsonViewer from "@/components/admin/regras/RegrasJsonViewer";
 import RegrasEdicaoTab from "@/components/admin/regras/RegrasEdicaoTab";
 import RegrasPublicacaoTab from "@/components/admin/regras/RegrasPublicacaoTab";
+import RegrasLimitesParticipacaoEditor from "@/components/admin/regras/RegrasLimitesParticipacaoEditor";
 
 export default function RegrasEventoPage() {
   const eventId = useActiveEventId();
@@ -107,6 +108,11 @@ export default function RegrasEventoPage() {
           updatedAt={data?.updated_at}
         />
       );
+    }
+
+    // Interactive editor for participation limits (replaces ParametrosEventoPage)
+    if (activeSection === "limites_atletas" && eventId) {
+      return <RegrasLimitesParticipacaoEditor eventId={eventId} />;
     }
 
     // For all other sections, use the generic JSON viewer
