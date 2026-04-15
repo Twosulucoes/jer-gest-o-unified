@@ -29,13 +29,12 @@ export default function LoginPage() {
       });
     } else if (data.user) {
       // Check if user is active
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("active")
-        .eq("id", data.user.id)
-        .single();
+      const [profileRes, rolesRes] = await Promise.all([
+        supabase.from("profiles").select("active").eq("id", data.user.id).single(),
+        supabase.from("user_roles").select("role").eq("user_id", data.user.id),
+      ]);
 
-      if (profile && profile.active === false) {
+      if (profileRes.data && profileRes.data.active === false) {
         await supabase.auth.signOut();
         toast({
           title: "Conta desativada",
@@ -45,7 +44,27 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      navigate("/admin");
+
+      // Redirect based on roles — operational users go to PWA
+      const userRoles = (rolesRes.data || []).map((r) => r.role as string);
+      const ADMIN_ROLES = ["admin", "secretaria", "super_admin", "coordenacao_tecnica", "coordenador_modalidade", "cde"];
+      const hasAdminAccess = userRoles.some((r) => ADMIN_ROLES.includes(r));
+
+      if (hasAdminAccess) {
+        navigate("/admin");
+      } else {
+        // Resolve PWA target
+        const ROLE_MAP: Record<string, string> = {
+          transporte: "/pwa/transporte",
+          alimentacao: "/pwa/alimentacao",
+          alojamento: "/pwa/alojamento",
+          delegacao: "/pwa/delegacao",
+          mesario: "/aovivo",
+          arbitragem: "/aovivo",
+        };
+        const target = userRoles.map((r) => ROLE_MAP[r]).find(Boolean) || "/pwa";
+        navigate(target);
+      }
     }
 
     setLoading(false);
