@@ -1,0 +1,1 @@
+ALTER TABLE public.transport_passengers ALTER COLUMN participant_id DROP NOT NULL;
