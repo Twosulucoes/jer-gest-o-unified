@@ -125,11 +125,13 @@ export default function OcorrenciasPage() {
 
   return (
     <div className="space-y-6">
-      <ModuleHeader
-        title="Ocorrências Operacionais"
-        description="Central de ocorrências de todos os módulos operacionais."
-        icon={<AlertTriangle className="h-6 w-6" />}
-      />
+      <div className="flex items-center gap-3">
+        <AlertTriangle className="h-6 w-6 text-destructive" />
+        <div>
+          <h1 className="text-xl font-bold">Ocorrências Operacionais</h1>
+          <p className="text-sm text-muted-foreground">Central de ocorrências de todos os módulos operacionais.</p>
+        </div>
+      </div>
 
       {/* Filters */}
       <Card>
