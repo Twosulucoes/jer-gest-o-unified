@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FoodIncidentDialog } from "@/components/pwa/alimentacao/FoodIncidentDialog";
+import { AlimentacaoDuplicateAlert } from "@/components/pwa/alimentacao/AlimentacaoDuplicateAlert";
 
 export default function AlimentacaoHomePage() {
   const navigate = useNavigate();
@@ -73,6 +74,8 @@ export default function AlimentacaoHomePage() {
       />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
+        <AlimentacaoDuplicateAlert />
+
         <div className="grid grid-cols-2 gap-3">
           <AppKPI label="Consumos hoje" value={kpis.consumosHoje} icon={CheckCircle} loading={loading} />
           <AppKPI label="Janelas abertas" value={kpis.janelasAbertas} icon={Clock} loading={loading} />
