@@ -14,6 +14,10 @@ import RegrasJsonViewer from "@/components/admin/regras/RegrasJsonViewer";
 import RegrasEdicaoTab from "@/components/admin/regras/RegrasEdicaoTab";
 import RegrasPublicacaoTab from "@/components/admin/regras/RegrasPublicacaoTab";
 import RegrasLimitesParticipacaoEditor from "@/components/admin/regras/RegrasLimitesParticipacaoEditor";
+import RegrasCentroTab from "@/components/admin/regras/RegrasCentroTab";
+import RegrasCatalogoModalidadesTab from "@/components/admin/regras/RegrasCatalogoModalidadesTab";
+import RegrasQualificacaoTab from "@/components/admin/regras/RegrasQualificacaoTab";
+import RegrasAssistenteInscricaoTab from "@/components/admin/regras/RegrasAssistenteInscricaoTab";
 
 export default function RegrasEventoPage() {
   const eventId = useActiveEventId();
@@ -114,6 +118,12 @@ export default function RegrasEventoPage() {
     if (activeSection === "limites_atletas" && eventId) {
       return <RegrasLimitesParticipacaoEditor eventId={eventId} />;
     }
+
+    // Centro de Regras consolidated tabs
+    if (activeSection === "centro_regras") return <RegrasCentroTab />;
+    if (activeSection === "catalogo_modalidades") return <RegrasCatalogoModalidadesTab />;
+    if (activeSection === "qualificacao") return <RegrasQualificacaoTab />;
+    if (activeSection === "assistente_inscricao") return <RegrasAssistenteInscricaoTab />;
 
     // For all other sections, use the generic JSON viewer
     const sectionDef = SECTION_CATALOG.find((s) => s.key === activeSection);

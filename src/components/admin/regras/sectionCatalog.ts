@@ -1,14 +1,15 @@
 import {
   BookOpen, Users, Trophy, Target, Settings, Award, Send,
   Calendar, Shield, Building, Shirt, Bus, Utensils, BedDouble,
-  FileText, UserCheck, Gavel, Replace, Gift, Scale, ClipboardList
+  FileText, UserCheck, Gavel, Replace, Gift, Scale, ClipboardList,
+  Layers, Map, ClipboardCheck
 } from "lucide-react";
 
 export interface SectionDef {
   key: string;
   label: string;
   icon: any;
-  group: "geral" | "competicao" | "logistica" | "governanca";
+  group: "geral" | "competicao" | "logistica" | "governanca" | "centro_regras";
   description: string;
 }
 
@@ -38,6 +39,12 @@ export const SECTION_CATALOG: SectionDef[] = [
   // Governança
   { key: "wo_wxo", label: "W.O. e WxO", icon: Settings, group: "governanca", description: "Tolerâncias, penalidades e exceções" },
   { key: "cde", label: "CDE / Justiça Desportiva", icon: Gavel, group: "governanca", description: "Protestos, penalidades e código disciplinar" },
+
+  // Centro de Regras Consolidado
+  { key: "centro_regras", label: "Visão Consolidada", icon: BookOpen, group: "centro_regras", description: "KPIs, regras de participação, tabela regulatória e casos manuais" },
+  { key: "catalogo_modalidades", label: "Catálogo Modalidades", icon: Layers, group: "centro_regras", description: "Catálogo operacional por modalidade com filtros e exportação" },
+  { key: "qualificacao", label: "Qualificação", icon: Map, group: "centro_regras", description: "Mapa de qualificação: vagas, sedes, remanejamento" },
+  { key: "assistente_inscricao", label: "Assistente Inscrição", icon: ClipboardCheck, group: "centro_regras", description: "Assistente operacional para orientar inscrições" },
 ];
 
 export const GROUP_LABELS: Record<string, string> = {
@@ -45,6 +52,7 @@ export const GROUP_LABELS: Record<string, string> = {
   competicao: "Competição",
   logistica: "Logística",
   governanca: "Governança",
+  centro_regras: "Centro de Regras",
 };
 
 export function getSectionDef(key: string): SectionDef | undefined {
