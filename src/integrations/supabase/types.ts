@@ -2017,6 +2017,68 @@ export type Database = {
           },
         ]
       }
+      operational_incidents: {
+        Row: {
+          admin_response: string | null
+          created_at: string
+          event_id: string
+          id: string
+          incident_description: string
+          incident_status: Database["public"]["Enums"]["incident_status"]
+          module: Database["public"]["Enums"]["incident_module"]
+          reference_id: string | null
+          reference_label: string | null
+          reported_by_user_id: string
+          reporter_name: string | null
+          reporter_phone: string | null
+          resolved_at: string | null
+          resolved_by_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          incident_description: string
+          incident_status?: Database["public"]["Enums"]["incident_status"]
+          module?: Database["public"]["Enums"]["incident_module"]
+          reference_id?: string | null
+          reference_label?: string | null
+          reported_by_user_id: string
+          reporter_name?: string | null
+          reporter_phone?: string | null
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          incident_description?: string
+          incident_status?: Database["public"]["Enums"]["incident_status"]
+          module?: Database["public"]["Enums"]["incident_module"]
+          reference_id?: string | null
+          reference_label?: string | null
+          reported_by_user_id?: string
+          reporter_name?: string | null
+          reporter_phone?: string | null
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_incidents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_credentials: {
         Row: {
           activated_at: string | null
@@ -4075,6 +4137,8 @@ export type Database = {
         | "coordenador_modalidade"
         | "mesario"
         | "super_admin"
+      incident_module: "transporte" | "alimentacao" | "alojamento" | "outro"
+      incident_status: "pending" | "in_progress" | "resolved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4216,6 +4280,8 @@ export const Constants = {
         "mesario",
         "super_admin",
       ],
+      incident_module: ["transporte", "alimentacao", "alojamento", "outro"],
+      incident_status: ["pending", "in_progress", "resolved"],
     },
   },
 } as const
