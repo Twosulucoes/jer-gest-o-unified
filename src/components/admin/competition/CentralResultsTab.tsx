@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import LaunchResultDialog from "./LaunchResultDialog";
 import ResultGovernancePanel from "./ResultGovernancePanel";
+import HomologarClassificadoCard from "./HomologarClassificadoCard";
 interface Props {
   eventId: string;
   sportEventId: string;
@@ -106,6 +107,13 @@ export default function CentralResultsTab({ eventId, sportEventId, isCollective 
 
   return (
     <div className="space-y-6">
+      {/* Homologar classificado direto (único apto) */}
+      <HomologarClassificadoCard
+        eventId={eventId}
+        sportEventId={sportEventId}
+        isCollective={isCollective}
+      />
+
       {/* Pending results section */}
       {pendingMatches.length > 0 && (
         <div className="space-y-3">
