@@ -4145,8 +4145,13 @@ export type Database = {
           institution_max_female: number | null
           institution_max_male: number | null
           is_active: boolean
+          is_nationally_eligible_by_age: boolean | null
           is_official_for_national_selection: boolean | null
+          is_state_competition_only: boolean | null
+          national_eligibility_notes: string | null
+          national_eligibility_reason_code: string | null
           national_eligibility_rule_json: Json | null
+          national_eligibility_snapshot: Json
           national_event_type: string | null
           notes: string | null
           released_at: string | null
@@ -4176,8 +4181,13 @@ export type Database = {
           institution_max_female?: number | null
           institution_max_male?: number | null
           is_active?: boolean
+          is_nationally_eligible_by_age?: boolean | null
           is_official_for_national_selection?: boolean | null
+          is_state_competition_only?: boolean | null
+          national_eligibility_notes?: string | null
+          national_eligibility_reason_code?: string | null
           national_eligibility_rule_json?: Json | null
+          national_eligibility_snapshot?: Json
           national_event_type?: string | null
           notes?: string | null
           released_at?: string | null
@@ -4207,8 +4217,13 @@ export type Database = {
           institution_max_female?: number | null
           institution_max_male?: number | null
           is_active?: boolean
+          is_nationally_eligible_by_age?: boolean | null
           is_official_for_national_selection?: boolean | null
+          is_state_competition_only?: boolean | null
+          national_eligibility_notes?: string | null
+          national_eligibility_reason_code?: string | null
           national_eligibility_rule_json?: Json | null
+          national_eligibility_snapshot?: Json
           national_event_type?: string | null
           notes?: string | null
           released_at?: string | null
