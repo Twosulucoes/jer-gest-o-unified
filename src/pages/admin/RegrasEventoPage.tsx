@@ -1,8 +1,7 @@
-import { useState, useCallback, useMemo, lazy, Suspense } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useActiveEventId, useEventContext } from "@/contexts/EventContext";
 import { useEventEditionRules, usePermLevel, type EventRulesSections } from "@/hooks/useEventEditionRules";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +14,10 @@ import RegrasJsonViewer from "@/components/admin/regras/RegrasJsonViewer";
 import RegrasEdicaoTab from "@/components/admin/regras/RegrasEdicaoTab";
 import RegrasPublicacaoTab from "@/components/admin/regras/RegrasPublicacaoTab";
 import RegrasLimitesParticipacaoEditor from "@/components/admin/regras/RegrasLimitesParticipacaoEditor";
+import RegrasCentroTab from "@/components/admin/regras/RegrasCentroTab";
+import RegrasCatalogoModalidadesTab from "@/components/admin/regras/RegrasCatalogoModalidadesTab";
+import RegrasQualificacaoTab from "@/components/admin/regras/RegrasQualificacaoTab";
+import RegrasAssistenteInscricaoTab from "@/components/admin/regras/RegrasAssistenteInscricaoTab";
 
 export default function RegrasEventoPage() {
   const eventId = useActiveEventId();
