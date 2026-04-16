@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import ModuleHeader from "@/components/admin/ModuleHeader";
+import { Loader2, RefreshCw } from "lucide-react";
 import { Loader2, RefreshCw } from "lucide-react";
 
 interface Pendencia {
@@ -91,10 +91,12 @@ export default function ImportacaoPendenciasPage() {
 
   return (
     <div className="space-y-4">
-      <ModuleHeader
-        title="Pendências de importação — TM 2012"
-        description="Atletas de Tênis de Mesa nascidos em 2012 que requerem escolha manual de categoria entre tm-12-14 e tm-14-15."
-      />
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Pendências de importação — TM 2012</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Atletas de Tênis de Mesa nascidos em 2012 que requerem escolha manual de categoria entre tm-12-14 e tm-14-15.
+        </p>
+      </div>
 
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={load} disabled={loading}>
