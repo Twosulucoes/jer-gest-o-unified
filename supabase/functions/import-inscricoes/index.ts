@@ -629,14 +629,18 @@ Deno.serve(async (req: Request) => {
     const operatorId = claimsData.claims.sub as string;
 
     const body = await req.json();
-    let { rows: rawRows, event_id: eventId, mode, file_name: fileName } = body as {
-      rows: RawRow[]; event_id: string; mode: string; file_name?: string;
+    let { rows: rawRows, event_id: eventId, event_stage_id: eventStageId, mode, file_name: fileName } = body as {
+      rows: RawRow[]; event_id: string; event_stage_id?: string; mode: string; file_name?: string;
     };
 
     rawRows = normalizeHeaders(rawRows);
 
     if (!rawRows || !eventId || !mode) {
       return new Response(JSON.stringify({ error: "Missing required fields: rows, event_id, mode" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (!eventStageId) {
+      return new Response(JSON.stringify({ error: "event_stage_id é obrigatório. Selecione a etapa antes de validar/importar." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     if (mode !== "validate" && mode !== "commit") {
