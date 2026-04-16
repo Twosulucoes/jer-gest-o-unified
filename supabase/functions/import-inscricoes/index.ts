@@ -1064,6 +1064,8 @@ Deno.serve(async (req: Request) => {
       people_reused: peopleReused,
       participants_created: participantsCreated,
       participants_reused: participantsReused,
+      participant_event_stages_created: pesCreated,
+      participant_event_stages_reused: pesReused,
       participant_sport_events_created: pseCreated,
       participant_sport_events_reused: pseReused,
       institutions_created: newInstMap.size,
