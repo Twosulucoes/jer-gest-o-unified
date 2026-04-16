@@ -40,6 +40,10 @@ interface ValidateResult {
   status: string;
   operator_id: string;
   event_id: string;
+  event_stage_id?: string;
+  event_stage?: { id: string; name: string; slug: string };
+  event?: { id: string; name: string; year: number };
+  file_name?: string | null;
   timestamp: string;
   summary: {
     total_linhas: number;
@@ -78,12 +82,18 @@ interface CommitResult {
   partial_success?: boolean;
   operator_id: string;
   event_id: string;
+  event_stage_id?: string;
+  event_stage?: { id: string; name: string; slug: string };
+  event?: { id: string; name: string; year: number };
+  file_name?: string | null;
   timestamp: string;
   result: {
     people_created: number;
     people_reused: number;
     participants_created: number;
     participants_reused: number;
+    participant_event_stages_created?: number;
+    participant_event_stages_reused?: number;
     participant_sport_events_created: number;
     participant_sport_events_reused: number;
     institutions_created: number;
