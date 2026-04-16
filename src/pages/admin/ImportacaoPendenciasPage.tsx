@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Loader2, RefreshCw } from "lucide-react";
-import { Loader2, RefreshCw } from "lucide-react";
 
 interface Pendencia {
   id: string;
