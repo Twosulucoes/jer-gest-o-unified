@@ -534,9 +534,11 @@ function mapColumns(
 
 interface ReadOnlyMaps {
   institutions: Map<string, string>;
-  sports: Map<string, string>;
-  categories: Map<string, string>;
-  sportEvents: Map<string, string>;
+  sports: Map<string, string>;                // sport_slug -> sport_id
+  categories: Map<string, string>;            // category_slug -> category_id
+  sportEvents: Map<string, string>;           // "sport_id|category_id|prova_slug" -> sport_event_id
+  sportCategoryPairs: Set<string>;            // "sport_slug|category_slug" presentes no catálogo
+  sportsSet: Set<string>;                     // sport_slugs presentes no catálogo
   delegations: Map<string, string>;
   existingInstitutionSlugs: Set<string>;
 }
@@ -557,14 +559,26 @@ async function loadReadOnlyMaps(
   for (const i of instRes.data ?? []) institutions.set(i.slug, i.id);
 
   const sports = new Map<string, string>();
-  for (const s of sportRes.data ?? []) sports.set(s.slug, s.id);
+  const sportsById = new Map<string, string>();
+  for (const s of sportRes.data ?? []) {
+    sports.set(s.slug, s.id);
+    sportsById.set(s.id, s.slug);
+  }
 
   const categories = new Map<string, string>();
-  for (const c of catRes.data ?? []) categories.set(c.slug, c.id);
+  const catsById = new Map<string, string>();
+  for (const c of catRes.data ?? []) {
+    categories.set(c.slug, c.id);
+    catsById.set(c.id, c.slug);
+  }
 
   const sportEvents = new Map<string, string>();
+  const sportCategoryPairs = new Set<string>();
   for (const se of seRes.data ?? []) {
     sportEvents.set(`${se.sport_id}|${se.category_id}|${se.slug}`, se.id);
+    const sSlug = sportsById.get(se.sport_id);
+    const cSlug = catsById.get(se.category_id);
+    if (sSlug && cSlug) sportCategoryPairs.add(`${sSlug}|${cSlug}`);
   }
 
   const delegations = new Map<string, string>();
@@ -575,6 +589,8 @@ async function loadReadOnlyMaps(
     sports,
     categories,
     sportEvents,
+    sportCategoryPairs,
+    sportsSet: new Set(sports.keys()),
     delegations,
     existingInstitutionSlugs: new Set(institutions.keys()),
   };
