@@ -945,12 +945,19 @@ function classifyRow(
     resolved.sport_id = sportId;
 
     if (!row.category_slug) {
-      // Diferenciar ambiguidade vs falha pura de parsing
-      const isAmbiguous = /amb[ií]gua/.test(row.parse_category_reason);
+      // Diferenciar ambiguidade (com motivo textual) vs falha pura de parsing.
+      // Os marcadores 'no_birth_date' / 'ambiguous_after_age' / 'birth_year_out_of_range'
+      // vêm do canonicalizeCategory.
+      const reason = row.parse_category_reason || "";
+      const isAmbiguous =
+        /amb[ií]gua/.test(reason) ||
+        reason.startsWith("no_birth_date") ||
+        reason.startsWith("ambiguous_after_age") ||
+        reason.startsWith("birth_year_out_of_range");
       pending.push({
         row_number: row.row_number,
         reason_code: isAmbiguous ? "SPORT_EVENT_AMBIGUOUS" : "CATEGORY_PARSE_FAILED",
-        reason_detail: `Categoria não resolvida para modalidade "${row.sport_slug}". Bruto COMPETIÇÃO="${row.competicao_raw}". Motivo: ${row.parse_category_reason}`,
+        reason_detail: `Categoria não resolvida para "${row.sport_slug}". Candidatas=[${row.category_candidates.join(", ") || "—"}]. birth_date=${row.birth_date ?? "null"}. Motivo: ${reason}`,
         row, fingerprint, candidate_person_id: null,
       });
       return { status: "pendencia", errors, warnings, pending, resolved };
@@ -1119,7 +1126,12 @@ Deno.serve(async (req: Request) => {
     const maps = await loadReadOnlyMaps(serviceClient, eventId);
 
     // Normalize rows usando catálogo canônico
-    const catalog = { sportsSet: maps.sportsSet, sportCategoryPairs: maps.sportCategoryPairs };
+    const catalog = {
+      sportsSet: maps.sportsSet,
+      sportCategoryPairs: maps.sportCategoryPairs,
+      categoriesBySport: maps.categoriesBySport,
+      eventYear: maps.eventYear,
+    };
     const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i, catalog));
 
     // Load people INCREMENTALLY (not full-table scan)
@@ -1234,6 +1246,12 @@ Deno.serve(async (req: Request) => {
         parse_is_paralimpic: p.row.parse_is_paralimpic,
         parse_sport_reason: p.row.parse_sport_reason,
         parse_category_reason: p.row.parse_category_reason,
+        // Desempate por idade:
+        birth_date: p.row.birth_date,
+        category_candidates: p.row.category_candidates,
+        category_resolved: p.row.category_slug || null,
+        category_resolution_reason: p.row.parse_category_reason,
+        category_resolved_by: p.row.category_resolved_by,
       })),
       institutions_preview: [...institutionsToCreate].slice(0, 10),
     };
