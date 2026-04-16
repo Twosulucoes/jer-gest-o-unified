@@ -1000,9 +1000,33 @@ Deno.serve(async (req: Request) => {
           }
         }
 
-        // ── Participant Sport Event (athletes only) ──
+        // ── Participant ↔ Stage (rastreabilidade operacional por etapa) ──
+        if (!pesSet.has(participantId)) {
+          const { error: pesErr } = await serviceClient.from("participant_event_stages").insert({
+            participant_id: participantId,
+            event_stage_id: eventStageId,
+            event_id: eventId,
+            status: "active",
+            created_by: operatorId,
+          });
+          if (pesErr) {
+            if (pesErr.message?.includes("duplicate") || pesErr.message?.includes("unique")) {
+              pesReused++;
+            } else {
+              // não bloqueante; registra como warning
+              allWarnings.push({ row: row.row_number, field: "STAGE", value: eventStageId, code: "PES_INSERT_FAILED", message: pesErr.message });
+            }
+          } else {
+            pesCreated++;
+            pesSet.add(participantId);
+          }
+        } else {
+          pesReused++;
+        }
+
+        // ── Participant Sport Event (athletes only) — agora único por (participant, sport_event, stage) ──
         if (row.participant_type === "athlete" && resolved.sport_event_id) {
-          const pseKey = `${participantId}|${resolved.sport_event_id}`;
+          const pseKey = `${participantId}|${resolved.sport_event_id}|${eventStageId}`;
           if (pseSet.has(pseKey)) {
             pseReused++;
             rowsSkippedDuplicate++;
@@ -1010,6 +1034,7 @@ Deno.serve(async (req: Request) => {
             const { error: pseErr } = await serviceClient.from("participant_sport_events").insert({
               participant_id: participantId,
               sport_event_id: resolved.sport_event_id,
+              event_stage_id: eventStageId,
               status: "confirmed",
             });
             if (pseErr) {
