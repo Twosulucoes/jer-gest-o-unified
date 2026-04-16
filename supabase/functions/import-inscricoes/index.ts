@@ -1052,6 +1052,44 @@ function classifyRow(
   return { status: "ok", errors, warnings, pending, resolved };
 }
 
+// ─── Manual resolutions for TM 2012 (override por chave estável) ─────
+//
+// Chave estável usada para casar override com linha da planilha:
+//   `${event_stage_id}|${source_row_number}|${fallback_fingerprint}`
+//
+// O override só vale para a mesma etapa, mesma posição na planilha original
+// E mesmo fingerprint (nome+dob+gender+inst+modalidade+prova). Isso impede
+// que uma escolha manual de um lote/etapa vaze para outro.
+interface ManualOverride {
+  pending_id: string;
+  category_slug: string; // tm-12-14 | tm-14-15
+}
+
+async function loadTm2012Overrides(
+  client: ReturnType<typeof createClient>,
+  eventId: string,
+  eventStageId: string,
+): Promise<Map<string, ManualOverride>> {
+  const { data, error } = await client
+    .from("import_pendencias")
+    .select("id, source_row_number, fallback_fingerprint, raw_payload_json")
+    .eq("event_id", eventId)
+    .eq("event_stage_id", eventStageId)
+    .eq("pending_reason_code", "TM_2012_MANUAL_CATEGORY_SELECTION")
+    .eq("resolution_status", "resolved");
+  if (error || !data) return new Map();
+  const out = new Map<string, ManualOverride>();
+  for (const r of data) {
+    const mr = (r.raw_payload_json as any)?.manual_resolution;
+    const chosen = mr?.chosen_category_slug;
+    if (!chosen || !TM_2012_VALID_CHOICES.has(chosen)) continue;
+    if (r.source_row_number == null || !r.fallback_fingerprint) continue;
+    const key = `${eventStageId}|${r.source_row_number}|${r.fallback_fingerprint}`;
+    out.set(key, { pending_id: r.id, category_slug: chosen });
+  }
+  return out;
+}
+
 // ─── Main Handler ────────────────────────────────────────────────────
 
 const MAX_ROWS = 10000;
