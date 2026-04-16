@@ -812,6 +812,7 @@ Deno.serve(async (req: Request) => {
     // Create import log first
     const { data: logData } = await serviceClient.from("import_logs").insert({
       event_id: eventId,
+      event_stage_id: eventStageId,
       performed_by: operatorId,
       file_name: fileName || "unknown",
       row_count: rawRows.length,
@@ -823,6 +824,9 @@ Deno.serve(async (req: Request) => {
     if (allPending.length > 0) {
       const pendBatch = allPending.map(p => ({
         event_id: eventId,
+        event_stage_id: eventStageId,
+        source_phase_name: stageData.name,
+        source_phase_slug: stageData.slug,
         import_log_id: importLogId,
         source_file_name: fileName || null,
         source_row_number: p.row_number,
