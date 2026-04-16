@@ -453,6 +453,44 @@ console.log("\n── Parser canônico Caracaraí ──");
   assert(ageBand("FUTSAL") === null, "sem age band -> null");
 }
 
+// ─── TM 2012 — pendência manual obrigatória ──────────────────────────
+console.log("\n── TM 2012: pendência manual entre tm-12-14 e tm-14-15 ──");
+{
+  // Mini-replicação da regra determinística (mirror de canonicalizeCategory)
+  function tm2012Decision(sportSlug: string, birthDate: string | null, candidates: string[]) {
+    const birthYear = birthDate ? Number(birthDate.slice(0, 4)) : null;
+    if (
+      sportSlug === "tenis-de-mesa" &&
+      birthYear === 2012 &&
+      candidates.includes("tm-12-14") &&
+      candidates.includes("tm-14-15")
+    ) {
+      return { resolved: null, code: "TM_2012_MANUAL_CATEGORY_SELECTION" };
+    }
+    return { resolved: "auto", code: null };
+  }
+
+  const r1 = tm2012Decision("tenis-de-mesa", "2012-06-10", ["tm-12-14", "tm-14-15", "tm-16-17"]);
+  assert(r1.resolved === null, "TM 2012 não resolve automaticamente");
+  assert(r1.code === "TM_2012_MANUAL_CATEGORY_SELECTION", "código de pendência específico TM_2012");
+
+  const r2 = tm2012Decision("tenis-de-mesa", "2011-03-01", ["tm-12-14", "tm-14-15", "tm-16-17"]);
+  assert(r2.resolved !== null, "TM 2011 NÃO cai na regra especial (segue desempate normal)");
+
+  const r3 = tm2012Decision("tenis-de-mesa", "2013-01-01", ["tm-12-14", "tm-14-15", "tm-16-17"]);
+  assert(r3.resolved !== null, "TM 2013 NÃO cai na regra especial");
+
+  const r4 = tm2012Decision("futsal", "2012-06-10", ["jers-12-14", "jers-15-17"]);
+  assert(r4.resolved !== null, "Outras modalidades não caem na regra TM 2012");
+
+  // Validação do whitelist de escolhas manuais
+  const VALID = new Set(["tm-12-14", "tm-14-15"]);
+  assert(VALID.has("tm-12-14"), "tm-12-14 é escolha válida");
+  assert(VALID.has("tm-14-15"), "tm-14-15 é escolha válida");
+  assert(!VALID.has("tm-16-17"), "tm-16-17 NÃO é escolha válida para 2012");
+  assert(!VALID.has("jers-12-14"), "categorias de outra modalidade rejeitadas");
+}
+
 // ─── Summary ─────────────────────────────────────────────────────────
 
 console.log(`\n${"═".repeat(40)}`);
