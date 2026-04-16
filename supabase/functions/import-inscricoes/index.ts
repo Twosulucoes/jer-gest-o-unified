@@ -1101,6 +1101,10 @@ Deno.serve(async (req: Request) => {
       partial_success: finalStatus === "partial",
       operator_id: operatorId,
       event_id: eventId,
+      event_stage_id: eventStageId,
+      event_stage: { id: stageData.id, name: stageData.name, slug: stageData.slug },
+      event: { id: eventData.id, name: eventData.name, year: eventData.year },
+      file_name: fileName || null,
       timestamp: new Date().toISOString(),
       result: resultSummary,
       errors_preview: commitErrors.slice(0, 20),
@@ -1113,5 +1117,7 @@ Deno.serve(async (req: Request) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
+
+// redeploy marker: 2026-04-16T20:35Z (event_stages support)
 
 // redeploy marker: 2026-04-16T16:00Z
