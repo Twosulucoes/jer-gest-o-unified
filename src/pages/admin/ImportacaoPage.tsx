@@ -293,7 +293,8 @@ export default function ImportacaoPage() {
   };
 
   const _selectedEvent = events.find((e) => e.id === selectedEventId);
-  const canValidate = !!file && !!selectedEventId && !!confirmedMapping && !validating && !committing;
+  const _selectedStage = stages.find((s) => s.id === selectedStageId);
+  const canValidate = !!file && !!selectedEventId && !!selectedStageId && !!confirmedMapping && !validating && !committing;
   const canCommit = validateResult && validateResult.summary.erros_bloqueantes === 0 && validateResult.summary.ok_para_importar > 0 && !committing && !commitResult;
 
   if (!canWrite) {
