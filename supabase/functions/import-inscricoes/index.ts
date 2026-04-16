@@ -972,15 +972,24 @@ function classifyRow(
       // Os marcadores 'no_birth_date' / 'ambiguous_after_age' / 'birth_year_out_of_range'
       // vêm do canonicalizeCategory.
       const reason = row.parse_category_reason || "";
+      const isTM2012 = reason.startsWith(TM_2012_MARKER);
       const isAmbiguous =
-        /amb[ií]gua/.test(reason) ||
-        reason.startsWith("no_birth_date") ||
-        reason.startsWith("ambiguous_after_age") ||
-        reason.startsWith("birth_year_out_of_range");
+        !isTM2012 && (
+          /amb[ií]gua/.test(reason) ||
+          reason.startsWith("no_birth_date") ||
+          reason.startsWith("ambiguous_after_age") ||
+          reason.startsWith("birth_year_out_of_range")
+        );
+      const code: PendingCode = isTM2012
+        ? "TM_2012_MANUAL_CATEGORY_SELECTION"
+        : (isAmbiguous ? "SPORT_EVENT_AMBIGUOUS" : "CATEGORY_PARSE_FAILED");
+      const detail = isTM2012
+        ? `Tênis de Mesa, atleta nascido em 2012: escolha manual obrigatória entre tm-12-14 e tm-14-15. Candidatas=[${row.category_candidates.join(", ")}]. birth_date=${row.birth_date ?? "null"}.`
+        : `Categoria não resolvida para "${row.sport_slug}". Candidatas=[${row.category_candidates.join(", ") || "—"}]. birth_date=${row.birth_date ?? "null"}. Motivo: ${reason}`;
       pending.push({
         row_number: row.row_number,
-        reason_code: isAmbiguous ? "SPORT_EVENT_AMBIGUOUS" : "CATEGORY_PARSE_FAILED",
-        reason_detail: `Categoria não resolvida para "${row.sport_slug}". Candidatas=[${row.category_candidates.join(", ") || "—"}]. birth_date=${row.birth_date ?? "null"}. Motivo: ${reason}`,
+        reason_code: code,
+        reason_detail: detail,
         row, fingerprint, candidate_person_id: null,
       });
       return { status: "pendencia", errors, warnings, pending, resolved };
