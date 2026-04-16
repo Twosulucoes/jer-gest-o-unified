@@ -319,20 +319,50 @@ export default function ImportacaoPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={() => { setValidateResult(null); setCommitResult(null); }} disabled={!!commitResult}>
+              <Select value={selectedEventId} disabled>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>
                   {events.map((e) => (<SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">Definido pelo seletor global de evento ativo.</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Etapa <span className="text-destructive">*</span>
+              </label>
+              <Select
+                value={selectedStageId}
+                onValueChange={(v) => { setSelectedStageId(v); setValidateResult(null); setCommitResult(null); }}
+                disabled={!!commitResult || stages.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={stages.length === 0 ? "Nenhuma etapa cadastrada" : "Selecione a etapa"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {stages.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} <span className="text-xs text-muted-foreground">({s.kind})</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {stages.length === 0 ? (
+                <p className="text-xs text-destructive">
+                  Cadastre uma etapa em <a href="/admin/eventos/etapas" className="underline">Eventos → Etapas</a>.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Obrigatório. Toda inscrição será vinculada a esta etapa.</p>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Planilha (.xlsx)</label>
-              <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileChange} disabled={!!commitResult}
-                className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer" />
+              <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileChange} disabled={!!commitResult || !selectedStageId}
+                className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer disabled:opacity-50" />
+              {!selectedStageId && <p className="text-xs text-muted-foreground">Selecione uma etapa primeiro.</p>}
             </div>
           </div>
 
@@ -361,11 +391,11 @@ export default function ImportacaoPage() {
       )}
 
       {validateResult && !commitResult && !showMapping && (
-        <ValidateResultCard validateResult={validateResult} committing={committing} canCommit={!!canCommit} selectedEvent={_selectedEvent} onCommit={handleCommit} onReset={handleReset} />
+        <ValidateResultCard validateResult={validateResult} committing={committing} canCommit={!!canCommit} selectedEvent={_selectedEvent} selectedStage={_selectedStage} onCommit={handleCommit} onReset={handleReset} />
       )}
 
       {commitResult && selectedEventId && (
-        <CommitResultCard commitResult={commitResult} eventId={selectedEventId} onReset={handleReset} />
+        <CommitResultCard commitResult={commitResult} eventId={selectedEventId} selectedStage={_selectedStage} onReset={handleReset} />
       )}
     </div>
   );
@@ -374,12 +404,13 @@ export default function ImportacaoPage() {
 // ─── Validate Result Card ────────────────────────────────────────────
 
 function ValidateResultCard({
-  validateResult, committing, canCommit, selectedEvent, onCommit, onReset,
+  validateResult, committing, canCommit, selectedEvent, selectedStage, onCommit, onReset,
 }: {
   validateResult: ValidateResult;
   committing: boolean;
   canCommit: boolean;
   selectedEvent: { name: string; year: number } | undefined;
+  selectedStage: { name: string; slug: string; kind: string } | undefined;
   onCommit: () => void;
   onReset: () => void;
 }) {
@@ -397,6 +428,13 @@ function ValidateResultCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {/* Evento + Etapa */}
+        <div className="rounded-lg border bg-muted/30 p-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+          <div><span className="text-muted-foreground">Evento:</span> <strong className="text-foreground">{selectedEvent?.name} ({selectedEvent?.year})</strong></div>
+          <div><span className="text-muted-foreground">Etapa:</span> <strong className="text-foreground">{selectedStage?.name ?? "—"}</strong> {selectedStage && <Badge variant="outline" className="ml-1 text-xs">{selectedStage.kind}</Badge>}</div>
+          {validateResult.file_name && <div><span className="text-muted-foreground">Arquivo:</span> <strong className="text-foreground">{validateResult.file_name}</strong></div>}
+        </div>
+
         {/* Summary */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <SummaryCard label="Total linhas" value={s.total_linhas} />
@@ -600,10 +638,11 @@ function ValidateResultCard({
 // ─── Commit Result Card ──────────────────────────────────────────────
 
 function CommitResultCard({
-  commitResult, eventId, onReset,
+  commitResult, eventId, selectedStage, onReset,
 }: {
   commitResult: CommitResult;
   eventId: string;
+  selectedStage: { name: string; slug: string; kind: string } | undefined;
   onReset: () => void;
 }) {
   const r = commitResult.result;
@@ -622,6 +661,12 @@ function CommitResultCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Evento + Etapa */}
+        <div className="rounded-lg border bg-background/60 p-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+          <div><span className="text-muted-foreground">Evento:</span> <strong className="text-foreground">{commitResult.event?.name ?? "—"} {commitResult.event?.year ? `(${commitResult.event.year})` : ""}</strong></div>
+          <div><span className="text-muted-foreground">Etapa:</span> <strong className="text-foreground">{commitResult.event_stage?.name ?? selectedStage?.name ?? "—"}</strong> {(commitResult.event_stage || selectedStage) && <Badge variant="outline" className="ml-1 text-xs">{selectedStage?.kind ?? ""}</Badge>}</div>
+          {commitResult.file_name && <div><span className="text-muted-foreground">Arquivo:</span> <strong className="text-foreground">{commitResult.file_name}</strong></div>}
+        </div>
         <div>
           <h3 className="text-sm font-medium text-foreground mb-2">Criados</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

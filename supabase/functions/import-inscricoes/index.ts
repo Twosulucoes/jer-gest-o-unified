@@ -809,10 +809,12 @@ Deno.serve(async (req: Request) => {
       }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Create import log first
+    // Create import log first (com source_phase_* denormalizado para auditoria)
     const { data: logData } = await serviceClient.from("import_logs").insert({
       event_id: eventId,
       event_stage_id: eventStageId,
+      source_phase_name: stageData.name,
+      source_phase_slug: stageData.slug,
       performed_by: operatorId,
       file_name: fileName || "unknown",
       row_count: rawRows.length,

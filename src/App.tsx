@@ -16,6 +16,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ModuleSelectorPage from "./pages/ModuleSelectorPage";
 import DashboardPage from "./pages/admin/DashboardPage";
 import EventosPage from "./pages/admin/EventosPage";
+import EventStagesPage from "./pages/admin/EventStagesPage";
 import ModalidadesPage from "./pages/admin/ModalidadesPage";
 import CategoriasPage from "./pages/admin/CategoriasPage";
 import LocaisPage from "./pages/admin/LocaisPage";
@@ -190,6 +191,7 @@ const App = () => (
             >
               <Route index element={<DashboardPage />} />
               <Route path="eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventosPage /></ProtectedRoute>} />
+              <Route path="eventos/etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventStagesPage /></ProtectedRoute>} />
               <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
               <Route path="categorias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CategoriasPage /></ProtectedRoute>} />
               <Route path="locais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><LocaisPage /></ProtectedRoute>} />
