@@ -177,23 +177,240 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO", "NOME DO ALUNO", "ALUNO"],
   "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO", "UNIDADE ESCOLAR", "ESCOLA/INSTITUICAO"],
   "MODALIDADE": ["MODALIDADE", "ESPORTE", "SPORT", "MOD"],
-  "PROVA": ["PROVA", "EVENTO", "DISCIPLINE", "PROVA/EVENTO"],
+  "PROVA": ["PROVA", "DISCIPLINE", "PROVA/EVENTO"],
   "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "COMPETIÇÃO/CATEGORIA", "CATEGORIA", "CATEGORY", "COMP"],
 };
-const REQUIRED_COLUMNS = ["NOME", "ESCOLA", "MODALIDADE", "PROVA"];
+const REQUIRED_COLUMNS = ["NOME", "ESCOLA", "MODALIDADE"];
 
 function normalizeStr(s: string): string {
   return s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9 _/-]/g, " ").replace(/\s+/g, " ");
 }
 
-function deriveCategoryFromProva(prova: string): string {
-  if (isBlank(prova)) return "";
-  const normalized = normalizeStr(prova);
-  const ageBand = normalized.match(/\b(\d{1,2}\s*[-/]\s*\d{1,2}\s*ANOS)\b/)?.[1]?.replace(/\s+/g, " ");
-  const schoolBand = normalized.match(/\b(INFANTIL|JUVENIL|MIRIM)\b/)?.[1];
-  const gender = normalized.match(/\b(FEMININO|MASCULINO|MISTO|MISTA)\b/)?.[1];
-  const parts = [ageBand ?? schoolBand, gender === "MISTA" ? "MISTO" : gender].filter(Boolean);
-  return parts.join(" ");
+// ─── Sport / Category Canonical Parser ────────────────────────────────
+//
+// Objetivo: transformar o texto bruto da planilha (que mistura modalidade,
+// nome da etapa, faixa etária e gênero) em slugs canônicos do catálogo do
+// evento. NUNCA inventa slug — só resolve para algo que já existe.
+
+// Tokens da etapa que devem ser removidos antes do match esportivo.
+const STAGE_TOKENS = [
+  "CARACARAI", "BONFIM", "BOA VISTA", "FINAL", "CLASSIFICATORIA",
+  "ETAPA", "REGIONAL", "ESTADUAL",
+];
+
+// Aliases de modalidade (texto bruto -> slug canônico). Usado como atalho
+// antes do match por substring contra o catálogo. Apenas quando o slugify
+// puro do nome não bate naturalmente com o catálogo (acentos/espaços já
+// tratados, então quase sempre o match natural funciona).
+const SPORT_ALIASES: Record<string, string> = {
+  "JUDO": "judo",
+  "JUDÔ": "judo",
+  "VOLEI DE PRAIA": "volei-de-praia",
+  "VOLEIBOL DE PRAIA": "volei-de-praia",
+  "GINASTICA RITMICA": "ginastica-ritmica",
+  "TENIS DE MESA": "tenis-de-mesa",
+  "ATLETISMO PARALIMPICO": "atletismo-paralimpico",
+  "NATACAO PARALIMPICA": "natacao-paralimpica",
+  "BOCHA PARALIMPICA": "bocha-paralimpica",
+  "TENIS DE MESA PARALIMPICO": "tenis-de-mesa-paralimpico",
+  "PARABADMINTON": "parabadminton",
+};
+
+interface ParsedSportText {
+  raw_combined: string;          // texto sanitizado (sem etapa)
+  sport_token: string;           // o que restou após tirar gênero/idade/etapa
+  age_band_raw: string | null;   // ex.: "15-17 ANOS"
+  age_band_normalized: string | null; // ex.: "15-17"
+  gender_raw: string | null;     // ex.: "MASCULINO"
+  is_paralimpic: boolean;
+}
+
+function parseSportText(modalidadeRaw: string, competicaoRaw: string): ParsedSportText {
+  const combined = normalizeStr(`${modalidadeRaw} ${competicaoRaw}`);
+  let cleaned = ` ${combined} `;
+
+  // Remove tokens de etapa
+  for (const tok of STAGE_TOKENS) {
+    cleaned = cleaned.replace(new RegExp(`\\b${tok}\\b`, "g"), " ");
+  }
+
+  // Extrai gênero
+  const genderMatch = cleaned.match(/\b(FEMININO|MASCULINO|MISTO|MISTA)\b/);
+  const gender = genderMatch?.[1] ?? null;
+  if (genderMatch) cleaned = cleaned.replace(genderMatch[0], " ");
+
+  // Extrai faixa etária (ex.: "15-17 ANOS", "12 A 14 ANOS", "17 ANOS")
+  const rangeMatch = cleaned.match(/\b(\d{1,2})\s*(?:[-/]|A)\s*(\d{1,2})\s*ANOS?\b/);
+  const singleMatch = !rangeMatch ? cleaned.match(/\b(\d{1,2})\s*ANOS?\b/) : null;
+  let ageBandRaw: string | null = null;
+  let ageBandNormalized: string | null = null;
+  if (rangeMatch) {
+    ageBandRaw = rangeMatch[0].replace(/\s+/g, " ").trim();
+    ageBandNormalized = `${rangeMatch[1]}-${rangeMatch[2]}`;
+    cleaned = cleaned.replace(rangeMatch[0], " ");
+  } else if (singleMatch) {
+    ageBandRaw = singleMatch[0].replace(/\s+/g, " ").trim();
+    ageBandNormalized = singleMatch[1];
+    cleaned = cleaned.replace(singleMatch[0], " ");
+  }
+
+  const sportToken = cleaned.replace(/\s+/g, " ").trim();
+  const isParalimpic = /\bPARALIMPIC[OA]?\b|\bPARA\b/.test(combined) || /PARA/.test(sportToken);
+
+  return {
+    raw_combined: combined,
+    sport_token: sportToken,
+    age_band_raw: ageBandRaw,
+    age_band_normalized: ageBandNormalized,
+    gender_raw: gender,
+    is_paralimpic: isParalimpic,
+  };
+}
+
+interface SportResolution {
+  sport_slug: string | null;
+  reason: string;       // explicação do match (ou da falha)
+  matched_by: "alias" | "exact" | "substring" | null;
+}
+
+function canonicalizeSport(parsed: ParsedSportText, sportsInCatalog: Set<string>): SportResolution {
+  const token = parsed.sport_token;
+  if (!token) {
+    return { sport_slug: null, reason: "modalidade vazia após sanitização", matched_by: null };
+  }
+
+  // 1. Alias direto
+  if (SPORT_ALIASES[token]) {
+    const slug = SPORT_ALIASES[token];
+    if (sportsInCatalog.has(slug)) {
+      return { sport_slug: slug, reason: `alias direto "${token}" -> ${slug}`, matched_by: "alias" };
+    }
+    return { sport_slug: null, reason: `alias "${token}" mapeia para "${slug}" mas não está no catálogo do evento`, matched_by: null };
+  }
+
+  // 2. Match exato pelo slug derivado
+  const slugified = slugify(token);
+  if (sportsInCatalog.has(slugified)) {
+    return { sport_slug: slugified, reason: `match exato slug "${slugified}"`, matched_by: "exact" };
+  }
+
+  // 3. Match por substring (sport do catálogo é prefixo do token)
+  const candidates = [...sportsInCatalog].filter(s => slugified.startsWith(s) || slugified.includes(s));
+  if (candidates.length === 1) {
+    return { sport_slug: candidates[0], reason: `substring única "${slugified}" ⊃ "${candidates[0]}"`, matched_by: "substring" };
+  }
+  if (candidates.length > 1) {
+    // Escolher o mais longo (mais específico)
+    candidates.sort((a, b) => b.length - a.length);
+    return { sport_slug: candidates[0], reason: `substring (escolhido mais específico entre ${candidates.length}): ${candidates.join(", ")}`, matched_by: "substring" };
+  }
+
+  return { sport_slug: null, reason: `nenhum match para token "${token}" (slug "${slugified}") no catálogo`, matched_by: null };
+}
+
+interface CategoryResolution {
+  category_slug: string | null;
+  reason: string;
+  matched_by: "age_band" | "single_in_catalog" | null;
+}
+
+// Mapa: (sport_slug, age_band_normalized) -> category_slug.
+// Construído a partir do catálogo real do evento (entregue pela query de
+// diagnóstico). Mantém regra explícita SEM chute genérico.
+const AGE_BAND_TO_CATEGORY: Array<{
+  sportPattern: RegExp; ageBand: string; categorySlug: string;
+}> = [
+  // JERPA (paralímpicas)
+  { sportPattern: /paralimpic/, ageBand: "11-14", categorySlug: "jerpa-11-14" },
+  { sportPattern: /paralimpic/, ageBand: "15-17", categorySlug: "jerpa-15-17" },
+  { sportPattern: /^parabadminton$/, ageBand: "11-14", categorySlug: "jerpa-11-14" },
+  { sportPattern: /^parabadminton$/, ageBand: "15-17", categorySlug: "jerpa-15-17" },
+  // Ginástica Rítmica (faixas próprias)
+  { sportPattern: /^ginastica-ritmica$/, ageBand: "11-12", categorySlug: "gr-11-12" },
+  { sportPattern: /^ginastica-ritmica$/, ageBand: "13-15", categorySlug: "gr-13-15" },
+  // Natação / Judô (faixas próprias)
+  { sportPattern: /^(natacao|judo)$/, ageBand: "12-14", categorySlug: "nat-judo-wrest-12-14" },
+  { sportPattern: /^(natacao|judo)$/, ageBand: "14-16", categorySlug: "nat-judo-wrest-14-16" },
+  { sportPattern: /^(natacao|judo)$/, ageBand: "17", categorySlug: "nat-judo-wrest-17" },
+  // Tênis de Mesa (faixas próprias, não-paralímpico)
+  { sportPattern: /^tenis-de-mesa$/, ageBand: "12-14", categorySlug: "tm-12-14" },
+  { sportPattern: /^tenis-de-mesa$/, ageBand: "14-15", categorySlug: "tm-14-15" },
+  { sportPattern: /^tenis-de-mesa$/, ageBand: "16-17", categorySlug: "tm-16-17" },
+  // Default JERS
+  { sportPattern: /.*/, ageBand: "12-14", categorySlug: "jers-12-14" },
+  { sportPattern: /.*/, ageBand: "15-17", categorySlug: "jers-15-17" },
+];
+
+// Whitelist: modalidades onde, na ausência de faixa etária na planilha, é
+// seguro assumir a única categoria existente no catálogo do evento.
+// Mantida explícita para evitar chute em modalidades multi-categoria.
+const SINGLE_CATEGORY_FALLBACK_WHITELIST = new Set<string>([
+  "futebol",  // catálogo só tem jers-15-17 para futebol
+]);
+
+function canonicalizeCategory(
+  sportSlug: string,
+  parsed: ParsedSportText,
+  catalogPairs: Set<string>,         // "sport_slug|category_slug" presentes no catálogo
+): CategoryResolution {
+  // 1. Tentar resolver por faixa etária explícita
+  if (parsed.age_band_normalized) {
+    for (const rule of AGE_BAND_TO_CATEGORY) {
+      if (rule.ageBand !== parsed.age_band_normalized) continue;
+      if (!rule.sportPattern.test(sportSlug)) continue;
+      if (!catalogPairs.has(`${sportSlug}|${rule.categorySlug}`)) continue;
+      return {
+        category_slug: rule.categorySlug,
+        reason: `faixa "${parsed.age_band_normalized}" + modalidade "${sportSlug}" -> ${rule.categorySlug}`,
+        matched_by: "age_band",
+      };
+    }
+    return {
+      category_slug: null,
+      reason: `faixa "${parsed.age_band_normalized}" não tem regra de mapeamento para "${sportSlug}" no catálogo`,
+      matched_by: null,
+    };
+  }
+
+  // 2. Fallback controlado: única categoria no catálogo para essa modalidade
+  const cats = [...catalogPairs]
+    .filter(k => k.startsWith(`${sportSlug}|`))
+    .map(k => k.split("|")[1]);
+  const unique = [...new Set(cats)];
+
+  if (unique.length === 1 && SINGLE_CATEGORY_FALLBACK_WHITELIST.has(sportSlug)) {
+    return {
+      category_slug: unique[0],
+      reason: `fallback whitelist "${sportSlug}" possui única categoria no catálogo (${unique[0]})`,
+      matched_by: "single_in_catalog",
+    };
+  }
+  if (unique.length === 1) {
+    return {
+      category_slug: null,
+      reason: `modalidade "${sportSlug}" tem única categoria "${unique[0]}", mas não está na whitelist de fallback — exija faixa etária na planilha`,
+      matched_by: null,
+    };
+  }
+  if (unique.length > 1) {
+    return {
+      category_slug: null,
+      reason: `categoria ambígua para "${sportSlug}" (${unique.length} possíveis: ${unique.join(", ")}) — faixa etária não informada`,
+      matched_by: null,
+    };
+  }
+  return {
+    category_slug: null,
+    reason: `nenhuma categoria do catálogo cadastrada para "${sportSlug}"`,
+    matched_by: null,
+  };
+}
+
+function deriveProvaName(sportSlug: string, categorySlug: string): string {
+  // Padrão observado no catálogo: "<Sport Name> - <category-slug>"
+  // Como o catálogo só guarda 1 prova por (sport, category) na maioria dos
+  // casos, montamos o slug correspondente.
+  return `${sportSlug}--${categorySlug}`;
 }
 
 function normalizeHeaders(rows: RawRow[]): RawRow[] {
