@@ -38,12 +38,12 @@ export default function ImportacaoPendenciasPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
 
   async function load() {
-    if (!activeEvent?.id) return;
+    if (!activeEventId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("import_pendencias")
       .select("id, source_row_number, normalized_name, raw_cpf, raw_birth_date, modality_raw, prova_raw, pending_reason_code, pending_reason_detail, resolution_status, raw_payload_json, created_at")
-      .eq("event_id", activeEvent.id)
+      .eq("event_id", activeEventId)
       .eq("pending_reason_code", "TM_2012_MANUAL_CATEGORY_SELECTION")
       .order("created_at", { ascending: false });
     setLoading(false);
@@ -54,7 +54,7 @@ export default function ImportacaoPendenciasPage() {
     setPendencias((data ?? []) as Pendencia[]);
   }
 
-  useEffect(() => { load(); }, [activeEvent?.id]);
+  useEffect(() => { load(); }, [activeEventId]);
 
   const stats = useMemo(() => {
     const total = pendencias.length;
