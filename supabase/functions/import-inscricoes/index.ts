@@ -129,12 +129,22 @@ interface NormalizedRow {
   phone: string | null;
   institution_name: string;
   institution_slug: string;
-  sport_name: string;
-  sport_slug: string;
-  category_name: string;
-  category_slug: string;
+  // Texto bruto da planilha (mantido para auditoria)
+  sport_raw: string;
+  competicao_raw: string;
+  // Resultado do parser canônico
+  sport_name: string;          // = sport_raw (retrocompat)
+  sport_slug: string;          // canônico do catálogo (vazio se falhou)
+  category_name: string;       // = competicao_raw
+  category_slug: string;       // canônico do catálogo (vazio se falhou)
   prova_name: string;
-  prova_slug: string;
+  prova_slug: string;          // derivado quando sport+category resolvidos
+  // Auxiliares de parsing
+  parse_age_band: string | null;
+  parse_gender: string | null;
+  parse_is_paralimpic: boolean;
+  parse_sport_reason: string;
+  parse_category_reason: string;
   user_type: string;
   inscription_status: string;
   participant_type: string;
@@ -151,6 +161,11 @@ type PendingCode =
   | "BIRTH_DATE_INVALID"
   | "PERSON_MATCH_AMBIGUOUS"
   | "SPORT_EVENT_NOT_FOUND"
+  | "SPORT_EVENT_NOT_FOUND_CANONICAL"
+  | "SPORT_PARSE_FAILED"
+  | "CATEGORY_PARSE_FAILED"
+  | "PROVA_PARSE_FAILED"
+  | "SPORT_EVENT_AMBIGUOUS"
   | "INSTITUTION_NOT_FOUND"
   | "MANUAL_REVIEW_REQUIRED";
 
@@ -177,23 +192,240 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO", "NOME DO ALUNO", "ALUNO"],
   "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO", "UNIDADE ESCOLAR", "ESCOLA/INSTITUICAO"],
   "MODALIDADE": ["MODALIDADE", "ESPORTE", "SPORT", "MOD"],
-  "PROVA": ["PROVA", "EVENTO", "DISCIPLINE", "PROVA/EVENTO"],
+  "PROVA": ["PROVA", "DISCIPLINE", "PROVA/EVENTO"],
   "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "COMPETIÇÃO/CATEGORIA", "CATEGORIA", "CATEGORY", "COMP"],
 };
-const REQUIRED_COLUMNS = ["NOME", "ESCOLA", "MODALIDADE", "PROVA"];
+const REQUIRED_COLUMNS = ["NOME", "ESCOLA", "MODALIDADE"];
 
 function normalizeStr(s: string): string {
   return s.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9 _/-]/g, " ").replace(/\s+/g, " ");
 }
 
-function deriveCategoryFromProva(prova: string): string {
-  if (isBlank(prova)) return "";
-  const normalized = normalizeStr(prova);
-  const ageBand = normalized.match(/\b(\d{1,2}\s*[-/]\s*\d{1,2}\s*ANOS)\b/)?.[1]?.replace(/\s+/g, " ");
-  const schoolBand = normalized.match(/\b(INFANTIL|JUVENIL|MIRIM)\b/)?.[1];
-  const gender = normalized.match(/\b(FEMININO|MASCULINO|MISTO|MISTA)\b/)?.[1];
-  const parts = [ageBand ?? schoolBand, gender === "MISTA" ? "MISTO" : gender].filter(Boolean);
-  return parts.join(" ");
+// ─── Sport / Category Canonical Parser ────────────────────────────────
+//
+// Objetivo: transformar o texto bruto da planilha (que mistura modalidade,
+// nome da etapa, faixa etária e gênero) em slugs canônicos do catálogo do
+// evento. NUNCA inventa slug — só resolve para algo que já existe.
+
+// Tokens da etapa que devem ser removidos antes do match esportivo.
+const STAGE_TOKENS = [
+  "CARACARAI", "BONFIM", "BOA VISTA", "FINAL", "CLASSIFICATORIA",
+  "ETAPA", "REGIONAL", "ESTADUAL",
+];
+
+// Aliases de modalidade (texto bruto -> slug canônico). Usado como atalho
+// antes do match por substring contra o catálogo. Apenas quando o slugify
+// puro do nome não bate naturalmente com o catálogo (acentos/espaços já
+// tratados, então quase sempre o match natural funciona).
+const SPORT_ALIASES: Record<string, string> = {
+  "JUDO": "judo",
+  "JUDÔ": "judo",
+  "VOLEI DE PRAIA": "volei-de-praia",
+  "VOLEIBOL DE PRAIA": "volei-de-praia",
+  "GINASTICA RITMICA": "ginastica-ritmica",
+  "TENIS DE MESA": "tenis-de-mesa",
+  "ATLETISMO PARALIMPICO": "atletismo-paralimpico",
+  "NATACAO PARALIMPICA": "natacao-paralimpica",
+  "BOCHA PARALIMPICA": "bocha-paralimpica",
+  "TENIS DE MESA PARALIMPICO": "tenis-de-mesa-paralimpico",
+  "PARABADMINTON": "parabadminton",
+};
+
+interface ParsedSportText {
+  raw_combined: string;          // texto sanitizado (sem etapa)
+  sport_token: string;           // o que restou após tirar gênero/idade/etapa
+  age_band_raw: string | null;   // ex.: "15-17 ANOS"
+  age_band_normalized: string | null; // ex.: "15-17"
+  gender_raw: string | null;     // ex.: "MASCULINO"
+  is_paralimpic: boolean;
+}
+
+function parseSportText(modalidadeRaw: string, competicaoRaw: string): ParsedSportText {
+  const combined = normalizeStr(`${modalidadeRaw} ${competicaoRaw}`);
+  let cleaned = ` ${combined} `;
+
+  // Remove tokens de etapa
+  for (const tok of STAGE_TOKENS) {
+    cleaned = cleaned.replace(new RegExp(`\\b${tok}\\b`, "g"), " ");
+  }
+
+  // Extrai gênero
+  const genderMatch = cleaned.match(/\b(FEMININO|MASCULINO|MISTO|MISTA)\b/);
+  const gender = genderMatch?.[1] ?? null;
+  if (genderMatch) cleaned = cleaned.replace(genderMatch[0], " ");
+
+  // Extrai faixa etária (ex.: "15-17 ANOS", "12 A 14 ANOS", "17 ANOS")
+  const rangeMatch = cleaned.match(/\b(\d{1,2})\s*(?:[-/]|A)\s*(\d{1,2})\s*ANOS?\b/);
+  const singleMatch = !rangeMatch ? cleaned.match(/\b(\d{1,2})\s*ANOS?\b/) : null;
+  let ageBandRaw: string | null = null;
+  let ageBandNormalized: string | null = null;
+  if (rangeMatch) {
+    ageBandRaw = rangeMatch[0].replace(/\s+/g, " ").trim();
+    ageBandNormalized = `${rangeMatch[1]}-${rangeMatch[2]}`;
+    cleaned = cleaned.replace(rangeMatch[0], " ");
+  } else if (singleMatch) {
+    ageBandRaw = singleMatch[0].replace(/\s+/g, " ").trim();
+    ageBandNormalized = singleMatch[1];
+    cleaned = cleaned.replace(singleMatch[0], " ");
+  }
+
+  const sportToken = cleaned.replace(/\s+/g, " ").trim();
+  const isParalimpic = /\bPARALIMPIC[OA]?\b|\bPARA\b/.test(combined) || /PARA/.test(sportToken);
+
+  return {
+    raw_combined: combined,
+    sport_token: sportToken,
+    age_band_raw: ageBandRaw,
+    age_band_normalized: ageBandNormalized,
+    gender_raw: gender,
+    is_paralimpic: isParalimpic,
+  };
+}
+
+interface SportResolution {
+  sport_slug: string | null;
+  reason: string;       // explicação do match (ou da falha)
+  matched_by: "alias" | "exact" | "substring" | null;
+}
+
+function canonicalizeSport(parsed: ParsedSportText, sportsInCatalog: Set<string>): SportResolution {
+  const token = parsed.sport_token;
+  if (!token) {
+    return { sport_slug: null, reason: "modalidade vazia após sanitização", matched_by: null };
+  }
+
+  // 1. Alias direto
+  if (SPORT_ALIASES[token]) {
+    const slug = SPORT_ALIASES[token];
+    if (sportsInCatalog.has(slug)) {
+      return { sport_slug: slug, reason: `alias direto "${token}" -> ${slug}`, matched_by: "alias" };
+    }
+    return { sport_slug: null, reason: `alias "${token}" mapeia para "${slug}" mas não está no catálogo do evento`, matched_by: null };
+  }
+
+  // 2. Match exato pelo slug derivado
+  const slugified = slugify(token);
+  if (sportsInCatalog.has(slugified)) {
+    return { sport_slug: slugified, reason: `match exato slug "${slugified}"`, matched_by: "exact" };
+  }
+
+  // 3. Match por substring (sport do catálogo é prefixo do token)
+  const candidates = [...sportsInCatalog].filter(s => slugified.startsWith(s) || slugified.includes(s));
+  if (candidates.length === 1) {
+    return { sport_slug: candidates[0], reason: `substring única "${slugified}" ⊃ "${candidates[0]}"`, matched_by: "substring" };
+  }
+  if (candidates.length > 1) {
+    // Escolher o mais longo (mais específico)
+    candidates.sort((a, b) => b.length - a.length);
+    return { sport_slug: candidates[0], reason: `substring (escolhido mais específico entre ${candidates.length}): ${candidates.join(", ")}`, matched_by: "substring" };
+  }
+
+  return { sport_slug: null, reason: `nenhum match para token "${token}" (slug "${slugified}") no catálogo`, matched_by: null };
+}
+
+interface CategoryResolution {
+  category_slug: string | null;
+  reason: string;
+  matched_by: "age_band" | "single_in_catalog" | null;
+}
+
+// Mapa: (sport_slug, age_band_normalized) -> category_slug.
+// Construído a partir do catálogo real do evento (entregue pela query de
+// diagnóstico). Mantém regra explícita SEM chute genérico.
+const AGE_BAND_TO_CATEGORY: Array<{
+  sportPattern: RegExp; ageBand: string; categorySlug: string;
+}> = [
+  // JERPA (paralímpicas)
+  { sportPattern: /paralimpic/, ageBand: "11-14", categorySlug: "jerpa-11-14" },
+  { sportPattern: /paralimpic/, ageBand: "15-17", categorySlug: "jerpa-15-17" },
+  { sportPattern: /^parabadminton$/, ageBand: "11-14", categorySlug: "jerpa-11-14" },
+  { sportPattern: /^parabadminton$/, ageBand: "15-17", categorySlug: "jerpa-15-17" },
+  // Ginástica Rítmica (faixas próprias)
+  { sportPattern: /^ginastica-ritmica$/, ageBand: "11-12", categorySlug: "gr-11-12" },
+  { sportPattern: /^ginastica-ritmica$/, ageBand: "13-15", categorySlug: "gr-13-15" },
+  // Natação / Judô (faixas próprias)
+  { sportPattern: /^(natacao|judo)$/, ageBand: "12-14", categorySlug: "nat-judo-wrest-12-14" },
+  { sportPattern: /^(natacao|judo)$/, ageBand: "14-16", categorySlug: "nat-judo-wrest-14-16" },
+  { sportPattern: /^(natacao|judo)$/, ageBand: "17", categorySlug: "nat-judo-wrest-17" },
+  // Tênis de Mesa (faixas próprias, não-paralímpico)
+  { sportPattern: /^tenis-de-mesa$/, ageBand: "12-14", categorySlug: "tm-12-14" },
+  { sportPattern: /^tenis-de-mesa$/, ageBand: "14-15", categorySlug: "tm-14-15" },
+  { sportPattern: /^tenis-de-mesa$/, ageBand: "16-17", categorySlug: "tm-16-17" },
+  // Default JERS
+  { sportPattern: /.*/, ageBand: "12-14", categorySlug: "jers-12-14" },
+  { sportPattern: /.*/, ageBand: "15-17", categorySlug: "jers-15-17" },
+];
+
+// Whitelist: modalidades onde, na ausência de faixa etária na planilha, é
+// seguro assumir a única categoria existente no catálogo do evento.
+// Mantida explícita para evitar chute em modalidades multi-categoria.
+const SINGLE_CATEGORY_FALLBACK_WHITELIST = new Set<string>([
+  "futebol",  // catálogo só tem jers-15-17 para futebol
+]);
+
+function canonicalizeCategory(
+  sportSlug: string,
+  parsed: ParsedSportText,
+  catalogPairs: Set<string>,         // "sport_slug|category_slug" presentes no catálogo
+): CategoryResolution {
+  // 1. Tentar resolver por faixa etária explícita
+  if (parsed.age_band_normalized) {
+    for (const rule of AGE_BAND_TO_CATEGORY) {
+      if (rule.ageBand !== parsed.age_band_normalized) continue;
+      if (!rule.sportPattern.test(sportSlug)) continue;
+      if (!catalogPairs.has(`${sportSlug}|${rule.categorySlug}`)) continue;
+      return {
+        category_slug: rule.categorySlug,
+        reason: `faixa "${parsed.age_band_normalized}" + modalidade "${sportSlug}" -> ${rule.categorySlug}`,
+        matched_by: "age_band",
+      };
+    }
+    return {
+      category_slug: null,
+      reason: `faixa "${parsed.age_band_normalized}" não tem regra de mapeamento para "${sportSlug}" no catálogo`,
+      matched_by: null,
+    };
+  }
+
+  // 2. Fallback controlado: única categoria no catálogo para essa modalidade
+  const cats = [...catalogPairs]
+    .filter(k => k.startsWith(`${sportSlug}|`))
+    .map(k => k.split("|")[1]);
+  const unique = [...new Set(cats)];
+
+  if (unique.length === 1 && SINGLE_CATEGORY_FALLBACK_WHITELIST.has(sportSlug)) {
+    return {
+      category_slug: unique[0],
+      reason: `fallback whitelist "${sportSlug}" possui única categoria no catálogo (${unique[0]})`,
+      matched_by: "single_in_catalog",
+    };
+  }
+  if (unique.length === 1) {
+    return {
+      category_slug: null,
+      reason: `modalidade "${sportSlug}" tem única categoria "${unique[0]}", mas não está na whitelist de fallback — exija faixa etária na planilha`,
+      matched_by: null,
+    };
+  }
+  if (unique.length > 1) {
+    return {
+      category_slug: null,
+      reason: `categoria ambígua para "${sportSlug}" (${unique.length} possíveis: ${unique.join(", ")}) — faixa etária não informada`,
+      matched_by: null,
+    };
+  }
+  return {
+    category_slug: null,
+    reason: `nenhuma categoria do catálogo cadastrada para "${sportSlug}"`,
+    matched_by: null,
+  };
+}
+
+function deriveProvaName(sportSlug: string, categorySlug: string): string {
+  // Padrão observado no catálogo: "<Sport Name> - <category-slug>"
+  // Como o catálogo só guarda 1 prova por (sport, category) na maioria dos
+  // casos, montamos o slug correspondente.
+  return `${sportSlug}--${categorySlug}`;
 }
 
 function normalizeHeaders(rows: RawRow[]): RawRow[] {
@@ -213,10 +445,6 @@ function normalizeHeaders(rows: RawRow[]): RawRow[] {
         newRow[canonical] = newRow[original];
       }
     }
-    if ((!("COMPETICAO" in newRow) || isBlank(newRow["COMPETICAO"])) && !isBlank(newRow["PROVA"])) {
-      const derivedCategory = deriveCategoryFromProva(String(newRow["PROVA"]));
-      if (derivedCategory) newRow["COMPETICAO"] = derivedCategory;
-    }
     return newRow;
   });
 }
@@ -231,11 +459,15 @@ function deriveParticipantType(userType: string, funcao: string): string {
   return "staff";
 }
 
-function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
+function mapColumns(
+  raw: RawRow,
+  rowIndex: number,
+  catalog: { sportsSet: Set<string>; sportCategoryPairs: Set<string> },
+): NormalizedRow {
   const fullName = normalizeName(getField(raw, "NOME", "NOME COMPLETO"));
   const institution = getField(raw, "ESCOLA", "INSTITUICAO");
-  const sport = getField(raw, "MODALIDADE");
-  const category = getField(raw, "COMPETICAO", "CATEGORIA");
+  const sportRaw = getField(raw, "MODALIDADE");
+  const competicaoRaw = getField(raw, "COMPETICAO", "CATEGORIA");
   const prova = getField(raw, "PROVA");
   const userType = getField(raw, "TIPO USUARIO", "TIPO_USUARIO");
   const status = getField(raw, "STATUS DA INSCRIÇÃO", "STATUS DA INSCRICAO", "STATUS_INSCRICAO");
@@ -250,6 +482,18 @@ function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
   const rawBirthDate = String(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"] ?? "").trim();
   const birthDate = parseDate(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"]);
 
+  // ── Parser canônico: modalidade + categoria do catálogo ──
+  const parsed = parseSportText(sportRaw, competicaoRaw);
+  const sportRes = canonicalizeSport(parsed, catalog.sportsSet);
+  let categoryRes: CategoryResolution = { category_slug: null, reason: "modalidade não resolvida", matched_by: null };
+  let provaSlug = "";
+  if (sportRes.sport_slug) {
+    categoryRes = canonicalizeCategory(sportRes.sport_slug, parsed, catalog.sportCategoryPairs);
+    if (categoryRes.category_slug) {
+      provaSlug = deriveProvaName(sportRes.sport_slug, categoryRes.category_slug);
+    }
+  }
+
   return {
     row_number: rowIndex + 2,
     full_name: fullName,
@@ -263,12 +507,19 @@ function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
     phone: getField(raw, "TELEFONE") || null,
     institution_name: institution,
     institution_slug: slugify(institution),
-    sport_name: sport,
-    sport_slug: slugify(sport),
-    category_name: category,
-    category_slug: slugify(category),
+    sport_raw: sportRaw,
+    competicao_raw: competicaoRaw,
+    sport_name: sportRaw,
+    sport_slug: sportRes.sport_slug ?? "",
+    category_name: competicaoRaw,
+    category_slug: categoryRes.category_slug ?? "",
     prova_name: prova,
-    prova_slug: slugify(prova),
+    prova_slug: provaSlug,
+    parse_age_band: parsed.age_band_normalized,
+    parse_gender: parsed.gender_raw,
+    parse_is_paralimpic: parsed.is_paralimpic,
+    parse_sport_reason: sportRes.reason,
+    parse_category_reason: categoryRes.reason,
     user_type: userType,
     inscription_status: status,
     participant_type: deriveParticipantType(userType, funcao),
@@ -283,9 +534,11 @@ function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
 
 interface ReadOnlyMaps {
   institutions: Map<string, string>;
-  sports: Map<string, string>;
-  categories: Map<string, string>;
-  sportEvents: Map<string, string>;
+  sports: Map<string, string>;                // sport_slug -> sport_id
+  categories: Map<string, string>;            // category_slug -> category_id
+  sportEvents: Map<string, string>;           // "sport_id|category_id|prova_slug" -> sport_event_id
+  sportCategoryPairs: Set<string>;            // "sport_slug|category_slug" presentes no catálogo
+  sportsSet: Set<string>;                     // sport_slugs presentes no catálogo
   delegations: Map<string, string>;
   existingInstitutionSlugs: Set<string>;
 }
@@ -306,14 +559,26 @@ async function loadReadOnlyMaps(
   for (const i of instRes.data ?? []) institutions.set(i.slug, i.id);
 
   const sports = new Map<string, string>();
-  for (const s of sportRes.data ?? []) sports.set(s.slug, s.id);
+  const sportsById = new Map<string, string>();
+  for (const s of sportRes.data ?? []) {
+    sports.set(s.slug, s.id);
+    sportsById.set(s.id, s.slug);
+  }
 
   const categories = new Map<string, string>();
-  for (const c of catRes.data ?? []) categories.set(c.slug, c.id);
+  const catsById = new Map<string, string>();
+  for (const c of catRes.data ?? []) {
+    categories.set(c.slug, c.id);
+    catsById.set(c.id, c.slug);
+  }
 
   const sportEvents = new Map<string, string>();
+  const sportCategoryPairs = new Set<string>();
   for (const se of seRes.data ?? []) {
     sportEvents.set(`${se.sport_id}|${se.category_id}|${se.slug}`, se.id);
+    const sSlug = sportsById.get(se.sport_id);
+    const cSlug = catsById.get(se.category_id);
+    if (sSlug && cSlug) sportCategoryPairs.add(`${sSlug}|${cSlug}`);
   }
 
   const delegations = new Map<string, string>();
@@ -324,6 +589,8 @@ async function loadReadOnlyMaps(
     sports,
     categories,
     sportEvents,
+    sportCategoryPairs,
+    sportsSet: new Set(sports.keys()),
     delegations,
     existingInstitutionSlugs: new Set(institutions.keys()),
   };
@@ -522,16 +789,27 @@ function classifyRow(
   }
 
   // ── Sport / Category / Sport Event (athletes only, NO auto-create) ──
+  // O parser canônico já tentou resolver row.sport_slug e row.category_slug
+  // contra o catálogo. Aqui apenas classificamos as falhas com códigos
+  // específicos para diferenciar parser vs catálogo vs ambiguidade.
   if (isAthlete) {
-    if (!row.sport_slug) {
+    if (!row.sport_raw) {
       errors.push({ row: row.row_number, field: "MODALIDADE", value: "", code: "SPORT_MISSING", message: "Modalidade obrigatória para atletas" });
       return { status: "erro_bloqueante", errors, warnings, pending, resolved };
+    }
+    if (!row.sport_slug) {
+      pending.push({
+        row_number: row.row_number, reason_code: "SPORT_PARSE_FAILED",
+        reason_detail: `Modalidade bruta "${row.sport_raw}" não foi resolvida no catálogo. Motivo: ${row.parse_sport_reason}`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
     }
     const sportId = maps.sports.get(row.sport_slug);
     if (!sportId) {
       pending.push({
-        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND",
-        reason_detail: `Modalidade "${row.sport_name}" (slug: ${row.sport_slug}) não encontrada no catálogo do evento`,
+        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND_CANONICAL",
+        reason_detail: `Modalidade canônica "${row.sport_slug}" deveria estar no catálogo, mas não foi encontrada`,
         row, fingerprint, candidate_person_id: null,
       });
       return { status: "pendencia", errors, warnings, pending, resolved };
@@ -539,14 +817,21 @@ function classifyRow(
     resolved.sport_id = sportId;
 
     if (!row.category_slug) {
-      errors.push({ row: row.row_number, field: "COMPETICAO", value: "", code: "CATEGORY_MISSING", message: "Categoria obrigatória para atletas" });
-      return { status: "erro_bloqueante", errors, warnings, pending, resolved };
+      // Diferenciar ambiguidade vs falha pura de parsing
+      const isAmbiguous = /amb[ií]gua/.test(row.parse_category_reason);
+      pending.push({
+        row_number: row.row_number,
+        reason_code: isAmbiguous ? "SPORT_EVENT_AMBIGUOUS" : "CATEGORY_PARSE_FAILED",
+        reason_detail: `Categoria não resolvida para modalidade "${row.sport_slug}". Bruto COMPETIÇÃO="${row.competicao_raw}". Motivo: ${row.parse_category_reason}`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
     }
     const catId = maps.categories.get(row.category_slug);
     if (!catId) {
       pending.push({
-        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND",
-        reason_detail: `Categoria "${row.category_name}" (slug: ${row.category_slug}) não encontrada no catálogo do evento`,
+        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND_CANONICAL",
+        reason_detail: `Categoria canônica "${row.category_slug}" não encontrada no catálogo do evento`,
         row, fingerprint, candidate_person_id: null,
       });
       return { status: "pendencia", errors, warnings, pending, resolved };
@@ -554,16 +839,20 @@ function classifyRow(
     resolved.category_id = catId;
 
     if (!row.prova_slug) {
-      warnings.push({ row: row.row_number, field: "PROVA", value: null, code: "PROVA_EMPTY", message: "Nenhuma prova — linha ignorada" });
-      return { status: "skip", errors, warnings, pending, resolved };
+      pending.push({
+        row_number: row.row_number, reason_code: "PROVA_PARSE_FAILED",
+        reason_detail: `Prova não derivada (sport=${row.sport_slug}, category=${row.category_slug})`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
     }
 
     const seKey = `${sportId}|${catId}|${row.prova_slug}`;
     const seId = maps.sportEvents.get(seKey);
     if (!seId) {
       pending.push({
-        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND",
-        reason_detail: `Prova "${row.prova_name}" (${row.sport_name} / ${row.category_name}) não encontrada no catálogo do evento`,
+        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND_CANONICAL",
+        reason_detail: `Prova "${row.prova_slug}" (${row.sport_slug} / ${row.category_slug}) não cadastrada como sport_event no catálogo`,
         row, fingerprint, candidate_person_id: null,
       });
       return { status: "pendencia", errors, warnings, pending, resolved };
@@ -697,11 +986,13 @@ Deno.serve(async (req: Request) => {
       }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Normalize rows
-    const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i));
-
-    // Load READ-ONLY maps (no writes!)
+    // Load READ-ONLY maps (no writes!) — necessário ANTES do mapColumns
+    // porque o parser canônico precisa do catálogo do evento.
     const maps = await loadReadOnlyMaps(serviceClient, eventId);
+
+    // Normalize rows usando catálogo canônico
+    const catalog = { sportsSet: maps.sportsSet, sportCategoryPairs: maps.sportCategoryPairs };
+    const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i, catalog));
 
     // Load people INCREMENTALLY (not full-table scan)
     const people = await loadPeopleIncremental(serviceClient, normalizedRows);
@@ -737,7 +1028,14 @@ Deno.serve(async (req: Request) => {
           if (p.reason_code === "CPF_INVALID") cpfsInvalidos++;
           if (p.reason_code === "CPF_MISSING") cpfsMissing++;
           if (p.reason_code === "BIRTH_DATE_MISSING" || p.reason_code === "BIRTH_DATE_INVALID") datasInvalidas++;
-          if (p.reason_code === "SPORT_EVENT_NOT_FOUND") seNaoEncontrados++;
+          if (
+            p.reason_code === "SPORT_EVENT_NOT_FOUND" ||
+            p.reason_code === "SPORT_EVENT_NOT_FOUND_CANONICAL" ||
+            p.reason_code === "SPORT_PARSE_FAILED" ||
+            p.reason_code === "CATEGORY_PARSE_FAILED" ||
+            p.reason_code === "PROVA_PARSE_FAILED" ||
+            p.reason_code === "SPORT_EVENT_AMBIGUOUS"
+          ) seNaoEncontrados++;
         }
         continue;
       }
@@ -751,6 +1049,12 @@ Deno.serve(async (req: Request) => {
       if (result.resolved.person_action === "create") cpfsNovos++;
       if (result.resolved.institution_will_create === "true") institutionsToCreate.add(row.institution_slug);
       if (result.resolved.delegation_will_create === "true") delegationsToCreate.add(row.institution_slug);
+    }
+
+    // Breakdown por código (para o frontend mostrar contadores específicos)
+    const pendingByCode: Record<string, number> = {};
+    for (const p of allPending) {
+      pendingByCode[p.reason_code] = (pendingByCode[p.reason_code] ?? 0) + 1;
     }
 
     const validateResponse = {
@@ -780,9 +1084,10 @@ Deno.serve(async (req: Request) => {
         institutions_que_seriam_criadas: institutionsToCreate.size,
         delegations_que_seriam_criadas: delegationsToCreate.size,
       },
+      pending_by_code: pendingByCode,
       errors: allErrors.slice(0, 50),
       warnings: allWarnings.slice(0, 50),
-      pendencias_preview: allPending.slice(0, 20).map(p => ({
+      pendencias_preview: allPending.slice(0, 30).map(p => ({
         row_number: p.row_number,
         reason_code: p.reason_code,
         reason_detail: p.reason_detail,
@@ -790,6 +1095,17 @@ Deno.serve(async (req: Request) => {
         normalized_name: p.row.full_name,
         cpf_raw: p.row.cpf_raw,
         candidate_person_id: p.candidate_person_id,
+        // Rastreabilidade do parsing canônico:
+        sport_raw: p.row.sport_raw,
+        competicao_raw: p.row.competicao_raw,
+        sport_slug_resolved: p.row.sport_slug || null,
+        category_slug_resolved: p.row.category_slug || null,
+        prova_slug_resolved: p.row.prova_slug || null,
+        parse_age_band: p.row.parse_age_band,
+        parse_gender: p.row.parse_gender,
+        parse_is_paralimpic: p.row.parse_is_paralimpic,
+        parse_sport_reason: p.row.parse_sport_reason,
+        parse_category_reason: p.row.parse_category_reason,
       })),
       institutions_preview: [...institutionsToCreate].slice(0, 10),
     };
