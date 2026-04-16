@@ -226,7 +226,7 @@ export default function ImportacaoPage() {
   };
 
   const callEdgeFunction = async (mode: "validate" | "commit") => {
-    if (!file || !selectedEventId || !confirmedMapping) return;
+    if (!file || !selectedEventId || !selectedStageId || !confirmedMapping) return;
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { toast.error("Sessão expirada. Faça login novamente."); return; }
     const rows = applyMapping(rawParsedRows, confirmedMapping);
@@ -239,7 +239,7 @@ export default function ImportacaoPage() {
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ rows, event_id: selectedEventId, mode, file_name: file.name }),
+      body: JSON.stringify({ rows, event_id: selectedEventId, event_stage_id: selectedStageId, mode, file_name: file.name }),
     });
     const json = await response.json();
     if (!response.ok) throw new Error(json.error || json.message || "Erro desconhecido");
