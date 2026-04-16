@@ -431,6 +431,28 @@ console.log("\n── Cenário: commit idempotente (verificação estrutural) �
   assert(r1.resolved.person_id === r2.resolved.person_id, "mesmo person_id");
 }
 
+// ─── Parser canônico (smoke tests inline) ────────────────────────────
+
+console.log("\n── Parser canônico Caracaraí ──");
+{
+  // Replicação mínima da lógica para validar regras-chave sem importar a edge
+  const STAGE = ["CARACARAI", "BONFIM", "BOA VISTA", "FINAL"];
+  function strip(s: string) {
+    let x = ` ${s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")} `;
+    for (const t of STAGE) x = x.replace(new RegExp(`\\b${t}\\b`,"g")," ");
+    return x.replace(/\s+/g," ").trim();
+  }
+  function ageBand(s: string) {
+    const m = s.match(/\b(\d{1,2})\s*(?:[-/]|A)\s*(\d{1,2})\s*ANOS?\b/);
+    return m ? `${m[1]}-${m[2]}` : null;
+  }
+  assert(strip("ATLETISMO CARACARAÍ 15-17 ANOS MASCULINO").includes("ATLETISMO"), "STAGE token CARACARAI removido");
+  assert(!strip("ATLETISMO CARACARAÍ").includes("CARACARAI"), "CARACARAI não contamina sport_token");
+  assert(ageBand("15-17 ANOS MASCULINO") === "15-17", "age band 15-17 detectada");
+  assert(ageBand("12-14 ANOS FEMININO") === "12-14", "age band 12-14 detectada");
+  assert(ageBand("FUTSAL") === null, "sem age band -> null");
+}
+
 // ─── Summary ─────────────────────────────────────────────────────────
 
 console.log(`\n${"═".repeat(40)}`);
