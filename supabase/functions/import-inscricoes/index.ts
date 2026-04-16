@@ -893,6 +893,7 @@ Deno.serve(async (req: Request) => {
     let peopleCreated = 0, peopleReused = 0;
     let participantsCreated = 0, participantsReused = 0;
     let pseCreated = 0, pseReused = 0;
+    let pesCreated = 0, pesReused = 0;
     let rowsFailed = 0;
     let rowsSkippedDuplicate = 0;
     const commitErrors: { row_number: number; error_code: string; error_message: string }[] = [];
@@ -904,12 +905,20 @@ Deno.serve(async (req: Request) => {
     const participantByPerson = new Map<string, string>();
     for (const p of existingParticipants ?? []) participantByPerson.set(p.person_id, p.id);
 
-    // Load existing PSEs for this event
+    // Load existing PSEs for this event (now scoped by event_stage_id for triple uniqueness)
     const { data: existingPSE } = await serviceClient
-      .from("participant_sport_events").select("id, participant_id, sport_event_id")
-      .in("participant_id", [...participantByPerson.values()]);
+      .from("participant_sport_events").select("id, participant_id, sport_event_id, event_stage_id")
+      .in("participant_id", [...participantByPerson.values(), "00000000-0000-0000-0000-000000000000"]);
     const pseSet = new Set<string>();
-    for (const p of existingPSE ?? []) pseSet.add(`${p.participant_id}|${p.sport_event_id}`);
+    for (const p of existingPSE ?? []) {
+      pseSet.add(`${p.participant_id}|${p.sport_event_id}|${p.event_stage_id ?? "null"}`);
+    }
+
+    // Load existing participant_event_stages for THIS stage
+    const { data: existingPES } = await serviceClient
+      .from("participant_event_stages").select("participant_id").eq("event_stage_id", eventStageId);
+    const pesSet = new Set<string>();
+    for (const r of existingPES ?? []) pesSet.add(r.participant_id);
 
     for (const { row, resolved } of validRows) {
       try {
