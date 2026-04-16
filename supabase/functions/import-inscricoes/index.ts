@@ -129,12 +129,22 @@ interface NormalizedRow {
   phone: string | null;
   institution_name: string;
   institution_slug: string;
-  sport_name: string;
-  sport_slug: string;
-  category_name: string;
-  category_slug: string;
+  // Texto bruto da planilha (mantido para auditoria)
+  sport_raw: string;
+  competicao_raw: string;
+  // Resultado do parser canônico
+  sport_name: string;          // = sport_raw (retrocompat)
+  sport_slug: string;          // canônico do catálogo (vazio se falhou)
+  category_name: string;       // = competicao_raw
+  category_slug: string;       // canônico do catálogo (vazio se falhou)
   prova_name: string;
-  prova_slug: string;
+  prova_slug: string;          // derivado quando sport+category resolvidos
+  // Auxiliares de parsing
+  parse_age_band: string | null;
+  parse_gender: string | null;
+  parse_is_paralimpic: boolean;
+  parse_sport_reason: string;
+  parse_category_reason: string;
   user_type: string;
   inscription_status: string;
   participant_type: string;
@@ -151,6 +161,11 @@ type PendingCode =
   | "BIRTH_DATE_INVALID"
   | "PERSON_MATCH_AMBIGUOUS"
   | "SPORT_EVENT_NOT_FOUND"
+  | "SPORT_EVENT_NOT_FOUND_CANONICAL"
+  | "SPORT_PARSE_FAILED"
+  | "CATEGORY_PARSE_FAILED"
+  | "PROVA_PARSE_FAILED"
+  | "SPORT_EVENT_AMBIGUOUS"
   | "INSTITUTION_NOT_FOUND"
   | "MANUAL_REVIEW_REQUIRED";
 
