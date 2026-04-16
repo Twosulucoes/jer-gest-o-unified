@@ -1425,6 +1425,100 @@ export type Database = {
           },
         ]
       }
+      import_pendencias: {
+        Row: {
+          candidate_person_id: string | null
+          created_at: string
+          event_id: string
+          fallback_fingerprint: string | null
+          id: string
+          import_log_id: string | null
+          institution_raw: string | null
+          modality_raw: string | null
+          normalized_name: string | null
+          pending_reason_code: string
+          pending_reason_detail: string | null
+          prova_raw: string | null
+          raw_birth_date: string | null
+          raw_cpf: string | null
+          raw_payload_json: Json | null
+          resolution_status: string
+          resolved_at: string | null
+          resolved_by: string | null
+          source_file_name: string | null
+          source_row_number: number
+          updated_at: string
+        }
+        Insert: {
+          candidate_person_id?: string | null
+          created_at?: string
+          event_id: string
+          fallback_fingerprint?: string | null
+          id?: string
+          import_log_id?: string | null
+          institution_raw?: string | null
+          modality_raw?: string | null
+          normalized_name?: string | null
+          pending_reason_code: string
+          pending_reason_detail?: string | null
+          prova_raw?: string | null
+          raw_birth_date?: string | null
+          raw_cpf?: string | null
+          raw_payload_json?: Json | null
+          resolution_status?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source_file_name?: string | null
+          source_row_number: number
+          updated_at?: string
+        }
+        Update: {
+          candidate_person_id?: string | null
+          created_at?: string
+          event_id?: string
+          fallback_fingerprint?: string | null
+          id?: string
+          import_log_id?: string | null
+          institution_raw?: string | null
+          modality_raw?: string | null
+          normalized_name?: string | null
+          pending_reason_code?: string
+          pending_reason_detail?: string | null
+          prova_raw?: string | null
+          raw_birth_date?: string | null
+          raw_cpf?: string | null
+          raw_payload_json?: Json | null
+          resolution_status?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source_file_name?: string | null
+          source_row_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_pendencias_candidate_person_id_fkey"
+            columns: ["candidate_person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_pendencias_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_pendencias_import_log_id_fkey"
+            columns: ["import_log_id"]
+            isOneToOne: false
+            referencedRelation: "import_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_row_errors: {
         Row: {
           created_at: string
