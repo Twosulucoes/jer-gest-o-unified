@@ -1028,7 +1028,14 @@ Deno.serve(async (req: Request) => {
           if (p.reason_code === "CPF_INVALID") cpfsInvalidos++;
           if (p.reason_code === "CPF_MISSING") cpfsMissing++;
           if (p.reason_code === "BIRTH_DATE_MISSING" || p.reason_code === "BIRTH_DATE_INVALID") datasInvalidas++;
-          if (p.reason_code === "SPORT_EVENT_NOT_FOUND") seNaoEncontrados++;
+          if (
+            p.reason_code === "SPORT_EVENT_NOT_FOUND" ||
+            p.reason_code === "SPORT_EVENT_NOT_FOUND_CANONICAL" ||
+            p.reason_code === "SPORT_PARSE_FAILED" ||
+            p.reason_code === "CATEGORY_PARSE_FAILED" ||
+            p.reason_code === "PROVA_PARSE_FAILED" ||
+            p.reason_code === "SPORT_EVENT_AMBIGUOUS"
+          ) seNaoEncontrados++;
         }
         continue;
       }
@@ -1042,6 +1049,12 @@ Deno.serve(async (req: Request) => {
       if (result.resolved.person_action === "create") cpfsNovos++;
       if (result.resolved.institution_will_create === "true") institutionsToCreate.add(row.institution_slug);
       if (result.resolved.delegation_will_create === "true") delegationsToCreate.add(row.institution_slug);
+    }
+
+    // Breakdown por código (para o frontend mostrar contadores específicos)
+    const pendingByCode: Record<string, number> = {};
+    for (const p of allPending) {
+      pendingByCode[p.reason_code] = (pendingByCode[p.reason_code] ?? 0) + 1;
     }
 
     const validateResponse = {
@@ -1071,9 +1084,10 @@ Deno.serve(async (req: Request) => {
         institutions_que_seriam_criadas: institutionsToCreate.size,
         delegations_que_seriam_criadas: delegationsToCreate.size,
       },
+      pending_by_code: pendingByCode,
       errors: allErrors.slice(0, 50),
       warnings: allWarnings.slice(0, 50),
-      pendencias_preview: allPending.slice(0, 20).map(p => ({
+      pendencias_preview: allPending.slice(0, 30).map(p => ({
         row_number: p.row_number,
         reason_code: p.reason_code,
         reason_detail: p.reason_detail,
@@ -1081,6 +1095,17 @@ Deno.serve(async (req: Request) => {
         normalized_name: p.row.full_name,
         cpf_raw: p.row.cpf_raw,
         candidate_person_id: p.candidate_person_id,
+        // Rastreabilidade do parsing canônico:
+        sport_raw: p.row.sport_raw,
+        competicao_raw: p.row.competicao_raw,
+        sport_slug_resolved: p.row.sport_slug || null,
+        category_slug_resolved: p.row.category_slug || null,
+        prova_slug_resolved: p.row.prova_slug || null,
+        parse_age_band: p.row.parse_age_band,
+        parse_gender: p.row.parse_gender,
+        parse_is_paralimpic: p.row.parse_is_paralimpic,
+        parse_sport_reason: p.row.parse_sport_reason,
+        parse_category_reason: p.row.parse_category_reason,
       })),
       institutions_preview: [...institutionsToCreate].slice(0, 10),
     };
