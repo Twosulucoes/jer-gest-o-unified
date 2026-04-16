@@ -676,10 +676,25 @@ Deno.serve(async (req: Request) => {
 
     // Verify event exists
     const { data: eventData, error: eventError } = await serviceClient
-      .from("events").select("id").eq("id", eventId).maybeSingle();
+      .from("events").select("id, name, year").eq("id", eventId).maybeSingle();
     if (eventError || !eventData) {
       return new Response(JSON.stringify({ error: `Evento não encontrado: ${eventId}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Verify event_stage exists AND belongs to the event
+    const { data: stageData, error: stageError } = await serviceClient
+      .from("event_stages").select("id, event_id, name, slug").eq("id", eventStageId).maybeSingle();
+    if (stageError || !stageData) {
+      return new Response(JSON.stringify({ error: `Etapa não encontrada: ${eventStageId}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (stageData.event_id !== eventId) {
+      return new Response(JSON.stringify({
+        error: `Etapa "${stageData.name}" não pertence ao evento selecionado.`,
+        stage_event_id: stageData.event_id,
+        provided_event_id: eventId,
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Normalize rows
