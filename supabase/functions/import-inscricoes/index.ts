@@ -789,16 +789,27 @@ function classifyRow(
   }
 
   // ── Sport / Category / Sport Event (athletes only, NO auto-create) ──
+  // O parser canônico já tentou resolver row.sport_slug e row.category_slug
+  // contra o catálogo. Aqui apenas classificamos as falhas com códigos
+  // específicos para diferenciar parser vs catálogo vs ambiguidade.
   if (isAthlete) {
-    if (!row.sport_slug) {
+    if (!row.sport_raw) {
       errors.push({ row: row.row_number, field: "MODALIDADE", value: "", code: "SPORT_MISSING", message: "Modalidade obrigatória para atletas" });
       return { status: "erro_bloqueante", errors, warnings, pending, resolved };
+    }
+    if (!row.sport_slug) {
+      pending.push({
+        row_number: row.row_number, reason_code: "SPORT_PARSE_FAILED",
+        reason_detail: `Modalidade bruta "${row.sport_raw}" não foi resolvida no catálogo. Motivo: ${row.parse_sport_reason}`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
     }
     const sportId = maps.sports.get(row.sport_slug);
     if (!sportId) {
       pending.push({
-        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND",
-        reason_detail: `Modalidade "${row.sport_name}" (slug: ${row.sport_slug}) não encontrada no catálogo do evento`,
+        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND_CANONICAL",
+        reason_detail: `Modalidade canônica "${row.sport_slug}" deveria estar no catálogo, mas não foi encontrada`,
         row, fingerprint, candidate_person_id: null,
       });
       return { status: "pendencia", errors, warnings, pending, resolved };
@@ -806,14 +817,21 @@ function classifyRow(
     resolved.sport_id = sportId;
 
     if (!row.category_slug) {
-      errors.push({ row: row.row_number, field: "COMPETICAO", value: "", code: "CATEGORY_MISSING", message: "Categoria obrigatória para atletas" });
-      return { status: "erro_bloqueante", errors, warnings, pending, resolved };
+      // Diferenciar ambiguidade vs falha pura de parsing
+      const isAmbiguous = /amb[ií]gua/.test(row.parse_category_reason);
+      pending.push({
+        row_number: row.row_number,
+        reason_code: isAmbiguous ? "SPORT_EVENT_AMBIGUOUS" : "CATEGORY_PARSE_FAILED",
+        reason_detail: `Categoria não resolvida para modalidade "${row.sport_slug}". Bruto COMPETIÇÃO="${row.competicao_raw}". Motivo: ${row.parse_category_reason}`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
     }
     const catId = maps.categories.get(row.category_slug);
     if (!catId) {
       pending.push({
-        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND",
-        reason_detail: `Categoria "${row.category_name}" (slug: ${row.category_slug}) não encontrada no catálogo do evento`,
+        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND_CANONICAL",
+        reason_detail: `Categoria canônica "${row.category_slug}" não encontrada no catálogo do evento`,
         row, fingerprint, candidate_person_id: null,
       });
       return { status: "pendencia", errors, warnings, pending, resolved };
@@ -821,16 +839,20 @@ function classifyRow(
     resolved.category_id = catId;
 
     if (!row.prova_slug) {
-      warnings.push({ row: row.row_number, field: "PROVA", value: null, code: "PROVA_EMPTY", message: "Nenhuma prova — linha ignorada" });
-      return { status: "skip", errors, warnings, pending, resolved };
+      pending.push({
+        row_number: row.row_number, reason_code: "PROVA_PARSE_FAILED",
+        reason_detail: `Prova não derivada (sport=${row.sport_slug}, category=${row.category_slug})`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
     }
 
     const seKey = `${sportId}|${catId}|${row.prova_slug}`;
     const seId = maps.sportEvents.get(seKey);
     if (!seId) {
       pending.push({
-        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND",
-        reason_detail: `Prova "${row.prova_name}" (${row.sport_name} / ${row.category_name}) não encontrada no catálogo do evento`,
+        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND_CANONICAL",
+        reason_detail: `Prova "${row.prova_slug}" (${row.sport_slug} / ${row.category_slug}) não cadastrada como sport_event no catálogo`,
         row, fingerprint, candidate_person_id: null,
       });
       return { status: "pendencia", errors, warnings, pending, resolved };
