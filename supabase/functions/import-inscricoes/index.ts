@@ -459,11 +459,15 @@ function deriveParticipantType(userType: string, funcao: string): string {
   return "staff";
 }
 
-function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
+function mapColumns(
+  raw: RawRow,
+  rowIndex: number,
+  catalog: { sportsSet: Set<string>; sportCategoryPairs: Set<string> },
+): NormalizedRow {
   const fullName = normalizeName(getField(raw, "NOME", "NOME COMPLETO"));
   const institution = getField(raw, "ESCOLA", "INSTITUICAO");
-  const sport = getField(raw, "MODALIDADE");
-  const category = getField(raw, "COMPETICAO", "CATEGORIA");
+  const sportRaw = getField(raw, "MODALIDADE");
+  const competicaoRaw = getField(raw, "COMPETICAO", "CATEGORIA");
   const prova = getField(raw, "PROVA");
   const userType = getField(raw, "TIPO USUARIO", "TIPO_USUARIO");
   const status = getField(raw, "STATUS DA INSCRIÇÃO", "STATUS DA INSCRICAO", "STATUS_INSCRICAO");
@@ -478,6 +482,18 @@ function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
   const rawBirthDate = String(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"] ?? "").trim();
   const birthDate = parseDate(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"]);
 
+  // ── Parser canônico: modalidade + categoria do catálogo ──
+  const parsed = parseSportText(sportRaw, competicaoRaw);
+  const sportRes = canonicalizeSport(parsed, catalog.sportsSet);
+  let categoryRes: CategoryResolution = { category_slug: null, reason: "modalidade não resolvida", matched_by: null };
+  let provaSlug = "";
+  if (sportRes.sport_slug) {
+    categoryRes = canonicalizeCategory(sportRes.sport_slug, parsed, catalog.sportCategoryPairs);
+    if (categoryRes.category_slug) {
+      provaSlug = deriveProvaName(sportRes.sport_slug, categoryRes.category_slug);
+    }
+  }
+
   return {
     row_number: rowIndex + 2,
     full_name: fullName,
@@ -491,12 +507,19 @@ function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
     phone: getField(raw, "TELEFONE") || null,
     institution_name: institution,
     institution_slug: slugify(institution),
-    sport_name: sport,
-    sport_slug: slugify(sport),
-    category_name: category,
-    category_slug: slugify(category),
+    sport_raw: sportRaw,
+    competicao_raw: competicaoRaw,
+    sport_name: sportRaw,
+    sport_slug: sportRes.sport_slug ?? "",
+    category_name: competicaoRaw,
+    category_slug: categoryRes.category_slug ?? "",
     prova_name: prova,
-    prova_slug: slugify(prova),
+    prova_slug: provaSlug,
+    parse_age_band: parsed.age_band_normalized,
+    parse_gender: parsed.gender_raw,
+    parse_is_paralimpic: parsed.is_paralimpic,
+    parse_sport_reason: sportRes.reason,
+    parse_category_reason: categoryRes.reason,
     user_type: userType,
     inscription_status: status,
     participant_type: deriveParticipantType(userType, funcao),
