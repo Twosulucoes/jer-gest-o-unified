@@ -629,14 +629,18 @@ Deno.serve(async (req: Request) => {
     const operatorId = claimsData.claims.sub as string;
 
     const body = await req.json();
-    let { rows: rawRows, event_id: eventId, mode, file_name: fileName } = body as {
-      rows: RawRow[]; event_id: string; mode: string; file_name?: string;
+    let { rows: rawRows, event_id: eventId, event_stage_id: eventStageId, mode, file_name: fileName } = body as {
+      rows: RawRow[]; event_id: string; event_stage_id?: string; mode: string; file_name?: string;
     };
 
     rawRows = normalizeHeaders(rawRows);
 
     if (!rawRows || !eventId || !mode) {
       return new Response(JSON.stringify({ error: "Missing required fields: rows, event_id, mode" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (!eventStageId) {
+      return new Response(JSON.stringify({ error: "event_stage_id é obrigatório. Selecione a etapa antes de validar/importar." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     if (mode !== "validate" && mode !== "commit") {
@@ -672,10 +676,25 @@ Deno.serve(async (req: Request) => {
 
     // Verify event exists
     const { data: eventData, error: eventError } = await serviceClient
-      .from("events").select("id").eq("id", eventId).maybeSingle();
+      .from("events").select("id, name, year").eq("id", eventId).maybeSingle();
     if (eventError || !eventData) {
       return new Response(JSON.stringify({ error: `Evento não encontrado: ${eventId}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Verify event_stage exists AND belongs to the event
+    const { data: stageData, error: stageError } = await serviceClient
+      .from("event_stages").select("id, event_id, name, slug").eq("id", eventStageId).maybeSingle();
+    if (stageError || !stageData) {
+      return new Response(JSON.stringify({ error: `Etapa não encontrada: ${eventStageId}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (stageData.event_id !== eventId) {
+      return new Response(JSON.stringify({
+        error: `Etapa "${stageData.name}" não pertence ao evento selecionado.`,
+        stage_event_id: stageData.event_id,
+        provided_event_id: eventId,
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Normalize rows
@@ -738,6 +757,10 @@ Deno.serve(async (req: Request) => {
       status: "validated",
       operator_id: operatorId,
       event_id: eventId,
+      event_stage_id: eventStageId,
+      event_stage: { id: stageData.id, name: stageData.name, slug: stageData.slug },
+      event: { id: eventData.id, name: eventData.name, year: eventData.year },
+      file_name: fileName || null,
       timestamp: new Date().toISOString(),
       summary: {
         total_linhas: rawRows.length,
@@ -789,6 +812,7 @@ Deno.serve(async (req: Request) => {
     // Create import log first
     const { data: logData } = await serviceClient.from("import_logs").insert({
       event_id: eventId,
+      event_stage_id: eventStageId,
       performed_by: operatorId,
       file_name: fileName || "unknown",
       row_count: rawRows.length,
@@ -800,6 +824,9 @@ Deno.serve(async (req: Request) => {
     if (allPending.length > 0) {
       const pendBatch = allPending.map(p => ({
         event_id: eventId,
+        event_stage_id: eventStageId,
+        source_phase_name: stageData.name,
+        source_phase_slug: stageData.slug,
         import_log_id: importLogId,
         source_file_name: fileName || null,
         source_row_number: p.row_number,
@@ -866,6 +893,7 @@ Deno.serve(async (req: Request) => {
     let peopleCreated = 0, peopleReused = 0;
     let participantsCreated = 0, participantsReused = 0;
     let pseCreated = 0, pseReused = 0;
+    let pesCreated = 0, pesReused = 0;
     let rowsFailed = 0;
     let rowsSkippedDuplicate = 0;
     const commitErrors: { row_number: number; error_code: string; error_message: string }[] = [];
@@ -877,12 +905,20 @@ Deno.serve(async (req: Request) => {
     const participantByPerson = new Map<string, string>();
     for (const p of existingParticipants ?? []) participantByPerson.set(p.person_id, p.id);
 
-    // Load existing PSEs for this event
+    // Load existing PSEs for this event (now scoped by event_stage_id for triple uniqueness)
     const { data: existingPSE } = await serviceClient
-      .from("participant_sport_events").select("id, participant_id, sport_event_id")
-      .in("participant_id", [...participantByPerson.values()]);
+      .from("participant_sport_events").select("id, participant_id, sport_event_id, event_stage_id")
+      .in("participant_id", [...participantByPerson.values(), "00000000-0000-0000-0000-000000000000"]);
     const pseSet = new Set<string>();
-    for (const p of existingPSE ?? []) pseSet.add(`${p.participant_id}|${p.sport_event_id}`);
+    for (const p of existingPSE ?? []) {
+      pseSet.add(`${p.participant_id}|${p.sport_event_id}|${p.event_stage_id ?? "null"}`);
+    }
+
+    // Load existing participant_event_stages for THIS stage
+    const { data: existingPES } = await serviceClient
+      .from("participant_event_stages").select("participant_id").eq("event_stage_id", eventStageId);
+    const pesSet = new Set<string>();
+    for (const r of existingPES ?? []) pesSet.add(r.participant_id);
 
     for (const { row, resolved } of validRows) {
       try {
@@ -964,9 +1000,33 @@ Deno.serve(async (req: Request) => {
           }
         }
 
-        // ── Participant Sport Event (athletes only) ──
+        // ── Participant ↔ Stage (rastreabilidade operacional por etapa) ──
+        if (!pesSet.has(participantId)) {
+          const { error: pesErr } = await serviceClient.from("participant_event_stages").insert({
+            participant_id: participantId,
+            event_stage_id: eventStageId,
+            event_id: eventId,
+            status: "active",
+            created_by: operatorId,
+          });
+          if (pesErr) {
+            if (pesErr.message?.includes("duplicate") || pesErr.message?.includes("unique")) {
+              pesReused++;
+            } else {
+              // não bloqueante; registra como warning
+              allWarnings.push({ row: row.row_number, field: "STAGE", value: eventStageId, code: "PES_INSERT_FAILED", message: pesErr.message });
+            }
+          } else {
+            pesCreated++;
+            pesSet.add(participantId);
+          }
+        } else {
+          pesReused++;
+        }
+
+        // ── Participant Sport Event (athletes only) — agora único por (participant, sport_event, stage) ──
         if (row.participant_type === "athlete" && resolved.sport_event_id) {
-          const pseKey = `${participantId}|${resolved.sport_event_id}`;
+          const pseKey = `${participantId}|${resolved.sport_event_id}|${eventStageId}`;
           if (pseSet.has(pseKey)) {
             pseReused++;
             rowsSkippedDuplicate++;
@@ -974,6 +1034,7 @@ Deno.serve(async (req: Request) => {
             const { error: pseErr } = await serviceClient.from("participant_sport_events").insert({
               participant_id: participantId,
               sport_event_id: resolved.sport_event_id,
+              event_stage_id: eventStageId,
               status: "confirmed",
             });
             if (pseErr) {
@@ -1003,6 +1064,8 @@ Deno.serve(async (req: Request) => {
       people_reused: peopleReused,
       participants_created: participantsCreated,
       participants_reused: participantsReused,
+      participant_event_stages_created: pesCreated,
+      participant_event_stages_reused: pesReused,
       participant_sport_events_created: pseCreated,
       participant_sport_events_reused: pseReused,
       institutions_created: newInstMap.size,
@@ -1038,6 +1101,10 @@ Deno.serve(async (req: Request) => {
       partial_success: finalStatus === "partial",
       operator_id: operatorId,
       event_id: eventId,
+      event_stage_id: eventStageId,
+      event_stage: { id: stageData.id, name: stageData.name, slug: stageData.slug },
+      event: { id: eventData.id, name: eventData.name, year: eventData.year },
+      file_name: fileName || null,
       timestamp: new Date().toISOString(),
       result: resultSummary,
       errors_preview: commitErrors.slice(0, 20),
@@ -1050,5 +1117,7 @@ Deno.serve(async (req: Request) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
+
+// redeploy marker: 2026-04-16T20:35Z (event_stages support)
 
 // redeploy marker: 2026-04-16T16:00Z

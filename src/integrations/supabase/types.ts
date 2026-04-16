@@ -1252,6 +1252,62 @@ export type Database = {
           },
         ]
       }
+      event_stages: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          event_id: string
+          id: string
+          kind: string
+          name: string
+          slug: string
+          sort_order: number
+          starts_at: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          event_id: string
+          id?: string
+          kind?: string
+          name: string
+          slug: string
+          sort_order?: number
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          event_id?: string
+          id?: string
+          kind?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_stages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
@@ -1386,6 +1442,7 @@ export type Database = {
           created_at: string
           error_message: string | null
           event_id: string
+          event_stage_id: string | null
           file_name: string | null
           id: string
           performed_by: string
@@ -1397,6 +1454,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           event_id: string
+          event_stage_id?: string | null
           file_name?: string | null
           id?: string
           performed_by: string
@@ -1408,6 +1466,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           event_id?: string
+          event_stage_id?: string | null
           file_name?: string | null
           id?: string
           performed_by?: string
@@ -1423,6 +1482,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "import_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
         ]
       }
       import_pendencias: {
@@ -1430,6 +1496,7 @@ export type Database = {
           candidate_person_id: string | null
           created_at: string
           event_id: string
+          event_stage_id: string | null
           fallback_fingerprint: string | null
           id: string
           import_log_id: string | null
@@ -1446,6 +1513,8 @@ export type Database = {
           resolved_at: string | null
           resolved_by: string | null
           source_file_name: string | null
+          source_phase_name: string | null
+          source_phase_slug: string | null
           source_row_number: number
           updated_at: string
         }
@@ -1453,6 +1522,7 @@ export type Database = {
           candidate_person_id?: string | null
           created_at?: string
           event_id: string
+          event_stage_id?: string | null
           fallback_fingerprint?: string | null
           id?: string
           import_log_id?: string | null
@@ -1469,6 +1539,8 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           source_file_name?: string | null
+          source_phase_name?: string | null
+          source_phase_slug?: string | null
           source_row_number: number
           updated_at?: string
         }
@@ -1476,6 +1548,7 @@ export type Database = {
           candidate_person_id?: string | null
           created_at?: string
           event_id?: string
+          event_stage_id?: string | null
           fallback_fingerprint?: string | null
           id?: string
           import_log_id?: string | null
@@ -1492,6 +1565,8 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           source_file_name?: string | null
+          source_phase_name?: string | null
+          source_phase_slug?: string | null
           source_row_number?: number
           updated_at?: string
         }
@@ -1508,6 +1583,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_pendencias_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {
@@ -3201,6 +3283,61 @@ export type Database = {
           },
         ]
       }
+      participant_event_stages: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          event_stage_id: string
+          id: string
+          participant_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          event_stage_id: string
+          id?: string
+          participant_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          event_stage_id?: string
+          id?: string
+          participant_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_event_stages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_event_stages_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_national_eligibility: {
         Row: {
           created_at: string
@@ -3280,6 +3417,7 @@ export type Database = {
           block_reason_code: string | null
           category_rule_code: string | null
           created_at: string
+          event_stage_id: string | null
           gender_snapshot: string | null
           id: string
           is_blocked_by_documentation: boolean | null
@@ -3299,6 +3437,7 @@ export type Database = {
           block_reason_code?: string | null
           category_rule_code?: string | null
           created_at?: string
+          event_stage_id?: string | null
           gender_snapshot?: string | null
           id?: string
           is_blocked_by_documentation?: boolean | null
@@ -3318,6 +3457,7 @@ export type Database = {
           block_reason_code?: string | null
           category_rule_code?: string | null
           created_at?: string
+          event_stage_id?: string | null
           gender_snapshot?: string | null
           id?: string
           is_blocked_by_documentation?: boolean | null
@@ -3334,6 +3474,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "participant_sport_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "participant_sport_events_participant_id_fkey"
             columns: ["participant_id"]

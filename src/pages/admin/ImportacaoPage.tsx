@@ -40,6 +40,10 @@ interface ValidateResult {
   status: string;
   operator_id: string;
   event_id: string;
+  event_stage_id?: string;
+  event_stage?: { id: string; name: string; slug: string };
+  event?: { id: string; name: string; year: number };
+  file_name?: string | null;
   timestamp: string;
   summary: {
     total_linhas: number;
@@ -78,12 +82,18 @@ interface CommitResult {
   partial_success?: boolean;
   operator_id: string;
   event_id: string;
+  event_stage_id?: string;
+  event_stage?: { id: string; name: string; slug: string };
+  event?: { id: string; name: string; year: number };
+  file_name?: string | null;
   timestamp: string;
   result: {
     people_created: number;
     people_reused: number;
     participants_created: number;
     participants_reused: number;
+    participant_event_stages_created?: number;
+    participant_event_stages_reused?: number;
     participant_sport_events_created: number;
     participant_sport_events_reused: number;
     institutions_created: number;
@@ -103,6 +113,7 @@ export default function ImportacaoPage() {
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
   const selectedEventId = useActiveEventId();
+  const [selectedStageId, setSelectedStageId] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [validating, setValidating] = useState(false);
   const [committing, setCommitting] = useState(false);
@@ -122,6 +133,22 @@ export default function ImportacaoPage() {
         .from("events").select("*").order("year", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: stages = [] } = useQuery({
+    queryKey: ["event_stages", selectedEventId],
+    enabled: !!selectedEventId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_stages" as never)
+        .select("id, name, slug, kind, sort_order, status")
+        .eq("event_id", selectedEventId)
+        .eq("status", "active")
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string; slug: string; kind: string; sort_order: number; status: string }>;
     },
   });
 
@@ -199,7 +226,7 @@ export default function ImportacaoPage() {
   };
 
   const callEdgeFunction = async (mode: "validate" | "commit") => {
-    if (!file || !selectedEventId || !confirmedMapping) return;
+    if (!file || !selectedEventId || !selectedStageId || !confirmedMapping) return;
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { toast.error("Sessão expirada. Faça login novamente."); return; }
     const rows = applyMapping(rawParsedRows, confirmedMapping);
@@ -212,7 +239,7 @@ export default function ImportacaoPage() {
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ rows, event_id: selectedEventId, mode, file_name: file.name }),
+      body: JSON.stringify({ rows, event_id: selectedEventId, event_stage_id: selectedStageId, mode, file_name: file.name }),
     });
     const json = await response.json();
     if (!response.ok) throw new Error(json.error || json.message || "Erro desconhecido");
@@ -266,7 +293,8 @@ export default function ImportacaoPage() {
   };
 
   const _selectedEvent = events.find((e) => e.id === selectedEventId);
-  const canValidate = !!file && !!selectedEventId && !!confirmedMapping && !validating && !committing;
+  const _selectedStage = stages.find((s) => s.id === selectedStageId);
+  const canValidate = !!file && !!selectedEventId && !!selectedStageId && !!confirmedMapping && !validating && !committing;
   const canCommit = validateResult && validateResult.summary.erros_bloqueantes === 0 && validateResult.summary.ok_para_importar > 0 && !committing && !commitResult;
 
   if (!canWrite) {
