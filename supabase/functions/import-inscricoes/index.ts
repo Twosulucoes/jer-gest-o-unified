@@ -450,6 +450,24 @@ function canonicalizeCategory(
       if (c.max_birth_year != null && birthYear > c.max_birth_year) return false;
       return true;
     });
+
+    // ── Caso especial determinístico: Tênis de Mesa, atleta nascido em 2012 ──
+    // Sem base normativa para escolher entre tm-12-14 e tm-14-15.
+    // SEMPRE pendência manual, antes de qualquer desempate ou fallback.
+    if (
+      sportSlug === "tenis-de-mesa" &&
+      birthYear === 2012 &&
+      candidateSlugs.includes("tm-12-14") &&
+      candidateSlugs.includes("tm-14-15")
+    ) {
+      return {
+        category_slug: null,
+        reason: `${TM_2012_MARKER}: TM atleta nascido em 2012 — escolha manual obrigatória entre tm-12-14 e tm-14-15`,
+        matched_by: null,
+        candidates: candidateSlugs,
+      };
+    }
+
     if (compatible.length === 1) {
       const chosen = compatible[0];
       const yearNote = eventYear ? ` (ano-base ${eventYear})` : "";
