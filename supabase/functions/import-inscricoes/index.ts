@@ -12,16 +12,19 @@ function slugify(text: string): string {
     .toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-function capitalize(text: string): string {
-  return text.trim().toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
-}
+const PREPOSITIONS = new Set(["da", "de", "do", "das", "dos"]);
 
 function normalizeName(name: string): string {
   return name.trim()
     .replace(/\s+/g, " ")
-    .toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+    .toLowerCase()
+    .split(" ")
+    .map((word, idx) => {
+      if (idx > 0 && PREPOSITIONS.has(word)) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(" ");
 }
 
 function cleanCpfRaw(cpf: string | null | undefined): string | null {
@@ -39,7 +42,6 @@ function extractCpfDigits(cpf: string | null | undefined): string | null {
 function validateCpfDigits(digits: string): boolean {
   if (digits.length !== 11) return false;
   if (/^(\d)\1{10}$/.test(digits)) return false;
-  // Validate check digits
   let sum = 0;
   for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
   let remainder = (sum * 10) % 11;
@@ -120,8 +122,8 @@ interface NormalizedRow {
   birth_date: string | null;
   raw_birth_date: string | null;
   gender: string;
-  cpf_valid: string | null;   // 11 digits, validated
-  cpf_raw: string | null;     // original value
+  cpf_valid: string | null;
+  cpf_raw: string | null;
   rg: string | null;
   email: string | null;
   phone: string | null;
@@ -280,11 +282,11 @@ function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
 // ─── READ-ONLY Validation ────────────────────────────────────────────
 
 interface ReadOnlyMaps {
-  institutions: Map<string, string>;       // slug -> id
-  sports: Map<string, string>;             // slug -> id (event-scoped)
-  categories: Map<string, string>;         // slug -> id (event-scoped)
-  sportEvents: Map<string, string>;        // composite key -> id
-  delegations: Map<string, string>;        // institution_id -> delegation_id
+  institutions: Map<string, string>;
+  sports: Map<string, string>;
+  categories: Map<string, string>;
+  sportEvents: Map<string, string>;
+  delegations: Map<string, string>;
   existingInstitutionSlugs: Set<string>;
 }
 
@@ -327,11 +329,70 @@ async function loadReadOnlyMaps(
   };
 }
 
+// ─── Incremental People Lookup ───────────────────────────────────────
+
+interface PeopleMaps {
+  byCpf: Map<string, string>;                    // cpf_digits -> person_id
+  byNameDob: Map<string, string[]>;              // "name|dob|gender" -> person_id[] (supports ambiguity)
+}
+
+async function loadPeopleIncremental(
+  supabase: ReturnType<typeof createClient>,
+  normalizedRows: NormalizedRow[],
+): Promise<PeopleMaps> {
+  const byCpf = new Map<string, string>();
+  const byNameDob = new Map<string, string[]>();
+
+  // Step 1: Collect all valid CPFs from the file
+  const validCpfs = [...new Set(normalizedRows.map(r => r.cpf_valid).filter(Boolean))] as string[];
+
+  // Batch lookup by CPF (in chunks of 200 to avoid URI limits)
+  for (let i = 0; i < validCpfs.length; i += 200) {
+    const batch = validCpfs.slice(i, i + 200);
+    const { data } = await supabase.from("people")
+      .select("id, full_name, birth_date, gender, cpf")
+      .in("cpf", batch);
+    for (const p of data ?? []) {
+      if (p.cpf) byCpf.set(p.cpf, p.id);
+      if (p.full_name && p.birth_date) {
+        const key = `${p.full_name.toLowerCase()}|${p.birth_date}|${p.gender}`;
+        const arr = byNameDob.get(key) || [];
+        arr.push(p.id);
+        byNameDob.set(key, arr);
+      }
+    }
+  }
+
+  // Step 2: For rows WITHOUT valid CPF, do targeted name+dob lookup
+  const noCpfRows = normalizedRows.filter(r => !r.cpf_valid && r.full_name && r.birth_date);
+  const nameKeys = [...new Set(noCpfRows.map(r => r.full_name))];
+
+  for (let i = 0; i < nameKeys.length; i += 50) {
+    const batch = nameKeys.slice(i, i + 50);
+    const { data } = await supabase.from("people")
+      .select("id, full_name, birth_date, gender, cpf")
+      .in("full_name", batch)
+      .eq("is_active", true);
+    for (const p of data ?? []) {
+      if (p.cpf && !byCpf.has(p.cpf)) byCpf.set(p.cpf, p.id);
+      if (p.full_name && p.birth_date) {
+        const key = `${p.full_name.toLowerCase()}|${p.birth_date}|${p.gender}`;
+        const arr = byNameDob.get(key) || [];
+        if (!arr.includes(p.id)) arr.push(p.id);
+        byNameDob.set(key, arr);
+      }
+    }
+  }
+
+  return { byCpf, byNameDob };
+}
+
+// ─── Row Classification ──────────────────────────────────────────────
+
 function classifyRow(
   row: NormalizedRow,
   maps: ReadOnlyMaps,
-  peopleByCpf: Map<string, string>,
-  peopleByNameDob: Map<string, string>,
+  people: PeopleMaps,
 ): RowClassification {
   const errors: RowClassification["errors"] = [];
   const warnings: RowClassification["warnings"] = [];
@@ -358,7 +419,6 @@ function classifyRow(
 
   // ── CPF classification ──
   if (row.cpf_raw && !row.cpf_valid) {
-    // CPF present but invalid
     pending.push({
       row_number: row.row_number, reason_code: "CPF_INVALID",
       reason_detail: `CPF informado "${row.cpf_raw}" não passou na validação de dígitos`,
@@ -368,16 +428,41 @@ function classifyRow(
   }
 
   if (!row.cpf_raw && isAthlete) {
-    // CPF missing for athlete
-    // Try name+dob fallback to suggest candidate
     let candidateId: string | null = null;
     if (row.full_name && row.birth_date) {
       const key = `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
-      candidateId = peopleByNameDob.get(key) ?? null;
+      const matches = people.byNameDob.get(key) ?? [];
+      if (matches.length === 1) candidateId = matches[0];
     }
     pending.push({
       row_number: row.row_number, reason_code: "CPF_MISSING",
       reason_detail: "Atleta sem CPF — requer resolução manual",
+      row, fingerprint, candidate_person_id: candidateId,
+    });
+    return { status: "pendencia", errors, warnings, pending, resolved };
+  }
+
+  // ── CPF missing for non-athlete => ALWAYS pendência ──
+  // Decision: comissão técnica sem CPF SEMPRE vai para pendência.
+  // Justificativa: evitar criação silenciosa de pessoa definitiva sem identificador único.
+  if (!row.cpf_raw && !isAthlete) {
+    let candidateId: string | null = null;
+    if (row.full_name && row.birth_date) {
+      const key = `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
+      const matches = people.byNameDob.get(key) ?? [];
+      if (matches.length === 1) candidateId = matches[0];
+      if (matches.length > 1) {
+        pending.push({
+          row_number: row.row_number, reason_code: "PERSON_MATCH_AMBIGUOUS",
+          reason_detail: `Múltiplos matches (${matches.length}) para "${row.full_name}" nascido em ${row.birth_date} — sem CPF`,
+          row, fingerprint, candidate_person_id: matches[0],
+        });
+        return { status: "pendencia", errors, warnings, pending, resolved };
+      }
+    }
+    pending.push({
+      row_number: row.row_number, reason_code: "CPF_MISSING",
+      reason_detail: `${isAthlete ? "Atleta" : "Comissão técnica"} sem CPF — requer resolução manual`,
       row, fingerprint, candidate_person_id: candidateId,
     });
     return { status: "pendencia", errors, warnings, pending, resolved };
@@ -402,7 +487,7 @@ function classifyRow(
   }
 
   if (!isAthlete && !row.birth_date) {
-    warnings.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING_STAFF", message: "Comissão técnica sem data de nascimento — seguirá com NULL" });
+    warnings.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING_STAFF", message: "Comissão técnica sem data de nascimento" });
   }
 
   // ── Institution ──
@@ -417,7 +502,6 @@ function classifyRow(
         return { status: "skip", errors, warnings, pending, resolved };
       }
     }
-    // Institution doesn't exist yet — will be created on commit
     resolved.institution_slug = row.institution_slug;
     resolved.institution_name = row.institution_name;
     resolved.institution_will_create = "true";
@@ -474,7 +558,6 @@ function classifyRow(
       return { status: "skip", errors, warnings, pending, resolved };
     }
 
-    // Check sport_event exists
     const seKey = `${sportId}|${catId}|${row.prova_slug}`;
     const seId = maps.sportEvents.get(seKey);
     if (!seId) {
@@ -490,41 +573,25 @@ function classifyRow(
 
   // ── Person deduplication ──
   if (row.cpf_valid) {
-    const existingId = peopleByCpf.get(row.cpf_valid);
+    const existingId = people.byCpf.get(row.cpf_valid);
     if (existingId) {
       resolved.person_id = existingId;
       resolved.person_action = "reuse";
     } else {
       resolved.person_action = "create";
     }
-  } else {
-    // Non-athlete without CPF — try name+dob fallback
+
+    // Even with valid CPF, check name+dob ambiguity for safety
     if (row.full_name && row.birth_date) {
       const key = `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
-      const matches: string[] = [];
-      const exactMatch = peopleByNameDob.get(key);
-      if (exactMatch) matches.push(exactMatch);
-
-      if (matches.length === 1) {
-        resolved.person_id = matches[0];
-        resolved.person_action = "reuse";
-      } else if (matches.length > 1) {
-        pending.push({
-          row_number: row.row_number, reason_code: "PERSON_MATCH_AMBIGUOUS",
-          reason_detail: `Múltiplos matches para "${row.full_name}" nascido em ${row.birth_date}`,
-          row, fingerprint, candidate_person_id: matches[0],
-        });
-        return { status: "pendencia", errors, warnings, pending, resolved };
-      } else {
-        // No match, create new (non-athlete without CPF is allowed)
-        resolved.person_action = "create";
-        warnings.push({ row: row.row_number, field: "CPF", value: null, code: "CPF_MISSING_STAFF", message: "Comissão técnica sem CPF — pessoa será criada" });
+      const matches = people.byNameDob.get(key) ?? [];
+      if (matches.length > 1) {
+        // Multiple people with same name+dob+gender — warn but proceed since CPF is definitive
+        warnings.push({ row: row.row_number, field: "NOME", value: row.full_name, code: "AMBIGUITY_WARNING", message: `${matches.length} pessoas com mesmo nome+nascimento+sexo, mas CPF é único — prosseguindo` });
       }
-    } else {
-      resolved.person_action = "create";
-      warnings.push({ row: row.row_number, field: "CPF", value: null, code: "CPF_MISSING_STAFF", message: "Comissão técnica sem CPF e sem data — pessoa será criada" });
     }
   }
+  // Note: non-athlete without CPF already routed to pendência above
 
   return { status: "ok", errors, warnings, pending, resolved };
 }
@@ -617,17 +684,8 @@ Deno.serve(async (req: Request) => {
     // Load READ-ONLY maps (no writes!)
     const maps = await loadReadOnlyMaps(serviceClient, eventId);
 
-    // Load people for dedup
-    const { data: peopleData } = await serviceClient
-      .from("people").select("id, full_name, birth_date, gender, cpf").eq("is_active", true);
-    const peopleByCpf = new Map<string, string>();
-    const peopleByNameDob = new Map<string, string>();
-    for (const p of peopleData ?? []) {
-      if (p.cpf) peopleByCpf.set(p.cpf, p.id);
-      if (p.full_name && p.birth_date) {
-        peopleByNameDob.set(`${p.full_name.toLowerCase()}|${p.birth_date}|${p.gender}`, p.id);
-      }
-    }
+    // Load people INCREMENTALLY (not full-table scan)
+    const people = await loadPeopleIncremental(serviceClient, normalizedRows);
 
     // Classify each row
     const allErrors: RowClassification["errors"] = [];
@@ -636,7 +694,6 @@ Deno.serve(async (req: Request) => {
     const validRows: { row: NormalizedRow; resolved: Record<string, string | null> }[] = [];
     let skippedRows = 0;
 
-    // Counters
     let cpfsValidos = 0, cpfsInvalidos = 0, cpfsMissing = 0;
     let cpfsReutilizados = 0, cpfsNovos = 0;
     let datasInvalidas = 0;
@@ -645,7 +702,7 @@ Deno.serve(async (req: Request) => {
     const delegationsToCreate = new Set<string>();
 
     for (const row of normalizedRows) {
-      const result = classifyRow(row, maps, peopleByCpf, peopleByNameDob);
+      const result = classifyRow(row, maps, people);
       allWarnings.push(...result.warnings);
 
       if (result.status === "skip") { skippedRows++; continue; }
@@ -760,18 +817,17 @@ Deno.serve(async (req: Request) => {
         resolution_status: "pending",
       }));
 
-      // Insert in batches of 100
       for (let i = 0; i < pendBatch.length; i += 100) {
         await serviceClient.from("import_pendencias").insert(pendBatch.slice(i, i + 100));
       }
     }
 
-    // ── Create institutions (only on commit) ──
+    // ── Create institutions (only on commit, NO hardcoded network_type) ──
     const newInstMap = new Map<string, string>();
     for (const slug of institutionsToCreate) {
       const name = validRows.find(r => r.row.institution_slug === slug)?.row.institution_name || slug;
       const { data, error } = await serviceClient.from("institutions")
-        .insert({ name, slug, network_type: "municipal" }).select("id").single();
+        .insert({ name, slug, network_type: "pending_review" }).select("id").single();
       if (error) {
         const { data: existing } = await serviceClient.from("institutions")
           .select("id").eq("slug", slug).single();
@@ -781,7 +837,6 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Merge institution maps
     const allInstMap = new Map(maps.institutions);
     for (const [slug, id] of newInstMap) allInstMap.set(slug, id);
 
@@ -822,15 +877,15 @@ Deno.serve(async (req: Request) => {
     const participantByPerson = new Map<string, string>();
     for (const p of existingParticipants ?? []) participantByPerson.set(p.person_id, p.id);
 
-    // Load existing PSEs
+    // Load existing PSEs for this event
     const { data: existingPSE } = await serviceClient
-      .from("participant_sport_events").select("id, participant_id, sport_event_id");
+      .from("participant_sport_events").select("id, participant_id, sport_event_id")
+      .in("participant_id", [...participantByPerson.values()]);
     const pseSet = new Set<string>();
-    for (const p of existingPSE ?? []) pseSet.set(`${p.participant_id}|${p.sport_event_id}`);
+    for (const p of existingPSE ?? []) pseSet.add(`${p.participant_id}|${p.sport_event_id}`);
 
     for (const { row, resolved } of validRows) {
       try {
-        // Resolve institution_id & delegation_id
         const instId = resolved.institution_id || allInstMap.get(row.institution_slug);
         const delId = instId ? (resolved.delegation_id || allDelMap.get(instId)) : null;
 
@@ -841,22 +896,18 @@ Deno.serve(async (req: Request) => {
         }
 
         // ── Person ──
-        const personKey = row.cpf_valid ?? `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
+        const personKey = row.cpf_valid!; // All valid rows now have cpf_valid (no-CPF goes to pendência)
         let personId = resolved.person_id || null;
 
         if (resolved.person_action === "create") {
           if (processedPersonKeys.has(personKey)) {
-            // Already created in this batch — lookup
-            const lookupId = row.cpf_valid
-              ? (await serviceClient.from("people").select("id").eq("cpf", row.cpf_valid).single()).data?.id
-              : (await serviceClient.from("people").select("id")
-                  .eq("full_name", row.full_name).eq("birth_date", row.birth_date ?? "").eq("gender", row.gender).single()).data?.id;
-            if (lookupId) { personId = lookupId; peopleReused++; }
+            const { data: lookupData } = await serviceClient.from("people").select("id").eq("cpf", row.cpf_valid!).single();
+            if (lookupData) { personId = lookupData.id; peopleReused++; }
           } else {
             processedPersonKeys.add(personKey);
             const { data: newPerson, error: personErr } = await serviceClient.from("people").insert({
               full_name: row.full_name,
-              birth_date: row.birth_date, // NULL for staff without DOB — NO fallback
+              birth_date: row.birth_date,
               gender: row.gender,
               cpf: row.cpf_valid,
               rg: row.rg,
@@ -866,7 +917,6 @@ Deno.serve(async (req: Request) => {
               disability_type: row.pcd,
             }).select("id").single();
             if (personErr) {
-              // May already exist (race condition) — try lookup
               if (row.cpf_valid) {
                 const { data: existing } = await serviceClient.from("people").select("id").eq("cpf", row.cpf_valid).single();
                 if (existing) { personId = existing.id; peopleReused++; }
@@ -877,8 +927,7 @@ Deno.serve(async (req: Request) => {
             } else {
               personId = newPerson.id;
               peopleCreated++;
-              // Update dedup maps for subsequent rows
-              if (row.cpf_valid) peopleByCpf.set(row.cpf_valid, personId);
+              if (row.cpf_valid) people.byCpf.set(row.cpf_valid, personId);
             }
           }
         } else {
@@ -904,7 +953,6 @@ Deno.serve(async (req: Request) => {
             status: "confirmed",
           }).select("id").single();
           if (partErr) {
-            // May already exist
             const { data: existing } = await serviceClient.from("participants")
               .select("id").eq("person_id", personId).eq("event_id", eventId).single();
             if (existing) { participantId = existing.id; participantsReused++; }
@@ -971,7 +1019,6 @@ Deno.serve(async (req: Request) => {
       }).eq("id", importLogId);
     }
 
-    // Write commit errors to import_row_errors
     if (commitErrors.length > 0) {
       const errBatch = commitErrors.map(e => ({
         event_id: eventId,
@@ -1004,4 +1051,4 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-// redeploy marker: 2026-04-16T14:00Z
+// redeploy marker: 2026-04-16T16:00Z
