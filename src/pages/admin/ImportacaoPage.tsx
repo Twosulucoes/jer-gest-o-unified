@@ -113,6 +113,7 @@ export default function ImportacaoPage() {
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
   const selectedEventId = useActiveEventId();
+  const [selectedStageId, setSelectedStageId] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [validating, setValidating] = useState(false);
   const [committing, setCommitting] = useState(false);
@@ -132,6 +133,22 @@ export default function ImportacaoPage() {
         .from("events").select("*").order("year", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: stages = [] } = useQuery({
+    queryKey: ["event_stages", selectedEventId],
+    enabled: !!selectedEventId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_stages" as never)
+        .select("id, name, slug, kind, sort_order, status")
+        .eq("event_id", selectedEventId)
+        .eq("status", "active")
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string; slug: string; kind: string; sort_order: number; status: string }>;
     },
   });
 
