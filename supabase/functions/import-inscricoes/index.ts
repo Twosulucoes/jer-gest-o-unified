@@ -445,10 +445,6 @@ function normalizeHeaders(rows: RawRow[]): RawRow[] {
         newRow[canonical] = newRow[original];
       }
     }
-    if ((!("COMPETICAO" in newRow) || isBlank(newRow["COMPETICAO"])) && !isBlank(newRow["PROVA"])) {
-      const derivedCategory = deriveCategoryFromProva(String(newRow["PROVA"]));
-      if (derivedCategory) newRow["COMPETICAO"] = derivedCategory;
-    }
     return newRow;
   });
 }
