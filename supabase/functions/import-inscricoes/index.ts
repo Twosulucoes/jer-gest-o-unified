@@ -1123,6 +1123,63 @@ Deno.serve(async (req: Request) => {
     const operatorId = claimsData.claims.sub as string;
 
     const body = await req.json();
+
+    // ── Ação especial: gravar escolha manual de categoria para TM 2012 ──
+    // Body: { action: "apply_manual_resolution", pending_id, chosen_category_slug }
+    if ((body as any)?.action === "apply_manual_resolution") {
+      const pendingId = (body as any).pending_id as string | undefined;
+      const chosen = (body as any).chosen_category_slug as string | undefined;
+      if (!pendingId || !chosen) {
+        return new Response(JSON.stringify({ error: "pending_id e chosen_category_slug são obrigatórios" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (!TM_2012_VALID_CHOICES.has(chosen)) {
+        return new Response(JSON.stringify({ error: `chosen_category_slug deve ser um de: ${[...TM_2012_VALID_CHOICES].join(", ")}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const serviceClientLocal = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+      const { data: pend, error: pendErr } = await serviceClientLocal
+        .from("import_pendencias")
+        .select("id, pending_reason_code, raw_payload_json, event_id, event_stage_id")
+        .eq("id", pendingId).maybeSingle();
+      if (pendErr || !pend) {
+        return new Response(JSON.stringify({ error: "Pendência não encontrada" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (pend.pending_reason_code !== "TM_2012_MANUAL_CATEGORY_SELECTION") {
+        return new Response(JSON.stringify({ error: "Esta pendência não é do tipo TM 2012" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const payload = (pend.raw_payload_json as any) ?? {};
+      payload.manual_resolution = {
+        chosen_category_slug: chosen,
+        resolved_by: operatorId,
+        resolved_at: new Date().toISOString(),
+      };
+      const { error: upErr } = await serviceClientLocal
+        .from("import_pendencias")
+        .update({
+          raw_payload_json: payload,
+          resolution_status: "resolved",
+          resolved_by: operatorId,
+          resolved_at: new Date().toISOString(),
+        })
+        .eq("id", pendingId);
+      if (upErr) {
+        return new Response(JSON.stringify({ error: upErr.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({
+        ok: true,
+        pending_id: pendingId,
+        chosen_category_slug: chosen,
+        message: "Escolha gravada. Reimporte a planilha (mesma etapa) para reprocessar a linha.",
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     let { rows: rawRows, event_id: eventId, event_stage_id: eventStageId, mode, file_name: fileName } = body as {
       rows: RawRow[]; event_id: string; event_stage_id?: string; mode: string; file_name?: string;
     };
