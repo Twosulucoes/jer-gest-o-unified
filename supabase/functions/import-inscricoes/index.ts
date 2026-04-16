@@ -986,11 +986,13 @@ Deno.serve(async (req: Request) => {
       }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Normalize rows
-    const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i));
-
-    // Load READ-ONLY maps (no writes!)
+    // Load READ-ONLY maps (no writes!) — necessário ANTES do mapColumns
+    // porque o parser canônico precisa do catálogo do evento.
     const maps = await loadReadOnlyMaps(serviceClient, eventId);
+
+    // Normalize rows usando catálogo canônico
+    const catalog = { sportsSet: maps.sportsSet, sportCategoryPairs: maps.sportCategoryPairs };
+    const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i, catalog));
 
     // Load people INCREMENTALLY (not full-table scan)
     const people = await loadPeopleIncremental(serviceClient, normalizedRows);
