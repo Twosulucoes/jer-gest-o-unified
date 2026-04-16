@@ -1448,6 +1448,8 @@ export type Database = {
           performed_by: string
           result_summary: Json | null
           row_count: number | null
+          source_phase_name: string | null
+          source_phase_slug: string | null
           status: string
         }
         Insert: {
@@ -1460,6 +1462,8 @@ export type Database = {
           performed_by: string
           result_summary?: Json | null
           row_count?: number | null
+          source_phase_name?: string | null
+          source_phase_slug?: string | null
           status?: string
         }
         Update: {
@@ -1472,6 +1476,8 @@ export type Database = {
           performed_by?: string
           result_summary?: Json | null
           row_count?: number | null
+          source_phase_name?: string | null
+          source_phase_slug?: string | null
           status?: string
         }
         Relationships: [
