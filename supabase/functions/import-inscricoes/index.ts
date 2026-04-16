@@ -757,6 +757,10 @@ Deno.serve(async (req: Request) => {
       status: "validated",
       operator_id: operatorId,
       event_id: eventId,
+      event_stage_id: eventStageId,
+      event_stage: { id: stageData.id, name: stageData.name, slug: stageData.slug },
+      event: { id: eventData.id, name: eventData.name, year: eventData.year },
+      file_name: fileName || null,
       timestamp: new Date().toISOString(),
       summary: {
         total_linhas: rawRows.length,
