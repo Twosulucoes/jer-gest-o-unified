@@ -1278,7 +1278,29 @@ Deno.serve(async (req: Request) => {
     const institutionsToCreate = new Set<string>();
     const delegationsToCreate = new Set<string>();
 
+    // ── Carregar overrides manuais (TM 2012) gravados em pendências resolvidas ──
+    const manualOverrides = await loadTm2012Overrides(serviceClient, eventId, eventStageId);
+    let manualOverridesApplied = 0;
+
     for (const row of normalizedRows) {
+      // Aplicar override manual TM 2012, se existir, ANTES de classificar.
+      // Chave estável: event_stage_id + source_row_number + fingerprint.
+      const fp = buildFingerprint(
+        row.full_name, row.birth_date, row.gender,
+        row.institution_name, row.sport_name, row.prova_name,
+      );
+      const overrideKey = `${eventStageId}|${row.row_number}|${fp}`;
+      const override = manualOverrides.get(overrideKey);
+      if (override && row.sport_slug === "tenis-de-mesa") {
+        row.category_slug = override.category_slug;
+        row.category_name = override.category_slug;
+        row.prova_slug = deriveProvaName(row.sport_slug, override.category_slug);
+        row.prova_name = row.prova_slug;
+        row.parse_category_reason = `manual_override: pending_id=${override.pending_id} -> ${override.category_slug}`;
+        row.category_resolved_by = "manual" as any;
+        manualOverridesApplied++;
+      }
+
       const result = classifyRow(row, maps, people);
       allWarnings.push(...result.warnings);
 
