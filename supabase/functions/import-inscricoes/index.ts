@@ -145,6 +145,9 @@ interface NormalizedRow {
   parse_is_paralimpic: boolean;
   parse_sport_reason: string;
   parse_category_reason: string;
+  // Rastreabilidade de resolução de categoria
+  category_candidates: string[];                  // candidatas no catálogo p/ a modalidade
+  category_resolved_by: "age_band" | "birth_date" | "single_in_catalog" | null;
   user_type: string;
   inscription_status: string;
   participant_type: string;
@@ -326,7 +329,8 @@ function canonicalizeSport(parsed: ParsedSportText, sportsInCatalog: Set<string>
 interface CategoryResolution {
   category_slug: string | null;
   reason: string;
-  matched_by: "age_band" | "single_in_catalog" | null;
+  matched_by: "age_band" | "single_in_catalog" | "birth_date" | null;
+  candidates: string[];
 }
 
 // Mapa: (sport_slug, age_band_normalized) -> category_slug.
@@ -363,12 +367,31 @@ const SINGLE_CATEGORY_FALLBACK_WHITELIST = new Set<string>([
   "futebol",  // catálogo só tem jers-15-17 para futebol
 ]);
 
+interface CategoryWindow { slug: string; min_birth_year: number | null; max_birth_year: number | null; }
+
+/**
+ * Resolve categoria canônica em até 3 estágios:
+ *   1) faixa etária explícita no texto da planilha (AGE_BAND_TO_CATEGORY)
+ *   2) desempate por birth_date contra categories.{min,max}_birth_year do catálogo
+ *      (apenas quando restar EXATAMENTE 1 candidata compatível)
+ *   3) fallback whitelist (única categoria no catálogo p/ a modalidade)
+ *
+ * Sem birth_date válida ou ainda ambígua => sem resolução (pendência mantida).
+ */
 function canonicalizeCategory(
   sportSlug: string,
   parsed: ParsedSportText,
-  catalogPairs: Set<string>,         // "sport_slug|category_slug" presentes no catálogo
+  catalogPairs: Set<string>,                          // "sport_slug|category_slug"
+  categoriesBySport: Map<string, CategoryWindow[]>,   // sport_slug -> janelas etárias
+  birthDate: string | null,                           // ISO yyyy-mm-dd
+  eventYear: number | null,                           // ano-base do evento (events.year)
 ): CategoryResolution {
-  // 1. Tentar resolver por faixa etária explícita
+  const cats = (categoriesBySport.get(sportSlug) ?? []).filter(c =>
+    catalogPairs.has(`${sportSlug}|${c.slug}`),
+  );
+  const candidateSlugs = cats.map(c => c.slug);
+
+  // 1. Faixa etária explícita
   if (parsed.age_band_normalized) {
     for (const rule of AGE_BAND_TO_CATEGORY) {
       if (rule.ageBand !== parsed.age_band_normalized) continue;
@@ -376,48 +399,115 @@ function canonicalizeCategory(
       if (!catalogPairs.has(`${sportSlug}|${rule.categorySlug}`)) continue;
       return {
         category_slug: rule.categorySlug,
-        reason: `faixa "${parsed.age_band_normalized}" + modalidade "${sportSlug}" -> ${rule.categorySlug}`,
+        reason: `by_age_band: faixa "${parsed.age_band_normalized}" + "${sportSlug}" -> ${rule.categorySlug}`,
         matched_by: "age_band",
+        candidates: candidateSlugs,
       };
     }
     return {
       category_slug: null,
-      reason: `faixa "${parsed.age_band_normalized}" não tem regra de mapeamento para "${sportSlug}" no catálogo`,
+      reason: `by_age_band_failed: faixa "${parsed.age_band_normalized}" sem mapeamento para "${sportSlug}"`,
       matched_by: null,
+      candidates: candidateSlugs,
     };
   }
 
-  // 2. Fallback controlado: única categoria no catálogo para essa modalidade
-  const cats = [...catalogPairs]
-    .filter(k => k.startsWith(`${sportSlug}|`))
-    .map(k => k.split("|")[1]);
-  const unique = [...new Set(cats)];
-
-  if (unique.length === 1 && SINGLE_CATEGORY_FALLBACK_WHITELIST.has(sportSlug)) {
+  if (cats.length === 0) {
     return {
-      category_slug: unique[0],
-      reason: `fallback whitelist "${sportSlug}" possui única categoria no catálogo (${unique[0]})`,
+      category_slug: null,
+      reason: `no_categories_in_catalog: nenhuma categoria cadastrada para "${sportSlug}"`,
+      matched_by: null,
+      candidates: [],
+    };
+  }
+
+  // 2. Desempate por birth_date
+  if (cats.length > 1) {
+    if (!birthDate) {
+      return {
+        category_slug: null,
+        reason: `no_birth_date: ambígua entre [${candidateSlugs.join(", ")}] e sem data de nascimento para desempatar`,
+        matched_by: null,
+        candidates: candidateSlugs,
+      };
+    }
+    const birthYear = Number(birthDate.slice(0, 4));
+    if (!Number.isFinite(birthYear)) {
+      return {
+        category_slug: null,
+        reason: `no_birth_date: birth_date inválida "${birthDate}"`,
+        matched_by: null,
+        candidates: candidateSlugs,
+      };
+    }
+    const compatible = cats.filter(c => {
+      if (c.min_birth_year != null && birthYear < c.min_birth_year) return false;
+      if (c.max_birth_year != null && birthYear > c.max_birth_year) return false;
+      return true;
+    });
+    if (compatible.length === 1) {
+      const chosen = compatible[0];
+      const yearNote = eventYear ? ` (ano-base ${eventYear})` : "";
+      return {
+        category_slug: chosen.slug,
+        reason: `by_birth_date: birth_year=${birthYear} ∈ [${chosen.min_birth_year ?? "-∞"}, ${chosen.max_birth_year ?? "+∞"}] -> ${chosen.slug}${yearNote}`,
+        matched_by: "birth_date",
+        candidates: candidateSlugs,
+      };
+    }
+    if (compatible.length === 0) {
+      return {
+        category_slug: null,
+        reason: `birth_year_out_of_range: birth_year=${birthYear} fora de toda janela de [${candidateSlugs.join(", ")}]`,
+        matched_by: null,
+        candidates: candidateSlugs,
+      };
+    }
+    return {
+      category_slug: null,
+      reason: `ambiguous_after_age: birth_year=${birthYear} ainda compatível com [${compatible.map(c => c.slug).join(", ")}]`,
+      matched_by: null,
+      candidates: candidateSlugs,
+    };
+  }
+
+  // 3. Única categoria no catálogo
+  const onlySlug = cats[0].slug;
+  if (SINGLE_CATEGORY_FALLBACK_WHITELIST.has(sportSlug)) {
+    return {
+      category_slug: onlySlug,
+      reason: `single_in_catalog (whitelist): "${sportSlug}" possui única categoria (${onlySlug})`,
       matched_by: "single_in_catalog",
+      candidates: candidateSlugs,
     };
   }
-  if (unique.length === 1) {
+  // Tentar via birth_date mesmo com 1 categoria, para validar coerência
+  if (birthDate) {
+    const birthYear = Number(birthDate.slice(0, 4));
+    const c = cats[0];
+    const inRange =
+      (c.min_birth_year == null || birthYear >= c.min_birth_year) &&
+      (c.max_birth_year == null || birthYear <= c.max_birth_year);
+    if (inRange) {
+      return {
+        category_slug: onlySlug,
+        reason: `by_birth_date: única categoria "${onlySlug}" e birth_year=${birthYear} compatível`,
+        matched_by: "birth_date",
+        candidates: candidateSlugs,
+      };
+    }
     return {
       category_slug: null,
-      reason: `modalidade "${sportSlug}" tem única categoria "${unique[0]}", mas não está na whitelist de fallback — exija faixa etária na planilha`,
+      reason: `birth_year_out_of_range: birth_year=${birthYear} fora de [${c.min_birth_year ?? "-∞"}, ${c.max_birth_year ?? "+∞"}] da única categoria "${onlySlug}"`,
       matched_by: null,
-    };
-  }
-  if (unique.length > 1) {
-    return {
-      category_slug: null,
-      reason: `categoria ambígua para "${sportSlug}" (${unique.length} possíveis: ${unique.join(", ")}) — faixa etária não informada`,
-      matched_by: null,
+      candidates: candidateSlugs,
     };
   }
   return {
     category_slug: null,
-    reason: `nenhuma categoria do catálogo cadastrada para "${sportSlug}"`,
+    reason: `no_birth_date: única categoria "${onlySlug}" mas não está na whitelist e sem birth_date para confirmar`,
     matched_by: null,
+    candidates: candidateSlugs,
   };
 }
 
