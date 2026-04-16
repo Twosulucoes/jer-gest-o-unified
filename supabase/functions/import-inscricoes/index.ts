@@ -552,7 +552,12 @@ function deriveParticipantType(userType: string, funcao: string): string {
 function mapColumns(
   raw: RawRow,
   rowIndex: number,
-  catalog: { sportsSet: Set<string>; sportCategoryPairs: Set<string> },
+  catalog: {
+    sportsSet: Set<string>;
+    sportCategoryPairs: Set<string>;
+    categoriesBySport: Map<string, CategoryWindow[]>;
+    eventYear: number | null;
+  },
 ): NormalizedRow {
   const fullName = normalizeName(getField(raw, "NOME", "NOME COMPLETO"));
   const institution = getField(raw, "ESCOLA", "INSTITUICAO");
@@ -575,10 +580,19 @@ function mapColumns(
   // ── Parser canônico: modalidade + categoria do catálogo ──
   const parsed = parseSportText(sportRaw, competicaoRaw);
   const sportRes = canonicalizeSport(parsed, catalog.sportsSet);
-  let categoryRes: CategoryResolution = { category_slug: null, reason: "modalidade não resolvida", matched_by: null };
+  let categoryRes: CategoryResolution = {
+    category_slug: null, reason: "modalidade não resolvida", matched_by: null, candidates: [],
+  };
   let provaSlug = "";
   if (sportRes.sport_slug) {
-    categoryRes = canonicalizeCategory(sportRes.sport_slug, parsed, catalog.sportCategoryPairs);
+    categoryRes = canonicalizeCategory(
+      sportRes.sport_slug,
+      parsed,
+      catalog.sportCategoryPairs,
+      catalog.categoriesBySport,
+      birthDate,
+      catalog.eventYear,
+    );
     if (categoryRes.category_slug) {
       provaSlug = deriveProvaName(sportRes.sport_slug, categoryRes.category_slug);
     }
@@ -610,6 +624,8 @@ function mapColumns(
     parse_is_paralimpic: parsed.is_paralimpic,
     parse_sport_reason: sportRes.reason,
     parse_category_reason: categoryRes.reason,
+    category_candidates: categoryRes.candidates,
+    category_resolved_by: categoryRes.matched_by,
     user_type: userType,
     inscription_status: status,
     participant_type: deriveParticipantType(userType, funcao),
@@ -629,6 +645,8 @@ interface ReadOnlyMaps {
   sportEvents: Map<string, string>;           // "sport_id|category_id|prova_slug" -> sport_event_id
   sportCategoryPairs: Set<string>;            // "sport_slug|category_slug" presentes no catálogo
   sportsSet: Set<string>;                     // sport_slugs presentes no catálogo
+  categoriesBySport: Map<string, CategoryWindow[]>; // sport_slug -> janelas etárias do catálogo
+  eventYear: number | null;                   // events.year (ano-base do desempate por idade)
   delegations: Map<string, string>;
   existingInstitutionSlugs: Set<string>;
 }
@@ -637,12 +655,13 @@ async function loadReadOnlyMaps(
   supabase: ReturnType<typeof createClient>,
   eventId: string,
 ): Promise<ReadOnlyMaps> {
-  const [instRes, sportRes, catRes, seRes, delRes] = await Promise.all([
+  const [instRes, sportRes, catRes, seRes, delRes, evRes] = await Promise.all([
     supabase.from("institutions").select("id, slug").eq("is_active", true),
     supabase.from("sports").select("id, slug").eq("event_id", eventId),
-    supabase.from("categories").select("id, slug").eq("event_id", eventId),
+    supabase.from("categories").select("id, slug, min_birth_year, max_birth_year").eq("event_id", eventId),
     supabase.from("sport_events").select("id, sport_id, category_id, slug").eq("event_id", eventId),
     supabase.from("delegations").select("id, institution_id").eq("event_id", eventId),
+    supabase.from("events").select("year").eq("id", eventId).maybeSingle(),
   ]);
 
   const institutions = new Map<string, string>();
@@ -657,22 +676,39 @@ async function loadReadOnlyMaps(
 
   const categories = new Map<string, string>();
   const catsById = new Map<string, string>();
+  const catWindowBySlug = new Map<string, CategoryWindow>();
   for (const c of catRes.data ?? []) {
     categories.set(c.slug, c.id);
     catsById.set(c.id, c.slug);
+    catWindowBySlug.set(c.slug, {
+      slug: c.slug,
+      min_birth_year: (c as { min_birth_year: number | null }).min_birth_year ?? null,
+      max_birth_year: (c as { max_birth_year: number | null }).max_birth_year ?? null,
+    });
   }
 
   const sportEvents = new Map<string, string>();
   const sportCategoryPairs = new Set<string>();
+  const categoriesBySport = new Map<string, CategoryWindow[]>();
   for (const se of seRes.data ?? []) {
     sportEvents.set(`${se.sport_id}|${se.category_id}|${se.slug}`, se.id);
     const sSlug = sportsById.get(se.sport_id);
     const cSlug = catsById.get(se.category_id);
-    if (sSlug && cSlug) sportCategoryPairs.add(`${sSlug}|${cSlug}`);
+    if (sSlug && cSlug) {
+      sportCategoryPairs.add(`${sSlug}|${cSlug}`);
+      const win = catWindowBySlug.get(cSlug);
+      if (win) {
+        const arr = categoriesBySport.get(sSlug) ?? [];
+        if (!arr.find(x => x.slug === cSlug)) arr.push(win);
+        categoriesBySport.set(sSlug, arr);
+      }
+    }
   }
 
   const delegations = new Map<string, string>();
   for (const d of delRes.data ?? []) delegations.set(d.institution_id, d.id);
+
+  const eventYear = (evRes.data as { year?: number | null } | null)?.year ?? null;
 
   return {
     institutions,
@@ -681,6 +717,8 @@ async function loadReadOnlyMaps(
     sportEvents,
     sportCategoryPairs,
     sportsSet: new Set(sports.keys()),
+    categoriesBySport,
+    eventYear,
     delegations,
     existingInstitutionSlugs: new Set(institutions.keys()),
   };
