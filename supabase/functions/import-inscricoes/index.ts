@@ -1374,6 +1374,7 @@ Deno.serve(async (req: Request) => {
         delegations_que_seriam_criadas: delegationsToCreate.size,
       },
       pending_by_code: pendingByCode,
+      manual_overrides_applied: manualOverridesApplied,
       errors: allErrors.slice(0, 50),
       warnings: allWarnings.slice(0, 50),
       pendencias_preview: allPending.slice(0, 30).map(p => ({
