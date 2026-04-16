@@ -169,8 +169,13 @@ type PendingCode =
   | "CATEGORY_PARSE_FAILED"
   | "PROVA_PARSE_FAILED"
   | "SPORT_EVENT_AMBIGUOUS"
+  | "TM_2012_MANUAL_CATEGORY_SELECTION"
   | "INSTITUTION_NOT_FOUND"
   | "MANUAL_REVIEW_REQUIRED";
+
+// Marcador textual usado para sinalizar caso TM 2012 antes da pendência ser emitida.
+const TM_2012_MARKER = "tm_2012_manual_required";
+const TM_2012_VALID_CHOICES = new Set(["tm-12-14", "tm-14-15"]);
 
 interface PendingItem {
   row_number: number;
