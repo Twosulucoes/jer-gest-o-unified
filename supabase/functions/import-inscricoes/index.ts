@@ -169,8 +169,13 @@ type PendingCode =
   | "CATEGORY_PARSE_FAILED"
   | "PROVA_PARSE_FAILED"
   | "SPORT_EVENT_AMBIGUOUS"
+  | "TM_2012_MANUAL_CATEGORY_SELECTION"
   | "INSTITUTION_NOT_FOUND"
   | "MANUAL_REVIEW_REQUIRED";
+
+// Marcador textual usado para sinalizar caso TM 2012 antes da pendência ser emitida.
+const TM_2012_MARKER = "tm_2012_manual_required";
+const TM_2012_VALID_CHOICES = new Set(["tm-12-14", "tm-14-15"]);
 
 interface PendingItem {
   row_number: number;
@@ -445,6 +450,24 @@ function canonicalizeCategory(
       if (c.max_birth_year != null && birthYear > c.max_birth_year) return false;
       return true;
     });
+
+    // ── Caso especial determinístico: Tênis de Mesa, atleta nascido em 2012 ──
+    // Sem base normativa para escolher entre tm-12-14 e tm-14-15.
+    // SEMPRE pendência manual, antes de qualquer desempate ou fallback.
+    if (
+      sportSlug === "tenis-de-mesa" &&
+      birthYear === 2012 &&
+      candidateSlugs.includes("tm-12-14") &&
+      candidateSlugs.includes("tm-14-15")
+    ) {
+      return {
+        category_slug: null,
+        reason: `${TM_2012_MARKER}: TM atleta nascido em 2012 — escolha manual obrigatória entre tm-12-14 e tm-14-15`,
+        matched_by: null,
+        candidates: candidateSlugs,
+      };
+    }
+
     if (compatible.length === 1) {
       const chosen = compatible[0];
       const yearNote = eventYear ? ` (ano-base ${eventYear})` : "";
@@ -949,15 +972,24 @@ function classifyRow(
       // Os marcadores 'no_birth_date' / 'ambiguous_after_age' / 'birth_year_out_of_range'
       // vêm do canonicalizeCategory.
       const reason = row.parse_category_reason || "";
+      const isTM2012 = reason.startsWith(TM_2012_MARKER);
       const isAmbiguous =
-        /amb[ií]gua/.test(reason) ||
-        reason.startsWith("no_birth_date") ||
-        reason.startsWith("ambiguous_after_age") ||
-        reason.startsWith("birth_year_out_of_range");
+        !isTM2012 && (
+          /amb[ií]gua/.test(reason) ||
+          reason.startsWith("no_birth_date") ||
+          reason.startsWith("ambiguous_after_age") ||
+          reason.startsWith("birth_year_out_of_range")
+        );
+      const code: PendingCode = isTM2012
+        ? "TM_2012_MANUAL_CATEGORY_SELECTION"
+        : (isAmbiguous ? "SPORT_EVENT_AMBIGUOUS" : "CATEGORY_PARSE_FAILED");
+      const detail = isTM2012
+        ? `Tênis de Mesa, atleta nascido em 2012: escolha manual obrigatória entre tm-12-14 e tm-14-15. Candidatas=[${row.category_candidates.join(", ")}]. birth_date=${row.birth_date ?? "null"}.`
+        : `Categoria não resolvida para "${row.sport_slug}". Candidatas=[${row.category_candidates.join(", ") || "—"}]. birth_date=${row.birth_date ?? "null"}. Motivo: ${reason}`;
       pending.push({
         row_number: row.row_number,
-        reason_code: isAmbiguous ? "SPORT_EVENT_AMBIGUOUS" : "CATEGORY_PARSE_FAILED",
-        reason_detail: `Categoria não resolvida para "${row.sport_slug}". Candidatas=[${row.category_candidates.join(", ") || "—"}]. birth_date=${row.birth_date ?? "null"}. Motivo: ${reason}`,
+        reason_code: code,
+        reason_detail: detail,
         row, fingerprint, candidate_person_id: null,
       });
       return { status: "pendencia", errors, warnings, pending, resolved };
@@ -1020,6 +1052,44 @@ function classifyRow(
   return { status: "ok", errors, warnings, pending, resolved };
 }
 
+// ─── Manual resolutions for TM 2012 (override por chave estável) ─────
+//
+// Chave estável usada para casar override com linha da planilha:
+//   `${event_stage_id}|${source_row_number}|${fallback_fingerprint}`
+//
+// O override só vale para a mesma etapa, mesma posição na planilha original
+// E mesmo fingerprint (nome+dob+gender+inst+modalidade+prova). Isso impede
+// que uma escolha manual de um lote/etapa vaze para outro.
+interface ManualOverride {
+  pending_id: string;
+  category_slug: string; // tm-12-14 | tm-14-15
+}
+
+async function loadTm2012Overrides(
+  client: ReturnType<typeof createClient>,
+  eventId: string,
+  eventStageId: string,
+): Promise<Map<string, ManualOverride>> {
+  const { data, error } = await client
+    .from("import_pendencias")
+    .select("id, source_row_number, fallback_fingerprint, raw_payload_json")
+    .eq("event_id", eventId)
+    .eq("event_stage_id", eventStageId)
+    .eq("pending_reason_code", "TM_2012_MANUAL_CATEGORY_SELECTION")
+    .eq("resolution_status", "resolved");
+  if (error || !data) return new Map();
+  const out = new Map<string, ManualOverride>();
+  for (const r of data) {
+    const mr = (r.raw_payload_json as any)?.manual_resolution;
+    const chosen = mr?.chosen_category_slug;
+    if (!chosen || !TM_2012_VALID_CHOICES.has(chosen)) continue;
+    if (r.source_row_number == null || !r.fallback_fingerprint) continue;
+    const key = `${eventStageId}|${r.source_row_number}|${r.fallback_fingerprint}`;
+    out.set(key, { pending_id: r.id, category_slug: chosen });
+  }
+  return out;
+}
+
 // ─── Main Handler ────────────────────────────────────────────────────
 
 const MAX_ROWS = 10000;
@@ -1053,6 +1123,63 @@ Deno.serve(async (req: Request) => {
     const operatorId = claimsData.claims.sub as string;
 
     const body = await req.json();
+
+    // ── Ação especial: gravar escolha manual de categoria para TM 2012 ──
+    // Body: { action: "apply_manual_resolution", pending_id, chosen_category_slug }
+    if ((body as any)?.action === "apply_manual_resolution") {
+      const pendingId = (body as any).pending_id as string | undefined;
+      const chosen = (body as any).chosen_category_slug as string | undefined;
+      if (!pendingId || !chosen) {
+        return new Response(JSON.stringify({ error: "pending_id e chosen_category_slug são obrigatórios" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (!TM_2012_VALID_CHOICES.has(chosen)) {
+        return new Response(JSON.stringify({ error: `chosen_category_slug deve ser um de: ${[...TM_2012_VALID_CHOICES].join(", ")}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const serviceClientLocal = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+      const { data: pend, error: pendErr } = await serviceClientLocal
+        .from("import_pendencias")
+        .select("id, pending_reason_code, raw_payload_json, event_id, event_stage_id")
+        .eq("id", pendingId).maybeSingle();
+      if (pendErr || !pend) {
+        return new Response(JSON.stringify({ error: "Pendência não encontrada" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (pend.pending_reason_code !== "TM_2012_MANUAL_CATEGORY_SELECTION") {
+        return new Response(JSON.stringify({ error: "Esta pendência não é do tipo TM 2012" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const payload = (pend.raw_payload_json as any) ?? {};
+      payload.manual_resolution = {
+        chosen_category_slug: chosen,
+        resolved_by: operatorId,
+        resolved_at: new Date().toISOString(),
+      };
+      const { error: upErr } = await serviceClientLocal
+        .from("import_pendencias")
+        .update({
+          raw_payload_json: payload,
+          resolution_status: "resolved",
+          resolved_by: operatorId,
+          resolved_at: new Date().toISOString(),
+        })
+        .eq("id", pendingId);
+      if (upErr) {
+        return new Response(JSON.stringify({ error: upErr.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({
+        ok: true,
+        pending_id: pendingId,
+        chosen_category_slug: chosen,
+        message: "Escolha gravada. Reimporte a planilha (mesma etapa) para reprocessar a linha.",
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     let { rows: rawRows, event_id: eventId, event_stage_id: eventStageId, mode, file_name: fileName } = body as {
       rows: RawRow[]; event_id: string; event_stage_id?: string; mode: string; file_name?: string;
     };
@@ -1151,7 +1278,29 @@ Deno.serve(async (req: Request) => {
     const institutionsToCreate = new Set<string>();
     const delegationsToCreate = new Set<string>();
 
+    // ── Carregar overrides manuais (TM 2012) gravados em pendências resolvidas ──
+    const manualOverrides = await loadTm2012Overrides(serviceClient, eventId, eventStageId);
+    let manualOverridesApplied = 0;
+
     for (const row of normalizedRows) {
+      // Aplicar override manual TM 2012, se existir, ANTES de classificar.
+      // Chave estável: event_stage_id + source_row_number + fingerprint.
+      const fp = buildFingerprint(
+        row.full_name, row.birth_date, row.gender,
+        row.institution_name, row.sport_name, row.prova_name,
+      );
+      const overrideKey = `${eventStageId}|${row.row_number}|${fp}`;
+      const override = manualOverrides.get(overrideKey);
+      if (override && row.sport_slug === "tenis-de-mesa") {
+        row.category_slug = override.category_slug;
+        row.category_name = override.category_slug;
+        row.prova_slug = deriveProvaName(row.sport_slug, override.category_slug);
+        row.prova_name = row.prova_slug;
+        row.parse_category_reason = `manual_override: pending_id=${override.pending_id} -> ${override.category_slug}`;
+        row.category_resolved_by = "manual" as any;
+        manualOverridesApplied++;
+      }
+
       const result = classifyRow(row, maps, people);
       allWarnings.push(...result.warnings);
 
@@ -1225,6 +1374,7 @@ Deno.serve(async (req: Request) => {
         delegations_que_seriam_criadas: delegationsToCreate.size,
       },
       pending_by_code: pendingByCode,
+      manual_overrides_applied: manualOverridesApplied,
       errors: allErrors.slice(0, 50),
       warnings: allWarnings.slice(0, 50),
       pendencias_preview: allPending.slice(0, 30).map(p => ({

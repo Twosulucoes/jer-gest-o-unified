@@ -465,6 +465,16 @@ function ValidateResultCard({
           </div>
         </div>
 
+        {/* Atalho para resolução manual de TM 2012 */}
+        {(validateResult as any).pending_by_code?.TM_2012_MANUAL_CATEGORY_SELECTION > 0 && (
+          <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm flex items-center justify-between">
+            <span>
+              <strong>{(validateResult as any).pending_by_code.TM_2012_MANUAL_CATEGORY_SELECTION}</strong> pendência(s) de Tênis de Mesa 2012 requerem escolha manual da categoria.
+            </span>
+            <a href="/admin/importacao/pendencias" className="underline font-medium">Resolver agora →</a>
+          </div>
+        )}
+
         {/* Pendencias preview */}
         {validateResult.pendencias_preview.length > 0 && (
           <Accordion type="single" collapsible>
