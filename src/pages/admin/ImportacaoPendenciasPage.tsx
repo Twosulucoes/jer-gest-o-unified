@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useEvent } from "@/contexts/EventContext";
+import { useEventContext } from "@/contexts/EventContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { ModuleHeader } from "@/components/admin/ModuleHeader";
+import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Loader2, RefreshCw } from "lucide-react";
 
 interface Pendencia {
@@ -31,7 +31,7 @@ const TM_CHOICES = [
 ];
 
 export default function ImportacaoPendenciasPage() {
-  const { activeEvent } = useEvent();
+  const { activeEventId } = useEventContext();
   const [loading, setLoading] = useState(false);
   const [pendencias, setPendencias] = useState<Pendencia[]>([]);
   const [choices, setChoices] = useState<Record<string, string>>({});
