@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
   FileSpreadsheet, CheckCircle2, AlertTriangle, XCircle,
-  Loader2, Send, RotateCcw, FileWarning,
+  Loader2, Send, RotateCcw, FileWarning, Clock,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -42,40 +42,35 @@ interface ValidateResult {
   event_id: string;
   timestamp: string;
   summary: {
-    total_rows: number;
+    total_linhas: number;
+    ok_para_importar: number;
+    pendencias: number;
+    erros_bloqueantes: number;
     skipped_rows: number;
-    valid: number;
     warnings: number;
-    errors: number;
   };
-  preview: {
-    people_to_create: number;
-    people_to_reuse: number;
-    participants_to_create: number;
-    sport_events_to_create: number;
-    enrollments_to_create: number;
-    staff_to_create?: number;
-    institutions_created?: number;
-    sports_created?: number;
-    categories_created?: number;
+  counters: {
+    novos_cpfs_validos: number;
+    cpfs_existentes_reutilizados: number;
+    pessoas_sem_cpf: number;
+    cpfs_invalidos: number;
+    datas_invalidas: number;
+    sport_events_nao_encontrados: number;
+    institutions_que_seriam_criadas: number;
+    delegations_que_seriam_criadas: number;
   };
   errors: Array<{ row: number; field: string; value: unknown; code: string; message: string }>;
   warnings: Array<{ row: number; field: string; value: unknown; code: string; message: string }>;
-}
-
-interface CommitRpcResult {
-  event_id: string;
-  inserted_count: number;
-  failed_count: number;
-  errors_preview: Array<{
+  pendencias_preview: Array<{
     row_number: number;
-    error_code: string;
-    error_message: string;
-    entity?: string;
-    person_key?: string;
+    reason_code: string;
+    reason_detail: string;
+    fingerprint: string;
+    normalized_name: string;
+    cpf_raw: string | null;
+    candidate_person_id: string | null;
   }>;
-  created: { people: number; participants: number; sport_events: number; participant_sport_events: number };
-  skipped: { people_existing: number; participants_existing: number; sport_events_existing: number; duplicate_enrollments: number };
+  institutions_preview: string[];
 }
 
 interface CommitResult {
@@ -84,7 +79,20 @@ interface CommitResult {
   operator_id: string;
   event_id: string;
   timestamp: string;
-  result: CommitRpcResult;
+  result: {
+    people_created: number;
+    people_reused: number;
+    participants_created: number;
+    participants_reused: number;
+    participant_sport_events_created: number;
+    participant_sport_events_reused: number;
+    institutions_created: number;
+    delegations_created: number;
+    pendencias_created: number;
+    rows_skipped_as_duplicate: number;
+    rows_failed: number;
+  };
+  errors_preview: Array<{ row_number: number; error_code: string; error_message: string }>;
   warnings: ValidateResult["warnings"];
 }
 
@@ -102,7 +110,6 @@ export default function ImportacaoPage() {
   const [commitResult, setCommitResult] = useState<CommitResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ─── Column Mapping State ───────────────────────────────────────
   const [rawParsedRows, setRawParsedRows] = useState<Record<string, unknown>[]>([]);
   const [detectedHeaders, setDetectedHeaders] = useState<string[]>([]);
   const [showMapping, setShowMapping] = useState(false);
@@ -121,7 +128,6 @@ export default function ImportacaoPage() {
   const parseXlsxClientSide = async (f: File): Promise<Record<string, unknown>[]> => {
     const buffer = await f.arrayBuffer();
     const workbook = read(new Uint8Array(buffer), { type: "array" });
-
     const COLUMN_ALIASES: Record<string, string[]> = {
       "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO", "NOME DO ALUNO", "ALUNO"],
       "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO", "UNIDADE ESCOLAR", "ESCOLA/INSTITUICAO"],
@@ -146,27 +152,20 @@ export default function ImportacaoPage() {
         }
       }
     }
-
     const sheet = workbook.Sheets[sheetName];
     return utils.sheet_to_json(sheet, { defval: null }) as Record<string, unknown>[];
   };
 
-  /** Apply user mapping: rename source columns to canonical target names */
   const applyMapping = (rows: Record<string, unknown>[], mapping: Record<string, string>): Record<string, unknown>[] => {
-    // Build reverse map: sourceHeader -> targetKey
     const reverseMap = new Map<string, string>();
     for (const [targetKey, sourceHeader] of Object.entries(mapping)) {
       reverseMap.set(sourceHeader, targetKey);
     }
-
     return rows.map((row) => {
       const newRow: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(row)) {
         const target = reverseMap.get(key);
-        if (target) {
-          newRow[target] = value;
-        }
-        // Always keep original column too (edge function may use additional fields)
+        if (target) newRow[target] = value;
         newRow[key] = value;
       }
       return newRow;
@@ -176,13 +175,9 @@ export default function ImportacaoPage() {
   const handleFileSelected = async (f: File) => {
     try {
       const rows = await parseXlsxClientSide(f);
-      if (rows.length === 0) {
-        toast.error("Planilha vazia ou sem dados.");
-        return;
-      }
-      const headers = Object.keys(rows[0]);
+      if (rows.length === 0) { toast.error("Planilha vazia ou sem dados."); return; }
       setRawParsedRows(rows);
-      setDetectedHeaders(headers);
+      setDetectedHeaders(Object.keys(rows[0]));
       setShowMapping(true);
       setConfirmedMapping(null);
       setValidateResult(null);
@@ -199,29 +194,17 @@ export default function ImportacaoPage() {
   };
 
   const handleMappingCancel = () => {
-    setShowMapping(false);
-    setFile(null);
-    setRawParsedRows([]);
-    setDetectedHeaders([]);
-    setConfirmedMapping(null);
+    setShowMapping(false); setFile(null); setRawParsedRows([]); setDetectedHeaders([]); setConfirmedMapping(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const callEdgeFunction = async (mode: "validate" | "commit") => {
     if (!file || !selectedEventId || !confirmedMapping) return;
-
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast.error("Sessão expirada. Faça login novamente.");
-      return;
-    }
-
-    // Apply mapping to raw parsed rows
+    if (!session) { toast.error("Sessão expirada. Faça login novamente."); return; }
     const rows = applyMapping(rawParsedRows, confirmedMapping);
-
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
     const url = `https://${projectId}.supabase.co/functions/v1/import-inscricoes`;
-
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -229,34 +212,24 @@ export default function ImportacaoPage() {
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        rows,
-        event_id: selectedEventId,
-        mode,
-        file_name: file.name,
-      }),
+      body: JSON.stringify({ rows, event_id: selectedEventId, mode, file_name: file.name }),
     });
-
     const json = await response.json();
-
-    if (!response.ok) {
-      throw new Error(json.error || json.message || "Erro desconhecido");
-    }
-
+    if (!response.ok) throw new Error(json.error || json.message || "Erro desconhecido");
     return json;
   };
 
   const handleValidate = async () => {
-    setValidating(true);
-    setValidateResult(null);
-    setCommitResult(null);
+    setValidating(true); setValidateResult(null); setCommitResult(null);
     try {
       const result = await callEdgeFunction("validate");
       setValidateResult(result);
-      if (result.summary.errors > 0) {
-        toast.warning(`Validação concluída com ${result.summary.errors} erro(s).`);
+      if (result.summary.erros_bloqueantes > 0) {
+        toast.warning(`Validação: ${result.summary.erros_bloqueantes} erro(s) bloqueante(s).`);
+      } else if (result.summary.pendencias > 0) {
+        toast.info(`Validação: ${result.summary.ok_para_importar} OK, ${result.summary.pendencias} pendência(s).`);
       } else {
-        toast.success(`Validação concluída: ${result.summary.valid} linha(s) válida(s).`);
+        toast.success(`Validação: ${result.summary.ok_para_importar} linha(s) prontas para importar.`);
       }
     } catch (err) {
       toast.error(`Erro na validação: ${(err as Error).message}`);
@@ -270,65 +243,38 @@ export default function ImportacaoPage() {
     try {
       const result = await callEdgeFunction("commit");
       setCommitResult(result);
-      const failedCount = result?.result?.failed_count ?? 0;
-      if (failedCount > 0) {
-        toast.warning(`Importação concluída com ${failedCount} falha(s). Veja detalhes.`);
-      } else {
-        toast.success("Importação concluída sem erros.");
-      }
+      const failed = result?.result?.rows_failed ?? 0;
+      if (failed > 0) toast.warning(`Importação com ${failed} falha(s).`);
+      else toast.success("Importação concluída sem erros.");
     } catch (err) {
-      const msg = (err as Error).message;
-      toast.error(`Erro na importação: ${msg}`, {
-        duration: 10000,
-        action: {
-          label: "Nova importação",
-          onClick: handleReset,
-        },
-      });
+      toast.error(`Erro na importação: ${(err as Error).message}`, { duration: 10000 });
     } finally {
       setCommitting(false);
     }
   };
 
   const handleReset = () => {
-    setFile(null);
-    setValidateResult(null);
-    setCommitResult(null);
-    setRawParsedRows([]);
-    setDetectedHeaders([]);
-    setShowMapping(false);
-    setConfirmedMapping(null);
+    setFile(null); setValidateResult(null); setCommitResult(null);
+    setRawParsedRows([]); setDetectedHeaders([]); setShowMapping(false); setConfirmedMapping(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0] ?? null;
-    setFile(selected);
-    setValidateResult(null);
-    setCommitResult(null);
-    setConfirmedMapping(null);
-    if (selected) {
-      handleFileSelected(selected);
-    }
+    setFile(selected); setValidateResult(null); setCommitResult(null); setConfirmedMapping(null);
+    if (selected) handleFileSelected(selected);
   };
 
   const _selectedEvent = events.find((e) => e.id === selectedEventId);
   const canValidate = !!file && !!selectedEventId && !!confirmedMapping && !validating && !committing;
-  const canCommit =
-    validateResult &&
-    validateResult.summary.errors === 0 &&
-    validateResult.summary.valid > 0 &&
-    !committing &&
-    !commitResult;
+  const canCommit = validateResult && validateResult.summary.erros_bloqueantes === 0 && validateResult.summary.ok_para_importar > 0 && !committing && !commitResult;
 
   if (!canWrite) {
     return (
       <div className="animate-fade-in flex flex-col items-center justify-center py-16">
         <XCircle className="h-10 w-10 text-destructive mb-3" />
         <p className="text-muted-foreground font-medium">Acesso restrito</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          Apenas administradores e secretaria podem realizar importações.
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">Apenas administradores e secretaria podem realizar importações.</p>
       </div>
     );
   }
@@ -337,7 +283,6 @@ export default function ImportacaoPage() {
     <div className="animate-fade-in space-y-6">
       <ModuleHeader route="/admin/importacao" />
 
-      {/* Step 1: Event + File */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
@@ -349,89 +294,50 @@ export default function ImportacaoPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select
-                value={selectedEventId}
-                onValueChange={() => { setValidateResult(null); setCommitResult(null); }}
-                disabled={!!commitResult}
-              >
+              <Select value={selectedEventId} onValueChange={() => { setValidateResult(null); setCommitResult(null); }} disabled={!!commitResult}>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>
-                  {events.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>
-                  ))}
+                  {events.map((e) => (<SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Planilha (.xlsx)</label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileChange}
-                disabled={!!commitResult}
-                className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
-              />
+              <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileChange} disabled={!!commitResult}
+                className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer" />
             </div>
           </div>
 
-          {/* Mapping status indicator */}
           {file && confirmedMapping && !showMapping && (
             <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
               <CheckCircle2 className="h-4 w-4" />
-              Mapeamento confirmado ({Object.keys(confirmedMapping).length} campos mapeados)
-              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setShowMapping(true)}>
-                Editar mapeamento
-              </Button>
+              Mapeamento confirmado ({Object.keys(confirmedMapping).length} campos)
+              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setShowMapping(true)}>Editar</Button>
             </div>
           )}
 
-          {/* Actions */}
           {!showMapping && (
             <div className="flex gap-3">
               <Button onClick={handleValidate} disabled={!canValidate} variant="outline">
                 {validating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                 {validating ? "Validando…" : "Validar"}
               </Button>
-              {commitResult && (
-                <Button onClick={handleReset} variant="ghost">
-                  <RotateCcw className="mr-2 h-4 w-4" /> Nova importação
-                </Button>
-              )}
+              {commitResult && <Button onClick={handleReset} variant="ghost"><RotateCcw className="mr-2 h-4 w-4" /> Nova importação</Button>}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Step 2: Column Mapping */}
       {showMapping && (
-        <ColumnMappingStep
-          headers={detectedHeaders}
-          sampleRows={rawParsedRows.slice(0, 5)}
-          onConfirm={handleMappingConfirm}
-          onCancel={handleMappingCancel}
-        />
+        <ColumnMappingStep headers={detectedHeaders} sampleRows={rawParsedRows.slice(0, 5)} onConfirm={handleMappingConfirm} onCancel={handleMappingCancel} />
       )}
 
-      {/* Validate result */}
       {validateResult && !commitResult && !showMapping && (
-        <ValidateResultCard
-          validateResult={validateResult}
-          committing={committing}
-          canCommit={!!canCommit}
-          selectedEvent={_selectedEvent}
-          onCommit={handleCommit}
-          onReset={handleReset}
-        />
+        <ValidateResultCard validateResult={validateResult} committing={committing} canCommit={!!canCommit} selectedEvent={_selectedEvent} onCommit={handleCommit} onReset={handleReset} />
       )}
 
-      {/* Commit result */}
       {commitResult && selectedEventId && (
-        <CommitResultCard
-          commitResult={commitResult}
-          eventId={selectedEventId}
-          onReset={handleReset}
-        />
+        <CommitResultCard commitResult={commitResult} eventId={selectedEventId} onReset={handleReset} />
       )}
     </div>
   );
@@ -449,56 +355,58 @@ function ValidateResultCard({
   onCommit: () => void;
   onReset: () => void;
 }) {
+  const s = validateResult.summary;
+  const c = validateResult.counters;
+  const hasPending = s.pendencias > 0;
+  const hasErrors = s.erros_bloqueantes > 0;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          {validateResult.summary.errors > 0 ? (
-            <XCircle className="h-5 w-5 text-destructive" />
-          ) : (
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-          )}
-          Resultado da validação
+          {hasErrors ? <XCircle className="h-5 w-5 text-destructive" /> : hasPending ? <Clock className="h-5 w-5 text-yellow-600" /> : <CheckCircle2 className="h-5 w-5 text-green-600" />}
+          Resultado da validação {hasPending && !hasErrors && <Badge variant="outline" className="ml-2 text-yellow-600 border-yellow-300">Com pendências</Badge>}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {/* Summary */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <SummaryCard label="Total linhas" value={validateResult.summary.total_rows} />
-          <SummaryCard label="Ignoradas" value={validateResult.summary.skipped_rows} variant="muted" />
-          <SummaryCard label="Válidas" value={validateResult.summary.valid} variant="success" />
-          <SummaryCard label="Avisos" value={validateResult.summary.warnings} variant="warning" />
-          <SummaryCard label="Erros" value={validateResult.summary.errors} variant="error" />
+          <SummaryCard label="Total linhas" value={s.total_linhas} />
+          <SummaryCard label="OK para importar" value={s.ok_para_importar} variant="success" />
+          <SummaryCard label="Pendências" value={s.pendencias} variant={s.pendencias > 0 ? "warning" : "muted"} />
+          <SummaryCard label="Erros bloqueantes" value={s.erros_bloqueantes} variant={s.erros_bloqueantes > 0 ? "error" : "muted"} />
+          <SummaryCard label="Ignoradas" value={s.skipped_rows} variant="muted" />
         </div>
 
+        {/* CPF & Data Counters */}
         <div>
-          <h3 className="text-sm font-medium text-foreground mb-2">Entidades auto-criadas</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <SummaryCard label="Instituições" value={validateResult.preview.institutions_created ?? 0} variant="success" />
-            <SummaryCard label="Modalidades" value={validateResult.preview.sports_created ?? 0} variant="success" />
-            <SummaryCard label="Categorias" value={validateResult.preview.categories_created ?? 0} variant="success" />
+          <h3 className="text-sm font-medium text-foreground mb-2">Deduplicação e CPF</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <SummaryCard label="CPFs novos válidos" value={c.novos_cpfs_validos} variant="success" />
+            <SummaryCard label="CPFs reutilizados" value={c.cpfs_existentes_reutilizados} variant="muted" />
+            <SummaryCard label="CPFs inválidos" value={c.cpfs_invalidos} variant={c.cpfs_invalidos > 0 ? "warning" : "muted"} />
+            <SummaryCard label="Sem CPF" value={c.pessoas_sem_cpf} variant={c.pessoas_sem_cpf > 0 ? "warning" : "muted"} />
           </div>
         </div>
 
         <div>
-          <h3 className="text-sm font-medium text-foreground mb-2">Preview de criação</h3>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-            <SummaryCard label="Pessoas (criar)" value={validateResult.preview.people_to_create} />
-            <SummaryCard label="Pessoas (reusar)" value={validateResult.preview.people_to_reuse} variant="muted" />
-            <SummaryCard label="Participantes" value={validateResult.preview.participants_to_create} />
-            <SummaryCard label="Provas" value={validateResult.preview.sport_events_to_create} />
-            <SummaryCard label="Entradas em provas" value={validateResult.preview.enrollments_to_create} />
-            <SummaryCard label="Comissão/Staff" value={validateResult.preview.staff_to_create ?? 0} variant="muted" />
+          <h3 className="text-sm font-medium text-foreground mb-2">Catálogo e entidades</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <SummaryCard label="Datas inválidas" value={c.datas_invalidas} variant={c.datas_invalidas > 0 ? "warning" : "muted"} />
+            <SummaryCard label="Provas não encontradas" value={c.sport_events_nao_encontrados} variant={c.sport_events_nao_encontrados > 0 ? "warning" : "muted"} />
+            <SummaryCard label="Instituições a criar" value={c.institutions_que_seriam_criadas} />
+            <SummaryCard label="Delegações a criar" value={c.delegations_que_seriam_criadas} />
           </div>
         </div>
 
-        {/* Errors accordion */}
-        {validateResult.errors.length > 0 && (
+        {/* Pendencias preview */}
+        {validateResult.pendencias_preview.length > 0 && (
           <Accordion type="single" collapsible>
-            <AccordionItem value="errors">
-              <AccordionTrigger className="text-sm font-medium text-destructive">
+            <AccordionItem value="pendencias">
+              <AccordionTrigger className="text-sm font-medium text-yellow-600">
                 <span className="flex items-center gap-2">
-                  <XCircle className="h-4 w-4" />
-                  {validateResult.errors.length} erro(s) encontrado(s)
+                  <Clock className="h-4 w-4" />
+                  {s.pendencias} pendência(s) — preview
                 </span>
               </AccordionTrigger>
               <AccordionContent>
@@ -507,11 +415,46 @@ function ValidateResultCard({
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-16">Linha</TableHead>
-                        <TableHead>Campo</TableHead>
                         <TableHead>Código</TableHead>
-                        <TableHead>Mensagem</TableHead>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>CPF</TableHead>
+                        <TableHead>Detalhe</TableHead>
                       </TableRow>
                     </TableHeader>
+                    <TableBody>
+                      {validateResult.pendencias_preview.map((p, i) => (
+                        <TableRow key={i}>
+                          <TableCell>{p.row_number}</TableCell>
+                          <TableCell><Badge variant="outline" className="text-xs">{p.reason_code}</Badge></TableCell>
+                          <TableCell className="text-sm">{p.normalized_name}</TableCell>
+                          <TableCell className="text-xs font-mono text-muted-foreground">{p.cpf_raw || "—"}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{p.reason_detail}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {s.pendencias > validateResult.pendencias_preview.length && (
+                  <p className="text-xs text-muted-foreground mt-2">Exibindo {validateResult.pendencias_preview.length} de {s.pendencias} pendências.</p>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        )}
+
+        {/* Errors */}
+        {validateResult.errors.length > 0 && (
+          <Accordion type="single" collapsible>
+            <AccordionItem value="errors">
+              <AccordionTrigger className="text-sm font-medium text-destructive">
+                <span className="flex items-center gap-2"><XCircle className="h-4 w-4" />{validateResult.errors.length} erro(s) bloqueante(s)</span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="rounded-lg border max-h-64 overflow-auto">
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead className="w-16">Linha</TableHead><TableHead>Campo</TableHead><TableHead>Código</TableHead><TableHead>Mensagem</TableHead>
+                    </TableRow></TableHeader>
                     <TableBody>
                       {validateResult.errors.map((e, i) => (
                         <TableRow key={i}>
@@ -529,27 +472,19 @@ function ValidateResultCard({
           </Accordion>
         )}
 
-        {/* Warnings accordion */}
+        {/* Warnings */}
         {validateResult.warnings.length > 0 && (
           <Accordion type="single" collapsible>
             <AccordionItem value="warnings">
               <AccordionTrigger className="text-sm font-medium text-yellow-600">
-                <span className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  {validateResult.warnings.length} aviso(s)
-                </span>
+                <span className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" />{s.warnings} aviso(s)</span>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="rounded-lg border max-h-64 overflow-auto">
                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-16">Linha</TableHead>
-                        <TableHead>Campo</TableHead>
-                        <TableHead>Código</TableHead>
-                        <TableHead>Mensagem</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                    <TableHeader><TableRow>
+                      <TableHead className="w-16">Linha</TableHead><TableHead>Campo</TableHead><TableHead>Código</TableHead><TableHead>Mensagem</TableHead>
+                    </TableRow></TableHeader>
                     <TableBody>
                       {validateResult.warnings.map((w, i) => (
                         <TableRow key={i}>
@@ -567,7 +502,17 @@ function ValidateResultCard({
           </Accordion>
         )}
 
-        {/* Commit button */}
+        {/* Info about pendencias */}
+        {hasPending && !hasErrors && (
+          <div className="flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30 p-3">
+            <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
+            <p className="text-sm text-yellow-800 dark:text-yellow-300">
+              {s.pendencias} linha(s) serão enviadas para a tabela de pendências. Linhas OK ({s.ok_para_importar}) serão importadas normalmente.
+            </p>
+          </div>
+        )}
+
+        {/* Commit */}
         <div className="flex gap-3 pt-2 border-t">
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -579,8 +524,7 @@ function ValidateResultCard({
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                  Confirmar importação
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />Confirmar importação
                 </AlertDialogTitle>
                 <AlertDialogDescription asChild>
                   <div className="space-y-3">
@@ -591,20 +535,20 @@ function ValidateResultCard({
                     <Separator />
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="flex justify-between rounded-md bg-muted px-3 py-1.5">
-                        <span className="text-muted-foreground">Linhas válidas</span>
-                        <span className="font-semibold text-foreground">{validateResult.summary.valid}</span>
+                        <span className="text-muted-foreground">Linhas OK</span>
+                        <span className="font-semibold text-foreground">{s.ok_para_importar}</span>
                       </div>
                       <div className="flex justify-between rounded-md bg-muted px-3 py-1.5">
-                        <span className="text-muted-foreground">Avisos</span>
-                        <span className="font-semibold text-foreground">{validateResult.summary.warnings}</span>
+                        <span className="text-muted-foreground">Pendências</span>
+                        <span className="font-semibold text-foreground">{s.pendencias}</span>
                       </div>
                       <div className="flex justify-between rounded-md bg-muted px-3 py-1.5">
-                        <span className="text-muted-foreground">Pessoas a criar</span>
-                        <span className="font-semibold text-foreground">{validateResult.preview.people_to_create}</span>
+                        <span className="text-muted-foreground">Pessoas novas</span>
+                        <span className="font-semibold text-foreground">{c.novos_cpfs_validos}</span>
                       </div>
-                      <div className="flex justify-between rounded-md bg-muted px-3 py-1.5 col-span-2">
-                        <span className="text-muted-foreground">Entradas em provas</span>
-                        <span className="font-semibold text-foreground">{validateResult.preview.enrollments_to_create}</span>
+                      <div className="flex justify-between rounded-md bg-muted px-3 py-1.5">
+                        <span className="text-muted-foreground">Pessoas reutilizadas</span>
+                        <span className="font-semibold text-foreground">{c.cpfs_existentes_reutilizados}</span>
                       </div>
                     </div>
                   </div>
@@ -618,9 +562,7 @@ function ValidateResultCard({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button onClick={onReset} variant="ghost">
-            <RotateCcw className="mr-2 h-4 w-4" /> Cancelar
-          </Button>
+          <Button onClick={onReset} variant="ghost"><RotateCcw className="mr-2 h-4 w-4" /> Cancelar</Button>
         </div>
       </CardContent>
     </Card>
@@ -637,9 +579,8 @@ function CommitResultCard({
   onReset: () => void;
 }) {
   const r = commitResult.result;
-  const failedCount = r?.failed_count ?? 0;
-  const isPartial = failedCount > 0;
-  const errorsPreview = r?.errors_preview ?? [];
+  const isPartial = r.rows_failed > 0;
+  const errorsPreview = commitResult.errors_preview ?? [];
 
   return (
     <Card className={isPartial
@@ -653,75 +594,71 @@ function CommitResultCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Created */}
         <div>
           <h3 className="text-sm font-medium text-foreground mb-2">Criados</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <SummaryCard label="Pessoas" value={r?.created?.people ?? 0} variant="success" />
-            <SummaryCard label="Participantes" value={r?.created?.participants ?? 0} variant="success" />
-            <SummaryCard label="Provas" value={r?.created?.sport_events ?? 0} variant="success" />
-            <SummaryCard label="Entradas em provas" value={r?.created?.participant_sport_events ?? 0} variant="success" />
+            <SummaryCard label="Pessoas" value={r.people_created} variant="success" />
+            <SummaryCard label="Participantes" value={r.participants_created} variant="success" />
+            <SummaryCard label="Entradas em provas" value={r.participant_sport_events_created} variant="success" />
+            <SummaryCard label="Instituições" value={r.institutions_created} variant="success" />
           </div>
         </div>
 
-        {/* Skipped */}
         <div>
-          <h3 className="text-sm font-medium text-foreground mb-2">Reutilizados / Ignorados</h3>
+          <h3 className="text-sm font-medium text-foreground mb-2">Reutilizados</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <SummaryCard label="Pessoas existentes" value={r?.skipped?.people_existing ?? 0} variant="muted" />
-            <SummaryCard label="Participantes existentes" value={r?.skipped?.participants_existing ?? 0} variant="muted" />
-            <SummaryCard label="Provas existentes" value={r?.skipped?.sport_events_existing ?? 0} variant="muted" />
-            <SummaryCard label="Entradas duplicadas" value={r?.skipped?.duplicate_enrollments ?? 0} variant="muted" />
+            <SummaryCard label="Pessoas" value={r.people_reused} variant="muted" />
+            <SummaryCard label="Participantes" value={r.participants_reused} variant="muted" />
+            <SummaryCard label="Entradas duplicadas" value={r.participant_sport_events_reused} variant="muted" />
+            <SummaryCard label="Delegações" value={r.delegations_created} variant="success" />
           </div>
         </div>
 
-        {/* Failed */}
-        {isPartial && (
-          <div>
-            <div className="grid grid-cols-1 gap-3 mb-3">
-              <SummaryCard label="Falhas" value={failedCount} variant="error" />
-            </div>
-            <div className="flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30 p-3 mb-3">
-              <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
-              <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                Alguns registros foram parcialmente criados. Corrija os dados na planilha e reexecute a importação para completar as entradas pendentes.
-              </p>
-            </div>
-            <Accordion type="single" collapsible defaultValue="errors-preview">
-              <AccordionItem value="errors-preview">
-                <AccordionTrigger className="text-sm font-medium text-destructive">
-                  <span className="flex items-center gap-2">
-                    <XCircle className="h-4 w-4" />
-                    {errorsPreview.length} erro(s) — preview
-                  </span>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <ImportErrorsTable eventId={eventId} mode="preview" previewErrors={errorsPreview} />
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+        <div>
+          <h3 className="text-sm font-medium text-foreground mb-2">Pendências e erros</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <SummaryCard label="Pendências criadas" value={r.pendencias_created} variant={r.pendencias_created > 0 ? "warning" : "muted"} />
+            <SummaryCard label="Duplicadas ignoradas" value={r.rows_skipped_as_duplicate} variant="muted" />
+            <SummaryCard label="Falhas" value={r.rows_failed} variant={r.rows_failed > 0 ? "error" : "muted"} />
+          </div>
+        </div>
 
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="mt-2">
-                  <FileWarning className="mr-2 h-4 w-4" />
-                  Ver log completo
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Erros de importação — Log completo</DialogTitle>
-                </DialogHeader>
-                <ImportErrorsTable eventId={eventId} mode="full" />
-              </DialogContent>
-            </Dialog>
+        {r.pendencias_created > 0 && (
+          <div className="flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30 p-3">
+            <Clock className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
+            <p className="text-sm text-yellow-800 dark:text-yellow-300">
+              {r.pendencias_created} linha(s) foram enviadas para a tabela de pendências. Resolva-as manualmente e reimporte se necessário.
+            </p>
           </div>
         )}
 
+        {isPartial && errorsPreview.length > 0 && (
+          <Accordion type="single" collapsible defaultValue="errors-preview">
+            <AccordionItem value="errors-preview">
+              <AccordionTrigger className="text-sm font-medium text-destructive">
+                <span className="flex items-center gap-2"><XCircle className="h-4 w-4" />{errorsPreview.length} erro(s)</span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <ImportErrorsTable eventId={eventId} mode="preview" previewErrors={errorsPreview} />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        )}
+
+        {isPartial && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm"><FileWarning className="mr-2 h-4 w-4" />Ver log completo</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader><DialogTitle>Erros de importação — Log completo</DialogTitle></DialogHeader>
+              <ImportErrorsTable eventId={eventId} mode="full" />
+            </DialogContent>
+          </Dialog>
+        )}
+
         <div className="pt-2">
-          <Button onClick={onReset} variant="outline">
-            <RotateCcw className="mr-2 h-4 w-4" /> Nova importação
-          </Button>
+          <Button onClick={onReset} variant="outline"><RotateCcw className="mr-2 h-4 w-4" /> Nova importação</Button>
         </div>
       </CardContent>
     </Card>
@@ -730,13 +667,7 @@ function CommitResultCard({
 
 // ─── Summary Card ────────────────────────────────────────────────────
 
-function SummaryCard({
-  label, value, variant = "default",
-}: {
-  label: string;
-  value: number;
-  variant?: "default" | "success" | "warning" | "error" | "muted";
-}) {
+function SummaryCard({ label, value, variant = "default" }: { label: string; value: number; variant?: "default" | "success" | "warning" | "error" | "muted" }) {
   const colors = {
     default: "text-foreground",
     success: "text-green-600 dark:text-green-400",
@@ -744,7 +675,6 @@ function SummaryCard({
     error: "text-destructive",
     muted: "text-muted-foreground",
   };
-
   return (
     <div className="rounded-lg border bg-card p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
