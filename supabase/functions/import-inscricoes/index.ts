@@ -16,10 +16,40 @@ function capitalize(text: string): string {
   return text.trim().toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
 }
 
-function cleanCpf(cpf: string | null | undefined): string | null {
+function normalizeName(name: string): string {
+  return name.trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+}
+
+function cleanCpfRaw(cpf: string | null | undefined): string | null {
   if (!cpf) return null;
-  const cleaned = cpf.replace(/\D/g, "");
-  return cleaned.length === 11 ? cleaned : null;
+  const s = String(cpf).trim();
+  if (s === "" || s === "---") return null;
+  return s;
+}
+
+function extractCpfDigits(cpf: string | null | undefined): string | null {
+  if (!cpf) return null;
+  return cpf.replace(/\D/g, "");
+}
+
+function validateCpfDigits(digits: string): boolean {
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+  // Validate check digits
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
+  let remainder = (sum * 10) % 11;
+  if (remainder === 10) remainder = 0;
+  if (remainder !== parseInt(digits[9])) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
+  remainder = (sum * 10) % 11;
+  if (remainder === 10) remainder = 0;
+  return remainder === parseInt(digits[10]);
 }
 
 function normalizeGender(value: string | null | undefined): string {
@@ -28,13 +58,6 @@ function normalizeGender(value: string | null | undefined): string {
   if (["f", "feminino", "female", "fem"].includes(v)) return "female";
   if (["m", "masculino", "male", "masc"].includes(v)) return "male";
   return "male";
-}
-
-function genderScopeFromCompetition(competicao: string): string {
-  const lower = competicao.toLowerCase();
-  if (lower.includes("feminino")) return "female";
-  if (lower.includes("masculino")) return "male";
-  return "mixed";
 }
 
 function isBlank(v: unknown): boolean {
@@ -50,6 +73,43 @@ function getField(raw: Record<string, unknown>, ...keys: string[]): string {
   return "";
 }
 
+function parseDate(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === "number") {
+    const date = new Date((value - 25569) * 86400 * 1000);
+    const iso = date.toISOString().split("T")[0];
+    return isValidDateString(iso) ? iso : null;
+  }
+  const str = String(value).trim();
+  if (str === "" || str === "---") return null;
+  const brMatch = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (brMatch) {
+    const d = `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+    return isValidDateString(d) ? d : null;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return isValidDateString(str) ? str : null;
+  return null;
+}
+
+function isValidDateString(d: string): boolean {
+  const date = new Date(d + "T00:00:00Z");
+  if (isNaN(date.getTime())) return false;
+  const year = date.getUTCFullYear();
+  return year >= 1920 && year <= 2020;
+}
+
+function buildFingerprint(name: string, birthDate: string | null, gender: string, institution: string, modality: string, prova: string): string {
+  const parts = [
+    name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_"),
+    birthDate || "NO_DOB",
+    gender,
+    slugify(institution || "NO_INST"),
+    slugify(modality || "NO_MOD"),
+    slugify(prova || "NO_PROVA"),
+  ];
+  return parts.join("|");
+}
+
 // ─── Types ───────────────────────────────────────────────────────────
 
 interface RawRow { [key: string]: unknown; }
@@ -58,14 +118,15 @@ interface NormalizedRow {
   row_number: number;
   full_name: string;
   birth_date: string | null;
+  raw_birth_date: string | null;
   gender: string;
-  cpf: string | null;
+  cpf_valid: string | null;   // 11 digits, validated
+  cpf_raw: string | null;     // original value
   rg: string | null;
   email: string | null;
   phone: string | null;
   institution_name: string;
   institution_slug: string;
-  delegation_name: string;
   sport_name: string;
   sport_slug: string;
   category_name: string;
@@ -77,402 +138,39 @@ interface NormalizedRow {
   participant_type: string;
   funcao: string;
   pcd: string | null;
-  food_restrictions: string | null;
   esfera: string;
+  raw_payload: Record<string, unknown>;
 }
 
-interface RowResult {
-  row: number;
-  field: string;
-  value: unknown;
-  code: string;
-  message: string;
-}
+type PendingCode =
+  | "CPF_MISSING"
+  | "CPF_INVALID"
+  | "BIRTH_DATE_MISSING"
+  | "BIRTH_DATE_INVALID"
+  | "PERSON_MATCH_AMBIGUOUS"
+  | "SPORT_EVENT_NOT_FOUND"
+  | "INSTITUTION_NOT_FOUND"
+  | "MANUAL_REVIEW_REQUIRED";
 
-// ─── Column Mapping ──────────────────────────────────────────────────
-
-function deriveParticipantType(userType: string, funcao: string): string {
-  const ut = userType.toLowerCase();
-  if (ut.includes("atleta")) return "athlete";
-  if (funcao.toLowerCase().includes("técnico") || funcao.toLowerCase().includes("tecnico")) return "coach";
-  if (funcao.toLowerCase().includes("chefe de delegação") || funcao.toLowerCase().includes("chefe de delegacao")) return "head_of_delegation";
-  if (ut.includes("comissão técnica") || ut.includes("comissao tecnica")) return "coach";
-  if (ut.includes("prestador")) return "staff";
-  return "staff";
-}
-
-function parseDate(value: unknown): string | null {
-  if (!value) return null;
-  if (typeof value === "number") {
-    const date = new Date((value - 25569) * 86400 * 1000);
-    return date.toISOString().split("T")[0];
-  }
-  const str = String(value).trim();
-  const brMatch = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-  return null;
-}
-
-function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
-  const fullName = capitalize(getField(raw, "NOME", "NOME COMPLETO"));
-  const institution = getField(raw, "ESCOLA", "INSTITUICAO");
-  const delegation = getField(raw, "DELEGAÇÃO", "DELEGACAO");
-  const sport = getField(raw, "MODALIDADE");
-  const category = getField(raw, "COMPETICAO", "CATEGORIA");
-  const prova = getField(raw, "PROVA");
-  const userType = getField(raw, "TIPO USUARIO", "TIPO_USUARIO");
-  const status = getField(raw, "STATUS DA INSCRIÇÃO", "STATUS DA INSCRICAO", "STATUS_INSCRICAO");
-  const funcao = getField(raw, "FUNCAO");
-  const pcd = getField(raw, "PCD");
-  const esfera = getField(raw, "ESFERA");
-
-  return {
-    row_number: rowIndex + 2,
-    full_name: fullName,
-    birth_date: parseDate(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"]),
-    gender: normalizeGender(getField(raw, "SEXO", "GENERO")),
-    cpf: cleanCpf(getField(raw, "CPF") || null),
-    rg: getField(raw, "RG") || null,
-    email: getField(raw, "EMAIL") || null,
-    phone: getField(raw, "TELEFONE") || null,
-    institution_name: institution,
-    institution_slug: slugify(institution),
-    delegation_name: delegation,
-    sport_name: sport,
-    sport_slug: slugify(sport),
-    category_name: category,
-    category_slug: slugify(category),
-    prova_name: prova,
-    prova_slug: slugify(prova),
-    user_type: userType,
-    inscription_status: status,
-    participant_type: deriveParticipantType(userType, funcao),
-    funcao,
-    pcd: isBlank(pcd) ? null : pcd,
-    food_restrictions: null,
-    esfera: esfera,
-  };
-}
-
-// ─── Auto-Create Reference Entities ──────────────────────────────────
-
-interface ResolvedMaps {
-  institutions: Map<string, string>;
-  delegations: Map<string, string>;
-  sports: Map<string, string>;
-  categories: Map<string, string>;
-}
-
-async function ensureReferenceEntities(
-  supabase: ReturnType<typeof createClient>,
-  eventId: string,
-  rows: NormalizedRow[]
-): Promise<{ maps: ResolvedMaps; warnings: RowResult[] }> {
-  const warnings: RowResult[] = [];
-
-  const uniqueInstitutions = new Map<string, string>();
-  for (const r of rows) {
-    if (r.institution_slug && !uniqueInstitutions.has(r.institution_slug)) {
-      uniqueInstitutions.set(r.institution_slug, r.institution_name);
-    }
-  }
-
-  const { data: existingInst } = await supabase
-    .from("institutions").select("id, slug").eq("is_active", true);
-  const instMap = new Map<string, string>();
-  for (const i of existingInst ?? []) instMap.set(i.slug, i.id);
-
-  for (const [slug, name] of uniqueInstitutions) {
-    if (!instMap.has(slug)) {
-      const { data, error } = await supabase
-        .from("institutions")
-        .insert({ name, slug, network_type: "municipal" })
-        .select("id")
-        .single();
-      if (error) {
-        const { data: existing } = await supabase
-          .from("institutions").select("id").eq("slug", slug).single();
-        if (existing) instMap.set(slug, existing.id);
-      } else {
-        instMap.set(slug, data.id);
-      }
-    }
-  }
-
-  const { data: existingDel } = await supabase
-    .from("delegations").select("id, institution_id").eq("event_id", eventId);
-  const delMap = new Map<string, string>();
-  for (const d of existingDel ?? []) delMap.set(d.institution_id, d.id);
-
-  for (const [slug] of uniqueInstitutions) {
-    const instId = instMap.get(slug);
-    if (instId && !delMap.has(instId)) {
-      const { data, error } = await supabase
-        .from("delegations")
-        .insert({ institution_id: instId, event_id: eventId, status: "confirmed" })
-        .select("id")
-        .single();
-      if (error) {
-        const { data: existing } = await supabase
-          .from("delegations")
-          .select("id")
-          .eq("institution_id", instId)
-          .eq("event_id", eventId)
-          .single();
-        if (existing) delMap.set(instId, existing.id);
-      } else {
-        delMap.set(instId, data.id);
-      }
-    }
-  }
-
-  const uniqueSports = new Map<string, string>();
-  for (const r of rows) {
-    if (r.sport_slug && !uniqueSports.has(r.sport_slug)) {
-      uniqueSports.set(r.sport_slug, r.sport_name);
-    }
-  }
-
-  const { data: existingSports } = await supabase
-    .from("sports").select("id, slug").eq("event_id", eventId);
-  const sportMap = new Map<string, string>();
-  for (const s of existingSports ?? []) sportMap.set(s.slug, s.id);
-
-  for (const [slug, name] of uniqueSports) {
-    if (!sportMap.has(slug)) {
-      const isCollective = ["futsal", "futebol", "handebol", "voleibol", "volei-de-praia"].includes(slug);
-      const { data, error } = await supabase
-        .from("sports")
-        .insert({ name, slug, event_id: eventId, is_collective: isCollective })
-        .select("id")
-        .single();
-      if (error) {
-        const { data: existing } = await supabase
-          .from("sports").select("id").eq("slug", slug).eq("event_id", eventId).single();
-        if (existing) sportMap.set(slug, existing.id);
-      } else {
-        sportMap.set(slug, data.id);
-      }
-    }
-  }
-
-  const uniqueCategories = new Map<string, { name: string; genderScope: string }>();
-  for (const r of rows) {
-    if (r.category_slug && !uniqueCategories.has(r.category_slug)) {
-      uniqueCategories.set(r.category_slug, {
-        name: r.category_name,
-        genderScope: genderScopeFromCompetition(r.category_name),
-      });
-    }
-  }
-
-  const { data: existingCats } = await supabase
-    .from("categories").select("id, slug").eq("event_id", eventId);
-  const catMap = new Map<string, string>();
-  for (const c of existingCats ?? []) catMap.set(c.slug, c.id);
-
-  for (const [slug, info] of uniqueCategories) {
-    if (!catMap.has(slug)) {
-      const { data, error } = await supabase
-        .from("categories")
-        .insert({ name: info.name, slug, event_id: eventId, gender_scope: info.genderScope })
-        .select("id")
-        .single();
-      if (error) {
-        const { data: existing } = await supabase
-          .from("categories").select("id").eq("slug", slug).eq("event_id", eventId).single();
-        if (existing) catMap.set(slug, existing.id);
-      } else {
-        catMap.set(slug, data.id);
-      }
-    }
-  }
-
-  return {
-    maps: { institutions: instMap, delegations: delMap, sports: sportMap, categories: catMap },
-    warnings,
-  };
-}
-
-// ─── Row Validation ──────────────────────────────────────────────────
-
-function validateRow(
-  row: NormalizedRow,
-  maps: ResolvedMaps,
-  peopleByCpf: Map<string, string>,
-  peopleByNameDob: Map<string, string>
-): { errors: RowResult[]; warnings: RowResult[]; resolved: Record<string, string | null>; skip: boolean } {
-  const errors: RowResult[] = [];
-  const warnings: RowResult[] = [];
-  const resolved: Record<string, string | null> = {};
-
-  const isAthlete = row.participant_type === "athlete";
-
-  if (row.inscription_status && !["válida", "valida", ""].includes(row.inscription_status.toLowerCase())) {
-    warnings.push({ row: row.row_number, field: "STATUS DA INSCRIÇÃO", value: row.inscription_status, code: "INVALID_STATUS", message: `Inscrição com status "${row.inscription_status}" — ignorada` });
-    return { errors: [], warnings, resolved: {}, skip: true };
-  }
-
-  if (!row.full_name) {
-    errors.push({ row: row.row_number, field: "NOME", value: "", code: "NAME_MISSING", message: "Nome obrigatório" });
-  }
-
-  if (isAthlete && !row.birth_date) {
-    errors.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING", message: "Data de nascimento obrigatória para atletas" });
-  }
-
-  const instId = maps.institutions.get(row.institution_slug);
-  if (!instId) {
-    if (row.institution_slug) {
-      errors.push({ row: row.row_number, field: "ESCOLA", value: row.institution_name, code: "INSTITUTION_RESOLVE_FAILED", message: "Não foi possível resolver a instituição" });
-    }
-  } else {
-    resolved.institution_id = instId;
-    const delId = maps.delegations.get(instId);
-    if (!delId) {
-      errors.push({ row: row.row_number, field: "DELEGAÇÃO", value: row.institution_name, code: "DELEGATION_RESOLVE_FAILED", message: "Não foi possível resolver a delegação" });
-    } else {
-      resolved.delegation_id = delId;
-    }
-  }
-
-  if (isAthlete) {
-    const sportId = maps.sports.get(row.sport_slug);
-    if (!sportId) {
-      if (row.sport_slug) {
-        errors.push({ row: row.row_number, field: "MODALIDADE", value: row.sport_name, code: "SPORT_RESOLVE_FAILED", message: "Não foi possível resolver a modalidade" });
-      } else {
-        errors.push({ row: row.row_number, field: "MODALIDADE", value: "", code: "SPORT_MISSING", message: "Modalidade obrigatória para atletas" });
-      }
-    } else {
-      resolved.sport_id = sportId;
-    }
-
-    const catId = maps.categories.get(row.category_slug);
-    if (!catId) {
-      if (row.category_slug) {
-        errors.push({ row: row.row_number, field: "COMPETICAO", value: row.category_name, code: "CATEGORY_RESOLVE_FAILED", message: "Não foi possível resolver a categoria" });
-      } else {
-        errors.push({ row: row.row_number, field: "COMPETICAO", value: "", code: "CATEGORY_MISSING", message: "Competição/categoria obrigatória para atletas" });
-      }
-    } else {
-      resolved.category_id = catId;
-    }
-
-    if (!row.prova_slug) {
-      warnings.push({ row: row.row_number, field: "PROVA", value: null, code: "PROVA_EMPTY", message: "Nenhuma prova — linha ignorada" });
-      return { errors: [], warnings, resolved: {}, skip: true };
-    }
-  } else {
-    if (!resolved.delegation_id && !row.institution_slug) {
-      warnings.push({ row: row.row_number, field: "TIPO USUARIO", value: row.user_type, code: "NON_ATHLETE", message: `Tipo "${row.user_type}" sem escola — ignorado` });
-      return { errors: [], warnings, resolved: {}, skip: true };
-    }
-  }
-
-  if (row.cpf) {
-    const existingId = peopleByCpf.get(row.cpf);
-    if (existingId) {
-      resolved.person_id = existingId;
-      resolved.person_action = "reuse";
-    } else {
-      resolved.person_action = "create";
-    }
-  } else {
-    if (!isAthlete) {
-      warnings.push({ row: row.row_number, field: "CPF", value: null, code: "CPF_MISSING", message: "CPF ausente" });
-    }
-    if (row.full_name && row.birth_date) {
-      const key = `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
-      const existingId = peopleByNameDob.get(key);
-      if (existingId) {
-        resolved.person_id = existingId;
-        resolved.person_action = "reuse";
-      } else {
-        resolved.person_action = "create";
-      }
-    } else {
-      resolved.person_action = "create";
-    }
-  }
-
-  return { errors, warnings, resolved, skip: false };
-}
-
-// ─── Build Commit Payload ────────────────────────────────────────────
-
-interface ProcessedRow {
+interface PendingItem {
+  row_number: number;
+  reason_code: PendingCode;
+  reason_detail: string;
   row: NormalizedRow;
+  fingerprint: string;
+  candidate_person_id: string | null;
+}
+
+interface RowClassification {
+  status: "ok" | "pendencia" | "erro_bloqueante" | "skip";
+  errors: { row: number; field: string; value: unknown; code: string; message: string }[];
+  warnings: { row: number; field: string; value: unknown; code: string; message: string }[];
+  pending: PendingItem[];
   resolved: Record<string, string | null>;
 }
 
-function buildCommitPayload(validRows: ProcessedRow[], eventId: string) {
-  const peopleToCreate: Record<string, unknown>[] = [];
-  const seenPeopleKeys = new Set<string>();
-  const enrollments: {
-    person_key: string;
-    delegation_id: string;
-    sport_id: string;
-    category_id: string;
-    sport_event_name: string;
-    sport_event_slug: string;
-    participant_type: string;
-  }[] = [];
+// ─── Column Mapping & Normalization ──────────────────────────────────
 
-  for (const { row, resolved } of validRows) {
-    const personKey = row.cpf ?? `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
-
-    if (resolved.person_action === "create" && !seenPeopleKeys.has(personKey)) {
-      seenPeopleKeys.add(personKey);
-      peopleToCreate.push({
-        full_name: row.full_name,
-        birth_date: row.birth_date || "2000-01-01",
-        gender: row.gender,
-        cpf: row.cpf,
-        rg: row.rg,
-        email: row.email,
-        phone: row.phone,
-        institution_id: resolved.institution_id,
-        disability_type: row.pcd,
-      });
-    }
-
-    const isAthlete = row.participant_type === "athlete";
-
-    if (isAthlete && resolved.sport_id && resolved.category_id) {
-      enrollments.push({
-        person_key: personKey,
-        delegation_id: resolved.delegation_id!,
-        sport_id: resolved.sport_id!,
-        category_id: resolved.category_id!,
-        sport_event_name: row.prova_name,
-        sport_event_slug: row.prova_slug,
-        participant_type: row.participant_type,
-      });
-    } else if (!isAthlete && resolved.delegation_id) {
-      enrollments.push({
-        person_key: personKey,
-        delegation_id: resolved.delegation_id!,
-        sport_id: "",
-        category_id: "",
-        sport_event_name: "",
-        sport_event_slug: "",
-        participant_type: row.participant_type,
-      });
-    }
-  }
-
-  return {
-    event_id: eventId,
-    people_to_create: peopleToCreate,
-    enrollments,
-  };
-}
-
-// ─── Main Handler ────────────────────────────────────────────────────
-
-const MAX_ROWS = 10000;
 const COLUMN_ALIASES: Record<string, string[]> = {
   "NOME": ["NOME", "NOME COMPLETO", "NOME_COMPLETO", "NOME DO ALUNO", "ALUNO"],
   "ESCOLA": ["ESCOLA", "INSTITUICAO", "INSTITUIÇÃO", "UNIDADE ESCOLAR", "ESCOLA/INSTITUICAO"],
@@ -488,12 +186,10 @@ function normalizeStr(s: string): string {
 
 function deriveCategoryFromProva(prova: string): string {
   if (isBlank(prova)) return "";
-
   const normalized = normalizeStr(prova);
   const ageBand = normalized.match(/\b(\d{1,2}\s*[-/]\s*\d{1,2}\s*ANOS)\b/)?.[1]?.replace(/\s+/g, " ");
   const schoolBand = normalized.match(/\b(INFANTIL|JUVENIL|MIRIM)\b/)?.[1];
   const gender = normalized.match(/\b(FEMININO|MASCULINO|MISTO|MISTA)\b/)?.[1];
-
   const parts = [ageBand ?? schoolBand, gender === "MISTA" ? "MISTO" : gender].filter(Boolean);
   return parts.join(" ");
 }
@@ -502,15 +198,12 @@ function normalizeHeaders(rows: RawRow[]): RawRow[] {
   if (rows.length === 0) return rows;
   const firstRowKeys = Object.keys(rows[0]);
   const headerMap = new Map<string, string>();
-
   for (const [canonical, aliases] of Object.entries(COLUMN_ALIASES)) {
     if (firstRowKeys.some((key) => normalizeStr(key) === normalizeStr(canonical))) continue;
-
     const normalizedAliases = aliases.map((alias) => normalizeStr(alias));
     const found = firstRowKeys.find((key) => normalizedAliases.includes(normalizeStr(key)));
     if (found) headerMap.set(found, canonical);
   }
-
   return rows.map((row) => {
     const newRow: RawRow = { ...row };
     for (const [original, canonical] of headerMap) {
@@ -518,17 +211,327 @@ function normalizeHeaders(rows: RawRow[]): RawRow[] {
         newRow[canonical] = newRow[original];
       }
     }
-
     if ((!("COMPETICAO" in newRow) || isBlank(newRow["COMPETICAO"])) && !isBlank(newRow["PROVA"])) {
       const derivedCategory = deriveCategoryFromProva(String(newRow["PROVA"]));
-      if (derivedCategory) {
-        newRow["COMPETICAO"] = derivedCategory;
-      }
+      if (derivedCategory) newRow["COMPETICAO"] = derivedCategory;
     }
-
     return newRow;
   });
 }
+
+function deriveParticipantType(userType: string, funcao: string): string {
+  const ut = userType.toLowerCase();
+  if (ut.includes("atleta")) return "athlete";
+  if (funcao.toLowerCase().includes("técnico") || funcao.toLowerCase().includes("tecnico")) return "coach";
+  if (funcao.toLowerCase().includes("chefe de delegação") || funcao.toLowerCase().includes("chefe de delegacao")) return "head_of_delegation";
+  if (ut.includes("comissão técnica") || ut.includes("comissao tecnica")) return "coach";
+  if (ut.includes("prestador")) return "staff";
+  return "staff";
+}
+
+function mapColumns(raw: RawRow, rowIndex: number): NormalizedRow {
+  const fullName = normalizeName(getField(raw, "NOME", "NOME COMPLETO"));
+  const institution = getField(raw, "ESCOLA", "INSTITUICAO");
+  const sport = getField(raw, "MODALIDADE");
+  const category = getField(raw, "COMPETICAO", "CATEGORIA");
+  const prova = getField(raw, "PROVA");
+  const userType = getField(raw, "TIPO USUARIO", "TIPO_USUARIO");
+  const status = getField(raw, "STATUS DA INSCRIÇÃO", "STATUS DA INSCRICAO", "STATUS_INSCRICAO");
+  const funcao = getField(raw, "FUNCAO");
+  const pcd = getField(raw, "PCD");
+  const esfera = getField(raw, "ESFERA");
+
+  const cpfRaw = cleanCpfRaw(getField(raw, "CPF") || null);
+  const cpfDigits = extractCpfDigits(cpfRaw);
+  const cpfValid = cpfDigits && validateCpfDigits(cpfDigits) ? cpfDigits : null;
+
+  const rawBirthDate = String(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"] ?? "").trim();
+  const birthDate = parseDate(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"]);
+
+  return {
+    row_number: rowIndex + 2,
+    full_name: fullName,
+    birth_date: birthDate,
+    raw_birth_date: rawBirthDate || null,
+    gender: normalizeGender(getField(raw, "SEXO", "GENERO")),
+    cpf_valid: cpfValid,
+    cpf_raw: cpfRaw,
+    rg: getField(raw, "RG") || null,
+    email: getField(raw, "EMAIL") || null,
+    phone: getField(raw, "TELEFONE") || null,
+    institution_name: institution,
+    institution_slug: slugify(institution),
+    sport_name: sport,
+    sport_slug: slugify(sport),
+    category_name: category,
+    category_slug: slugify(category),
+    prova_name: prova,
+    prova_slug: slugify(prova),
+    user_type: userType,
+    inscription_status: status,
+    participant_type: deriveParticipantType(userType, funcao),
+    funcao,
+    pcd: isBlank(pcd) ? null : pcd,
+    esfera,
+    raw_payload: raw,
+  };
+}
+
+// ─── READ-ONLY Validation ────────────────────────────────────────────
+
+interface ReadOnlyMaps {
+  institutions: Map<string, string>;       // slug -> id
+  sports: Map<string, string>;             // slug -> id (event-scoped)
+  categories: Map<string, string>;         // slug -> id (event-scoped)
+  sportEvents: Map<string, string>;        // composite key -> id
+  delegations: Map<string, string>;        // institution_id -> delegation_id
+  existingInstitutionSlugs: Set<string>;
+}
+
+async function loadReadOnlyMaps(
+  supabase: ReturnType<typeof createClient>,
+  eventId: string,
+): Promise<ReadOnlyMaps> {
+  const [instRes, sportRes, catRes, seRes, delRes] = await Promise.all([
+    supabase.from("institutions").select("id, slug").eq("is_active", true),
+    supabase.from("sports").select("id, slug").eq("event_id", eventId),
+    supabase.from("categories").select("id, slug").eq("event_id", eventId),
+    supabase.from("sport_events").select("id, sport_id, category_id, slug").eq("event_id", eventId),
+    supabase.from("delegations").select("id, institution_id").eq("event_id", eventId),
+  ]);
+
+  const institutions = new Map<string, string>();
+  for (const i of instRes.data ?? []) institutions.set(i.slug, i.id);
+
+  const sports = new Map<string, string>();
+  for (const s of sportRes.data ?? []) sports.set(s.slug, s.id);
+
+  const categories = new Map<string, string>();
+  for (const c of catRes.data ?? []) categories.set(c.slug, c.id);
+
+  const sportEvents = new Map<string, string>();
+  for (const se of seRes.data ?? []) {
+    sportEvents.set(`${se.sport_id}|${se.category_id}|${se.slug}`, se.id);
+  }
+
+  const delegations = new Map<string, string>();
+  for (const d of delRes.data ?? []) delegations.set(d.institution_id, d.id);
+
+  return {
+    institutions,
+    sports,
+    categories,
+    sportEvents,
+    delegations,
+    existingInstitutionSlugs: new Set(institutions.keys()),
+  };
+}
+
+function classifyRow(
+  row: NormalizedRow,
+  maps: ReadOnlyMaps,
+  peopleByCpf: Map<string, string>,
+  peopleByNameDob: Map<string, string>,
+): RowClassification {
+  const errors: RowClassification["errors"] = [];
+  const warnings: RowClassification["warnings"] = [];
+  const pending: PendingItem[] = [];
+  const resolved: Record<string, string | null> = {};
+  const isAthlete = row.participant_type === "athlete";
+
+  const fingerprint = buildFingerprint(
+    row.full_name, row.birth_date, row.gender,
+    row.institution_name, row.sport_name, row.prova_name
+  );
+
+  // Skip invalid inscription status
+  if (row.inscription_status && !["válida", "valida", ""].includes(row.inscription_status.toLowerCase())) {
+    warnings.push({ row: row.row_number, field: "STATUS", value: row.inscription_status, code: "INVALID_STATUS", message: `Inscrição com status "${row.inscription_status}" — ignorada` });
+    return { status: "skip", errors: [], warnings, pending: [], resolved: {} };
+  }
+
+  // Name required
+  if (!row.full_name) {
+    errors.push({ row: row.row_number, field: "NOME", value: "", code: "NAME_MISSING", message: "Nome obrigatório" });
+    return { status: "erro_bloqueante", errors, warnings, pending, resolved };
+  }
+
+  // ── CPF classification ──
+  if (row.cpf_raw && !row.cpf_valid) {
+    // CPF present but invalid
+    pending.push({
+      row_number: row.row_number, reason_code: "CPF_INVALID",
+      reason_detail: `CPF informado "${row.cpf_raw}" não passou na validação de dígitos`,
+      row, fingerprint, candidate_person_id: null,
+    });
+    return { status: "pendencia", errors, warnings, pending, resolved };
+  }
+
+  if (!row.cpf_raw && isAthlete) {
+    // CPF missing for athlete
+    // Try name+dob fallback to suggest candidate
+    let candidateId: string | null = null;
+    if (row.full_name && row.birth_date) {
+      const key = `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
+      candidateId = peopleByNameDob.get(key) ?? null;
+    }
+    pending.push({
+      row_number: row.row_number, reason_code: "CPF_MISSING",
+      reason_detail: "Atleta sem CPF — requer resolução manual",
+      row, fingerprint, candidate_person_id: candidateId,
+    });
+    return { status: "pendencia", errors, warnings, pending, resolved };
+  }
+
+  // ── Birth date ──
+  if (isAthlete && !row.birth_date) {
+    if (row.raw_birth_date) {
+      pending.push({
+        row_number: row.row_number, reason_code: "BIRTH_DATE_INVALID",
+        reason_detail: `Data de nascimento "${row.raw_birth_date}" não pôde ser interpretada`,
+        row, fingerprint, candidate_person_id: null,
+      });
+    } else {
+      pending.push({
+        row_number: row.row_number, reason_code: "BIRTH_DATE_MISSING",
+        reason_detail: "Atleta sem data de nascimento",
+        row, fingerprint, candidate_person_id: null,
+      });
+    }
+    return { status: "pendencia", errors, warnings, pending, resolved };
+  }
+
+  if (!isAthlete && !row.birth_date) {
+    warnings.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING_STAFF", message: "Comissão técnica sem data de nascimento — seguirá com NULL" });
+  }
+
+  // ── Institution ──
+  const instId = maps.institutions.get(row.institution_slug);
+  if (!instId) {
+    if (!row.institution_slug) {
+      if (isAthlete) {
+        errors.push({ row: row.row_number, field: "ESCOLA", value: "", code: "INSTITUTION_MISSING", message: "Escola obrigatória" });
+        return { status: "erro_bloqueante", errors, warnings, pending, resolved };
+      } else {
+        warnings.push({ row: row.row_number, field: "ESCOLA", value: "", code: "INSTITUTION_MISSING_STAFF", message: "Comissão sem escola — ignorada" });
+        return { status: "skip", errors, warnings, pending, resolved };
+      }
+    }
+    // Institution doesn't exist yet — will be created on commit
+    resolved.institution_slug = row.institution_slug;
+    resolved.institution_name = row.institution_name;
+    resolved.institution_will_create = "true";
+  } else {
+    resolved.institution_id = instId;
+  }
+
+  // ── Delegation ──
+  if (resolved.institution_id) {
+    const delId = maps.delegations.get(resolved.institution_id);
+    if (delId) {
+      resolved.delegation_id = delId;
+    } else {
+      resolved.delegation_will_create = "true";
+    }
+  } else {
+    resolved.delegation_will_create = "true";
+  }
+
+  // ── Sport / Category / Sport Event (athletes only, NO auto-create) ──
+  if (isAthlete) {
+    if (!row.sport_slug) {
+      errors.push({ row: row.row_number, field: "MODALIDADE", value: "", code: "SPORT_MISSING", message: "Modalidade obrigatória para atletas" });
+      return { status: "erro_bloqueante", errors, warnings, pending, resolved };
+    }
+    const sportId = maps.sports.get(row.sport_slug);
+    if (!sportId) {
+      pending.push({
+        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND",
+        reason_detail: `Modalidade "${row.sport_name}" (slug: ${row.sport_slug}) não encontrada no catálogo do evento`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
+    }
+    resolved.sport_id = sportId;
+
+    if (!row.category_slug) {
+      errors.push({ row: row.row_number, field: "COMPETICAO", value: "", code: "CATEGORY_MISSING", message: "Categoria obrigatória para atletas" });
+      return { status: "erro_bloqueante", errors, warnings, pending, resolved };
+    }
+    const catId = maps.categories.get(row.category_slug);
+    if (!catId) {
+      pending.push({
+        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND",
+        reason_detail: `Categoria "${row.category_name}" (slug: ${row.category_slug}) não encontrada no catálogo do evento`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
+    }
+    resolved.category_id = catId;
+
+    if (!row.prova_slug) {
+      warnings.push({ row: row.row_number, field: "PROVA", value: null, code: "PROVA_EMPTY", message: "Nenhuma prova — linha ignorada" });
+      return { status: "skip", errors, warnings, pending, resolved };
+    }
+
+    // Check sport_event exists
+    const seKey = `${sportId}|${catId}|${row.prova_slug}`;
+    const seId = maps.sportEvents.get(seKey);
+    if (!seId) {
+      pending.push({
+        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND",
+        reason_detail: `Prova "${row.prova_name}" (${row.sport_name} / ${row.category_name}) não encontrada no catálogo do evento`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
+    }
+    resolved.sport_event_id = seId;
+  }
+
+  // ── Person deduplication ──
+  if (row.cpf_valid) {
+    const existingId = peopleByCpf.get(row.cpf_valid);
+    if (existingId) {
+      resolved.person_id = existingId;
+      resolved.person_action = "reuse";
+    } else {
+      resolved.person_action = "create";
+    }
+  } else {
+    // Non-athlete without CPF — try name+dob fallback
+    if (row.full_name && row.birth_date) {
+      const key = `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
+      const matches: string[] = [];
+      const exactMatch = peopleByNameDob.get(key);
+      if (exactMatch) matches.push(exactMatch);
+
+      if (matches.length === 1) {
+        resolved.person_id = matches[0];
+        resolved.person_action = "reuse";
+      } else if (matches.length > 1) {
+        pending.push({
+          row_number: row.row_number, reason_code: "PERSON_MATCH_AMBIGUOUS",
+          reason_detail: `Múltiplos matches para "${row.full_name}" nascido em ${row.birth_date}`,
+          row, fingerprint, candidate_person_id: matches[0],
+        });
+        return { status: "pendencia", errors, warnings, pending, resolved };
+      } else {
+        // No match, create new (non-athlete without CPF is allowed)
+        resolved.person_action = "create";
+        warnings.push({ row: row.row_number, field: "CPF", value: null, code: "CPF_MISSING_STAFF", message: "Comissão técnica sem CPF — pessoa será criada" });
+      }
+    } else {
+      resolved.person_action = "create";
+      warnings.push({ row: row.row_number, field: "CPF", value: null, code: "CPF_MISSING_STAFF", message: "Comissão técnica sem CPF e sem data — pessoa será criada" });
+    }
+  }
+
+  return { status: "ok", errors, warnings, pending, resolved };
+}
+
+// ─── Main Handler ────────────────────────────────────────────────────
+
+const MAX_ROWS = 10000;
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -560,52 +563,39 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
     let { rows: rawRows, event_id: eventId, mode, file_name: fileName } = body as {
-      rows: RawRow[];
-      event_id: string;
-      mode: string;
-      file_name?: string;
+      rows: RawRow[]; event_id: string; mode: string; file_name?: string;
     };
 
     rawRows = normalizeHeaders(rawRows);
 
     if (!rawRows || !eventId || !mode) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields: rows, event_id, mode" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Missing required fields: rows, event_id, mode" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
     if (mode !== "validate" && mode !== "commit") {
-      return new Response(
-        JSON.stringify({ error: 'mode must be "validate" or "commit"' }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: 'mode must be "validate" or "commit"' }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
     if (rawRows.length === 0) {
       return new Response(JSON.stringify({ error: "Planilha vazia" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
     if (rawRows.length > MAX_ROWS) {
-      return new Response(
-        JSON.stringify({ error: `Planilha excede o limite de ${MAX_ROWS} linhas (encontradas: ${rawRows.length})` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: `Planilha excede o limite de ${MAX_ROWS} linhas` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Validate required columns
     const headers = Object.keys(rawRows[0]);
-    const normalizedHeaders = headers.map((header) => normalizeStr(header));
-    const missingCols = REQUIRED_COLUMNS.filter((col) => {
+    const normalizedHdrs = headers.map(h => normalizeStr(h));
+    const missingCols = REQUIRED_COLUMNS.filter(col => {
       if (headers.includes(col)) return false;
       const aliases = COLUMN_ALIASES[col] || [col];
-      return !aliases.some((alias) => normalizedHeaders.includes(normalizeStr(alias)));
+      return !aliases.some(alias => normalizedHdrs.includes(normalizeStr(alias)));
     });
     if (missingCols.length > 0) {
-      return new Response(
-        JSON.stringify({ error: `Colunas obrigatórias ausentes: ${missingCols.join(", ")}` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: `Colunas obrigatórias ausentes: ${missingCols.join(", ")}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const serviceClient = createClient(
@@ -613,24 +603,19 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Verify event exists
     const { data: eventData, error: eventError } = await serviceClient
       .from("events").select("id").eq("id", eventId).maybeSingle();
-
     if (eventError || !eventData) {
-      return new Response(
-        JSON.stringify({ error: `Evento não encontrado: ${eventId}` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: `Evento não encontrado: ${eventId}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Normalize all rows
+    // Normalize rows
     const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i));
 
-    const processableRows = normalizedRows.filter(r => !!r.full_name);
-
-    const result = await ensureReferenceEntities(serviceClient, eventId, processableRows);
-    const maps = result.maps;
-    const refWarnings = result.warnings;
+    // Load READ-ONLY maps (no writes!)
+    const maps = await loadReadOnlyMaps(serviceClient, eventId);
 
     // Load people for dedup
     const { data: peopleData } = await serviceClient
@@ -639,142 +624,384 @@ Deno.serve(async (req: Request) => {
     const peopleByNameDob = new Map<string, string>();
     for (const p of peopleData ?? []) {
       if (p.cpf) peopleByCpf.set(p.cpf, p.id);
-      peopleByNameDob.set(`${p.full_name.toLowerCase()}|${p.birth_date}|${p.gender}`, p.id);
-    }
-
-    // Validate each row
-    const allErrors: RowResult[] = [];
-    const allWarnings: RowResult[] = [...refWarnings];
-    const validRows: ProcessedRow[] = [];
-    let skippedRows = 0;
-
-    for (const row of normalizedRows) {
-      const { errors, warnings, resolved, skip } = validateRow(row, maps, peopleByCpf, peopleByNameDob);
-      allWarnings.push(...warnings);
-      if (skip) { skippedRows++; continue; }
-      if (errors.length > 0) { allErrors.push(...errors); }
-      else { validRows.push({ row, resolved }); }
-    }
-
-    // Preview counts
-    const athleteRows = validRows.filter(r => r.row.participant_type === "athlete");
-    const sportEventKeys = new Set<string>();
-    for (const { row, resolved } of athleteRows) {
-      if (resolved.sport_id && resolved.category_id) {
-        sportEventKeys.add(`${resolved.sport_id}|${resolved.category_id}|${row.prova_slug}`);
+      if (p.full_name && p.birth_date) {
+        peopleByNameDob.set(`${p.full_name.toLowerCase()}|${p.birth_date}|${p.gender}`, p.id);
       }
     }
 
-    const uniquePeopleKeys = new Set<string>();
-    for (const { row } of validRows) {
-      const key = row.cpf ?? `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
-      uniquePeopleKeys.add(key);
+    // Classify each row
+    const allErrors: RowClassification["errors"] = [];
+    const allWarnings: RowClassification["warnings"] = [];
+    const allPending: PendingItem[] = [];
+    const validRows: { row: NormalizedRow; resolved: Record<string, string | null> }[] = [];
+    let skippedRows = 0;
+
+    // Counters
+    let cpfsValidos = 0, cpfsInvalidos = 0, cpfsMissing = 0;
+    let cpfsReutilizados = 0, cpfsNovos = 0;
+    let datasInvalidas = 0;
+    let seNaoEncontrados = 0;
+    const institutionsToCreate = new Set<string>();
+    const delegationsToCreate = new Set<string>();
+
+    for (const row of normalizedRows) {
+      const result = classifyRow(row, maps, peopleByCpf, peopleByNameDob);
+      allWarnings.push(...result.warnings);
+
+      if (result.status === "skip") { skippedRows++; continue; }
+
+      if (result.status === "erro_bloqueante") {
+        allErrors.push(...result.errors);
+        continue;
+      }
+
+      if (result.status === "pendencia") {
+        allPending.push(...result.pending);
+        for (const p of result.pending) {
+          if (p.reason_code === "CPF_INVALID") cpfsInvalidos++;
+          if (p.reason_code === "CPF_MISSING") cpfsMissing++;
+          if (p.reason_code === "BIRTH_DATE_MISSING" || p.reason_code === "BIRTH_DATE_INVALID") datasInvalidas++;
+          if (p.reason_code === "SPORT_EVENT_NOT_FOUND") seNaoEncontrados++;
+        }
+        continue;
+      }
+
+      // ok
+      allErrors.push(...result.errors);
+      validRows.push({ row, resolved: result.resolved });
+
+      if (row.cpf_valid) cpfsValidos++;
+      if (result.resolved.person_action === "reuse") cpfsReutilizados++;
+      if (result.resolved.person_action === "create") cpfsNovos++;
+      if (result.resolved.institution_will_create === "true") institutionsToCreate.add(row.institution_slug);
+      if (result.resolved.delegation_will_create === "true") delegationsToCreate.add(row.institution_slug);
     }
 
-    const preview = {
-      people_to_create: new Set(validRows.filter(r => r.resolved.person_action === "create").map(r => r.row.cpf ?? `${r.row.full_name.toLowerCase()}|${r.row.birth_date}|${r.row.gender}`)).size,
-      people_to_reuse: new Set(validRows.filter(r => r.resolved.person_action === "reuse").map(r => r.row.cpf ?? `${r.row.full_name.toLowerCase()}|${r.row.birth_date}|${r.row.gender}`)).size,
-      participants_to_create: uniquePeopleKeys.size,
-      sport_events_to_create: sportEventKeys.size,
-      enrollments_to_create: athleteRows.length,
-      staff_to_create: validRows.filter(r => r.row.participant_type !== "athlete").length,
-      institutions_created: maps.institutions.size,
-      sports_created: maps.sports.size,
-      categories_created: maps.categories.size,
+    const validateResponse = {
+      status: "validated",
+      operator_id: operatorId,
+      event_id: eventId,
+      timestamp: new Date().toISOString(),
+      summary: {
+        total_linhas: rawRows.length,
+        ok_para_importar: validRows.length,
+        pendencias: allPending.length,
+        erros_bloqueantes: allErrors.length,
+        skipped_rows: skippedRows,
+        warnings: allWarnings.length,
+      },
+      counters: {
+        novos_cpfs_validos: cpfsNovos,
+        cpfs_existentes_reutilizados: cpfsReutilizados,
+        pessoas_sem_cpf: cpfsMissing,
+        cpfs_invalidos: cpfsInvalidos,
+        datas_invalidas: datasInvalidas,
+        sport_events_nao_encontrados: seNaoEncontrados,
+        institutions_que_seriam_criadas: institutionsToCreate.size,
+        delegations_que_seriam_criadas: delegationsToCreate.size,
+      },
+      errors: allErrors.slice(0, 50),
+      warnings: allWarnings.slice(0, 50),
+      pendencias_preview: allPending.slice(0, 20).map(p => ({
+        row_number: p.row_number,
+        reason_code: p.reason_code,
+        reason_detail: p.reason_detail,
+        fingerprint: p.fingerprint,
+        normalized_name: p.row.full_name,
+        cpf_raw: p.row.cpf_raw,
+        candidate_person_id: p.candidate_person_id,
+      })),
+      institutions_preview: [...institutionsToCreate].slice(0, 10),
     };
 
+    // ── VALIDATE MODE: return without writing anything ──
     if (mode === "validate") {
-      return new Response(
-        JSON.stringify({
-          status: "validated",
-          operator_id: operatorId,
-          event_id: eventId,
-          timestamp: new Date().toISOString(),
-          summary: {
-            total_rows: rawRows.length,
-            skipped_rows: skippedRows,
-            valid: validRows.length,
-            warnings: allWarnings.length,
-            errors: allErrors.length,
-          },
-          preview,
-          errors: allErrors,
-          warnings: allWarnings,
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify(validateResponse),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // ── Mode: commit ──
+    // ── COMMIT MODE ──
     if (allErrors.length > 0) {
-      return new Response(
-        JSON.stringify({
-          status: "rejected",
-          message: `Não é possível gravar: ${allErrors.length} erros encontrados. Execute mode=validate primeiro.`,
-          errors: allErrors,
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({
+        status: "rejected",
+        message: `Não é possível gravar: ${allErrors.length} erro(s) bloqueante(s).`,
+        errors: allErrors,
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const payload = buildCommitPayload(validRows, eventId);
-
-    console.log("import-inscricoes: commit payload stats", {
-      people_to_create: payload.people_to_create.length,
-      enrollments: payload.enrollments.length,
-    });
-
-    const { data: rpcResult, error: rpcError } = await serviceClient.rpc(
-      "import_inscricoes_batch",
-      { payload }
-    );
-
-    if (rpcError) {
-      await serviceClient.from("import_logs").insert({
-        event_id: eventId,
-        performed_by: operatorId,
-        file_name: fileName || "unknown",
-        row_count: rawRows.length,
-        status: "error",
-        error_message: rpcError.message,
-      });
-      return new Response(
-        JSON.stringify({ status: "rollback", error: rpcError.message, details: rpcError }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const failedCount = rpcResult?.failed_count ?? 0;
-    const partialSuccess = failedCount > 0;
-
-    await serviceClient.from("import_logs").insert({
+    // Create import log first
+    const { data: logData } = await serviceClient.from("import_logs").insert({
       event_id: eventId,
       performed_by: operatorId,
       file_name: fileName || "unknown",
-      row_count: validRows.length,
-      status: partialSuccess ? "partial" : "success",
-      result_summary: rpcResult,
-    });
+      row_count: rawRows.length,
+      status: "processing",
+    }).select("id").single();
+    const importLogId = logData?.id;
 
-    return new Response(
-      JSON.stringify({
-        status: partialSuccess ? "partial" : "committed",
-        partial_success: partialSuccess,
-        operator_id: operatorId,
+    // ── Write pendencias ──
+    if (allPending.length > 0) {
+      const pendBatch = allPending.map(p => ({
         event_id: eventId,
-        timestamp: new Date().toISOString(),
-        result: rpcResult,
-        warnings: allWarnings,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+        import_log_id: importLogId,
+        source_file_name: fileName || null,
+        source_row_number: p.row_number,
+        raw_payload_json: p.row.raw_payload,
+        normalized_name: p.row.full_name,
+        raw_cpf: p.row.cpf_raw,
+        raw_birth_date: p.row.raw_birth_date,
+        modality_raw: p.row.sport_name,
+        prova_raw: p.row.prova_name,
+        institution_raw: p.row.institution_name,
+        pending_reason_code: p.reason_code,
+        pending_reason_detail: p.reason_detail,
+        fallback_fingerprint: p.fingerprint,
+        candidate_person_id: p.candidate_person_id,
+        resolution_status: "pending",
+      }));
+
+      // Insert in batches of 100
+      for (let i = 0; i < pendBatch.length; i += 100) {
+        await serviceClient.from("import_pendencias").insert(pendBatch.slice(i, i + 100));
+      }
+    }
+
+    // ── Create institutions (only on commit) ──
+    const newInstMap = new Map<string, string>();
+    for (const slug of institutionsToCreate) {
+      const name = validRows.find(r => r.row.institution_slug === slug)?.row.institution_name || slug;
+      const { data, error } = await serviceClient.from("institutions")
+        .insert({ name, slug, network_type: "municipal" }).select("id").single();
+      if (error) {
+        const { data: existing } = await serviceClient.from("institutions")
+          .select("id").eq("slug", slug).single();
+        if (existing) newInstMap.set(slug, existing.id);
+      } else {
+        newInstMap.set(slug, data.id);
+      }
+    }
+
+    // Merge institution maps
+    const allInstMap = new Map(maps.institutions);
+    for (const [slug, id] of newInstMap) allInstMap.set(slug, id);
+
+    // ── Create delegations (only on commit) ──
+    const newDelMap = new Map<string, string>();
+    let delegationsCreated = 0;
+    for (const slug of delegationsToCreate) {
+      const instId = allInstMap.get(slug);
+      if (!instId) continue;
+      if (maps.delegations.has(instId)) continue;
+      const { data, error } = await serviceClient.from("delegations")
+        .insert({ institution_id: instId, event_id: eventId, status: "confirmed" }).select("id").single();
+      if (error) {
+        const { data: existing } = await serviceClient.from("delegations")
+          .select("id").eq("institution_id", instId).eq("event_id", eventId).single();
+        if (existing) newDelMap.set(instId, existing.id);
+      } else {
+        newDelMap.set(instId, data.id);
+        delegationsCreated++;
+      }
+    }
+
+    const allDelMap = new Map(maps.delegations);
+    for (const [instId, delId] of newDelMap) allDelMap.set(instId, delId);
+
+    // ── Process valid rows ──
+    let peopleCreated = 0, peopleReused = 0;
+    let participantsCreated = 0, participantsReused = 0;
+    let pseCreated = 0, pseReused = 0;
+    let rowsFailed = 0;
+    let rowsSkippedDuplicate = 0;
+    const commitErrors: { row_number: number; error_code: string; error_message: string }[] = [];
+    const processedPersonKeys = new Set<string>();
+
+    // Load existing participants for this event
+    const { data: existingParticipants } = await serviceClient
+      .from("participants").select("id, person_id").eq("event_id", eventId);
+    const participantByPerson = new Map<string, string>();
+    for (const p of existingParticipants ?? []) participantByPerson.set(p.person_id, p.id);
+
+    // Load existing PSEs
+    const { data: existingPSE } = await serviceClient
+      .from("participant_sport_events").select("id, participant_id, sport_event_id");
+    const pseSet = new Set<string>();
+    for (const p of existingPSE ?? []) pseSet.set(`${p.participant_id}|${p.sport_event_id}`);
+
+    for (const { row, resolved } of validRows) {
+      try {
+        // Resolve institution_id & delegation_id
+        const instId = resolved.institution_id || allInstMap.get(row.institution_slug);
+        const delId = instId ? (resolved.delegation_id || allDelMap.get(instId)) : null;
+
+        if (!instId || !delId) {
+          commitErrors.push({ row_number: row.row_number, error_code: "DELEGATION_FAILED", error_message: "Não conseguiu resolver delegação" });
+          rowsFailed++;
+          continue;
+        }
+
+        // ── Person ──
+        const personKey = row.cpf_valid ?? `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
+        let personId = resolved.person_id || null;
+
+        if (resolved.person_action === "create") {
+          if (processedPersonKeys.has(personKey)) {
+            // Already created in this batch — lookup
+            const lookupId = row.cpf_valid
+              ? (await serviceClient.from("people").select("id").eq("cpf", row.cpf_valid).single()).data?.id
+              : (await serviceClient.from("people").select("id")
+                  .eq("full_name", row.full_name).eq("birth_date", row.birth_date ?? "").eq("gender", row.gender).single()).data?.id;
+            if (lookupId) { personId = lookupId; peopleReused++; }
+          } else {
+            processedPersonKeys.add(personKey);
+            const { data: newPerson, error: personErr } = await serviceClient.from("people").insert({
+              full_name: row.full_name,
+              birth_date: row.birth_date, // NULL for staff without DOB — NO fallback
+              gender: row.gender,
+              cpf: row.cpf_valid,
+              rg: row.rg,
+              email: row.email,
+              phone: row.phone,
+              institution_id: instId,
+              disability_type: row.pcd,
+            }).select("id").single();
+            if (personErr) {
+              // May already exist (race condition) — try lookup
+              if (row.cpf_valid) {
+                const { data: existing } = await serviceClient.from("people").select("id").eq("cpf", row.cpf_valid).single();
+                if (existing) { personId = existing.id; peopleReused++; }
+                else { commitErrors.push({ row_number: row.row_number, error_code: "PERSON_CREATE_FAILED", error_message: personErr.message }); rowsFailed++; continue; }
+              } else {
+                commitErrors.push({ row_number: row.row_number, error_code: "PERSON_CREATE_FAILED", error_message: personErr.message }); rowsFailed++; continue;
+              }
+            } else {
+              personId = newPerson.id;
+              peopleCreated++;
+              // Update dedup maps for subsequent rows
+              if (row.cpf_valid) peopleByCpf.set(row.cpf_valid, personId);
+            }
+          }
+        } else {
+          peopleReused++;
+        }
+
+        if (!personId) {
+          commitErrors.push({ row_number: row.row_number, error_code: "PERSON_MISSING", error_message: "Pessoa não resolvida" });
+          rowsFailed++;
+          continue;
+        }
+
+        // ── Participant ──
+        let participantId = participantByPerson.get(personId);
+        if (participantId) {
+          participantsReused++;
+        } else {
+          const { data: newPart, error: partErr } = await serviceClient.from("participants").insert({
+            person_id: personId,
+            event_id: eventId,
+            delegation_id: delId,
+            participant_type: row.participant_type,
+            status: "confirmed",
+          }).select("id").single();
+          if (partErr) {
+            // May already exist
+            const { data: existing } = await serviceClient.from("participants")
+              .select("id").eq("person_id", personId).eq("event_id", eventId).single();
+            if (existing) { participantId = existing.id; participantsReused++; }
+            else { commitErrors.push({ row_number: row.row_number, error_code: "PARTICIPANT_FAILED", error_message: partErr.message }); rowsFailed++; continue; }
+          } else {
+            participantId = newPart.id;
+            participantsCreated++;
+            participantByPerson.set(personId, participantId);
+          }
+        }
+
+        // ── Participant Sport Event (athletes only) ──
+        if (row.participant_type === "athlete" && resolved.sport_event_id) {
+          const pseKey = `${participantId}|${resolved.sport_event_id}`;
+          if (pseSet.has(pseKey)) {
+            pseReused++;
+            rowsSkippedDuplicate++;
+          } else {
+            const { error: pseErr } = await serviceClient.from("participant_sport_events").insert({
+              participant_id: participantId,
+              sport_event_id: resolved.sport_event_id,
+              status: "confirmed",
+            });
+            if (pseErr) {
+              if (pseErr.message?.includes("duplicate") || pseErr.message?.includes("unique")) {
+                pseReused++;
+                rowsSkippedDuplicate++;
+              } else {
+                commitErrors.push({ row_number: row.row_number, error_code: "PSE_FAILED", error_message: pseErr.message });
+                rowsFailed++;
+              }
+            } else {
+              pseCreated++;
+              pseSet.add(pseKey);
+            }
+          }
+        }
+      } catch (rowErr) {
+        commitErrors.push({ row_number: row.row_number, error_code: "UNEXPECTED", error_message: String(rowErr) });
+        rowsFailed++;
+      }
+    }
+
+    // Update import log
+    const finalStatus = rowsFailed > 0 ? (validRows.length - rowsFailed > 0 ? "partial" : "error") : "success";
+    const resultSummary = {
+      people_created: peopleCreated,
+      people_reused: peopleReused,
+      participants_created: participantsCreated,
+      participants_reused: participantsReused,
+      participant_sport_events_created: pseCreated,
+      participant_sport_events_reused: pseReused,
+      institutions_created: newInstMap.size,
+      delegations_created: delegationsCreated,
+      pendencias_created: allPending.length,
+      rows_skipped_as_duplicate: rowsSkippedDuplicate,
+      rows_failed: rowsFailed,
+    };
+
+    if (importLogId) {
+      await serviceClient.from("import_logs").update({
+        status: finalStatus,
+        result_summary: resultSummary,
+      }).eq("id", importLogId);
+    }
+
+    // Write commit errors to import_row_errors
+    if (commitErrors.length > 0) {
+      const errBatch = commitErrors.map(e => ({
+        event_id: eventId,
+        import_log_id: importLogId,
+        row_number: e.row_number,
+        error_code: e.error_code,
+        error_message: e.error_message,
+        entity: "commit",
+      }));
+      for (let i = 0; i < errBatch.length; i += 100) {
+        await serviceClient.from("import_row_errors").insert(errBatch.slice(i, i + 100));
+      }
+    }
+
+    return new Response(JSON.stringify({
+      status: finalStatus === "success" ? "committed" : finalStatus,
+      partial_success: finalStatus === "partial",
+      operator_id: operatorId,
+      event_id: eventId,
+      timestamp: new Date().toISOString(),
+      result: resultSummary,
+      errors_preview: commitErrors.slice(0, 20),
+      warnings: allWarnings.slice(0, 30),
+    }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
   } catch (err) {
     console.error("import-inscricoes error:", err);
-    return new Response(
-      JSON.stringify({ error: "Erro interno", details: String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Erro interno", details: String(err) }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
 
-// redeploy marker: 2026-04-11T19:34Z
+// redeploy marker: 2026-04-16T14:00Z
