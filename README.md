@@ -4,26 +4,40 @@ Sistema de **gestão operacional** dos Jogos Escolares de Roraima (JER e JERPA).
 
 Gerencia toda a operação do evento **após a fase de inscrição**: credenciamento, logística (transporte, alimentação, alojamento), competição, apuração e publicação de resultados.
 
-> **Navegação ✅ Refatorada** — Sistema reorganizado em 3 níveis hierárquicos (2026-04-14)
+> **Navegação ✅ Refatorada Global vs Etapa** — Separação total entre contexto Global e contexto de Etapa (2026-04-17)
 
 ---
 
 ## Estrutura de Navegação
 
-O sistema é organizado em **3 níveis hierárquicos** de acesso:
+O sistema é organizado em **3 níveis hierárquicos** + **separação Global ↔ Etapa**:
 
 ```
 ┌─────────────────────────────────────────────┐
 │          SUPER ADMIN (/super)               │
 │   Desenvolvedor / Fornecedor do sistema     │
 ├─────────────────────────────────────────────┤
-│          CLIENTE ADMIN (/admin)             │
-│   Secretaria / Coordenação do evento        │
+│   CLIENTE ADMIN — GLOBAL (/admin)           │
+│   Preparação · Acessos · Config · Sistema   │
+│   Sem itens operacionais de Etapa           │
+│   ─── botão "Entrar na Etapa" ───►          │
+├─────────────────────────────────────────────┤
+│   ETAPA (/admin/etapa/:stageId/...)         │
+│   Credenciamento · Competição · Logística   │
+│   Ocorrências · Pesquisa · Relatórios       │
+│   Sem itens do Global                       │
+│   ◄── botão "Sair da Etapa" ────            │
 ├─────────────────────────────────────────────┤
 │        OPERADORES PWA (/pwa)                │
 │   Equipes de campo (externos)               │
 └─────────────────────────────────────────────┘
 ```
+
+### Regra-de-ouro
+- **Global** nunca mostra módulos operacionais de Etapa.
+- **Etapa** nunca mostra itens do Global.
+- Saída da Etapa só pelo botão dedicado **"Sair da Etapa"**.
+- Links legados (`/admin/credenciamento`, `/admin/competicao/*`, `/admin/transporte/*`, etc.) redirecionam para a última etapa ativa ou para `/admin/etapas`.
 
 ### Super Admin (`/super`) — Desenvolvedor/Fornecedor
 
@@ -39,25 +53,39 @@ Painel exclusivo para quem desenvolve e mantém o sistema.
 - **Acesso**: apenas perfil `super_admin`
 - **Como ativar**: `INSERT INTO user_roles (user_id, role) VALUES ('<uuid>', 'super_admin');`
 
-### Cliente Admin (`/admin`) — Quem opera o evento
+### Cliente Admin GLOBAL (`/admin`) — Configuração do evento
 
-Painel completo para a equipe organizadora do evento, com **10 seções** no menu lateral:
+Painel **enxuto** com apenas o que é transversal ao evento (não operacional de etapa):
 
-| Seção | Itens | Destaque |
-|-------|-------|---------|
-| Dashboard | Home com KPIs | — |
-| Preparação | Eventos, Instituições, Delegações, Participantes, Importação, Normalização, Irregularidades | — |
-| Credenciamento | Busca/Emissão, Validação QR, Modelos | — |
-| Competição | Painel, Pré-validação, Central, **Partidas e Agenda** (mesclado), Regras, Resultados, Boletins | Toggle lista/calendário |
-| Logística | Transporte (Veículos, Rotas, Viagens), Alimentação (Tipos, Janelas, Consumo, **Dashboard**), Alojamento (Locais, Unidades, Ocupação) | Dashboard ativado |
-| Relatórios | Competição, Transporte, Alimentação, Alojamento | 4 relatórios ativados |
-| Pesquisa | Dashboard, Eventos, Pesquisadores | — |
-| Acessos | Usuários Operacionais, Links Externos, Vínculos Delegação | — |
-| Configurações | Parâmetros, Locais, Modalidades, Categorias | — |
-| Sistema | **Diagnóstico do Sistema** (mesclado: Mapa + Diagnóstico), Demo/Seeds | Tabs Mapa/Diagnóstico |
+| Seção | Itens |
+|-------|-------|
+| Dashboard | KPIs do evento ativo |
+| Preparação | Eventos, Delegações, Participantes, Importação, Normalização, Irregularidades, Etapas |
+| Relatórios Globais | Visão consolidada do evento |
+| Acessos | Usuários Operacionais, Links Externos, Vínculos Delegação |
+| Configurações | Parâmetros, Locais, Modalidades, Categorias, Modelos de Credencial |
+| Sistema | Diagnóstico do Sistema, Demo/Seeds |
+| **CTA** | **Entrar na Etapa** → leva ao seletor `/admin/etapas` |
 
-- **Acesso**: perfis `admin`, `secretaria`, `coordenacao_tecnica` e operacionais específicos por módulo
-- **Mesclagens**: Partidas+Agenda → 1 página, Mapa+Diagnóstico → 1 página
+### Cliente Admin ETAPA (`/admin/etapa/:stageId`)
+
+Tudo que é operação acontece **dentro da Etapa**, escopado por `event_stage_id`:
+
+| Módulo | Rota da Etapa |
+|--------|--------------|
+| Visão Geral | `/admin/etapa/:stageId` |
+| Credenciamento | `/admin/etapa/:stageId/credenciamento` |
+| Competição | `/admin/etapa/:stageId/competicao/*` |
+| Alojamento | `/admin/etapa/:stageId/alojamento/*` |
+| Alimentação | `/admin/etapa/:stageId/alimentacao/*` |
+| Transporte | `/admin/etapa/:stageId/transporte/*` |
+| Ocorrências | `/admin/etapa/:stageId/ocorrencias` |
+| Pesquisa | `/admin/etapa/:stageId/pesquisa` |
+| Relatórios da Etapa | `/admin/etapa/:stageId/relatorios` |
+
+- **Banner fixo** indica nome da etapa ativa.
+- **Botão "Sair da Etapa"** é a única saída para o Global.
+- **Auditoria**: cada entrada/saída registra `stage_enter` / `stage_exit` em `audit_events`.
 
 ### Operadores PWA (`/pwa`) — Equipes de campo
 

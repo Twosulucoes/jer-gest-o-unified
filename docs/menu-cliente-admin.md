@@ -1,99 +1,42 @@
 # Menu do Cliente Admin — Estrutura Completa
 
-Última atualização: 2026-04-14
+Última atualização: 2026-04-17 (Refatoração Global vs Etapa)
 
-## Estrutura do Menu Lateral
+## Princípio fundamental
 
-### Dashboard
-- **Rota:** `/admin`
-- **Ícone:** Home
-- **Perfis:** Todos
+O sistema separa rigidamente dois contextos:
+
+- **GLOBAL (`/admin`)** — preparação, configuração, acessos, relatórios consolidados. **Nunca** contém módulos operacionais de etapa.
+- **ETAPA (`/admin/etapa/:stageId/...`)** — credenciamento, competição, logística, ocorrências, pesquisa, relatórios da etapa. **Nunca** contém itens do Global.
+
+A ponte entre os dois é feita por **um único botão**:
+- No Global: **"Entrar na Etapa"** → vai para `/admin/etapas` (seletor).
+- Na Etapa: **"Sair da Etapa"** → volta para `/admin`.
 
 ---
+
+## Menu Global (`/admin`)
+
+### Dashboard
+- `/admin` — Home com KPIs do evento ativo
 
 ### Preparação (FolderOpen)
 | Item | Rota | Perfis |
 |------|------|--------|
 | Eventos | `/admin/eventos` | admin, secretaria, coord. técnica |
-| **Delegações (Escolas)** *(unificado)* | `/admin/delegacoes` | admin, secretaria, coord. técnica |
+| Delegações (Escolas) | `/admin/delegacoes` | admin, secretaria, coord. técnica |
 | Participantes | `/admin/participantes` | admin, secretaria, coord. técnica |
 | Importação | `/admin/importacao` | admin, secretaria |
 | Normalização | `/admin/normalizacao-provas` | admin, secretaria, coord. técnica |
 | Irregularidades | `/admin/irregularidades` | admin, secretaria, coord. técnica |
+| Etapas | `/admin/etapas` | admin, secretaria, coord. técnica |
 
-> **Nota:** "Instituições" foi removido do menu (Fase 1). Escola e Delegação são tratadas como uma coisa só. Página `/admin/instituicoes` permanece acessível por URL até a Fase 3 (fusão no banco).
-
----
-
-### Credenciamento (BadgeCheck)
+### Relatórios Globais (FileBarChart)
 | Item | Rota | Perfis |
 |------|------|--------|
-| Busca e Emissão | `/admin/credenciamento` | admin, secretaria, coord. técnica |
-| Validação QR | `/admin/validacao-qr` | admin, secretaria, coord. técnica, transporte, alimentação |
-| Modelos de Credencial | `/admin/credenciais/modelos` | admin, secretaria, coord. técnica |
+| Central de Relatórios | `/admin/relatorios` | admin, secretaria, coord. técnica |
 
----
-
-### Competição (Trophy)
-| Item | Rota | Perfis |
-|------|------|--------|
-| Painel de Controle | `/admin/competicao/painel` | admin, secretaria, coord. técnica |
-| Pré-validação | `/admin/competicao/pre-validacao` | admin, secretaria, coord. técnica |
-| Central da Competição | `/admin/competicao/central` | admin, secretaria, coord. técnica |
-| **Partidas e Agenda** *(mesclado)* | `/admin/competicao/partidas-agenda` | admin, secretaria, coord. técnica |
-| Regras por Prova | `/admin/competicao/regras` | admin, secretaria, coord. técnica |
-| Regras em Lote | `/admin/competicao/regras/lote` | admin, secretaria, coord. técnica |
-| Resultados | `/admin/competicao/resultados` | admin, secretaria, coord. técnica |
-| Boletins Oficiais | `/admin/boletins` | admin, secretaria, coord. técnica |
-
-> **Nota:** Fases (`/admin/competicao/fases`) e Grupos (`/admin/competicao/grupos`) foram removidos do menu — são gerenciados via wizard na Central da Competição. Acessíveis via URL direto.
-
----
-
-### Logística (Truck)
-
-#### Transporte
-| Item | Rota | Perfis |
-|------|------|--------|
-| Veículos | `/admin/transporte/veiculos` | admin, secretaria, coord. técnica, transporte |
-| Rotas | `/admin/transporte/rotas` | admin, secretaria, coord. técnica, transporte |
-| Viagens | `/admin/transporte/viagens` | admin, secretaria, coord. técnica, transporte |
-
-#### Alimentação
-| Item | Rota | Perfis |
-|------|------|--------|
-| Tipos de Refeição | `/admin/alimentacao/tipos` | admin, secretaria, coord. técnica, alimentação |
-| Janelas de Serviço | `/admin/alimentacao/janelas` | admin, secretaria, coord. técnica, alimentação |
-| Consumo | `/admin/alimentacao/consumo` | admin, secretaria, coord. técnica, alimentação |
-| **Dashboard** *(ativado)* | `/admin/alimentacao/dashboard` | admin, secretaria, coord. técnica, alimentação |
-
-#### Alojamento
-| Item | Rota | Perfis |
-|------|------|--------|
-| Locais | `/admin/alojamento/locais` | admin, secretaria, coord. técnica |
-| Unidades | `/admin/alojamento/unidades` | admin, secretaria, coord. técnica |
-| Ocupação | `/admin/alojamento/ocupacao` | admin, secretaria, coord. técnica |
-
----
-
-### Relatórios (FileBarChart) — *NOVA SEÇÃO*
-| Item | Rota | Perfis |
-|------|------|--------|
-| Competição | `/admin/relatorios` | admin, secretaria, coord. técnica |
-| **Transporte** *(ativado)* | `/admin/transporte/relatorios` | admin, secretaria, coord. técnica, transporte |
-| **Alimentação** *(ativado)* | `/admin/alimentacao/relatorios` | admin, secretaria, coord. técnica, alimentação |
-| **Alojamento** *(ativado)* | `/admin/alojamento/relatorios` | admin, secretaria, coord. técnica |
-
----
-
-### Pesquisa de Satisfação (MessageSquare)
-| Item | Rota | Perfis |
-|------|------|--------|
-| Dashboard | `/admin/pesquisa` | admin, secretaria |
-| Eventos de Pesquisa | `/admin/pesquisa/eventos` | admin, secretaria |
-| Pesquisadores | `/admin/pesquisa/pesquisadores` | admin, secretaria |
-
----
+> Relatórios operacionais (Transporte, Alimentação, Alojamento, Competição) ficam **dentro da Etapa**.
 
 ### Acessos (Users)
 | Item | Rota | Perfis |
@@ -102,8 +45,6 @@
 | Links Externos | `/admin/links` | admin, secretaria |
 | Vínculos Delegação | `/admin/acessos/delegacoes` | admin, secretaria |
 
----
-
 ### Configurações (Settings)
 | Item | Rota | Perfis |
 |------|------|--------|
@@ -111,34 +52,70 @@
 | Locais de Competição | `/admin/locais` | admin, secretaria, coord. técnica |
 | Modalidades | `/admin/modalidades` | admin, secretaria, coord. técnica |
 | Categorias | `/admin/categorias` | admin, secretaria, coord. técnica |
-
----
+| Modelos de Credencial | `/admin/credenciais/modelos` | admin, secretaria, coord. técnica |
 
 ### Sistema (Cog)
 | Item | Rota | Perfis |
 |------|------|--------|
-| **Diagnóstico do Sistema** *(mesclado)* | `/admin/sistema/diagnostico` | admin, secretaria, coord. técnica |
+| Diagnóstico do Sistema | `/admin/sistema/diagnostico` | admin, secretaria, coord. técnica |
 | Demo/Seeds | `/admin/demo` | admin, coord. técnica |
+
+### CTA dedicada
+**"Entrar na Etapa"** (botão destacado no topo da sidebar) → leva ao seletor `/admin/etapas`.
 
 ---
 
-## Rotas acessíveis apenas via URL (sem link no menu)
+## Menu Etapa (`/admin/etapa/:stageId/...`)
 
-| Rota | Página | Motivo |
-|------|--------|--------|
-| `/admin/competicao/fases` | CompeticaoFasesPage | Gerenciado via Central |
-| `/admin/competicao/grupos` | CompeticaoGruposPage | Gerenciado via Central |
-| `/admin/schema/validador` | SchemaValidadorPage | Ferramenta avançada |
-| `/admin/auth/email-templates` | EmailTemplatesPage | Configuração avançada |
-| `/admin/atletas/qrcode` | AtletaQrCodePage | Acesso via participante |
-| `/admin/competicao/sincronizar-equipes` | SincronizarEquipesPage | Acesso via Central |
-| `/admin/competicao/equipes` | CompeticaoEquipesPage | Acesso via Central |
-| `/admin/dados` | CentralDadosPage | Acesso via Importação |
+Banner fixo no topo identifica a etapa ativa. Botão **"Sair da Etapa"** no header retorna ao Global.
 
-## Changelog de mesclagens
+| Módulo | Rota | Perfis |
+|--------|------|--------|
+| Visão Geral | `/admin/etapa/:stageId` | admin, secretaria, coord. técnica |
+| Credenciamento | `/admin/etapa/:stageId/credenciamento` | admin, secretaria, coord. técnica |
+| Validação QR | `/admin/etapa/:stageId/validacao-qr` | admin, secretaria, coord. técnica, transporte, alimentação |
+| Competição → Painel | `/admin/etapa/:stageId/competicao/painel` | admin, secretaria, coord. técnica |
+| Competição → Pré-validação | `/admin/etapa/:stageId/competicao/pre-validacao` | admin, secretaria, coord. técnica |
+| Competição → Central | `/admin/etapa/:stageId/competicao/central` | admin, secretaria, coord. técnica |
+| Competição → Partidas e Agenda | `/admin/etapa/:stageId/competicao/partidas-agenda` | admin, secretaria, coord. técnica |
+| Competição → Regras por Prova | `/admin/etapa/:stageId/competicao/regras` | admin, secretaria, coord. técnica |
+| Competição → Resultados | `/admin/etapa/:stageId/competicao/resultados` | admin, secretaria, coord. técnica |
+| Competição → Boletins | `/admin/etapa/:stageId/boletins` | admin, secretaria, coord. técnica |
+| Transporte → Veículos / Rotas / Viagens | `/admin/etapa/:stageId/transporte/*` | admin, secretaria, coord. técnica, transporte |
+| Alimentação → Tipos / Janelas / Consumo / Dashboard | `/admin/etapa/:stageId/alimentacao/*` | admin, secretaria, coord. técnica, alimentação |
+| Alojamento → Locais / Unidades / Ocupação | `/admin/etapa/:stageId/alojamento/*` | admin, secretaria, coord. técnica |
+| Ocorrências | `/admin/etapa/:stageId/ocorrencias` | admin, secretaria, coord. técnica |
+| Pesquisa | `/admin/etapa/:stageId/pesquisa` | admin, secretaria |
+| Relatórios da Etapa | `/admin/etapa/:stageId/relatorios` | admin, secretaria, coord. técnica |
 
-- **Partidas + Agenda** → `CompeticaoPartidasAgendaPage` com toggle Lista/Calendário
-- **Mapa do Sistema + Diagnóstico Competição** → `SistemaDiagnosticoPage` com tabs
-- **4 relatórios órfãos** ativados no menu (Transporte, Alimentação, Alojamento, Competição)
-- **Dashboard Alimentação** ativado no menu
-- **Fases e Grupos** removidos do menu (acessíveis via wizard na Central)
+---
+
+## Redirecionamento de URLs legadas
+
+Acessos a rotas antigas (sem `etapa/:stageId`) caem no componente `RedirectToEtapas`:
+
+1. Se houver `jer_last_active_stage_id` no `localStorage` → redireciona para a versão escopada (`/admin/etapa/<id>/<modulo>`).
+2. Caso contrário → redireciona para `/admin/etapas` com toast "Selecione uma etapa primeiro".
+
+URLs cobertas: `/admin/credenciamento`, `/admin/competicao/*`, `/admin/transporte/*`, `/admin/alimentacao/*`, `/admin/alojamento/*`, `/admin/ocorrencias`, `/admin/boletins`.
+
+---
+
+## Auditoria
+
+A entrada e saída do contexto de Etapa registra eventos em `public.audit_events`:
+
+| Action | Quando | Payload |
+|--------|--------|---------|
+| `stage_enter` | Mount do `StageLayout` | `{ event_id, stage_name, stage_kind }` |
+| `stage_exit` | Unmount do `StageLayout` | `{ event_id, stage_name, stage_kind }` |
+
+---
+
+## Mapa de perfis com acesso à Etapa
+
+- **admin**, **secretaria**, **coordenacao_tecnica** — acesso total.
+- **transporte**, **alimentacao** — acesso aos seus módulos dentro da Etapa.
+- **coordenador_modalidade** — Competição filtrada por suas modalidades.
+- **delegacao** — **NÃO** acessa Web. Usa exclusivamente o PWA.
+- **mesario / arbitragem** — apenas `/aovivo`.
