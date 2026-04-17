@@ -50,6 +50,15 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
   replaced: { label: "Substituída", variant: "secondary" },
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  athlete: "Atleta",
+  coach: "Técnico",
+  head_of_delegation: "Chefe de delegação",
+  staff: "Staff",
+  referee: "Árbitro",
+  guest: "Convidado",
+};
+
 const PAGE_SIZE = 50;
 
 export default function CredenciamentoExternoPage() {
