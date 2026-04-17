@@ -59,7 +59,7 @@ export default function AlojamentoRelatoriosPage() {
     queryFn: async () => {
       let q = supabase
         .from("lodging_occupancies")
-        .select("*, lodging_units(name, capacity, location_id, lodging_locations(name)), participants(full_name, delegation_id, delegations(institutions(name)))")
+        .select("*, lodging_units(name, capacity, location_id, lodging_locations(name)), participants(person:people(full_name), delegation_id, delegations(institutions(name)))")
         .eq("event_id", eventId!)
         .order("checked_in_at", { ascending: false });
 
@@ -94,7 +94,7 @@ export default function AlojamentoRelatoriosPage() {
     const rows = ["Participante,Delegação,Local,Unidade,Status,Check-in,Check-out"];
     for (const o of occupancies) {
       rows.push([
-        `"${o.participants?.full_name || ""}"`,
+        `"${o.participants?.person?.full_name || ""}"`,
         `"${o.participants?.delegations?.institutions?.name || ""}"`,
         `"${o.lodging_units?.lodging_locations?.name || ""}"`,
         `"${o.lodging_units?.name || ""}"`,
@@ -203,7 +203,7 @@ export default function AlojamentoRelatoriosPage() {
             <TableBody>
               {occupancies.slice(0, 200).map((o: any) => (
                 <TableRow key={o.id}>
-                  <TableCell className="font-medium">{o.participants?.full_name || "—"}</TableCell>
+                  <TableCell className="font-medium">{o.participants?.person?.full_name || "—"}</TableCell>
                   <TableCell>{o.participants?.delegations?.institutions?.name || "—"}</TableCell>
                   <TableCell>{o.lodging_units?.lodging_locations?.name || "—"}</TableCell>
                   <TableCell>{o.lodging_units?.name || "—"}</TableCell>

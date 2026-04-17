@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Loader2,
   User,
+  Camera,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useActiveEventId } from "@/contexts/EventContext";
+import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 
 interface ValidationResult {
   result: string;
@@ -55,6 +57,7 @@ export default function ValidacaoQRPage() {
   const [scanPoint, setScanPoint] = useState("general");
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
@@ -117,6 +120,15 @@ export default function ValidacaoQRPage() {
     setResult(null);
   };
 
+  const handleCameraScan = useCallback((raw: string) => {
+    setScannerOpen(false);
+    setQrInput(raw.trim());
+    // Auto-validate after camera scan
+    setTimeout(() => {
+      document.getElementById("btn-validate-qr")?.click();
+    }, 100);
+  }, []);
+
   const resultConfig = result ? RESULT_CONFIG[result.result] ?? {
     label: result.result.toUpperCase(),
     icon: <AlertTriangle className="h-8 w-8" />,
@@ -178,6 +190,15 @@ export default function ValidacaoQRPage() {
                   autoFocus
                 />
                 <Button
+                  variant="outline"
+                  onClick={() => setScannerOpen(true)}
+                  disabled={!selectedEventId || validating}
+                  title="Abrir câmera"
+                >
+                  <Camera className="h-4 w-4" />
+                </Button>
+                <Button
+                  id="btn-validate-qr"
                   onClick={handleValidate}
                   disabled={!qrInput.trim() || !selectedEventId || validating}
                 >
@@ -253,10 +274,20 @@ export default function ValidacaoQRPage() {
           <ScanLine className="h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground font-medium">Pronto para validar</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Escaneie um QR Code ou cole o valor no campo acima.
+            Clique na câmera para escanear ou cole o valor no campo acima.
           </p>
+          <Button className="mt-4" onClick={() => setScannerOpen(true)} disabled={!selectedEventId}>
+            <Camera className="mr-2 h-4 w-4" /> Abrir câmera
+          </Button>
         </div>
       )}
+
+      <QrCodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleCameraScan}
+        title="Validar Credencial"
+      />
     </div>
   );
 }

@@ -52,7 +52,7 @@ export default function AlimentacaoRelatoriosPage() {
     queryFn: async () => {
       let q = supabase
         .from("meal_consumptions")
-        .select("*, meal_windows(label, service_date, meal_type_id, meal_types(name)), participants(full_name, delegation_id, delegations(institutions(name)))")
+        .select("*, meal_windows(label, service_date, meal_type_id, meal_types(name)), participants(person:people(full_name), delegation_id, delegations(institutions(name)))")
         .order("consumed_at", { ascending: false });
 
       // Filter by event through meal_windows
@@ -88,7 +88,7 @@ export default function AlimentacaoRelatoriosPage() {
     const rows = ["Participante,Delegação,Refeição,Data/Hora,Método"];
     for (const c of consumptions) {
       rows.push([
-        `"${c.participants?.full_name || ""}"`,
+        `"${c.participants?.person?.full_name || ""}"`,
         `"${c.participants?.delegations?.institutions?.name || ""}"`,
         `"${c.meal_windows?.label || ""}"`,
         c.consumed_at ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm") : "",
@@ -209,7 +209,7 @@ export default function AlimentacaoRelatoriosPage() {
             <TableBody>
               {consumptions.slice(0, 200).map((c: any) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.participants?.full_name || "—"}</TableCell>
+                  <TableCell className="font-medium">{c.participants?.person?.full_name || "—"}</TableCell>
                   <TableCell>{c.participants?.delegations?.institutions?.name || "—"}</TableCell>
                   <TableCell>{c.meal_windows?.label || "—"}</TableCell>
                   <TableCell>{c.consumed_at ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm") : "—"}</TableCell>

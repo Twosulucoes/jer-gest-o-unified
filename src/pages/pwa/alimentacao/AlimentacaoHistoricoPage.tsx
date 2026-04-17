@@ -10,7 +10,7 @@ interface ConsumptionItem {
   id: string;
   consumed_at: string;
   method: string;
-  participant: { full_name: string } | null;
+  participant: { person: { full_name: string } | null } | null;
   meal_window: { meal_type: { name: string } | null } | null;
 }
 
@@ -24,7 +24,7 @@ export default function AlimentacaoHistoricoPage() {
       const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
         .from("meal_consumptions")
-        .select("id, consumed_at, method, participant:participants(full_name), meal_window:meal_windows(meal_type:meal_types(name))")
+        .select("id, consumed_at, method, participant:participants(person:people(full_name)), meal_window:meal_windows(meal_type:meal_types(name))")
         .gte("consumed_at", today + "T00:00:00")
         .order("consumed_at", { ascending: false })
         .limit(50);
@@ -54,7 +54,7 @@ export default function AlimentacaoHistoricoPage() {
           <Card key={item.id}>
             <CardContent className="p-3 flex items-center justify-between">
               <div>
-                <p className="font-medium text-sm">{item.participant?.full_name || "—"}</p>
+                <p className="font-medium text-sm">{item.participant?.person?.full_name || "—"}</p>
                 <p className="text-xs text-muted-foreground">
                   {(item.meal_window as any)?.meal_type?.name || "Refeição"} • {item.method === "qr" ? "QR" : "Manual"}
                 </p>

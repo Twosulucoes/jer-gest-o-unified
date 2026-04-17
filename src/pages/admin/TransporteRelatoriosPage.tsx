@@ -47,7 +47,7 @@ export default function TransporteRelatoriosPage() {
     queryFn: async () => {
       let q = supabase
         .from("transport_trips")
-        .select("*, transport_routes(name, origin, destination), transport_vehicles(label, plate), transport_passengers(id, participant_id, status, boarded_at, participants(full_name, delegations(institutions(name))))")
+        .select("*, transport_routes(name, origin, destination), transport_vehicles(label, plate), transport_passengers(id, participant_id, status, boarded_at, participants(person:people(full_name), delegations(institutions(name))))")
         .eq("event_id", eventId!)
         .order("scheduled_at", { ascending: false });
 
@@ -84,7 +84,7 @@ export default function TransporteRelatoriosPage() {
       } else {
         for (const p of passengers) {
           rows.push(base.concat([
-            `"${p.participants?.full_name || ""}"`,
+            `"${p.participants?.person?.full_name || ""}"`,
             `"${p.participants?.delegations?.institutions?.name || ""}"`,
             p.boarded_at ? format(new Date(p.boarded_at), "dd/MM/yyyy HH:mm") : "",
           ]).join(","));
