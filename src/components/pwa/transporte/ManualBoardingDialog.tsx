@@ -70,11 +70,14 @@ export function ManualBoardingDialog({
         photoUrl = urlData.publicUrl;
       }
 
+      const { data: { session } } = await supabase.auth.getSession();
+
       const { error } = await supabase.from("transport_passengers").insert({
         trip_id: tripId,
         participant_id: null,
         status: "boarded",
         boarded_at: new Date().toISOString(),
+        boarded_by: session?.user.id ?? null,
         is_manual: true,
         manual_name: name.trim(),
         manual_cpf: cpf.trim() || null,

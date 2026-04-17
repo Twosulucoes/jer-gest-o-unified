@@ -237,9 +237,11 @@ export default function TransporteEmbarquePage() {
         return;
       }
 
+      const { data: { session: boardSession } } = await supabase.auth.getSession();
+
       const { error } = await supabase
         .from("transport_passengers")
-        .update({ status: "boarded", boarded_at: new Date().toISOString() })
+        .update({ status: "boarded", boarded_at: new Date().toISOString(), boarded_by: boardSession?.user.id ?? null })
         .eq("id", passenger.id);
       if (error) throw error;
 
