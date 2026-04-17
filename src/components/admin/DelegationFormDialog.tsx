@@ -8,8 +8,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Form, FormField, FormItem, FormLabel, FormControl, FormMessage,
+  Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription,
 } from "@/components/ui/form";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -23,15 +24,37 @@ const STATUS_OPTIONS = [
   { value: "cancelled", label: "Cancelada" },
 ];
 
+const NETWORK_TYPE_OPTIONS = [
+  { value: "municipal", label: "Municipal" },
+  { value: "estadual", label: "Estadual" },
+  { value: "federal", label: "Federal" },
+  { value: "privada", label: "Privada" },
+];
+
 const delegationSchema = z.object({
   event_id: z.string().min(1, "Selecione um evento"),
-  institution_id: z.string().min(1, "Selecione uma instituição"),
   status: z.string().min(1, "Selecione o status"),
-  chief_name: z.string().trim().max(200, "Máximo 200 caracteres").optional().or(z.literal("")),
-  chief_phone: z.string().trim().max(30, "Máximo 30 caracteres").optional().or(z.literal("")),
+  // Dados da escola (embutidos na delegação)
+  school_name: z.string().min(2, "Nome da escola deve ter no mínimo 2 caracteres"),
+  school_official_name: z.string().optional().or(z.literal("")),
+  school_slug: z.string().min(2, "Slug deve ter no mínimo 2 caracteres")
+    .regex(/^[a-z0-9-]+$/, "Slug: apenas letras minúsculas, números e hífens"),
+  school_network_type: z.string().min(1, "Selecione o tipo de rede"),
+  school_city: z.string().optional().or(z.literal("")),
+  school_state: z.string().optional().or(z.literal(""))
+    .refine((val) => !val || /^[A-Z]{2}$/.test(val), "UF deve ter 2 letras maiúsculas"),
+  school_district: z.string().optional().or(z.literal("")),
+  school_contact_name: z.string().optional().or(z.literal("")),
+  school_contact_phone: z.string().optional().or(z.literal("")),
+  school_contact_email: z.string().optional().or(z.literal(""))
+    .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "E-mail inválido"),
+  school_is_active: z.boolean(),
+  // Chefia
+  chief_name: z.string().trim().max(200).optional().or(z.literal("")),
+  chief_phone: z.string().trim().max(30).optional().or(z.literal("")),
   chief_email: z.string().trim().optional().or(z.literal(""))
     .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "E-mail inválido"),
-  notes: z.string().trim().max(1000, "Máximo 1000 caracteres").optional().or(z.literal("")),
+  notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
 export type DelegationFormValues = z.infer<typeof delegationSchema>;
@@ -39,113 +62,107 @@ export type DelegationFormValues = z.infer<typeof delegationSchema>;
 interface DelegationFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  delegation?: Tables<"delegations"> | null;
+  delegation?: (Tables<"delegations"> & Record<string, any>) | null;
   events: Tables<"events">[];
-  institutions: Tables<"institutions">[];
   onSubmit: (values: DelegationFormValues) => void;
   isPending: boolean;
 }
 
+const EMPTY_VALUES: DelegationFormValues = {
+  event_id: "", status: "pending",
+  school_name: "", school_official_name: "", school_slug: "",
+  school_network_type: "municipal",
+  school_city: "", school_state: "", school_district: "",
+  school_contact_name: "", school_contact_phone: "", school_contact_email: "",
+  school_is_active: true,
+  chief_name: "", chief_phone: "", chief_email: "", notes: "",
+};
+
 export default function DelegationFormDialog({
-  open, onOpenChange, delegation, events, institutions, onSubmit, isPending,
+  open, onOpenChange, delegation, events, onSubmit, isPending,
 }: DelegationFormDialogProps) {
   const isEditing = !!delegation;
 
   const form = useForm<DelegationFormValues>({
     resolver: zodResolver(delegationSchema),
-    defaultValues: {
-      event_id: "", institution_id: "", status: "pending",
-      chief_name: "", chief_phone: "", chief_email: "", notes: "",
-    },
+    defaultValues: EMPTY_VALUES,
   });
 
   useEffect(() => {
     if (delegation) {
+      const d = delegation as any;
       form.reset({
-        event_id: delegation.event_id,
-        institution_id: delegation.institution_id,
-        status: delegation.status,
-        chief_name: delegation.chief_name ?? "",
-        chief_phone: delegation.chief_phone ?? "",
-        chief_email: delegation.chief_email ?? "",
-        notes: delegation.notes ?? "",
+        event_id: d.event_id,
+        status: d.status,
+        school_name: d.school_name ?? "",
+        school_official_name: d.school_official_name ?? "",
+        school_slug: d.school_slug ?? "",
+        school_network_type: d.school_network_type ?? "municipal",
+        school_city: d.school_city ?? "",
+        school_state: d.school_state ?? "",
+        school_district: d.school_district ?? "",
+        school_contact_name: d.school_contact_name ?? "",
+        school_contact_phone: d.school_contact_phone ?? "",
+        school_contact_email: d.school_contact_email ?? "",
+        school_is_active: d.school_is_active ?? true,
+        chief_name: d.chief_name ?? "",
+        chief_phone: d.chief_phone ?? "",
+        chief_email: d.chief_email ?? "",
+        notes: d.notes ?? "",
       });
     } else {
       form.reset({
+        ...EMPTY_VALUES,
         event_id: events.length === 1 ? events[0].id : "",
-        institution_id: "",
-        status: "pending",
-        chief_name: "", chief_phone: "", chief_email: "", notes: "",
       });
     }
   }, [delegation, events, form]);
 
+  const handleNameChange = (value: string) => {
+    form.setValue("school_name", value);
+    if (!isEditing || form.getValues("school_slug") === "") {
+      const slug = value
+        .toLowerCase().normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      form.setValue("school_slug", slug);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar Delegação" : "Nova Delegação"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar Delegação (Escola)" : "Nova Delegação (Escola)"}</DialogTitle>
           <DialogDescription>
-            {isEditing ? "Atualize os dados da delegação." : "Preencha os dados para registrar uma nova delegação."}
+            Cada delegação representa uma escola participante do evento.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Bloco evento + status */}
             <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="event_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Evento</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {events.map((ev) => (
-                          <SelectItem key={ev.id} value={ev.id}>{ev.name} ({ev.year})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="institution_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Instituição</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Selecione a instituição" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {institutions.map((inst) => (
-                          <SelectItem key={inst.id} value={inst.id}>{inst.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
+              <FormField control={form.control} name="event_id" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Evento</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {events.map((ev) => (
+                        <SelectItem key={ev.id} value={ev.id}>{ev.name} ({ev.year})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    </FormControl>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {STATUS_OPTIONS.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -154,58 +171,112 @@ export default function DelegationFormDialog({
                   </Select>
                   <FormMessage />
                 </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="chief_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Chefe da Delegação</FormLabel>
-                    <FormControl><Input placeholder="Nome completo" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="chief_phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone</FormLabel>
-                    <FormControl><Input placeholder="(95) 99999-0000" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="chief_email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail</FormLabel>
-                    <FormControl><Input placeholder="chefe@escola.com" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              )} />
             </div>
 
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
+            {/* Bloco escola */}
+            <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
+              <h3 className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">Dados da Escola</h3>
+
+              <FormField control={form.control} name="school_name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Observações</FormLabel>
-                  <FormControl><Textarea placeholder="Observações sobre a delegação (opcional)" rows={3} {...field} /></FormControl>
+                  <FormLabel>Nome</FormLabel>
+                  <FormControl><Input placeholder="Escola Municipal João da Silva" {...field}
+                    onChange={(e) => handleNameChange(e.target.value)} /></FormControl>
                   <FormMessage />
                 </FormItem>
-              )}
-            />
+              )} />
+
+              <FormField control={form.control} name="school_official_name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome oficial</FormLabel>
+                  <FormControl><Input placeholder="Opcional" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="school_slug" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl><Input placeholder="escola-joao-silva" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="school_network_type" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de rede</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {NETWORK_TYPE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <FormField control={form.control} name="school_city" render={({ field }) => (
+                  <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input placeholder="Boa Vista" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="school_state" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>UF</FormLabel>
+                    <FormControl><Input placeholder="RR" maxLength={2} {...field}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="school_district" render={({ field }) => (
+                  <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input placeholder="Centro" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <FormField control={form.control} name="school_contact_name" render={({ field }) => (
+                  <FormItem><FormLabel>Contato (escola)</FormLabel><FormControl><Input placeholder="Diretor(a)" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="school_contact_phone" render={({ field }) => (
+                  <FormItem><FormLabel>Telefone</FormLabel><FormControl><Input placeholder="(95) 99999-0000" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="school_contact_email" render={({ field }) => (
+                  <FormItem><FormLabel>E-mail</FormLabel><FormControl><Input placeholder="contato@escola.com" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+
+              <FormField control={form.control} name="school_is_active" render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border bg-card p-3">
+                  <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Ativa</FormLabel>
+                    <FormDescription>Escola disponível para participação.</FormDescription>
+                  </div>
+                </FormItem>
+              )} />
+            </div>
+
+            {/* Bloco chefia */}
+            <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
+              <h3 className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">Chefia da Delegação</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <FormField control={form.control} name="chief_name" render={({ field }) => (
+                  <FormItem><FormLabel>Chefe</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="chief_phone" render={({ field }) => (
+                  <FormItem><FormLabel>Telefone</FormLabel><FormControl><Input placeholder="(95) 99999-0000" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="chief_email" render={({ field }) => (
+                  <FormItem><FormLabel>E-mail</FormLabel><FormControl><Input placeholder="chefe@escola.com" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+              <FormField control={form.control} name="notes" render={({ field }) => (
+                <FormItem><FormLabel>Observações</FormLabel><FormControl><Textarea rows={3} placeholder="Opcional" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

@@ -40,16 +40,7 @@ export default function DelegacoesPage() {
     },
   });
 
-  const { data: institutions = [] } = useQuery({
-    queryKey: ["institutions"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("institutions").select("*").order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { stageId, participantIds } = useStageParticipantFilter();
+  const { stageId } = useStageParticipantFilter();
 
   // Quando filtrando por etapa, calcula os delegation_id que têm participantes na etapa
   const { data: stageDelegationIds } = useQuery({
@@ -81,12 +72,21 @@ export default function DelegacoesPage() {
   }, [allDelegations, stageId, stageDelegationIds]);
 
   const eventsMap = new Map(events.map((e) => [e.id, e]));
-  const institutionsMap = new Map(institutions.map((i) => [i.id, i]));
 
   const toPayload = (values: DelegationFormValues) => ({
     event_id: values.event_id,
-    institution_id: values.institution_id,
     status: values.status,
+    school_name: values.school_name,
+    school_official_name: values.school_official_name || null,
+    school_slug: values.school_slug,
+    school_network_type: values.school_network_type,
+    school_city: values.school_city || null,
+    school_state: values.school_state || null,
+    school_district: values.school_district || null,
+    school_contact_name: values.school_contact_name || null,
+    school_contact_phone: values.school_contact_phone || null,
+    school_contact_email: values.school_contact_email || null,
+    school_is_active: values.school_is_active,
     chief_name: values.chief_name || null,
     chief_phone: values.chief_phone || null,
     chief_email: values.chief_email || null,
@@ -94,8 +94,8 @@ export default function DelegacoesPage() {
   });
 
   const handleError = (err: Error, action: string) => {
-    if (err.message?.includes("delegations_event_institution_key")) {
-      toast.error("Esta instituição já possui uma delegação cadastrada para o evento selecionado.");
+    if (err.message?.includes("delegations_school_slug_event_key") || err.message?.includes("institutions_slug_key")) {
+      toast.error("Já existe uma escola com este slug. Escolha outro.");
     } else {
       toast.error(`Erro ao ${action} delegação: ${err.message}`);
     }
@@ -103,7 +103,7 @@ export default function DelegacoesPage() {
 
   const createMutation = useMutation({
     mutationFn: async (values: DelegationFormValues) => {
-      const { error } = await supabase.from("delegations").insert(toPayload(values));
+      const { error } = await (supabase.from("delegations") as any).insert(toPayload(values));
       if (error) throw error;
     },
     onSuccess: () => {
@@ -116,8 +116,8 @@ export default function DelegacoesPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...values }: DelegationFormValues & { id: string }) => {
-      const { event_id: _, institution_id: __, ...rest } = toPayload(values);
-      const { error } = await supabase.from("delegations").update(rest).eq("id", id);
+      const { event_id: _, ...rest } = toPayload(values);
+      const { error } = await (supabase.from("delegations") as any).update(rest).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -147,7 +147,7 @@ export default function DelegacoesPage() {
         {canWrite && (
           <Button
             onClick={() => { setEditingDelegation(null); setDialogOpen(true); }}
-            disabled={!events.length || !institutions.length}
+            disabled={!events.length}
           >
             <Plus className="mr-2 h-4 w-4" />
             Nova delegação
@@ -172,34 +172,32 @@ export default function DelegacoesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Evento</TableHead>
-                <TableHead>Instituição</TableHead>
+                <TableHead>Escola</TableHead>
+                <TableHead>Cidade/UF</TableHead>
+                <TableHead>Rede</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Chefe</TableHead>
                 <TableHead>Telefone</TableHead>
-                <TableHead>E-mail</TableHead>
                 <TableHead className="w-[80px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {delegations.map((del) => {
-                const event = eventsMap.get(del.event_id);
-                const institution = institutionsMap.get(del.institution_id);
+                const d = del as any;
                 const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
+                const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
                 return (
                   <TableRow key={del.id}>
-                    <TableCell className="text-muted-foreground">
-                      {event ? `${event.name} (${event.year})` : "—"}
-                    </TableCell>
                     <TableCell className="font-medium">
-                      {institution?.name ?? "—"}
+                      {d.school_name ?? "—"}
                     </TableCell>
+                    <TableCell className="text-muted-foreground">{cityState || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground capitalize">{d.school_network_type ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                     </TableCell>
                     <TableCell>{del.chief_name || "—"}</TableCell>
                     <TableCell>{del.chief_phone || "—"}</TableCell>
-                    <TableCell>{del.chief_email || "—"}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" asChild>
@@ -227,7 +225,6 @@ export default function DelegacoesPage() {
         onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingDelegation(null); }}
         delegation={editingDelegation}
         events={events}
-        institutions={institutions}
         onSubmit={handleSubmit}
         isPending={createMutation.isPending || updateMutation.isPending}
       />
