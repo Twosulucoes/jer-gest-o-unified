@@ -272,21 +272,21 @@ const App = () => (
               <Route path="demo" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><DemoSeedsPage /></ProtectedRoute>} />
               <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DebugPublicadosPage /></ProtectedRoute>} />
               <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EmailTemplatesPage /></ProtectedRoute>} />
-              {/* Pesquisa */}
-              <Route path="pesquisa" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaDashboardPage /></ProtectedRoute>} />
-              <Route path="pesquisa/eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaEventosPage /></ProtectedRoute>} />
-              <Route path="pesquisa/eventos/:eventId/form" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaFormEditorPage /></ProtectedRoute>} />
-              <Route path="pesquisa/pesquisadores" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaPesquisadoresPage /></ProtectedRoute>} />
+              {/* Pesquisa de Satisfação — operacional, redireciona para Etapa */}
+              <Route path="pesquisa" element={<RedirectToEtapas />} />
+              <Route path="pesquisa/eventos" element={<RedirectToEtapas />} />
+              <Route path="pesquisa/eventos/:eventId/form" element={<RedirectToEtapas />} />
+              <Route path="pesquisa/pesquisadores" element={<RedirectToEtapas />} />
               {/* Links & Páginas */}
               <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinksPage /></ProtectedRoute>} />
               <Route path="links/novo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
               <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
               <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
-              {/* Relatórios */}
+              {/* Relatórios Globais */}
               <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ReportCenterPage /></ProtectedRoute>} />
               <Route path="atletas/qrcode" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AtletaQrCodePage /></ProtectedRoute>} />
-              {/* Ocorrências */}
-              <Route path="ocorrencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><OcorrenciasPage /></ProtectedRoute>} />
+              {/* Ocorrências — operacional, redireciona para Etapa */}
+              <Route path="ocorrencias" element={<RedirectToEtapas />} />
             </Route>
             {/* PWA Auth — redirect old login paths to unified login */}
             <Route path="/pwa/login" element={<Navigate to="/login" replace />} />
