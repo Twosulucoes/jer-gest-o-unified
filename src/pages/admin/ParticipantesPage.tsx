@@ -198,6 +198,7 @@ export default function ParticipantesPage() {
   };
 
   const filtered = (participants ?? []).filter((p) => {
+    if (stageFilterId && stageParticipantIds && !stageParticipantIds.has(p.id)) return false;
     if (!searchTerm) return true;
     const person = peopleMap.get(p.person_id);
     if (!person) return false;
@@ -219,6 +220,29 @@ export default function ParticipantesPage() {
           Visualizar todos os participantes importados por evento
         </p>
       </div>
+
+      {stageFilterId && stageInfo && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Layers className="h-4 w-4 text-primary" />
+            <span className="text-muted-foreground">Filtrando por etapa:</span>
+            <strong className="text-foreground">{stageInfo.name}</strong>
+            {stageParticipantIds && (
+              <Badge variant="outline" className="ml-1 text-xs">
+                {stageParticipantIds.size} vinculados
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" asChild>
+              <Link to={`/admin/etapas/${stageFilterId}`}>Ver etapa</Link>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearStageFilter} title="Limpar filtro">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardContent className="pt-6">
