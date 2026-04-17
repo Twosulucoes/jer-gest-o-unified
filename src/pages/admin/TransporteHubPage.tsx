@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -44,7 +44,15 @@ export default function TransporteHubPage() {
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("transporte");
 
   const [tab, setTab] = useState<TabKey>("saidas");
-  const [selectedStageId, setSelectedStageId] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const stageParam = searchParams.get("stage") ?? "";
+  const [selectedStageId, setSelectedStageIdState] = useState(stageParam);
+  const setSelectedStageId = (id: string) => {
+    setSelectedStageIdState(id);
+    const next = new URLSearchParams(searchParams);
+    if (id) next.set("stage", id); else next.delete("stage");
+    setSearchParams(next, { replace: true });
+  };
 
   const [vehicleDialog, setVehicleDialog] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
@@ -77,9 +85,11 @@ export default function TransporteHubPage() {
 
   useEffect(() => {
     if (stages.length > 0 && !stages.find(s => s.id === selectedStageId)) {
-      setSelectedStageId(stages[0].id);
+      const fromUrl = stages.find(s => s.id === stageParam);
+      setSelectedStageId(fromUrl ? fromUrl.id : stages[0].id);
     }
-  }, [stages, selectedStageId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stages, stageParam]);
 
   const selectedStage = stages.find(s => s.id === selectedStageId);
   const stageContext: StageContext | undefined = selectedStage
