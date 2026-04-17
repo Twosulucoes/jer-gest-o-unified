@@ -27,15 +27,13 @@ export default function AlojamentoNovoIncidentePage() {
     setSaving(true);
     const { data: { session } } = await supabase.auth.getSession();
 
-    const { error } = await supabase.schema("alojamento" as any)
-      .from("incidents")
-      .insert({
-        facility_id: facilityId,
-        severity,
-        category,
-        description: description.trim(),
-        created_by: session?.user?.id || null,
-      } as any);
+    const { error } = await supabase.rpc("create_alojamento_incident" as any, {
+      p_facility_id: facilityId,
+      p_severity: severity,
+      p_category: category,
+      p_description: description.trim(),
+      p_created_by: session?.user?.id || null,
+    });
 
     if (error) {
       toast.error("Erro ao registrar: " + error.message);

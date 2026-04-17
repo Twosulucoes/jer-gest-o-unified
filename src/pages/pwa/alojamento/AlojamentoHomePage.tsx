@@ -28,37 +28,34 @@ export default function AlojamentoHomePage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.schema("alojamento" as any).from("facilities").select("id, name").eq("active", true).order("name");
-      const list = (data || []) as Facility[];
-      setFacilities(list);
-      if (!facilityId && list.length > 0) {
-        setFacilityId(list[0].id);
-        setSelectedFacility(list[0].id);
+      const { data, error } = await supabase.rpc("list_alojamento_facilities" as any);
+      if (!error) {
+        const list = (Array.isArray(data) ? data : []) as Facility[];
+        setFacilities(list);
+        if (!facilityId && list.length > 0) {
+          setFacilityId(list[0].id);
+          setSelectedFacility(list[0].id);
+        }
       }
       setLoading(false);
     })();
-  }, [facilityId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!facilityId) return;
     setSelectedFacility(facilityId);
     (async () => {
-      const today = new Date().toISOString().slice(0, 10);
-      const [staysRes, checkinsRes, checkoutsRes, bedsRes, assignRes] = await Promise.all([
-        supabase.schema("alojamento" as any).from("stays").select("id", { count: "exact", head: true }).eq("facility_id", facilityId).eq("status", "hospedado"),
-        supabase.schema("alojamento" as any).from("stays").select("id", { count: "exact", head: true }).eq("facility_id", facilityId).gte("checkin_at", today + "T00:00:00"),
-        supabase.schema("alojamento" as any).from("stays").select("id", { count: "exact", head: true }).eq("facility_id", facilityId).eq("status", "finalizado").gte("checkout_at", today + "T00:00:00"),
-        supabase.schema("alojamento" as any).from("beds").select("id", { count: "exact", head: true }).eq("active", true),
-        supabase.schema("alojamento" as any).from("assignments").select("id", { count: "exact", head: true }).eq("active", true),
-      ]);
-      const totalBeds = bedsRes.count || 1;
-      const assignedBeds = assignRes.count || 0;
-      setKpis({
-        hospedados: staysRes.count || 0,
-        checkinsHoje: checkinsRes.count || 0,
-        checkoutsHoje: checkoutsRes.count || 0,
-        ocupacao: Math.round((assignedBeds / totalBeds) * 100),
-      });
+      const { data } = await supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId });
+      if (data) {
+        const kpi = data as any;
+        setKpis({
+          hospedados: kpi.hospedados || 0,
+          checkinsHoje: kpi.checkins_hoje || 0,
+          checkoutsHoje: kpi.checkouts_hoje || 0,
+          ocupacao: kpi.total_beds > 0 ? Math.round((kpi.assigned_beds / kpi.total_beds) * 100) : 0,
+        });
+      }
     })();
   }, [facilityId]);
 

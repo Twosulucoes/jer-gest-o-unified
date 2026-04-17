@@ -24,51 +24,8 @@ export function AlojamentoDuplicateAlert({ facilityId }: Props) {
     if (!facilityId) return;
     (async () => {
       setLoading(true);
-      // Find persons with multiple active stays (status=hospedado) in the facility
-      const { data, error } = await supabase
-        .schema("alojamento" as any)
-        .from("stays")
-        .select("person_id, assignment:assignments(bed:beds(room:rooms(code)))")
-        .eq("facility_id", facilityId)
-        .eq("status", "hospedado");
-
-      if (error || !data) {
-        setLoading(false);
-        return;
-      }
-
-      // Group by person_id
-      const personMap = new Map<string, Set<string>>();
-      (data as any[]).forEach((s: any) => {
-        const pid = s.person_id;
-        const roomCode = s.assignment?.bed?.room?.code || "?";
-        if (!personMap.has(pid)) personMap.set(pid, new Set());
-        personMap.get(pid)!.add(roomCode);
-      });
-
-      // Filter to those with >1 room
-      const dups: { person_id: string; rooms: string[] }[] = [];
-      personMap.forEach((rooms, pid) => {
-        if (rooms.size > 1) {
-          dups.push({ person_id: pid, rooms: Array.from(rooms) });
-        }
-      });
-
-      if (dups.length === 0) {
-        setDuplicates([]);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch names
-      const personIds = dups.map(d => d.person_id);
-      const { data: people } = await supabase.from("people").select("id, full_name").in("id", personIds);
-      const nameMap = new Map((people || []).map((p: any) => [p.id, p.full_name]));
-
-      setDuplicates(dups.map(d => ({
-        ...d,
-        person_name: nameMap.get(d.person_id) || "Desconhecido",
-      })));
+      const { data } = await supabase.rpc("get_alojamento_duplicates" as any, { p_facility_id: facilityId });
+      setDuplicates((Array.isArray(data) ? data : []) as DuplicateStay[]);
       setLoading(false);
     })();
   }, [facilityId]);

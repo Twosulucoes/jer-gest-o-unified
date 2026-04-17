@@ -31,53 +31,8 @@ export default function AlojamentoOcupacaoPage() {
   useEffect(() => {
     if (!facilityId) return;
     (async () => {
-      const { data: blocksData } = await supabase.schema("alojamento" as any)
-        .from("blocks").select("id, name, gender_policy").eq("active", true)
-        .order("name");
-
-      if (!blocksData || blocksData.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      const blockIds = blocksData.map((b: any) => b.id);
-      const { data: roomsData } = await supabase.schema("alojamento" as any)
-        .from("rooms").select("id, code, capacity, block_id").eq("active", true)
-        .in("block_id", blockIds).order("code");
-
-      const roomIds = (roomsData || []).map((r: any) => r.id);
-      const { data: bedsData } = await supabase.schema("alojamento" as any)
-        .from("beds").select("id, room_id").eq("active", true)
-        .in("room_id", roomIds);
-
-      const { data: assignData } = await supabase.schema("alojamento" as any)
-        .from("assignments").select("bed_id").eq("active", true);
-
-      const assignedBedIds = new Set((assignData || []).map((a: any) => a.bed_id));
-      const bedsByRoom = new Map<string, { total: number; occupied: number }>();
-      for (const bed of (bedsData || [])) {
-        const b = bed as any;
-        const entry = bedsByRoom.get(b.room_id) || { total: 0, occupied: 0 };
-        entry.total++;
-        if (assignedBedIds.has(b.id)) entry.occupied++;
-        bedsByRoom.set(b.room_id, entry);
-      }
-
-      const result: BlockInfo[] = (blocksData as any[]).map((block) => ({
-        id: block.id,
-        name: block.name,
-        gender_policy: block.gender_policy,
-        rooms: (roomsData as any[] || [])
-          .filter((r) => r.block_id === block.id)
-          .map((r) => ({
-            id: r.id,
-            code: r.code,
-            capacity: r.capacity,
-            occupied: bedsByRoom.get(r.id)?.occupied || 0,
-          })),
-      }));
-
-      setBlocks(result);
+      const { data } = await supabase.rpc("get_alojamento_ocupacao" as any, { p_facility_id: facilityId });
+      setBlocks((Array.isArray(data) ? data : []) as BlockInfo[]);
       setLoading(false);
     })();
   }, [facilityId]);

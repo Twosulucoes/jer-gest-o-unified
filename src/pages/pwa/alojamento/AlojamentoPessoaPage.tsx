@@ -55,35 +55,12 @@ export default function AlojamentoPessoaPage() {
       delegationName = (del as any)?.institution?.name || null;
     }
 
-    // Get stay info
-    const { data: stay } = await supabase.schema("alojamento" as any)
-      .from("stays").select("id, checkin_at, facility_id")
-      .eq("person_id", id).eq("status", "hospedado").limit(1).maybeSingle();
-
-    let facilityName: string | null = null;
-    if (stay) {
-      const { data: fac } = await supabase.schema("alojamento" as any)
-        .from("facilities").select("name").eq("id", (stay as any).facility_id).single();
-      facilityName = (fac as any)?.name || null;
-    }
-
-    // Get assignment
-    const { data: assignment } = await supabase.schema("alojamento" as any)
-      .from("assignments").select("bed_id").eq("person_id", id).eq("active", true).maybeSingle();
-
-    let bedCode: string | null = null;
-    let roomCode: string | null = null;
-    let blockName: string | null = null;
-    if (assignment) {
-      const { data: bed } = await supabase.schema("alojamento" as any)
-        .from("beds").select("bed_code, room:rooms(code, block:blocks(name))").eq("id", (assignment as any).bed_id).single();
-      if (bed) {
-        const b = bed as any;
-        bedCode = b.bed_code;
-        roomCode = b.room?.code || null;
-        blockName = b.room?.block?.name || null;
-      }
-    }
+    // Get stay + assignment info via public wrapper
+    const { data: alj } = await supabase.rpc("get_alojamento_person_detail" as any, {
+      p_participant_id: id,
+      p_facility_id: facilityId,
+    });
+    const aljData = (alj as any) || {};
 
     setPerson({
       full_name: p.person?.full_name || "—",
@@ -91,12 +68,12 @@ export default function AlojamentoPessoaPage() {
       gender: p.person?.gender || "—",
       participant_type: p.participant_type,
       delegation_name: delegationName,
-      is_checked_in: !!stay,
-      stay_checkin_at: (stay as any)?.checkin_at || null,
-      facility_name: facilityName,
-      bed_code: bedCode,
-      room_code: roomCode,
-      block_name: blockName,
+      is_checked_in: aljData.is_checked_in ?? false,
+      stay_checkin_at: aljData.stay_checkin_at || null,
+      facility_name: aljData.facility_name || null,
+      bed_code: aljData.bed_code || null,
+      room_code: aljData.room_code || null,
+      block_name: aljData.block_name || null,
     });
     setLoading(false);
   };
