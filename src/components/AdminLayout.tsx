@@ -15,6 +15,7 @@ import {
   Home,
 } from "lucide-react";
 import { useState, useMemo } from "react";
+import StageFilterBanner from "@/components/admin/StageFilterBanner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getStatusEmoji } from "@/lib/systemMapHelpers";
@@ -475,6 +476,8 @@ export default function AdminLayout() {
               </DropdownMenuContent>
             </DropdownMenu>
           </header>
+
+          <StageFilterBanner />
 
           <main className="flex-1 p-4 lg:p-6">
             {location.pathname === "/admin/eventos" ? (
