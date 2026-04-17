@@ -66,6 +66,7 @@ export default function CredenciamentoExternoPage() {
   const [replaceDialogOpen, setReplaceDialogOpen] = useState(false);
   const [pendingCode, setPendingCode] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const [manualCode, setManualCode] = useState("");
 
   // Fetch delegations for filter
   const { data: delegations = [] } = useQuery({
