@@ -1853,6 +1853,7 @@ export type Database = {
           address: string | null
           created_at: string
           event_id: string
+          event_stage_id: string | null
           id: string
           is_active: boolean
           name: string
@@ -1865,6 +1866,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           event_id: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -1877,6 +1879,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           event_id?: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           name?: string
@@ -1893,6 +1896,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "lodging_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
         ]
       }
       lodging_occupancies: {
@@ -1903,6 +1913,7 @@ export type Database = {
           checked_out_by: string | null
           created_at: string
           event_id: string
+          event_stage_id: string | null
           id: string
           notes: string | null
           participant_id: string
@@ -1917,6 +1928,7 @@ export type Database = {
           checked_out_by?: string | null
           created_at?: string
           event_id: string
+          event_stage_id?: string | null
           id?: string
           notes?: string | null
           participant_id: string
@@ -1931,6 +1943,7 @@ export type Database = {
           checked_out_by?: string | null
           created_at?: string
           event_id?: string
+          event_stage_id?: string | null
           id?: string
           notes?: string | null
           participant_id?: string
@@ -1944,6 +1957,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_occupancies_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {
@@ -2039,6 +2059,7 @@ export type Database = {
           capacity: number
           created_at: string
           event_id: string
+          event_stage_id: string | null
           gender_restriction: string
           gender_zone: string | null
           id: string
@@ -2057,6 +2078,7 @@ export type Database = {
           capacity?: number
           created_at?: string
           event_id: string
+          event_stage_id?: string | null
           gender_restriction?: string
           gender_zone?: string | null
           id?: string
@@ -2075,6 +2097,7 @@ export type Database = {
           capacity?: number
           created_at?: string
           event_id?: string
+          event_stage_id?: string | null
           gender_restriction?: string
           gender_zone?: string | null
           id?: string
@@ -2094,6 +2117,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_units_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {
@@ -2807,6 +2837,7 @@ export type Database = {
         Row: {
           created_at: string
           event_id: string
+          event_stage_id: string | null
           id: string
           is_active: boolean
           name: string
@@ -2819,6 +2850,7 @@ export type Database = {
         Insert: {
           created_at?: string
           event_id: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -2831,6 +2863,7 @@ export type Database = {
         Update: {
           created_at?: string
           event_id?: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           name?: string
@@ -2848,6 +2881,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "meal_types_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
         ]
       }
       meal_windows: {
@@ -2855,6 +2895,7 @@ export type Database = {
           created_at: string
           end_time: string
           event_id: string
+          event_stage_id: string | null
           id: string
           is_active: boolean
           label: string | null
@@ -2870,6 +2911,7 @@ export type Database = {
           created_at?: string
           end_time: string
           event_id: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           label?: string | null
@@ -2885,6 +2927,7 @@ export type Database = {
           created_at?: string
           end_time?: string
           event_id?: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           label?: string | null
@@ -2902,6 +2945,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {
@@ -3762,9 +3812,11 @@ export type Database = {
           created_at: string
           created_by: string | null
           event_date: string | null
+          event_stage_id: string | null
           id: string
           location: string | null
           name: string
+          questions_config: Json | null
           updated_at: string
           updated_by: string | null
         }
@@ -3773,9 +3825,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           event_date?: string | null
+          event_stage_id?: string | null
           id?: string
           location?: string | null
           name: string
+          questions_config?: Json | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -3784,13 +3838,23 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           event_date?: string | null
+          event_stage_id?: string | null
           id?: string
           location?: string | null
           name?: string
+          questions_config?: Json | null
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pesquisa_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pesquisa_researchers: {
         Row: {
@@ -4930,6 +4994,7 @@ export type Database = {
           created_at: string
           destination: string | null
           event_id: string
+          event_stage_id: string | null
           id: string
           is_active: boolean
           name: string
@@ -4943,6 +5008,7 @@ export type Database = {
           created_at?: string
           destination?: string | null
           event_id: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -4956,6 +5022,7 @@ export type Database = {
           created_at?: string
           destination?: string | null
           event_id?: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           name?: string
@@ -4973,6 +5040,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transport_routes_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
         ]
       }
       transport_trips: {
@@ -4986,6 +5060,7 @@ export type Database = {
           driver_name: string | null
           driver_phone: string | null
           event_id: string
+          event_stage_id: string | null
           has_incidents: boolean
           id: string
           notes: string | null
@@ -5008,6 +5083,7 @@ export type Database = {
           driver_name?: string | null
           driver_phone?: string | null
           event_id: string
+          event_stage_id?: string | null
           has_incidents?: boolean
           id?: string
           notes?: string | null
@@ -5030,6 +5106,7 @@ export type Database = {
           driver_name?: string | null
           driver_phone?: string | null
           event_id?: string
+          event_stage_id?: string | null
           has_incidents?: boolean
           id?: string
           notes?: string | null
@@ -5048,6 +5125,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_trips_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {
@@ -5071,6 +5155,7 @@ export type Database = {
           capacity: number
           created_at: string
           event_id: string
+          event_stage_id: string | null
           id: string
           is_active: boolean
           label: string | null
@@ -5084,6 +5169,7 @@ export type Database = {
           capacity?: number
           created_at?: string
           event_id: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           label?: string | null
@@ -5097,6 +5183,7 @@ export type Database = {
           capacity?: number
           created_at?: string
           event_id?: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           label?: string | null
@@ -5112,6 +5199,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_vehicles_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
         ]
@@ -5417,7 +5511,34 @@ export type Database = {
         Args: { p_sport_event_id: string }
         Returns: Json
       }
+      create_alojamento_incident: {
+        Args: {
+          p_category: string
+          p_created_by?: string
+          p_description: string
+          p_facility_id: string
+          p_severity: string
+        }
+        Returns: undefined
+      }
       generate_public_token: { Args: never; Returns: string }
+      get_alojamento_duplicates: {
+        Args: { p_facility_id: string }
+        Returns: Json
+      }
+      get_alojamento_incidents: {
+        Args: { p_facility_id: string; p_status?: string }
+        Returns: Json
+      }
+      get_alojamento_kpis: { Args: { p_facility_id: string }; Returns: Json }
+      get_alojamento_ocupacao: {
+        Args: { p_facility_id: string }
+        Returns: Json
+      }
+      get_alojamento_person_detail: {
+        Args: { p_facility_id: string; p_participant_id: string }
+        Returns: Json
+      }
       get_athlete_public_profile: { Args: { p_token: string }; Returns: Json }
       get_blocking_irregularities: {
         Args: { p_event_id: string; p_participant_id: string }
@@ -5486,6 +5607,7 @@ export type Database = {
       import_inscricoes_batch: { Args: { payload: Json }; Returns: Json }
       is_admin_or_secretaria: { Args: never; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      list_alojamento_facilities: { Args: never; Returns: Json }
       list_blocked_participants: {
         Args: { p_event_id: string }
         Returns: {
@@ -5494,6 +5616,7 @@ export type Database = {
       }
       normalize_prova_slug: { Args: { p: string }; Returns: string }
       normalize_text: { Args: { p: string }; Returns: string }
+      pesquisa_get_event_config: { Args: { p_event_id: string }; Returns: Json }
       pesquisa_hash_pin: { Args: { pin: string }; Returns: string }
       pesquisa_login_with_pin: {
         Args: { p_device_id: string; p_pin: string }
