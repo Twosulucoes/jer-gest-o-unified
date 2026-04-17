@@ -41,14 +41,11 @@ export default function AlojamentoIncidentesPage() {
     if (!facilityId) return;
     setLoading(true);
     (async () => {
-      const { data } = await supabase.schema("alojamento" as any)
-        .from("incidents")
-        .select("id, severity, category, description, status, created_at")
-        .eq("facility_id", facilityId)
-        .eq("status", statusFilter)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      setIncidents((data || []) as Incident[]);
+      const { data } = await supabase.rpc("get_alojamento_incidents" as any, {
+        p_facility_id: facilityId,
+        p_status: statusFilter,
+      });
+      setIncidents((Array.isArray(data) ? data : []) as Incident[]);
       setLoading(false);
     })();
   }, [facilityId, statusFilter]);
