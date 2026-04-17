@@ -81,7 +81,7 @@ export default function AlimentacaoHubPage() {
       const { data, error } = await (supabase.from("meal_types") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("sort_order");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });
@@ -93,7 +93,7 @@ export default function AlimentacaoHubPage() {
       const { data, error } = await (supabase.from("meal_windows") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("service_date").order("start_time");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });

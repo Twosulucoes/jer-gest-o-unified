@@ -93,7 +93,7 @@ export default function TransporteHubPage() {
       const { data, error } = await (supabase.from("transport_vehicles") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("plate");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });
@@ -105,7 +105,7 @@ export default function TransporteHubPage() {
       const { data, error } = await (supabase.from("transport_routes") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("name");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });
@@ -117,7 +117,7 @@ export default function TransporteHubPage() {
       const { data, error } = await (supabase.from("transport_trips") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("scheduled_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });

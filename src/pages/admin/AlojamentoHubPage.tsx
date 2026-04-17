@@ -81,7 +81,7 @@ export default function AlojamentoHubPage() {
       const { data, error } = await (supabase.from("lodging_locations") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("name");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });
@@ -93,7 +93,7 @@ export default function AlojamentoHubPage() {
       const { data, error } = await (supabase.from("lodging_units") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("name");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });
@@ -106,7 +106,7 @@ export default function AlojamentoHubPage() {
         .from("lodging_occupancies") as any).select("unit_id")
         .eq("event_stage_id", selectedStageId).in("status", ["allocated", "checked_in"]);
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });
