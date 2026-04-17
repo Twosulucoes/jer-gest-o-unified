@@ -23,31 +23,33 @@ export default function DelegacaoHomePage() {
       const { data: profile } = await supabase.from("profiles").select("active").eq("id", session.user.id).single();
       if (!(profile as any)?.active) { navigate("/pwa", { replace: true }); return; }
 
-      await supabase.from("user_roles").select("role").eq("user_id", session.user.id);
+      const { data: userDelegation } = await supabase
+        .from("user_delegations")
+        .select("delegation_id")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
 
-      const { data: delegations } = await supabase
-        .from("delegations")
-        .select("id")
-        .eq("status", "ativa")
-        .limit(1);
-
-      const del = delegations?.[0];
-      if (del) {
-        setDelegationId(del.id);
-
-        const [partRes, atletasRes, comissaoRes] = await Promise.all([
-          supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", del.id),
-          supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", del.id).eq("participant_type", "atleta"),
-          supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", del.id).in("participant_type", ["tecnico", "dirigente", "apoio"]),
-        ]);
-
-        setKpis({
-          participantes: partRes.count || 0,
-          atletas: atletasRes.count || 0,
-          comissao: comissaoRes.count || 0,
-          partidasHoje: 0,
-        });
+      if (!userDelegation) {
+        setLoading(false);
+        return;
       }
+
+      const delId = userDelegation.delegation_id;
+      setDelegationId(delId);
+
+      const [partRes, atletasRes, comissaoRes] = await Promise.all([
+        supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId),
+        supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId).eq("participant_type", "athlete"),
+        supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId).in("participant_type", ["coach", "head_of_delegation", "official", "staff"]),
+      ]);
+
+      setKpis({
+        participantes: partRes.count || 0,
+        atletas: atletasRes.count || 0,
+        comissao: comissaoRes.count || 0,
+        partidasHoje: 0,
+      });
+
       setLoading(false);
     })();
   }, [navigate]);
@@ -84,18 +86,20 @@ export default function DelegacaoHomePage() {
           <AppKPI label="Jogos hoje" value={kpis.partidasHoje} icon={Calendar} loading={loading} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          {actions.map((action) => (
-            <Card key={action.label} className="cursor-pointer hover:shadow-app-md active:scale-[0.98] transition-all" onClick={() => navigate(action.to)}>
-              <CardContent className="p-4 flex flex-col items-center gap-2">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <action.icon className="h-6 w-6" />
-                </div>
-                <span className="text-sm font-medium">{action.label}</span>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {delegationId && (
+          <div className="grid grid-cols-2 gap-3">
+            {actions.map((action) => (
+              <Card key={action.label} className="cursor-pointer hover:shadow-app-md active:scale-[0.98] transition-all" onClick={() => navigate(action.to)}>
+                <CardContent className="p-4 flex flex-col items-center gap-2">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <action.icon className="h-6 w-6" />
+                  </div>
+                  <span className="text-sm font-medium">{action.label}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

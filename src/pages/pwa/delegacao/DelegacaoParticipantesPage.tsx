@@ -14,6 +14,21 @@ interface Participant {
   status: string;
 }
 
+const TYPE_LABEL: Record<string, string> = {
+  athlete: "Atleta",
+  coach: "Técnico",
+  head_of_delegation: "Chefe de Delegação",
+  official: "Oficial",
+  staff: "Staff",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  confirmed: "Confirmado",
+  pending: "Pendente",
+  cancelled: "Cancelado",
+  rejected: "Rejeitado",
+};
+
 export default function DelegacaoParticipantesPage() {
   const navigate = useNavigate();
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -22,28 +37,35 @@ export default function DelegacaoParticipantesPage() {
 
   useEffect(() => {
     (async () => {
-      // Get first active delegation (simplified — in production would link to user's institution)
-      const { data: del } = await supabase
-        .from("delegations")
-        .select("id")
-        .eq("status", "ativa")
-        .limit(1)
-        .single();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { navigate("/pwa/login", { replace: true }); return; }
 
-      if (!del) { setLoading(false); return; }
+      const { data: userDelegation } = await supabase
+        .from("user_delegations")
+        .select("delegation_id")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      if (!userDelegation) { setLoading(false); return; }
 
       const { data } = await supabase
         .from("participants")
-        .select("id, full_name, participant_type, status")
-        .eq("delegation_id", del.id)
-        .order("full_name");
+        .select("id, person:people(full_name), participant_type, status")
+        .eq("delegation_id", userDelegation.delegation_id)
+        .eq("is_active", true);
 
-      setParticipants((data as any) || []);
+      const list: Participant[] = ((data as any) || []).map((p: any) => ({
+        id: p.id,
+        full_name: p.person?.full_name || "—",
+        participant_type: p.participant_type,
+        status: p.status,
+      }));
+
+      list.sort((a, b) => a.full_name.localeCompare(b.full_name, "pt-BR"));
+      setParticipants(list);
       setLoading(false);
     })();
-  }, []);
-
-  const typeLabel: Record<string, string> = { atleta: "Atleta", tecnico: "Técnico", dirigente: "Dirigente", apoio: "Apoio" };
+  }, [navigate]);
 
   const filtered = filter
     ? participants.filter(p => p.full_name.toLowerCase().includes(filter.toLowerCase()))
@@ -67,7 +89,13 @@ export default function DelegacaoParticipantesPage() {
 
         {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full" />)}
 
-        {!loading && filtered.length === 0 && (
+        {!loading && participants.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            Nenhuma delegação vinculada ao seu perfil
+          </div>
+        )}
+
+        {!loading && participants.length > 0 && filtered.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">Nenhum participante encontrado</div>
         )}
 
@@ -76,10 +104,10 @@ export default function DelegacaoParticipantesPage() {
             <CardContent className="p-3 flex items-center justify-between">
               <div>
                 <p className="font-medium text-sm">{p.full_name}</p>
-                <p className="text-xs text-muted-foreground">{typeLabel[p.participant_type] || p.participant_type}</p>
+                <p className="text-xs text-muted-foreground">{TYPE_LABEL[p.participant_type] || p.participant_type}</p>
               </div>
-              <Badge variant={p.status === "ativo" ? "default" : "secondary"}>
-                {p.status === "ativo" ? "Ativo" : p.status}
+              <Badge variant={p.status === "confirmed" ? "default" : "secondary"}>
+                {STATUS_LABEL[p.status] || p.status}
               </Badge>
             </CardContent>
           </Card>
