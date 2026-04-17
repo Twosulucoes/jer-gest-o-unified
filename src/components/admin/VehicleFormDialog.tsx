@@ -35,16 +35,24 @@ const vehicleSchema = z.object({
 
 export type VehicleFormValues = z.infer<typeof vehicleSchema>;
 
+export interface StageContext {
+  id: string;
+  name: string;
+  kind: string;
+  event_id: string;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vehicle?: any | null;
   events: Tables<"events">[];
+  stageContext?: StageContext;
   onSubmit: (values: VehicleFormValues) => void;
   isPending: boolean;
 }
 
-export default function VehicleFormDialog({ open, onOpenChange, vehicle, events, onSubmit, isPending }: Props) {
+export default function VehicleFormDialog({ open, onOpenChange, vehicle, events, stageContext, onSubmit, isPending }: Props) {
   const isEditing = !!vehicle;
 
   const form = useForm<VehicleFormValues>({
@@ -53,6 +61,7 @@ export default function VehicleFormDialog({ open, onOpenChange, vehicle, events,
   });
 
   useEffect(() => {
+    const defaultEventId = stageContext?.event_id ?? (events.length === 1 ? events[0].id : "");
     if (vehicle) {
       form.reset({
         event_id: vehicle.event_id,
@@ -64,11 +73,11 @@ export default function VehicleFormDialog({ open, onOpenChange, vehicle, events,
       });
     } else {
       form.reset({
-        event_id: events.length === 1 ? events[0].id : "",
+        event_id: defaultEventId,
         plate: "", label: "", capacity: 40, vehicle_type: "bus", is_active: true,
       });
     }
-  }, [vehicle, events, form]);
+  }, [vehicle, events, stageContext, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,16 +88,23 @@ export default function VehicleFormDialog({ open, onOpenChange, vehicle, events,
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField control={form.control} name="event_id" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Evento</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                  <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+            {stageContext ? (
+              <div className="rounded-md bg-muted px-3 py-2 text-sm flex items-center gap-2">
+                <span className="text-muted-foreground">Etapa:</span>
+                <span className="font-medium">{stageContext.name}</span>
+              </div>
+            ) : (
+              <FormField control={form.control} name="event_id" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Evento</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                    <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="plate" render={({ field }) => (
                 <FormItem>
