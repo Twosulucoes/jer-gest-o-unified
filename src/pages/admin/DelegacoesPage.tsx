@@ -71,7 +71,7 @@ export default function DelegacoesPage() {
     return allDelegations.filter((d) => stageDelegationIds.has(d.id));
   }, [allDelegations, stageId, stageDelegationIds]);
 
-  const eventsMap = new Map(events.map((e) => [e.id, e]));
+  
 
   const toPayload = (values: DelegationFormValues) => ({
     event_id: values.event_id,
