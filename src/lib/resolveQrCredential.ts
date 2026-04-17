@@ -58,7 +58,7 @@ export async function resolveQrCredential(
   // 1. Try participant_credentials by qr_code_value (full raw match)
   const { data: byQr } = await supabase
     .from("participant_credentials")
-    .select("participant_id, participant:participants(full_name)")
+    .select("participant_id, participant:participants(person:people(full_name))")
     .eq("qr_code_value", fullValue)
     .eq("status", "active")
     .limit(1)
@@ -67,7 +67,7 @@ export async function resolveQrCredential(
   if (byQr) {
     return {
       participant_id: (byQr as any).participant_id,
-      full_name: (byQr as any).participant?.full_name ?? null,
+      full_name: (byQr as any).participant?.person?.full_name ?? null,
       source: "participant_credentials",
     };
   }
@@ -76,7 +76,7 @@ export async function resolveQrCredential(
   if (credentialCode) {
     const { data: byCode } = await supabase
       .from("participant_credentials")
-      .select("participant_id, participant:participants(full_name)")
+      .select("participant_id, participant:participants(person:people(full_name))")
       .eq("credential_code", credentialCode)
       .eq("status", "active")
       .limit(1)
@@ -85,7 +85,7 @@ export async function resolveQrCredential(
     if (byCode) {
       return {
         participant_id: (byCode as any).participant_id,
-        full_name: (byCode as any).participant?.full_name ?? null,
+        full_name: (byCode as any).participant?.person?.full_name ?? null,
         source: "participant_credentials",
       };
     }
@@ -95,7 +95,7 @@ export async function resolveQrCredential(
   const tokenToTry = credentialCode || fullValue;
   const { data: ext } = await supabase
     .from("external_credentials")
-    .select("participant_id, participant:participants(full_name)")
+    .select("participant_id, participant:participants(person:people(full_name))")
     .eq("credential_code", tokenToTry)
     .eq("status", "active")
     .limit(1)
@@ -104,7 +104,7 @@ export async function resolveQrCredential(
   if (ext) {
     return {
       participant_id: (ext as any).participant_id,
-      full_name: (ext as any).participant?.full_name ?? null,
+      full_name: (ext as any).participant?.person?.full_name ?? null,
       source: "external_credentials",
     };
   }
