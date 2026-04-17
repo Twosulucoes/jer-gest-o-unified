@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
 import { useActiveEventId } from "@/contexts/EventContext";
 import ModuleHeader from "@/components/admin/ModuleHeader";
+import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
 
 export default function CompeticaoPartidasPage() {
   const qc = useQueryClient();

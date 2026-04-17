@@ -69,6 +69,7 @@ import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog"
 import { SingleLabelDialog, BatchLabelsDialog } from "@/components/admin/CredentialLabelPrint";
 import { useActiveEventId } from "@/contexts/EventContext";
 import ModuleHeader from "@/components/admin/ModuleHeader";
+import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -197,8 +198,11 @@ export default function CredenciamentoPage() {
     }
   }, [selectedEventId, templateFetched, eventTemplate]);
 
+  // --- Stage filter (?stage= na URL) ---
+  const { stageId, participantIds: stageParticipantIds } = useStageParticipantFilter();
+
   // --- Participants ---
-  const { data: participants, isLoading } = useQuery({
+  const { data: allParticipants, isLoading } = useQuery({
     queryKey: ["credenciamento-participants", selectedEventId],
     queryFn: async () => {
       if (!selectedEventId) return [];
@@ -215,6 +219,13 @@ export default function CredenciamentoPage() {
     },
     enabled: !!selectedEventId,
   });
+
+  const participants = useMemo(() => {
+    if (!allParticipants) return allParticipants;
+    if (!stageId) return allParticipants;
+    if (!stageParticipantIds) return [];
+    return allParticipants.filter((p) => stageParticipantIds.has(p.id));
+  }, [allParticipants, stageId, stageParticipantIds]);
 
   // --- Active credentials ---
   const { data: activeCredentials = [] } = useQuery({
