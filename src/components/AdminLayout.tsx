@@ -99,26 +99,22 @@ const navGroups: NavGroup[] = [
       {
         label: "Transporte",
         items: [
-          { label: "Veículos", to: "/admin/transporte/veiculos", icon: <Bus className="h-4 w-4" />, roles: TRANSPORT_ROLES },
-          { label: "Rotas", to: "/admin/transporte/rotas", icon: <Route className="h-4 w-4" />, roles: TRANSPORT_ROLES },
-          { label: "Viagens", to: "/admin/transporte/viagens", icon: <Navigation className="h-4 w-4" />, roles: TRANSPORT_ROLES },
+          { label: "Saídas, Veículos e Linhas", to: "/admin/transporte", icon: <Bus className="h-4 w-4" />, roles: TRANSPORT_ROLES },
         ],
       },
       {
         label: "Alimentação",
         items: [
-          { label: "Tipos de Refeição", to: "/admin/alimentacao/tipos", icon: <UtensilsCrossed className="h-4 w-4" />, roles: FOOD_ROLES },
-          { label: "Janelas de Serviço", to: "/admin/alimentacao/janelas", icon: <Clock className="h-4 w-4" />, roles: FOOD_ROLES },
-          { label: "Consumo", to: "/admin/alimentacao/consumo", icon: <ClipboardList className="h-4 w-4" />, roles: FOOD_ROLES },
+          { label: "Janelas e Tipos", to: "/admin/alimentacao", icon: <UtensilsCrossed className="h-4 w-4" />, roles: FOOD_ROLES },
+          { label: "Registrar Consumo", to: "/admin/alimentacao/consumo", icon: <ClipboardList className="h-4 w-4" />, roles: FOOD_ROLES },
           { label: "Dashboard", to: "/admin/alimentacao/dashboard", icon: <LayoutDashboard className="h-4 w-4" />, roles: FOOD_ROLES },
         ],
       },
       {
         label: "Alojamento",
         items: [
-          { label: "Locais", to: "/admin/alojamento/locais", icon: <Building className="h-4 w-4" />, roles: LODGING_ROLES },
-          { label: "Unidades", to: "/admin/alojamento/unidades", icon: <DoorOpen className="h-4 w-4" />, roles: LODGING_ROLES },
-          { label: "Ocupação", to: "/admin/alojamento/ocupacao", icon: <KeyRound className="h-4 w-4" />, roles: LODGING_ROLES },
+          { label: "Locais e Unidades", to: "/admin/alojamento", icon: <Building className="h-4 w-4" />, roles: LODGING_ROLES },
+          { label: "Check-in / Check-out", to: "/admin/alojamento/ocupacao", icon: <KeyRound className="h-4 w-4" />, roles: LODGING_ROLES },
         ],
       },
     ],

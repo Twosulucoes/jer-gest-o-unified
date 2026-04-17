@@ -15,6 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
+import type { StageContext } from "@/components/admin/VehicleFormDialog";
 
 const schema = z.object({
   event_id: z.string().min(1, "Selecione um evento"),
@@ -31,11 +32,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   location?: any | null;
   events: Tables<"events">[];
+  stageContext?: StageContext;
   onSubmit: (values: LodgingLocationFormValues) => void;
   isPending: boolean;
 }
 
-export default function LodgingLocationFormDialog({ open, onOpenChange, location, events, onSubmit, isPending }: Props) {
+export default function LodgingLocationFormDialog({ open, onOpenChange, location, events, stageContext, onSubmit, isPending }: Props) {
   const isEditing = !!location;
 
   const form = useForm<LodgingLocationFormValues>({
@@ -44,6 +46,7 @@ export default function LodgingLocationFormDialog({ open, onOpenChange, location
   });
 
   useEffect(() => {
+    const defaultEventId = stageContext?.event_id ?? (events.length === 1 ? events[0].id : "");
     if (location) {
       form.reset({
         event_id: location.event_id,
@@ -54,11 +57,11 @@ export default function LodgingLocationFormDialog({ open, onOpenChange, location
       });
     } else {
       form.reset({
-        event_id: events.length === 1 ? events[0].id : "",
+        event_id: defaultEventId,
         name: "", address: "", notes: "", is_active: true,
       });
     }
-  }, [location, events, form]);
+  }, [location, events, stageContext, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -69,16 +72,23 @@ export default function LodgingLocationFormDialog({ open, onOpenChange, location
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField control={form.control} name="event_id" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Evento</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                  <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+            {stageContext ? (
+              <div className="rounded-md bg-muted px-3 py-2 text-sm flex items-center gap-2">
+                <span className="text-muted-foreground">Etapa:</span>
+                <span className="font-medium">{stageContext.name}</span>
+              </div>
+            ) : (
+              <FormField control={form.control} name="event_id" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Evento</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                    <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
                 <FormLabel>Nome</FormLabel>
