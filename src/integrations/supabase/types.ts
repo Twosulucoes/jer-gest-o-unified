@@ -5886,6 +5886,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      user_can_access_stage: {
+        Args: { _stage_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:
