@@ -81,11 +81,16 @@ export default function AlimentacaoScanPage() {
 
       const { data: { session } } = await supabase.auth.getSession();
 
+      if (!session?.user.id) {
+        setResult({ ok: false, message: "Sessão expirada. Faça login novamente." });
+        return;
+      }
+
       const { error } = await supabase.from("meal_consumptions").insert({
         participant_id: participantId,
         meal_window_id: windowId,
         method: "qr_scan",
-        registered_by: session?.user.id,
+        registered_by: session.user.id,
       });
 
       if (error) throw error;
