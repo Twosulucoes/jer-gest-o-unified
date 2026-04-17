@@ -675,7 +675,7 @@ interface ReadOnlyMaps {
 }
 
 async function loadReadOnlyMaps(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   eventId: string,
 ): Promise<ReadOnlyMaps> {
   const [instRes, sportRes, catRes, seRes, delRes, evRes] = await Promise.all([
@@ -688,11 +688,11 @@ async function loadReadOnlyMaps(
   ]);
 
   const institutions = new Map<string, string>();
-  for (const i of instRes.data ?? []) institutions.set(i.slug, i.id);
+  for (const i of (instRes.data ?? []) as any[]) institutions.set(i.slug, i.id);
 
   const sports = new Map<string, string>();
   const sportsById = new Map<string, string>();
-  for (const s of sportRes.data ?? []) {
+  for (const s of (sportRes.data ?? []) as any[]) {
     sports.set(s.slug, s.id);
     sportsById.set(s.id, s.slug);
   }
@@ -700,20 +700,20 @@ async function loadReadOnlyMaps(
   const categories = new Map<string, string>();
   const catsById = new Map<string, string>();
   const catWindowBySlug = new Map<string, CategoryWindow>();
-  for (const c of catRes.data ?? []) {
+  for (const c of (catRes.data ?? []) as any[]) {
     categories.set(c.slug, c.id);
     catsById.set(c.id, c.slug);
     catWindowBySlug.set(c.slug, {
       slug: c.slug,
-      min_birth_year: (c as { min_birth_year: number | null }).min_birth_year ?? null,
-      max_birth_year: (c as { max_birth_year: number | null }).max_birth_year ?? null,
+      min_birth_year: c.min_birth_year ?? null,
+      max_birth_year: c.max_birth_year ?? null,
     });
   }
 
   const sportEvents = new Map<string, string>();
   const sportCategoryPairs = new Set<string>();
   const categoriesBySport = new Map<string, CategoryWindow[]>();
-  for (const se of seRes.data ?? []) {
+  for (const se of (seRes.data ?? []) as any[]) {
     sportEvents.set(`${se.sport_id}|${se.category_id}|${se.slug}`, se.id);
     const sSlug = sportsById.get(se.sport_id);
     const cSlug = catsById.get(se.category_id);
@@ -729,7 +729,7 @@ async function loadReadOnlyMaps(
   }
 
   const delegations = new Map<string, string>();
-  for (const d of delRes.data ?? []) delegations.set(d.institution_id, d.id);
+  for (const d of (delRes.data ?? []) as any[]) delegations.set(d.institution_id, d.id);
 
   const eventYear = (evRes.data as { year?: number | null } | null)?.year ?? null;
 
@@ -755,7 +755,7 @@ interface PeopleMaps {
 }
 
 async function loadPeopleIncremental(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   normalizedRows: NormalizedRow[],
 ): Promise<PeopleMaps> {
   const byCpf = new Map<string, string>();
@@ -770,12 +770,12 @@ async function loadPeopleIncremental(
     const { data } = await supabase.from("people")
       .select("id, full_name, birth_date, gender, cpf")
       .in("cpf", batch);
-    for (const p of data ?? []) {
-      if (p.cpf) byCpf.set(p.cpf, p.id);
+    for (const p of (data ?? []) as any[]) {
+      if (p.cpf) byCpf.set(p.cpf as string, p.id as string);
       if (p.full_name && p.birth_date) {
-        const key = `${p.full_name.toLowerCase()}|${p.birth_date}|${p.gender}`;
+        const key = `${(p.full_name as string).toLowerCase()}|${p.birth_date}|${p.gender}`;
         const arr = byNameDob.get(key) || [];
-        arr.push(p.id);
+        arr.push(p.id as string);
         byNameDob.set(key, arr);
       }
     }
@@ -791,12 +791,12 @@ async function loadPeopleIncremental(
       .select("id, full_name, birth_date, gender, cpf")
       .in("full_name", batch)
       .eq("is_active", true);
-    for (const p of data ?? []) {
-      if (p.cpf && !byCpf.has(p.cpf)) byCpf.set(p.cpf, p.id);
+    for (const p of (data ?? []) as any[]) {
+      if (p.cpf && !byCpf.has(p.cpf as string)) byCpf.set(p.cpf as string, p.id as string);
       if (p.full_name && p.birth_date) {
-        const key = `${p.full_name.toLowerCase()}|${p.birth_date}|${p.gender}`;
+        const key = `${(p.full_name as string).toLowerCase()}|${p.birth_date}|${p.gender}`;
         const arr = byNameDob.get(key) || [];
-        if (!arr.includes(p.id)) arr.push(p.id);
+        if (!arr.includes(p.id as string)) arr.push(p.id as string);
         byNameDob.set(key, arr);
       }
     }
@@ -1066,7 +1066,7 @@ interface ManualOverride {
 }
 
 async function loadTm2012Overrides(
-  client: ReturnType<typeof createClient>,
+  client: any,
   eventId: string,
   eventStageId: string,
 ): Promise<Map<string, ManualOverride>> {
@@ -1085,7 +1085,7 @@ async function loadTm2012Overrides(
     if (!chosen || !TM_2012_VALID_CHOICES.has(chosen)) continue;
     if (r.source_row_number == null || !r.fallback_fingerprint) continue;
     const key = `${eventStageId}|${r.source_row_number}|${r.fallback_fingerprint}`;
-    out.set(key, { pending_id: r.id, category_slug: chosen });
+    out.set(key, { pending_id: r.id as string, category_slug: chosen });
   }
   return out;
 }
@@ -1577,7 +1577,7 @@ Deno.serve(async (req: Request) => {
             } else {
               personId = newPerson.id;
               peopleCreated++;
-              if (row.cpf_valid) people.byCpf.set(row.cpf_valid, personId);
+              if (row.cpf_valid) people.byCpf.set(row.cpf_valid as string, personId);
             }
           }
         } else {
@@ -1610,8 +1610,14 @@ Deno.serve(async (req: Request) => {
           } else {
             participantId = newPart.id;
             participantsCreated++;
-            participantByPerson.set(personId, participantId);
+            participantByPerson.set(personId, participantId as string);
           }
+        }
+
+        if (!participantId) {
+          commitErrors.push({ row_number: row.row_number, error_code: "PARTICIPANT_MISSING", error_message: "Participant não resolvido" });
+          rowsFailed++;
+          continue;
         }
 
         // ── Participant ↔ Stage (rastreabilidade operacional por etapa) ──
@@ -1632,7 +1638,7 @@ Deno.serve(async (req: Request) => {
             }
           } else {
             pesCreated++;
-            pesSet.add(participantId);
+            pesSet.add(participantId as string);
           }
         } else {
           pesReused++;
