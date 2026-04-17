@@ -504,6 +504,26 @@ export default function CredenciamentoExternoPage() {
                       <ScanLine className="h-5 w-5 mr-2" />
                       Escanear Credencial
                     </Button>
+                    <div className="flex items-center gap-2">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-xs text-muted-foreground">ou digite o código</span>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Código da credencial"
+                        value={manualCode}
+                        onChange={(e) => setManualCode(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleManualSubmit()}
+                        className="font-mono"
+                      />
+                      <Button
+                        onClick={handleManualSubmit}
+                        disabled={!manualCode.trim() || linkMutation.isPending}
+                      >
+                        Vincular
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>
