@@ -107,7 +107,7 @@ export default function PesquisaNovaPage() {
 
   useEffect(() => {
     if (!session?.researcher?.event_id) return;
-    supabase.rpc('pesquisa_get_event_config', { p_event_id: session.researcher.event_id } as any)
+    (supabase.rpc as any)('pesquisa_get_event_config', { p_event_id: session.researcher.event_id })
       .then(({ data }) => {
         const config = data as any;
         if (Array.isArray(config?.questions_config) && config.questions_config.length > 0) {
