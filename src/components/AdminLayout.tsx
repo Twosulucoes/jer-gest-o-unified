@@ -52,6 +52,13 @@ const dashboardItem: NavItem = {
   roles: "all",
 };
 
+const etapasItem: NavItem = {
+  label: "Etapas",
+  to: "/admin/etapas",
+  icon: <ListTree className="h-4 w-4" />,
+  roles: ADMIN_ROLES,
+};
+
 const navGroups: NavGroup[] = [
   {
     id: "preparacao", label: "Preparação", description: "Cadastros base do evento ativo.",
@@ -330,6 +337,9 @@ export default function AdminLayout() {
           <nav className={`flex-1 overflow-y-auto py-3 space-y-1 ${collapsed ? "px-2" : "px-3"}`}>
             {isItemVisible(dashboardItem) && (
               <NavItemLink item={dashboardItem} collapsed={collapsed} onClick={closeSidebar} />
+            )}
+            {isItemVisible(etapasItem) && (
+              <NavItemLink item={etapasItem} collapsed={collapsed} onClick={closeSidebar} />
             )}
 
             {navGroups.filter(isGroupVisible).map((group) => (
