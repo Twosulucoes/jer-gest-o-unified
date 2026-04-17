@@ -79,6 +79,29 @@ export default function StageLayout() {
     [hasRole, roles],
   );
 
+  // Persist last active stage (used by RedirectToEtapas to keep user in context)
+  // and emit stage_enter/stage_exit audit events.
+  useEffect(() => {
+    if (!stage?.id || !eventId) return;
+    try { localStorage.setItem("jer_last_active_stage_id", stage.id); } catch {}
+
+    void supabase.from("audit_events").insert({
+      action: "stage_enter",
+      table_name: "event_stages",
+      record_id: stage.id,
+      payload: { event_id: eventId, stage_name: stage.name, stage_kind: stage.kind },
+    });
+
+    return () => {
+      void supabase.from("audit_events").insert({
+        action: "stage_exit",
+        table_name: "event_stages",
+        record_id: stage.id,
+        payload: { event_id: eventId, stage_name: stage.name },
+      });
+    };
+  }, [stage?.id, eventId, stage?.name, stage?.kind]);
+
   if (isLoading) {
     return (
       <div className="p-8 space-y-3">
