@@ -274,6 +274,18 @@ export default function CredenciamentoExternoPage() {
     setPendingCode(null);
   };
 
+  const handleManualSubmit = () => {
+    const code = manualCode.trim();
+    if (!code) return;
+    setManualCode("");
+    if (hasActiveCred) {
+      setPendingCode(code);
+      setReplaceDialogOpen(true);
+    } else {
+      linkMutation.mutate({ code });
+    }
+  };
+
   // Unique participant types for filter
   const participantTypes = useMemo(() => {
     const types = new Set(allParticipants.map((p) => p.participant_type));
