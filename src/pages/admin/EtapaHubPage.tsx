@@ -1,7 +1,7 @@
 import { Link, useParams, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft, Users, UsersRound, Trophy, BadgeCheck, Building, UtensilsCrossed, Bus, Layers,
+  ArrowLeft, Users, UsersRound, Trophy, Layers,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
