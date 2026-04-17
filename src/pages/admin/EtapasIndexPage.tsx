@@ -73,7 +73,7 @@ export default function EtapasIndexPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {stages.map((stage) => (
-            <Link key={stage.id} to={`/admin/etapas/${stage.id}`} className="group">
+            <Link key={stage.id} to={`/admin/etapa/${stage.id}`} className="group">
               <Card className="h-full hover:border-primary hover:shadow-app-md transition-all">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">

@@ -1,7 +1,7 @@
 import { Link, useParams, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft, Users, UsersRound, Trophy, BadgeCheck, Building, UtensilsCrossed, Bus, Layers,
+  ArrowLeft, Users, UsersRound, Trophy, Layers,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -42,39 +42,11 @@ const MODULES: ModuleCard[] = [
     color: "text-indigo-600",
   },
   {
-    label: "Competição",
-    description: "Provas, partidas e resultados desta etapa.",
+    label: "Entrar na Etapa →",
+    description: "Acessar todos os módulos operacionais (credenciamento, competição, logística, ocorrências, pesquisa, relatórios).",
     icon: <Trophy className="h-5 w-5" />,
-    to: (id) => `/admin/competicao/painel?stage=${id}`,
+    to: (id) => `/admin/etapa/${id}`,
     color: "text-amber-600",
-  },
-  {
-    label: "Credenciamento",
-    description: "Emissão e validação de credenciais.",
-    icon: <BadgeCheck className="h-5 w-5" />,
-    to: (id) => `/admin/credenciamento?stage=${id}`,
-    color: "text-emerald-600",
-  },
-  {
-    label: "Alojamento",
-    description: "Locais, unidades e check-in desta etapa.",
-    icon: <Building className="h-5 w-5" />,
-    to: (id) => `/admin/alojamento?stage=${id}`,
-    color: "text-purple-600",
-  },
-  {
-    label: "Alimentação",
-    description: "Janelas, tipos e consumos desta etapa.",
-    icon: <UtensilsCrossed className="h-5 w-5" />,
-    to: (id) => `/admin/alimentacao?stage=${id}`,
-    color: "text-orange-600",
-  },
-  {
-    label: "Transporte",
-    description: "Veículos, rotas e viagens desta etapa.",
-    icon: <Bus className="h-5 w-5" />,
-    to: (id) => `/admin/transporte?stage=${id}`,
-    color: "text-cyan-600",
   },
 ];
 
