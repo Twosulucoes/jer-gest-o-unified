@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,6 +6,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { Plus, Pencil, Users, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +49,22 @@ export default function DelegacoesPage() {
     },
   });
 
-  const { data: delegations, isLoading } = useQuery({
+  const { stageId, participantIds } = useStageParticipantFilter();
+
+  // Quando filtrando por etapa, calcula os delegation_id que têm participantes na etapa
+  const { data: stageDelegationIds } = useQuery({
+    queryKey: ["stage_delegation_ids", stageId],
+    enabled: !!stageId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+        .select("participants!inner(delegation_id)")
+        .eq("event_stage_id", stageId);
+      if (error) throw error;
+      return new Set<string>((data ?? []).map((r: any) => r.participants?.delegation_id).filter(Boolean));
+    },
+  });
+
+  const { data: allDelegations, isLoading } = useQuery({
     queryKey: ["delegations"],
     queryFn: async () => {
       const { data, error } = await supabase.from("delegations").select("*").order("created_at", { ascending: false });
@@ -56,6 +72,13 @@ export default function DelegacoesPage() {
       return data;
     },
   });
+
+  const delegations = useMemo(() => {
+    if (!allDelegations) return allDelegations;
+    if (!stageId) return allDelegations;
+    if (!stageDelegationIds) return [];
+    return allDelegations.filter((d) => stageDelegationIds.has(d.id));
+  }, [allDelegations, stageId, stageDelegationIds]);
 
   const eventsMap = new Map(events.map((e) => [e.id, e]));
   const institutionsMap = new Map(institutions.map((i) => [i.id, i]));
