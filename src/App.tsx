@@ -9,6 +9,7 @@ import { EventProvider } from "@/contexts/EventContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SuperAdminRoute from "@/components/SuperAdminRoute";
 import AdminLayout from "@/components/AdminLayout";
+import RedirectToEtapas from "@/components/admin/RedirectToEtapas";
 import SuperAdminLayout from "@/components/SuperAdminLayout";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
@@ -212,44 +213,44 @@ const App = () => (
               <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipantesPage /></ProtectedRoute>} />
               <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipanteDetalhePage /></ProtectedRoute>} />
               <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
-              <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoPage /></ProtectedRoute>} />
-              <Route path="credenciamento-externo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoExternoPage /></ProtectedRoute>} />
-              <Route path="validacao-qr" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao"]}><ValidacaoQRPage /></ProtectedRoute>} />
-              {/* Transporte */}
-              <Route path="transporte" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteHubPage /></ProtectedRoute>} />
-              <Route path="transporte/veiculos" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteVeiculosPage /></ProtectedRoute>} />
-              <Route path="transporte/rotas" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteRotasPage /></ProtectedRoute>} />
-              <Route path="transporte/viagens" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteViagensPage /></ProtectedRoute>} />
-              <Route path="transporte/embarque/:tripId" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteEmbarquePage /></ProtectedRoute>} />
-              <Route path="transporte/relatorios" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteRelatoriosPage /></ProtectedRoute>} />
-              {/* Alimentação */}
-              <Route path="alimentacao" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoHubPage /></ProtectedRoute>} />
-              <Route path="alimentacao/tipos" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoTiposPage /></ProtectedRoute>} />
-              <Route path="alimentacao/janelas" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoJanelasPage /></ProtectedRoute>} />
-              <Route path="alimentacao/consumo" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoConsumoPage /></ProtectedRoute>} />
-              <Route path="alimentacao/dashboard" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoDashboardPage /></ProtectedRoute>} />
-              <Route path="alimentacao/relatorios" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoRelatoriosPage /></ProtectedRoute>} />
-              {/* Alojamento */}
-              <Route path="alojamento" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoHubPage /></ProtectedRoute>} />
-              <Route path="alojamento/locais" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoLocaisPage /></ProtectedRoute>} />
-              <Route path="alojamento/unidades" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoUnidadesPage /></ProtectedRoute>} />
-              <Route path="alojamento/ocupacao" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoOcupacaoPage /></ProtectedRoute>} />
-              <Route path="alojamento/relatorios" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoRelatoriosPage /></ProtectedRoute>} />
-              {/* Competição */}
-              <Route path="competicao/painel" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelPage /></ProtectedRoute>} />
-              <Route path="competicao/pre-validacao" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><PreValidacaoPage /></ProtectedRoute>} />
-              <Route path="competicao/central" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoCentralPage /></ProtectedRoute>} />
-              <Route path="competicao/fases" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoFasesPage /></ProtectedRoute>} />
-              <Route path="competicao/grupos" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoGruposPage /></ProtectedRoute>} />
-              <Route path="competicao/partidas" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidasAgendaPage /></ProtectedRoute>} />
-              <Route path="competicao/agenda" element={<Navigate to="/admin/competicao/partidas" replace />} />
-              <Route path="competicao/partidas-agenda" element={<Navigate to="/admin/competicao/partidas" replace />} />
+              <Route path="credenciamento" element={<RedirectToEtapas />} />
+              <Route path="credenciamento-externo" element={<RedirectToEtapas />} />
+              <Route path="validacao-qr" element={<RedirectToEtapas />} />
+              {/* Transporte — operacional, redireciona para Etapa */}
+              <Route path="transporte" element={<RedirectToEtapas />} />
+              <Route path="transporte/veiculos" element={<RedirectToEtapas />} />
+              <Route path="transporte/rotas" element={<RedirectToEtapas />} />
+              <Route path="transporte/viagens" element={<RedirectToEtapas />} />
+              <Route path="transporte/embarque/:tripId" element={<RedirectToEtapas />} />
+              <Route path="transporte/relatorios" element={<RedirectToEtapas />} />
+              {/* Alimentação — operacional, redireciona para Etapa */}
+              <Route path="alimentacao" element={<RedirectToEtapas />} />
+              <Route path="alimentacao/tipos" element={<RedirectToEtapas />} />
+              <Route path="alimentacao/janelas" element={<RedirectToEtapas />} />
+              <Route path="alimentacao/consumo" element={<RedirectToEtapas />} />
+              <Route path="alimentacao/dashboard" element={<RedirectToEtapas />} />
+              <Route path="alimentacao/relatorios" element={<RedirectToEtapas />} />
+              {/* Alojamento — operacional, redireciona para Etapa */}
+              <Route path="alojamento" element={<RedirectToEtapas />} />
+              <Route path="alojamento/locais" element={<RedirectToEtapas />} />
+              <Route path="alojamento/unidades" element={<RedirectToEtapas />} />
+              <Route path="alojamento/ocupacao" element={<RedirectToEtapas />} />
+              <Route path="alojamento/relatorios" element={<RedirectToEtapas />} />
+              {/* Competição — operacional, redireciona para Etapa */}
+              <Route path="competicao/painel" element={<RedirectToEtapas />} />
+              <Route path="competicao/pre-validacao" element={<RedirectToEtapas />} />
+              <Route path="competicao/central" element={<RedirectToEtapas />} />
+              <Route path="competicao/fases" element={<RedirectToEtapas />} />
+              <Route path="competicao/grupos" element={<RedirectToEtapas />} />
+              <Route path="competicao/partidas" element={<RedirectToEtapas />} />
+              <Route path="competicao/agenda" element={<RedirectToEtapas />} />
+              <Route path="competicao/partidas-agenda" element={<RedirectToEtapas />} />
               <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />
-              <Route path="competicao/equipes" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoEquipesPage /></ProtectedRoute>} />
-              <Route path="competicao/resultados" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoResultadosPage /></ProtectedRoute>} />
-              <Route path="competicao/sincronizar-equipes" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><SincronizarEquipesPage /></ProtectedRoute>} />
-              <Route path="competicao/regras" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><RegrasProvaPage /></ProtectedRoute>} />
-              <Route path="competicao/regras/lote" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><RegrasLotePage /></ProtectedRoute>} />
+              <Route path="competicao/equipes" element={<RedirectToEtapas />} />
+              <Route path="competicao/resultados" element={<RedirectToEtapas />} />
+              <Route path="competicao/sincronizar-equipes" element={<RedirectToEtapas />} />
+              <Route path="competicao/regras" element={<RedirectToEtapas />} />
+              <Route path="competicao/regras/lote" element={<RedirectToEtapas />} />
               {/* Credenciais */}
               <Route path="credenciais/modelos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredencialModelosPage /></ProtectedRoute>} />
               {/* Acessos */}
@@ -271,21 +272,21 @@ const App = () => (
               <Route path="demo" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><DemoSeedsPage /></ProtectedRoute>} />
               <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DebugPublicadosPage /></ProtectedRoute>} />
               <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EmailTemplatesPage /></ProtectedRoute>} />
-              {/* Pesquisa */}
-              <Route path="pesquisa" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaDashboardPage /></ProtectedRoute>} />
-              <Route path="pesquisa/eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaEventosPage /></ProtectedRoute>} />
-              <Route path="pesquisa/eventos/:eventId/form" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaFormEditorPage /></ProtectedRoute>} />
-              <Route path="pesquisa/pesquisadores" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaPesquisadoresPage /></ProtectedRoute>} />
+              {/* Pesquisa de Satisfação — operacional, redireciona para Etapa */}
+              <Route path="pesquisa" element={<RedirectToEtapas />} />
+              <Route path="pesquisa/eventos" element={<RedirectToEtapas />} />
+              <Route path="pesquisa/eventos/:eventId/form" element={<RedirectToEtapas />} />
+              <Route path="pesquisa/pesquisadores" element={<RedirectToEtapas />} />
               {/* Links & Páginas */}
               <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinksPage /></ProtectedRoute>} />
               <Route path="links/novo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
               <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
               <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
-              {/* Relatórios */}
+              {/* Relatórios Globais */}
               <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ReportCenterPage /></ProtectedRoute>} />
               <Route path="atletas/qrcode" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AtletaQrCodePage /></ProtectedRoute>} />
-              {/* Ocorrências */}
-              <Route path="ocorrencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><OcorrenciasPage /></ProtectedRoute>} />
+              {/* Ocorrências — operacional, redireciona para Etapa */}
+              <Route path="ocorrencias" element={<RedirectToEtapas />} />
             </Route>
             {/* PWA Auth — redirect old login paths to unified login */}
             <Route path="/pwa/login" element={<Navigate to="/login" replace />} />
