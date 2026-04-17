@@ -35,7 +35,7 @@ export default function DebugPublicadosPage() {
             team_id,
             teams(name),
             participant_sport_event_id,
-            participant_sport_events(participants(full_name))
+            participant_sport_events(participants(person:people(full_name)))
           ),
           competition_matches!competition_match_results_match_id_fkey(
             match_date, sport_event_id, event_id,
@@ -76,7 +76,7 @@ export default function DebugPublicadosPage() {
           row.entries.push({
             side: entry.side,
             team_name: entry.teams?.name ?? null,
-            participant_name: entry.participant_sport_events?.participants?.full_name ?? null,
+            participant_name: (entry.participant_sport_events?.participants as any)?.person?.full_name ?? null,
             score: r.score,
           });
         }

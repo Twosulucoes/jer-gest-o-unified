@@ -19,7 +19,7 @@ interface MatchDetail {
     id: string;
     side: string;
     team: { name: string } | null;
-    participant_sport_event: { participant: { full_name: string } | null } | null;
+    participant_sport_event: { participant: { person: { full_name: string } | null } | null } | null;
   }>;
 }
 
@@ -38,7 +38,7 @@ export default function CoordenacaoPartidaDetalhePage() {
           id, match_date, start_time, status, match_number, notes,
           venue:venues(name),
           phase:competition_phases(name),
-          entries:competition_match_entries(id, side, team:teams(name), participant_sport_event:participant_sport_events(participant:participants(full_name)))
+          entries:competition_match_entries(id, side, team:teams(name), participant_sport_event:participant_sport_events(participant:participants(person:people(full_name))))
         `)
         .eq("id", matchId)
         .single();
@@ -98,7 +98,7 @@ export default function CoordenacaoPartidaDetalhePage() {
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Participantes</h3>
               <div className="space-y-2">
                 {(match.entries || []).map((e) => {
-                  const name = e.team?.name || (e.participant_sport_event as any)?.participant?.full_name || "—";
+                  const name = e.team?.name || (e.participant_sport_event as any)?.participant?.person?.full_name || "—";
                   return (
                     <Card key={e.id}>
                       <CardContent className="p-3 flex items-center justify-between">
