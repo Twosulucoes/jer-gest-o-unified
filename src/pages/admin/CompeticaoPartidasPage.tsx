@@ -82,7 +82,21 @@ export default function CompeticaoPartidasPage() {
     enabled: !!selectedEventId,
   });
 
-  const { data: matches, isLoading } = useQuery({
+  const { stageId } = useStageParticipantFilter();
+
+  const { data: stageMatchIds } = useQuery({
+    queryKey: ["stage_match_ids", stageId, selectedEventId],
+    enabled: !!stageId && !!selectedEventId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("competition_match_entries" as never) as any)
+        .select("match_id, participant_sport_events!inner(event_stage_id)")
+        .eq("participant_sport_events.event_stage_id", stageId);
+      if (error) throw error;
+      return new Set<string>((data ?? []).map((r: any) => r.match_id as string));
+    },
+  });
+
+  const { data: allMatches, isLoading } = useQuery({
     queryKey: ["competition_matches", selectedEventId, selectedSportEventId],
     queryFn: async () => {
       if (!selectedEventId) return [];
@@ -94,6 +108,13 @@ export default function CompeticaoPartidasPage() {
     },
     enabled: !!selectedEventId,
   });
+
+  const matches = useMemo(() => {
+    if (!allMatches) return allMatches;
+    if (!stageId) return allMatches;
+    if (!stageMatchIds) return [];
+    return allMatches.filter((m) => stageMatchIds.has(m.id));
+  }, [allMatches, stageId, stageMatchIds]);
 
   const phasesMap = new Map(phases.map((p) => [p.id, p]));
   const groupsMap = new Map(groups.map((g) => [g.id, g]));
