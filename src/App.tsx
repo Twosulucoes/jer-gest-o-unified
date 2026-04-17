@@ -9,6 +9,7 @@ import { EventProvider } from "@/contexts/EventContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SuperAdminRoute from "@/components/SuperAdminRoute";
 import AdminLayout from "@/components/AdminLayout";
+import RedirectToEtapas from "@/components/admin/RedirectToEtapas";
 import SuperAdminLayout from "@/components/SuperAdminLayout";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
