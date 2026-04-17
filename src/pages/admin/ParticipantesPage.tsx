@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, XCircle, User } from "lucide-react";
+import { Search, Users, XCircle, User, Layers, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,41 @@ export default function ParticipantesPage() {
   const navigate = useNavigate();
   const selectedEventId = useActiveEventId();
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const stageFilterId = searchParams.get("stage");
+
+  // Carrega etapa filtrada (se houver)
+  const { data: stageInfo } = useQuery({
+    queryKey: ["participantes-stage-info", stageFilterId],
+    enabled: !!stageFilterId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("event_stages" as never) as any)
+        .select("id, name, slug")
+        .eq("id", stageFilterId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { id: string; name: string; slug: string } | null;
+    },
+  });
+
+  // IDs de participantes vinculados à etapa
+  const { data: stageParticipantIds } = useQuery({
+    queryKey: ["participantes-stage-participants", stageFilterId],
+    enabled: !!stageFilterId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+        .select("participant_id")
+        .eq("event_stage_id", stageFilterId);
+      if (error) throw error;
+      return new Set((data ?? []).map((r: any) => r.participant_id as string));
+    },
+  });
+
+  const clearStageFilter = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("stage");
+    setSearchParams(next, { replace: true });
+  };
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
