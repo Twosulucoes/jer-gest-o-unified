@@ -87,6 +87,7 @@ import GoRedirectPage from "./pages/public/GoRedirectPage";
 import PublicPagePage from "./pages/public/PublicPagePage";
 import PesquisaDashboardPage from "./pages/admin/PesquisaDashboardPage";
 import PesquisaEventosPage from "./pages/admin/PesquisaEventosPage";
+import PesquisaFormEditorPage from "./pages/admin/PesquisaFormEditorPage";
 import PesquisaPesquisadoresPage from "./pages/admin/PesquisaPesquisadoresPage";
 // PWA pages
 import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
@@ -263,6 +264,7 @@ const App = () => (
               {/* Pesquisa */}
               <Route path="pesquisa" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaDashboardPage /></ProtectedRoute>} />
               <Route path="pesquisa/eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaEventosPage /></ProtectedRoute>} />
+              <Route path="pesquisa/eventos/:eventId/form" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaFormEditorPage /></ProtectedRoute>} />
               <Route path="pesquisa/pesquisadores" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PesquisaPesquisadoresPage /></ProtectedRoute>} />
               {/* Links & Páginas */}
               <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinksPage /></ProtectedRoute>} />
