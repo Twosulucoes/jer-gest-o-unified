@@ -1,12 +1,24 @@
 # 02 — Modelo de Acesso e Perfis
 
-## Hierarquia de Acesso — 3 Níveis
+## Hierarquia de Acesso — 3 Níveis + Global/Etapa
 
 ```
 Super Admin (/super) → acesso global, todos os eventos
-    └── Cliente Admin (/admin) → acesso ao evento ativo
+    └── Cliente Admin GLOBAL (/admin) → preparação, acessos, config
+            └── [botão "Entrar na Etapa"]
+                  └── Cliente Admin ETAPA (/admin/etapa/:stageId/...)
+                        operação: credenciamento, competição, logística
         └── Operadores PWA (/pwa) → módulo isolado por perfil
 ```
+
+### Regra de separação obrigatória
+
+- **Global** nunca exibe módulos operacionais de Etapa.
+- **Etapa** nunca exibe itens do Global.
+- Única ponte: botões dedicados **"Entrar na Etapa"** ↔ **"Sair da Etapa"**.
+- URLs legadas (`/admin/credenciamento`, `/admin/competicao/*`, `/admin/transporte/*`, `/admin/alimentacao/*`, `/admin/alojamento/*`) são redirecionadas pelo `RedirectToEtapas` para a etapa lembrada (`localStorage.jer_last_active_stage_id`) ou para `/admin/etapas`.
+- Toda entrada/saída registra `stage_enter` / `stage_exit` em `audit_events`.
+- Perfil `delegacao` **não** acessa o Web — usa exclusivamente o PWA.
 
 ## Perfis (app_role)
 
