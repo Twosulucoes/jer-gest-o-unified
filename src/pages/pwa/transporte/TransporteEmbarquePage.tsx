@@ -228,22 +228,32 @@ export default function TransporteEmbarquePage() {
       }
 
       const passenger = passengers.find((p) => p.participant_id === participantId);
-      if (!passenger) {
-        toast.error(`${name} não está na lista desta viagem`);
-        return;
-      }
-      if (passenger.boarded) {
-        toast.info(`${name} já embarcou`);
-        return;
-      }
-
       const { data: { session: boardSession } } = await supabase.auth.getSession();
 
-      const { error } = await supabase
-        .from("transport_passengers")
-        .update({ status: "boarded", boarded_at: new Date().toISOString(), boarded_by: boardSession?.user.id ?? null })
-        .eq("id", passenger.id);
-      if (error) throw error;
+      if (passenger) {
+        if (passenger.boarded) {
+          toast.info(`${name} já embarcou`);
+          return;
+        }
+        const { error } = await supabase
+          .from("transport_passengers")
+          .update({ status: "boarded", boarded_at: new Date().toISOString(), boarded_by: boardSession?.user.id ?? null })
+          .eq("id", passenger.id);
+        if (error) throw error;
+      } else {
+        // Participant has a valid credential but wasn't pre-registered — add on the spot
+        const { error } = await supabase
+          .from("transport_passengers")
+          .insert({
+            trip_id: tripId,
+            participant_id: participantId,
+            status: "boarded",
+            boarded_at: new Date().toISOString(),
+            boarded_by: boardSession?.user.id ?? null,
+            is_manual: false,
+          } as any);
+        if (error) throw error;
+      }
 
       toast.success(`${name} embarcado com sucesso`);
       if (navigator.vibrate) navigator.vibrate(200);
