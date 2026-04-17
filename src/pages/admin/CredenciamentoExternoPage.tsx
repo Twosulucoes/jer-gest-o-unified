@@ -335,13 +335,13 @@ export default function CredenciamentoExternoPage() {
             </Select>
 
             <Select value={filterType} onValueChange={(v) => { setFilterType(v); setPage(0); }}>
-              <SelectTrigger className="w-[150px] h-9 text-xs">
+              <SelectTrigger className="w-[170px] h-9 text-xs">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 {participantTypes.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                  <SelectItem key={t} value={t}>{TYPE_LABELS[t] ?? t}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
