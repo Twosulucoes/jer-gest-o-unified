@@ -38,7 +38,7 @@ const MODE_OPTIONS = [
   { value: 'autopreenchimento', label: 'Autopreenchimento' },
 ];
 
-const QUESTIONS = [
+const DEFAULT_QUESTIONS = [
   { key: 'd1_organizacao', label: 'Organização do evento', dim: 'D1 — Operação' },
   { key: 'd1_infraestrutura', label: 'Infraestrutura', dim: 'D1 — Operação' },
   { key: 'd1_alimentacao', label: 'Alimentação', dim: 'D1 — Operação' },
@@ -61,6 +61,7 @@ export default function PesquisaNovaPage() {
   const [step, setStep] = useState<Step>('profile');
   const [questionIdx, setQuestionIdx] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [QUESTIONS, setQUESTIONS] = useState(DEFAULT_QUESTIONS);
 
   // Profile fields
   const [respondentType, setRespondentType] = useState('');
@@ -103,6 +104,17 @@ export default function PesquisaNovaPage() {
   useEffect(() => {
     if (!session) navigate('/pwa/pesquisa/login', { replace: true });
   }, [session, navigate]);
+
+  useEffect(() => {
+    if (!session?.researcher?.event_id) return;
+    supabase.rpc('pesquisa_get_event_config', { p_event_id: session.researcher.event_id } as any)
+      .then(({ data }) => {
+        const config = data as any;
+        if (Array.isArray(config?.questions_config) && config.questions_config.length > 0) {
+          setQUESTIONS(config.questions_config);
+        }
+      });
+  }, [session?.researcher?.event_id]);
 
   if (!session) return null;
 

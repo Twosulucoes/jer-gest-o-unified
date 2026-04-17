@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, FormInput } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PesquisaEvent {
@@ -21,6 +22,7 @@ interface PesquisaEvent {
 
 export default function PesquisaEventosPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<PesquisaEvent | null>(null);
   const [form, setForm] = useState({ name: '', location: '', event_date: '', active: true });
@@ -90,7 +92,12 @@ export default function PesquisaEventosPage() {
                   {e.location || 'Sem local'} · {e.event_date || 'Sem data'} · {e.active ? '✅ Ativo' : '⏸ Inativo'}
                 </p>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => openEdit(e)}><Pencil className="h-4 w-4" /></Button>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/pesquisa/eventos/${e.id}/form`)} title="Editar formulário">
+                  <FormInput className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => openEdit(e)} title="Editar informações básicas"><Pencil className="h-4 w-4" /></Button>
+              </div>
             </Card>
           ))}
           {events?.length === 0 && <p className="text-muted-foreground text-center py-8">Nenhum evento cadastrado</p>}
