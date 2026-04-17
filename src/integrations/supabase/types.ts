@@ -5391,6 +5391,10 @@ export type Database = {
         Args: { p_athlete_id: string }
         Returns: undefined
       }
+      admin_generate_qr: {
+        Args: { p_entity_id: string; p_qr_type: string }
+        Returns: Json
+      }
       admin_list_users: {
         Args: never
         Returns: {
@@ -5516,6 +5520,31 @@ export type Database = {
         Args: { pin: string; pin_hash: string }
         Returns: boolean
       }
+      pwa_assign_bed: {
+        Args: {
+          p_bed_token: string
+          p_device_id: string
+          p_person_token: string
+        }
+        Returns: Json
+      }
+      pwa_checkin: {
+        Args: {
+          p_device_id: string
+          p_facility_id: string
+          p_mode?: string
+          p_token: string
+        }
+        Returns: Json
+      }
+      pwa_checkout: {
+        Args: { p_device_id: string; p_facility_id: string; p_token: string }
+        Returns: Json
+      }
+      pwa_search_person: {
+        Args: { p_facility_id: string; p_limit?: number; p_query: string }
+        Returns: Json
+      }
       recompute_participation_irregularities: {
         Args: { p_event_id: string }
         Returns: Json
@@ -5530,6 +5559,7 @@ export type Database = {
         Args: { p_event_id: string; p_prova_raw: string; p_sport_id: string }
         Returns: Json
       }
+      resolve_qr: { Args: { p_token: string }; Returns: Json }
       rpc_build_preset_rules: { Args: { p_preset_key: string }; Returns: Json }
       rpc_can_regenerate_matches: {
         Args: { p_event_id: string; p_sport_event_id: string }
