@@ -50,6 +50,15 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
   replaced: { label: "Substituída", variant: "secondary" },
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  athlete: "Atleta",
+  coach: "Técnico",
+  head_of_delegation: "Chefe de delegação",
+  staff: "Staff",
+  referee: "Árbitro",
+  guest: "Convidado",
+};
+
 const PAGE_SIZE = 50;
 
 export default function CredenciamentoExternoPage() {
@@ -66,6 +75,7 @@ export default function CredenciamentoExternoPage() {
   const [replaceDialogOpen, setReplaceDialogOpen] = useState(false);
   const [pendingCode, setPendingCode] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const [manualCode, setManualCode] = useState("");
 
   // Fetch delegations for filter
   const { data: delegations = [] } = useQuery({
@@ -264,6 +274,18 @@ export default function CredenciamentoExternoPage() {
     setPendingCode(null);
   };
 
+  const handleManualSubmit = () => {
+    const code = manualCode.trim();
+    if (!code) return;
+    setManualCode("");
+    if (hasActiveCred) {
+      setPendingCode(code);
+      setReplaceDialogOpen(true);
+    } else {
+      linkMutation.mutate({ code });
+    }
+  };
+
   // Unique participant types for filter
   const participantTypes = useMemo(() => {
     const types = new Set(allParticipants.map((p) => p.participant_type));
@@ -325,13 +347,13 @@ export default function CredenciamentoExternoPage() {
             </Select>
 
             <Select value={filterType} onValueChange={(v) => { setFilterType(v); setPage(0); }}>
-              <SelectTrigger className="w-[150px] h-9 text-xs">
+              <SelectTrigger className="w-[170px] h-9 text-xs">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 {participantTypes.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                  <SelectItem key={t} value={t}>{TYPE_LABELS[t] ?? t}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -482,6 +504,26 @@ export default function CredenciamentoExternoPage() {
                       <ScanLine className="h-5 w-5 mr-2" />
                       Escanear Credencial
                     </Button>
+                    <div className="flex items-center gap-2">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-xs text-muted-foreground">ou digite o código</span>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Código da credencial"
+                        value={manualCode}
+                        onChange={(e) => setManualCode(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleManualSubmit()}
+                        className="font-mono"
+                      />
+                      <Button
+                        onClick={handleManualSubmit}
+                        disabled={!manualCode.trim() || linkMutation.isPending}
+                      >
+                        Vincular
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>
