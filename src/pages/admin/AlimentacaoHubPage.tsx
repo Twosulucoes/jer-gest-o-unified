@@ -78,10 +78,10 @@ export default function AlimentacaoHubPage() {
     queryKey: ["meal_types", selectedStageId],
     queryFn: async () => {
       if (!selectedStageId) return [];
-      const { data, error } = await supabase.from("meal_types").select("*")
+      const { data, error } = await (supabase.from("meal_types") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("sort_order");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });
@@ -90,10 +90,10 @@ export default function AlimentacaoHubPage() {
     queryKey: ["meal_windows", selectedStageId],
     queryFn: async () => {
       if (!selectedStageId) return [];
-      const { data, error } = await supabase.from("meal_windows").select("*")
+      const { data, error } = await (supabase.from("meal_windows") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("service_date").order("start_time");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });
@@ -102,7 +102,7 @@ export default function AlimentacaoHubPage() {
 
   const createType = useMutation({
     mutationFn: async (v: MealTypeFormValues) => {
-      const { error } = await supabase.from("meal_types").insert({
+      const { error } = await (supabase.from("meal_types") as any).insert({
         event_id: selectedStage!.event_id, event_stage_id: selectedStageId,
         name: v.name, slug: v.slug, sort_order: v.sort_order, is_active: v.is_active,
       });
@@ -125,7 +125,7 @@ export default function AlimentacaoHubPage() {
 
   const createWindow = useMutation({
     mutationFn: async (v: MealWindowFormValues) => {
-      const { error } = await supabase.from("meal_windows").insert({
+      const { error } = await (supabase.from("meal_windows") as any).insert({
         event_id: selectedStage!.event_id, event_stage_id: selectedStageId,
         meal_type_id: v.meal_type_id, label: v.label || null,
         service_date: v.service_date, start_time: v.start_time, end_time: v.end_time,

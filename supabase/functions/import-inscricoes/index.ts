@@ -1333,7 +1333,7 @@ Deno.serve(async (req: Request) => {
       allErrors.push(...result.errors);
       validRows.push({ row, resolved: result.resolved });
 
-      if (row.cpf_valid) cpfsValidos++;
+      if (row.cpf_valid) { cpfsValidos++; }
       if (result.resolved.person_action === "reuse") cpfsReutilizados++;
       if (result.resolved.person_action === "create") cpfsNovos++;
       if (result.resolved.institution_will_create === "true") institutionsToCreate.add(row.institution_slug);
@@ -1577,7 +1577,8 @@ Deno.serve(async (req: Request) => {
             } else {
               personId = newPerson.id;
               peopleCreated++;
-              if (row.cpf_valid) people.byCpf.set(row.cpf_valid as string, personId);
+              const cpf = row.cpf_valid;
+              if (cpf) people.byCpf.set(cpf, personId);
             }
           }
         } else {

@@ -78,10 +78,10 @@ export default function AlojamentoHubPage() {
     queryKey: ["lodging_locations", selectedStageId],
     queryFn: async () => {
       if (!selectedStageId) return [];
-      const { data, error } = await supabase.from("lodging_locations").select("*")
+      const { data, error } = await (supabase.from("lodging_locations") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("name");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });
@@ -90,10 +90,10 @@ export default function AlojamentoHubPage() {
     queryKey: ["lodging_units", selectedStageId],
     queryFn: async () => {
       if (!selectedStageId) return [];
-      const { data, error } = await supabase.from("lodging_units").select("*")
+      const { data, error } = await (supabase.from("lodging_units") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("name");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });
@@ -102,11 +102,11 @@ export default function AlojamentoHubPage() {
     queryKey: ["lodging_occupancy_counts", selectedStageId],
     queryFn: async () => {
       if (!selectedStageId) return [];
-      const { data, error } = await supabase
-        .from("lodging_occupancies").select("unit_id")
+      const { data, error } = await (supabase
+        .from("lodging_occupancies") as any).select("unit_id")
         .eq("event_stage_id", selectedStageId).in("status", ["allocated", "checked_in"]);
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
     enabled: !!selectedStageId,
   });
@@ -121,7 +121,7 @@ export default function AlojamentoHubPage() {
 
   const createLocation = useMutation({
     mutationFn: async (v: LodgingLocationFormValues) => {
-      const { error } = await supabase.from("lodging_locations").insert({
+      const { error } = await (supabase.from("lodging_locations") as any).insert({
         event_id: selectedStage!.event_id, event_stage_id: selectedStageId,
         name: v.name, address: v.address || null, notes: v.notes || null, is_active: v.is_active,
       });
@@ -144,7 +144,7 @@ export default function AlojamentoHubPage() {
 
   const createUnit = useMutation({
     mutationFn: async (v: LodgingUnitFormValues) => {
-      const { error } = await supabase.from("lodging_units").insert({
+      const { error } = await (supabase.from("lodging_units") as any).insert({
         event_id: selectedStage!.event_id, event_stage_id: selectedStageId,
         location_id: v.location_id, name: v.name, capacity: v.capacity,
         gender_restriction: v.gender_restriction, notes: v.notes || null, is_active: v.is_active,

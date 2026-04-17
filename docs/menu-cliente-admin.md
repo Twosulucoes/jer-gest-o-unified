@@ -15,12 +15,13 @@
 | Item | Rota | Perfis |
 |------|------|--------|
 | Eventos | `/admin/eventos` | admin, secretaria, coord. técnica |
-| Instituições | `/admin/instituicoes` | admin, secretaria, coord. técnica |
-| Delegações | `/admin/delegacoes` | admin, secretaria, coord. técnica |
+| **Delegações (Escolas)** *(unificado)* | `/admin/delegacoes` | admin, secretaria, coord. técnica |
 | Participantes | `/admin/participantes` | admin, secretaria, coord. técnica |
 | Importação | `/admin/importacao` | admin, secretaria |
 | Normalização | `/admin/normalizacao-provas` | admin, secretaria, coord. técnica |
 | Irregularidades | `/admin/irregularidades` | admin, secretaria, coord. técnica |
+
+> **Nota:** "Instituições" foi removido do menu (Fase 1). Escola e Delegação são tratadas como uma coisa só. Página `/admin/instituicoes` permanece acessível por URL até a Fase 3 (fusão no banco).
 
 ---
 
