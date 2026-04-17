@@ -90,7 +90,7 @@ export default function TransporteHubPage() {
     queryKey: ["transport_vehicles", selectedStageId],
     queryFn: async () => {
       if (!selectedStageId) return [];
-      const { data, error } = await supabase.from("transport_vehicles").select("*")
+      const { data, error } = await (supabase.from("transport_vehicles") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("plate");
       if (error) throw error;
       return data;
@@ -102,7 +102,7 @@ export default function TransporteHubPage() {
     queryKey: ["transport_routes", selectedStageId],
     queryFn: async () => {
       if (!selectedStageId) return [];
-      const { data, error } = await supabase.from("transport_routes").select("*")
+      const { data, error } = await (supabase.from("transport_routes") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("name");
       if (error) throw error;
       return data;
@@ -114,7 +114,7 @@ export default function TransporteHubPage() {
     queryKey: ["transport_trips", selectedStageId],
     queryFn: async () => {
       if (!selectedStageId) return [];
-      const { data, error } = await supabase.from("transport_trips").select("*")
+      const { data, error } = await (supabase.from("transport_trips") as any).select("*")
         .eq("event_stage_id", selectedStageId).order("scheduled_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -127,7 +127,7 @@ export default function TransporteHubPage() {
 
   const createVehicle = useMutation({
     mutationFn: async (v: VehicleFormValues) => {
-      const { error } = await supabase.from("transport_vehicles").insert({
+      const { error } = await (supabase.from("transport_vehicles") as any).insert({
         event_id: selectedStage!.event_id, event_stage_id: selectedStageId,
         plate: v.plate.toUpperCase(), label: v.label || null,
         capacity: v.capacity, vehicle_type: v.vehicle_type, is_active: v.is_active,
@@ -152,7 +152,7 @@ export default function TransporteHubPage() {
 
   const createRoute = useMutation({
     mutationFn: async (v: RouteFormValues) => {
-      const { error } = await supabase.from("transport_routes").insert({
+      const { error } = await (supabase.from("transport_routes") as any).insert({
         event_id: selectedStage!.event_id, event_stage_id: selectedStageId,
         name: v.name, origin: v.origin || null,
         destination: v.destination || null, notes: v.notes || null, is_active: v.is_active,
@@ -177,7 +177,7 @@ export default function TransporteHubPage() {
 
   const createTrip = useMutation({
     mutationFn: async (v: TripFormValues) => {
-      const { error } = await supabase.from("transport_trips").insert({
+      const { error } = await (supabase.from("transport_trips") as any).insert({
         event_id: selectedStage!.event_id, event_stage_id: selectedStageId,
         route_id: v.route_id, vehicle_id: v.vehicle_id || null,
         driver_name: v.driver_name || null, driver_phone: v.driver_phone || null,
