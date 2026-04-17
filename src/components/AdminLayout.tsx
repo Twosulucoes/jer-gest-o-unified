@@ -5,13 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
-  LayoutDashboard, Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree,
-  Building2, Users, Upload, UserCheck, ScanLine, Bus, Route, Navigation,
-  UtensilsCrossed, Clock, ClipboardList, Building, DoorOpen, KeyRound,
-  Trophy, Swords, UsersRound, IdCard, ChevronDown,
+  Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree,
+  Building2, Users, Upload, KeyRound,
+  UsersRound, ChevronDown,
   Shield, Settings, AlertTriangle, FileSearch, FileBarChart,
-  Info, Zap, ClipboardCheck, ExternalLink, ChevronsLeft,
-  ChevronsRight, User, FolderOpen, BadgeCheck, Truck, MessageSquare, Cog,
+  Info, Zap, ExternalLink, ChevronsLeft,
+  ChevronsRight, User, FolderOpen, Cog,
   Home,
 } from "lucide-react";
 import { useState, useMemo } from "react";
