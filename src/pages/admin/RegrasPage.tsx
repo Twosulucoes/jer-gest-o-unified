@@ -23,6 +23,7 @@ import {
 import { RegraSection, KvTable } from "@/components/regras-jer/RegraSection";
 import { ModalidadeCard } from "@/components/regras-jer/ModalidadeCard";
 import { MotorPanel } from "@/components/regras-jer/MotorPanel";
+import { EditorRegrasProva } from "@/components/regras-jer/EditorRegrasProva";
 import { toast } from "sonner";
 
 const BLOCO_TABS = [
