@@ -30,9 +30,8 @@ const TIE_BREAKER_OPTIONS = [
 interface SportEventRow {
   id: string;
   name: string;
-  gender_scope: string;
   sports: { name: string; is_collective: boolean } | null;
-  categories: { name: string } | null;
+  categories: { name: string; gender_scope: string } | null;
 }
 
 export function EditorRegrasProva() {
@@ -47,7 +46,7 @@ export function EditorRegrasProva() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sport_events")
-        .select("id, name, gender_scope, sports(name, is_collective), categories(name)")
+        .select("id, name, sports(name, is_collective), categories(name, gender_scope)")
         .eq("event_id", eventId)
         .order("name");
       if (error) throw error;
