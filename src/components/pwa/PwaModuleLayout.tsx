@@ -26,7 +26,7 @@ export default function PwaModuleLayout({ children, moduleTitle, moduleIcon: Ico
     return <Navigate to="/pwa/login" replace />;
   }
 
-  const authorized = hasRole("admin" as AppRole) || hasRole("secretaria" as AppRole) || allowedRoles.some((r) => hasRole(r));
+  const authorized = hasRole("admin") || hasRole("secretaria") || allowedRoles.some((r) => hasRole(r));
   if (!authorized) {
     return <Navigate to="/pwa/acesso-negado" replace />;
   }
