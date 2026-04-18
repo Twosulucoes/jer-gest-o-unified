@@ -1349,6 +1349,8 @@ Deno.serve(async (req: Request) => {
       sportCategoryPairs: maps.sportCategoryPairs,
       categoriesBySport: maps.categoriesBySport,
       eventYear: maps.eventYear,
+      sportAliases: maps.sportAliases,
+      categoryAliases: maps.categoryAliases,
     };
     const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i, catalog));
 
