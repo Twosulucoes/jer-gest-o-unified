@@ -871,8 +871,15 @@ function classifyRow(
     row.institution_name, row.sport_name, row.prova_name
   );
 
-  // Skip invalid inscription status
-  if (row.inscription_status && !["válida", "valida", ""].includes(row.inscription_status.toLowerCase())) {
+  // Skip invalid inscription status — aceita variações usadas pelo SIGECOM.
+  // Aceitos como válidos (segue): vazio, "valida", "deferida", "aprovada", "homologada", "confirmada".
+  // Tudo o mais (indeferida, pendente, cancelada, etc.) é ignorado com warning.
+  const statusNorm = row.inscription_status
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .trim();
+  const STATUS_OK = new Set(["", "valida", "deferida", "aprovada", "homologada", "confirmada"]);
+  if (statusNorm && !STATUS_OK.has(statusNorm)) {
     warnings.push({ row: row.row_number, field: "STATUS", value: row.inscription_status, code: "INVALID_STATUS", message: `Inscrição com status "${row.inscription_status}" — ignorada` });
     return { status: "skip", errors: [], warnings, pending: [], resolved: {} };
   }
