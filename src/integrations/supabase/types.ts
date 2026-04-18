@@ -6122,6 +6122,10 @@ export type Database = {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
       }
+      rpc_validate_sport_event_quorum: {
+        Args: { p_event_id: string; p_sport_event_id: string }
+        Returns: Json
+      }
       seed_event_demo: { Args: { p_event_id: string }; Returns: Json }
       seed_jer_2026_core_rules: {
         Args: { p_event_id_text: string }
@@ -6137,6 +6141,10 @@ export type Database = {
       }
       seed_logistics_stage_template: {
         Args: { p_event_id: string; p_seed_tag?: string; p_stage_name?: string }
+        Returns: Json
+      }
+      seed_logistics_template_to_all_stages: {
+        Args: { p_event_id: string; p_source_stage_slug?: string }
         Returns: Json
       }
       unaccent: { Args: { "": string }; Returns: string }
