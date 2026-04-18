@@ -82,6 +82,8 @@ import BoletinsPage from "./pages/admin/BoletinsPage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 import RegrasEventoPage from "./pages/admin/RegrasEventoPage";
+import RegrasPage from "./pages/admin/RegrasPage";
+import ImportacaoAliasesPage from "./pages/admin/ImportacaoAliasesPage";
 import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
 import DebugPublicadosPage from "./pages/admin/DebugPublicadosPage";
 import SuperDashboardPage from "./pages/super/SuperDashboardPage";
@@ -216,6 +218,7 @@ const App = () => (
               <Route path="importacao/modelo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoModeloPage /></ProtectedRoute>} />
               <Route path="importacao/pendencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPendenciasPage /></ProtectedRoute>} />
               <Route path="importacao/catalogo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoCatalogoPage /></ProtectedRoute>} />
+              <Route path="importacao/aliases" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ImportacaoAliasesPage /></ProtectedRoute>} />
               <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipantesPage /></ProtectedRoute>} />
               <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipanteDetalhePage /></ProtectedRoute>} />
               <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
@@ -265,7 +268,8 @@ const App = () => (
               {/* Parâmetros e Regras — consolidados em /admin/regras */}
               <Route path="parametros-evento" element={<Navigate to="/admin/regras" replace />} />
               <Route path="regras-evento" element={<Navigate to="/admin/regras" replace />} />
-              <Route path="regras" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegrasEventoPage /></ProtectedRoute>} />
+              <Route path="regras" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegrasPage /></ProtectedRoute>} />
+              <Route path="regras-legacy" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegrasEventoPage /></ProtectedRoute>} />
               {/* Irregularidades e Normalização */}
               <Route path="irregularidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><IrregularidadesPage /></ProtectedRoute>} />
               <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />
