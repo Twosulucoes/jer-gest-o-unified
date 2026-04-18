@@ -720,19 +720,26 @@ interface ReadOnlyMaps {
   eventYear: number | null;                   // events.year (ano-base do desempate por idade)
   delegations: Map<string, string>;
   existingInstitutionSlugs: Set<string>;
+  /** Aliases dinâmicos vindos da tabela import_aliases (kind='sport'). */
+  sportAliases: Record<string, string>;
+  /** Aliases dinâmicos vindos da tabela import_aliases (kind='category'). */
+  categoryAliases: Record<string, string>;
 }
 
 async function loadReadOnlyMaps(
   supabase: any,
   eventId: string,
 ): Promise<ReadOnlyMaps> {
-  const [instRes, sportRes, catRes, seRes, delRes, evRes] = await Promise.all([
+  const [instRes, sportRes, catRes, seRes, delRes, evRes, aliasRes] = await Promise.all([
     supabase.from("institutions").select("id, slug").eq("is_active", true),
     supabase.from("sports").select("id, slug").eq("event_id", eventId),
     supabase.from("categories").select("id, slug, min_birth_year, max_birth_year").eq("event_id", eventId),
     supabase.from("sport_events").select("id, sport_id, category_id, slug").eq("event_id", eventId),
     supabase.from("delegations").select("id, institution_id").eq("event_id", eventId),
     supabase.from("events").select("year").eq("id", eventId).maybeSingle(),
+    supabase.from("import_aliases")
+      .select("alias_norm, canonical_slug, kind, event_id")
+      .or(`event_id.eq.${eventId},event_id.is.null`),
   ]);
 
   const institutions = new Map<string, string>();
@@ -781,6 +788,20 @@ async function loadReadOnlyMaps(
 
   const eventYear = (evRes.data as { year?: number | null } | null)?.year ?? null;
 
+  // Aliases dinâmicos da fonte de verdade (event-scoped tem prioridade sobre global)
+  const sportAliases: Record<string, string> = {};
+  const categoryAliases: Record<string, string> = {};
+  const aliasRows = (aliasRes.data ?? []) as Array<{
+    alias_norm: string; canonical_slug: string; kind: string; event_id: string | null;
+  }>;
+  // Ordena: globais primeiro, depois event-scoped (sobrescreve)
+  aliasRows.sort((a, b) => Number(!!a.event_id) - Number(!!b.event_id));
+  for (const a of aliasRows) {
+    const key = a.alias_norm.toUpperCase();
+    if (a.kind === "sport") sportAliases[key] = a.canonical_slug;
+    else if (a.kind === "category") categoryAliases[key] = a.canonical_slug;
+  }
+
   return {
     institutions,
     sports,
@@ -792,6 +813,8 @@ async function loadReadOnlyMaps(
     eventYear,
     delegations,
     existingInstitutionSlugs: new Set(institutions.keys()),
+    sportAliases,
+    categoryAliases,
   };
 }
 
