@@ -44,6 +44,9 @@ function buildHtml(opts: {
           </tr>
           <tr>
             <td style="padding:20px 32px;border-top:1px solid #E2E8F0;background-color:#F6F8FC;">
+              <p style="margin:0 0 6px;font-size:12px;line-height:1.5;color:#94A3B8;text-align:center;">
+                <a href="{{ .SiteURL }}" target="_blank" style="color:${ACCENT_COLOR};text-decoration:none;font-weight:600;">{{ .SiteURL }}</a>
+              </p>
               <p style="margin:0;font-size:12px;line-height:1.5;color:#94A3B8;text-align:center;">
                 © ${new Date().getFullYear()} JER's Gestão — Jogos Escolares de Roraima
               </p>
