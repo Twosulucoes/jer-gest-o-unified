@@ -33,6 +33,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import ImportErrorsTable from "@/components/admin/ImportErrorsTable";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import ColumnMappingStep from "@/components/admin/ColumnMappingStep";
+import ImportResetCard from "@/components/admin/ImportResetCard";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
