@@ -30,9 +30,8 @@ const TIE_BREAKER_OPTIONS = [
 interface SportEventRow {
   id: string;
   name: string;
-  gender_scope: string;
   sports: { name: string; is_collective: boolean } | null;
-  categories: { name: string } | null;
+  categories: { name: string; gender_scope: string } | null;
 }
 
 export function EditorRegrasProva() {
