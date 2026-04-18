@@ -86,7 +86,7 @@ const navGroups: NavGroup[] = [
     id: "configuracoes", label: "Configurações", description: "Regras, locais, modalidades e categorias.",
     icon: <Settings className="h-4 w-4" />,
     items: [
-      { label: "Regras do Evento", to: "/admin/regras-evento", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Regras do Evento", to: "/admin/regras", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Modalidades", to: "/admin/modalidades", icon: <Dumbbell className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Categorias", to: "/admin/categorias", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },

@@ -258,9 +258,10 @@ const App = () => (
               {/* Acessos */}
               <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
               <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
-              {/* Parâmetros — consolidated into regras-evento */}
-              <Route path="parametros-evento" element={<Navigate to="/admin/regras-evento" replace />} />
-              <Route path="regras-evento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegrasEventoPage /></ProtectedRoute>} />
+              {/* Parâmetros e Regras — consolidados em /admin/regras */}
+              <Route path="parametros-evento" element={<Navigate to="/admin/regras" replace />} />
+              <Route path="regras-evento" element={<Navigate to="/admin/regras" replace />} />
+              <Route path="regras" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegrasEventoPage /></ProtectedRoute>} />
               {/* Irregularidades e Normalização */}
               <Route path="irregularidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><IrregularidadesPage /></ProtectedRoute>} />
               <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />
