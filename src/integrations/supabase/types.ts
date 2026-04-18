@@ -2996,6 +2996,153 @@ export type Database = {
           },
         ]
       }
+      monitoring_alert_state: {
+        Row: {
+          alert_key: string
+          last_sent_at: string
+          payload: Json | null
+        }
+        Insert: {
+          alert_key: string
+          last_sent_at?: string
+          payload?: Json | null
+        }
+        Update: {
+          alert_key?: string
+          last_sent_at?: string
+          payload?: Json | null
+        }
+        Relationships: []
+      }
+      monitoring_errors: {
+        Row: {
+          acknowledged: boolean
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          context: Json | null
+          created_at: string
+          id: string
+          message: string
+          severity: string
+          source: string
+          stack: string | null
+          url: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          context?: Json | null
+          created_at?: string
+          id?: string
+          message: string
+          severity?: string
+          source: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          context?: Json | null
+          created_at?: string
+          id?: string
+          message?: string
+          severity?: string
+          source?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      monitoring_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          entity_id: string | null
+          entity_label: string | null
+          event_id: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          entity_id?: string | null
+          entity_label?: string | null
+          event_id?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          entity_id?: string | null
+          entity_label?: string | null
+          event_id?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
+      monitoring_metrics: {
+        Row: {
+          active_users: number
+          bucket_at: string
+          bucket_size: string
+          created_at: string
+          details: Json | null
+          edge_function_calls: number
+          errors_count: number
+          id: string
+          new_inscriptions: number
+          new_matches: number
+          new_results: number
+          requests_count: number
+        }
+        Insert: {
+          active_users?: number
+          bucket_at: string
+          bucket_size?: string
+          created_at?: string
+          details?: Json | null
+          edge_function_calls?: number
+          errors_count?: number
+          id?: string
+          new_inscriptions?: number
+          new_matches?: number
+          new_results?: number
+          requests_count?: number
+        }
+        Update: {
+          active_users?: number
+          bucket_at?: string
+          bucket_size?: string
+          created_at?: string
+          details?: Json | null
+          edge_function_calls?: number
+          errors_count?: number
+          id?: string
+          new_inscriptions?: number
+          new_matches?: number
+          new_results?: number
+          requests_count?: number
+        }
+        Relationships: []
+      }
       official_bulletins: {
         Row: {
           content_md: string
@@ -4366,6 +4513,45 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           visibility?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          active: boolean
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string | null
+          p256dh: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string | null
+          p256dh: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string | null
+          p256dh?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
