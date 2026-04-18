@@ -148,6 +148,7 @@ import PwaDebugPage from "./pages/pwa/PwaDebugPage";
 import NotFound from "./pages/NotFound";
 import PwaRouteGuard from "./components/pwa/PwaRouteGuard";
 import PwaAcessoNegadoPage from "./pages/pwa/PwaAcessoNegadoPage";
+import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
 import PublicResultsPage from "./pages/public/PublicResultsPage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
@@ -158,10 +159,6 @@ const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
 
 const queryClient = new QueryClient();
 
-const TRANSPORT_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "transporte"] as const;
-const FOOD_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"] as const;
-const LODGING_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "alojamento"] as const;
-const COMPETITION_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as const;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
