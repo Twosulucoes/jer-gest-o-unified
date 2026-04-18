@@ -58,8 +58,9 @@ export default function RegrasPage() {
       </Alert>
 
       <Tabs defaultValue="visao" className="w-full">
-        <TabsList className="grid grid-cols-5 max-w-3xl">
+        <TabsList className="grid grid-cols-6 max-w-4xl">
           <TabsTrigger value="visao"><BookOpen className="h-3.5 w-3.5 mr-1" />Visão</TabsTrigger>
+          <TabsTrigger value="editar"><Pencil className="h-3.5 w-3.5 mr-1" />Editar</TabsTrigger>
           <TabsTrigger value="diff"><GitCompareArrows className="h-3.5 w-3.5 mr-1" />Diff</TabsTrigger>
           <TabsTrigger value="sync"><RefreshCw className="h-3.5 w-3.5 mr-1" />Sincronizar</TabsTrigger>
           <TabsTrigger value="motor"><Cpu className="h-3.5 w-3.5 mr-1" />Motor</TabsTrigger>
@@ -67,6 +68,7 @@ export default function RegrasPage() {
         </TabsList>
 
         <TabsContent value="visao"><VisaoTabs /></TabsContent>
+        <TabsContent value="editar"><EditorRegrasProva /></TabsContent>
         <TabsContent value="diff"><DiffPanel /></TabsContent>
         <TabsContent value="sync"><SyncPanel /></TabsContent>
         <TabsContent value="motor"><MotorPanel /></TabsContent>
