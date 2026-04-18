@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { ScanLine, CheckCircle, XCircle } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
@@ -14,6 +16,12 @@ export default function TransporteScanPage() {
   const tripId = searchParams.get("tripId");
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [continuousMode, setContinuousMode] = useState(true);
+
+  const reopenIfContinuous = () => {
+    if (!continuousMode) return;
+    setTimeout(() => setScannerOpen(true), 450);
+  };
 
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
@@ -42,6 +50,7 @@ export default function TransporteScanPage() {
         if (existing) {
           if (existing.status === "boarded") {
             setResult({ ok: true, message: `${name} já embarcou anteriormente` });
+            reopenIfContinuous();
             return;
           }
           const { error } = await supabase
@@ -66,6 +75,7 @@ export default function TransporteScanPage() {
 
       setResult({ ok: true, message: `Embarque registrado: ${name}` });
       if (navigator.vibrate) navigator.vibrate(200);
+      reopenIfContinuous();
     } catch (err: any) {
       setResult({ ok: false, message: `Erro ao validar: ${err.message || "desconhecido"}` });
     }
@@ -80,6 +90,11 @@ export default function TransporteScanPage() {
       />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
+        <div className="flex items-center justify-between rounded-lg border bg-card p-3">
+          <Label htmlFor="continuous-scan" className="text-sm">Modo contínuo</Label>
+          <Switch id="continuous-scan" checked={continuousMode} onCheckedChange={setContinuousMode} />
+        </div>
+
         <Button className="w-full min-h-[44px]" onClick={() => setScannerOpen(true)}>
           <ScanLine className="h-5 w-5 mr-2" />
           Escanear QR Code

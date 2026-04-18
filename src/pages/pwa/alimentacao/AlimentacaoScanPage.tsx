@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -21,7 +23,13 @@ export default function AlimentacaoScanPage() {
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [continuousMode, setContinuousMode] = useState(true);
   const [result, setResult] = useState<{ ok: boolean; message: string; restrictions?: string } | null>(null);
+
+  const reopenIfContinuous = () => {
+    if (!continuousMode) return;
+    setTimeout(() => setScannerOpen(true), 450);
+  };
 
   useEffect(() => {
     (async () => {
@@ -101,6 +109,7 @@ export default function AlimentacaoScanPage() {
         restrictions: foodRestrictions || undefined,
       });
       if (navigator.vibrate) navigator.vibrate(200);
+      reopenIfContinuous();
     } catch (err: any) {
       setResult({ ok: false, message: `Erro ao registrar consumo: ${err.message || "desconhecido"}` });
     }
@@ -122,6 +131,11 @@ export default function AlimentacaoScanPage() {
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-4">
+        <div className="flex items-center justify-between rounded-lg border bg-card p-3">
+          <Label htmlFor="continuous-food-scan" className="text-sm">Modo contínuo</Label>
+          <Switch id="continuous-food-scan" checked={continuousMode} onCheckedChange={setContinuousMode} />
+        </div>
+
         {windows.length === 0 ? (
           <Card className="border-amber-500/50">
             <CardContent className="p-4 flex items-center gap-3">
