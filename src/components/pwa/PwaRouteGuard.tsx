@@ -1,9 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
-import type { Database } from "@/integrations/supabase/types";
-
-type AppRole = Database["public"]["Enums"]["app_role"];
+import AuthLoadingScreen from "@/components/auth/AuthLoadingScreen";
+import type { AppRole } from "@/config/accessControl";
 
 interface PwaRouteGuardProps {
   children: React.ReactNode;
@@ -12,23 +10,19 @@ interface PwaRouteGuardProps {
 }
 
 export default function PwaRouteGuard({ children, allowedRoles }: PwaRouteGuardProps) {
-  const { user, roles, loading, hasRole } = useAuth();
+  const { user, loading, hasRole } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AuthLoadingScreen />;
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/pwa/login" replace />;
   }
 
-  // If specific roles required, check. Admin always passes.
+  // If specific roles required, check. Admin/secretaria always pass.
   if (allowedRoles && allowedRoles.length > 0) {
-    const authorized = hasRole("admin" as AppRole) || allowedRoles.some((r) => hasRole(r));
+    const authorized = hasRole("admin") || hasRole("secretaria") || allowedRoles.some((r) => hasRole(r));
     if (!authorized) {
       return <Navigate to="/pwa/acesso-negado" replace />;
     }

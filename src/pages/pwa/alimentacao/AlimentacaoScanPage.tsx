@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -21,7 +23,18 @@ export default function AlimentacaoScanPage() {
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [continuousMode, setContinuousMode] = useState(true);
   const [result, setResult] = useState<{ ok: boolean; message: string; restrictions?: string } | null>(null);
+
+  const reopenIfContinuous = () => {
+    if (!continuousMode) return;
+    setTimeout(() => setScannerOpen(true), 450);
+  };
+
+  const getErrorMessage = (err: unknown) => {
+    if (err instanceof Error && err.message) return err.message;
+    return "desconhecido";
+  };
 
   useEffect(() => {
     (async () => {
@@ -32,7 +45,7 @@ export default function AlimentacaoScanPage() {
         .lte("window_start", now)
         .gte("window_end", now)
         .order("window_start");
-      const list = (data as any) || [];
+      const list = (data ?? []) as MealWindow[];
       setWindows(list);
       if (list.length === 1) setWindowId(list[0].id);
     })();
@@ -65,7 +78,7 @@ export default function AlimentacaoScanPage() {
         .select("food_restrictions")
         .eq("id", participantId)
         .maybeSingle();
-      foodRestrictions = (pData as any)?.food_restrictions ?? null;
+      foodRestrictions = pData?.food_restrictions ?? null;
 
       // Check duplicate consumption
       const { count } = await supabase
@@ -101,8 +114,9 @@ export default function AlimentacaoScanPage() {
         restrictions: foodRestrictions || undefined,
       });
       if (navigator.vibrate) navigator.vibrate(200);
-    } catch (err: any) {
-      setResult({ ok: false, message: `Erro ao registrar consumo: ${err.message || "desconhecido"}` });
+      reopenIfContinuous();
+    } catch (err: unknown) {
+      setResult({ ok: false, message: `Erro ao registrar consumo: ${getErrorMessage(err)}` });
     }
   };
 
@@ -122,6 +136,11 @@ export default function AlimentacaoScanPage() {
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-4">
+        <div className="flex items-center justify-between rounded-lg border bg-card p-3">
+          <Label htmlFor="continuous-food-scan" className="text-sm">Modo contínuo</Label>
+          <Switch id="continuous-food-scan" checked={continuousMode} onCheckedChange={setContinuousMode} />
+        </div>
+
         {windows.length === 0 ? (
           <Card className="border-amber-500/50">
             <CardContent className="p-4 flex items-center gap-3">

@@ -227,6 +227,7 @@ Consulte a pasta `/docs` para documentação detalhada:
 - [Links Externos](docs/links-externos.md) — Distribuição de acessos
 - [Menu Cliente Admin](docs/menu-cliente-admin.md) — Estrutura completa do menu
 - [Importação (SIGECOM)](docs/operacao/importacao-sigecom.md)
+- [Refinamentos UX/UI PWA](docs/operacao/refinamentos-ux-ui-pwa.md)
 
 ### Validação
 - [Validação de Navegação](docs/validacao-navegacao.md) — Checklist de testes
@@ -240,3 +241,4 @@ Consulte a pasta `/docs` para documentação detalhada:
 2. **Produção**: https://joyful-sports-hub.lovable.app
 3. **Supabase**: Projeto conectado via Lovable Cloud
 4. **Variáveis de ambiente**: `.env` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`
+5. **Troubleshooting Vercel (acesso de deploy)**: `docs/operacao/vercel-acesso-e-deploy.md`
