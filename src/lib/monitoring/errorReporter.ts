@@ -13,8 +13,18 @@ async function flush() {
       flushing = false;
       return;
     }
-    const batch = queue.splice(0, queue.length).map((e) => ({ ...e, user_id: user.id, user_email: user.email }));
-    await supabase.from("monitoring_errors").insert(batch);
+    const batch = queue.splice(0, queue.length).map((e) => ({
+      source: "frontend" as const,
+      message: String(e.message ?? "unknown"),
+      severity: (e.severity as string) ?? "error",
+      stack: e.stack as string | undefined,
+      url: e.url as string | undefined,
+      user_agent: e.user_agent as string | undefined,
+      context: (e.context ?? {}) as Record<string, unknown>,
+      user_id: user.id,
+      user_email: user.email ?? null,
+    }));
+    await supabase.from("monitoring_errors").insert(batch as never);
   } catch (err) {
     console.warn("[monitor] failed to flush errors", err);
   } finally {

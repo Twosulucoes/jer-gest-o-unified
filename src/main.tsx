@@ -62,4 +62,7 @@ window.addEventListener("load", () => {
   setTimeout(() => sessionStorage.removeItem(RELOAD_FLAG), 5000);
 });
 
+// Install error reporter (frontend monitoring)
+import("@/lib/monitoring/errorReporter").then((m) => m.installErrorReporter()).catch(() => {});
+
 createRoot(document.getElementById("root")!).render(<App />);

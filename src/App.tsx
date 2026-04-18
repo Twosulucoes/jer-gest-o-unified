@@ -87,6 +87,7 @@ import SuperDashboardPage from "./pages/super/SuperDashboardPage";
 import SuperEventosPage from "./pages/super/SuperEventosPage";
 import SuperLogsPage from "./pages/super/SuperLogsPage";
 import SuperConfigPage from "./pages/super/SuperConfigPage";
+import SuperMonitorPage from "./pages/super/SuperMonitorPage";
 import EmailTemplatesPage from "./pages/admin/EmailTemplatesPage";
 import LinksPage from "./pages/admin/LinksPage";
 import LinkFormPage from "./pages/admin/LinkFormPage";
@@ -187,6 +188,7 @@ const App = () => (
               <Route path="eventos" element={<SuperEventosPage />} />
               <Route path="logs" element={<SuperLogsPage />} />
               <Route path="config" element={<SuperConfigPage />} />
+              <Route path="monitor" element={<SuperMonitorPage />} />
               <Route path="demo" element={<DemoSeedsPage />} />
               <Route path="validador" element={<SchemaValidadorPage />} />
             </Route>
