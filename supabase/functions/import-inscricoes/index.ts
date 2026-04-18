@@ -97,7 +97,10 @@ function isValidDateString(d: string): boolean {
   const date = new Date(d + "T00:00:00Z");
   if (isNaN(date.getTime())) return false;
   const year = date.getUTCFullYear();
-  return year >= 1920 && year <= 2020;
+  // Faixa dinâmica: aceita do nascido com até ~110 anos até o ano corrente.
+  // Evita falsos negativos quando atletas nascem no ano da edição (categorias mais novas).
+  const currentYear = new Date().getUTCFullYear();
+  return year >= 1915 && year <= currentYear;
 }
 
 function buildFingerprint(name: string, birthDate: string | null, gender: string, institution: string, modality: string, prova: string): string {
