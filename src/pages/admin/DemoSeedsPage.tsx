@@ -83,23 +83,7 @@ export default function DemoSeedsPage() {
     onError: (err: any) => toast.error("Erro ao recriar demo: " + err.message),
   });
 
-  const seedLogisticsMutation = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.rpc("seed_logistics_stage_template" as any, {
-        p_event_id: activeEventId!,
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      setLastResult(data);
-      toast.success("Seed de logística criado com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["demo-status"] });
-    },
-    onError: (err: any) => toast.error("Erro ao criar seed de logística: " + err.message),
-  });
-
-  const isLoading = seedMutation.isPending || resetMutation.isPending || recreateMutation.isPending || seedLogisticsMutation.isPending;
+  const isLoading = seedMutation.isPending || resetMutation.isPending || recreateMutation.isPending;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(JSON.stringify(lastResult, null, 2));
