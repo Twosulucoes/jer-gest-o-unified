@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Search, Info, Calendar, Trophy, ScrollText, Users, Award, Accessibility,
-  GitCompareArrows, RefreshCw, Sparkles, Database, BookOpen, AlertCircle, CheckCircle2, Cpu,
+  GitCompareArrows, RefreshCw, Sparkles, Database, BookOpen, AlertCircle, CheckCircle2, Cpu, Pencil,
 } from "lucide-react";
 import { RegraSection, KvTable } from "@/components/regras-jer/RegraSection";
 import { ModalidadeCard } from "@/components/regras-jer/ModalidadeCard";
