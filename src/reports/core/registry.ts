@@ -1,9 +1,17 @@
 import type { ReportDefinition, ReportContext } from './types';
 import { resultsByGroupReport } from '../definitions/sample.resultsByGroup';
 import { delegationRosterReport } from '../definitions/sample.delegationRoster';
+import { boletinsModalidadeReport } from '../definitions/boletins.modalidade';
+import { dashboardOperacionalReport } from '../definitions/dashboard.operacional';
+import { quadroMedalhasReport } from '../definitions/quadro.medalhas';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const reportRegistry: ReportDefinition<any>[] = [
+  // Relatórios oficiais (com página dedicada + presets persistentes)
+  boletinsModalidadeReport,
+  dashboardOperacionalReport,
+  quadroMedalhasReport,
+  // Engine genérica (samples)
   resultsByGroupReport,
   delegationRosterReport,
 ];

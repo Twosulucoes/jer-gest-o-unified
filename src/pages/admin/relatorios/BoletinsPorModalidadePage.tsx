@@ -12,6 +12,7 @@ import { FileBarChart, FileDown, FileSpreadsheet, Loader2 } from "lucide-react";
 import { useBulletinData } from "@/components/relatorios/boletins/useBulletinData";
 import BulletinRouter from "@/components/relatorios/boletins/BulletinRouter";
 import { ReportShell } from "@/components/relatorios/ReportShell";
+import { ReportPresetsButton } from "@/components/relatorios/ReportPresetsButton";
 import { exportBulletinPdf } from "@/components/relatorios/boletins/bulletinPdfExporter";
 import { exportBulletinXlsx } from "@/components/relatorios/boletins/bulletinXlsxExporter";
 import { useEventBranding } from "@/hooks/useEventBranding";
@@ -134,12 +135,25 @@ export default function BoletinsPorModalidadePage() {
   return (
     <RequireActiveEvent>
       <div className="container mx-auto py-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <FileBarChart className="h-5 w-5 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Boletins de Resultado por Modalidade</h1>
-            <p className="text-sm text-muted-foreground">Visualize e exporte resultados oficiais por modalidade, categoria, gênero e fase.</p>
+        <div className="flex items-center gap-3 justify-between flex-wrap">
+          <div className="flex items-center gap-3">
+            <FileBarChart className="h-5 w-5 text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold">Boletins de Resultado por Modalidade</h1>
+              <p className="text-sm text-muted-foreground">Visualize e exporte resultados oficiais por modalidade, categoria, gênero e fase.</p>
+            </div>
           </div>
+          <ReportPresetsButton
+            reportId="boletins-modalidade"
+            eventId={eventId}
+            currentFilters={{ sportId, categoryId, gender, phaseId }}
+            onApply={(f) => {
+              if (typeof f.sportId === "string") setSportId(f.sportId);
+              if (typeof f.categoryId === "string") setCategoryId(f.categoryId);
+              if (typeof f.gender === "string") setGender(f.gender);
+              if (typeof f.phaseId === "string") setPhaseId(f.phaseId);
+            }}
+          />
         </div>
 
         <Card>

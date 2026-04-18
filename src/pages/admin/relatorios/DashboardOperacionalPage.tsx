@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReportShell } from "@/components/relatorios";
+import { ReportPresetsButton } from "@/components/relatorios/ReportPresetsButton";
 import {
   Users, BadgeCheck, Trophy, UtensilsCrossed, Bed, Bus,
   RefreshCw, Download, CalendarClock, Truck, MapPin,
@@ -108,6 +109,12 @@ export default function DashboardOperacionalPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <ReportPresetsButton
+            reportId="dashboard-operacional"
+            eventId={eventId}
+            currentFilters={{}}
+            onApply={() => { /* sem filtros configuráveis hoje */ }}
+          />
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
             Atualizar dados

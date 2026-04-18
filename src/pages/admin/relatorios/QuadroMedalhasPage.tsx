@@ -10,6 +10,7 @@ import { useMedalTableData, type MedalTableFilters, type ScopeFilter, type TypeF
 import { useEventBranding } from "@/hooks/useEventBranding";
 import { exportMedalTablePdf, exportRankingGeralPdf } from "./medalTablePdfExporter";
 import { exportMedalTableXlsx, exportRankingGeralXlsx } from "./medalTableXlsxExporter";
+import { ReportPresetsButton } from "@/components/relatorios/ReportPresetsButton";
 
 export default function QuadroMedalhasPage() {
   const { activeEvent } = useEventContext();
