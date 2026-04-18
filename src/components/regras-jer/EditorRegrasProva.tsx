@@ -417,11 +417,22 @@ function DesempateEditor({
   criterios,
   onChange,
 }: {
-  criterios: string[];
+  criterios: any[];
   onChange: (v: string[]) => void;
 }) {
+  // Normaliza: aceita strings (slugs) ou objetos { ordem, criterio } vindos de presets.
+  const list: string[] = (Array.isArray(criterios) ? criterios : [])
+    .map((c: any) =>
+      typeof c === "string"
+        ? c
+        : c && typeof c === "object"
+          ? String(c.slug ?? c.criterio ?? c.criteria ?? "")
+          : "",
+    )
+    .filter(Boolean);
+
   const move = (idx: number, dir: -1 | 1) => {
-    const next = [...criterios];
+    const next = [...list];
     const target = idx + dir;
     if (target < 0 || target >= next.length) return;
     [next[idx], next[target]] = [next[target], next[idx]];
