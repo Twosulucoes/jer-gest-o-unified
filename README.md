@@ -64,7 +64,7 @@ Painel **enxuto** com apenas o que é transversal ao evento (não operacional de
 | Relatórios Globais | Visão consolidada do evento |
 | Acessos | Usuários Operacionais, Links Externos, Vínculos Delegação |
 | Configurações | Parâmetros, Locais, Modalidades, Categorias, Modelos de Credencial |
-| Sistema | Diagnóstico do Sistema, Demo/Seeds |
+| Sistema | Diagnóstico do Sistema, Demo/Seeds, **Seed Logística (Etapa)** |
 | **CTA** | **Entrar na Etapa** → leva ao seletor `/admin/etapas` |
 
 ### Cliente Admin ETAPA (`/admin/etapa/:stageId`)
