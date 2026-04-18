@@ -104,6 +104,18 @@ export const systemMap: SystemMapGroup[] = [
         nextActions: ["Adicionar preview pré-importação"],
       },
       {
+        id: "importacao-modelo",
+        label: "Modelo padrão de importação",
+        route: "/admin/importacao/modelo",
+        pageFile: "src/pages/admin/ImportacaoModeloPage.tsx",
+        description: "Gera dinamicamente o arquivo .xlsx modelo com cabeçalhos, dropdowns e instruções otimizados para minimizar erros de preenchimento.",
+        roles: ["admin", "secretaria"],
+        status: ModuleStatus.DONE,
+        dataSources: ["sports", "categories", "sport_events", "delegations"],
+        gaps: [],
+        nextActions: [],
+      },
+      {
         id: "participantes",
         label: "Participantes",
         route: "/admin/participantes",
