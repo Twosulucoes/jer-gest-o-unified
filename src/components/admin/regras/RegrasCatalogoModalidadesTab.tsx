@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useConsolidatedSportEventRules } from "@/hooks/useEventRulesCenter";
 import { RuleStatusBadge, DisciplineTypeBadge } from "@/components/regras/RuleBadges";
@@ -17,6 +18,7 @@ import type { RuleSportEventView } from "@/types/rulesSportEvent";
 export default function RegrasCatalogoModalidadesTab() {
   const eventId = useActiveEventId();
   const { data: rules = [], isLoading, error } = useConsolidatedSportEventRules(eventId);
+  const [searchParams] = useSearchParams();
 
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -24,6 +26,12 @@ export default function RegrasCatalogoModalidadesTab() {
   const [selectedRule, setSelectedRule] = useState<RuleSportEventView | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [compact, setCompact] = useState(false);
+
+  // Pré-preenche busca quando vier ?categoria=... da tela de Categorias
+  useEffect(() => {
+    const cat = searchParams.get("categoria");
+    if (cat) setSearch(cat);
+  }, [searchParams]);
 
   const filtered = useMemo(() => {
     let result = rules;
