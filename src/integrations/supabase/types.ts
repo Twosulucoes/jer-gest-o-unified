@@ -1470,6 +1470,53 @@ export type Database = {
           },
         ]
       }
+      import_aliases: {
+        Row: {
+          alias_norm: string
+          canonical_slug: string
+          created_at: string
+          created_by: string | null
+          event_id: string | null
+          id: string
+          kind: string
+          notes: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          alias_norm: string
+          canonical_slug: string
+          created_at?: string
+          created_by?: string | null
+          event_id?: string | null
+          id?: string
+          kind: string
+          notes?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          alias_norm?: string
+          canonical_slug?: string
+          created_at?: string
+          created_by?: string | null
+          event_id?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_aliases_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_logs: {
         Row: {
           created_at: string
@@ -5903,6 +5950,10 @@ export type Database = {
       }
       reset_all_data: { Args: { p_confirm?: string }; Returns: Json }
       reset_demo: { Args: { p_event_id: string }; Returns: Json }
+      resolve_import_alias: {
+        Args: { _alias_norm: string; _event_id?: string; _kind: string }
+        Returns: string
+      }
       resolve_prova_slug: {
         Args: { p_event_id: string; p_prova_raw: string; p_sport_id: string }
         Returns: Json
