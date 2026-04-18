@@ -226,7 +226,7 @@ export const systemMap: SystemMapGroup[] = [
       {
         id: "regras-evento",
         label: "Regras do Evento",
-        route: "/admin/regras-evento",
+        route: "/admin/regras",
         pageFile: "src/pages/admin/RegrasEventoPage.tsx",
         description: "Painel centralizado das regras gerais da edição: identificação, categorias, modalidades, limites, classificação, regras operacionais, pontuação e publicação/versionamento.",
         roles: ["admin", "secretaria", "coordenacao_tecnica"],
@@ -494,7 +494,7 @@ export const systemMap: SystemMapGroup[] = [
       {
         id: "regras-evento",
         label: "Regras do Evento",
-        route: "/admin/regras-evento",
+        route: "/admin/regras",
         pageFile: "src/pages/admin/RegrasEventoPage.tsx",
         description: "Painel centralizado com todas as regras do evento incluindo limites de participação, edição, categorias, modalidades, classificação, operacionais, pontuação e publicação com versionamento e auditoria.",
         roles: ["admin", "secretaria", "coordenacao_tecnica"],
