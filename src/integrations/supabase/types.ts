@@ -3892,6 +3892,7 @@ export type Database = {
       pesquisa_researchers: {
         Row: {
           active: boolean
+          assigned_location: string | null
           created_at: string
           created_by: string | null
           event_id: string
@@ -3904,6 +3905,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          assigned_location?: string | null
           created_at?: string
           created_by?: string | null
           event_id: string
@@ -3916,6 +3918,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          assigned_location?: string | null
           created_at?: string
           created_by?: string | null
           event_id?: string
@@ -3986,6 +3989,7 @@ export type Database = {
       }
       pesquisa_surveys: {
         Row: {
+          application_location: string | null
           client_uuid: string
           collected_at: string
           created_at: string
@@ -4014,6 +4018,7 @@ export type Database = {
           sugestao: string | null
         }
         Insert: {
+          application_location?: string | null
           client_uuid: string
           collected_at?: string
           created_at?: string
@@ -4042,6 +4047,7 @@ export type Database = {
           sugestao?: string | null
         }
         Update: {
+          application_location?: string | null
           client_uuid?: string
           collected_at?: string
           created_at?: string
@@ -5878,6 +5884,10 @@ export type Database = {
       }
       seed_jer_2026_sport_event_and_phase_rules_v21: {
         Args: { p_event_id: string }
+        Returns: Json
+      }
+      seed_logistics_stage_template: {
+        Args: { p_event_id: string; p_seed_tag?: string; p_stage_name?: string }
         Returns: Json
       }
       unaccent: { Args: { "": string }; Returns: string }
