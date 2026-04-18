@@ -4,6 +4,7 @@ import { delegationRosterReport } from '../definitions/sample.delegationRoster';
 import { boletinsModalidadeReport } from '../definitions/boletins.modalidade';
 import { dashboardOperacionalReport } from '../definitions/dashboard.operacional';
 import { quadroMedalhasReport } from '../definitions/quadro.medalhas';
+import { prestacaoContasOscReport } from '../definitions/prestacao.contas.osc';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const reportRegistry: ReportDefinition<any>[] = [
@@ -11,6 +12,7 @@ export const reportRegistry: ReportDefinition<any>[] = [
   boletinsModalidadeReport,
   dashboardOperacionalReport,
   quadroMedalhasReport,
+  prestacaoContasOscReport,
   // Engine genérica (samples)
   resultsByGroupReport,
   delegationRosterReport,

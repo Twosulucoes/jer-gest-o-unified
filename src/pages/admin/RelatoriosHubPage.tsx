@@ -40,9 +40,10 @@ const REPORTS: ReportEntry[] = [
   {
     key: "osc",
     title: "Prestação de Contas (OSC)",
-    description: "Relatório formal para prestação de contas junto a parceiros e órgãos de controle.",
+    description: "Relatório formal consolidado para Governo de Roraima, IDJUV, Acolher e órgãos de controle. Exportação PDF oficial e XLSX analítico.",
     icon: <Receipt className="h-6 w-6 text-primary" />,
-    status: "soon",
+    status: "available",
+    to: "/admin/relatorios/osc",
   },
 ];
 
