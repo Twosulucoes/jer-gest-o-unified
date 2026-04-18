@@ -87,8 +87,10 @@ export default function PesquisaNovaPage() {
       if (draft.answers) setAnswers(draft.answers as Record<string, number>);
       if (draft.pontoPositivo) setPontoPositivo(draft.pontoPositivo as string);
       if (draft.sugestao) setSugestao(draft.sugestao as string);
+    } else if (session?.researcher?.assigned_location || session?.event?.location) {
+      setApplicationLocation((session.researcher.assigned_location || session.event.location || '').trim());
     }
-  }, []);
+  }, [session?.event?.location, session?.researcher?.assigned_location]);
 
   // Save draft on changes (debounced)
   const saveDraftDebounced = useCallback(() => {
