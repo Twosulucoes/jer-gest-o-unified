@@ -68,6 +68,7 @@ export default function PesquisaNovaPage() {
   const [respondentAge, setRespondentAge] = useState('');
   const [respondentGender, setRespondentGender] = useState('');
   const [mode, setMode] = useState('');
+  const [applicationLocation, setApplicationLocation] = useState('');
 
   // Question answers
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -82,6 +83,7 @@ export default function PesquisaNovaPage() {
       if (draft.respondentAge) setRespondentAge(draft.respondentAge as string);
       if (draft.respondentGender) setRespondentGender(draft.respondentGender as string);
       if (draft.mode) setMode(draft.mode as string);
+      if (draft.applicationLocation) setApplicationLocation(draft.applicationLocation as string);
       if (draft.answers) setAnswers(draft.answers as Record<string, number>);
       if (draft.pontoPositivo) setPontoPositivo(draft.pontoPositivo as string);
       if (draft.sugestao) setSugestao(draft.sugestao as string);
@@ -91,10 +93,10 @@ export default function PesquisaNovaPage() {
   // Save draft on changes (debounced)
   const saveDraftDebounced = useCallback(() => {
     const timeout = setTimeout(() => {
-      saveDraft({ respondentType, respondentAge, respondentGender, mode, answers, pontoPositivo, sugestao });
+      saveDraft({ respondentType, respondentAge, respondentGender, mode, applicationLocation, answers, pontoPositivo, sugestao });
     }, 500);
     return () => clearTimeout(timeout);
-  }, [respondentType, respondentAge, respondentGender, mode, answers, pontoPositivo, sugestao]);
+  }, [respondentType, respondentAge, respondentGender, mode, applicationLocation, answers, pontoPositivo, sugestao]);
 
   useEffect(() => {
     const cleanup = saveDraftDebounced();
@@ -119,7 +121,7 @@ export default function PesquisaNovaPage() {
   if (!session) return null;
 
   const isKiosk = mode === 'autopreenchimento';
-  const profileComplete = respondentType && respondentAge && respondentGender && mode;
+  const profileComplete = respondentType && respondentAge && respondentGender && mode && applicationLocation.trim();
   const allAnswered = QUESTIONS.every(q => answers[q.key] != null);
   const totalProgress = Object.keys(answers).length;
   const progressPercent = (totalProgress / QUESTIONS.length) * 100;
@@ -135,6 +137,7 @@ export default function PesquisaNovaPage() {
       respondent_age: respondentAge,
       respondent_gender: respondentGender,
       mode,
+      application_location: applicationLocation.trim(),
       ...answers,
       ponto_positivo: pontoPositivo || null,
       sugestao: sugestao || null,
@@ -241,6 +244,16 @@ export default function PesquisaNovaPage() {
                   <OptionButton key={o.value} {...o} selected={mode === o.value} onClick={() => setMode(o.value)} />
                 ))}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">Local da aplicação *</label>
+              <Textarea
+                value={applicationLocation}
+                onChange={(e) => setApplicationLocation(e.target.value)}
+                placeholder="Ex.: Ginásio 2, arquibancada leste"
+                rows={2}
+              />
             </div>
 
             <Button onClick={() => setStep('questionnaire')} disabled={!profileComplete} className="w-full h-14 text-lg">
