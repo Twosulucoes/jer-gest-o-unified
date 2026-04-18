@@ -86,8 +86,13 @@ Cada módulo PWA é protegido pelo componente `PwaModuleLayout`:
 | **Regras em Lote (Seed)** | **✓** | — | **✓** | — | — | — | — | — | — |
 | Resultados (publicados) | ✓ | ✓ | ✓ | R | — | — | — | — | R |
 | Credenciais (próprias) | ✓ | ✓ | ✓ | — | — | — | — | R | — |
+| **Identidade Visual** (`event_branding` + bucket `report-assets`) | **CRUD** | — | — | — | — | — | — | — | — |
+| **Hub de Relatórios** (`/admin/relatorios`) | ✓ | ✓ | ✓ | — | — | — | — | — | — |
+| Cabeçalho/rodapé de relatórios (leitura de `event_branding`) | R | R | R | R | R | R | R | R | — |
 
 **Legenda**: ✓ = acesso completo ao módulo | R = somente leitura | CRUD = Create/Read/Update/Delete
+
+> **Identidade Visual**: somente `admin` cria/edita a configuração e faz upload de logos. Todos os perfis autenticados leem a configuração e os arquivos do bucket público `report-assets` para renderizar cabeçalhos em qualquer relatório.
 
 ## Tabelas de Vínculo
 
