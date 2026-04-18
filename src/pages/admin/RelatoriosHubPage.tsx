@@ -26,7 +26,8 @@ const REPORTS: ReportEntry[] = [
     title: "Dashboard Operacional",
     description: "Visão consolidada em tempo real de credenciamento, alojamento, alimentação e transporte.",
     icon: <BarChart3 className="h-6 w-6 text-primary" />,
-    status: "soon",
+    status: "available",
+    to: "/admin/relatorios/dashboard",
   },
   {
     key: "medalhas",
