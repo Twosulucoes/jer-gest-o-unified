@@ -68,9 +68,8 @@ export function useOscData(eventId: string | null | undefined) {
         .select("id, school_name, school_network_type")
         .eq("event_id", eventId);
       const delegations = (dels || []) as Array<{ id: string; school_name: string; school_network_type: string | null }>;
-      const delMap = new Map(delegations.map((d) => [d.id, d]));
 
-      // 3. Participantes (paginado em lotes — supabase limit 1000)
+      // 3. Participantes
       const { data: parts } = await supabase
         .from("participants")
         .select("id, delegation_id, participant_type, status")
@@ -78,26 +77,27 @@ export function useOscData(eventId: string | null | undefined) {
         .limit(5000);
       const participants = (parts || []) as Array<{ id: string; delegation_id: string | null; participant_type: string; status: string }>;
       const partById = new Map(participants.map((p) => [p.id, p]));
+      const partIds = participants.map((p) => p.id);
 
       // 4. Credenciais ativas
-      const { data: creds } = await supabase
-        .from("participant_credentials")
-        .select("participant_id, status")
-        .in("participant_id", participants.map((p) => p.id).length ? participants.map((p) => p.id) : ["00000000-0000-0000-0000-000000000000"]);
+      const { data: creds } = partIds.length
+        ? await supabase.from("participant_credentials").select("participant_id, status").in("participant_id", partIds)
+        : { data: [] as Array<{ participant_id: string; status: string }> };
       const credSet = new Set(((creds || []) as Array<{ participant_id: string; status: string }>)
         .filter((c) => c.status === "ativa" || c.status === "active" || c.status === "issued").map((c) => c.participant_id));
 
-      // 5. Refeições consumidas
-      const { count: mealsCount } = await supabase
-        .from("meal_consumptions")
-        .select("id", { count: "exact", head: true })
-        .eq("event_id", eventId);
+      // 5. Refeições — via meal_windows do evento
+      const { data: windows } = await supabase
+        .from("meal_windows").select("id").eq("event_id", eventId);
+      const windowIds = ((windows || []) as Array<{ id: string }>).map((w) => w.id);
 
-      const { data: mealsByPart } = await supabase
-        .from("meal_consumptions")
-        .select("participant_id")
-        .eq("event_id", eventId)
-        .limit(50000);
+      const { count: mealsCount } = windowIds.length
+        ? await supabase.from("meal_consumptions").select("id", { count: "exact", head: true }).in("meal_window_id", windowIds)
+        : { count: 0 };
+
+      const { data: mealsByPart } = windowIds.length
+        ? await supabase.from("meal_consumptions").select("participant_id").in("meal_window_id", windowIds).limit(50000)
+        : { data: [] as Array<{ participant_id: string }> };
       const mealsByDelegation = new Map<string, number>();
       for (const m of (mealsByPart || []) as Array<{ participant_id: string }>) {
         const p = partById.get(m.participant_id);
@@ -107,7 +107,7 @@ export function useOscData(eventId: string | null | undefined) {
       // 6. Alojamento
       const { data: lod } = await supabase
         .from("lodging_occupancies")
-        .select("id, status, lodging_unit_id")
+        .select("id, status, unit_id")
         .eq("event_id", eventId);
       const occupied = ((lod || []) as Array<{ status: string }>).filter((o) => o.status === "active" || o.status === "ocupada").length;
 
