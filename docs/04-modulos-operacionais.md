@@ -159,21 +159,31 @@
 - **Rotas públicas**: `/go/:slug` (redirect), `/p/:slug` (página), `/a/:token` (perfil atleta)
 - **Tabela**: `public_content`
 
-## 19. Relatórios (🟡 Parcial)
-- **Página hub**: `/admin/relatorios` (cards dos 4 relatórios oficiais)
+## 19. Relatórios (🟡 85%)
+- **Página hub**: `/admin/relatorios` (cards dos relatórios oficiais)
 - **Engine legada**: framework com filtros, colunas, presets em `/admin/relatorios/central`
 - **Renderers**: PDF (@react-pdf/renderer) e Excel (exceljs)
-- **Definições**: `sample.delegationRoster`, `sample.resultsByGroup`
+- **Presets persistentes**: tabela `report_presets` + componente `ReportPresets` (salvar/aplicar/excluir filtros por usuário)
 
-### Camada 0 — Fundação (✅ Entregue nesta etapa)
-- **Identidade Visual por evento** em `/admin/configuracoes/identidade-visual` (admin only)
-- Tabela `event_branding` (1:1 com `events`): até 3 logos com rótulo, ordem e flag ativo; nome oficial; subtítulo; rodapé institucional; local/ano; assinatura formal (nome + cargo)
-- Bucket público `report-assets` para os logos institucionais (upload restrito a admin)
-- Componentes reutilizáveis em `src/components/relatorios/`: `ReportHeader`, `ReportFooter`, `ReportShell`
-- Hook `useEventBranding(eventId)` com cache react-query
+### Camada 0 — Fundação (✅)
+- **Identidade Visual por evento** em `/admin/configuracoes/identidade-visual`
+- Tabela `event_branding`, bucket `report-assets`
+- Componentes `ReportHeader`, `ReportFooter`, `ReportShell` + hook `useEventBranding`
 
-### Camadas futuras (Em breve)
-1. **Boletins Oficiais** — boletins de competição com resultados validados
-2. **Dashboard Operacional** — visão consolidada em tempo real (credenciamento, logística)
-3. **Quadro de Medalhas** — ranking por delegação
-4. **Prestação de Contas (OSC)** — relatório formal para parceiros e órgãos de controle
+### Etapa 1 — Boletins por Modalidade (✅)
+- Página `/admin/relatorios/boletins` com filtros em cascata (Modalidade → Categoria → Gênero → Fase)
+- 5 layouts adaptativos por família: `BulletinScore`, `BulletinSets`, `BulletinCombat`, `BulletinTimeMark`, roteador `BulletinRouter`
+- Exportação PDF e XLSX multi-aba
+
+### Etapa 2 — Dashboard Operacional (✅)
+- Página `/admin/relatorios/dashboard` com 6 KPIs, gráficos recharts, exportação PDF
+- Hook `useDashboardData` com staleTime 30s, botão "Atualizar dados"
+
+### Etapa 3 — Quadro de Medalhas e Classificação Geral (✅)
+- Página `/admin/relatorios/quadro-medalhas` (admin/secretaria/coordenacao_tecnica)
+- Critério olímpico (ouro → prata → bronze) e tabela Art. 108 (1º=10, 2º=8, 3º=6, 4º=5, 5º=4, 6º=3, 7º=2, 8º=1)
+- Desempate Art. 111 (total → ouros → pratas → bronzes → coletivas)
+- Filtros JER/JERPA/Tipo, banner de dados parciais, exportação PDF/XLSX com selo OFICIAL/PARCIAL
+
+### Etapa 4 — Prestação de Contas OSC (🟡 Em breve)
+- Relatório formal consolidado para Governo RR, IDJUV e Acolher
