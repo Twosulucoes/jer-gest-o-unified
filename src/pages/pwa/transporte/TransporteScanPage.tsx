@@ -23,6 +23,11 @@ export default function TransporteScanPage() {
     setTimeout(() => setScannerOpen(true), 450);
   };
 
+  const getErrorMessage = (err: unknown) => {
+    if (err instanceof Error && err.message) return err.message;
+    return "desconhecido";
+  };
+
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
     if (!rawValue.trim()) return;
@@ -68,7 +73,7 @@ export default function TransporteScanPage() {
               boarded_at: new Date().toISOString(),
               boarded_by: session?.user.id ?? null,
               is_manual: false,
-            } as any);
+            });
           if (error) throw error;
         }
       }
@@ -76,8 +81,8 @@ export default function TransporteScanPage() {
       setResult({ ok: true, message: `Embarque registrado: ${name}` });
       if (navigator.vibrate) navigator.vibrate(200);
       reopenIfContinuous();
-    } catch (err: any) {
-      setResult({ ok: false, message: `Erro ao validar: ${err.message || "desconhecido"}` });
+    } catch (err: unknown) {
+      setResult({ ok: false, message: `Erro ao validar: ${getErrorMessage(err)}` });
     }
   };
 

@@ -31,6 +31,11 @@ export default function AlimentacaoScanPage() {
     setTimeout(() => setScannerOpen(true), 450);
   };
 
+  const getErrorMessage = (err: unknown) => {
+    if (err instanceof Error && err.message) return err.message;
+    return "desconhecido";
+  };
+
   useEffect(() => {
     (async () => {
       const now = new Date().toISOString();
@@ -40,7 +45,7 @@ export default function AlimentacaoScanPage() {
         .lte("window_start", now)
         .gte("window_end", now)
         .order("window_start");
-      const list = (data as any) || [];
+      const list = (data ?? []) as MealWindow[];
       setWindows(list);
       if (list.length === 1) setWindowId(list[0].id);
     })();
@@ -73,7 +78,7 @@ export default function AlimentacaoScanPage() {
         .select("food_restrictions")
         .eq("id", participantId)
         .maybeSingle();
-      foodRestrictions = (pData as any)?.food_restrictions ?? null;
+      foodRestrictions = pData?.food_restrictions ?? null;
 
       // Check duplicate consumption
       const { count } = await supabase
@@ -110,8 +115,8 @@ export default function AlimentacaoScanPage() {
       });
       if (navigator.vibrate) navigator.vibrate(200);
       reopenIfContinuous();
-    } catch (err: any) {
-      setResult({ ok: false, message: `Erro ao registrar consumo: ${err.message || "desconhecido"}` });
+    } catch (err: unknown) {
+      setResult({ ok: false, message: `Erro ao registrar consumo: ${getErrorMessage(err)}` });
     }
   };
 
