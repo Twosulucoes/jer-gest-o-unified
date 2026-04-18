@@ -103,6 +103,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Diagnóstico do Sistema", to: "/admin/sistema/diagnostico", icon: <Info className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Demo / Seeds", to: "/admin/demo", icon: <Zap className="h-4 w-4" />, roles: ["admin", "coordenacao_tecnica"] as AppRole[] },
+      { label: "Seed Logística (Etapa)", to: "/admin/seed-logistica", icon: <Zap className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
     ],
   },
 ];

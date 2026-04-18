@@ -184,27 +184,7 @@ export default function DemoSeedsPage() {
         <CardTitle className="text-base">Ações</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="secondary" disabled={isLoading}>
-                {seedLogisticsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Building className="mr-2 h-4 w-4" />}
-                Seed Logística (1 Etapa)
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Criar seed inicial de logística?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Cria uma etapa de exemplo com estruturas editáveis de alojamento, alimentação e transporte.
-                  Não cria participantes.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => seedLogisticsMutation.mutate()}>Criar</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {/* Seed de Logística migrado para /admin/seed-logistica */}
 
           <AlertDialog>
             <AlertDialogTrigger asChild>

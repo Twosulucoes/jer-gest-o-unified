@@ -88,6 +88,7 @@ import RegrasLotePage from "./pages/admin/RegrasLotePage";
 import RegrasPage from "./pages/admin/RegrasPage";
 import ImportacaoAliasesPage from "./pages/admin/ImportacaoAliasesPage";
 import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
+import SeedLogisticaEtapaPage from "./pages/admin/SeedLogisticaEtapaPage";
 import DebugPublicadosPage from "./pages/admin/DebugPublicadosPage";
 import SuperDashboardPage from "./pages/super/SuperDashboardPage";
 import SuperEventosPage from "./pages/super/SuperEventosPage";
@@ -290,6 +291,7 @@ const App = () => (
               <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><QuadroMedalhasPage /></ProtectedRoute>} />
               <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
               <Route path="demo" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><DemoSeedsPage /></ProtectedRoute>} />
+              <Route path="seed-logistica" element={<ProtectedRoute allowedRoles={["admin"]}><SeedLogisticaEtapaPage /></ProtectedRoute>} />
               <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DebugPublicadosPage /></ProtectedRoute>} />
               <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EmailTemplatesPage /></ProtectedRoute>} />
               {/* Pesquisa de Satisfação — operacional, redireciona para Etapa */}
