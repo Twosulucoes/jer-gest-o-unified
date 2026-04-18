@@ -5998,6 +5998,10 @@ export type Database = {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
       }
+      rpc_diff_rules_vs_truth: {
+        Args: { p_event_id: string; p_payload: Json }
+        Returns: Json
+      }
       rpc_extract_match_outcome: { Args: { p_match_id: string }; Returns: Json }
       rpc_generate_groups: {
         Args: {
@@ -6085,6 +6089,10 @@ export type Database = {
         Args: { p_event_id: string; p_force?: boolean; p_stage_id?: string }
         Returns: Json
       }
+      rpc_resolve_import_alias: {
+        Args: { p_event_id: string; p_input: string; p_kind: string }
+        Returns: string
+      }
       rpc_seed_sport_event_rules_for_event: {
         Args: { p_dry_run?: boolean; p_event_id: string; p_mode?: string }
         Returns: Json
@@ -6095,6 +6103,10 @@ export type Database = {
       }
       rpc_sync_match_scores_to_results: {
         Args: { p_match_id: string }
+        Returns: Json
+      }
+      rpc_sync_rules_from_truth: {
+        Args: { p_event_id: string; p_payload: Json }
         Returns: Json
       }
       rpc_upsert_sport_event_rules: {
