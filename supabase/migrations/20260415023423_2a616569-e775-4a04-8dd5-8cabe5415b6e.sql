@@ -1,0 +1,1 @@
+ALTER TABLE public.transport_trips ADD COLUMN IF NOT EXISTS driver_phone TEXT;
