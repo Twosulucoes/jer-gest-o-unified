@@ -14,8 +14,9 @@ import { resolveQrCredential } from "@/lib/resolveQrCredential";
 interface MealWindow {
   id: string;
   meal_type: { name: string } | null;
-  window_start: string;
-  window_end: string;
+  service_date: string;
+  start_time: string;
+  end_time: string;
 }
 
 export default function AlimentacaoScanPage() {
@@ -38,14 +39,13 @@ export default function AlimentacaoScanPage() {
 
   useEffect(() => {
     (async () => {
-      const now = new Date().toISOString();
+      const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
         .from("meal_windows")
-        .select("id, meal_type:meal_types(name), window_start, window_end")
-        .lte("window_start", now)
-        .gte("window_end", now)
-        .order("window_start");
-      const list = (data ?? []) as MealWindow[];
+        .select("id, meal_type:meal_types(name), service_date, start_time, end_time")
+        .eq("service_date", today)
+        .order("start_time");
+      const list = (data ?? []) as unknown as MealWindow[];
       setWindows(list);
       if (list.length === 1) setWindowId(list[0].id);
     })();
@@ -71,14 +71,8 @@ export default function AlimentacaoScanPage() {
       const participantId = resolved.participant_id;
       const participantName = resolved.full_name;
 
-      // Fetch food restrictions
-      let foodRestrictions: string | null = null;
-      const { data: pData } = await supabase
-        .from("participants")
-        .select("food_restrictions")
-        .eq("id", participantId)
-        .maybeSingle();
-      foodRestrictions = pData?.food_restrictions ?? null;
+      // Restrições alimentares foram removidas do schema; manter contrato vazio
+      const foodRestrictions: string | null = null;
 
       // Check duplicate consumption
       const { count } = await supabase
