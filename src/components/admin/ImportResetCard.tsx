@@ -57,8 +57,17 @@ export default function ImportResetCard({ eventId, stageId, stageName, onDone }:
         toast.success(`Reset concluído. ${total} registros apagados.`);
         onDone?.();
       }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+    } catch (e: unknown) {
+      let msg = "Erro desconhecido";
+      if (e instanceof Error) {
+        msg = e.message;
+      } else if (e && typeof e === "object") {
+        const err = e as { message?: string; details?: string; hint?: string; code?: string };
+        msg = err.message || err.details || err.hint || err.code || JSON.stringify(e);
+      } else {
+        msg = String(e);
+      }
+      console.error("Reset RPC error:", e);
       toast.error("Falha no reset: " + msg);
     } finally {
       setLoading(false);
