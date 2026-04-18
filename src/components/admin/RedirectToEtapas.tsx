@@ -10,6 +10,11 @@ const STORAGE_KEY = "jer_last_active_stage_id";
  * generic stage selector.
  */
 function rewriteToStagePath(pathname: string, stageId: string): string | null {
+  // Compat: páginas legadas mescladas em "partidas-agenda"
+  if (pathname === `/admin/competicao/agenda` || pathname === `/admin/competicao/partidas`) {
+    return `/admin/etapa/${stageId}/competicao/partidas-agenda`;
+  }
+
   // /admin/credenciamento[/...] → /admin/etapa/:stageId/credenciamento[/...]
   const match = pathname.match(
     /^\/admin\/(credenciamento(?:-externo)?|validacao-qr|competicao(?:\/.*)?|alojamento(?:\/.*)?|alimentacao(?:\/.*)?|transporte(?:\/.*)?|ocorrencias|pesquisa(?:\/.*)?)$/,
