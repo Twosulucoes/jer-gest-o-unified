@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useEvent } from "@/contexts/EventContext";
+import { useEventContext } from "@/contexts/EventContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ interface SportEventRow { id: string; name: string; slug: string; sport_id: stri
 interface CategoryRow { id: string; name: string; slug: string; }
 
 export default function ImportacaoCatalogoPage() {
-  const { activeEvent } = useEvent();
+  const { activeEvent } = useEventContext();
   const [catalog, setCatalog] = useState<CatalogResponse | null>(null);
   const [sports, setSports] = useState<SportRow[]>([]);
   const [sportEvents, setSportEvents] = useState<SportEventRow[]>([]);
