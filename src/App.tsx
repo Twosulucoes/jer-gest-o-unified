@@ -78,7 +78,7 @@ import OcorrenciasPage from "./pages/admin/OcorrenciasPage";
 // MapaSistemaPage and DiagnosticoCompeticaoPage accessed only via SistemaDiagnosticoPage
 import SistemaDiagnosticoPage from "./pages/admin/SistemaDiagnosticoPage";
 import CentralDadosPage from "./pages/admin/CentralDadosPage";
-import BoletinsPage from "./pages/admin/BoletinsPage";
+import BoletinsPorModalidadePage from "./pages/admin/relatorios/BoletinsPorModalidadePage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 // RegrasEventoPage removed — consolidated into RegrasPage
@@ -281,7 +281,8 @@ const App = () => (
               <Route path="diagnostico-competicao" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
               <Route path="sistema/diagnostico" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
               <Route path="dados" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CentralDadosPage /></ProtectedRoute>} />
-              <Route path="boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><BoletinsPage /></ProtectedRoute>} />
+              <Route path="boletins" element={<Navigate to="/admin/relatorios/boletins" replace />} />
+              <Route path="relatorios/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />
               <Route path="demo" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><DemoSeedsPage /></ProtectedRoute>} />
               <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DebugPublicadosPage /></ProtectedRoute>} />
               <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EmailTemplatesPage /></ProtectedRoute>} />
