@@ -99,6 +99,7 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
     subject: "JER's Gestão — Confirme seu e-mail",
     html: buildHtml({
       title: "Confirme seu e-mail",
+      preheader: "Confirme seu e-mail para ativar seu acesso ao JER's Gestão.",
       greeting: "Olá!",
       body: "Para ativar seu acesso ao <strong>JER's Gestão</strong>, confirme seu endereço de e-mail clicando no botão abaixo.",
       cta: "Confirmar e-mail",
