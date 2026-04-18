@@ -5806,6 +5806,10 @@ export type Database = {
       }
     }
     Functions: {
+      _seed_logistics_sede_code: {
+        Args: { p_event_id: string }
+        Returns: string
+      }
       admin_deactivate_athlete_public_token: {
         Args: { p_athlete_id: string }
         Returns: undefined
@@ -5834,6 +5838,10 @@ export type Database = {
       }
       check_phase_transitions: {
         Args: { p_sport_event_id: string }
+        Returns: Json
+      }
+      clear_logistics_seed_by_stage: {
+        Args: { p_event_id: string }
         Returns: Json
       }
       create_alojamento_incident: {
@@ -6192,6 +6200,7 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      seed_logistics_by_stage: { Args: { p_event_id: string }; Returns: Json }
       seed_logistics_stage_template: {
         Args: { p_event_id: string; p_seed_tag?: string; p_stage_name?: string }
         Returns: Json
