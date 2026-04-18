@@ -108,3 +108,18 @@ Coordenação monta chaves/fases por prova
 ```
 
 **Cenário real**: Na Central, ao selecionar "Futsal Sub-14 Masc", o sistema carrega as regras (W.O. 5×0, fase de grupos, pênaltis no mata-mata) e ajusta a interface automaticamente.
+
+## 8. Consulta do Quadro de Medalhas e Classificação Geral
+
+```
+Coordenação publica resultados de partidas (result_status = 'publicado')
+  → Sistema dispara recálculo do quadro (cache react-query 30s)
+  → Acesso em /admin/relatorios/quadro-medalhas (admin/secretaria/coord. técnica)
+  → Aplica filtros: Escopo (Geral/JER/JERPA), Tipo (Coletivas/Individuais), Modalidade
+  → Aba "Quadro de Medalhas": ordenação olímpica (ouro → prata → bronze)
+  → Aba "Classificação Geral": Art. 108 (1º=10..8º=1 pts) separando coletivas/individuais
+  → Banner amarelo aparece se houver SE com partidas concluídas mas sem publicação
+  → Exporta PDF (selo OFICIAL/PARCIAL) ou XLSX
+```
+
+**Cenário real**: Após a final do Futsal Sub-14, secretaria publica o resultado. O quadro recalcula automaticamente e a escola campeã ganha 10 pts em "Coletivas".

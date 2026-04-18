@@ -64,3 +64,21 @@ Ao preparar um evento, o sistema pode gerar regras automaticamente para todas as
 - **missing_only** — cria regras apenas para provas sem configuração
 - **overwrite** — sobrescreve regras existentes (requer perfil admin)
 - **dry_run** — simula a operação sem persistir, retornando relatório
+
+### 14. Campeonato Geral — Pontuação e Desempate (Art. 108 e 111)
+
+O sistema calcula automaticamente o ranking do Campeonato Geral em `/admin/relatorios/quadro-medalhas`:
+
+**Tabela de pontos (Art. 108)**: 1º=10, 2º=8, 3º=6, 4º=5, 5º=4, 6º=3, 7º=2, 8º=1.
+
+**Modalidades coletivas** (família `score` ou `sets` com equipes): a posição final da equipe no torneio gera pontos diretos.
+
+**Modalidades individuais**: o sistema calcula o quadro de medalhas interno por modalidade (critério olímpico) e converte a posição resultante em pontos.
+
+**Critério olímpico**: ouros → pratas → bronzes (empate total mantém mesma posição).
+
+**Desempate Art. 111**: total de pontos → mais ouros → mais pratas → mais bronzes → melhor desempenho nas coletivas.
+
+**Detecção JERPA**: regex sobre nome de modalidade/categoria (`paralímpic|paralimpic|\bpara\b|jerpa|parabadminton`). Filtros JER/JERPA separam os dois rankings sem alterar a base de dados.
+
+Apenas resultados com `result_status = 'publicado'` e `position` 1–3 (medalhas) ou 1–8 (pontos) entram no cálculo. Resultados pendentes acionam banner de "Dados parciais".
