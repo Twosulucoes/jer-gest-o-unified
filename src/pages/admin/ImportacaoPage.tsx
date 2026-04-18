@@ -310,7 +310,17 @@ export default function ImportacaoPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <ModuleHeader route="/admin/importacao" />
+      <ModuleHeader
+        route="/admin/importacao"
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <a href="/admin/importacao/modelo">
+              <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
+              Baixar modelo .xlsx
+            </a>
+          </Button>
+        }
+      />
 
       <Card>
         <CardHeader>

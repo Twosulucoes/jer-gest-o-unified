@@ -29,6 +29,7 @@ import LocaisPage from "./pages/admin/LocaisPage";
 import InstituicoesPage from "./pages/admin/InstituicoesPage";
 import DelegacoesPage from "./pages/admin/DelegacoesPage";
 import ImportacaoPage from "./pages/admin/ImportacaoPage";
+import ImportacaoModeloPage from "./pages/admin/ImportacaoModeloPage";
 import ImportacaoPendenciasPage from "./pages/admin/ImportacaoPendenciasPage";
 import CredenciamentoPage from "./pages/admin/CredenciamentoPage";
 import CredenciamentoExternoPage from "./pages/admin/CredenciamentoExternoPage";
@@ -209,6 +210,7 @@ const App = () => (
               <Route path="delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacoesPage /></ProtectedRoute>} />
               <Route path="delegacoes/:delegationId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacaoDetalhePage /></ProtectedRoute>} />
               <Route path="importacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPage /></ProtectedRoute>} />
+              <Route path="importacao/modelo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoModeloPage /></ProtectedRoute>} />
               <Route path="importacao/pendencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPendenciasPage /></ProtectedRoute>} />
               <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipantesPage /></ProtectedRoute>} />
               <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipanteDetalhePage /></ProtectedRoute>} />
