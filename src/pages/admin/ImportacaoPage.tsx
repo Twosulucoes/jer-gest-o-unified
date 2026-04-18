@@ -397,6 +397,15 @@ export default function ImportacaoPage() {
       {commitResult && selectedEventId && (
         <CommitResultCard commitResult={commitResult} eventId={selectedEventId} selectedStage={_selectedStage} onReset={handleReset} />
       )}
+
+      {hasRole("admin") && (
+        <ImportResetCard
+          eventId={selectedEventId || null}
+          stageId={selectedStageId || null}
+          stageName={_selectedStage?.name ?? null}
+          onDone={handleReset}
+        />
+      )}
     </div>
   );
 }
