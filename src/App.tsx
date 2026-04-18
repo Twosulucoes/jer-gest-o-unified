@@ -286,6 +286,7 @@ const App = () => (
               <Route path="boletins" element={<Navigate to="/admin/relatorios/boletins" replace />} />
               <Route path="relatorios/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />
               <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
+              <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><QuadroMedalhasPage /></ProtectedRoute>} />
               <Route path="demo" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><DemoSeedsPage /></ProtectedRoute>} />
               <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DebugPublicadosPage /></ProtectedRoute>} />
               <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EmailTemplatesPage /></ProtectedRoute>} />
