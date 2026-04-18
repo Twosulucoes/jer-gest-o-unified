@@ -66,6 +66,32 @@ export default function CategoriasPage() {
     },
   });
 
+  // Buscar provas (sport_events) com modalidade para agregar por categoria
+  const { data: sportEvents = [] } = useQuery({
+    queryKey: ["sport-events-by-category"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sport_events")
+        .select("id, category_id, sports(id, name)")
+        .not("category_id", "is", null);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Mapa: category_id -> { sports: Set<name>, provasCount: number }
+  const sportsByCategory = useMemo(() => {
+    const map = new Map<string, { sports: Set<string>; provasCount: number }>();
+    for (const se of sportEvents as any[]) {
+      if (!se.category_id) continue;
+      const entry = map.get(se.category_id) ?? { sports: new Set<string>(), provasCount: 0 };
+      if (se.sports?.name) entry.sports.add(se.sports.name);
+      entry.provasCount += 1;
+      map.set(se.category_id, entry);
+    }
+    return map;
+  }, [sportEvents]);
+
   const eventsMap = new Map(events.map((e) => [e.id, e]));
 
   const toPayload = (values: CategoryFormValues) => ({
