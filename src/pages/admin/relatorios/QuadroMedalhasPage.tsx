@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useEvent } from "@/contexts/EventContext";
+import { useEventContext } from "@/contexts/EventContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,7 +12,7 @@ import { exportMedalTablePdf, exportRankingGeralPdf } from "./medalTablePdfExpor
 import { exportMedalTableXlsx, exportRankingGeralXlsx } from "./medalTableXlsxExporter";
 
 export default function QuadroMedalhasPage() {
-  const { activeEvent } = useEvent();
+  const { activeEvent } = useEventContext();
   const eventId = activeEvent?.id;
   const [scope, setScope] = useState<ScopeFilter>("all");
   const [type, setType] = useState<TypeFilter>("all");

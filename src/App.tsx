@@ -80,6 +80,7 @@ import SistemaDiagnosticoPage from "./pages/admin/SistemaDiagnosticoPage";
 import CentralDadosPage from "./pages/admin/CentralDadosPage";
 import BoletinsPorModalidadePage from "./pages/admin/relatorios/BoletinsPorModalidadePage";
 import DashboardOperacionalPage from "./pages/admin/relatorios/DashboardOperacionalPage";
+import QuadroMedalhasPage from "./pages/admin/relatorios/QuadroMedalhasPage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 // RegrasEventoPage removed — consolidated into RegrasPage

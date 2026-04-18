@@ -32,9 +32,10 @@ const REPORTS: ReportEntry[] = [
   {
     key: "medalhas",
     title: "Quadro de Medalhas",
-    description: "Ranking de medalhas e pontuação geral por delegação.",
+    description: "Ranking de medalhas e pontuação do Campeonato Geral por delegação (Art. 108 e 111).",
     icon: <Trophy className="h-6 w-6 text-primary" />,
-    status: "soon",
+    status: "available",
+    to: "/admin/relatorios/quadro-medalhas",
   },
   {
     key: "osc",
