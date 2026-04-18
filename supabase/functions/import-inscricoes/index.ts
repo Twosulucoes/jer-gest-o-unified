@@ -97,7 +97,10 @@ function isValidDateString(d: string): boolean {
   const date = new Date(d + "T00:00:00Z");
   if (isNaN(date.getTime())) return false;
   const year = date.getUTCFullYear();
-  return year >= 1920 && year <= 2020;
+  // Faixa dinâmica: aceita do nascido com até ~110 anos até o ano corrente.
+  // Evita falsos negativos quando atletas nascem no ano da edição (categorias mais novas).
+  const currentYear = new Date().getUTCFullYear();
+  return year >= 1915 && year <= currentYear;
 }
 
 function buildFingerprint(name: string, birthDate: string | null, gender: string, institution: string, modality: string, prova: string): string {
@@ -226,16 +229,48 @@ const STAGE_TOKENS = [
 // puro do nome não bate naturalmente com o catálogo (acentos/espaços já
 // tratados, então quase sempre o match natural funciona).
 const SPORT_ALIASES: Record<string, string> = {
+  // Combate
   "JUDO": "judo",
   "JUDÔ": "judo",
+  "KARATE": "karate",
+  "KARATÊ": "karate",
+  "TAEKWONDO": "taekwondo",
+  "TAE KWON DO": "taekwondo",
+  "WRESTLING": "wrestling",
+  "LUTA OLIMPICA": "wrestling",
+  // Coletivos
+  "FUTSAL": "futsal",
+  "FUTEBOL DE SALAO": "futsal",
+  "FUTEBOL": "futebol",
+  "FUTEBOL DE CAMPO": "futebol",
+  "BASQUETE": "basquete",
+  "BASQUETEBOL": "basquete",
+  "VOLEI": "volei",
+  "VOLEIBOL": "volei",
   "VOLEI DE PRAIA": "volei-de-praia",
   "VOLEIBOL DE PRAIA": "volei-de-praia",
-  "GINASTICA RITMICA": "ginastica-ritmica",
+  "HANDEBOL": "handebol",
+  // Raquete / mesa
   "TENIS DE MESA": "tenis-de-mesa",
+  "BADMINTON": "badminton",
+  "XADREZ": "xadrez",
+  // Tempo / marca
+  "ATLETISMO": "atletismo",
+  "NATACAO": "natacao",
+  "NATAÇÃO": "natacao",
+  "CICLISMO": "ciclismo",
+  // Ginástica
+  "GINASTICA RITMICA": "ginastica-ritmica",
+  "GINÁSTICA RÍTMICA": "ginastica-ritmica",
+  // JERPA
   "ATLETISMO PARALIMPICO": "atletismo-paralimpico",
+  "ATLETISMO PARALÍMPICO": "atletismo-paralimpico",
   "NATACAO PARALIMPICA": "natacao-paralimpica",
+  "NATAÇÃO PARALÍMPICA": "natacao-paralimpica",
   "BOCHA PARALIMPICA": "bocha-paralimpica",
+  "BOCHA PARALÍMPICA": "bocha-paralimpica",
   "TENIS DE MESA PARALIMPICO": "tenis-de-mesa-paralimpico",
+  "TÊNIS DE MESA PARALÍMPICO": "tenis-de-mesa-paralimpico",
   "PARABADMINTON": "parabadminton",
 };
 
@@ -369,7 +404,20 @@ const AGE_BAND_TO_CATEGORY: Array<{
 // seguro assumir a única categoria existente no catálogo do evento.
 // Mantida explícita para evitar chute em modalidades multi-categoria.
 const SINGLE_CATEGORY_FALLBACK_WHITELIST = new Set<string>([
-  "futebol",  // catálogo só tem jers-15-17 para futebol
+  // Coletivos: catálogo costuma ter 1 categoria por (modalidade, naipe)
+  "futebol",
+  "futsal",
+  "basquete",
+  "volei",
+  "volei-de-praia",
+  "handebol",
+  // Raquete/mesa quando o evento só roda 1 categoria
+  "xadrez",
+  "badminton",
+  // Combate: muitos eventos rodam categoria única para JER
+  "karate",
+  "taekwondo",
+  "wrestling",
 ]);
 
 interface CategoryWindow { slug: string; min_birth_year: number | null; max_birth_year: number | null; }
@@ -823,8 +871,15 @@ function classifyRow(
     row.institution_name, row.sport_name, row.prova_name
   );
 
-  // Skip invalid inscription status
-  if (row.inscription_status && !["válida", "valida", ""].includes(row.inscription_status.toLowerCase())) {
+  // Skip invalid inscription status — aceita variações usadas pelo SIGECOM.
+  // Aceitos como válidos (segue): vazio, "valida", "deferida", "aprovada", "homologada", "confirmada".
+  // Tudo o mais (indeferida, pendente, cancelada, etc.) é ignorado com warning.
+  const statusNorm = row.inscription_status
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .trim();
+  const STATUS_OK = new Set(["", "valida", "deferida", "aprovada", "homologada", "confirmada"]);
+  if (statusNorm && !STATUS_OK.has(statusNorm)) {
     warnings.push({ row: row.row_number, field: "STATUS", value: row.inscription_status, code: "INVALID_STATUS", message: `Inscrição com status "${row.inscription_status}" — ignorada` });
     return { status: "skip", errors: [], warnings, pending: [], resolved: {} };
   }
