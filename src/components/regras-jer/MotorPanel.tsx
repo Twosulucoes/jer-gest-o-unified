@@ -185,9 +185,16 @@ function MotorRow({ row }: { row: any }) {
         ? "bg-blue-500/15 text-blue-700 border-blue-500/30"
         : "bg-amber-500/15 text-amber-700 border-amber-500/30";
 
-  const tb: string[] = Array.isArray(row.points_rules?.tie_breakers)
+  const tbRaw: any[] = Array.isArray(row.points_rules?.tie_breakers)
     ? row.points_rules.tie_breakers
     : [];
+  const tb: string[] = tbRaw.map((t) =>
+    typeof t === "string"
+      ? t
+      : t && typeof t === "object"
+        ? (t.criterio ?? t.criteria ?? t.name ?? JSON.stringify(t))
+        : String(t)
+  );
   const gp = row.points_rules?.group_points ?? {};
   const wo = row.points_rules?.walkover_policy;
   const q = row.quorum ?? {};
