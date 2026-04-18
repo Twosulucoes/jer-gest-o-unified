@@ -15,10 +15,11 @@ interface ReportEntry {
 const REPORTS: ReportEntry[] = [
   {
     key: "boletins",
-    title: "Boletins",
-    description: "Boletins oficiais da competição com resultados validados e publicados.",
+    title: "Boletins por Modalidade",
+    description: "Resultados oficiais por modalidade, categoria, gênero e fase. Exportação em PDF e XLSX.",
     icon: <FileText className="h-6 w-6 text-primary" />,
-    status: "soon",
+    status: "available",
+    to: "/admin/relatorios/boletins",
   },
   {
     key: "dashboard",

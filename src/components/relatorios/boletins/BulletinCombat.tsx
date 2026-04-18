@@ -101,7 +101,7 @@ export default function BulletinCombat({ data }: { data: BulletinDataset }) {
             <div className="grid gap-3">
               {podio.map((p, i) => (
                 <div key={`${p.pos}-${p.name}-${i}`} className="flex items-center gap-3 p-3 border border-border rounded-md">
-                  <Medal className={`h-5 w-5 ${p.pos === 1 ? "text-yellow-500" : p.pos === 2 ? "text-zinc-400" : "text-amber-700"}`} />
+                  <Medal className={`h-5 w-5 ${p.pos === 1 ? "text-yellow-500" : p.pos === 2 ? "text-muted-foreground" : "text-amber-700"}`} />
                   <div className="font-mono w-10">{p.pos}º</div>
                   <div className="flex-1">
                     <div className="font-medium">{p.name}</div>
