@@ -185,45 +185,83 @@ export default function CategoriasPage() {
         </div>
       ) : (
         <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Evento</TableHead>
-                <TableHead>Gênero</TableHead>
-                <TableHead>Faixa etária</TableHead>
-                {canWrite && <TableHead className="w-[60px]" />}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {categories.map((cat) => {
-                const event = eventsMap.get(cat.event_id);
-                return (
-                  <TableRow key={cat.id}>
-                    <TableCell className="font-medium">{cat.name}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {event ? `${event.name} (${event.year})` : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{GENDER_MAP[cat.gender_scope] ?? cat.gender_scope}</Badge>
-                    </TableCell>
-                    <TableCell>{birthRange(cat)}</TableCell>
-                    {canWrite && (
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => { setEditingCategory(cat); setDialogOpen(true); }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+          <TooltipProvider delayDuration={150}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Evento</TableHead>
+                  <TableHead>Gênero</TableHead>
+                  <TableHead>Faixa etária</TableHead>
+                  <TableHead>Modalidades</TableHead>
+                  {canWrite && <TableHead className="w-[60px]" />}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {categories.map((cat) => {
+                  const event = eventsMap.get(cat.event_id);
+                  const usage = sportsByCategory.get(cat.id);
+                  const sportNames = usage ? Array.from(usage.sports).sort() : [];
+                  const sportsCount = sportNames.length;
+                  const provasCount = usage?.provasCount ?? 0;
+                  return (
+                    <TableRow key={cat.id}>
+                      <TableCell className="font-medium">{cat.name}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {event ? `${event.name} (${event.year})` : "—"}
                       </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      <TableCell>
+                        <Badge variant="secondary">{GENDER_MAP[cat.gender_scope] ?? cat.gender_scope}</Badge>
+                      </TableCell>
+                      <TableCell>{birthRange(cat)}</TableCell>
+                      <TableCell>
+                        {sportsCount === 0 ? (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            sem modalidades
+                          </Badge>
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Link
+                                to={`/admin/regras-evento?tab=catalogo_modalidades&categoria=${encodeURIComponent(cat.name)}`}
+                                className="inline-flex items-center gap-1.5 hover:underline"
+                              >
+                                <Badge variant="secondary" className="font-normal">
+                                  {sportsCount} {sportsCount === 1 ? "modalidade" : "modalidades"}
+                                  {" · "}
+                                  {provasCount} {provasCount === 1 ? "prova" : "provas"}
+                                </Badge>
+                                <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-[260px]">
+                              <p className="font-medium text-xs mb-1">Modalidades nesta categoria:</p>
+                              <ul className="text-xs space-y-0.5">
+                                {sportNames.map((n) => (
+                                  <li key={n}>• {n}</li>
+                                ))}
+                              </ul>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </TableCell>
+                      {canWrite && (
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => { setEditingCategory(cat); setDialogOpen(true); }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TooltipProvider>
         </div>
       )}
 
