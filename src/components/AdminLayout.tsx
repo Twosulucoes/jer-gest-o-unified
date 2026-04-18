@@ -71,6 +71,8 @@ const navGroups: NavGroup[] = [
     icon: <FileBarChart className="h-4 w-4" />,
     items: [
       { label: "Central de Relatórios", to: "/admin/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Boletins por Modalidade", to: "/admin/relatorios/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Dashboard Operacional", to: "/admin/relatorios/dashboard", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
     ],
   },
   {
