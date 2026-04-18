@@ -639,6 +639,8 @@ function mapColumns(
     sportCategoryPairs: Set<string>;
     categoriesBySport: Map<string, CategoryWindow[]>;
     eventYear: number | null;
+    sportAliases?: Record<string, string>;
+    categoryAliases?: Record<string, string>;
   },
 ): NormalizedRow {
   const fullName = normalizeName(getField(raw, "NOME", "NOME COMPLETO"));
@@ -661,7 +663,7 @@ function mapColumns(
 
   // ── Parser canônico: modalidade + categoria do catálogo ──
   const parsed = parseSportText(sportRaw, competicaoRaw);
-  const sportRes = canonicalizeSport(parsed, catalog.sportsSet);
+  const sportRes = canonicalizeSport(parsed, catalog.sportsSet, catalog.sportAliases ?? {});
   let categoryRes: CategoryResolution = {
     category_slug: null, reason: "modalidade não resolvida", matched_by: null, candidates: [],
   };
