@@ -112,7 +112,7 @@ function buildInscricoesSheet(sources: ModeloDataSources): XLSX.WorkSheet {
   const exampleRows = [
     {
       "NOME": "JOÃO DA SILVA SANTOS",
-      "CPF": "123.456.789-00",
+      "CPF": "104.332.181-00",
       "DATA NASCIMENTO": "15/03/2008",
       "SEXO": "Masculino",
       "RG": "1234567",
@@ -131,7 +131,7 @@ function buildInscricoesSheet(sources: ModeloDataSources): XLSX.WorkSheet {
     },
     {
       "NOME": "MARIA OLIVEIRA COSTA",
-      "CPF": "987.654.321-00",
+      "CPF": "960.013.389-14",
       "DATA NASCIMENTO": "22/07/2009",
       "SEXO": "Feminino",
       "RG": "",
@@ -150,7 +150,7 @@ function buildInscricoesSheet(sources: ModeloDataSources): XLSX.WorkSheet {
     },
     {
       "NOME": "CARLOS EDUARDO LIMA",
-      "CPF": "111.222.333-44",
+      "CPF": "083.863.794-99",
       "DATA NASCIMENTO": "10/05/1985",
       "SEXO": "Masculino",
       "RG": "",
@@ -332,7 +332,9 @@ function buildInstructionsSheet(sources: ModeloDataSources): XLSX.WorkSheet {
     ["   • PROVA → veja aba 'Provas'"],
     ["   • COMPETICAO → veja aba 'Categorias' (formato: 'Sub-17 Masculino')"],
     [""],
-    ["4. CPF: pode ser digitado com ou sem formatação (123.456.789-00 ou 12345678900)."],
+    ["4. CPF: pode ser digitado com ou sem formatação (000.000.000-00 ou 00000000000)."],
+    ["   O sistema valida o dígito verificador (padrão Receita Federal). CPFs como"],
+    ["   '123.456.789-00' são REJEITADOS por terem dígito verificador inválido."],
     ["   Se inválido ou ausente, o sistema gera uma pendência para revisão manual."],
     [""],
     ["5. DATA NASCIMENTO: use o formato DD/MM/AAAA (ex.: 15/03/2008)."],
