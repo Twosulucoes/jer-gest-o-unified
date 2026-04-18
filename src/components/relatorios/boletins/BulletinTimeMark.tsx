@@ -16,7 +16,7 @@ function fmtTime(ms: number | null) {
 export default function BulletinTimeMark({ data }: { data: BulletinDataset }) {
   const isMark = data.family === "mark";
 
-  const { rankingByPhase, entryById } = useMemo(() => {
+  const { rankingByPhase } = useMemo(() => {
     const eById = new Map<string, typeof data.entries[number]>();
     for (const e of data.entries) eById.set(e.id, e);
 
@@ -45,7 +45,7 @@ export default function BulletinTimeMark({ data }: { data: BulletinDataset }) {
         return Number(av) - Number(bv);
       });
     }
-    return { rankingByPhase: byPhase, entryById: eById };
+    return { rankingByPhase: byPhase };
   }, [data, isMark]);
 
   const phaseName = (pid: string) => data.phases.find((p) => p.id === pid)?.name ?? "Resultado";

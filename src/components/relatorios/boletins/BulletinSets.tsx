@@ -52,7 +52,6 @@ export default function BulletinSets({ data }: { data: BulletinDataset }) {
         const otherEnt = ents.find((x) => x.id !== e.id);
         const otherR = otherEnt ? rByE.get(otherEnt.id) : undefined;
         const my = extractSets(r.combat_detail, r.score);
-        const op = extractSets(otherR?.combat_detail, otherR?.score ?? null);
         s.J += 1;
         s.SP += my.setsWon; s.SC += my.setsLost;
         s.PP += my.pp; s.PC += my.pc;
