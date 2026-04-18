@@ -331,13 +331,25 @@ interface SportResolution {
   matched_by: "alias" | "exact" | "substring" | null;
 }
 
-function canonicalizeSport(parsed: ParsedSportText, sportsInCatalog: Set<string>): SportResolution {
+function canonicalizeSport(
+  parsed: ParsedSportText,
+  sportsInCatalog: Set<string>,
+  dynamicAliases: Record<string, string> = {},
+): SportResolution {
   const token = parsed.sport_token;
   if (!token) {
     return { sport_slug: null, reason: "modalidade vazia após sanitização", matched_by: null };
   }
 
-  // 1. Alias direto
+  // 0. Alias dinâmico (vindo de import_aliases — fonte de verdade)
+  if (dynamicAliases[token]) {
+    const slug = dynamicAliases[token];
+    if (sportsInCatalog.has(slug)) {
+      return { sport_slug: slug, reason: `alias DB "${token}" -> ${slug}`, matched_by: "alias" };
+    }
+  }
+
+  // 1. Alias hardcoded (legado — será migrado p/ DB)
   if (SPORT_ALIASES[token]) {
     const slug = SPORT_ALIASES[token];
     if (sportsInCatalog.has(slug)) {
@@ -358,7 +370,6 @@ function canonicalizeSport(parsed: ParsedSportText, sportsInCatalog: Set<string>
     return { sport_slug: candidates[0], reason: `substring única "${slugified}" ⊃ "${candidates[0]}"`, matched_by: "substring" };
   }
   if (candidates.length > 1) {
-    // Escolher o mais longo (mais específico)
     candidates.sort((a, b) => b.length - a.length);
     return { sport_slug: candidates[0], reason: `substring (escolhido mais específico entre ${candidates.length}): ${candidates.join(", ")}`, matched_by: "substring" };
   }
@@ -628,6 +639,8 @@ function mapColumns(
     sportCategoryPairs: Set<string>;
     categoriesBySport: Map<string, CategoryWindow[]>;
     eventYear: number | null;
+    sportAliases?: Record<string, string>;
+    categoryAliases?: Record<string, string>;
   },
 ): NormalizedRow {
   const fullName = normalizeName(getField(raw, "NOME", "NOME COMPLETO"));
@@ -650,7 +663,7 @@ function mapColumns(
 
   // ── Parser canônico: modalidade + categoria do catálogo ──
   const parsed = parseSportText(sportRaw, competicaoRaw);
-  const sportRes = canonicalizeSport(parsed, catalog.sportsSet);
+  const sportRes = canonicalizeSport(parsed, catalog.sportsSet, catalog.sportAliases ?? {});
   let categoryRes: CategoryResolution = {
     category_slug: null, reason: "modalidade não resolvida", matched_by: null, candidates: [],
   };
@@ -720,19 +733,26 @@ interface ReadOnlyMaps {
   eventYear: number | null;                   // events.year (ano-base do desempate por idade)
   delegations: Map<string, string>;
   existingInstitutionSlugs: Set<string>;
+  /** Aliases dinâmicos vindos da tabela import_aliases (kind='sport'). */
+  sportAliases: Record<string, string>;
+  /** Aliases dinâmicos vindos da tabela import_aliases (kind='category'). */
+  categoryAliases: Record<string, string>;
 }
 
 async function loadReadOnlyMaps(
   supabase: any,
   eventId: string,
 ): Promise<ReadOnlyMaps> {
-  const [instRes, sportRes, catRes, seRes, delRes, evRes] = await Promise.all([
+  const [instRes, sportRes, catRes, seRes, delRes, evRes, aliasRes] = await Promise.all([
     supabase.from("institutions").select("id, slug").eq("is_active", true),
     supabase.from("sports").select("id, slug").eq("event_id", eventId),
     supabase.from("categories").select("id, slug, min_birth_year, max_birth_year").eq("event_id", eventId),
     supabase.from("sport_events").select("id, sport_id, category_id, slug").eq("event_id", eventId),
     supabase.from("delegations").select("id, institution_id").eq("event_id", eventId),
     supabase.from("events").select("year").eq("id", eventId).maybeSingle(),
+    supabase.from("import_aliases")
+      .select("alias_norm, canonical_slug, kind, event_id")
+      .or(`event_id.eq.${eventId},event_id.is.null`),
   ]);
 
   const institutions = new Map<string, string>();
@@ -781,6 +801,20 @@ async function loadReadOnlyMaps(
 
   const eventYear = (evRes.data as { year?: number | null } | null)?.year ?? null;
 
+  // Aliases dinâmicos da fonte de verdade (event-scoped tem prioridade sobre global)
+  const sportAliases: Record<string, string> = {};
+  const categoryAliases: Record<string, string> = {};
+  const aliasRows = (aliasRes.data ?? []) as Array<{
+    alias_norm: string; canonical_slug: string; kind: string; event_id: string | null;
+  }>;
+  // Ordena: globais primeiro, depois event-scoped (sobrescreve)
+  aliasRows.sort((a, b) => Number(!!a.event_id) - Number(!!b.event_id));
+  for (const a of aliasRows) {
+    const key = a.alias_norm.toUpperCase();
+    if (a.kind === "sport") sportAliases[key] = a.canonical_slug;
+    else if (a.kind === "category") categoryAliases[key] = a.canonical_slug;
+  }
+
   return {
     institutions,
     sports,
@@ -792,6 +826,8 @@ async function loadReadOnlyMaps(
     eventYear,
     delegations,
     existingInstitutionSlugs: new Set(institutions.keys()),
+    sportAliases,
+    categoryAliases,
   };
 }
 
@@ -1313,6 +1349,8 @@ Deno.serve(async (req: Request) => {
       sportCategoryPairs: maps.sportCategoryPairs,
       categoriesBySport: maps.categoriesBySport,
       eventYear: maps.eventYear,
+      sportAliases: maps.sportAliases,
+      categoryAliases: maps.categoryAliases,
     };
     const normalizedRows = rawRows.map((raw, i) => mapColumns(raw, i, catalog));
 
