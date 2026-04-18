@@ -18,10 +18,11 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Search, Info, Calendar, Trophy, ScrollText, Users, Award, Accessibility,
-  GitCompareArrows, RefreshCw, Sparkles, Database, BookOpen, AlertCircle, CheckCircle2,
+  GitCompareArrows, RefreshCw, Sparkles, Database, BookOpen, AlertCircle, CheckCircle2, Cpu,
 } from "lucide-react";
 import { RegraSection, KvTable } from "@/components/regras-jer/RegraSection";
 import { ModalidadeCard } from "@/components/regras-jer/ModalidadeCard";
+import { MotorPanel } from "@/components/regras-jer/MotorPanel";
 import { toast } from "sonner";
 
 const BLOCO_TABS = [
@@ -56,16 +57,18 @@ export default function RegrasPage() {
       </Alert>
 
       <Tabs defaultValue="visao" className="w-full">
-        <TabsList className="grid grid-cols-4 max-w-2xl">
+        <TabsList className="grid grid-cols-5 max-w-3xl">
           <TabsTrigger value="visao"><BookOpen className="h-3.5 w-3.5 mr-1" />Visão</TabsTrigger>
           <TabsTrigger value="diff"><GitCompareArrows className="h-3.5 w-3.5 mr-1" />Diff</TabsTrigger>
           <TabsTrigger value="sync"><RefreshCw className="h-3.5 w-3.5 mr-1" />Sincronizar</TabsTrigger>
+          <TabsTrigger value="motor"><Cpu className="h-3.5 w-3.5 mr-1" />Motor</TabsTrigger>
           <TabsTrigger value="aliases"><Sparkles className="h-3.5 w-3.5 mr-1" />Aliases</TabsTrigger>
         </TabsList>
 
         <TabsContent value="visao"><VisaoTabs /></TabsContent>
         <TabsContent value="diff"><DiffPanel /></TabsContent>
         <TabsContent value="sync"><SyncPanel /></TabsContent>
+        <TabsContent value="motor"><MotorPanel /></TabsContent>
         <TabsContent value="aliases"><AliasesPanel /></TabsContent>
       </Tabs>
     </div>
