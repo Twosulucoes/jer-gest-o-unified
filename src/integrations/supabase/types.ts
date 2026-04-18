@@ -1032,6 +1032,59 @@ export type Database = {
           },
         ]
       }
+      event_branding: {
+        Row: {
+          assinatura_cargo: string | null
+          assinatura_nome: string | null
+          created_at: string
+          created_by: string | null
+          event_id: string
+          local_ano: string | null
+          logos: Json
+          nome_oficial: string | null
+          rodape_texto: string | null
+          subtitulo: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          assinatura_cargo?: string | null
+          assinatura_nome?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          local_ano?: string | null
+          logos?: Json
+          nome_oficial?: string | null
+          rodape_texto?: string | null
+          subtitulo?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          assinatura_cargo?: string | null
+          assinatura_nome?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          local_ano?: string | null
+          logos?: Json
+          nome_oficial?: string | null
+          rodape_texto?: string | null
+          subtitulo?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_branding_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_edition_rules: {
         Row: {
           created_at: string

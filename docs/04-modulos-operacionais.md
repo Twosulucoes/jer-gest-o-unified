@@ -160,8 +160,20 @@
 - **Tabela**: `public_content`
 
 ## 19. Relatórios (🟡 Parcial)
-- **Página**: `/admin/relatorios`
-- **Engine**: framework de relatórios com filtros, colunas, presets
+- **Página hub**: `/admin/relatorios` (cards dos 4 relatórios oficiais)
+- **Engine legada**: framework com filtros, colunas, presets em `/admin/relatorios/central`
 - **Renderers**: PDF (@react-pdf/renderer) e Excel (exceljs)
 - **Definições**: `sample.delegationRoster`, `sample.resultsByGroup`
-- **Gaps**: ❌ Poucos relatórios definidos | ❌ Falta relatórios operacionais (transporte, alimentação)
+
+### Camada 0 — Fundação (✅ Entregue nesta etapa)
+- **Identidade Visual por evento** em `/admin/configuracoes/identidade-visual` (admin only)
+- Tabela `event_branding` (1:1 com `events`): até 3 logos com rótulo, ordem e flag ativo; nome oficial; subtítulo; rodapé institucional; local/ano; assinatura formal (nome + cargo)
+- Bucket público `report-assets` para os logos institucionais (upload restrito a admin)
+- Componentes reutilizáveis em `src/components/relatorios/`: `ReportHeader`, `ReportFooter`, `ReportShell`
+- Hook `useEventBranding(eventId)` com cache react-query
+
+### Camadas futuras (Em breve)
+1. **Boletins Oficiais** — boletins de competição com resultados validados
+2. **Dashboard Operacional** — visão consolidada em tempo real (credenciamento, logística)
+3. **Quadro de Medalhas** — ranking por delegação
+4. **Prestação de Contas (OSC)** — relatório formal para parceiros e órgãos de controle

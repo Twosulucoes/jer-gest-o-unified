@@ -95,6 +95,8 @@ import EmailTemplatesPage from "./pages/admin/EmailTemplatesPage";
 import LinksPage from "./pages/admin/LinksPage";
 import LinkFormPage from "./pages/admin/LinkFormPage";
 import ReportCenterPage from "./reports/ui/ReportCenterPage";
+import RelatoriosHubPage from "./pages/admin/RelatoriosHubPage";
+import IdentidadeVisualPage from "./pages/admin/IdentidadeVisualPage";
 import LinkPreviewPage from "./pages/admin/LinkPreviewPage";
 import GoRedirectPage from "./pages/public/GoRedirectPage";
 // Evento Rules Center pages removed — consolidated into RegrasEventoPage
@@ -294,7 +296,9 @@ const App = () => (
               <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
               <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
               {/* Relatórios Globais */}
-              <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ReportCenterPage /></ProtectedRoute>} />
+              <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RelatoriosHubPage /></ProtectedRoute>} />
+              <Route path="relatorios/central" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ReportCenterPage /></ProtectedRoute>} />
+              <Route path="configuracoes/identidade-visual" element={<ProtectedRoute allowedRoles={["admin"]}><IdentidadeVisualPage /></ProtectedRoute>} />
               <Route path="atletas/qrcode" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AtletaQrCodePage /></ProtectedRoute>} />
               {/* Ocorrências — operacional, redireciona para Etapa */}
               <Route path="ocorrencias" element={<RedirectToEtapas />} />

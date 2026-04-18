@@ -53,6 +53,19 @@ src/pages/admin/RegrasProvaPage.tsx     → editor individual
 src/pages/admin/RegrasLotePage.tsx      → seed e revisão em lote
 ```
 
+### Identidade Visual e Componentes de Relatório
+```
+src/hooks/useEventBranding.ts                   → hook react-query (cache de branding por evento)
+src/components/relatorios/ReportHeader.tsx      → cabeçalho com logos + título oficial
+src/components/relatorios/ReportFooter.tsx      → rodapé institucional + paginação + data/hora
+src/components/relatorios/ReportShell.tsx       → wrapper padrão (header + conteúdo + footer)
+src/pages/admin/IdentidadeVisualPage.tsx        → editor /admin/configuracoes/identidade-visual
+src/pages/admin/RelatoriosHubPage.tsx           → hub /admin/relatorios (cards "Em breve")
+```
+
+- **Tabela**: `event_branding` (1:1 com `events`) — até 3 logos como JSONB ordenado, textos institucionais e dados de assinatura.
+- **Bucket**: `report-assets` (público) — armazena os arquivos de logo. Upload restrito a admin via RLS em `storage.objects`.
+
 ## Decisões Arquiteturais
 
 1. **Client-side only** — sem servidor Node/Python; toda lógica server-side via Supabase

@@ -67,7 +67,7 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    id: "relatorios", label: "Relatórios Globais", description: "Visão consolidada do evento.",
+    id: "relatorios", label: "Relatórios", description: "Documentos oficiais e painéis consolidados.",
     icon: <FileBarChart className="h-4 w-4" />,
     items: [
       { label: "Central de Relatórios", to: "/admin/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
@@ -90,6 +90,7 @@ const navGroups: NavGroup[] = [
       { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Modalidades", to: "/admin/modalidades", icon: <Dumbbell className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Categorias", to: "/admin/categorias", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Identidade Visual", to: "/admin/configuracoes/identidade-visual", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
     ],
   },
   {
