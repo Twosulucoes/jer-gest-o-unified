@@ -121,6 +121,7 @@ Se você não solicitou esta ação, ignore este e-mail.
     subject: "JER's Gestão — Link de acesso",
     html: buildHtml({
       title: "Link de acesso",
+      preheader: "Seu link pessoal e temporário de acesso ao JER's Gestão.",
       greeting: "Olá!",
       body: "Você solicitou um link de acesso ao <strong>JER's Gestão</strong>. Este link é pessoal e temporário — <strong>não compartilhe</strong> com outras pessoas.",
       cta: "Acessar agora",
@@ -142,6 +143,7 @@ Se você não solicitou esta ação, ignore este e-mail.
     subject: "JER's Gestão — Redefinição de senha",
     html: buildHtml({
       title: "Redefinição de senha",
+      preheader: "Crie uma nova senha para sua conta no JER's Gestão.",
       greeting: "Olá!",
       body: "Recebemos uma solicitação para redefinir a senha da sua conta no <strong>JER's Gestão</strong>. Clique no botão abaixo para criar uma nova senha.",
       cta: "Redefinir senha",
@@ -163,6 +165,7 @@ Se você não solicitou esta ação, ignore este e-mail.
     subject: "JER's Gestão — Convite de acesso",
     html: buildHtml({
       title: "Convite de acesso",
+      preheader: "Você foi convidado(a) para acessar o JER's Gestão.",
       greeting: "Olá!",
       body: "Você foi convidado(a) para acessar o <strong>JER's Gestão</strong> — sistema dos Jogos Escolares de Roraima. Clique no botão abaixo para aceitar o convite e configurar sua conta.",
       cta: "Aceitar convite",
