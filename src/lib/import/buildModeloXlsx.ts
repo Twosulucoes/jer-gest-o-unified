@@ -431,7 +431,7 @@ export function buildModeloXlsx(sources: ModeloDataSources): Uint8Array {
 
 export function downloadModeloXlsx(sources: ModeloDataSources, fileName?: string) {
   const buffer = buildModeloXlsx(sources);
-  const blob = new Blob([buffer], {
+  const blob = new Blob([buffer.buffer as ArrayBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   const url = URL.createObjectURL(blob);

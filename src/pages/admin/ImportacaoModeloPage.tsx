@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Download, FileSpreadsheet, ArrowLeft, Sparkles, BookOpen, ListChecks, AlertTriangle } from "lucide-react";
+import { Download, ArrowLeft, Sparkles, BookOpen, ListChecks, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -105,9 +105,8 @@ export default function ImportacaoModeloPage() {
       </div>
 
       <ModuleHeader
-        icon={FileSpreadsheet}
+        route="/admin/importacao/modelo"
         title="Modelo padrão de importação"
-        description="Baixe a planilha modelo já configurada com cabeçalhos corretos, dropdowns de validação e instruções de preenchimento."
       />
 
       {/* Hero CTA */}
@@ -149,8 +148,8 @@ export default function ImportacaoModeloPage() {
           </AlertDescription>
         </Alert>
       ) : (
-        <Alert className="border-green-500/30 bg-green-500/5">
-          <ListChecks className="h-4 w-4 text-green-600" />
+        <Alert className="border-primary/30 bg-primary/5">
+          <ListChecks className="h-4 w-4 text-primary" />
           <AlertTitle>Modelo será gerado com seus dados reais</AlertTitle>
           <AlertDescription>
             <div className="flex flex-wrap gap-2 mt-2">
