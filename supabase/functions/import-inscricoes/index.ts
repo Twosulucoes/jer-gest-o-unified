@@ -331,13 +331,25 @@ interface SportResolution {
   matched_by: "alias" | "exact" | "substring" | null;
 }
 
-function canonicalizeSport(parsed: ParsedSportText, sportsInCatalog: Set<string>): SportResolution {
+function canonicalizeSport(
+  parsed: ParsedSportText,
+  sportsInCatalog: Set<string>,
+  dynamicAliases: Record<string, string> = {},
+): SportResolution {
   const token = parsed.sport_token;
   if (!token) {
     return { sport_slug: null, reason: "modalidade vazia após sanitização", matched_by: null };
   }
 
-  // 1. Alias direto
+  // 0. Alias dinâmico (vindo de import_aliases — fonte de verdade)
+  if (dynamicAliases[token]) {
+    const slug = dynamicAliases[token];
+    if (sportsInCatalog.has(slug)) {
+      return { sport_slug: slug, reason: `alias DB "${token}" -> ${slug}`, matched_by: "alias" };
+    }
+  }
+
+  // 1. Alias hardcoded (legado — será migrado p/ DB)
   if (SPORT_ALIASES[token]) {
     const slug = SPORT_ALIASES[token];
     if (sportsInCatalog.has(slug)) {
@@ -358,7 +370,6 @@ function canonicalizeSport(parsed: ParsedSportText, sportsInCatalog: Set<string>
     return { sport_slug: candidates[0], reason: `substring única "${slugified}" ⊃ "${candidates[0]}"`, matched_by: "substring" };
   }
   if (candidates.length > 1) {
-    // Escolher o mais longo (mais específico)
     candidates.sort((a, b) => b.length - a.length);
     return { sport_slug: candidates[0], reason: `substring (escolhido mais específico entre ${candidates.length}): ${candidates.join(", ")}`, matched_by: "substring" };
   }
