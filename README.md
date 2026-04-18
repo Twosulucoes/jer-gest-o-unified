@@ -171,7 +171,7 @@ O cliente distribui acessos para operadores através de **links curtos** com QR 
 | **Pesquisa de Satisfação** | 🟡 Parcial | 60% |
 | **Links e Páginas Públicas** | ✅ Pronto | 85% |
 | **Relatórios** (Central + Transporte + Alimentação + Alojamento) | ✅ Pronto | 100% |
-| **Relatórios Oficiais** — Identidade Visual ✅, Boletins ✅, Dashboard ✅, Quadro de Medalhas ✅, OSC 🟡 | 🟡 Parcial | 85% |
+| **Relatórios Oficiais** — Identidade Visual ✅, Boletins ✅, Dashboard ✅, Quadro de Medalhas ✅, OSC ✅ | ✅ Pronto | 100% |
 | **Boletins Oficiais** (Criação, publicação, geração PDF) | 🟡 Parcial | 70% |
 | **Super Admin** (Dashboard, Eventos, Logs, Config) | ✅ Pronto | 80% |
 
