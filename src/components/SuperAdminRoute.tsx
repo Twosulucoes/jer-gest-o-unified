@@ -1,8 +1,8 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react";
+import AuthLoadingScreen from "@/components/auth/AuthLoadingScreen";
 
 interface SuperAdminRouteProps {
   children: React.ReactNode;
@@ -22,11 +22,7 @@ export default function SuperAdminRoute({ children }: SuperAdminRouteProps) {
   }, [loading, user, roles, isSuperAdmin]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AuthLoadingScreen />;
   }
 
   if (!user) return <Navigate to="/login" replace />;

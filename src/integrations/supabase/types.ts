@@ -5838,6 +5838,10 @@ export type Database = {
         Returns: Json
       }
       rpc_reprocess_event: { Args: { p_event_id: string }; Returns: Json }
+      rpc_reset_import_data: {
+        Args: { p_event_id: string; p_force?: boolean; p_stage_id?: string }
+        Returns: Json
+      }
       rpc_seed_sport_event_rules_for_event: {
         Args: { p_dry_run?: boolean; p_event_id: string; p_mode?: string }
         Returns: Json

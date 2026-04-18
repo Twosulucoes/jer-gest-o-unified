@@ -1,12 +1,11 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import type { Database } from "@/integrations/supabase/types";
-
-type AppRole = Database["public"]["Enums"]["app_role"];
+import AuthLoadingScreen from "@/components/auth/AuthLoadingScreen";
+import type { AppRole } from "@/config/accessControl";
 
 interface PwaModuleLayoutProps {
   children: React.ReactNode;
@@ -20,18 +19,14 @@ export default function PwaModuleLayout({ children, moduleTitle, moduleIcon: Ico
   const navigate = useNavigate();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AuthLoadingScreen />;
   }
 
   if (!user) {
     return <Navigate to="/pwa/login" replace />;
   }
 
-  const authorized = hasRole("admin" as AppRole) || hasRole("secretaria" as AppRole) || allowedRoles.some((r) => hasRole(r));
+  const authorized = hasRole("admin") || hasRole("secretaria") || allowedRoles.some((r) => hasRole(r));
   if (!authorized) {
     return <Navigate to="/pwa/acesso-negado" replace />;
   }

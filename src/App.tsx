@@ -29,6 +29,7 @@ import LocaisPage from "./pages/admin/LocaisPage";
 import InstituicoesPage from "./pages/admin/InstituicoesPage";
 import DelegacoesPage from "./pages/admin/DelegacoesPage";
 import ImportacaoPage from "./pages/admin/ImportacaoPage";
+import ImportacaoModeloPage from "./pages/admin/ImportacaoModeloPage";
 import ImportacaoPendenciasPage from "./pages/admin/ImportacaoPendenciasPage";
 import CredenciamentoPage from "./pages/admin/CredenciamentoPage";
 import CredenciamentoExternoPage from "./pages/admin/CredenciamentoExternoPage";
@@ -148,6 +149,7 @@ import PwaDebugPage from "./pages/pwa/PwaDebugPage";
 import NotFound from "./pages/NotFound";
 import PwaRouteGuard from "./components/pwa/PwaRouteGuard";
 import PwaAcessoNegadoPage from "./pages/pwa/PwaAcessoNegadoPage";
+import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
 import PublicResultsPage from "./pages/public/PublicResultsPage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
@@ -158,10 +160,6 @@ const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
 
 const queryClient = new QueryClient();
 
-const TRANSPORT_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "transporte"] as const;
-const FOOD_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"] as const;
-const LODGING_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "alojamento"] as const;
-const COMPETITION_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as const;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -212,6 +210,7 @@ const App = () => (
               <Route path="delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacoesPage /></ProtectedRoute>} />
               <Route path="delegacoes/:delegationId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacaoDetalhePage /></ProtectedRoute>} />
               <Route path="importacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPage /></ProtectedRoute>} />
+              <Route path="importacao/modelo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoModeloPage /></ProtectedRoute>} />
               <Route path="importacao/pendencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPendenciasPage /></ProtectedRoute>} />
               <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipantesPage /></ProtectedRoute>} />
               <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipanteDetalhePage /></ProtectedRoute>} />

@@ -33,6 +33,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import ImportErrorsTable from "@/components/admin/ImportErrorsTable";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import ColumnMappingStep from "@/components/admin/ColumnMappingStep";
+import ImportResetCard from "@/components/admin/ImportResetCard";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -309,7 +310,17 @@ export default function ImportacaoPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <ModuleHeader route="/admin/importacao" />
+      <ModuleHeader
+        route="/admin/importacao"
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <a href="/admin/importacao/modelo">
+              <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
+              Baixar modelo .xlsx
+            </a>
+          </Button>
+        }
+      />
 
       <Card>
         <CardHeader>
@@ -396,6 +407,15 @@ export default function ImportacaoPage() {
 
       {commitResult && selectedEventId && (
         <CommitResultCard commitResult={commitResult} eventId={selectedEventId} selectedStage={_selectedStage} onReset={handleReset} />
+      )}
+
+      {hasRole("admin") && (
+        <ImportResetCard
+          eventId={selectedEventId || null}
+          stageId={selectedStageId || null}
+          stageName={_selectedStage?.name ?? null}
+          onDone={handleReset}
+        />
       )}
     </div>
   );
