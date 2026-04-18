@@ -404,7 +404,20 @@ const AGE_BAND_TO_CATEGORY: Array<{
 // seguro assumir a única categoria existente no catálogo do evento.
 // Mantida explícita para evitar chute em modalidades multi-categoria.
 const SINGLE_CATEGORY_FALLBACK_WHITELIST = new Set<string>([
-  "futebol",  // catálogo só tem jers-15-17 para futebol
+  // Coletivos: catálogo costuma ter 1 categoria por (modalidade, naipe)
+  "futebol",
+  "futsal",
+  "basquete",
+  "volei",
+  "volei-de-praia",
+  "handebol",
+  // Raquete/mesa quando o evento só roda 1 categoria
+  "xadrez",
+  "badminton",
+  // Combate: muitos eventos rodam categoria única para JER
+  "karate",
+  "taekwondo",
+  "wrestling",
 ]);
 
 interface CategoryWindow { slug: string; min_birth_year: number | null; max_birth_year: number | null; }
