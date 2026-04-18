@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEvent } from "@/contexts/EventContext";
+import { useEventContext as useEvent } from "@/contexts/EventContext";
 import { FONTE_DE_VERDADE_JER2026 } from "@/regras/jer2026";
 import {
   EVENTO_INFO, SISTEMAS_DISPUTA, CATEGORIAS_PADRAO, MODALIDADES,
