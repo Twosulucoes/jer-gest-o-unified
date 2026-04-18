@@ -85,6 +85,16 @@ GRANT EXECUTE ON FUNCTION public.rpc_nome TO authenticated;
 | `rpc_upsert_sport_event_rules` | admin, coord_tecnica | Upsert com validação |
 | `rpc_seed_sport_event_rules_for_event` | admin (overwrite), coord_tecnica (missing_only) | Seed em massa |
 
+## RPCs de Seed de Logística
+
+| RPC | Permissão | Descrição |
+|-----|-----------|-----------|
+| `seed_logistics_by_stage(p_event_id)` | admin | Gera dataset isolado por evento (veículos, alojamentos, unidades, refeitórios, janelas, rotas, viagens). Nomenclatura `{TIPO}-{SEDE}-{NNN}`, `seed_tag='seed:logistica:stage'`. Idempotente (aborta se já houver seed). |
+| `clear_logistics_seed_by_stage(p_event_id)` | admin | Remove apenas linhas com `seed_tag='seed:logistica:stage'` no evento. |
+
+UI: `/admin/seed-logistica` (apenas perfil `admin`). Auditoria gravada em `audit_events` (`table_name='logistics_seed'`).
+
+
 ## Migrations
 
 - Diretório: `supabase/migrations/`
