@@ -29,6 +29,7 @@ const QUESTION_KEYS = Object.keys(DIM_LABELS);
 
 export default function PesquisaDashboardPage() {
   const [eventFilter, setEventFilter] = useState<string>('all');
+  const [researcherFilter, setResearcherFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -41,11 +42,26 @@ export default function PesquisaDashboardPage() {
     },
   });
 
-  const { data: surveys, isLoading } = useQuery({
-    queryKey: ['pesquisa-surveys', eventFilter, dateFrom, dateTo, typeFilter],
+  const { data: researchers } = useQuery({
+    queryKey: ['pesquisa-researchers-list', eventFilter],
     queryFn: async () => {
-      let query = supabase.from('pesquisa_surveys').select('*').order('collected_at', { ascending: false }).limit(1000);
+      let query = supabase.from('pesquisa_researchers').select('id, name').eq('active', true).order('name');
       if (eventFilter !== 'all') query = query.eq('event_id', eventFilter);
+      const { data } = await query;
+      return data || [];
+    },
+  });
+
+  const { data: surveys, isLoading } = useQuery({
+    queryKey: ['pesquisa-surveys', eventFilter, researcherFilter, dateFrom, dateTo, typeFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from('pesquisa_surveys')
+        .select('*, pesquisa_researchers(name), pesquisa_events(name, location, event_date)')
+        .order('collected_at', { ascending: false })
+        .limit(1000);
+      if (eventFilter !== 'all') query = query.eq('event_id', eventFilter);
+      if (researcherFilter !== 'all') query = query.eq('researcher_id', researcherFilter);
       if (dateFrom) query = query.gte('collected_at', dateFrom);
       if (dateTo) query = query.lte('collected_at', dateTo + 'T23:59:59');
       if (typeFilter !== 'all') query = query.eq('respondent_type', typeFilter);
@@ -92,10 +108,14 @@ export default function PesquisaDashboardPage() {
     if (!surveys || surveys.length === 0) return;
     const headers = [
       'event_id', 'respondent_type', 'respondent_age', 'respondent_gender', 'mode',
+      'researcher_id', 'researcher_name', 'event_name', 'event_location', 'application_location',
       ...QUESTION_KEYS, 'ponto_positivo', 'sugestao', 'collected_at', 'device_id', 'client_uuid'
     ];
     const rows = surveys.map(s => headers.map(h => {
-      const val = (s as any)[h];
+      let val: unknown = (s as any)[h];
+      if (h === 'researcher_name') val = (s as any).pesquisa_researchers?.name;
+      if (h === 'event_name') val = (s as any).pesquisa_events?.name;
+      if (h === 'event_location') val = (s as any).pesquisa_events?.location;
       if (val == null) return '';
       return typeof val === 'string' && val.includes(',') ? `"${val}"` : String(val);
     }).join(','));
@@ -124,6 +144,14 @@ export default function PesquisaDashboardPage() {
           <SelectContent>
             <SelectItem value="all">Todos eventos</SelectItem>
             {events?.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select value={researcherFilter} onValueChange={setResearcherFilter}>
+          <SelectTrigger className="w-[220px]"><SelectValue placeholder="Pesquisador" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos pesquisadores</SelectItem>
+            {researchers?.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
           </SelectContent>
         </Select>
 
@@ -216,6 +244,8 @@ export default function PesquisaDashboardPage() {
                 <div key={i} className="border-l-2 border-primary pl-3 space-y-1">
                   <p className="text-xs text-muted-foreground">
                     {s.respondent_type} · {format(new Date(s.collected_at), 'dd/MM HH:mm')}
+                    {` · ${(s as any).pesquisa_researchers?.name || 'Pesquisador'}`}
+                    {` · Local: ${(s as any).application_location || (s as any).pesquisa_events?.location || 'não informado'}`}
                   </p>
                   {s.ponto_positivo && <p className="text-sm"><span className="font-medium">👍</span> {s.ponto_positivo}</p>}
                   {s.sugestao && <p className="text-sm"><span className="font-medium">💡</span> {s.sugestao}</p>}
@@ -223,6 +253,34 @@ export default function PesquisaDashboardPage() {
               ))}
             </Card>
           )}
+
+          <Card className="p-6">
+            <h3 className="text-sm font-semibold mb-4">Relatório de Coletas (local, data e hora)</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2">Data/Hora</th>
+                    <th className="text-left py-2">Pesquisador</th>
+                    <th className="text-left py-2">Evento</th>
+                    <th className="text-left py-2">Local da pesquisa</th>
+                    <th className="text-left py-2">Tipo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {surveys?.slice(0, 100).map((s: any) => (
+                    <tr key={s.id} className="border-b last:border-0">
+                      <td className="py-2">{format(new Date(s.collected_at), 'dd/MM/yyyy HH:mm')}</td>
+                      <td className="py-2">{s.pesquisa_researchers?.name || '—'}</td>
+                      <td className="py-2">{s.pesquisa_events?.name || '—'}</td>
+                      <td className="py-2">{s.application_location || s.pesquisa_events?.location || '—'}</td>
+                      <td className="py-2">{s.respondent_type}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </>
       )}
     </div>

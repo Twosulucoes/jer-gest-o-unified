@@ -18,6 +18,7 @@ interface Researcher {
   event_id: string;
   active: boolean;
   last_login_at: string | null;
+  assigned_location?: string | null;
   pesquisa_events?: { name: string } | null;
 }
 
@@ -26,7 +27,7 @@ export default function PesquisaPesquisadoresPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Researcher | null>(null);
-  const [form, setForm] = useState({ name: '', event_id: '', active: true });
+  const [form, setForm] = useState({ name: '', event_id: '', active: true, assigned_location: '' });
   const [pinTarget, setPinTarget] = useState<Researcher | null>(null);
   const [newPin, setNewPin] = useState('');
   const [generatedPin, setGeneratedPin] = useState('');
@@ -44,7 +45,7 @@ export default function PesquisaPesquisadoresPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pesquisa_researchers')
-        .select('id, name, event_id, active, last_login_at, pesquisa_events(name)')
+        .select('id, name, event_id, active, last_login_at, assigned_location, pesquisa_events(name)')
         .order('name');
       if (error) throw error;
       return data as unknown as Researcher[];
@@ -55,7 +56,12 @@ export default function PesquisaPesquisadoresPage() {
     mutationFn: async () => {
       if (editing) {
         const { error } = await supabase.from('pesquisa_researchers')
-          .update({ name: form.name.trim(), event_id: form.event_id, active: form.active })
+          .update({
+            name: form.name.trim(),
+            event_id: form.event_id,
+            active: form.active,
+            assigned_location: form.assigned_location.trim() || null,
+          })
           .eq('id', editing.id);
         if (error) throw error;
       } else {
@@ -68,6 +74,7 @@ export default function PesquisaPesquisadoresPage() {
           event_id: form.event_id,
           active: form.active,
           pin_hash: hash as string,
+          assigned_location: form.assigned_location.trim() || null,
         });
         if (error) throw error;
         setGeneratedPin(pin);
@@ -106,14 +113,14 @@ export default function PesquisaPesquisadoresPage() {
   const openNew = () => {
     setEditing(null);
     setGeneratedPin('');
-    setForm({ name: '', event_id: events?.[0]?.id || '', active: true });
+    setForm({ name: '', event_id: events?.[0]?.id || '', active: true, assigned_location: '' });
     setDialogOpen(true);
   };
 
   const openEdit = (r: Researcher) => {
     setEditing(r);
     setGeneratedPin('');
-    setForm({ name: r.name, event_id: r.event_id, active: r.active });
+    setForm({ name: r.name, event_id: r.event_id, active: r.active, assigned_location: r.assigned_location || '' });
     setDialogOpen(true);
   };
 
@@ -126,7 +133,8 @@ export default function PesquisaPesquisadoresPage() {
   const pwaUrl = `${window.location.origin}/pwa/pesquisa/login`;
 
   const copyMessage = (r: Researcher, pin?: string) => {
-    const msg = `Pesquisa de Satisfação JER\nLink: ${pwaUrl}\nPIN: ${pin || '****'}\nPesquisador: ${r.name}`;
+    const location = r.assigned_location ? `\nLocal padrão: ${r.assigned_location}` : '';
+    const msg = `Pesquisa de Satisfação JER\nLink: ${pwaUrl}\nPIN: ${pin || '****'}\nPesquisador: ${r.name}${location}`;
     navigator.clipboard.writeText(msg);
     toast.success('Mensagem copiada!');
   };
@@ -151,6 +159,9 @@ export default function PesquisaPesquisadoresPage() {
                   {(r as any).pesquisa_events?.name || '?'} · {r.active ? '✅' : '⏸'}
                   {r.last_login_at && ` · Último login: ${new Date(r.last_login_at).toLocaleDateString('pt-BR')}`}
                 </p>
+                {r.assigned_location && (
+                  <p className="text-xs text-muted-foreground">Local padrão: {r.assigned_location}</p>
+                )}
               </div>
               <div className="flex gap-1">
                 <Button variant="ghost" size="icon" onClick={() => openPin(r)} title="Definir PIN"><Key className="h-4 w-4" /></Button>
@@ -174,7 +185,7 @@ export default function PesquisaPesquisadoresPage() {
             <div className="text-center space-y-4 py-4">
               <p className="text-lg font-bold">PIN gerado: <span className="text-primary text-2xl">{generatedPin}</span></p>
               <p className="text-sm text-muted-foreground">Anote o PIN — ele não poderá ser visualizado depois.</p>
-              <Button onClick={() => { copyMessage({ name: form.name, id: '', event_id: form.event_id, active: true, last_login_at: null }, generatedPin); }}>
+              <Button onClick={() => { copyMessage({ name: form.name, id: '', event_id: form.event_id, active: true, last_login_at: null, assigned_location: form.assigned_location || null }, generatedPin); }}>
                 <Copy className="h-4 w-4 mr-2" /> Copiar mensagem com PIN
               </Button>
               <Button variant="outline" onClick={() => { setDialogOpen(false); setGeneratedPin(''); }}>Fechar</Button>
@@ -194,6 +205,15 @@ export default function PesquisaPesquisadoresPage() {
                       {events?.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Local padrão de aplicação</Label>
+                  <Input
+                    value={form.assigned_location}
+                    onChange={e => setForm(f => ({ ...f, assigned_location: e.target.value }))}
+                    placeholder="Ex.: Ginásio 2 / Alojamento escola X"
+                    maxLength={200}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch checked={form.active} onCheckedChange={a => setForm(f => ({ ...f, active: a }))} />

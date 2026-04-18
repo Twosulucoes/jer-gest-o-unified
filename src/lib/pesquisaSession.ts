@@ -10,7 +10,7 @@ const STORAGE_KEYS = {
 export interface PesquisaSession {
   session_id: string;
   expires_at: string;
-  researcher: { id: string; name: string; event_id: string };
+  researcher: { id: string; name: string; event_id: string; assigned_location?: string | null };
   event: { id: string; name: string; location: string | null; event_date: string | null };
 }
 
