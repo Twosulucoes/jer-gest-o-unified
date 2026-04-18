@@ -83,23 +83,7 @@ export default function DemoSeedsPage() {
     onError: (err: any) => toast.error("Erro ao recriar demo: " + err.message),
   });
 
-  const seedLogisticsMutation = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.rpc("seed_logistics_stage_template" as any, {
-        p_event_id: activeEventId!,
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      setLastResult(data);
-      toast.success("Seed de logística criado com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["demo-status"] });
-    },
-    onError: (err: any) => toast.error("Erro ao criar seed de logística: " + err.message),
-  });
-
-  const isLoading = seedMutation.isPending || resetMutation.isPending || recreateMutation.isPending || seedLogisticsMutation.isPending;
+  const isLoading = seedMutation.isPending || resetMutation.isPending || recreateMutation.isPending;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(JSON.stringify(lastResult, null, 2));
@@ -184,27 +168,7 @@ export default function DemoSeedsPage() {
         <CardTitle className="text-base">Ações</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="secondary" disabled={isLoading}>
-                {seedLogisticsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Building className="mr-2 h-4 w-4" />}
-                Seed Logística (1 Etapa)
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Criar seed inicial de logística?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Cria uma etapa de exemplo com estruturas editáveis de alojamento, alimentação e transporte.
-                  Não cria participantes.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => seedLogisticsMutation.mutate()}>Criar</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {/* Seed de Logística migrado para /admin/seed-logistica */}
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
