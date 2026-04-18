@@ -417,34 +417,45 @@ function DesempateEditor({
   criterios,
   onChange,
 }: {
-  criterios: string[];
+  criterios: any[];
   onChange: (v: string[]) => void;
 }) {
+  // Normaliza: aceita strings (slugs) ou objetos { ordem, criterio } vindos de presets.
+  const list: string[] = (Array.isArray(criterios) ? criterios : [])
+    .map((c: any) =>
+      typeof c === "string"
+        ? c
+        : c && typeof c === "object"
+          ? String(c.slug ?? c.criterio ?? c.criteria ?? "")
+          : "",
+    )
+    .filter(Boolean);
+
   const move = (idx: number, dir: -1 | 1) => {
-    const next = [...criterios];
+    const next = [...list];
     const target = idx + dir;
     if (target < 0 || target >= next.length) return;
     [next[idx], next[target]] = [next[target], next[idx]];
     onChange(next);
   };
-  const remove = (idx: number) => onChange(criterios.filter((_, i) => i !== idx));
+  const remove = (idx: number) => onChange(list.filter((_, i) => i !== idx));
   const add = (slug: string) => {
-    if (!slug || criterios.includes(slug)) {
+    if (!slug || list.includes(slug)) {
       toast.error("Critério já existe ou inválido");
       return;
     }
-    onChange([...criterios, slug]);
+    onChange([...list, slug]);
   };
 
-  const available = TIE_BREAKER_OPTIONS.filter((o) => !criterios.includes(o.slug));
+  const available = TIE_BREAKER_OPTIONS.filter((o) => !list.includes(o.slug));
 
   return (
     <div className="space-y-2">
       <ol className="space-y-1">
-        {criterios.length === 0 && (
+        {list.length === 0 && (
           <li className="text-xs text-muted-foreground italic">Nenhum critério configurado.</li>
         )}
-        {criterios.map((c, i) => {
+        {list.map((c, i) => {
           const opt = TIE_BREAKER_OPTIONS.find((o) => o.slug === c);
           return (
             <li
@@ -459,7 +470,7 @@ function DesempateEditor({
                 size="sm"
                 variant="ghost"
                 onClick={() => move(i, 1)}
-                disabled={i === criterios.length - 1}
+                disabled={i === list.length - 1}
               >
                 ↓
               </Button>
