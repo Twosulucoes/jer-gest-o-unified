@@ -229,16 +229,48 @@ const STAGE_TOKENS = [
 // puro do nome não bate naturalmente com o catálogo (acentos/espaços já
 // tratados, então quase sempre o match natural funciona).
 const SPORT_ALIASES: Record<string, string> = {
+  // Combate
   "JUDO": "judo",
   "JUDÔ": "judo",
+  "KARATE": "karate",
+  "KARATÊ": "karate",
+  "TAEKWONDO": "taekwondo",
+  "TAE KWON DO": "taekwondo",
+  "WRESTLING": "wrestling",
+  "LUTA OLIMPICA": "wrestling",
+  // Coletivos
+  "FUTSAL": "futsal",
+  "FUTEBOL DE SALAO": "futsal",
+  "FUTEBOL": "futebol",
+  "FUTEBOL DE CAMPO": "futebol",
+  "BASQUETE": "basquete",
+  "BASQUETEBOL": "basquete",
+  "VOLEI": "volei",
+  "VOLEIBOL": "volei",
   "VOLEI DE PRAIA": "volei-de-praia",
   "VOLEIBOL DE PRAIA": "volei-de-praia",
-  "GINASTICA RITMICA": "ginastica-ritmica",
+  "HANDEBOL": "handebol",
+  // Raquete / mesa
   "TENIS DE MESA": "tenis-de-mesa",
+  "BADMINTON": "badminton",
+  "XADREZ": "xadrez",
+  // Tempo / marca
+  "ATLETISMO": "atletismo",
+  "NATACAO": "natacao",
+  "NATAÇÃO": "natacao",
+  "CICLISMO": "ciclismo",
+  // Ginástica
+  "GINASTICA RITMICA": "ginastica-ritmica",
+  "GINÁSTICA RÍTMICA": "ginastica-ritmica",
+  // JERPA
   "ATLETISMO PARALIMPICO": "atletismo-paralimpico",
+  "ATLETISMO PARALÍMPICO": "atletismo-paralimpico",
   "NATACAO PARALIMPICA": "natacao-paralimpica",
+  "NATAÇÃO PARALÍMPICA": "natacao-paralimpica",
   "BOCHA PARALIMPICA": "bocha-paralimpica",
+  "BOCHA PARALÍMPICA": "bocha-paralimpica",
   "TENIS DE MESA PARALIMPICO": "tenis-de-mesa-paralimpico",
+  "TÊNIS DE MESA PARALÍMPICO": "tenis-de-mesa-paralimpico",
   "PARABADMINTON": "parabadminton",
 };
 
