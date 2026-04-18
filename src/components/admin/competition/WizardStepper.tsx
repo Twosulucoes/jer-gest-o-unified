@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Check, Lock, AlertCircle } from "lucide-react";
-import type { StepStatusMap } from "@/hooks/useCollectiveStepStatus";
+
+type StepStatusMap = Record<string, { status: "completed" | "partial" | "blocked" | "available" | "active" }>;
 
 export interface WizardStep {
   key: string;
