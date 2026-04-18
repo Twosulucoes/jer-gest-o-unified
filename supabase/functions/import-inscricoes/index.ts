@@ -1578,7 +1578,7 @@ Deno.serve(async (req: Request) => {
               personId = newPerson.id;
               peopleCreated++;
               const cpf = row.cpf_valid;
-              if (cpf) people.byCpf.set(cpf, personId);
+              if (cpf) people.byCpf.set(cpf, personId!);
             }
           }
         } else {
