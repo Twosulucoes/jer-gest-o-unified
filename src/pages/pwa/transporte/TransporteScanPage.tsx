@@ -1,31 +1,59 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { ScanLine, CheckCircle, XCircle } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  loadScanPreferences,
+  saveScanPreferences,
+  loadScanTelemetry,
+  bumpScanTelemetry,
+  resetScanTelemetry,
+  type ScanPreferences,
+  type ScanTelemetry,
+} from "@/lib/pwaScan";
+import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
+
+const MODULE = "transporte" as const;
 
 export default function TransporteScanPage() {
   const _navigate = useNavigate();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get("tripId");
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
-  const [continuousMode, setContinuousMode] = useState(true);
+  const [prefs, setPrefs] = useState<ScanPreferences>(() => loadScanPreferences(MODULE, userId));
+  const [telemetry, setTelemetry] = useState<ScanTelemetry>(() => loadScanTelemetry(MODULE, userId));
+
+  useEffect(() => {
+    setPrefs(loadScanPreferences(MODULE, userId));
+    setTelemetry(loadScanTelemetry(MODULE, userId));
+  }, [userId]);
+
+  const updatePrefs = (next: ScanPreferences) => {
+    setPrefs(next);
+    saveScanPreferences(MODULE, next, userId);
+  };
 
   const reopenIfContinuous = () => {
-    if (!continuousMode) return;
-    setTimeout(() => setScannerOpen(true), 450);
+    if (!prefs.continuousMode) return;
+    setTimeout(() => setScannerOpen(true), prefs.reopenDelayMs);
   };
 
   const getErrorMessage = (err: unknown) => {
     if (err instanceof Error && err.message) return err.message;
     return "desconhecido";
+  };
+
+  const recordOutcome = (outcome: "ok" | "error") => {
+    setTelemetry(bumpScanTelemetry(MODULE, outcome, userId));
   };
 
   const handleScan = async (rawValue: string) => {
@@ -36,6 +64,7 @@ export default function TransporteScanPage() {
       const resolved = await resolveQrCredential(rawValue);
       if (!resolved) {
         setResult({ ok: false, message: "Credencial não encontrada ou inativa" });
+        recordOutcome("error");
         return;
       }
 
@@ -44,7 +73,6 @@ export default function TransporteScanPage() {
       if (tripId) {
         const { data: { session } } = await supabase.auth.getSession();
 
-        // Check if already registered for this trip
         const { data: existing } = await supabase
           .from("transport_passengers")
           .select("id, status")
@@ -55,6 +83,7 @@ export default function TransporteScanPage() {
         if (existing) {
           if (existing.status === "boarded") {
             setResult({ ok: true, message: `${name} já embarcou anteriormente` });
+            recordOutcome("ok");
             reopenIfContinuous();
             return;
           }
@@ -79,10 +108,12 @@ export default function TransporteScanPage() {
       }
 
       setResult({ ok: true, message: `Embarque registrado: ${name}` });
+      recordOutcome("ok");
       if (navigator.vibrate) navigator.vibrate(200);
       reopenIfContinuous();
     } catch (err: unknown) {
       setResult({ ok: false, message: `Erro ao validar: ${getErrorMessage(err)}` });
+      recordOutcome("error");
     }
   };
 
@@ -95,10 +126,14 @@ export default function TransporteScanPage() {
       />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
-        <div className="flex items-center justify-between rounded-lg border bg-card p-3">
-          <Label htmlFor="continuous-scan" className="text-sm">Modo contínuo</Label>
-          <Switch id="continuous-scan" checked={continuousMode} onCheckedChange={setContinuousMode} />
-        </div>
+        <ScanPreferencesPanel
+          prefs={prefs}
+          telemetry={telemetry}
+          onChangeContinuous={(v) => updatePrefs({ ...prefs, continuousMode: v })}
+          onChangeDelay={(v) => updatePrefs({ ...prefs, reopenDelayMs: v })}
+          onResetTelemetry={() => setTelemetry(resetScanTelemetry(MODULE, userId))}
+          switchId="continuous-transport-scan"
+        />
 
         <Button className="w-full min-h-[44px]" onClick={() => setScannerOpen(true)}>
           <ScanLine className="h-5 w-5 mr-2" />
