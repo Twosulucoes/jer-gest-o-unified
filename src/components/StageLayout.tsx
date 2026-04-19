@@ -11,6 +11,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useAuth } from "@/hooks/useAuth";
 import { StageProvider } from "@/contexts/StageContext";
 import type { EventStage } from "@/contexts/StageContext";
+import { StagePageScaffold } from "@/components/admin/stage/StagePageScaffold";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
