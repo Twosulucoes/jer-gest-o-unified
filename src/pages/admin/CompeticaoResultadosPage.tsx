@@ -13,7 +13,10 @@ import { useNavigate } from "react-router-dom";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
+import { useStageScope } from "@/hooks/useStageScope";
 import ModuleHeader from "@/components/admin/ModuleHeader";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 type ResultStatusFilter = "all" | "sem_resultado" | "resultado_lancado" | "resultado_validado" | "publicado";
 
