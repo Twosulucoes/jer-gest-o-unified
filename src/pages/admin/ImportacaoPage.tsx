@@ -266,7 +266,7 @@ export default function ImportacaoPage() {
     }
   };
 
-  const pollImportLog = async (importLogId: string, planned: { valid_rows: number }): Promise<CommitResult> => {
+  const pollImportLog = async (importLogId: string): Promise<CommitResult> => {
     const maxAttempts = 360; // ~12 min (2s interval)
     let attempt = 0;
     while (attempt < maxAttempts) {
