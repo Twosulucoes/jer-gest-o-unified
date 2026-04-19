@@ -62,6 +62,25 @@ async function buildSystemPrompt(client: any): Promise<string> {
 
 // ─── Providers ────────────────────────────────────────────────────────
 
+/** Lovable AI Gateway (default — pre-configured key, OpenAI-compatible) */
+async function callLovable(messages: ChatMessage[], system: string, apiKey: string): Promise<string> {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${apiKey}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      messages: [{ role: "system", content: system }, ...messages],
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    if (res.status === 429) throw new Error("Rate limit excedido na Lovable AI. Tente novamente em alguns segundos.");
+    if (res.status === 402) throw new Error("Créditos da Lovable AI esgotados. Adicione créditos em Settings → Workspace → Usage.");
+    throw new Error(`Lovable AI ${res.status}: ${data?.error?.message ?? JSON.stringify(data)}`);
+  }
+  return data.choices[0].message.content as string;
+}
+
 async function callClaude(messages: ChatMessage[], system: string, apiKey: string): Promise<string> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -88,7 +107,7 @@ async function callGrok(messages: ChatMessage[], system: string, apiKey: string)
     method: "POST",
     headers: { "Authorization": `Bearer ${apiKey}`, "content-type": "application/json" },
     body: JSON.stringify({
-      model: "grok-3",
+      model: "grok-2-latest",
       max_tokens: 1024,
       messages: [{ role: "system", content: system }, ...messages],
     }),
@@ -142,15 +161,23 @@ Deno.serve(async (req: Request) => {
 
     const systemPrompt = await buildSystemPrompt(client);
 
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    const xaiKey = Deno.env.get("XAI_API_KEY");
+    const deepseekKey = Deno.env.get("DEEPSEEK_API_KEY");
+
     // ── Test mode ──
     if (body.test_provider) {
       const provider = body.test_provider;
       const testMessages: ChatMessage[] = [{ role: "user", content: 'Responda apenas: "OK"' }];
-      const key = provider === "claude"
-        ? Deno.env.get("ANTHROPIC_API_KEY")
-        : provider === "grok"
-        ? Deno.env.get("XAI_API_KEY")
-        : Deno.env.get("DEEPSEEK_API_KEY");
+
+      const keyMap: Record<string, string | undefined> = {
+        lovable: lovableKey, claude: anthropicKey, grok: xaiKey, deepseek: deepseekKey,
+      };
+      const fnMap: Record<string, typeof callLovable> = {
+        lovable: callLovable, claude: callClaude, grok: callGrok, deepseek: callDeepSeek,
+      };
+      const key = keyMap[provider];
 
       if (!key) {
         return new Response(JSON.stringify({ ok: false, provider, error: "Chave não configurada" }), {
@@ -158,8 +185,7 @@ Deno.serve(async (req: Request) => {
         });
       }
       try {
-        const fn = provider === "claude" ? callClaude : provider === "grok" ? callGrok : callDeepSeek;
-        const response = await fn(testMessages, systemPrompt, key);
+        const response = await fnMap[provider](testMessages, systemPrompt, key);
         return new Response(JSON.stringify({ ok: true, provider, response }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -178,11 +204,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
-    const xaiKey = Deno.env.get("XAI_API_KEY");
-    const deepseekKey = Deno.env.get("DEEPSEEK_API_KEY");
-
-    if (!anthropicKey && !xaiKey && !deepseekKey) {
+    if (!lovableKey && !anthropicKey && !xaiKey && !deepseekKey) {
       return new Response(JSON.stringify({ error: "Nenhuma chave de IA configurada" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -192,7 +214,12 @@ Deno.serve(async (req: Request) => {
     let provider = "none";
     const errors: string[] = [];
 
-    if (anthropicKey) {
+    // Order: Lovable AI (pre-configured, with included credits) → Claude → Grok → DeepSeek
+    if (lovableKey) {
+      try { response = await callLovable(messages, systemPrompt, lovableKey); provider = "lovable"; }
+      catch (e: any) { errors.push(`Lovable AI: ${e?.message}`); }
+    }
+    if (!response && anthropicKey) {
       try { response = await callClaude(messages, systemPrompt, anthropicKey); provider = "claude"; }
       catch (e: any) { errors.push(`Claude: ${e?.message}`); }
     }
