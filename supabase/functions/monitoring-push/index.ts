@@ -8,8 +8,11 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY")!;
-const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY")!;
+// Sanitiza chaves VAPID: web-push exige base64 url-safe SEM padding "="
+const sanitizeVapidKey = (k: string) =>
+  (k ?? "").trim().replace(/\s+/g, "").replace(/=+$/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+const VAPID_PUBLIC = sanitizeVapidKey(Deno.env.get("VAPID_PUBLIC_KEY") ?? "");
+const VAPID_PRIVATE = sanitizeVapidKey(Deno.env.get("VAPID_PRIVATE_KEY") ?? "");
 // VAPID subject precisa ser uma URL (https://...) ou mailto:
 // Se vier inválido, sanitiza para evitar 500 no boot.
 const RAW_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "";
