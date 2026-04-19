@@ -181,6 +181,9 @@ Deno.serve(async (req) => {
         if (!user_id || !role) {
           return jsonResponse({ error: "user_id and role are required" }, 400);
         }
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
 
         // Secretaria cannot assign admin/secretaria
         if (!roles.includes("admin") && (role === "admin" || role === "secretaria")) {
@@ -201,6 +204,9 @@ Deno.serve(async (req) => {
         const { user_id, roles: newRoles } = body;
         if (!user_id || !Array.isArray(newRoles) || newRoles.length === 0) {
           return jsonResponse({ error: "user_id and at least one role are required" }, 400);
+        }
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
         }
 
         for (const r of newRoles) {
@@ -230,6 +236,9 @@ Deno.serve(async (req) => {
         if (!user_id || typeof active !== "boolean") {
           return jsonResponse({ error: "user_id and active are required" }, 400);
         }
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
 
         // Prevent deactivating self
         if (user_id === caller.id && !active) {
@@ -255,6 +264,9 @@ Deno.serve(async (req) => {
       case "revoke_sessions": {
         const { user_id } = body;
         if (!user_id) return jsonResponse({ error: "user_id is required" }, 400);
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
 
         const { error } = await adminClient.auth.admin.signOut(user_id);
         if (error) return jsonResponse({ error: error.message }, 500);
@@ -283,6 +295,9 @@ Deno.serve(async (req) => {
       case "resend_invite": {
         const { user_id } = body;
         if (!user_id) return jsonResponse({ error: "user_id is required" }, 400);
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
 
         // Get user email
         const { data: { user: targetUser }, error: getUserErr } = await adminClient.auth.admin.getUserById(user_id);
@@ -300,6 +315,9 @@ Deno.serve(async (req) => {
       case "reset_password": {
         const { user_id } = body;
         if (!user_id) return jsonResponse({ error: "user_id is required" }, 400);
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
 
         const { data: { user: targetUser }, error: getUserErr } = await adminClient.auth.admin.getUserById(user_id);
         if (getUserErr || !targetUser) return jsonResponse({ error: "Usuário não encontrado" }, 404);
