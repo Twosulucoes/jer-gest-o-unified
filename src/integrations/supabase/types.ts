@@ -1523,6 +1523,45 @@ export type Database = {
           },
         ]
       }
+      help_manual_sections: {
+        Row: {
+          category: string
+          content_md: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_published: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category?: string
+          content_md?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          content_md?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       import_aliases: {
         Row: {
           alias_norm: string

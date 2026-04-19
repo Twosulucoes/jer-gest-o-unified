@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   LayoutDashboard, Calendar, LogOut, Menu, X, ScrollText, Settings,
-  ChevronsLeft, ChevronsRight, User, ChevronLeft, Activity,
+  ChevronsLeft, ChevronsRight, User, ChevronLeft, Activity, BookOpen,
 } from "lucide-react";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -23,6 +23,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard", to: "/super", icon: <LayoutDashboard className="h-4 w-4" /> },
   { label: "Eventos", to: "/super/eventos", icon: <Calendar className="h-4 w-4" /> },
   { label: "Monitor (PWA)", to: "/super/monitor", icon: <Activity className="h-4 w-4" /> },
+  { label: "Manual de Instruções", to: "/super/manual", icon: <BookOpen className="h-4 w-4" /> },
   { label: "Logs do Sistema", to: "/super/logs", icon: <ScrollText className="h-4 w-4" /> },
   { label: "Configurações", to: "/super/config", icon: <Settings className="h-4 w-4" /> },
 ];

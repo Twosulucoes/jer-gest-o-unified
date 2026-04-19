@@ -5,78 +5,64 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `Você é o assistente de suporte do JER Gestão — sistema de gerenciamento dos Jogos Escolares de Roraima (JER/JERPA).
+const STRICT_RULES = `Você é o assistente oficial de suporte do JER's Gestão — sistema de gerenciamento dos Jogos Escolares de Roraima.
 
-Responda dúvidas de uso do sistema de forma clara, objetiva e em português. Seja direto e prático.
+REGRAS ABSOLUTAS (não negociáveis):
+1. Responda APENAS com base no MANUAL OFICIAL fornecido abaixo.
+2. Se a resposta NÃO estiver claramente coberta pelo manual, responda exatamente:
+   "Não encontrei essa informação no manual oficial. Por favor, abra um chamado com o time de TI."
+3. NUNCA invente caminhos de menu, RPCs, regras ou comportamentos que não constam no manual.
+4. Cite a SEÇÃO do manual ao responder (ex.: "Conforme a seção 3.5 — Credenciamento...").
+5. Responda em português, de forma direta, prática e amigável.
+6. Se a pergunta for fora do escopo do sistema, oriente que você responde apenas dúvidas sobre o JER's Gestão.
 
-## O QUE É O JER GESTÃO
-Sistema web para administrar os Jogos Escolares de Roraima: importação de inscrições, credenciamento de participantes, gestão de competições, etapas e resultados.
+=== MANUAL OFICIAL ===
+`;
 
-## MÓDULOS PRINCIPAIS
-
-### Importação (SIGECOM → JER)
-- Acesso: Admin → Importação
-- Fluxo: exporte as inscrições Deferidas do SIGECOM em .xlsx → faça upload → mapeie colunas → valide → confirme
-- O sistema detecta automaticamente colunas do SIGECOM (NOME DO ALUNO, ESCOLA, MODALIDADE, PROVA, etc.)
-- Uma linha = uma inscrição em uma prova. Atleta em 3 provas = 3 linhas
-- Campos obrigatórios: NOME, ESCOLA, MODALIDADE, PROVA
-- DATA NASCIMENTO resolve a categoria automaticamente (12 a 14 / 15 a 17 anos)
-- CPF inválido ou ausente gera pendência, não bloqueia a importação
-- Importação é idempotente: reimportar não duplica dados
-
-### Pendências de Importação
-- Acesso: Admin → Importação → Pendências
-- Mostra todos os itens que precisam de revisão
-- Botão "Analisar com IA": envia pendências para IA e recebe sugestões automáticas
-- TM 2012: atletas de Tênis de Mesa nascidos em 2012 precisam de escolha manual entre tm-12-14 e tm-14-15
-- Após resolver, reimporte a mesma planilha para reprocessar
-
-### Credenciamento
-- Dois fluxos: credencial própria do sistema ou credencial externa (QR físico)
-- Credencial própria: Admin → Credenciamento → emite código único JER-XXXXX
-- Credencial externa: Admin → Credenciamento Externo → escaneia o QR da credencial física
-  → vincula ao participante → participante fica automaticamente credenciado e apto a competir
-- Só participantes credenciados podem entrar em disputas/partidas
-
-### Competição
-- Acesso: Admin → Competição → Central
-- Dentro de uma etapa, o seletor de provas mostra apenas provas com inscrições (filtro automático)
-- Fluxo manual: Inscritos → Montagem de Disputas → Agenda → Check-in → Resultado
-- Modalidades coletivas: times são gerados automaticamente a partir das inscrições
-- Modalidades individuais: chaves e grupos são montados manualmente ou por sorteio
-
-### Etapas
-- Cada evento pode ter múltiplas etapas (classificatórias, regional, estadual, final)
-- Dentro de uma etapa, todos os módulos ficam filtrados pelos participantes daquela etapa
-- Status da etapa: rascunho → ativo → encerrado
-
-### Pré-validação
-- Acesso: Admin → Competição → Pré-validação
-- Valida provas antes de iniciar a competição (mínimo de participantes, etc.)
-- Libera as provas para competição (released_at)
-
-## CATEGORIAS JER 2026
-- 12 a 14 anos: nascidos entre 2012 e 2014
-- 15 a 17 anos: nascidos entre 2009 e 2011
-- Natação, Judô, Wrestling, Tênis de Mesa e GR têm categorias específicas
-
-## DICAS RÁPIDAS
-- Problema ao importar: verifique se o status da inscrição no SIGECOM é "Deferida"
-- Atleta não aparece na competição: verifique se está credenciado
-- Prova sem inscrições na competição: verifique se o filtro por etapa está correto
-- Pendência de CPF: corrija na planilha e reimporte
-- Categoria errada: informe DATA NASCIMENTO ou preencha coluna COMPETICAO
-
-Se a pergunta não for sobre o sistema JER Gestão, oriente gentilmente que você só responde dúvidas sobre o sistema.`;
+const FALLBACK_MANUAL = `Manual ainda não cadastrado. Oriente o usuário a procurar o super administrador para preencher as seções do manual em /super/manual.`;
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
 
+// ─── Build system prompt from DB manual ──────────────────────────────
+
+async function buildSystemPrompt(client: any): Promise<string> {
+  try {
+    const { data, error } = await client
+      .from("help_manual_sections")
+      .select("category,title,content_md,sort_order")
+      .eq("is_published", true)
+      .order("category", { ascending: true })
+      .order("sort_order", { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      return STRICT_RULES + FALLBACK_MANUAL;
+    }
+
+    const grouped: Record<string, typeof data> = {};
+    for (const row of data) {
+      const cat = row.category ?? "Geral";
+      (grouped[cat] ||= []).push(row);
+    }
+
+    let manual = "";
+    for (const [cat, rows] of Object.entries(grouped)) {
+      manual += `\n## ${cat}\n`;
+      for (const r of rows) {
+        manual += `\n### ${r.title}\n${r.content_md}\n`;
+      }
+    }
+    return STRICT_RULES + manual + "\n=== FIM DO MANUAL ===";
+  } catch {
+    return STRICT_RULES + FALLBACK_MANUAL;
+  }
+}
+
 // ─── Providers ────────────────────────────────────────────────────────
 
-async function callClaude(messages: ChatMessage[], apiKey: string): Promise<string> {
+async function callClaude(messages: ChatMessage[], system: string, apiKey: string): Promise<string> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -88,7 +74,7 @@ async function callClaude(messages: ChatMessage[], apiKey: string): Promise<stri
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
       max_tokens: 1024,
-      system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+      system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
       messages,
     }),
   });
@@ -97,14 +83,14 @@ async function callClaude(messages: ChatMessage[], apiKey: string): Promise<stri
   return data.content[0].text as string;
 }
 
-async function callGrok(messages: ChatMessage[], apiKey: string): Promise<string> {
+async function callGrok(messages: ChatMessage[], system: string, apiKey: string): Promise<string> {
   const res = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
     headers: { "Authorization": `Bearer ${apiKey}`, "content-type": "application/json" },
     body: JSON.stringify({
       model: "grok-3",
       max_tokens: 1024,
-      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+      messages: [{ role: "system", content: system }, ...messages],
     }),
   });
   const data = await res.json();
@@ -112,14 +98,14 @@ async function callGrok(messages: ChatMessage[], apiKey: string): Promise<string
   return data.choices[0].message.content as string;
 }
 
-async function callDeepSeek(messages: ChatMessage[], apiKey: string): Promise<string> {
+async function callDeepSeek(messages: ChatMessage[], system: string, apiKey: string): Promise<string> {
   const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
     method: "POST",
     headers: { "Authorization": `Bearer ${apiKey}`, "content-type": "application/json" },
     body: JSON.stringify({
       model: "deepseek-chat",
       max_tokens: 1024,
-      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+      messages: [{ role: "system", content: system }, ...messages],
     }),
   });
   const data = await res.json();
@@ -140,7 +126,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Validate user session
     const client = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -155,7 +140,9 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json() as { messages: ChatMessage[]; test_provider?: string };
 
-    // ── Test mode: ping a specific provider ──
+    const systemPrompt = await buildSystemPrompt(client);
+
+    // ── Test mode ──
     if (body.test_provider) {
       const provider = body.test_provider;
       const testMessages: ChatMessage[] = [{ role: "user", content: 'Responda apenas: "OK"' }];
@@ -172,7 +159,7 @@ Deno.serve(async (req: Request) => {
       }
       try {
         const fn = provider === "claude" ? callClaude : provider === "grok" ? callGrok : callDeepSeek;
-        const response = await fn(testMessages, key);
+        const response = await fn(testMessages, systemPrompt, key);
         return new Response(JSON.stringify({ ok: true, provider, response }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -206,15 +193,15 @@ Deno.serve(async (req: Request) => {
     const errors: string[] = [];
 
     if (anthropicKey) {
-      try { response = await callClaude(messages, anthropicKey); provider = "claude"; }
+      try { response = await callClaude(messages, systemPrompt, anthropicKey); provider = "claude"; }
       catch (e: any) { errors.push(`Claude: ${e?.message}`); }
     }
     if (!response && xaiKey) {
-      try { response = await callGrok(messages, xaiKey); provider = "grok"; }
+      try { response = await callGrok(messages, systemPrompt, xaiKey); provider = "grok"; }
       catch (e: any) { errors.push(`Grok: ${e?.message}`); }
     }
     if (!response && deepseekKey) {
-      try { response = await callDeepSeek(messages, deepseekKey); provider = "deepseek"; }
+      try { response = await callDeepSeek(messages, systemPrompt, deepseekKey); provider = "deepseek"; }
       catch (e: any) { errors.push(`DeepSeek: ${e?.message}`); }
     }
 

@@ -89,6 +89,8 @@ import RegrasLotePage from "./pages/admin/RegrasLotePage";
 import RegrasPage from "./pages/admin/RegrasPage";
 import ImportacaoAliasesPage from "./pages/admin/ImportacaoAliasesPage";
 import AjudaChatPage from "./pages/admin/AjudaChatPage";
+import AjudaManualPage from "./pages/admin/AjudaManualPage";
+import SuperManualPage from "./pages/super/SuperManualPage";
 import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
 import SeedLogisticaEtapaPage from "./pages/admin/SeedLogisticaEtapaPage";
 import DebugPublicadosPage from "./pages/admin/DebugPublicadosPage";
@@ -202,6 +204,7 @@ const App = () => (
               <Route path="config" element={<SuperConfigPage />} />
               <Route path="monitor" element={<SuperMonitorPage />} />
               <Route path="demo" element={<DemoSeedsPage />} />
+              <Route path="manual" element={<SuperManualPage />} />
               <Route path="validador" element={<SchemaValidadorPage />} />
             </Route>
             <Route
@@ -304,6 +307,8 @@ const App = () => (
               <Route path="pesquisa/pesquisadores" element={<RedirectToEtapas />} />
               {/* Links & Páginas */}
               <Route path="ajuda" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
+              <Route path="ajuda/chat" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
+              <Route path="ajuda/manual" element={<ProtectedRoute><AjudaManualPage /></ProtectedRoute>} />
               <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinksPage /></ProtectedRoute>} />
               <Route path="links/novo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
               <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
