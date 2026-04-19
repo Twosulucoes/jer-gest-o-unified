@@ -1,16 +1,10 @@
 // Motor inteligente de resolução SIGECOM → catálogo do evento.
 //
-// ESTRATÉGIA: scoring por tokens contra o catálogo REAL carregado do banco.
+// ESTRATÉGIA: scoring por tokens contra o catálogo REAL carregado do banco,
+// + detecção de "categoria implícita" (combate vs forma, peso vs distância, etc.).
 //
-// Em vez de manter listas hardcoded de keywords (que sempre ficam incompletas),
-// o matcher recebe a lista de provas candidatas (sport_events do par sport+categoria)
+// O matcher recebe a lista de provas candidatas (sport_events do par sport+categoria)
 // e calcula um score de similaridade entre o texto bruto e o NOME/slug de cada prova.
-//
-// Regras:
-//   1. Tokeniza o texto bruto e o nome de cada candidata (normaliza acentos, plurais).
-//   2. Pesa tokens numéricos com word boundary forte (75 ≠ 750).
-//   3. Aplica sinônimos comuns (RASOS↔'', BORBOLETA↔FLY, EQUIPE↔TEAM, etc.).
-//   4. Retorna a candidata com maior score; se houver empate ou score baixo, devolve null.
 
 export type Gender = "male" | "female" | "mixed";
 
@@ -27,20 +21,20 @@ export function norm(s: string | null | undefined): string {
 }
 
 // Sinônimos: chave canônica → variantes que devem ser tratadas como equivalentes.
-// Aplicado em ambos os lados (texto bruto E nome da candidata) antes de tokenizar.
+// IMPORTANTE: NÃO mapear METROS↔RASOS de forma global — depende do contexto
+// da modalidade. Em natação "1500 metros livre" não é "1500 rasos livres".
 const SYNONYM_GROUPS: string[][] = [
-  ["RASOS", "RASO", "METROS", "METRO"],          // "100 METROS" ≡ "100M RASOS"
   ["REVEZAMENTO", "REV", "RELAY"],
-  ["MASCULINO", "MASC", "MALE", "M"],
-  ["FEMININO", "FEM", "FEMININA", "FEMALE", "F"],
+  ["MASCULINO", "MASC", "MALE"],
+  ["FEMININO", "FEM", "FEMININA", "FEMALE"],
   ["MISTO", "MISTA", "MISTAS", "MISTOS", "MIXED"],
   ["INDIVIDUAL", "IND", "SOLO"],
   ["EQUIPE", "EQUIPES", "TEAM", "EQUIPO"],
   ["DUPLAS", "DUPLA", "DOUBLES"],
   ["SIMPLES", "SINGLES", "SINGLE"],
-  ["COMBATE", "FIGHT", "LUTA"],
-  ["FORMA", "FORMS"],
-  ["ARREMESSO", "ARREMESO", "PUT"],              // erro comum SIGECOM
+  ["COMBATE", "FIGHT", "LUTA", "KUMITE", "KYORUGI", "GYEORUGI"],
+  ["FORMA", "FORMS", "KATA", "POOMSAE", "PUMSE"],
+  ["ARREMESSO", "ARREMESO", "PUT"],
   ["LANCAMENTO", "LANC"],
   ["DISTANCIA", "DISTANCE", "LONG"],
   ["ALTURA", "HIGH"],
@@ -56,29 +50,29 @@ const SYNONYM_GROUPS: string[][] = [
   ["PEITO", "BREAST"],
   ["MEDLEY", "MEDLEI"],
   ["RECURVO", "RECURVE"],
-  ["GRECO-ROMANO", "GRECO", "GRECOROMANO"],
+  ["GRECO-ROMANO", "GRECO", "GRECOROMANO", "GRECOROMANA"],
   ["ESTILO", "STYLE"],
-  ["KUMITE", "KUMITÊ"],
-  ["PARTIDA", "JOGO", "MATCH", "GAME"],
   ["AGUAS", "ABERTAS", "OPEN"],
-  ["PROVA", "PROVAS"],
   ["UNICA", "UNICO", "UNIQUE"],
   ["DARDO", "JAVELIN"],
   ["DISCO", "DISCUS"],
   ["PESO", "SHOT"],
   ["HEXATLO", "HEPTATLO", "PENTATLO", "MULTIPROVAS"],
-  ["KYORUGI", "GYEORUGI"],
-  ["POOMSAE", "PUMSE"],
-  ["KATA", "FORMA"],
   ["RITMICA", "RITIMICA"],
   ["ARTISTICA", "ARTISTIC"],
 ];
 
 // Stopwords descartadas em ambos os lados (não contribuem para o score).
+// Inclui cidades de Roraima (sedes JER) e termos genéricos.
 const STOPWORDS = new Set([
   "DE", "DA", "DO", "DAS", "DOS", "EM", "E", "A", "O", "AS", "OS",
-  "JERS", "JERPA", "JER", "ANO", "ANOS", "CAT", "CATEGORIA",
-  "MODALIDADE", "PROVA", "COMPETICAO", "—", "-",
+  "ANO", "ANOS", "CAT", "CATEGORIA", "MODALIDADE", "PROVA", "PROVAS",
+  "COMPETICAO", "RASOS", "RASO", "METROS", "METRO",
+  "GRAMAS", "GRAMA", "GR", "KG", "G",
+  "BOA", "VISTA", "BONFIM", "CARACARAI", "MUCAJAI", "CANTA",
+  "FINAL", "CLASSIFICATORIA", "ETAPA", "REGIONAL", "ESTADUAL",
+  "JERS", "JERPA", "JER", "ATE", "ATÉ", "ACIMA", "SUPER", "MEDIO",
+  "LEVE", "PESADO", "MEIO", "—", "-",
 ]);
 
 function applySynonyms(text: string): string {
@@ -86,7 +80,6 @@ function applySynonyms(text: string): string {
   for (const group of SYNONYM_GROUPS) {
     const canonical = group[0];
     for (let i = 1; i < group.length; i++) {
-      // Substitui palavra inteira pelo canônico
       const re = new RegExp(`(^|\\s)${group[i].replace(/[+\-]/g, "\\$&")}(\\s|$)`, "g");
       t = t.replace(re, `$1${canonical}$2`);
     }
@@ -97,9 +90,10 @@ function applySynonyms(text: string): string {
 function tokenize(text: string): string[] {
   // Normaliza distâncias: "75M" → "75", "4X100M" → "4X100"
   const cleaned = applySynonyms(norm(text))
-    .replace(/(\d+)\s*M\b/g, "$1")            // "75M" → "75"
-    .replace(/(\d+)\s+METROS?\b/g, "$1")      // "75 METROS" → "75"
-    .replace(/-/g, " ");                       // "4-x-100" → "4 x 100"
+    .replace(/(\d+)\s*M\b/g, "$1")
+    .replace(/(\d+)\s+METROS?\b/g, "$1")
+    .replace(/(\d+)\s*KG\b/g, "$1KG")
+    .replace(/-/g, " ");
   return cleaned.split(/\s+/).filter(t => t && !STOPWORDS.has(t));
 }
 
@@ -107,34 +101,47 @@ function tokenize(text: string): string[] {
 
 export interface CatalogEvent {
   id: string;
-  slug: string;       // sport_event slug (já com categoria)
-  name: string;       // "Atletismo — 800m rasos — Masculino"
-  prova_label?: string; // texto da parte central do nome (sem sport e sem gênero)
+  slug: string;
+  name: string;
+  prova_label?: string;
 }
+
+// Tokens "discriminativos" — quando aparecem em UM lado e não no outro,
+// pesam mais (positivo no match, negativo no mismatch).
+const DISCRIMINATIVE = new Set([
+  "KUMITE", "KATA", "KYORUGI", "POOMSAE", "COMBATE", "FORMA",
+  "ESTRADA", "CONTRARRELOGIO",
+  "BORBOLETA", "COSTAS", "PEITO", "LIVRES", "MEDLEY",
+  "DARDO", "DISCO", "PESO",
+  "DISTANCIA", "ALTURA", "TRIPLO", "ARREMESSO", "LANCAMENTO",
+  "BARREIRAS", "MARCHA", "REVEZAMENTO",
+  "GRECO-ROMANO", "GRECO",
+  "SIMPLES", "DUPLAS", "EQUIPE", "INDIVIDUAL",
+]);
 
 /**
  * Score de match entre tokens do texto bruto e tokens do nome da prova.
- * - Tokens numéricos exigem match EXATO (75 ≠ 750, 80 ≠ 800).
- * - Tokens textuais valem 1 ponto cada quando presentes em ambos.
- * - Tokens numéricos valem 3 pontos (são mais discriminativos).
+ * - Tokens discriminativos valem 5 pontos (kata vs kumite, estrada vs crono).
+ * - Tokens numéricos valem 3 pontos (75 ≠ 750).
+ * - Tokens textuais comuns valem 1 ponto.
+ * - Penalidade SUAVE quando candidata tem token numérico ausente do raw (-1).
+ * - Penalidade FORTE quando candidata tem discriminativo ausente do raw (-2).
  */
 function scoreMatch(rawTokens: string[], candTokens: string[]): number {
   const candSet = new Set(candTokens);
+  const rawSet = new Set(rawTokens);
   let score = 0;
-  let matched = 0;
   for (const t of rawTokens) {
     if (candSet.has(t)) {
-      const isNum = /^\d/.test(t);
-      score += isNum ? 3 : 1;
-      matched++;
+      if (DISCRIMINATIVE.has(t)) score += 5;
+      else if (/^\d/.test(t)) score += 3;
+      else score += 1;
     }
   }
-  // Penaliza se a candidata tem tokens numéricos que NÃO estão no texto bruto
-  // (evita "800m" casar com "80 METROS" só por overlap de "800"≈"80").
   for (const t of candTokens) {
-    if (/^\d/.test(t) && !rawTokens.includes(t)) {
-      score -= 2;
-    }
+    if (rawSet.has(t)) continue;
+    if (DISCRIMINATIVE.has(t)) score -= 2;
+    else if (/^\d/.test(t)) score -= 1;
   }
   return score;
 }
@@ -143,7 +150,6 @@ function scoreMatch(rawTokens: string[], candTokens: string[]): number {
 export function extractProvaLabel(fullName: string): string {
   const parts = fullName.split(/—|–|-{2,}/);
   if (parts.length >= 2) {
-    // Remove sufixo de gênero
     const middle = parts.slice(1, parts.length > 2 ? -1 : parts.length).join(" ");
     return middle.trim();
   }
@@ -160,10 +166,34 @@ export interface MatchResult {
 }
 
 /**
+ * Inferência por gênero embutido no slug (-fem-, -masc-).
+ * Wrestling tem `wrestling-livre-fem-...` (estilo livre feminino) vs
+ * `wrestling-livre-masc-...` (estilo livre masculino) vs `wrestling-greco-romano-...`.
+ * Quando o gênero do atleta é conhecido, filtra candidatas incompatíveis.
+ */
+function filterByEmbeddedGender(catalog: CatalogEvent[], rawText: string): CatalogEvent[] {
+  const t = norm(rawText);
+  const isFemale = /\b(FEMININO|FEMININA|FEM)\b/.test(t);
+  const isMale = /\b(MASCULINO|MASCULINA|MASC)\b/.test(t);
+  if (!isFemale && !isMale) return catalog;
+
+  // Detecta se algum slug do catálogo tem marcador de gênero embutido (-fem- ou -masc-)
+  const hasEmbedded = catalog.some(c => /-fem-|-masc-/.test(c.slug));
+  if (!hasEmbedded) return catalog;
+
+  const filtered = catalog.filter(c => {
+    const hasFem = /-fem-/.test(c.slug);
+    const hasMasc = /-masc-/.test(c.slug);
+    if (!hasFem && !hasMasc) return true; // sem marcador embutido → mantém
+    if (isFemale && hasFem) return true;
+    if (isMale && hasMasc) return true;
+    return false;
+  });
+  return filtered.length > 0 ? filtered : catalog;
+}
+
+/**
  * Resolve qual sport_event do catálogo melhor casa com o texto bruto.
- *
- * @param rawText  Texto bruto (PROVA + MODALIDADE + COMPETICAO concatenados)
- * @param catalog  Lista de provas candidatas (já filtrada por sport+categoria)
  */
 export function matchEventInCatalog(rawText: string, catalog: CatalogEvent[]): MatchResult {
   const reasons: string[] = [];
@@ -181,16 +211,44 @@ export function matchEventInCatalog(rawText: string, catalog: CatalogEvent[]): M
     };
   }
 
+  // Pré-filtro por gênero embutido no slug (wrestling, etc.)
+  const filtered = filterByEmbeddedGender(catalog, rawText);
+  if (filtered.length < catalog.length) {
+    reasons.push(`pré-filtro por gênero embutido: ${catalog.length} → ${filtered.length}`);
+  }
+  // Se sobrou só 1 após o pré-filtro, devolve direto
+  if (filtered.length === 1) {
+    return {
+      event_id: filtered[0].id,
+      event_slug: filtered[0].slug,
+      score: 998,
+      confidence: "high",
+      reasons: [...reasons, "única prova após filtro de gênero"],
+      candidates: [{ id: filtered[0].id, slug: filtered[0].slug, score: 998 }],
+    };
+  }
+
   const rawTokens = tokenize(rawText);
   reasons.push(`tokens raw: [${rawTokens.join(", ")}]`);
 
-  const scored = catalog.map(c => {
+  // Detecção contextual: presença de "KG" ou padrão peso (ex.: "+59KG", "60-65KG")
+  // indica modalidade DE COMBATE em modalidades que tem combate vs forma.
+  const isCombatByWeight = /\b\+?\d{2,3}\s*KG\b|\b\d{2,3}\s*-\s*\d{2,3}\s*KG\b|\bATE\s+\d{2,3}/.test(norm(rawText));
+
+  const scored = filtered.map(c => {
     const label = c.prova_label ?? extractProvaLabel(c.name);
-    // Inclui também o slug (sem prefixo do sport) para captar tokens que só aparecem lá
-    const slugTokens = tokenize(c.slug.replace(/^[a-z-]+?-/, "").replace(/-(jers|nat|tm|gr|jerpa)-.*$/, ""));
+    const slugClean = c.slug.replace(/-(jers|nat|tm|gr|jerpa|wrestling|judo)-.*$/, "");
+    const slugTokens = tokenize(slugClean.replace(/^[a-z-]+?-/, ""));
     const labelTokens = tokenize(label);
     const candTokens = [...new Set([...labelTokens, ...slugTokens])];
-    const score = scoreMatch(rawTokens, candTokens);
+    let score = scoreMatch(rawTokens, candTokens);
+
+    // Bônus contextual: se há indicador de peso no texto (combate),
+    // candidatas com tokens de combate ganham; candidatas com forma perdem.
+    if (isCombatByWeight) {
+      if (candTokens.includes("COMBATE") || candTokens.includes("KUMITE") || candTokens.includes("KYORUGI")) score += 4;
+      if (candTokens.includes("FORMA") || candTokens.includes("KATA") || candTokens.includes("POOMSAE")) score -= 4;
+    }
     return { id: c.id, slug: c.slug, score, candTokens };
   });
 
@@ -198,15 +256,15 @@ export function matchEventInCatalog(rawText: string, catalog: CatalogEvent[]): M
   const top = scored[0];
   const second = scored[1];
 
-  // Confiança:
-  //   high   = score >= 3 e diferença ≥ 2 sobre o segundo
-  //   medium = score >= 2 e ganha do segundo
-  //   low    = empatado ou score baixo → null
+  // Confiança permissiva: top > second sempre vence.
+  // - high: diferença ≥ 3
+  // - medium: top > second (qualquer margem) E score >= 0
+  // - low: empate ou top negativo sem segundo distinto
   let confidence: "high" | "medium" | "low" = "low";
-  if (top.score >= 3 && top.score - second.score >= 2) confidence = "high";
-  else if (top.score >= 2 && top.score > second.score) confidence = "medium";
+  if (top.score - second.score >= 3) confidence = "high";
+  else if (top.score > second.score) confidence = "medium";
 
-  reasons.push(`top: ${top.slug} (score=${top.score}) vs ${second.slug} (score=${second.score})`);
+  reasons.push(`top: ${top.slug} (score=${top.score}) vs ${second.slug} (score=${second.score})${isCombatByWeight ? " [combate por peso]" : ""}`);
 
   if (confidence === "low") {
     return {
@@ -225,19 +283,16 @@ export function matchEventInCatalog(rawText: string, catalog: CatalogEvent[]): M
 interface SportAlias { sport: string; alias: string; }
 
 const SPORT_ALIASES: SportAlias[] = [
-  // Coletivas
   ...["BASQUETE","BASQUETEBOL","BASKETBALL","BASKET"].map(a=>({sport:"basquete",alias:a})),
   ...["FUTSAL","FUTEBOL DE SALAO","FUTSAL FEMININO","FUTSAL MASCULINO"].map(a=>({sport:"futsal",alias:a})),
   ...["FUTEBOL","FUTEBOL DE CAMPO","SOCCER","FOOTBALL"].map(a=>({sport:"futebol",alias:a})),
   ...["HANDEBOL","HANDBALL"].map(a=>({sport:"handebol",alias:a})),
   ...["VOLEI","VOLEIBOL","VOLLEYBALL","VOLLEY"].map(a=>({sport:"volei",alias:a})),
   ...["VOLEI DE PRAIA","VOLEIBOL DE PRAIA","BEACH VOLLEY","VOLEI PRAIA"].map(a=>({sport:"volei-de-praia",alias:a})),
-  // Combate
   ...["JUDO"].map(a=>({sport:"judo",alias:a})),
   ...["KARATE","KARATÊ"].map(a=>({sport:"karate",alias:a})),
   ...["TAEKWONDO","TAE KWON DO","TKD"].map(a=>({sport:"taekwondo",alias:a})),
   ...["WRESTLING","LUTA OLIMPICA","LUTA"].map(a=>({sport:"wrestling",alias:a})),
-  // Técnicas/individuais
   ...["BADMINTON"].map(a=>({sport:"badminton",alias:a})),
   ...["PARABADMINTON","PARA BADMINTON","BADMINTON PARALIMPICO"].map(a=>({sport:"parabadminton",alias:a})),
   ...["TENIS DE MESA","TM","PINGUE-PONGUE","PINGUE PONGUE","TABLE TENNIS"].map(a=>({sport:"tenis-de-mesa",alias:a})),
@@ -245,14 +300,12 @@ const SPORT_ALIASES: SportAlias[] = [
   ...["TIRO COM ARCO","TIRO ARCO","ARCHERY"].map(a=>({sport:"tiro-com-arco",alias:a})),
   ...["XADREZ","CHESS"].map(a=>({sport:"xadrez",alias:a})),
   ...["GINASTICA RITMICA","GINASTICA RITIMICA","GR","RHYTHMIC"].map(a=>({sport:"ginastica-ritmica",alias:a})),
-  // Tempo & marca
   ...["ATLETISMO","ATHLETICS"].map(a=>({sport:"atletismo",alias:a})),
   ...["ATLETISMO PARALIMPICO","ATLETISMO PARA","PARA ATLETISMO"].map(a=>({sport:"atletismo-paralimpico",alias:a})),
   ...["NATACAO","SWIMMING"].map(a=>({sport:"natacao",alias:a})),
   ...["NATACAO PARALIMPICA","PARA NATACAO"].map(a=>({sport:"natacao-paralimpica",alias:a})),
   ...["AGUAS ABERTAS","OPEN WATER","MARATONA AQUATICA"].map(a=>({sport:"aguas-abertas",alias:a})),
   ...["CICLISMO","CYCLING","BIKE"].map(a=>({sport:"ciclismo",alias:a})),
-  // Paralímpicas
   ...["BOCHA","BOCHA PARALIMPICA","BOCCIA"].map(a=>({sport:"bocha-paralimpica",alias:a})),
 ];
 
@@ -260,10 +313,8 @@ export function resolveSport(modalidadeRaw: string, provaRaw: string, competicao
   const m = norm(modalidadeRaw);
   const p = norm(provaRaw);
   const c = norm(competicaoRaw);
-  // Detecta paralímpico no competição/prova
   const isPara = /PARALIMPIC|PARA[\s-]/.test(`${m} ${p} ${c}`);
 
-  // Ordena aliases por tamanho desc para evitar que "VOLEI" case antes de "VOLEI DE PRAIA"
   const sorted = [...SPORT_ALIASES].sort((a, b) => b.alias.length - a.alias.length);
 
   const matchToken = (text: string, alias: string): boolean => {
@@ -277,7 +328,6 @@ export function resolveSport(modalidadeRaw: string, provaRaw: string, competicao
   for (const text of [m, c, p]) {
     for (const { sport, alias } of sorted) {
       if (matchToken(text, alias)) {
-        // Se detectou paralímpico mas o sport casado é a versão olímpica, tenta a paralímpica
         if (isPara && !sport.includes("paralimpic")) {
           const paraVersion = sorted.find(s => s.sport === `${sport}-paralimpico`);
           if (paraVersion) return { slug: paraVersion.sport, reason: `paralímpico detectado, alias "${alias}" + "PARA"` };
@@ -357,7 +407,6 @@ export function normalizeAgeBandToCategorySlug(sportSlug: string, ageBand: strin
     if (g) candidates.push(`${base}-${g}`);
     candidates.push(base);
   };
-  // Natação / Judô / Wrestling têm faixas próprias
   if (sportSlug === "natacao" || sportSlug === "natacao-paralimpica") {
     if (ageBand === "12-14") push("nat-12-14");
     if (ageBand === "14-16" || ageBand === "15-16") push("nat-14-16");
@@ -380,14 +429,13 @@ export function normalizeAgeBandToCategorySlug(sportSlug: string, ageBand: strin
     if (ageBand === "11-12" || ageBand === "12-13") push("gr-11-12");
     if (ageBand === "13-15" || ageBand === "14-15") push("gr-13-15");
   }
-  // Padrão geral JER
   if (ageBand === "12-14") push("jers-12-14");
   if (ageBand === "15-17" || ageBand === "17" || ageBand === "16-17") push("jers-15-17");
   if (ageBand === "11-14") push("jerpa-11-14");
   return candidates;
 }
 
-// ─── Função principal exposta (compatibilidade com código existente) ───
+// ─── Função principal exposta (compatibilidade) ────────────────────
 
 export interface SmartMatchInput {
   modalidadeRaw: string;
@@ -406,13 +454,7 @@ export interface SmartMatchOutput {
   reasons: string[];
 }
 
-/**
- * Resolve sport, age_band, gender e weight_class a partir do texto bruto.
- * A resolução da PROVA específica é delegada ao `matchEventInCatalog` que
- * recebe a lista real de candidatas do banco.
- */
 export function smartMatch(input: SmartMatchInput): SmartMatchOutput & {
-  // legados para não quebrar callsites existentes
   prova_slug: string | null;
   confidence: "high" | "medium" | "low";
   prova_candidates: string[];
@@ -441,7 +483,7 @@ export function smartMatch(input: SmartMatchInput): SmartMatchOutput & {
     gender,
     weight_class: weight,
     reasons,
-    prova_slug: null,         // resolvido pelo catálogo no index.ts
+    prova_slug: null,
     confidence: "low",
     prova_candidates: [],
   };

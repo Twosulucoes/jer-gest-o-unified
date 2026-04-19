@@ -598,10 +598,36 @@ function canonicalizeCategory(
         candidates: candidateSlugs,
       };
     }
+    // ── Desempate em sobreposição de faixas (ex.: nat-12-14 e nat-14-16 ambos
+    //    aceitam 2012). Regra geral JER: atleta compete na faixa MAIS NOVA
+    //    compatível com sua idade (princípio padrão de competições escolares).
+    //    Exceção: Tênis de Mesa 2012 (já tratado acima como pendência manual).
+    //    Exceção: se o gênero da prova bruta foi extraído, filtramos por gênero
+    //    primeiro (slugs com sufixo -male/-female).
+    const targetGender =
+      (parsed.gender_raw || "").toUpperCase() === "MASCULINO" ? "male" :
+      (parsed.gender_raw || "").toUpperCase() === "FEMININO" ? "female" : null;
+    let pool = compatible;
+    if (targetGender) {
+      const filtered = pool.filter(c => c.gender_scope == null || c.gender_scope === "mixed" || c.gender_scope === targetGender);
+      if (filtered.length > 0) pool = filtered;
+    }
+    if (pool.length === 1) {
+      const chosen = pool[0];
+      return {
+        category_slug: chosen.slug,
+        reason: `by_birth_date+gender: birth_year=${birthYear}, gender=${targetGender ?? "—"} -> ${chosen.slug}`,
+        matched_by: "birth_date",
+        candidates: candidateSlugs,
+      };
+    }
+    // Escolhe a faixa MAIS NOVA (max_birth_year mais alto = atletas mais novos)
+    const sorted = [...pool].sort((a, b) => (b.max_birth_year ?? 0) - (a.max_birth_year ?? 0));
+    const chosen = sorted[0];
     return {
-      category_slug: null,
-      reason: `ambiguous_after_age: birth_year=${birthYear} ainda compatível com [${compatible.map(c => c.slug).join(", ")}]`,
-      matched_by: null,
+      category_slug: chosen.slug,
+      reason: `by_age_overlap_youngest: birth_year=${birthYear} compatível com [${pool.map(c => c.slug).join(", ")}], escolhida faixa mais nova "${chosen.slug}"`,
+      matched_by: "birth_date",
       candidates: candidateSlugs,
     };
   }
