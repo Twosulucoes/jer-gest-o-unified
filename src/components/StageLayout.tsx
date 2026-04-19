@@ -330,7 +330,7 @@ export default function StageLayout() {
             </header>
 
             <main className="flex-1 p-4 lg:p-6">
-              <Outlet key={location.pathname} />
+              <StageWrappedOutlet key={location.pathname} />
             </main>
           </div>
         </div>
