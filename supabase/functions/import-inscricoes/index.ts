@@ -1170,14 +1170,30 @@ function classifyRow(
     }
 
     const seKey = `${sportId}|${catId}|${row.prova_slug}`;
-    const seId = maps.sportEvents.get(seKey);
+    let seId = maps.sportEvents.get(seKey);
     if (!seId) {
-      pending.push({
-        row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND_CANONICAL",
-        reason_detail: `Prova "${row.prova_slug}" (${row.sport_slug} / ${row.category_slug}) não cadastrada como sport_event no catálogo`,
-        row, fingerprint, candidate_person_id: null,
-      });
-      return { status: "pendencia", errors, warnings, pending, resolved };
+      // Fallback: o slug derivado pelo importador (`<sport>--<cat>`) raramente
+      // bate com o slug real do catálogo (ex.: `futsal-partida-jers-15-17-male`,
+      // `badminton-simples-masc-jers-15-17-male`). Buscamos os SEs do par
+      // (sport_id, category_id) e, se houver exatamente 1, usamos automaticamente.
+      const candidates = maps.sportEventsBySportCat.get(`${sportId}|${catId}`) ?? [];
+      if (candidates.length === 1) {
+        seId = candidates[0].id;
+      } else if (candidates.length > 1) {
+        pending.push({
+          row_number: row.row_number, reason_code: "SPORT_EVENT_AMBIGUOUS",
+          reason_detail: `Modalidade "${row.sport_slug}" / categoria "${row.category_slug}" tem ${candidates.length} provas no catálogo. Selecione manualmente: [${candidates.map(c => c.slug).join(", ")}]. PROVA bruta="${row.prova_name || "—"}"`,
+          row, fingerprint, candidate_person_id: null,
+        });
+        return { status: "pendencia", errors, warnings, pending, resolved };
+      } else {
+        pending.push({
+          row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND_CANONICAL",
+          reason_detail: `Nenhum sport_event cadastrado para ${row.sport_slug} / ${row.category_slug} no catálogo do evento`,
+          row, fingerprint, candidate_person_id: null,
+        });
+        return { status: "pendencia", errors, warnings, pending, resolved };
+      }
     }
     resolved.sport_event_id = seId;
   }
