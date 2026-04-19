@@ -150,6 +150,27 @@ export default function CompeticaoResultadosPage() {
     <div className="animate-fade-in space-y-6">
       <ModuleHeader route="/admin/competicao/resultados" />
 
+      {isStageScoped && stage && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Etapa: {stage.name}</AlertTitle>
+          <AlertDescription>
+            Exibindo apenas partidas com participantes vinculados a esta etapa.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {stageError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro ao carregar escopo da etapa</AlertTitle>
+          <AlertDescription>
+            Não foi possível filtrar as partidas pela etapa selecionada ({stageError.message}).
+            Verifique suas permissões ou contate o administrador.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
