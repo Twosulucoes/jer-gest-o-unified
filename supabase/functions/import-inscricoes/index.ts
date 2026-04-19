@@ -1729,12 +1729,30 @@ Deno.serve(async (req: Request) => {
       const instId = allInstMap.get(slug);
       if (!instId) continue;
       if (maps.delegations.has(instId)) continue;
+
+      // Resolve required school_* fields from any row of this institution
+      const sampleRow = validRows.find(r => r.row.institution_slug === slug)?.row;
+      const schoolName = sampleRow?.institution_name || slug;
+      const schoolSlug = slug;
+      const schoolNetworkType = "pending_review";
+
       const { data, error } = await serviceClient.from("delegations")
-        .insert({ institution_id: instId, event_id: eventId, status: "confirmed" }).select("id").single();
+        .insert({
+          institution_id: instId,
+          event_id: eventId,
+          status: "confirmed",
+          school_name: schoolName,
+          school_slug: schoolSlug,
+          school_network_type: schoolNetworkType,
+        }).select("id").single();
       if (error) {
         const { data: existing } = await serviceClient.from("delegations")
-          .select("id").eq("institution_id", instId).eq("event_id", eventId).single();
-        if (existing) newDelMap.set(instId, existing.id);
+          .select("id").eq("institution_id", instId).eq("event_id", eventId).maybeSingle();
+        if (existing) {
+          newDelMap.set(instId, existing.id);
+        } else {
+          console.error("[delegations] insert failed:", { slug, instId, error: error.message });
+        }
       } else {
         newDelMap.set(instId, data.id);
         delegationsCreated++;
