@@ -27,6 +27,7 @@ import {
   Building2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useStageScope } from "@/hooks/useStageScope";
 
 interface Props {
   eventId: string;
@@ -87,8 +88,11 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
   const [institutionFilter, setInstitutionFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("aptos");
 
+  // Escopo de etapa (se a página estiver dentro de /admin/etapa/:stageId/...)
+  const { isStageScoped, participantIds: stageParticipantIds, isLoading: loadingStageScope } = useStageScope();
+
   // Individual enrollments
-  const { data: enrolled = [], isLoading: loadingEnrolled, error: errorEnrolled } = useQuery({
+  const { data: enrolledRaw = [], isLoading: loadingEnrolled, error: errorEnrolled } = useQuery({
     queryKey: ["central-enrolled", sportEventId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -102,8 +106,14 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
     enabled: !isCollective,
   });
 
+  // Aplica filtro de etapa nos individuais
+  const enrolled = useMemo(() => {
+    if (!isStageScoped || !stageParticipantIds) return enrolledRaw;
+    return enrolledRaw.filter((e) => stageParticipantIds.has(e.participant_id));
+  }, [enrolledRaw, isStageScoped, stageParticipantIds]);
+
   // Teams
-  const { data: teams = [], isLoading: loadingTeams, error: errorTeams } = useQuery({
+  const { data: teamsRaw = [], isLoading: loadingTeams, error: errorTeams } = useQuery({
     queryKey: ["central-teams", eventId, sportEventId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -117,6 +127,27 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
     },
     enabled: isCollective,
   });
+
+  // Para equipes: filtra pelos times que tenham ao menos 1 atleta vinculado à etapa
+  const { data: stageTeamIds } = useQuery({
+    queryKey: ["central-teams-stage-filter", sportEventId, isStageScoped, stageParticipantIds?.size ?? 0],
+    enabled: isCollective && isStageScoped && !!stageParticipantIds && stageParticipantIds.size > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("team_members")
+        .select("team_id, participant_id")
+        .in("participant_id", Array.from(stageParticipantIds!));
+      if (error) throw error;
+      return new Set<string>((data ?? []).map((r: any) => r.team_id as string));
+    },
+  });
+
+  const teams = useMemo(() => {
+    if (!isCollective) return teamsRaw;
+    if (!isStageScoped) return teamsRaw;
+    if (!stageTeamIds) return [];
+    return teamsRaw.filter((t) => stageTeamIds.has(t.id));
+  }, [teamsRaw, isCollective, isStageScoped, stageTeamIds]);
 
   // Eligibility pending (inaptos)
   const { data: pending = [], isLoading: loadingPending } = useQuery({
