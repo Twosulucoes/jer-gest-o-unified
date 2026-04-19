@@ -3,13 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  loadScanPreferences,
+  saveScanPreferences,
+  loadScanTelemetry,
+  bumpScanTelemetry,
+  resetScanTelemetry,
+  type ScanPreferences,
+  type ScanTelemetry,
+} from "@/lib/pwaScan";
+import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 
 interface MealWindow {
   id: string;
@@ -19,22 +28,41 @@ interface MealWindow {
   end_time: string;
 }
 
+const MODULE = "alimentacao" as const;
+
 export default function AlimentacaoScanPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
-  const [continuousMode, setContinuousMode] = useState(true);
+  const [prefs, setPrefs] = useState<ScanPreferences>(() => loadScanPreferences(MODULE, userId));
+  const [telemetry, setTelemetry] = useState<ScanTelemetry>(() => loadScanTelemetry(MODULE, userId));
   const [result, setResult] = useState<{ ok: boolean; message: string; restrictions?: string } | null>(null);
 
+  useEffect(() => {
+    setPrefs(loadScanPreferences(MODULE, userId));
+    setTelemetry(loadScanTelemetry(MODULE, userId));
+  }, [userId]);
+
+  const updatePrefs = (next: ScanPreferences) => {
+    setPrefs(next);
+    saveScanPreferences(MODULE, next, userId);
+  };
+
   const reopenIfContinuous = () => {
-    if (!continuousMode) return;
-    setTimeout(() => setScannerOpen(true), 450);
+    if (!prefs.continuousMode) return;
+    setTimeout(() => setScannerOpen(true), prefs.reopenDelayMs);
   };
 
   const getErrorMessage = (err: unknown) => {
     if (err instanceof Error && err.message) return err.message;
     return "desconhecido";
+  };
+
+  const recordOutcome = (outcome: "ok" | "error") => {
+    setTelemetry(bumpScanTelemetry(MODULE, outcome, userId));
   };
 
   useEffect(() => {
@@ -65,16 +93,14 @@ export default function AlimentacaoScanPage() {
 
       if (!resolved) {
         setResult({ ok: false, message: "Credencial não encontrada ou inativa" });
+        recordOutcome("error");
         return;
       }
 
       const participantId = resolved.participant_id;
       const participantName = resolved.full_name;
-
-      // Restrições alimentares foram removidas do schema; manter contrato vazio
       const foodRestrictions: string | null = null;
 
-      // Check duplicate consumption
       const { count } = await supabase
         .from("meal_consumptions")
         .select("id", { count: "exact", head: true })
@@ -83,6 +109,8 @@ export default function AlimentacaoScanPage() {
 
       if ((count || 0) > 0) {
         setResult({ ok: false, message: "Refeição já registrada nesta janela" });
+        recordOutcome("error");
+        reopenIfContinuous();
         return;
       }
 
@@ -90,6 +118,7 @@ export default function AlimentacaoScanPage() {
 
       if (!session?.user.id) {
         setResult({ ok: false, message: "Sessão expirada. Faça login novamente." });
+        recordOutcome("error");
         return;
       }
 
@@ -107,10 +136,12 @@ export default function AlimentacaoScanPage() {
         message: `Consumo registrado: ${participantName || ""}`,
         restrictions: foodRestrictions || undefined,
       });
+      recordOutcome("ok");
       if (navigator.vibrate) navigator.vibrate(200);
       reopenIfContinuous();
     } catch (err: unknown) {
       setResult({ ok: false, message: `Erro ao registrar consumo: ${getErrorMessage(err)}` });
+      recordOutcome("error");
     }
   };
 
@@ -130,15 +161,19 @@ export default function AlimentacaoScanPage() {
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-4">
-        <div className="flex items-center justify-between rounded-lg border bg-card p-3">
-          <Label htmlFor="continuous-food-scan" className="text-sm">Modo contínuo</Label>
-          <Switch id="continuous-food-scan" checked={continuousMode} onCheckedChange={setContinuousMode} />
-        </div>
+        <ScanPreferencesPanel
+          prefs={prefs}
+          telemetry={telemetry}
+          onChangeContinuous={(v) => updatePrefs({ ...prefs, continuousMode: v })}
+          onChangeDelay={(v) => updatePrefs({ ...prefs, reopenDelayMs: v })}
+          onResetTelemetry={() => setTelemetry(resetScanTelemetry(MODULE, userId))}
+          switchId="continuous-food-scan"
+        />
 
         {windows.length === 0 ? (
-          <Card className="border-amber-500/50">
+          <Card className="border-warning/50">
             <CardContent className="p-4 flex items-center gap-3">
-              <AlertTriangle className="h-6 w-6 text-amber-500 shrink-0" />
+              <AlertTriangle className="h-6 w-6 text-warning shrink-0" />
               <span className="text-sm">Nenhuma janela de refeição aberta no momento</span>
             </CardContent>
           </Card>
@@ -158,16 +193,16 @@ export default function AlimentacaoScanPage() {
         )}
 
         {result && (
-          <Card className={result.ok ? "border-green-500/50" : "border-destructive/50"}>
+          <Card className={result.ok ? "border-success/50" : "border-destructive/50"}>
             <CardContent className="p-4 space-y-2">
               <div className="flex items-center gap-3">
-                {result.ok ? <CheckCircle className="h-6 w-6 text-green-500 shrink-0" /> : <XCircle className="h-6 w-6 text-destructive shrink-0" />}
+                {result.ok ? <CheckCircle className="h-6 w-6 text-success shrink-0" /> : <XCircle className="h-6 w-6 text-destructive shrink-0" />}
                 <span className="text-sm font-medium">{result.message}</span>
               </div>
               {result.restrictions && (
-                <div className="flex items-center gap-2 p-2 rounded bg-amber-500/10">
-                  <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-                  <span className="text-xs text-amber-700 dark:text-amber-400">Restrição: {result.restrictions}</span>
+                <div className="flex items-center gap-2 p-2 rounded bg-warning/10">
+                  <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
+                  <span className="text-xs text-warning-foreground">Restrição: {result.restrictions}</span>
                 </div>
               )}
             </CardContent>
