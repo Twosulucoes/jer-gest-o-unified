@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
+import { isVoucherQr, tryRedeemVoucher, voucherReasonLabel } from "@/lib/voucherScan";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -234,11 +235,23 @@ export default function TransporteEmbarquePage() {
     try {
       let participantId: string | null = null;
       let name = "Participante";
+      let viaVoucher = false;
 
-      const resolved = await resolveQrCredential(rawValue);
-      if (resolved) {
-        participantId = resolved.participant_id;
-        name = resolved.full_name || name;
+      if (isVoucherQr(rawValue)) {
+        const voucher = await tryRedeemVoucher(rawValue, "transport", tripId);
+        if (!voucher || !voucher.ok) {
+          toast.error(voucherReasonLabel(voucher?.reason));
+          return;
+        }
+        participantId = voucher.participant_id ?? null;
+        name = voucher.person_name || name;
+        viaVoucher = true;
+      } else {
+        const resolved = await resolveQrCredential(rawValue);
+        if (resolved) {
+          participantId = resolved.participant_id;
+          name = resolved.full_name || name;
+        }
       }
 
       if (!participantId) {
@@ -274,7 +287,7 @@ export default function TransporteEmbarquePage() {
         if (error) throw error;
       }
 
-      toast.success(`${name} embarcado com sucesso`);
+      toast.success(`${viaVoucher ? "🎫 " : ""}${name} embarcado com sucesso`);
       if (navigator.vibrate) navigator.vibrate(200);
       await fetchPassengers();
     } catch (err: any) {

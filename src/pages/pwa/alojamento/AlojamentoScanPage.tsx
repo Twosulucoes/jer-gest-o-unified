@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { rpcResolveQr, rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
 import { extractQrToken } from "@/lib/resolveQrCredential";
+import { isVoucherQr, tryRedeemVoucher, voucherReasonLabel } from "@/lib/voucherScan";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { ArrowLeft, ScanLine, CheckCircle2, XCircle } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
@@ -23,6 +24,33 @@ export default function AlojamentoScanPage() {
 
   const handleScan = useCallback(async (rawValue: string) => {
     setScannerOpen(false);
+
+    // Auto-detecção de voucher: substitui credencial para validar/check-in operacional
+    if (isVoucherQr(rawValue)) {
+      if (!facilityId) {
+        toast.error("Selecione um local primeiro");
+        navigate("/pwa/alojamento");
+        return;
+      }
+      setResult(null);
+      const voucher = await tryRedeemVoucher(rawValue, "lodging", facilityId);
+      if (!voucher || !voucher.ok) {
+        toast.error(voucherReasonLabel(voucher?.reason));
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        return;
+      }
+      setResult({
+        ok: true,
+        full_name: voucher.person_name,
+        participant_type: "Voucher",
+        person_id: null,
+        message: `Voucher validado · ${voucher.remaining_uses ?? "∞"} usos restantes`,
+      });
+      toast.success(`🎫 Voucher validado — ${voucher.person_name ?? ""}`);
+      if (navigator.vibrate) navigator.vibrate(200);
+      return;
+    }
+
     const token = extractQrToken(rawValue);
     if (!token) {
       toast.error("Código QR inválido");
