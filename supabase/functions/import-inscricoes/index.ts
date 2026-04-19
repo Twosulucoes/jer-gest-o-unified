@@ -1419,9 +1419,13 @@ Deno.serve(async (req: Request) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    let { rows: rawRows, event_id: eventId, event_stage_id: eventStageId, mode, file_name: fileName } = body as {
+    let { rows: rawRows, event_id: eventId, event_stage_id: eventStageId, mode, file_name: fileName,
+          import_log_id: providedImportLogId, chunk_index: chunkIndex, chunk_total: chunkTotal,
+          row_offset: rowOffset } = body as {
       rows: RawRow[]; event_id: string; event_stage_id?: string; mode: string; file_name?: string;
+      import_log_id?: string; chunk_index?: number; chunk_total?: number; row_offset?: number;
     };
+    const isChunked = typeof chunkIndex === "number" && typeof chunkTotal === "number";
 
     rawRows = normalizeHeaders(rawRows);
 
