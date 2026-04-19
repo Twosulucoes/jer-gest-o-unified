@@ -299,8 +299,11 @@ function parseSportText(modalidadeRaw: string, competicaoRaw: string, provaRaw: 
   const gender = genderMatch?.[1] ?? null;
   if (genderMatch) cleaned = cleaned.replace(genderMatch[0], " ");
 
-  // Extrai faixa etária (ex.: "15-17 ANOS", "12 A 14 ANOS", "17 ANOS")
-  const rangeMatch = cleaned.match(/\b(\d{1,2})\s*(?:[-/]|A)\s*(\d{1,2})\s*ANOS?\b/);
+  // Extrai faixa etária. SIGECOM: "ANOS" às vezes está ausente em provas de
+  // combate/ciclismo (ex.: "KATA INDIVIDUAL 15 A 17 FEMININO", "CICLISMO 15 A 17").
+  // Aceitamos intervalo numérico (\d{1,2}-\d{1,2} ou \d A \d) com ANOS opcional;
+  // valor único só se vier seguido de ANOS para evitar falso positivo com pesos/distâncias.
+  const rangeMatch = cleaned.match(/\b(\d{1,2})\s*(?:[-/]|A)\s*(\d{1,2})\s*(?:ANOS?\b)?/);
   const singleMatch = !rangeMatch ? cleaned.match(/\b(\d{1,2})\s*ANOS?\b/) : null;
   let ageBandRaw: string | null = null;
   let ageBandNormalized: string | null = null;
