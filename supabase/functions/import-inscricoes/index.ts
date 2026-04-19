@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { smartMatch } from "./matcher.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1172,20 +1173,44 @@ function classifyRow(
     const seKey = `${sportId}|${catId}|${row.prova_slug}`;
     let seId = maps.sportEvents.get(seKey);
     if (!seId) {
-      // Fallback: o slug derivado pelo importador (`<sport>--<cat>`) raramente
-      // bate com o slug real do catálogo (ex.: `futsal-partida-jers-15-17-male`,
+      // O slug derivado pelo importador (`<sport>--<cat>`) raramente bate com
+      // o slug real do catálogo (ex.: `futsal-partida-jers-15-17-male`,
       // `badminton-simples-masc-jers-15-17-male`). Buscamos os SEs do par
-      // (sport_id, category_id) e, se houver exatamente 1, usamos automaticamente.
+      // (sport_id, category_id) e tentamos:
+      //   1) Se houver 1 SE só → usa direto (coletivas).
+      //   2) Se houver vários → usa o motor inteligente para casar pelo nome
+      //      da prova bruta (ex.: "SIMPLES 15 A 17 ANOS MASCULINO" →
+      //      `badminton-simples-masc-...`).
+      //   3) Se nem isso resolver → pendência informativa.
       const candidates = maps.sportEventsBySportCat.get(`${sportId}|${catId}`) ?? [];
       if (candidates.length === 1) {
         seId = candidates[0].id;
       } else if (candidates.length > 1) {
-        pending.push({
-          row_number: row.row_number, reason_code: "SPORT_EVENT_AMBIGUOUS",
-          reason_detail: `Modalidade "${row.sport_slug}" / categoria "${row.category_slug}" tem ${candidates.length} provas no catálogo. Selecione manualmente: [${candidates.map(c => c.slug).join(", ")}]. PROVA bruta="${row.prova_name || "—"}"`,
-          row, fingerprint, candidate_person_id: null,
+        // (2) Motor inteligente: usa smartMatch para extrair o slug da prova
+        // a partir do texto bruto (PROVA + COMPETIÇÃO + MODALIDADE).
+        const sm = smartMatch({
+          modalidadeRaw: row.sport_raw,
+          provaRaw: row.prova_name,
+          competicaoRaw: row.competicao_raw,
+          sexoColumn: row.gender === "female" ? "F" : "M",
+          birthYear: row.birth_date ? Number(row.birth_date.slice(0, 4)) : null,
+          eventYear: maps.eventYear,
         });
-        return { status: "pendencia", errors, warnings, pending, resolved };
+        if (sm.prova_slug) {
+          // Procura por slug de SE que termine com o slug da prova do matcher
+          const found = candidates.find(c => c.slug.includes(`-${sm.prova_slug}-`) || c.slug.includes(`-${sm.prova_slug}`));
+          if (found) {
+            seId = found.id;
+          }
+        }
+        if (!seId) {
+          pending.push({
+            row_number: row.row_number, reason_code: "SPORT_EVENT_AMBIGUOUS",
+            reason_detail: `Modalidade "${row.sport_slug}" / categoria "${row.category_slug}" tem ${candidates.length} provas no catálogo e o motor não conseguiu identificar a prova específica. PROVA bruta="${row.prova_name || "—"}". Smart match: ${sm.prova_slug ?? "n/a"} (conf=${sm.confidence}). Opções: [${candidates.map(c => c.slug).join(", ")}]`,
+            row, fingerprint, candidate_person_id: null,
+          });
+          return { status: "pendencia", errors, warnings, pending, resolved };
+        }
       } else {
         pending.push({
           row_number: row.row_number, reason_code: "SPORT_EVENT_NOT_FOUND_CANONICAL",
