@@ -784,7 +784,7 @@ interface ReadOnlyMaps {
   sports: Map<string, string>;                // sport_slug -> sport_id
   categories: Map<string, string>;            // category_slug -> category_id
   sportEvents: Map<string, string>;           // "sport_id|category_id|prova_slug" -> sport_event_id
-  sportEventsBySportCat: Map<string, Array<{ id: string; slug: string }>>; // "sport_id|category_id" -> SEs
+  sportEventsBySportCat: Map<string, Array<{ id: string; slug: string; name: string }>>; // "sport_id|category_id" -> SEs
   sportCategoryPairs: Set<string>;            // "sport_slug|category_slug" presentes no catálogo
   sportsSet: Set<string>;                     // sport_slugs presentes no catálogo
   categoriesBySport: Map<string, CategoryWindow[]>; // sport_slug -> janelas etárias do catálogo
