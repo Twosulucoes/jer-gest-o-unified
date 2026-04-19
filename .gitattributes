@@ -1,0 +1,3 @@
+# Reduce recurrent merge conflicts on generated SQL migrations.
+# These files are append-only in most branches; union preserves both sides when possible.
+supabase/migrations/*.sql merge=union
