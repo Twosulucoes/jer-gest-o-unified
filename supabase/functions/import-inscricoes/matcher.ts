@@ -1,10 +1,8 @@
 // Motor inteligente de resolução SIGECOM → catálogo do evento.
 //
-// ESTRATÉGIA: scoring por tokens contra o catálogo REAL carregado do banco,
-// + detecção de "categoria implícita" (combate vs forma, peso vs distância, etc.).
-//
-// O matcher recebe a lista de provas candidatas (sport_events do par sport+categoria)
-// e calcula um score de similaridade entre o texto bruto e o NOME/slug de cada prova.
+// Estratégia v3 (definitiva): regras DETERMINÍSTICAS por palavra-chave de
+// disciplina + extração de NÚMERO (distância/peso) + filtro de gênero embutido.
+// O scoring genérico vira fallback quando nenhuma regra determinística decide.
 
 export type Gender = "male" | "female" | "mixed";
 
@@ -20,9 +18,6 @@ export function norm(s: string | null | undefined): string {
     .trim();
 }
 
-// Sinônimos: chave canônica → variantes que devem ser tratadas como equivalentes.
-// IMPORTANTE: NÃO mapear METROS↔RASOS de forma global — depende do contexto
-// da modalidade. Em natação "1500 metros livre" não é "1500 rasos livres".
 const SYNONYM_GROUPS: string[][] = [
   ["REVEZAMENTO", "REV", "RELAY"],
   ["MASCULINO", "MASC", "MALE"],
@@ -32,8 +27,6 @@ const SYNONYM_GROUPS: string[][] = [
   ["EQUIPE", "EQUIPES", "TEAM", "EQUIPO"],
   ["DUPLAS", "DUPLA", "DOUBLES"],
   ["SIMPLES", "SINGLES", "SINGLE"],
-  ["COMBATE", "FIGHT", "LUTA", "KUMITE", "KYORUGI", "GYEORUGI"],
-  ["FORMA", "FORMS", "KATA", "POOMSAE", "PUMSE"],
   ["ARREMESSO", "ARREMESO", "PUT"],
   ["LANCAMENTO", "LANC"],
   ["DISTANCIA", "DISTANCE", "LONG"],
@@ -41,38 +34,32 @@ const SYNONYM_GROUPS: string[][] = [
   ["TRIPLO", "TRIPLE"],
   ["BARREIRAS", "BARREIRA", "HURDLES"],
   ["MARCHA", "WALK"],
-  ["CONTRARRELOGIO", "CRONO", "CONTRA-RELOGIO", "CONTRA"],
+  ["CONTRARRELOGIO", "CRONO", "CONTRA-RELOGIO", "CONTRARELOGIO", "CRONOMETRO"],
   ["ESTRADA", "ROAD"],
-  ["MAOS", "MAO"],
   ["LIVRES", "LIVRE", "FREE", "FREESTYLE"],
   ["BORBOLETA", "BUTTERFLY", "FLY"],
   ["COSTAS", "COSTA", "BACK"],
   ["PEITO", "BREAST"],
   ["MEDLEY", "MEDLEI"],
   ["RECURVO", "RECURVE"],
-  ["GRECO-ROMANO", "GRECO", "GRECOROMANO", "GRECOROMANA"],
-  ["ESTILO", "STYLE"],
+  ["GRECO-ROMANO", "GRECO", "GRECOROMANO", "GRECOROMANA", "GRECO-ROMANA"],
   ["AGUAS", "ABERTAS", "OPEN"],
-  ["UNICA", "UNICO", "UNIQUE"],
   ["DARDO", "JAVELIN"],
   ["DISCO", "DISCUS"],
   ["PESO", "SHOT"],
-  ["HEXATLO", "HEPTATLO", "PENTATLO", "MULTIPROVAS"],
   ["RITMICA", "RITIMICA"],
-  ["ARTISTICA", "ARTISTIC"],
 ];
 
-// Stopwords descartadas em ambos os lados (não contribuem para o score).
-// Inclui cidades de Roraima (sedes JER) e termos genéricos.
 const STOPWORDS = new Set([
   "DE", "DA", "DO", "DAS", "DOS", "EM", "E", "A", "O", "AS", "OS",
   "ANO", "ANOS", "CAT", "CATEGORIA", "MODALIDADE", "PROVA", "PROVAS",
   "COMPETICAO", "RASOS", "RASO", "METROS", "METRO",
   "GRAMAS", "GRAMA", "GR", "KG", "G",
-  "BOA", "VISTA", "BONFIM", "CARACARAI", "MUCAJAI", "CANTA",
+  "BOA", "VISTA", "BONFIM", "CARACARAI", "MUCAJAI", "CANTA", "PACARAIMA",
+  "ALTO", "ALEGRE", "URAICOERA", "AMAJARI", "RORAINOPOLIS", "IRACEMA",
   "FINAL", "CLASSIFICATORIA", "ETAPA", "REGIONAL", "ESTADUAL",
   "JERS", "JERPA", "JER", "ATE", "ATÉ", "ACIMA", "SUPER", "MEDIO",
-  "LEVE", "PESADO", "MEIO", "—", "-",
+  "LEVE", "PESADO", "MEIO", "—", "-", "INDIVIDUAL", "EQUIPE",
 ]);
 
 function applySynonyms(text: string): string {
@@ -88,7 +75,6 @@ function applySynonyms(text: string): string {
 }
 
 function tokenize(text: string): string[] {
-  // Normaliza distâncias: "75M" → "75", "4X100M" → "4X100"
   const cleaned = applySynonyms(norm(text))
     .replace(/(\d+)\s*M\b/g, "$1")
     .replace(/(\d+)\s+METROS?\b/g, "$1")
@@ -106,56 +92,6 @@ export interface CatalogEvent {
   prova_label?: string;
 }
 
-// Tokens "discriminativos" — quando aparecem em UM lado e não no outro,
-// pesam mais (positivo no match, negativo no mismatch).
-const DISCRIMINATIVE = new Set([
-  "KUMITE", "KATA", "KYORUGI", "POOMSAE", "COMBATE", "FORMA",
-  "ESTRADA", "CONTRARRELOGIO",
-  "BORBOLETA", "COSTAS", "PEITO", "LIVRES", "MEDLEY",
-  "DARDO", "DISCO", "PESO",
-  "DISTANCIA", "ALTURA", "TRIPLO", "ARREMESSO", "LANCAMENTO",
-  "BARREIRAS", "MARCHA", "REVEZAMENTO",
-  "GRECO-ROMANO", "GRECO",
-  "SIMPLES", "DUPLAS", "EQUIPE", "INDIVIDUAL",
-]);
-
-/**
- * Score de match entre tokens do texto bruto e tokens do nome da prova.
- * - Tokens discriminativos valem 5 pontos (kata vs kumite, estrada vs crono).
- * - Tokens numéricos valem 3 pontos (75 ≠ 750).
- * - Tokens textuais comuns valem 1 ponto.
- * - Penalidade SUAVE quando candidata tem token numérico ausente do raw (-1).
- * - Penalidade FORTE quando candidata tem discriminativo ausente do raw (-2).
- */
-function scoreMatch(rawTokens: string[], candTokens: string[]): number {
-  const candSet = new Set(candTokens);
-  const rawSet = new Set(rawTokens);
-  let score = 0;
-  for (const t of rawTokens) {
-    if (candSet.has(t)) {
-      if (DISCRIMINATIVE.has(t)) score += 5;
-      else if (/^\d/.test(t)) score += 3;
-      else score += 1;
-    }
-  }
-  for (const t of candTokens) {
-    if (rawSet.has(t)) continue;
-    if (DISCRIMINATIVE.has(t)) score -= 2;
-    else if (/^\d/.test(t)) score -= 1;
-  }
-  return score;
-}
-
-/** Extrai a parte central do nome ("Atletismo — 800m rasos — Masculino" → "800m rasos"). */
-export function extractProvaLabel(fullName: string): string {
-  const parts = fullName.split(/—|–|-{2,}/);
-  if (parts.length >= 2) {
-    const middle = parts.slice(1, parts.length > 2 ? -1 : parts.length).join(" ");
-    return middle.trim();
-  }
-  return fullName;
-}
-
 export interface MatchResult {
   event_id: string | null;
   event_slug: string | null;
@@ -165,11 +101,214 @@ export interface MatchResult {
   candidates: Array<{ id: string; slug: string; score: number }>;
 }
 
+// ─── Regras DETERMINÍSTICAS por modalidade ─────────────────────────
+
 /**
- * Inferência por gênero embutido no slug (-fem-, -masc-).
- * Wrestling tem `wrestling-livre-fem-...` (estilo livre feminino) vs
- * `wrestling-livre-masc-...` (estilo livre masculino) vs `wrestling-greco-romano-...`.
- * Quando o gênero do atleta é conhecido, filtra candidatas incompatíveis.
+ * Cada regra recebe o texto bruto normalizado e o catálogo (já filtrado por gênero).
+ * Retorna o slug escolhido OU null se a regra não se aplica.
+ */
+type DeterministicRule = (rawNorm: string, catalog: CatalogEvent[]) => CatalogEvent | null;
+
+const findInCatalog = (catalog: CatalogEvent[], predicate: (slug: string) => boolean): CatalogEvent | null =>
+  catalog.find(c => predicate(c.slug.toLowerCase())) ?? null;
+
+const RULES: DeterministicRule[] = [
+  // ── KARATÊ: KATA vs KUMITE ───────────────────────────────────────
+  (raw, cat) => {
+    if (!cat.some(c => /karate/.test(c.slug))) return null;
+    if (/\bKATA\b/.test(raw)) return findInCatalog(cat, s => /karate.*kata/.test(s));
+    if (/\bKUMITE\b/.test(raw)) return findInCatalog(cat, s => /karate.*kumite/.test(s));
+    // Indicador de peso → KUMITE (combate)
+    if (/[+\-]?\d{2,3}\s*KG|ATE\s+\d{2,3}/.test(raw)) return findInCatalog(cat, s => /karate.*kumite/.test(s));
+    return null;
+  },
+
+  // ── TAEKWONDO: KYORUGI/COMBATE vs POOMSAE/FORMA ──────────────────
+  (raw, cat) => {
+    if (!cat.some(c => /taekwondo/.test(c.slug))) return null;
+    if (/\bPOOMSAE\b|\bPUMSE\b|\bFORMA\b/.test(raw)) return findInCatalog(cat, s => /taekwondo.*(poomsae|forma|pumse)/.test(s));
+    if (/\bKYORUGI\b|\bGYEORUGI\b|\bCOMBATE\b/.test(raw)) return findInCatalog(cat, s => /taekwondo.*(kyorugi|combate|gyeorugi)/.test(s));
+    // Indicador de peso → KYORUGI (combate)
+    if (/[+\-]?\d{2,3}\s*KG|ATE\s+\d{2,3}/.test(raw)) return findInCatalog(cat, s => /taekwondo.*(kyorugi|combate)/.test(s));
+    return null;
+  },
+
+  // ── WRESTLING: livre-masc / livre-fem / greco-romano ─────────────
+  (raw, cat) => {
+    if (!cat.some(c => /wrestling/.test(c.slug))) return null;
+    const isFem = /\bFEMININO\b|\bFEMININA\b|\bFEM\b/.test(raw);
+    const isMasc = /\bMASCULINO\b|\bMASCULINA\b|\bMASC\b/.test(raw);
+    if (/GRECO/.test(raw)) return findInCatalog(cat, s => /greco/.test(s));
+    // Sem GRECO: estilo livre
+    if (isFem) return findInCatalog(cat, s => /wrestling-livre-fem/.test(s)) ?? findInCatalog(cat, s => /wrestling.*livre/.test(s));
+    if (isMasc) return findInCatalog(cat, s => /wrestling-livre-masc/.test(s)) ?? findInCatalog(cat, s => /wrestling.*livre/.test(s));
+    return null;
+  },
+
+  // ── JUDÔ: peso → única prova "judo" da categoria (sem subdivisão por estilo) ─
+  // (Catálogo de judô normalmente tem só 1 prova por categoria.)
+  (_raw, cat) => {
+    if (!cat.some(c => /^judo/.test(c.slug))) return null;
+    if (cat.length === 1) return cat[0];
+    return null;
+  },
+
+  // ── CICLISMO: ESTRADA vs CONTRARRELÓGIO ──────────────────────────
+  (raw, cat) => {
+    if (!cat.some(c => /ciclismo/.test(c.slug))) return null;
+    if (/CONTRARRELOGIO|CRONO/.test(raw)) return findInCatalog(cat, s => /contrarrelogio|crono/.test(s));
+    if (/ESTRADA|ROAD/.test(raw)) return findInCatalog(cat, s => /estrada/.test(s));
+    // Texto vago "CICLISMO 15 A 17 FEMININO" → assume ESTRADA (prova base mais comum)
+    if (/^CICLISMO/.test(raw.trim()) && !/CONTRA|CRONO/.test(raw)) {
+      return findInCatalog(cat, s => /estrada/.test(s));
+    }
+    return null;
+  },
+
+  // ── ATLETISMO: distância numérica + tipo de prova ───────────────
+  (raw, cat) => {
+    if (!cat.some(c => /atletismo/.test(c.slug))) return null;
+
+    // 1) Lançamentos / arremessos (DARDO, DISCO, PESO, MARTELO)
+    if (/\bDARDO\b|JAVELIN/.test(raw)) {
+      return findInCatalog(cat, s => /dardo|javelin/.test(s))
+        ?? findInCatalog(cat, s => /lancamento/.test(s))   // fallback p/ "lançamento" genérico
+        ?? findInCatalog(cat, s => /arremesso/.test(s));
+    }
+    if (/\bDISCO\b/.test(raw)) return findInCatalog(cat, s => /disco/.test(s));
+    if (/\bPESO\b|\bSHOT\b/.test(raw)) return findInCatalog(cat, s => /peso|arremesso-peso/.test(s));
+    if (/\bMARTELO\b/.test(raw)) return findInCatalog(cat, s => /martelo/.test(s));
+
+    // 2) Saltos
+    if (/\bSALTO\b.*\bDISTANCIA\b|SALTO\s+EM\s+DISTANCIA|SALTO\s+DISTANCIA/.test(raw))
+      return findInCatalog(cat, s => /salto-distancia|salto-em-distancia/.test(s));
+    if (/\bSALTO\b.*\bALTURA\b|SALTO\s+EM\s+ALTURA|SALTO\s+ALTURA/.test(raw))
+      return findInCatalog(cat, s => /salto-altura|salto-em-altura/.test(s));
+    if (/\bSALTO\b.*\bTRIPLO\b|SALTO\s+TRIPLO/.test(raw))
+      return findInCatalog(cat, s => /salto-triplo/.test(s));
+
+    // 3) Barreiras / marcha
+    if (/BARREIRAS?/.test(raw)) {
+      const m = raw.match(/(\d{2,4})/);
+      if (m) {
+        const dist = m[1];
+        const exact = findInCatalog(cat, s => new RegExp(`-${dist}m?-.*barreira|barreira.*${dist}`).test(s));
+        if (exact) return exact;
+      }
+      return findInCatalog(cat, s => /barreira/.test(s));
+    }
+    if (/MARCHA/.test(raw)) return findInCatalog(cat, s => /marcha/.test(s));
+
+    // 4) Revezamento NxDistancia
+    const relayMatch = raw.match(/(?:REVEZAMENTO|REV)\s*(\d)\s*X\s*(\d{2,3})|(\d)\s*X\s*(\d{2,3})/);
+    if (relayMatch || /REVEZAMENTO|REV\b/.test(raw)) {
+      const n = relayMatch?.[1] ?? relayMatch?.[3];
+      const d = relayMatch?.[2] ?? relayMatch?.[4];
+      if (n && d) {
+        const exact = findInCatalog(cat, s => new RegExp(`rev[-_]?${n}x${d}`).test(s));
+        if (exact) return exact;
+      }
+      return findInCatalog(cat, s => /rev/.test(s));
+    }
+
+    // 5) Corrida por distância — pega o número e tenta casar com -<dist>m-
+    const distMatch = raw.match(/(\d{2,4})\s*(METROS?|M)?\b/);
+    if (distMatch) {
+      const dist = distMatch[1];
+      // Match exato
+      const exact = findInCatalog(cat, s => new RegExp(`-${dist}m?-`).test(s) || new RegExp(`atletismo-${dist}m?-`).test(s));
+      if (exact) return exact;
+      // Match aproximado: 80→75, 150→100, 800→800, 2000→1500/3000 (pega o mais próximo)
+      const distances = cat
+        .map(c => {
+          const m = c.slug.match(/atletismo-(\d{2,4})m-/);
+          return m ? { c, d: Number(m[1]) } : null;
+        })
+        .filter((x): x is { c: CatalogEvent; d: number } => x !== null);
+      if (distances.length > 0) {
+        const target = Number(dist);
+        distances.sort((a, b) => Math.abs(a.d - target) - Math.abs(b.d - target));
+        return distances[0].c;
+      }
+    }
+    return null;
+  },
+
+  // ── NATAÇÃO: distância + estilo ─────────────────────────────────
+  (raw, cat) => {
+    if (!cat.some(c => /natacao/.test(c.slug))) return null;
+
+    // Estilo
+    let style: string | null = null;
+    if (/\bBORBOLETA\b|BUTTERFLY|\bFLY\b/.test(raw)) style = "borboleta";
+    else if (/\bCOSTAS\b|\bBACK\b/.test(raw)) style = "costas";
+    else if (/\bPEITO\b|\bBREAST\b/.test(raw)) style = "peito";
+    else if (/\bMEDLEY\b|\bMEDLEI\b|MEDLEY\s+INDIVIDUAL/.test(raw)) style = "medley";
+    else if (/\bLIVRE\b|\bLIVRES\b|\bFREE\b/.test(raw)) style = "livre";
+
+    // Revezamento
+    const relayMatch = raw.match(/(?:REVEZAMENTO|REV)\s*(\d)\s*X\s*(\d{2,3})/);
+    if (relayMatch || /REVEZAMENTO|\bREV\b/.test(raw)) {
+      const n = relayMatch?.[1] ?? "4";
+      const d = relayMatch?.[2];
+      if (d && style) {
+        const exact = findInCatalog(cat, s => new RegExp(`rev-?${n}x${d}-${style}`).test(s));
+        if (exact) return exact;
+      }
+      return findInCatalog(cat, s => /rev/.test(s) && (!style || s.includes(style)));
+    }
+
+    // Distância
+    const distMatch = raw.match(/(\d{2,4})\s*(METROS?|M)?\b/);
+    if (distMatch && style) {
+      const dist = distMatch[1];
+      const exact = findInCatalog(cat, s => new RegExp(`natacao-${dist}-${style}`).test(s));
+      if (exact) return exact;
+      // Fallback: distância mais próxima dentro do mesmo estilo
+      const same = cat
+        .map(c => {
+          const m = c.slug.match(new RegExp(`natacao-(\\d{2,4})-${style}`));
+          return m ? { c, d: Number(m[1]) } : null;
+        })
+        .filter((x): x is { c: CatalogEvent; d: number } => x !== null);
+      if (same.length > 0) {
+        const target = Number(dist);
+        same.sort((a, b) => Math.abs(a.d - target) - Math.abs(b.d - target));
+        return same[0].c;
+      }
+    }
+    if (distMatch && !style) {
+      // Sem estilo: assume LIVRE
+      const dist = distMatch[1];
+      const exact = findInCatalog(cat, s => new RegExp(`natacao-${dist}-livre`).test(s));
+      if (exact) return exact;
+    }
+    if (style && !distMatch) {
+      return findInCatalog(cat, s => s.includes(`-${style}`));
+    }
+    return null;
+  },
+
+  // ── TÊNIS DE MESA: SIMPLES vs DUPLAS vs EQUIPE ───────────────────
+  (raw, cat) => {
+    if (!cat.some(c => /tenis-de-mesa/.test(c.slug))) return null;
+    if (/DUPLAS?|DOUBLES/.test(raw)) return findInCatalog(cat, s => /dupla/.test(s));
+    if (/EQUIPE/.test(raw)) return findInCatalog(cat, s => /equipe/.test(s));
+    if (/SIMPLES|SINGLES?/.test(raw)) return findInCatalog(cat, s => /simples|singles/.test(s));
+    return null;
+  },
+
+  // ── TIRO COM ARCO: RECURVO / COMPOSTO ────────────────────────────
+  (raw, cat) => {
+    if (!cat.some(c => /tiro-com-arco/.test(c.slug))) return null;
+    if (/COMPOSTO|COMPOUND/.test(raw)) return findInCatalog(cat, s => /composto|compound/.test(s));
+    if (/RECURVO|RECURVE/.test(raw)) return findInCatalog(cat, s => /recurvo|recurve/.test(s));
+    return null;
+  },
+];
+
+/**
+ * Filtro por gênero embutido no slug (-fem-, -masc-, -male, -female).
  */
 function filterByEmbeddedGender(catalog: CatalogEvent[], rawText: string): CatalogEvent[] {
   const t = norm(rawText);
@@ -177,16 +316,19 @@ function filterByEmbeddedGender(catalog: CatalogEvent[], rawText: string): Catal
   const isMale = /\b(MASCULINO|MASCULINA|MASC)\b/.test(t);
   if (!isFemale && !isMale) return catalog;
 
-  // Detecta se algum slug do catálogo tem marcador de gênero embutido (-fem- ou -masc-)
-  const hasEmbedded = catalog.some(c => /-fem-|-masc-/.test(c.slug));
+  // Marcadores no slug que indicam gênero específico
+  const femMarker = /(^|-)(fem|feminino|female)(-|$)/i;
+  const mascMarker = /(^|-)(masc|masculino|male)(-|$)/i;
+
+  const hasEmbedded = catalog.some(c => femMarker.test(c.slug) || mascMarker.test(c.slug));
   if (!hasEmbedded) return catalog;
 
   const filtered = catalog.filter(c => {
-    const hasFem = /-fem-/.test(c.slug);
-    const hasMasc = /-masc-/.test(c.slug);
-    if (!hasFem && !hasMasc) return true; // sem marcador embutido → mantém
-    if (isFemale && hasFem) return true;
-    if (isMale && hasMasc) return true;
+    const hasFem = femMarker.test(c.slug);
+    const hasMasc = mascMarker.test(c.slug);
+    if (!hasFem && !hasMasc) return true;
+    if (isFemale && hasFem && !hasMasc) return true;
+    if (isMale && hasMasc && !hasFem) return true;
     return false;
   });
   return filtered.length > 0 ? filtered : catalog;
@@ -202,69 +344,72 @@ export function matchEventInCatalog(rawText: string, catalog: CatalogEvent[]): M
   }
   if (catalog.length === 1) {
     return {
-      event_id: catalog[0].id,
-      event_slug: catalog[0].slug,
-      score: 999,
-      confidence: "high",
+      event_id: catalog[0].id, event_slug: catalog[0].slug, score: 999, confidence: "high",
       reasons: ["única prova no catálogo"],
       candidates: [{ id: catalog[0].id, slug: catalog[0].slug, score: 999 }],
     };
   }
 
-  // Pré-filtro por gênero embutido no slug (wrestling, etc.)
+  // 1) Filtro por gênero embutido
   const filtered = filterByEmbeddedGender(catalog, rawText);
   if (filtered.length < catalog.length) {
     reasons.push(`pré-filtro por gênero embutido: ${catalog.length} → ${filtered.length}`);
   }
-  // Se sobrou só 1 após o pré-filtro, devolve direto
   if (filtered.length === 1) {
     return {
-      event_id: filtered[0].id,
-      event_slug: filtered[0].slug,
-      score: 998,
-      confidence: "high",
+      event_id: filtered[0].id, event_slug: filtered[0].slug, score: 998, confidence: "high",
       reasons: [...reasons, "única prova após filtro de gênero"],
       candidates: [{ id: filtered[0].id, slug: filtered[0].slug, score: 998 }],
     };
   }
 
+  // 2) Regras determinísticas
+  const rawNorm = applySynonyms(norm(rawText));
+  for (const rule of RULES) {
+    const hit = rule(rawNorm, filtered);
+    if (hit) {
+      reasons.push(`regra determinística: ${hit.slug}`);
+      return {
+        event_id: hit.id, event_slug: hit.slug, score: 100, confidence: "high",
+        reasons,
+        candidates: [{ id: hit.id, slug: hit.slug, score: 100 }],
+      };
+    }
+  }
+
+  // 3) Scoring genérico (fallback)
   const rawTokens = tokenize(rawText);
   reasons.push(`tokens raw: [${rawTokens.join(", ")}]`);
 
-  // Detecção contextual: presença de "KG" ou padrão peso (ex.: "+59KG", "60-65KG")
-  // indica modalidade DE COMBATE em modalidades que tem combate vs forma.
-  const isCombatByWeight = /\b\+?\d{2,3}\s*KG\b|\b\d{2,3}\s*-\s*\d{2,3}\s*KG\b|\bATE\s+\d{2,3}/.test(norm(rawText));
-
   const scored = filtered.map(c => {
-    const label = c.prova_label ?? extractProvaLabel(c.name);
     const slugClean = c.slug.replace(/-(jers|nat|tm|gr|jerpa|wrestling|judo)-.*$/, "");
     const slugTokens = tokenize(slugClean.replace(/^[a-z-]+?-/, ""));
-    const labelTokens = tokenize(label);
+    const labelTokens = tokenize(c.prova_label ?? c.name);
     const candTokens = [...new Set([...labelTokens, ...slugTokens])];
-    let score = scoreMatch(rawTokens, candTokens);
-
-    // Bônus contextual: se há indicador de peso no texto (combate),
-    // candidatas com tokens de combate ganham; candidatas com forma perdem.
-    if (isCombatByWeight) {
-      if (candTokens.includes("COMBATE") || candTokens.includes("KUMITE") || candTokens.includes("KYORUGI")) score += 4;
-      if (candTokens.includes("FORMA") || candTokens.includes("KATA") || candTokens.includes("POOMSAE")) score -= 4;
+    const candSet = new Set(candTokens);
+    const rawSet = new Set(rawTokens);
+    let score = 0;
+    for (const t of rawTokens) {
+      if (candSet.has(t)) {
+        if (/^\d/.test(t)) score += 3;
+        else score += 1;
+      }
     }
-    return { id: c.id, slug: c.slug, score, candTokens };
+    for (const t of candTokens) {
+      if (!rawSet.has(t) && /^\d/.test(t)) score -= 1;
+    }
+    return { id: c.id, slug: c.slug, score };
   });
 
   scored.sort((a, b) => b.score - a.score);
   const top = scored[0];
   const second = scored[1];
 
-  // Confiança permissiva: top > second sempre vence.
-  // - high: diferença ≥ 3
-  // - medium: top > second (qualquer margem) E score >= 0
-  // - low: empate ou top negativo sem segundo distinto
   let confidence: "high" | "medium" | "low" = "low";
   if (top.score - second.score >= 3) confidence = "high";
   else if (top.score > second.score) confidence = "medium";
 
-  reasons.push(`top: ${top.slug} (score=${top.score}) vs ${second.slug} (score=${second.score})${isCombatByWeight ? " [combate por peso]" : ""}`);
+  reasons.push(`scoring fallback — top: ${top.slug} (${top.score}) vs ${second.slug} (${second.score})`);
 
   if (confidence === "low") {
     return {
@@ -276,6 +421,15 @@ export function matchEventInCatalog(rawText: string, catalog: CatalogEvent[]): M
     event_id: top.id, event_slug: top.slug, score: top.score, confidence, reasons,
     candidates: scored.slice(0, 5).map(s => ({ id: s.id, slug: s.slug, score: s.score })),
   };
+}
+
+export function extractProvaLabel(fullName: string): string {
+  const parts = fullName.split(/—|–|-{2,}/);
+  if (parts.length >= 2) {
+    const middle = parts.slice(1, parts.length > 2 ? -1 : parts.length).join(" ");
+    return middle.trim();
+  }
+  return fullName;
 }
 
 // ─── Resolução de modalidade (sport) ───────────────────────────────
