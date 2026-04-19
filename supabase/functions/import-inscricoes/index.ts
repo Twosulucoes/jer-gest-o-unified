@@ -683,10 +683,12 @@ function canonicalizeCategory(
         candidates: candidateSlugs,
       };
     }
+    // Fallback determinístico: única categoria do catálogo, mesmo fora da
+    // janela etária — aceita inscrição (sistema deve mapear todas as inscrições).
     return {
-      category_slug: null,
-      reason: `birth_year_out_of_range: birth_year=${birthYear} fora de [${c.min_birth_year ?? "-∞"}, ${c.max_birth_year ?? "+∞"}] da única categoria "${onlySlug}"`,
-      matched_by: null,
+      category_slug: onlySlug,
+      reason: `by_only_category_available: birth_year=${birthYear} fora de [${c.min_birth_year ?? "-∞"}, ${c.max_birth_year ?? "+∞"}], mas "${onlySlug}" é a única categoria disponível no catálogo desta modalidade`,
+      matched_by: "single_in_catalog",
       candidates: candidateSlugs,
     };
   }
