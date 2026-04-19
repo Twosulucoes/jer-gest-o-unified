@@ -58,8 +58,21 @@ Deno.serve(async (req) => {
       .eq("user_id", caller.id);
     
     const roles = (callerRoles || []).map((r: any) => r.role);
-    if (!roles.includes("admin") && !roles.includes("secretaria")) {
+    const callerIsSuper = roles.includes("super_admin");
+    if (!roles.includes("admin") && !roles.includes("secretaria") && !callerIsSuper) {
       return jsonResponse({ error: "NOT_AUTHORIZED" }, 403);
+    }
+
+    // Helper: bloqueia operações sobre super_admins por callers não-super
+    async function isProtectedTarget(targetUserId: string): Promise<boolean> {
+      if (callerIsSuper) return false;
+      const { data } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", targetUserId)
+        .eq("role", "super_admin")
+        .maybeSingle();
+      return !!data;
     }
 
 
@@ -88,18 +101,25 @@ Deno.serve(async (req) => {
           rolesMap.set(r.user_id, arr);
         }
 
-        const result = users.map((u: any) => {
-          const profile = profilesMap.get(u.id);
-          return {
-            user_id: u.id,
-            email: u.email,
-            full_name: profile?.full_name || null,
-            active: profile?.active ?? true,
-            roles: rolesMap.get(u.id) || [],
-            last_sign_in_at: u.last_sign_in_at,
-            created_at: u.created_at,
-          };
-        });
+        const result = users
+          .filter((u: any) => {
+            // Esconde super_admins de callers não-super
+            if (callerIsSuper) return true;
+            const userRoles = rolesMap.get(u.id) || [];
+            return !userRoles.includes("super_admin");
+          })
+          .map((u: any) => {
+            const profile = profilesMap.get(u.id);
+            return {
+              user_id: u.id,
+              email: u.email,
+              full_name: profile?.full_name || null,
+              active: profile?.active ?? true,
+              roles: rolesMap.get(u.id) || [],
+              last_sign_in_at: u.last_sign_in_at,
+              created_at: u.created_at,
+            };
+          });
 
         return jsonResponse({ users: result });
       }
@@ -161,6 +181,9 @@ Deno.serve(async (req) => {
         if (!user_id || !role) {
           return jsonResponse({ error: "user_id and role are required" }, 400);
         }
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
 
         // Secretaria cannot assign admin/secretaria
         if (!roles.includes("admin") && (role === "admin" || role === "secretaria")) {
@@ -181,6 +204,9 @@ Deno.serve(async (req) => {
         const { user_id, roles: newRoles } = body;
         if (!user_id || !Array.isArray(newRoles) || newRoles.length === 0) {
           return jsonResponse({ error: "user_id and at least one role are required" }, 400);
+        }
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
         }
 
         for (const r of newRoles) {
@@ -210,6 +236,9 @@ Deno.serve(async (req) => {
         if (!user_id || typeof active !== "boolean") {
           return jsonResponse({ error: "user_id and active are required" }, 400);
         }
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
 
         // Prevent deactivating self
         if (user_id === caller.id && !active) {
@@ -235,6 +264,9 @@ Deno.serve(async (req) => {
       case "revoke_sessions": {
         const { user_id } = body;
         if (!user_id) return jsonResponse({ error: "user_id is required" }, 400);
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
 
         const { error } = await adminClient.auth.admin.signOut(user_id);
         if (error) return jsonResponse({ error: error.message }, 500);
@@ -263,6 +295,9 @@ Deno.serve(async (req) => {
       case "resend_invite": {
         const { user_id } = body;
         if (!user_id) return jsonResponse({ error: "user_id is required" }, 400);
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
 
         // Get user email
         const { data: { user: targetUser }, error: getUserErr } = await adminClient.auth.admin.getUserById(user_id);
@@ -280,6 +315,9 @@ Deno.serve(async (req) => {
       case "reset_password": {
         const { user_id } = body;
         if (!user_id) return jsonResponse({ error: "user_id is required" }, 400);
+        if (await isProtectedTarget(user_id)) {
+          return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
 
         const { data: { user: targetUser }, error: getUserErr } = await adminClient.auth.admin.getUserById(user_id);
         if (getUserErr || !targetUser) return jsonResponse({ error: "Usuário não encontrado" }, 404);
