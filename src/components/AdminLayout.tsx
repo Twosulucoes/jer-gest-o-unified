@@ -103,6 +103,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Manual de Instruções", to: "/admin/ajuda/manual", icon: <BookOpen className="h-4 w-4" />, roles: "all" },
       { label: "Chat com IA", to: "/admin/ajuda/chat", icon: <Bot className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as AppRole[] },
+      { label: "Abrir Chamado", to: "/admin/ajuda/chamados", icon: <LifeBuoy className="h-4 w-4" />, roles: "all" },
     ],
   },
   {
