@@ -50,6 +50,7 @@ Deno.serve(async (req) => {
 
   const sportId = url.searchParams.get("sport_id");
   const sportEventId = url.searchParams.get("sport_event_id");
+  const eventStageId = url.searchParams.get("event_stage_id");
   const bulletinNumberStr = url.searchParams.get("bulletin_number");
 
   // Validate bulletin_number if provided
@@ -66,9 +67,39 @@ Deno.serve(async (req) => {
     }
   }
 
+  if (eventStageId && !uuidRegex.test(eventStageId)) {
+    return new Response(
+      JSON.stringify({ error: "Invalid event_stage_id format" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // Quando o evento tem mais de uma etapa ativa, exigimos o filtro event_stage_id.
+  const { data: stagesList, error: stagesErr } = await supabase
+    .from("event_stages")
+    .select("id")
+    .eq("event_id", eventId)
+    .neq("status", "archived");
+  if (stagesErr) {
+    return new Response(
+      JSON.stringify({ error: stagesErr.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  const stageCount = (stagesList ?? []).length;
+  if (stageCount > 1 && !eventStageId) {
+    return new Response(
+      JSON.stringify({
+        error: "event_stage_id é obrigatório quando o evento possui mais de uma etapa.",
+        available_stage_count: stageCount,
+      }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 
   let query = supabase
     .from("public_results_view")
@@ -84,6 +115,9 @@ Deno.serve(async (req) => {
   }
   if (sportEventId && uuidRegex.test(sportEventId)) {
     query = query.eq("sport_event_id", sportEventId);
+  }
+  if (eventStageId) {
+    query = query.eq("event_stage_id", eventStageId);
   }
   if (bulletinNumberStr) {
     query = query.eq("bulletin_number", Number(bulletinNumberStr));
