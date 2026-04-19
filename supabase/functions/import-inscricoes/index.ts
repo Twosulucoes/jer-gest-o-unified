@@ -517,15 +517,11 @@ function canonicalizeCategory(
         }
       }
 
-      if (matches.length === 0) {
-        return {
-          category_slug: null,
-          reason: `by_age_band_failed: faixa "${parsed.age_band_normalized}"${targetGender ? `/${targetGender}` : ""} (birth ∈ [${derivedBirthMin},${derivedBirthMax}]) sem categoria compatível em [${candidateSlugs.join(", ")}]`,
-          matched_by: null,
-          candidates: candidateSlugs,
-        };
-      }
-      // Cai para fluxo de birth_date abaixo se ainda ambíguo
+      // Se faixa explícita não casou com NENHUMA categoria do catálogo
+      // (ex.: planilha "15 A 17" mas catálogo só tem jers-12-14, ou natação
+      // só tem nat-12-14/14-16/17), NÃO falhar — cair para resolução por
+      // birth_date abaixo, que escolhe pela idade real do atleta.
+      // (matches.length === 0 → segue adiante)
     }
   }
 

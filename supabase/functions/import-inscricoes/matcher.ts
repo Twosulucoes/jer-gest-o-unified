@@ -289,13 +289,42 @@ const RULES: DeterministicRule[] = [
     return null;
   },
 
-  // ── TÊNIS DE MESA: SIMPLES vs DUPLAS vs EQUIPE ───────────────────
+  // ── TÊNIS DE MESA: INDIVIDUAL/SIMPLES vs DUPLAS vs EQUIPE ────────
   (raw, cat) => {
     if (!cat.some(c => /tenis-de-mesa/.test(c.slug))) return null;
     if (/DUPLAS?|DOUBLES/.test(raw)) return findInCatalog(cat, s => /dupla/.test(s));
-    if (/EQUIPE/.test(raw)) return findInCatalog(cat, s => /equipe/.test(s));
-    if (/SIMPLES|SINGLES?/.test(raw)) return findInCatalog(cat, s => /simples|singles/.test(s));
+    if (/EQUIPES?|TEAM/.test(raw)) return findInCatalog(cat, s => /equipe/.test(s));
+    if (/INDIVIDUAL|SIMPLES|SINGLES?|SOLO/.test(raw))
+      return findInCatalog(cat, s => /individual|simples|singles/.test(s));
     return null;
+  },
+
+  // ── BADMINTON: SIMPLES / DUPLAS (mesmo gênero) / DUPLAS MISTAS ───
+  (raw, cat) => {
+    if (!cat.some(c => /badminton/.test(c.slug))) return null;
+    const isMista = /MIST(A|AS|O|OS)|MIXED/.test(raw);
+    if (/DUPLAS?|DOUBLES/.test(raw)) {
+      if (isMista) return findInCatalog(cat, s => /dupla.*mist|mistas|misto/.test(s));
+      // Duplas sem "MISTA" → preferir duplas-{fem|masc} (o filtro de gênero
+      // já reduziu o catálogo, então a primeira que casa "dupla" e NÃO é mista serve)
+      return findInCatalog(cat, s => /dupla/.test(s) && !/mist/.test(s))
+        ?? findInCatalog(cat, s => /dupla/.test(s));
+    }
+    if (/SIMPLES|SINGLES?|INDIVIDUAL/.test(raw))
+      return findInCatalog(cat, s => /simples|singles|individual/.test(s));
+    return null;
+  },
+
+  // ── GINÁSTICA RÍTMICA: aparelho explícito ou DEFAULT (arco) ──────
+  (raw, cat) => {
+    if (!cat.some(c => /ginastica-ritmica/.test(c.slug))) return null;
+    if (/\bMACAS?\b|\bMAÇAS?\b|\bCLUBS?\b/.test(raw)) return findInCatalog(cat, s => /macas|macas/.test(s) || /maca/.test(s));
+    if (/\bARCO\b|\bHOOP\b/.test(raw)) return findInCatalog(cat, s => /arco/.test(s));
+    if (/\bFITA\b|\bRIBBON\b/.test(raw)) return findInCatalog(cat, s => /fita/.test(s));
+    if (/\bBOLA\b|\bBALL\b/.test(raw)) return findInCatalog(cat, s => /bola/.test(s));
+    if (/\bCORDA\b|\bROPE\b/.test(raw)) return findInCatalog(cat, s => /corda/.test(s));
+    // Sem aparelho explícito ("GINASTICA RITMICA 12-13 FEMININO") → default ARCO
+    return findInCatalog(cat, s => /arco/.test(s)) ?? cat[0];
   },
 
   // ── TIRO COM ARCO: RECURVO / COMPOSTO ────────────────────────────
