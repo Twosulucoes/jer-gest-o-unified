@@ -209,24 +209,35 @@ export function resolveSport(modalidadeRaw: string, provaRaw: string, competicao
   const m = norm(modalidadeRaw);
   const p = norm(provaRaw);
   const c = norm(competicaoRaw);
-  // 1) Match direto pelos aliases na MODALIDADE
-  for (const sp of SPORTS) {
-    if (sp.aliases.some(a => m === a || m.includes(a))) {
-      return { slug: sp.slug, reason: `match by MODALIDADE alias "${sp.aliases.find(a => m.includes(a))}"` };
+  // Ordena aliases por tamanho desc para evitar que "VOLEI" case antes de "VOLEI DE PRAIA"
+  // e que "TM" case com "GINASTICA RITMICA".
+  const expanded: Array<{ sport: string; alias: string }> = [];
+  for (const sp of SPORTS) for (const a of sp.aliases) expanded.push({ sport: sp.slug, alias: a });
+  expanded.sort((a, b) => b.alias.length - a.alias.length);
+
+  const matchToken = (text: string, alias: string): boolean => {
+    // Aliases curtos (≤3 chars) exigem word boundary; longos podem ser substring
+    if (alias.length <= 3) {
+      const re = new RegExp(`(^|\\s)${alias.replace(/[+\-]/g, "\\$&")}(\\s|$)`);
+      return re.test(text);
     }
+    return text.includes(alias);
+  };
+
+  // 1) MODALIDADE
+  for (const { sport, alias } of expanded) {
+    if (matchToken(m, alias)) return { slug: sport, reason: `match by MODALIDADE alias "${alias}"` };
   }
-  // 2) Tenta inferir pela COMPETIÇÃO ("BASQUETE BOA VISTA", "TÊNIS DE MESA BOA VISTA")
-  for (const sp of SPORTS) {
-    if (sp.aliases.some(a => c.includes(a))) {
-      return { slug: sp.slug, reason: `inferred from COMPETICAO contains "${sp.aliases.find(a => c.includes(a))}"` };
-    }
+  // 2) COMPETIÇÃO
+  for (const { sport, alias } of expanded) {
+    if (matchToken(c, alias)) return { slug: sport, reason: `inferred from COMPETICAO contains "${alias}"` };
   }
-  // 3) Tenta pela PROVA (KATA INDIVIDUAL → karate; CICLISMO 15 A 17 → ciclismo)
+  // 3) PROVA
+  for (const { sport, alias } of expanded) {
+    if (matchToken(p, alias)) return { slug: sport, reason: `inferred from PROVA contains "${alias}"` };
+  }
+  // 4) Palavras de provas específicas
   for (const sp of SPORTS) {
-    if (sp.aliases.some(a => p.includes(a))) {
-      return { slug: sp.slug, reason: `inferred from PROVA contains "${sp.aliases.find(a => p.includes(a))}"` };
-    }
-    // Match por palavras de prova específicas
     for (const pv of sp.provas) {
       for (const tokens of pv.keywords) {
         if (matchesAll(p, tokens)) return { slug: sp.slug, reason: `inferred from PROVA keywords [${tokens.join(",")}] (prova ${pv.slug})` };
