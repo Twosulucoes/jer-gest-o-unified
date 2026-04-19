@@ -226,13 +226,23 @@ export default function ImportacaoPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const callEdgeFunction = async (mode: "validate" | "commit") => {
+  const callEdgeFunction = async (
+    mode: "validate" | "commit",
+    options?: { rowsOverride?: any[]; importLogId?: string; chunkIndex?: number; chunkTotal?: number; rowOffset?: number }
+  ) => {
     if (!file || !selectedEventId || !selectedStageId || !confirmedMapping) return;
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { toast.error("Sessão expirada. Faça login novamente."); return; }
-    const rows = applyMapping(rawParsedRows, confirmedMapping);
+    const rows = options?.rowsOverride ?? applyMapping(rawParsedRows, confirmedMapping);
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
     const url = `https://${projectId}.supabase.co/functions/v1/import-inscricoes`;
+    const payload: Record<string, unknown> = {
+      rows, event_id: selectedEventId, event_stage_id: selectedStageId, mode, file_name: file.name,
+    };
+    if (options?.importLogId) payload.import_log_id = options.importLogId;
+    if (typeof options?.chunkIndex === "number") payload.chunk_index = options.chunkIndex;
+    if (typeof options?.chunkTotal === "number") payload.chunk_total = options.chunkTotal;
+    if (typeof options?.rowOffset === "number") payload.row_offset = options.rowOffset;
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -240,7 +250,7 @@ export default function ImportacaoPage() {
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ rows, event_id: selectedEventId, event_stage_id: selectedStageId, mode, file_name: file.name }),
+      body: JSON.stringify(payload),
     });
     const json = await response.json();
     if (!response.ok) throw new Error(json.error || json.message || "Erro desconhecido");
