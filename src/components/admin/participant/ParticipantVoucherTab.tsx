@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -13,17 +13,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { QrCode, Plus, Ban, Loader2, History } from "lucide-react";
+import { QrCode, Plus, Ban, Loader2 } from "lucide-react";
 import QRCode from "qrcode";
 
 interface Props {
   participantId: string;
   eventId: string;
 }
-
-const SERVICE_LABELS: Record<string, string> = {
-  transport: "Transporte", meals: "Alimentação", lodging: "Alojamento",
-};
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   active: "default", revoked: "destructive", expired: "outline",

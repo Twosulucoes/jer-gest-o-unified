@@ -41,12 +41,6 @@ export default function VoucherValidarPage() {
   const [result, setResult] = useState<RedeemResult | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Default service based on role
-  const defaults: any = {
-    transporte: "transport", alimentacao: "meals", alojamento: "lodging",
-  };
-  // (we leave the user free to change; defaults could be auto-set in real use)
-
   const redeem = async (qrValue: string) => {
     if (!qrValue) return;
     setLoading(true);
@@ -127,20 +121,20 @@ export default function VoucherValidarPage() {
         </CardContent>
       </Card>
 
-      {scanning && (
-        <Card>
-          <CardContent className="pt-4">
-            <QrCodeScanner onResult={handleScan} onCancel={() => setScanning(false)} />
-          </CardContent>
-        </Card>
-      )}
+      <QrCodeScanner
+        isOpen={scanning}
+        onScan={handleScan}
+        onClose={() => setScanning(false)}
+        title="Validar voucher"
+        allowedPrefixes={["voucher:"]}
+      />
 
       {result && (
-        <Card className={result.ok ? "border-green-500/50 bg-green-500/5" : "border-destructive/50 bg-destructive/5"}>
+        <Card className={result.ok ? "border-success/50 bg-success/5" : "border-destructive/50 bg-destructive/5"}>
           <CardContent className="pt-4">
             {result.ok ? (
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-8 w-8 text-green-600 shrink-0" />
+                <CheckCircle2 className="h-8 w-8 text-success shrink-0" />
                 <div>
                   <p className="font-semibold text-foreground">Validado com sucesso</p>
                   <p className="text-sm">{result.person_name}</p>
