@@ -202,30 +202,38 @@ export default function CredenciamentoPage() {
   const { stageId, participantIds: stageParticipantIds } = useStageParticipantFilter();
 
   // --- Participants ---
+  // Quando há filtro de etapa, restringe a query aos IDs vinculados (evita corte do .limit).
+  const stageIdsArray = useMemo(
+    () => (stageParticipantIds ? Array.from(stageParticipantIds) : null),
+    [stageParticipantIds],
+  );
+
   const { data: allParticipants, isLoading } = useQuery({
-    queryKey: ["credenciamento-participants", selectedEventId],
+    queryKey: ["credenciamento-participants", selectedEventId, stageId, stageIdsArray?.length ?? 0],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase
+      let q = supabase
         .from("participants")
         .select("id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id")
         .eq("event_id", selectedEventId)
         .eq("is_active", true)
-        .in("status", ["pending", "confirmed", "credentialed"])
+        .in("status", ["pending", "confirmed", "credentialed"]);
+
+      if (stageId && stageIdsArray) {
+        if (stageIdsArray.length === 0) return [];
+        q = q.in("id", stageIdsArray);
+      }
+
+      const { data, error } = await q
         .order("status", { ascending: true })
-        .limit(2000);
+        .limit(5000);
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedEventId,
+    enabled: !!selectedEventId && (!stageId || !!stageIdsArray),
   });
 
-  const participants = useMemo(() => {
-    if (!allParticipants) return allParticipants;
-    if (!stageId) return allParticipants;
-    if (!stageParticipantIds) return [];
-    return allParticipants.filter((p) => stageParticipantIds.has(p.id));
-  }, [allParticipants, stageId, stageParticipantIds]);
+  const participants = allParticipants;
 
   // --- Active credentials ---
   const { data: activeCredentials = [] } = useQuery({
