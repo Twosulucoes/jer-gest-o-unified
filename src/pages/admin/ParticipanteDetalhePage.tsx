@@ -144,6 +144,7 @@ export default function ParticipanteDetalhePage() {
         credential_code: credentialCode,
         qr_code_value: qrCodeValue,
         status: "active",
+        is_active: true,
         binding_source: "manual",
         activated_at: new Date().toISOString(),
         activated_by: user.id,
@@ -173,7 +174,7 @@ export default function ParticipanteDetalhePage() {
       if (!participant || !user || !activeCredential) throw new Error("Dados insuficientes");
       await supabase
         .from("participant_credentials")
-        .update({ status: "reissued", revoked_at: new Date().toISOString() })
+        .update({ status: "reissued", is_active: false, revoked_at: new Date().toISOString() })
         .eq("id", activeCredential.id);
       const credentialCode = generateCredentialCode();
       const qrCodeValue = generateQrCodeValue(participant.event_id, participant.id, credentialCode);
@@ -183,6 +184,7 @@ export default function ParticipanteDetalhePage() {
         credential_code: credentialCode,
         qr_code_value: qrCodeValue,
         status: "active",
+        is_active: true,
         binding_source: "reissue",
         activated_at: new Date().toISOString(),
         activated_by: user.id,
