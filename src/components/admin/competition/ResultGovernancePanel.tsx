@@ -6,9 +6,13 @@ import { RESULT_STATUS } from "@/lib/resultStatus";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle, Send, Loader2, FileText } from "lucide-react";
+import { CheckCircle, Send, Loader2, FileText, Plus, Pencil, ArrowRight } from "lucide-react";
 
 interface Props {
   sportEventId: string | null;
@@ -18,6 +22,8 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
   const eventId = useActiveEventId();
   const queryClient = useQueryClient();
   const [selectedBulletinId, setSelectedBulletinId] = useState<string>("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
 
   // Counts of results by status for this sport_event
   const { data: counts } = useQuery({
@@ -37,18 +43,37 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
     },
   });
 
-  // Published bulletins for dropdown
+  // Bulletins (any status) for context + dropdown
   const { data: bulletins = [] } = useQuery({
-    queryKey: ["published-bulletins", eventId],
+    queryKey: ["bulletins-all", eventId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("official_bulletins")
-        .select("id, number, title, status")
+        .select("id, number, title, status, published_at")
         .eq("event_id", eventId)
-        .eq("status", "published")
         .order("number", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  const publishedBulletins = bulletins.filter((b: any) => b.status === "published");
+
+  // Published results with bulletin info (for "Publicados" list)
+  const { data: publishedRows = [] } = useQuery({
+    queryKey: ["published-results-bulletin", eventId, sportEventId],
+    enabled: !!sportEventId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_match_results")
+        .select("id, published_at, published_bulletin_id, competition_matches!inner(match_number, event_id, sport_event_id), official_bulletins:published_bulletin_id(number, title)")
+        .eq("competition_matches.event_id", eventId)
+        .eq("competition_matches.sport_event_id", sportEventId!)
+        .eq("result_status", RESULT_STATUS.PUBLISHED)
+        .order("published_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -82,8 +107,8 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
       toast.success(`${data.published_count} resultado(s) publicado(s).`);
       setSelectedBulletinId("");
       queryClient.invalidateQueries({ queryKey: ["governance-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["published-results-bulletin"] });
       queryClient.invalidateQueries({ queryKey: ["competition_phases"] });
-      // Check phase transitions
       if (sportEventId) {
         try {
           const { data: transResult } = await supabase.rpc("check_phase_transitions", { p_sport_event_id: sportEventId });
@@ -98,12 +123,60 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Create + auto-publish a new bulletin inline
+  const createBulletin = useMutation({
+    mutationFn: async () => {
+      if (!newTitle.trim()) throw new Error("Informe um título para o boletim.");
+      const nextNumber = (bulletins[0]?.number ?? 0) + 1;
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from("official_bulletins")
+        .insert({
+          event_id: eventId,
+          number: nextNumber,
+          title: newTitle.trim(),
+          status: "published",
+          published_at: new Date().toISOString(),
+          published_by: user?.id ?? null,
+          content_md: `# Boletim Oficial #${nextNumber}\n\n${newTitle.trim()}`,
+        })
+        .select("id, number, title")
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(`Boletim #${data.number} criado e publicado.`);
+      setSelectedBulletinId(data.id);
+      setNewTitle("");
+      setCreateOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["bulletins-all"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (!sportEventId) {
     return <p className="text-sm text-muted-foreground">Selecione uma prova para gerenciar governança.</p>;
   }
 
   return (
     <div className="space-y-4">
+      {/* Visual step guide */}
+      <Card className="bg-muted/30">
+        <CardContent className="pt-4">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <StepBadge n={1} label="Lançar" desc="mesário registra placar" active={(counts?.launched ?? 0) > 0} />
+            <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            <StepBadge n={2} label="Validar" desc="coordenação confere" active={(counts?.validated ?? 0) > 0} />
+            <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            <StepBadge n={3} label="Publicar" desc="vincular a um boletim" active={(counts?.published ?? 0) > 0} />
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Apenas resultados <strong>publicados</strong> ficam visíveis no portal público. Publicar exige um <strong>Boletim Oficial</strong> publicado.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Counters */}
       <div className="grid grid-cols-3 gap-3">
         <Card>
@@ -128,7 +201,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
 
       {/* Validate */}
       <Card>
-        <CardHeader><CardTitle className="text-sm flex items-center gap-2"><CheckCircle className="h-4 w-4" /> Validar Resultados</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-sm flex items-center gap-2"><CheckCircle className="h-4 w-4" /> 2. Validar Resultados</CardTitle></CardHeader>
         <CardContent>
           <p className="text-xs text-muted-foreground mb-3">
             Marca todos os resultados "lançados" desta prova como "validados". {counts?.launched || 0} pendente(s).
@@ -156,30 +229,73 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
 
       {/* Publish */}
       <Card>
-        <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Send className="h-4 w-4" /> Publicar Resultados</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2"><Send className="h-4 w-4" /> 3. Publicar Resultados</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            Publica resultados validados vinculando a um Boletim Oficial. {counts?.validated || 0} pendente(s).
+            Publica resultados validados vinculando a um <strong>Boletim Oficial</strong>. {counts?.validated || 0} pendente(s).
+            {publishedBulletins.length === 0 && (
+              <span className="block mt-1 text-warning">⚠️ Nenhum boletim publicado disponível — crie um abaixo.</span>
+            )}
           </p>
-          <div className="flex gap-2 items-end">
-            <div className="flex-1">
-              <label className="text-xs font-medium mb-1 block">Boletim publicado</label>
+
+          <div className="flex gap-2 items-end flex-wrap">
+            <div className="flex-1 min-w-[200px]">
+              <Label className="text-xs font-medium mb-1 block">Boletim publicado</Label>
               <Select value={selectedBulletinId} onValueChange={setSelectedBulletinId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um boletim..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {bulletins.map((b: any) => (
+                  {publishedBulletins.map((b: any) => (
                     <SelectItem key={b.id} value={b.id}>
                       <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> #{b.number} — {b.title}</span>
                     </SelectItem>
                   ))}
-                  {bulletins.length === 0 && (
+                  {publishedBulletins.length === 0 && (
                     <div className="p-2 text-xs text-muted-foreground">Nenhum boletim publicado.</div>
                   )}
                 </SelectContent>
               </Select>
             </div>
+
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Novo boletim
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Criar novo Boletim Oficial</DialogTitle>
+                  <DialogDescription>
+                    Será criado como <strong>#{(bulletins[0]?.number ?? 0) + 1}</strong> e já publicado, pronto para vincular resultados.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2 py-2">
+                  <Label htmlFor="bulletin-title">Título do boletim *</Label>
+                  <Input
+                    id="bulletin-title"
+                    placeholder="Ex: Resultados do dia 18/04 - Manhã"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Você pode editar conteúdo completo, PDF e demais detalhes em <em>Relatórios → Boletins</em>.
+                  </p>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+                  <Button onClick={() => createBulletin.mutate()} disabled={!newTitle.trim() || createBulletin.isPending}>
+                    {createBulletin.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                    Criar e publicar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button size="sm" disabled={!counts?.validated || !selectedBulletinId || publishResults.isPending}>
@@ -203,6 +319,48 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Published list with bulletin reference */}
+      {publishedRows.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileText className="h-4 w-4" /> Resultados publicados (últimos 10)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1.5">
+              {publishedRows.map((r: any) => (
+                <div key={r.id} className="flex items-center justify-between gap-2 text-xs border-b pb-1.5 last:border-0">
+                  <span className="font-medium">Partida #{r.competition_matches?.match_number ?? "?"}</span>
+                  {r.official_bulletins ? (
+                    <Badge variant="secondary" className="font-normal">
+                      <FileText className="h-3 w-3 mr-1" />
+                      Boletim #{r.official_bulletins.number} — {r.official_bulletins.title}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="font-normal text-muted-foreground">sem boletim</Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function StepBadge({ n, label, desc, active }: { n: number; label: string; desc: string; active: boolean }) {
+  return (
+    <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground border"}`}>
+        {n}
+      </div>
+      <div className="min-w-0">
+        <p className="font-medium leading-tight truncate">{label}</p>
+        <p className="text-[10px] text-muted-foreground leading-tight truncate">{desc}</p>
+      </div>
     </div>
   );
 }
