@@ -3314,6 +3314,7 @@ export type Database = {
           admin_response: string | null
           created_at: string
           event_id: string
+          event_stage_id: string
           id: string
           incident_description: string
           incident_status: Database["public"]["Enums"]["incident_status"]
@@ -3331,6 +3332,7 @@ export type Database = {
           admin_response?: string | null
           created_at?: string
           event_id: string
+          event_stage_id: string
           id?: string
           incident_description: string
           incident_status?: Database["public"]["Enums"]["incident_status"]
@@ -3348,6 +3350,7 @@ export type Database = {
           admin_response?: string | null
           created_at?: string
           event_id?: string
+          event_stage_id?: string
           id?: string
           incident_description?: string
           incident_status?: Database["public"]["Enums"]["incident_status"]
@@ -3367,6 +3370,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_incidents_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
         ]
@@ -5672,6 +5682,47 @@ export type Database = {
           },
         ]
       }
+      user_stage_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          created_at: string
+          event_stage_id: string
+          id: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          event_stage_id: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          event_stage_id?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stage_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venues: {
         Row: {
           address: string | null
@@ -5735,6 +5786,7 @@ export type Database = {
           entry_type: string | null
           event_id: string | null
           event_name: string | null
+          event_stage_id: string | null
           event_year: number | null
           institution_name: string | null
           match_date: string | null

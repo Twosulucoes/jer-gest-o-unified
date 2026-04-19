@@ -32,6 +32,7 @@ interface TripInfo {
   scheduledAt?: string | null;
   vehicleLabel?: string;
   vehiclePlate?: string;
+  eventStageId?: string | null;
 }
 
 export default function TransporteEmbarquePage() {
@@ -73,7 +74,7 @@ export default function TransporteEmbarquePage() {
 
       const { data: trip } = await supabase
         .from("transport_trips")
-        .select("assigned_driver_id, scheduled_at, transport_routes(name, origin, destination), transport_vehicles(label, plate)")
+        .select("assigned_driver_id, scheduled_at, event_stage_id, transport_routes(name, origin, destination), transport_vehicles(label, plate)")
         .eq("id", tripId)
         .single();
 
@@ -90,6 +91,7 @@ export default function TransporteEmbarquePage() {
         scheduledAt: (trip as any).scheduled_at,
         vehicleLabel: (trip as any).transport_vehicles?.label,
         vehiclePlate: (trip as any).transport_vehicles?.plate,
+        eventStageId: (trip as any).event_stage_id ?? null,
       });
       setAuthorized(true);
     })();
@@ -170,7 +172,7 @@ export default function TransporteEmbarquePage() {
         const userId = session?.user?.id;
         const { data: tripData } = await supabase
           .from("transport_trips")
-          .select("event_id")
+          .select("event_id, event_stage_id")
           .eq("id", tripId!)
           .single();
 
@@ -186,16 +188,33 @@ export default function TransporteEmbarquePage() {
             tripInfo.scheduledAt ? format(new Date(tripInfo.scheduledAt), "HH:mm") : "",
           ].filter(Boolean).join(", ");
 
-          await supabase.from("operational_incidents").insert({
-            event_id: (tripData as any).event_id,
-            module: "transporte" as any,
-            reference_id: tripId!,
-            reference_label: label,
-            reported_by_user_id: userId,
-            reporter_name: (profile as any)?.full_name || null,
-            reporter_phone: null,
-            incident_description: notes,
-          });
+          // Resolve event_stage_id: prioriza viagem; fallback p/ primeira etapa ativa do evento.
+          let eventStageId: string | null = (tripData as any).event_stage_id ?? null;
+          if (!eventStageId) {
+            const { data: stage } = await supabase
+              .from("event_stages")
+              .select("id")
+              .eq("event_id", (tripData as any).event_id)
+              .eq("status", "active")
+              .order("sort_order")
+              .limit(1)
+              .maybeSingle();
+            eventStageId = (stage as any)?.id ?? null;
+          }
+
+          if (eventStageId) {
+            await supabase.from("operational_incidents").insert({
+              event_id: (tripData as any).event_id,
+              event_stage_id: eventStageId,
+              module: "transporte" as any,
+              reference_id: tripId!,
+              reference_label: label,
+              reported_by_user_id: userId,
+              reporter_name: (profile as any)?.full_name || null,
+              reporter_phone: null,
+              incident_description: notes,
+            });
+          }
         }
       }
 

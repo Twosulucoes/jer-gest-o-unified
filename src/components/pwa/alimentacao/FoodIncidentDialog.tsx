@@ -24,6 +24,7 @@ interface MealWindowOption {
   id: string;
   label: string;
   event_id: string;
+  event_stage_id: string | null;
 }
 
 interface FoodIncidentDialogProps {
@@ -50,21 +51,21 @@ export function FoodIncidentDialog({
     const today = new Date().toISOString().slice(0, 10);
     supabase
       .from("meal_windows")
-      .select("id, window_start, window_end, event_id, meal_type:meal_types(name)")
-      .gte("window_start", today + "T00:00:00")
-      .lte("window_start", today + "T23:59:59")
-      .order("window_start")
+      .select("id, service_date, start_time, end_time, event_id, event_stage_id, meal_type:meal_types(name)")
+      .eq("service_date", today)
+      .order("start_time")
       .then(({ data }) => {
         if (data) {
           setWindows(
             data.map((w: any) => {
-              const start = new Date(w.window_start).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-              const end = new Date(w.window_end).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+              const start = (w.start_time ?? "").slice(0, 5);
+              const end = (w.end_time ?? "").slice(0, 5);
               const typeName = w.meal_type?.name ?? "Refeição";
               return {
                 id: w.id,
                 label: `${typeName} ${start}–${end}`,
                 event_id: w.event_id,
+                event_stage_id: w.event_stage_id ?? null,
               };
             })
           );
@@ -107,8 +108,27 @@ export function FoodIncidentDialog({
         ? `Janela ${chosenWindow.label}`
         : "Ocorrência geral - Alimentação";
 
+      // Resolve event_stage_id: prioriza a janela; senão, primeira etapa ativa do evento.
+      let eventStageId: string | null = chosenWindow?.event_stage_id ?? null;
+      if (!eventStageId) {
+        const { data: stage } = await supabase
+          .from("event_stages")
+          .select("id")
+          .eq("event_id", eventId)
+          .eq("status", "active")
+          .order("sort_order")
+          .limit(1)
+          .maybeSingle();
+        eventStageId = (stage as any)?.id ?? null;
+      }
+      if (!eventStageId) {
+        toast.error("Nenhuma etapa ativa encontrada para este evento.");
+        return;
+      }
+
       const { error } = await supabase.from("operational_incidents").insert({
         event_id: eventId,
+        event_stage_id: eventStageId,
         module: "alimentacao",
         reference_id: chosenWindow?.id ?? null,
         reference_label: referenceLabel,
