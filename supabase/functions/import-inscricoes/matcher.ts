@@ -188,7 +188,16 @@ export function norm(s: string | null | undefined): string {
 }
 
 function matchesAll(text: string, tokens: string[]): boolean {
-  return tokens.every(t => text.includes(t));
+  return tokens.every(t => {
+    // Tokens puramente numéricos OU numéricos com sufixo (75M, 4X100, etc.)
+    // exigem word boundary para evitar que "80" case dentro de "800".
+    if (/^[0-9]/.test(t)) {
+      const escaped = t.replace(/[+\-]/g, "\\$&");
+      const re = new RegExp(`(^|[^0-9A-Z])${escaped}([^0-9A-Z]|$)`);
+      return re.test(text);
+    }
+    return text.includes(t);
+  });
 }
 
 export interface MatchResult {
