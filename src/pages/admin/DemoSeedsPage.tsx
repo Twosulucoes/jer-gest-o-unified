@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, Play, Trash2, RefreshCw, Copy, Check, Database as DbIcon, Users, Swords, MapPin, Building } from "lucide-react";
+import { Loader2, Play, Trash2, RefreshCw, Copy, Check, Database as DbIcon, Users, Swords, MapPin, Building, Truck, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DemoSeedsPage() {
@@ -83,7 +83,35 @@ export default function DemoSeedsPage() {
     onError: (err: any) => toast.error("Erro ao recriar demo: " + err.message),
   });
 
-  const isLoading = seedMutation.isPending || resetMutation.isPending || recreateMutation.isPending;
+  const seedLogisticsTemplateMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("seed_logistics_stage_template" as any, { p_event_id: activeEventId! });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      setLastResult(data);
+      toast.success("Etapa-template de logística criada!");
+      queryClient.invalidateQueries({ queryKey: ["demo-status"] });
+    },
+    onError: (err: any) => toast.error("Erro ao criar template: " + err.message),
+  });
+
+  const replicateLogisticsMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("seed_logistics_template_to_all_stages" as any, { p_event_id: activeEventId! });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      setLastResult(data);
+      toast.success("Template replicado para todas as etapas!");
+      queryClient.invalidateQueries({ queryKey: ["demo-status"] });
+    },
+    onError: (err: any) => toast.error("Erro ao replicar template: " + err.message),
+  });
+
+  const isLoading = seedMutation.isPending || resetMutation.isPending || recreateMutation.isPending || seedLogisticsTemplateMutation.isPending || replicateLogisticsMutation.isPending;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(JSON.stringify(lastResult, null, 2));
@@ -231,6 +259,48 @@ export default function DemoSeedsPage() {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                 <AlertDialogAction onClick={() => recreateMutation.mutate()}>Recriar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="secondary" disabled={isLoading}>
+                {seedLogisticsTemplateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-4 w-4" />}
+                Criar etapa-template de logística
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Criar etapa-template de logística?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cria uma etapa de logística completa (alojamento, alimentação, transporte) que servirá de modelo para replicação às demais etapas do evento.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => seedLogisticsTemplateMutation.mutate()}>Criar template</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="secondary" disabled={isLoading}>
+                {replicateLogisticsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Layers className="mr-2 h-4 w-4" />}
+                Replicar template em todas as etapas
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Replicar template para todas as etapas?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Copia a estrutura da etapa-template de logística para todas as outras etapas ativas do evento. Itens já existentes não serão sobrescritos.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => replicateLogisticsMutation.mutate()}>Replicar</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
