@@ -805,7 +805,7 @@ async function loadReadOnlyMaps(
     supabase.from("institutions").select("id, slug").eq("is_active", true),
     supabase.from("sports").select("id, slug").eq("event_id", eventId),
     supabase.from("categories").select("id, slug, min_birth_year, max_birth_year, gender_scope").eq("event_id", eventId),
-    supabase.from("sport_events").select("id, sport_id, category_id, slug").eq("event_id", eventId),
+    supabase.from("sport_events").select("id, sport_id, category_id, slug, name").eq("event_id", eventId),
     supabase.from("delegations").select("id, institution_id").eq("event_id", eventId),
     supabase.from("events").select("year").eq("id", eventId).maybeSingle(),
     supabase.from("import_aliases")
