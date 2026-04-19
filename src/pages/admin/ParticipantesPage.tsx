@@ -125,46 +125,37 @@ export default function ParticipantesPage() {
   const delegations = Array.from(delegationMapEmbedded.values());
   const institutions = Array.from(institutionMapEmbedded.values());
 
-  // Load sport enrollments for these participants
+  // Load sport enrollments for these participants (chunked to avoid URL length limits)
   const partIds = participants?.map((p) => p.id) ?? [];
   const { data: enrollments = [] } = useQuery({
-    queryKey: ["participants-enrollments", partIds],
+    queryKey: ["participants-enrollments", selectedEventId, partIds.length],
     queryFn: async () => {
       if (partIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("participant_sport_events")
-        .select("participant_id, sport_event_id")
-        .in("participant_id", partIds);
-      if (error) throw error;
-      return data;
+      const CHUNK = 200;
+      const out: any[] = [];
+      for (let i = 0; i < partIds.length; i += CHUNK) {
+        const slice = partIds.slice(i, i + CHUNK);
+        const { data, error } = await supabase
+          .from("participant_sport_events")
+          .select("participant_id, sport_event_id, sport_event:sport_events(id, name, sport_id, sport:sports(id, name))")
+          .in("participant_id", slice);
+        if (error) throw error;
+        out.push(...(data ?? []));
+      }
+      return out;
     },
     enabled: partIds.length > 0,
   });
 
-  const seIds = [...new Set(enrollments.map((e) => e.sport_event_id))];
-  const { data: sportEvents = [] } = useQuery({
-    queryKey: ["participants-sport-events", seIds],
-    queryFn: async () => {
-      if (seIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("sport_events").select("id, name, sport_id").in("id", seIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: seIds.length > 0,
-  });
-
-  const sportIds = [...new Set(sportEvents.map((se) => se.sport_id))];
-  const { data: sports = [] } = useQuery({
-    queryKey: ["participants-sports", sportIds],
-    queryFn: async () => {
-      if (sportIds.length === 0) return [];
-      const { data, error } = await supabase.from("sports").select("id, name").in("id", sportIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: sportIds.length > 0,
-  });
+  const sportEventMap = new Map<string, any>();
+  const sportMap = new Map<string, any>();
+  for (const e of enrollments) {
+    const se = (e as any).sport_event;
+    if (se) {
+      sportEventMap.set(se.id, se);
+      if (se.sport) sportMap.set(se.sport.id, se.sport);
+    }
+  }
 
   const peopleMap = new Map(people.map((p) => [p.id, p]));
   const delegationMap = new Map(delegations.map((d) => [d.id, d]));
