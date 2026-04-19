@@ -1662,7 +1662,7 @@ Deno.serve(async (req: Request) => {
       }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Create import log first (com source_phase_* denormalizado para auditoria)
+    // Create import log first
     const { data: logData } = await serviceClient.from("import_logs").insert({
       event_id: eventId,
       event_stage_id: eventStageId,
@@ -1675,310 +1675,282 @@ Deno.serve(async (req: Request) => {
     }).select("id").single();
     const importLogId = logData?.id;
 
-    // ── Write pendencias ──
-    if (allPending.length > 0) {
-      const pendBatch = allPending.map(p => ({
-        event_id: eventId,
-        event_stage_id: eventStageId,
-        source_phase_name: stageData.name,
-        source_phase_slug: stageData.slug,
-        import_log_id: importLogId,
-        source_file_name: fileName || null,
-        source_row_number: p.row_number,
-        raw_payload_json: p.row.raw_payload,
-        normalized_name: p.row.full_name,
-        raw_cpf: p.row.cpf_raw,
-        raw_birth_date: p.row.raw_birth_date,
-        modality_raw: p.row.sport_name,
-        prova_raw: p.row.prova_name,
-        institution_raw: p.row.institution_name,
-        pending_reason_code: p.reason_code,
-        pending_reason_detail: p.reason_detail,
-        fallback_fingerprint: p.fingerprint,
-        candidate_person_id: p.candidate_person_id,
-        resolution_status: "pending",
-      }));
-
-      for (let i = 0; i < pendBatch.length; i += 100) {
-        await serviceClient.from("import_pendencias").insert(pendBatch.slice(i, i + 100));
-      }
-    }
-
-    // ── Create institutions (only on commit, NO hardcoded network_type) ──
-    const newInstMap = new Map<string, string>();
-    for (const slug of institutionsToCreate) {
-      const name = validRows.find(r => r.row.institution_slug === slug)?.row.institution_name || slug;
-      const { data, error } = await serviceClient.from("institutions")
-        .insert({ name, slug, network_type: "pending_review" }).select("id").single();
-      if (error) {
-        const { data: existing } = await serviceClient.from("institutions")
-          .select("id").eq("slug", slug).single();
-        if (existing) newInstMap.set(slug, existing.id);
-      } else {
-        newInstMap.set(slug, data.id);
-      }
-    }
-
-    const allInstMap = new Map(maps.institutions);
-    for (const [slug, id] of newInstMap) allInstMap.set(slug, id);
-
-    // ── Create delegations (only on commit) ──
-    const newDelMap = new Map<string, string>();
-    let delegationsCreated = 0;
-    for (const slug of delegationsToCreate) {
-      const instId = allInstMap.get(slug);
-      if (!instId) continue;
-      if (maps.delegations.has(instId)) continue;
-
-      // Resolve required school_* fields from any row of this institution
-      const sampleRow = validRows.find(r => r.row.institution_slug === slug)?.row;
-      const schoolName = sampleRow?.institution_name || slug;
-      const schoolSlug = slug;
-      const schoolNetworkType = "pending_review";
-
-      const { data, error } = await serviceClient.from("delegations")
-        .insert({
-          institution_id: instId,
-          event_id: eventId,
-          status: "confirmed",
-          school_name: schoolName,
-          school_slug: schoolSlug,
-          school_network_type: schoolNetworkType,
-        }).select("id").single();
-      if (error) {
-        const { data: existing } = await serviceClient.from("delegations")
-          .select("id").eq("institution_id", instId).eq("event_id", eventId).maybeSingle();
-        if (existing) {
-          newDelMap.set(instId, existing.id);
-        } else {
-          console.error("[delegations] insert failed:", { slug, instId, error: error.message });
-        }
-      } else {
-        newDelMap.set(instId, data.id);
-        delegationsCreated++;
-      }
-    }
-
-    const allDelMap = new Map(maps.delegations);
-    for (const [instId, delId] of newDelMap) allDelMap.set(instId, delId);
-
-    // ── Process valid rows ──
-    let peopleCreated = 0, peopleReused = 0;
-    let participantsCreated = 0, participantsReused = 0;
-    let pseCreated = 0, pseReused = 0;
-    let pesCreated = 0, pesReused = 0;
-    let rowsFailed = 0;
-    let rowsSkippedDuplicate = 0;
-    const commitErrors: { row_number: number; error_code: string; error_message: string }[] = [];
-    const processedPersonKeys = new Set<string>();
-
-    // Load existing participants for this event
-    const { data: existingParticipants } = await serviceClient
-      .from("participants").select("id, person_id").eq("event_id", eventId);
-    const participantByPerson = new Map<string, string>();
-    for (const p of existingParticipants ?? []) participantByPerson.set(p.person_id, p.id);
-
-    // Load existing PSEs for this event (now scoped by event_stage_id for triple uniqueness)
-    const { data: existingPSE } = await serviceClient
-      .from("participant_sport_events").select("id, participant_id, sport_event_id, event_stage_id")
-      .in("participant_id", [...participantByPerson.values(), "00000000-0000-0000-0000-000000000000"]);
-    const pseSet = new Set<string>();
-    for (const p of existingPSE ?? []) {
-      pseSet.add(`${p.participant_id}|${p.sport_event_id}|${p.event_stage_id ?? "null"}`);
-    }
-
-    // Load existing participant_event_stages for THIS stage
-    const { data: existingPES } = await serviceClient
-      .from("participant_event_stages").select("participant_id").eq("event_stage_id", eventStageId);
-    const pesSet = new Set<string>();
-    for (const r of existingPES ?? []) pesSet.add(r.participant_id);
-
-    for (const { row, resolved } of validRows) {
+    // ── Background processing (evita CPU Time exceeded em planilhas grandes) ──
+    const processCommit = async () => {
       try {
-        const instId = resolved.institution_id || allInstMap.get(row.institution_slug);
-        const delId = instId ? (resolved.delegation_id || allDelMap.get(instId)) : null;
-
-        if (!instId || !delId) {
-          commitErrors.push({ row_number: row.row_number, error_code: "DELEGATION_FAILED", error_message: "Não conseguiu resolver delegação" });
-          rowsFailed++;
-          continue;
-        }
-
-        // ── Person ──
-        const personKey = row.cpf_valid!; // All valid rows now have cpf_valid (no-CPF goes to pendência)
-        let personId = resolved.person_id || null;
-
-        if (resolved.person_action === "create") {
-          if (processedPersonKeys.has(personKey)) {
-            const { data: lookupData } = await serviceClient.from("people").select("id").eq("cpf", row.cpf_valid!).single();
-            if (lookupData) { personId = lookupData.id; peopleReused++; }
-          } else {
-            processedPersonKeys.add(personKey);
-            const { data: newPerson, error: personErr } = await serviceClient.from("people").insert({
-              full_name: row.full_name,
-              birth_date: row.birth_date,
-              gender: row.gender,
-              cpf: row.cpf_valid,
-              rg: row.rg,
-              email: row.email,
-              phone: row.phone,
-              institution_id: instId,
-              disability_type: row.pcd,
-            }).select("id").single();
-            if (personErr) {
-              if (row.cpf_valid) {
-                const { data: existing } = await serviceClient.from("people").select("id").eq("cpf", row.cpf_valid).single();
-                if (existing) { personId = existing.id; peopleReused++; }
-                else { commitErrors.push({ row_number: row.row_number, error_code: "PERSON_CREATE_FAILED", error_message: personErr.message }); rowsFailed++; continue; }
-              } else {
-                commitErrors.push({ row_number: row.row_number, error_code: "PERSON_CREATE_FAILED", error_message: personErr.message }); rowsFailed++; continue;
-              }
-            } else {
-              personId = newPerson.id;
-              peopleCreated++;
-              const cpf = row.cpf_valid;
-              if (cpf) people.byCpf.set(cpf, personId!);
-            }
-          }
-        } else {
-          peopleReused++;
-        }
-
-        if (!personId) {
-          commitErrors.push({ row_number: row.row_number, error_code: "PERSON_MISSING", error_message: "Pessoa não resolvida" });
-          rowsFailed++;
-          continue;
-        }
-
-        // ── Participant ──
-        let participantId = participantByPerson.get(personId);
-        if (participantId) {
-          participantsReused++;
-        } else {
-          const { data: newPart, error: partErr } = await serviceClient.from("participants").insert({
-            person_id: personId,
+        if (allPending.length > 0) {
+          const pendBatch = allPending.map(p => ({
             event_id: eventId,
-            delegation_id: delId,
-            participant_type: row.participant_type,
-            status: "confirmed",
-          }).select("id").single();
-          if (partErr) {
-            const { data: existing } = await serviceClient.from("participants")
-              .select("id").eq("person_id", personId).eq("event_id", eventId).single();
-            if (existing) { participantId = existing.id; participantsReused++; }
-            else { commitErrors.push({ row_number: row.row_number, error_code: "PARTICIPANT_FAILED", error_message: partErr.message }); rowsFailed++; continue; }
-          } else {
-            participantId = newPart.id;
-            participantsCreated++;
-            participantByPerson.set(personId, participantId as string);
-          }
-        }
-
-        if (!participantId) {
-          commitErrors.push({ row_number: row.row_number, error_code: "PARTICIPANT_MISSING", error_message: "Participant não resolvido" });
-          rowsFailed++;
-          continue;
-        }
-
-        // ── Participant ↔ Stage (rastreabilidade operacional por etapa) ──
-        if (!pesSet.has(participantId)) {
-          const { error: pesErr } = await serviceClient.from("participant_event_stages").insert({
-            participant_id: participantId,
             event_stage_id: eventStageId,
-            event_id: eventId,
-            status: "active",
-            created_by: operatorId,
-          });
-          if (pesErr) {
-            if (pesErr.message?.includes("duplicate") || pesErr.message?.includes("unique")) {
-              pesReused++;
-            } else {
-              // não bloqueante; registra como warning
-              allWarnings.push({ row: row.row_number, field: "STAGE", value: eventStageId, code: "PES_INSERT_FAILED", message: pesErr.message });
-            }
-          } else {
-            pesCreated++;
-            pesSet.add(participantId as string);
+            source_phase_name: stageData.name,
+            source_phase_slug: stageData.slug,
+            import_log_id: importLogId,
+            source_file_name: fileName || null,
+            source_row_number: p.row_number,
+            raw_payload_json: p.row.raw_payload,
+            normalized_name: p.row.full_name,
+            raw_cpf: p.row.cpf_raw,
+            raw_birth_date: p.row.raw_birth_date,
+            modality_raw: p.row.sport_name,
+            prova_raw: p.row.prova_name,
+            institution_raw: p.row.institution_name,
+            pending_reason_code: p.reason_code,
+            pending_reason_detail: p.reason_detail,
+            fallback_fingerprint: p.fingerprint,
+            candidate_person_id: p.candidate_person_id,
+            resolution_status: "pending",
+          }));
+          for (let i = 0; i < pendBatch.length; i += 200) {
+            await serviceClient.from("import_pendencias").insert(pendBatch.slice(i, i + 200));
           }
-        } else {
-          pesReused++;
         }
 
-        // ── Participant Sport Event (athletes only) — agora único por (participant, sport_event, stage) ──
-        if (row.participant_type === "athlete" && resolved.sport_event_id) {
-          const pseKey = `${participantId}|${resolved.sport_event_id}|${eventStageId}`;
-          if (pseSet.has(pseKey)) {
-            pseReused++;
-            rowsSkippedDuplicate++;
+        const newInstMap = new Map<string, string>();
+        for (const slug of institutionsToCreate) {
+          const name = validRows.find(r => r.row.institution_slug === slug)?.row.institution_name || slug;
+          const { data, error } = await serviceClient.from("institutions")
+            .insert({ name, slug, network_type: "pending_review" }).select("id").single();
+          if (error) {
+            const { data: existing } = await serviceClient.from("institutions")
+              .select("id").eq("slug", slug).single();
+            if (existing) newInstMap.set(slug, existing.id);
           } else {
-            const { error: pseErr } = await serviceClient.from("participant_sport_events").insert({
-              participant_id: participantId,
-              sport_event_id: resolved.sport_event_id,
-              event_stage_id: eventStageId,
+            newInstMap.set(slug, data.id);
+          }
+        }
+
+        const allInstMap = new Map(maps.institutions);
+        for (const [slug, id] of newInstMap) allInstMap.set(slug, id);
+
+        const newDelMap = new Map<string, string>();
+        let delegationsCreated = 0;
+        for (const slug of delegationsToCreate) {
+          const instId = allInstMap.get(slug);
+          if (!instId) continue;
+          if (maps.delegations.has(instId)) continue;
+          const sampleRow = validRows.find(r => r.row.institution_slug === slug)?.row;
+          const schoolName = sampleRow?.institution_name || slug;
+          const { data, error } = await serviceClient.from("delegations")
+            .insert({
+              institution_id: instId,
+              event_id: eventId,
               status: "confirmed",
-            });
-            if (pseErr) {
-              if (pseErr.message?.includes("duplicate") || pseErr.message?.includes("unique")) {
-                pseReused++;
-                rowsSkippedDuplicate++;
+              school_name: schoolName,
+              school_slug: slug,
+              school_network_type: "pending_review",
+            }).select("id").single();
+          if (error) {
+            const { data: existing } = await serviceClient.from("delegations")
+              .select("id").eq("institution_id", instId).eq("event_id", eventId).maybeSingle();
+            if (existing) newDelMap.set(instId, existing.id);
+            else console.error("[delegations] insert failed:", { slug, instId, error: error.message });
+          } else {
+            newDelMap.set(instId, data.id);
+            delegationsCreated++;
+          }
+        }
+
+        const allDelMap = new Map(maps.delegations);
+        for (const [instId, delId] of newDelMap) allDelMap.set(instId, delId);
+
+        let peopleCreated = 0, peopleReused = 0;
+        let participantsCreated = 0, participantsReused = 0;
+        let pseCreated = 0, pseReused = 0;
+        let pesCreated = 0, pesReused = 0;
+        let rowsFailed = 0;
+        let rowsSkippedDuplicate = 0;
+        const commitErrors: { row_number: number; error_code: string; error_message: string }[] = [];
+        const processedPersonKeys = new Set<string>();
+
+        const { data: existingParticipants } = await serviceClient
+          .from("participants").select("id, person_id").eq("event_id", eventId);
+        const participantByPerson = new Map<string, string>();
+        for (const p of existingParticipants ?? []) participantByPerson.set(p.person_id, p.id);
+
+        const { data: existingPSE } = await serviceClient
+          .from("participant_sport_events").select("id, participant_id, sport_event_id, event_stage_id")
+          .in("participant_id", [...participantByPerson.values(), "00000000-0000-0000-0000-000000000000"]);
+        const pseSet = new Set<string>();
+        for (const p of existingPSE ?? []) {
+          pseSet.add(`${p.participant_id}|${p.sport_event_id}|${p.event_stage_id ?? "null"}`);
+        }
+
+        const { data: existingPES } = await serviceClient
+          .from("participant_event_stages").select("participant_id").eq("event_stage_id", eventStageId);
+        const pesSet = new Set<string>();
+        for (const r of existingPES ?? []) pesSet.add(r.participant_id);
+
+        let processed = 0;
+        const total = validRows.length;
+        const progressEvery = Math.max(50, Math.floor(total / 20));
+
+        for (const { row, resolved } of validRows) {
+          try {
+            const instId = resolved.institution_id || allInstMap.get(row.institution_slug);
+            const delId = instId ? (resolved.delegation_id || allDelMap.get(instId)) : null;
+
+            if (!instId || !delId) {
+              commitErrors.push({ row_number: row.row_number, error_code: "DELEGATION_FAILED", error_message: "Não conseguiu resolver delegação" });
+              rowsFailed++; processed++; continue;
+            }
+
+            const personKey = row.cpf_valid!;
+            let personId = resolved.person_id || null;
+
+            if (resolved.person_action === "create") {
+              if (processedPersonKeys.has(personKey)) {
+                const { data: lookupData } = await serviceClient.from("people").select("id").eq("cpf", row.cpf_valid!).single();
+                if (lookupData) { personId = lookupData.id; peopleReused++; }
               } else {
-                commitErrors.push({ row_number: row.row_number, error_code: "PSE_FAILED", error_message: pseErr.message });
-                rowsFailed++;
+                processedPersonKeys.add(personKey);
+                const { data: newPerson, error: personErr } = await serviceClient.from("people").insert({
+                  full_name: row.full_name, birth_date: row.birth_date, gender: row.gender,
+                  cpf: row.cpf_valid, rg: row.rg, email: row.email, phone: row.phone,
+                  institution_id: instId, disability_type: row.pcd,
+                }).select("id").single();
+                if (personErr) {
+                  if (row.cpf_valid) {
+                    const { data: existing } = await serviceClient.from("people").select("id").eq("cpf", row.cpf_valid).single();
+                    if (existing) { personId = existing.id; peopleReused++; }
+                    else { commitErrors.push({ row_number: row.row_number, error_code: "PERSON_CREATE_FAILED", error_message: personErr.message }); rowsFailed++; processed++; continue; }
+                  } else {
+                    commitErrors.push({ row_number: row.row_number, error_code: "PERSON_CREATE_FAILED", error_message: personErr.message }); rowsFailed++; processed++; continue;
+                  }
+                } else {
+                  personId = newPerson.id; peopleCreated++;
+                  if (row.cpf_valid) people.byCpf.set(row.cpf_valid, personId!);
+                }
               }
             } else {
-              pseCreated++;
-              pseSet.add(pseKey);
+              peopleReused++;
             }
+
+            if (!personId) {
+              commitErrors.push({ row_number: row.row_number, error_code: "PERSON_MISSING", error_message: "Pessoa não resolvida" });
+              rowsFailed++; processed++; continue;
+            }
+
+            let participantId = participantByPerson.get(personId);
+            if (participantId) {
+              participantsReused++;
+            } else {
+              const { data: newPart, error: partErr } = await serviceClient.from("participants").insert({
+                person_id: personId, event_id: eventId, delegation_id: delId,
+                participant_type: row.participant_type, status: "confirmed",
+              }).select("id").single();
+              if (partErr) {
+                const { data: existing } = await serviceClient.from("participants")
+                  .select("id").eq("person_id", personId).eq("event_id", eventId).single();
+                if (existing) { participantId = existing.id; participantsReused++; }
+                else { commitErrors.push({ row_number: row.row_number, error_code: "PARTICIPANT_FAILED", error_message: partErr.message }); rowsFailed++; processed++; continue; }
+              } else {
+                participantId = newPart.id; participantsCreated++;
+                participantByPerson.set(personId, participantId as string);
+              }
+            }
+
+            if (!participantId) {
+              commitErrors.push({ row_number: row.row_number, error_code: "PARTICIPANT_MISSING", error_message: "Participant não resolvido" });
+              rowsFailed++; processed++; continue;
+            }
+
+            if (!pesSet.has(participantId)) {
+              const { error: pesErr } = await serviceClient.from("participant_event_stages").insert({
+                participant_id: participantId, event_stage_id: eventStageId, event_id: eventId,
+                status: "active", created_by: operatorId,
+              });
+              if (pesErr) {
+                if (pesErr.message?.includes("duplicate") || pesErr.message?.includes("unique")) pesReused++;
+              } else {
+                pesCreated++; pesSet.add(participantId as string);
+              }
+            } else {
+              pesReused++;
+            }
+
+            if (row.participant_type === "athlete" && resolved.sport_event_id) {
+              const pseKey = `${participantId}|${resolved.sport_event_id}|${eventStageId}`;
+              if (pseSet.has(pseKey)) { pseReused++; rowsSkippedDuplicate++; }
+              else {
+                const { error: pseErr } = await serviceClient.from("participant_sport_events").insert({
+                  participant_id: participantId, sport_event_id: resolved.sport_event_id,
+                  event_stage_id: eventStageId, status: "confirmed",
+                });
+                if (pseErr) {
+                  if (pseErr.message?.includes("duplicate") || pseErr.message?.includes("unique")) {
+                    pseReused++; rowsSkippedDuplicate++;
+                  } else {
+                    commitErrors.push({ row_number: row.row_number, error_code: "PSE_FAILED", error_message: pseErr.message });
+                    rowsFailed++;
+                  }
+                } else {
+                  pseCreated++; pseSet.add(pseKey);
+                }
+              }
+            }
+          } catch (rowErr) {
+            commitErrors.push({ row_number: row.row_number, error_code: "UNEXPECTED", error_message: String(rowErr) });
+            rowsFailed++;
+          }
+
+          processed++;
+          if (importLogId && processed % progressEvery === 0) {
+            await serviceClient.from("import_logs").update({
+              result_summary: {
+                progress: { processed, total },
+                people_created: peopleCreated,
+                participants_created: participantsCreated,
+                participant_sport_events_created: pseCreated,
+                rows_failed: rowsFailed,
+              },
+            }).eq("id", importLogId);
           }
         }
-      } catch (rowErr) {
-        commitErrors.push({ row_number: row.row_number, error_code: "UNEXPECTED", error_message: String(rowErr) });
-        rowsFailed++;
-      }
-    }
 
-    // Update import log
-    const finalStatus = rowsFailed > 0 ? (validRows.length - rowsFailed > 0 ? "partial" : "error") : "success";
-    const resultSummary = {
-      people_created: peopleCreated,
-      people_reused: peopleReused,
-      participants_created: participantsCreated,
-      participants_reused: participantsReused,
-      participant_event_stages_created: pesCreated,
-      participant_event_stages_reused: pesReused,
-      participant_sport_events_created: pseCreated,
-      participant_sport_events_reused: pseReused,
-      institutions_created: newInstMap.size,
-      delegations_created: delegationsCreated,
-      pendencias_created: allPending.length,
-      rows_skipped_as_duplicate: rowsSkippedDuplicate,
-      rows_failed: rowsFailed,
+        const finalStatus = rowsFailed > 0 ? (validRows.length - rowsFailed > 0 ? "partial" : "error") : "success";
+        const resultSummary = {
+          people_created: peopleCreated, people_reused: peopleReused,
+          participants_created: participantsCreated, participants_reused: participantsReused,
+          participant_event_stages_created: pesCreated, participant_event_stages_reused: pesReused,
+          participant_sport_events_created: pseCreated, participant_sport_events_reused: pseReused,
+          institutions_created: newInstMap.size, delegations_created: delegationsCreated,
+          pendencias_created: allPending.length, rows_skipped_as_duplicate: rowsSkippedDuplicate,
+          rows_failed: rowsFailed, progress: { processed: total, total },
+        };
+
+        if (importLogId) {
+          await serviceClient.from("import_logs").update({
+            status: finalStatus, result_summary: resultSummary,
+          }).eq("id", importLogId);
+        }
+
+        if (commitErrors.length > 0) {
+          const errBatch = commitErrors.map(e => ({
+            event_id: eventId, import_log_id: importLogId,
+            row_number: e.row_number, error_code: e.error_code,
+            error_message: e.error_message, entity: "commit",
+          }));
+          for (let i = 0; i < errBatch.length; i += 200) {
+            await serviceClient.from("import_row_errors").insert(errBatch.slice(i, i + 200));
+          }
+        }
+      } catch (bgErr) {
+        console.error("[background] processCommit failed:", bgErr);
+        if (importLogId) {
+          await serviceClient.from("import_logs").update({
+            status: "error", error_message: String(bgErr),
+          }).eq("id", importLogId);
+        }
+      }
     };
 
-    if (importLogId) {
-      await serviceClient.from("import_logs").update({
-        status: finalStatus,
-        result_summary: resultSummary,
-      }).eq("id", importLogId);
-    }
-
-    if (commitErrors.length > 0) {
-      const errBatch = commitErrors.map(e => ({
-        event_id: eventId,
-        import_log_id: importLogId,
-        row_number: e.row_number,
-        error_code: e.error_code,
-        error_message: e.error_message,
-        entity: "commit",
-      }));
-      for (let i = 0; i < errBatch.length; i += 100) {
-        await serviceClient.from("import_row_errors").insert(errBatch.slice(i, i + 100));
-      }
-    }
+    // @ts-ignore - EdgeRuntime existe no Supabase Edge Runtime
+    EdgeRuntime.waitUntil(processCommit());
 
     return new Response(JSON.stringify({
-      status: finalStatus === "success" ? "committed" : finalStatus,
-      partial_success: finalStatus === "partial",
+      status: "processing",
+      async: true,
+      import_log_id: importLogId,
       operator_id: operatorId,
       event_id: eventId,
       event_stage_id: eventStageId,
@@ -1986,10 +1958,14 @@ Deno.serve(async (req: Request) => {
       event: { id: eventData.id, name: eventData.name, year: eventData.year },
       file_name: fileName || null,
       timestamp: new Date().toISOString(),
-      result: resultSummary,
-      errors_preview: commitErrors.slice(0, 20),
-      warnings: allWarnings.slice(0, 30),
-    }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      planned: {
+        valid_rows: validRows.length,
+        pendencias: allPending.length,
+        institutions_to_create: institutionsToCreate.size,
+        delegations_to_create: delegationsToCreate.size,
+      },
+      message: "Importação iniciada em background. Acompanhe o status do import_log.",
+    }), { status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (err) {
     console.error("import-inscricoes error:", err);
