@@ -61,10 +61,20 @@ function roleBadgeVariant(role: string): "default" | "secondary" | "outline" {
   return "outline";
 }
 
-function statusLabel(u: any): { text: string; variant: "default" | "secondary" | "destructive" | "outline" } {
-  if (!u.last_sign_in_at && u.active) return { text: "Convite pendente", variant: "outline" };
-  if (!u.active) return { text: "Inativo", variant: "destructive" };
-  return { text: "Ativo", variant: "default" };
+function statusLabel(u: any): {
+  text: string;
+  variant: "default" | "secondary" | "destructive" | "outline";
+  tooltip?: string;
+} {
+  if (!u.active) return { text: "Inativo", variant: "destructive", tooltip: "Conta desativada — sessões revogadas." };
+  if (!u.last_sign_in_at) {
+    return {
+      text: "Convite enviado",
+      variant: "outline",
+      tooltip: "Convite criado, mas o usuário ainda não definiu senha nem fez o primeiro login. Reenvie o convite se necessário.",
+    };
+  }
+  return { text: "Ativo", variant: "default", tooltip: "Usuário já concluiu o primeiro login." };
 }
 
 async function callAdminUsers(action: string, body: Record<string, unknown> = {}) {
@@ -185,7 +195,7 @@ export default function AcessosUsuariosPage() {
         const s = statusLabel(u);
         if (filterStatus === "ativo") return s.text === "Ativo";
         if (filterStatus === "inativo") return s.text === "Inativo";
-        if (filterStatus === "pendente") return s.text === "Convite pendente";
+        if (filterStatus === "pendente") return s.text === "Convite enviado";
         return true;
       });
     }
@@ -353,7 +363,7 @@ export default function AcessosUsuariosPage() {
             <SelectItem value="all">Todos os status</SelectItem>
             <SelectItem value="ativo">Ativo</SelectItem>
             <SelectItem value="inativo">Inativo</SelectItem>
-            <SelectItem value="pendente">Convite pendente</SelectItem>
+            <SelectItem value="pendente">Convite enviado</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -444,13 +454,56 @@ export default function AcessosUsuariosPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={status.variant}>{status.text}</Badge>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant={status.variant} className="cursor-help">{status.text}</Badge>
+                          </TooltipTrigger>
+                          {status.tooltip && (
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-xs">{status.tooltip}</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {u.created_at ? format(new Date(u.created_at), "dd/MM/yyyy") : "—"}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {u.last_sign_in_at ? format(new Date(u.last_sign_in_at), "dd/MM/yyyy HH:mm") : "Nunca"}
+                      {u.last_sign_in_at ? (
+                        format(new Date(u.last_sign_in_at), "dd/MM/yyyy HH:mm")
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help underline decoration-dotted">Nunca</span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="text-xs">
+                                  O usuário ainda não concluiu o primeiro login. O link do convite precisa ser finalizado (definir senha) para o acesso ser ativado.
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          {u.active && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                resendInviteMutation.mutate(u.user_id);
+                              }}
+                              disabled={resendInviteMutation.isPending}
+                            >
+                              <Mail className="mr-1 h-3 w-3" />
+                              Reenviar
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 );
