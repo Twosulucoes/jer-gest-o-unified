@@ -1666,18 +1666,21 @@ Deno.serve(async (req: Request) => {
       }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Create import log first
-    const { data: logData } = await serviceClient.from("import_logs").insert({
-      event_id: eventId,
-      event_stage_id: eventStageId,
-      source_phase_name: stageData.name,
-      source_phase_slug: stageData.slug,
-      performed_by: operatorId,
-      file_name: fileName || "unknown",
-      row_count: rawRows.length,
-      status: "processing",
-    }).select("id").single();
-    const importLogId = logData?.id;
+    // Create import log (reuse if provided by chunked client)
+    let importLogId: string | undefined = providedImportLogId;
+    if (!importLogId) {
+      const { data: logData } = await serviceClient.from("import_logs").insert({
+        event_id: eventId,
+        event_stage_id: eventStageId,
+        source_phase_name: stageData.name,
+        source_phase_slug: stageData.slug,
+        performed_by: operatorId,
+        file_name: fileName || "unknown",
+        row_count: isChunked && typeof chunkTotal === "number" ? chunkTotal : rawRows.length,
+        status: "processing",
+      }).select("id").single();
+      importLogId = logData?.id;
+    }
 
     // ── Background processing (evita CPU Time exceeded em planilhas grandes) ──
     const processCommit = async () => {
