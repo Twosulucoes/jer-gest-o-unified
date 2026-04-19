@@ -436,7 +436,7 @@ const SINGLE_CATEGORY_FALLBACK_WHITELIST = new Set<string>([
   "wrestling",
 ]);
 
-interface CategoryWindow { slug: string; min_birth_year: number | null; max_birth_year: number | null; }
+interface CategoryWindow { slug: string; min_birth_year: number | null; max_birth_year: number | null; gender_scope: string | null; }
 
 /**
  * Resolve categoria canônica em até 3 estágios:
