@@ -13,7 +13,10 @@ import { useNavigate } from "react-router-dom";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
+import { useStageScope } from "@/hooks/useStageScope";
 import ModuleHeader from "@/components/admin/ModuleHeader";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 type ResultStatusFilter = "all" | "sem_resultado" | "resultado_lancado" | "resultado_validado" | "publicado";
 
@@ -32,6 +35,7 @@ export default function CompeticaoResultadosPage() {
   const navigate = useNavigate();
   const selectedEventId = useActiveEventId();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
+  const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError } = useStageScope();
   const [statusFilter, setStatusFilter] = useState<ResultStatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
@@ -71,7 +75,7 @@ export default function CompeticaoResultadosPage() {
 
   const sportEventIds = sportEvents.map((se: any) => se.id);
 
-  const { data: matches = [], isLoading: loadingMatches } = useQuery({
+  const { data: matchesRaw = [], isLoading: loadingMatches } = useQuery({
     queryKey: ["competition_matches_results_overview", selectedEventId, sportEventIds],
     queryFn: async () => {
       if (!selectedEventId) return [];
@@ -86,6 +90,11 @@ export default function CompeticaoResultadosPage() {
     },
     enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
   });
+
+  // Filtro estrito de etapa: se há escopo de etapa, mantém apenas partidas vinculadas
+  const matches = isStageScoped && stageMatchIds
+    ? matchesRaw.filter((m) => stageMatchIds.has(m.id))
+    : matchesRaw;
 
   const matchIds = matches.map((m) => m.id);
   const { data: allResults = [] } = useQuery({
@@ -140,6 +149,27 @@ export default function CompeticaoResultadosPage() {
   return (
     <div className="animate-fade-in space-y-6">
       <ModuleHeader route="/admin/competicao/resultados" />
+
+      {isStageScoped && stage && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Etapa: {stage.name}</AlertTitle>
+          <AlertDescription>
+            Exibindo apenas partidas com participantes vinculados a esta etapa.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {stageError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro ao carregar escopo da etapa</AlertTitle>
+          <AlertDescription>
+            Não foi possível filtrar as partidas pela etapa selecionada ({stageError.message}).
+            Verifique suas permissões ou contate o administrador.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardContent className="pt-6">
