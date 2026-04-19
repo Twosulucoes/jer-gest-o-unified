@@ -11,6 +11,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useAuth } from "@/hooks/useAuth";
 import { StageProvider } from "@/contexts/StageContext";
 import type { EventStage } from "@/contexts/StageContext";
+import { StagePageScaffold } from "@/components/admin/stage/StagePageScaffold";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -329,7 +330,7 @@ export default function StageLayout() {
             </header>
 
             <main className="flex-1 p-4 lg:p-6">
-              <Outlet key={location.pathname} />
+              <StageWrappedOutlet key={location.pathname} />
             </main>
           </div>
         </div>
@@ -337,3 +338,31 @@ export default function StageLayout() {
     </StageProvider>
   );
 }
+
+/**
+ * Envolve cada rota filha do StageLayout com o scaffold de etapa
+ * (mini-dash + tabs do módulo). Para a Visão Geral (rota índice) e
+ * páginas de detalhe (ex.: partida/:matchId, embarque/:tripId),
+ * o scaffold se omite/oculta as tabs automaticamente.
+ */
+function StageWrappedOutlet() {
+  const location = useLocation();
+  const { stageId } = useParams<{ stageId: string }>();
+
+  const base = `/admin/etapa/${stageId}`;
+  const isHome = location.pathname === base || location.pathname === `${base}/`;
+  // páginas de detalhe não devem mostrar as tabs
+  const isDetail = /\/(partida|embarque|form|pessoa)\/[^/]+/.test(location.pathname);
+
+  if (isHome) {
+    // A home já é uma página de visão geral própria — não envolve.
+    return <Outlet />;
+  }
+
+  return (
+    <StagePageScaffold hideTabs={isDetail}>
+      <Outlet />
+    </StagePageScaffold>
+  );
+}
+
