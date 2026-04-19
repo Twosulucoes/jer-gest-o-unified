@@ -208,19 +208,23 @@ export default function CredenciamentoPage() {
     [stageParticipantIds],
   );
 
+  // Se stageId existe mas stageIdsArray é null => RLS bloqueou participant_event_stages.
+  // Nesse caso, ignoramos o filtro de etapa (melhor mostrar todos do evento que mostrar vazio falso).
+  const effectiveStageFilter = stageId && stageIdsArray ? stageIdsArray : null;
+
   const { data: allParticipants, isLoading } = useQuery({
-    queryKey: ["credenciamento-participants", selectedEventId, stageId, stageIdsArray?.length ?? 0],
+    queryKey: ["credenciamento-participants", selectedEventId, stageId, effectiveStageFilter?.length ?? -1],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      if (stageId && stageIdsArray && stageIdsArray.length === 0) return [];
+      if (effectiveStageFilter && effectiveStageFilter.length === 0) return [];
 
       const CHUNK = 1000;
       const all: any[] = [];
 
-      // Quando há filtro de etapa, fatia os IDs em blocos de 1000 (limite prático do filtro IN).
-      const idChunks: (string[] | null)[] = stageId && stageIdsArray
-        ? Array.from({ length: Math.ceil(stageIdsArray.length / CHUNK) }, (_, i) =>
-            stageIdsArray.slice(i * CHUNK, (i + 1) * CHUNK))
+      // Quando há filtro de etapa válido, fatia os IDs em blocos de 1000 (limite prático do filtro IN).
+      const idChunks: (string[] | null)[] = effectiveStageFilter
+        ? Array.from({ length: Math.ceil(effectiveStageFilter.length / CHUNK) }, (_, i) =>
+            effectiveStageFilter.slice(i * CHUNK, (i + 1) * CHUNK))
         : [null];
 
       for (const ids of idChunks) {
@@ -248,7 +252,7 @@ export default function CredenciamentoPage() {
 
       return all;
     },
-    enabled: !!selectedEventId && (!stageId || !!stageIdsArray),
+    enabled: !!selectedEventId,
   });
 
   const participants = allParticipants;
