@@ -91,6 +91,8 @@ import ImportacaoAliasesPage from "./pages/admin/ImportacaoAliasesPage";
 import AjudaChatPage from "./pages/admin/AjudaChatPage";
 import AjudaManualPage from "./pages/admin/AjudaManualPage";
 import SuperManualPage from "./pages/super/SuperManualPage";
+import SuperChamadosPage from "./pages/super/SuperChamadosPage";
+import AjudaChamadosPage from "./pages/admin/AjudaChamadosPage";
 import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
 import SeedLogisticaEtapaPage from "./pages/admin/SeedLogisticaEtapaPage";
 import DebugPublicadosPage from "./pages/admin/DebugPublicadosPage";
@@ -205,6 +207,7 @@ const App = () => (
               <Route path="monitor" element={<SuperMonitorPage />} />
               <Route path="demo" element={<DemoSeedsPage />} />
               <Route path="manual" element={<SuperManualPage />} />
+              <Route path="chamados" element={<SuperChamadosPage />} />
               <Route path="validador" element={<SchemaValidadorPage />} />
             </Route>
             <Route
@@ -216,6 +219,7 @@ const App = () => (
               }
             >
               <Route index element={<DashboardPage />} />
+              <Route path="ajuda/chamados" element={<AjudaChamadosPage />} />
               <Route path="eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventosPage /></ProtectedRoute>} />
               <Route path="eventos/etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventStagesPage /></ProtectedRoute>} />
               <Route path="etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapasIndexPage /></ProtectedRoute>} />

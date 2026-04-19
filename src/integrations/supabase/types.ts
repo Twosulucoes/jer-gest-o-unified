@@ -5130,6 +5130,112 @@ export type Database = {
           },
         ]
       }
+      support_ticket_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          is_internal: boolean
+          ticket_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_comments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          context: Json
+          created_at: string
+          created_by: string
+          current_url: string | null
+          description: string
+          event_id: string | null
+          id: string
+          priority: string
+          reporter_email: string | null
+          reporter_name: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string
+          context?: Json
+          created_at?: string
+          created_by: string
+          current_url?: string | null
+          description: string
+          event_id?: string | null
+          id?: string
+          priority?: string
+          reporter_email?: string | null
+          reporter_name?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          context?: Json
+          created_at?: string
+          created_by?: string
+          current_url?: string | null
+          description?: string
+          event_id?: string | null
+          id?: string
+          priority?: string
+          reporter_email?: string | null
+          reporter_name?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_config: {
         Row: {
           created_at: string
