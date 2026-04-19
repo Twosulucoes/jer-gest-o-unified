@@ -11,7 +11,7 @@ import {
   Shield, Settings, AlertTriangle, FileSearch, FileBarChart,
   Info, Zap, ExternalLink, ChevronsLeft,
   ChevronsRight, User, FolderOpen, Cog,
-  Home, Bot,
+  Home, Bot, BookOpen, HelpCircle,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import StageFilterBanner from "@/components/admin/StageFilterBanner";
@@ -98,11 +98,18 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    id: "ajuda", label: "Ajuda", description: "Manual e suporte com IA.",
+    icon: <HelpCircle className="h-4 w-4" />,
+    items: [
+      { label: "Manual de Instruções", to: "/admin/ajuda/manual", icon: <BookOpen className="h-4 w-4" />, roles: "all" },
+      { label: "Chat com IA", to: "/admin/ajuda/chat", icon: <Bot className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as AppRole[] },
+    ],
+  },
+  {
     id: "sistema", label: "Sistema", description: "Diagnóstico e manutenção.",
     icon: <Cog className="h-4 w-4" />,
     items: [
       { label: "Diagnóstico do Sistema", to: "/admin/sistema/diagnostico", icon: <Info className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Ajuda — Chat com IA", to: "/admin/ajuda", icon: <Bot className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as AppRole[] },
       { label: "Demo / Seeds", to: "/admin/demo", icon: <Zap className="h-4 w-4" />, roles: ["admin", "coordenacao_tecnica"] as AppRole[] },
       { label: "Seed Logística (Etapa)", to: "/admin/seed-logistica", icon: <Zap className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
     ],
