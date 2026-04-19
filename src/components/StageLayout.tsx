@@ -338,3 +338,31 @@ export default function StageLayout() {
     </StageProvider>
   );
 }
+
+/**
+ * Envolve cada rota filha do StageLayout com o scaffold de etapa
+ * (mini-dash + tabs do módulo). Para a Visão Geral (rota índice) e
+ * páginas de detalhe (ex.: partida/:matchId, embarque/:tripId),
+ * o scaffold se omite/oculta as tabs automaticamente.
+ */
+function StageWrappedOutlet() {
+  const location = useLocation();
+  const { stageId } = useParams<{ stageId: string }>();
+
+  const base = `/admin/etapa/${stageId}`;
+  const isHome = location.pathname === base || location.pathname === `${base}/`;
+  // páginas de detalhe não devem mostrar as tabs
+  const isDetail = /\/(partida|embarque|form|pessoa)\/[^/]+/.test(location.pathname);
+
+  if (isHome) {
+    // A home já é uma página de visão geral própria — não envolve.
+    return <Outlet />;
+  }
+
+  return (
+    <StagePageScaffold hideTabs={isDetail}>
+      <Outlet />
+    </StagePageScaffold>
+  );
+}
+
