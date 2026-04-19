@@ -327,7 +327,7 @@ export default function ImportacaoPage() {
       let finalResult: CommitResult;
       if (result?.async && result?.import_log_id) {
         toast.info(`Importação iniciada em background (${result?.planned?.valid_rows ?? 0} linhas). Acompanhando progresso…`, { duration: 5000 });
-        finalResult = await pollImportLog(result.import_log_id, result.planned ?? { valid_rows: 0 });
+        finalResult = await pollImportLog(result.import_log_id);
         toast.dismiss("import-progress");
       } else {
         finalResult = result as CommitResult;
