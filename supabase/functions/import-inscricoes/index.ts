@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { smartMatch } from "./matcher.ts";
+import { smartMatch, matchEventInCatalog } from "./matcher.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -784,7 +784,7 @@ interface ReadOnlyMaps {
   sports: Map<string, string>;                // sport_slug -> sport_id
   categories: Map<string, string>;            // category_slug -> category_id
   sportEvents: Map<string, string>;           // "sport_id|category_id|prova_slug" -> sport_event_id
-  sportEventsBySportCat: Map<string, Array<{ id: string; slug: string }>>; // "sport_id|category_id" -> SEs
+  sportEventsBySportCat: Map<string, Array<{ id: string; slug: string; name: string }>>; // "sport_id|category_id" -> SEs
   sportCategoryPairs: Set<string>;            // "sport_slug|category_slug" presentes no catálogo
   sportsSet: Set<string>;                     // sport_slugs presentes no catálogo
   categoriesBySport: Map<string, CategoryWindow[]>; // sport_slug -> janelas etárias do catálogo
@@ -805,7 +805,7 @@ async function loadReadOnlyMaps(
     supabase.from("institutions").select("id, slug").eq("is_active", true),
     supabase.from("sports").select("id, slug").eq("event_id", eventId),
     supabase.from("categories").select("id, slug, min_birth_year, max_birth_year, gender_scope").eq("event_id", eventId),
-    supabase.from("sport_events").select("id, sport_id, category_id, slug").eq("event_id", eventId),
+    supabase.from("sport_events").select("id, sport_id, category_id, slug, name").eq("event_id", eventId),
     supabase.from("delegations").select("id, institution_id").eq("event_id", eventId),
     supabase.from("events").select("year").eq("id", eventId).maybeSingle(),
     supabase.from("import_aliases")
@@ -838,14 +838,14 @@ async function loadReadOnlyMaps(
   }
 
   const sportEvents = new Map<string, string>();
-  const sportEventsBySportCat = new Map<string, Array<{ id: string; slug: string }>>();
+  const sportEventsBySportCat = new Map<string, Array<{ id: string; slug: string; name: string }>>();
   const sportCategoryPairs = new Set<string>();
   const categoriesBySport = new Map<string, CategoryWindow[]>();
   for (const se of (seRes.data ?? []) as any[]) {
     sportEvents.set(`${se.sport_id}|${se.category_id}|${se.slug}`, se.id);
     const pairKey = `${se.sport_id}|${se.category_id}`;
     const arrSE = sportEventsBySportCat.get(pairKey) ?? [];
-    arrSE.push({ id: se.id, slug: se.slug });
+    arrSE.push({ id: se.id, slug: se.slug, name: se.name ?? se.slug });
     sportEventsBySportCat.set(pairKey, arrSE);
     const sSlug = sportsById.get(se.sport_id);
     const cSlug = catsById.get(se.category_id);
@@ -1186,27 +1186,16 @@ function classifyRow(
       if (candidates.length === 1) {
         seId = candidates[0].id;
       } else if (candidates.length > 1) {
-        // (2) Motor inteligente: usa smartMatch para extrair o slug da prova
-        // a partir do texto bruto (PROVA + COMPETIÇÃO + MODALIDADE).
-        const sm = smartMatch({
-          modalidadeRaw: row.sport_raw,
-          provaRaw: row.prova_name,
-          competicaoRaw: row.competicao_raw,
-          sexoColumn: row.gender === "female" ? "F" : "M",
-          birthYear: row.birth_date ? Number(row.birth_date.slice(0, 4)) : null,
-          eventYear: maps.eventYear,
-        });
-        if (sm.prova_slug) {
-          // Procura por slug de SE que termine com o slug da prova do matcher
-          const found = candidates.find(c => c.slug.includes(`-${sm.prova_slug}-`) || c.slug.includes(`-${sm.prova_slug}`));
-          if (found) {
-            seId = found.id;
-          }
-        }
-        if (!seId) {
+        // Motor genérico: scoring por tokens contra o catálogo REAL.
+        // Funciona para QUALQUER prova (não depende de listas hardcoded).
+        const rawText = `${row.prova_name || ""} ${row.competicao_raw || ""} ${row.sport_raw || ""}`;
+        const mr = matchEventInCatalog(rawText, candidates);
+        if (mr.event_id) {
+          seId = mr.event_id;
+        } else {
           pending.push({
             row_number: row.row_number, reason_code: "SPORT_EVENT_AMBIGUOUS",
-            reason_detail: `Modalidade "${row.sport_slug}" / categoria "${row.category_slug}" tem ${candidates.length} provas no catálogo e o motor não conseguiu identificar a prova específica. PROVA bruta="${row.prova_name || "—"}". Smart match: ${sm.prova_slug ?? "n/a"} (conf=${sm.confidence}). Opções: [${candidates.map(c => c.slug).join(", ")}]`,
+            reason_detail: `Modalidade "${row.sport_slug}" / categoria "${row.category_slug}": catálogo tem ${candidates.length} provas e o motor não conseguiu decidir. PROVA bruta="${row.prova_name || "—"}". Top scores: ${mr.candidates.map(c => `${c.slug}=${c.score}`).join(", ")}. Razões: ${mr.reasons.join(" | ")}`,
             row, fingerprint, candidate_person_id: null,
           });
           return { status: "pendencia", errors, warnings, pending, resolved };
