@@ -3385,7 +3385,7 @@ export type Database = {
           external_system: string
           function_label: string | null
           id: string
-          is_active: boolean | null
+          is_active: boolean
           issued_at: string | null
           issued_by: string | null
           last_reissue_request_id: number | null
@@ -3413,7 +3413,7 @@ export type Database = {
           external_system?: string
           function_label?: string | null
           id?: string
-          is_active?: boolean | null
+          is_active?: boolean
           issued_at?: string | null
           issued_by?: string | null
           last_reissue_request_id?: number | null
@@ -3441,7 +3441,7 @@ export type Database = {
           external_system?: string
           function_label?: string | null
           id?: string
-          is_active?: boolean | null
+          is_active?: boolean
           issued_at?: string | null
           issued_by?: string | null
           last_reissue_request_id?: number | null

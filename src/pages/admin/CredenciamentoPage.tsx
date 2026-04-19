@@ -398,13 +398,31 @@ export default function CredenciamentoPage() {
   const paginatedItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // --- Mutations ---
+  // Fluxo unificado: registrar presença + emitir credencial em um único passo
   const credentialMutation = useMutation({
     mutationFn: async (participantId: string) => {
+      const credentialCode = generateCredentialCode();
+      const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
+      const nowIso = new Date().toISOString();
+      const { error: credErr } = await supabase.from("participant_credentials").insert({
+        participant_id: participantId,
+        event_id: selectedEventId,
+        credential_code: credentialCode,
+        qr_code_value: qrCodeValue,
+        status: "active",
+        is_active: true,
+        binding_source: "manual",
+        issued_at: nowIso,
+        activated_at: nowIso,
+        issued_by: user?.id,
+        activated_by: user?.id,
+      });
+      if (credErr) throw credErr;
       const { error } = await supabase
         .from("participants")
         .update({
           status: "credentialed",
-          credentialed_at: new Date().toISOString(),
+          credentialed_at: nowIso,
           credentialed_by: user?.id,
         })
         .eq("id", participantId);
@@ -412,9 +430,18 @@ export default function CredenciamentoPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
-      toast.success("Presença registrada!");
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
+      toast.success("Presença registrada e credencial emitida!");
     },
-    onError: (err: Error) => toast.error(`Erro ao registrar presença: ${err.message}`),
+    onError: (err: Error) => {
+      if (err.message?.includes("irregularidade") || err.message?.includes("Credenciamento bloqueado")) {
+        toast.error("Credenciamento bloqueado: atleta possui irregularidade aberta. Resolva em Irregularidades.");
+      } else if (err.message?.includes("uq_participant_event_active")) {
+        toast.error("Este participante já possui credencial ativa.");
+      } else {
+        toast.error(`Erro ao credenciar: ${err.message}`);
+      }
+    },
   });
 
   const emitCredentialMutation = useMutation({
@@ -427,6 +454,7 @@ export default function CredenciamentoPage() {
         credential_code: credentialCode,
         qr_code_value: qrCodeValue,
         status: "active",
+        is_active: true,
         binding_source: "manual",
         issued_at: new Date().toISOString(),
         activated_at: new Date().toISOString(),
@@ -456,7 +484,7 @@ export default function CredenciamentoPage() {
       if (existing) {
         const { error: revokeErr } = await supabase
           .from("participant_credentials")
-          .update({ status: "reissued", revoked_at: new Date().toISOString() })
+          .update({ status: "reissued", is_active: false, revoked_at: new Date().toISOString() })
           .eq("id", existing.id);
         if (revokeErr) throw revokeErr;
       }
@@ -468,6 +496,7 @@ export default function CredenciamentoPage() {
         credential_code: credentialCode,
         qr_code_value: qrCodeValue,
         status: "active",
+        is_active: true,
         binding_source: "manual",
         issued_at: new Date().toISOString(),
         activated_at: new Date().toISOString(),
@@ -563,21 +592,33 @@ export default function CredenciamentoPage() {
     return p && getParticipantState(p) === "complete";
   });
 
+  // Batch unificado: presença + emissão em uma única ação
   const handleBatchCredential = async () => {
     if (selectedAwaiting.length === 0) return;
     setBatchProcessing(true);
     let success = 0, errors = 0;
     for (const id of selectedAwaiting) {
+      const credentialCode = generateCredentialCode();
+      const qrCodeValue = generateQrCodeValue(selectedEventId, id, credentialCode);
+      const nowIso = new Date().toISOString();
+      const { error: credErr } = await supabase.from("participant_credentials").insert({
+        participant_id: id, event_id: selectedEventId, credential_code: credentialCode, qr_code_value: qrCodeValue,
+        status: "active", is_active: true, binding_source: "manual",
+        issued_at: nowIso, activated_at: nowIso,
+        issued_by: user?.id, activated_by: user?.id,
+      });
+      if (credErr) { errors++; continue; }
       const { error } = await supabase
         .from("participants")
-        .update({ status: "credentialed", credentialed_at: new Date().toISOString(), credentialed_by: user?.id })
+        .update({ status: "credentialed", credentialed_at: nowIso, credentialed_by: user?.id })
         .eq("id", id);
       if (error) errors++; else success++;
     }
     setBatchProcessing(false);
     setSelectedIds(new Set());
     queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
-    toast.success(`${success} presença(s) registrada(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
+    queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
+    toast.success(`${success} credencial(is) emitida(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
   };
 
   const handleBatchEmit = async () => {
@@ -589,7 +630,8 @@ export default function CredenciamentoPage() {
       const qrCodeValue = generateQrCodeValue(selectedEventId, id, credentialCode);
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: id, event_id: selectedEventId, credential_code: credentialCode, qr_code_value: qrCodeValue,
-        status: "active", binding_source: "manual", issued_at: new Date().toISOString(), activated_at: new Date().toISOString(),
+        status: "active", is_active: true, binding_source: "manual",
+        issued_at: new Date().toISOString(), activated_at: new Date().toISOString(),
         issued_by: user?.id, activated_by: user?.id,
       });
       if (error) errors++; else success++;
