@@ -202,7 +202,7 @@ export default function CredenciamentoPage() {
   const { stageId, participantIds: stageParticipantIds } = useStageParticipantFilter();
 
   // --- Participants ---
-  // Quando há filtro de etapa, restringe a query aos IDs vinculados (evita corte do .limit).
+  // Busca todos os participantes do evento (ou da etapa) em chunks de 1000 — sem limite arbitrário.
   const stageIdsArray = useMemo(
     () => (stageParticipantIds ? Array.from(stageParticipantIds) : null),
     [stageParticipantIds],
@@ -212,23 +212,41 @@ export default function CredenciamentoPage() {
     queryKey: ["credenciamento-participants", selectedEventId, stageId, stageIdsArray?.length ?? 0],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      let q = supabase
-        .from("participants")
-        .select("id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id")
-        .eq("event_id", selectedEventId)
-        .eq("is_active", true)
-        .in("status", ["pending", "confirmed", "credentialed"]);
+      if (stageId && stageIdsArray && stageIdsArray.length === 0) return [];
 
-      if (stageId && stageIdsArray) {
-        if (stageIdsArray.length === 0) return [];
-        q = q.in("id", stageIdsArray);
+      const CHUNK = 1000;
+      const all: any[] = [];
+
+      // Quando há filtro de etapa, fatia os IDs em blocos de 1000 (limite prático do filtro IN).
+      const idChunks: (string[] | null)[] = stageId && stageIdsArray
+        ? Array.from({ length: Math.ceil(stageIdsArray.length / CHUNK) }, (_, i) =>
+            stageIdsArray.slice(i * CHUNK, (i + 1) * CHUNK))
+        : [null];
+
+      for (const ids of idChunks) {
+        let from = 0;
+        // Loop por range para escapar do limite default do PostgREST (1000 linhas).
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          let q = supabase
+            .from("participants")
+            .select("id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id")
+            .eq("event_id", selectedEventId)
+            .eq("is_active", true)
+            .in("status", ["pending", "confirmed", "credentialed"]);
+          if (ids) q = q.in("id", ids);
+          const { data, error } = await q
+            .order("id", { ascending: true })
+            .range(from, from + CHUNK - 1);
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          all.push(...data);
+          if (data.length < CHUNK) break;
+          from += CHUNK;
+        }
       }
 
-      const { data, error } = await q
-        .order("status", { ascending: true })
-        .limit(5000);
-      if (error) throw error;
-      return data;
+      return all;
     },
     enabled: !!selectedEventId && (!stageId || !!stageIdsArray),
   });
