@@ -83,55 +83,47 @@ export default function ParticipantesPage() {
     queryKey: ["all-participants", selectedEventId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase
-        .from("participants")
-        .select("id, status, participant_type, person_id, delegation_id, created_at")
-        .eq("event_id", selectedEventId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      // Paginate to bypass PostgREST default 1000-row cap and fetch joined data in one query
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      const all: any[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("participants")
+          .select(
+            "id, status, participant_type, person_id, delegation_id, created_at, " +
+              "person:people(id, full_name, cpf, gender), " +
+              "delegation:delegations(id, institution_id, institution:institutions(id, name))"
+          )
+          .eq("event_id", selectedEventId)
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      return all;
     },
     enabled: !!selectedEventId,
   });
 
-  const personIds = participants?.map((p) => p.person_id) ?? [];
-  const delegationIds = [...new Set(participants?.map((p) => p.delegation_id) ?? [])];
-
-  const { data: people = [] } = useQuery({
-    queryKey: ["participants-people", personIds],
-    queryFn: async () => {
-      if (personIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("people").select("id, full_name, cpf, gender").in("id", personIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: personIds.length > 0,
-  });
-
-  const { data: delegations = [] } = useQuery({
-    queryKey: ["participants-delegations", delegationIds],
-    queryFn: async () => {
-      if (delegationIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("delegations").select("id, institution_id").in("id", delegationIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: delegationIds.length > 0,
-  });
-
-  const instIds = [...new Set(delegations.map((d) => d.institution_id))];
-  const { data: institutions = [] } = useQuery({
-    queryKey: ["participants-institutions", instIds],
-    queryFn: async () => {
-      if (instIds.length === 0) return [];
-      const { data, error } = await supabase.from("institutions").select("id, name").in("id", instIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: instIds.length > 0,
-  });
+  // Build lookup maps from embedded relations
+  const peopleMapEmbedded = new Map<string, any>();
+  const delegationMapEmbedded = new Map<string, any>();
+  const institutionMapEmbedded = new Map<string, any>();
+  for (const p of participants ?? []) {
+    if ((p as any).person) peopleMapEmbedded.set((p as any).person.id, (p as any).person);
+    const del = (p as any).delegation;
+    if (del) {
+      delegationMapEmbedded.set(del.id, del);
+      if (del.institution) institutionMapEmbedded.set(del.institution.id, del.institution);
+    }
+  }
+  const people = Array.from(peopleMapEmbedded.values());
+  const delegations = Array.from(delegationMapEmbedded.values());
+  const institutions = Array.from(institutionMapEmbedded.values());
 
   // Load sport enrollments for these participants
   const partIds = participants?.map((p) => p.id) ?? [];
