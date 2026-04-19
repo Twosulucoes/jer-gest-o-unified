@@ -89,6 +89,25 @@ export default function SuperMonitorPage() {
     toast({ title: "Notificações desativadas" });
   };
 
+  const handleTestPush = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("monitoring-push", {
+        body: {
+          title: "🧪 Teste de notificação",
+          body: "Se você recebeu isto, o push está funcionando!",
+          url: "/super/monitor",
+        },
+      });
+      if (error) throw error;
+      toast({
+        title: "Push enviado",
+        description: `Enviadas: ${data?.sent ?? 0} • Falhas: ${data?.failed ?? 0}`,
+      });
+    } catch (e: any) {
+      toast({ title: "Falha no teste", description: e.message, variant: "destructive" });
+    }
+  };
+
   const ackError = async (id: string) => {
     await supabase.from("monitoring_errors").update({ acknowledged: true, acknowledged_at: new Date().toISOString() }).eq("id", id);
     load();
@@ -119,9 +138,14 @@ export default function SuperMonitorPage() {
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
           </Button>
           {pushEnabled ? (
-            <Button size="sm" variant="ghost" onClick={handleDisablePush} className="text-amber-400">
-              <Bell className="h-4 w-4 mr-1" /> Ativo
-            </Button>
+            <>
+              <Button size="sm" variant="ghost" onClick={handleTestPush} className="text-zinc-400">
+                Testar
+              </Button>
+              <Button size="sm" variant="ghost" onClick={handleDisablePush} className="text-amber-400">
+                <Bell className="h-4 w-4 mr-1" /> Ativo
+              </Button>
+            </>
           ) : (
             <Button size="sm" onClick={handleEnablePush} className="bg-amber-500 text-zinc-900 hover:bg-amber-400">
               <BellOff className="h-4 w-4 mr-1" /> Ativar Push
