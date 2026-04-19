@@ -363,7 +363,7 @@ export default function AcessosUsuariosPage() {
             <SelectItem value="all">Todos os status</SelectItem>
             <SelectItem value="ativo">Ativo</SelectItem>
             <SelectItem value="inativo">Inativo</SelectItem>
-            <SelectItem value="pendente">Convite pendente</SelectItem>
+            <SelectItem value="pendente">Convite enviado</SelectItem>
           </SelectContent>
         </Select>
       </div>
