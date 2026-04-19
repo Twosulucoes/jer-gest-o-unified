@@ -15,11 +15,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScope } from "@/hooks/useStageScope";
 
 export default function AlimentacaoConsumoPage() {
   const qc = useQueryClient();
   const { user, hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
+  const { isStageScoped, stageId, participantIds: stageParticipantIds } = useStageScope();
   const [selectedWindowId, setSelectedWindowId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [qrCode, setQrCode] = useState("");
@@ -49,10 +51,12 @@ export default function AlimentacaoConsumoPage() {
   });
 
   const { data: windows = [] } = useQuery({
-    queryKey: ["meal_windows", selectedEventId],
+    queryKey: ["meal_windows", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("meal_windows").select("*").eq("event_id", selectedEventId).eq("is_active", true).order("service_date").order("start_time");
+      let q = supabase.from("meal_windows").select("*").eq("event_id", selectedEventId).eq("is_active", true).order("service_date").order("start_time");
+      if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
@@ -107,9 +111,9 @@ export default function AlimentacaoConsumoPage() {
 
   const consumedParticipantIds = new Set(consumptions.map((c) => c.participant_id));
 
-  // Search participants
+  // Search participants — restrito à etapa quando aplicável
   const { data: searchResults = [], isFetching: searching } = useQuery({
-    queryKey: ["search-participants-food", selectedEventId, searchTerm],
+    queryKey: ["search-participants-food", selectedEventId, searchTerm, stageId, stageParticipantIds?.size ?? -1],
     queryFn: async () => {
       if (!searchTerm || searchTerm.length < 2 || !selectedEventId) return [];
       const { data: ppl, error: pplErr } = await supabase
@@ -121,12 +125,17 @@ export default function AlimentacaoConsumoPage() {
       if (!ppl.length) return [];
 
       const personIds = ppl.map((p) => p.id);
-      const { data: parts, error: partsErr } = await supabase
+      let pq = supabase
         .from("participants")
         .select("id, person_id, status, participant_type")
         .eq("event_id", selectedEventId)
         .eq("is_active", true)
         .in("person_id", personIds);
+      if (isStageScoped && stageParticipantIds) {
+        if (stageParticipantIds.size === 0) return [];
+        pq = pq.in("id", Array.from(stageParticipantIds));
+      }
+      const { data: parts, error: partsErr } = await pq;
       if (partsErr) throw partsErr;
 
       return parts.map((pt) => ({
@@ -134,7 +143,7 @@ export default function AlimentacaoConsumoPage() {
         person: ppl.find((p) => p.id === pt.person_id),
       }));
     },
-    enabled: !!searchTerm && searchTerm.length >= 2 && !!selectedEventId,
+    enabled: !!searchTerm && searchTerm.length >= 2 && !!selectedEventId && (!isStageScoped || !!stageParticipantIds),
   });
 
   // Register consumption
