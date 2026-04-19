@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle, Send, Loader2, FileText, Plus, Pencil, ArrowRight } from "lucide-react";
+import { CheckCircle, Send, Loader2, FileText, Plus, ArrowRight } from "lucide-react";
 
 interface Props {
   sportEventId: string | null;
@@ -187,13 +187,13 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
-            <p className="text-2xl font-bold text-blue-600">{counts?.validated ?? "—"}</p>
+            <p className="text-2xl font-bold text-primary">{counts?.validated ?? "—"}</p>
             <p className="text-xs text-muted-foreground">Validados</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
-            <p className="text-2xl font-bold text-green-600">{counts?.published ?? "—"}</p>
+            <p className="text-2xl font-bold text-success">{counts?.published ?? "—"}</p>
             <p className="text-xs text-muted-foreground">Publicados</p>
           </CardContent>
         </Card>
