@@ -1419,9 +1419,13 @@ Deno.serve(async (req: Request) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    let { rows: rawRows, event_id: eventId, event_stage_id: eventStageId, mode, file_name: fileName } = body as {
+    let { rows: rawRows, event_id: eventId, event_stage_id: eventStageId, mode, file_name: fileName,
+          import_log_id: providedImportLogId, chunk_index: chunkIndex, chunk_total: chunkTotal,
+          row_offset: rowOffset } = body as {
       rows: RawRow[]; event_id: string; event_stage_id?: string; mode: string; file_name?: string;
+      import_log_id?: string; chunk_index?: number; chunk_total?: number; row_offset?: number;
     };
+    const isChunked = typeof chunkIndex === "number" && typeof chunkTotal === "number";
 
     rawRows = normalizeHeaders(rawRows);
 
@@ -1662,18 +1666,21 @@ Deno.serve(async (req: Request) => {
       }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Create import log first
-    const { data: logData } = await serviceClient.from("import_logs").insert({
-      event_id: eventId,
-      event_stage_id: eventStageId,
-      source_phase_name: stageData.name,
-      source_phase_slug: stageData.slug,
-      performed_by: operatorId,
-      file_name: fileName || "unknown",
-      row_count: rawRows.length,
-      status: "processing",
-    }).select("id").single();
-    const importLogId = logData?.id;
+    // Create import log (reuse if provided by chunked client)
+    let importLogId: string | undefined = providedImportLogId;
+    if (!importLogId) {
+      const { data: logData } = await serviceClient.from("import_logs").insert({
+        event_id: eventId,
+        event_stage_id: eventStageId,
+        source_phase_name: stageData.name,
+        source_phase_slug: stageData.slug,
+        performed_by: operatorId,
+        file_name: fileName || "unknown",
+        row_count: isChunked && typeof chunkTotal === "number" ? chunkTotal : rawRows.length,
+        status: "processing",
+      }).select("id").single();
+      importLogId = logData?.id;
+    }
 
     // ── Background processing (evita CPU Time exceeded em planilhas grandes) ──
     const processCommit = async () => {
@@ -1907,21 +1914,57 @@ Deno.serve(async (req: Request) => {
           }
         }
 
-        const finalStatus = rowsFailed > 0 ? (validRows.length - rowsFailed > 0 ? "partial" : "error") : "success";
-        const resultSummary = {
+        // Build chunk-local result summary
+        const chunkSummary = {
           people_created: peopleCreated, people_reused: peopleReused,
           participants_created: participantsCreated, participants_reused: participantsReused,
           participant_event_stages_created: pesCreated, participant_event_stages_reused: pesReused,
           participant_sport_events_created: pseCreated, participant_sport_events_reused: pseReused,
           institutions_created: newInstMap.size, delegations_created: delegationsCreated,
           pendencias_created: allPending.length, rows_skipped_as_duplicate: rowsSkippedDuplicate,
-          rows_failed: rowsFailed, progress: { processed: total, total },
+          rows_failed: rowsFailed,
         };
 
         if (importLogId) {
-          await serviceClient.from("import_logs").update({
-            status: finalStatus, result_summary: resultSummary,
-          }).eq("id", importLogId);
+          if (isChunked) {
+            const { data: cur } = await serviceClient.from("import_logs")
+              .select("result_summary").eq("id", importLogId).maybeSingle();
+            const prev = (cur?.result_summary as Record<string, number> | null) ?? {};
+            const merged: Record<string, unknown> = {
+              people_created: (Number(prev.people_created) || 0) + chunkSummary.people_created,
+              people_reused: (Number(prev.people_reused) || 0) + chunkSummary.people_reused,
+              participants_created: (Number(prev.participants_created) || 0) + chunkSummary.participants_created,
+              participants_reused: (Number(prev.participants_reused) || 0) + chunkSummary.participants_reused,
+              participant_event_stages_created: (Number(prev.participant_event_stages_created) || 0) + chunkSummary.participant_event_stages_created,
+              participant_event_stages_reused: (Number(prev.participant_event_stages_reused) || 0) + chunkSummary.participant_event_stages_reused,
+              participant_sport_events_created: (Number(prev.participant_sport_events_created) || 0) + chunkSummary.participant_sport_events_created,
+              participant_sport_events_reused: (Number(prev.participant_sport_events_reused) || 0) + chunkSummary.participant_sport_events_reused,
+              institutions_created: (Number(prev.institutions_created) || 0) + chunkSummary.institutions_created,
+              delegations_created: (Number(prev.delegations_created) || 0) + chunkSummary.delegations_created,
+              pendencias_created: (Number(prev.pendencias_created) || 0) + chunkSummary.pendencias_created,
+              rows_skipped_as_duplicate: (Number(prev.rows_skipped_as_duplicate) || 0) + chunkSummary.rows_skipped_as_duplicate,
+              rows_failed: (Number(prev.rows_failed) || 0) + chunkSummary.rows_failed,
+            };
+            const isLastChunk = (chunkIndex! + 1) >= chunkTotal!;
+            const baseOffset = typeof rowOffset === "number" ? rowOffset : 0;
+            (merged as any).progress = {
+              processed: baseOffset + total,
+              total: chunkTotal,
+              chunk_index: chunkIndex,
+              chunk_total: chunkTotal,
+            };
+            const totalFailed = Number(merged.rows_failed) || 0;
+            const newStatus = isLastChunk ? (totalFailed > 0 ? "partial" : "success") : "processing";
+            await serviceClient.from("import_logs").update({
+              status: newStatus, result_summary: merged,
+            }).eq("id", importLogId);
+          } else {
+            const finalStatus = rowsFailed > 0 ? (validRows.length - rowsFailed > 0 ? "partial" : "success") : "success";
+            (chunkSummary as any).progress = { processed: total, total };
+            await serviceClient.from("import_logs").update({
+              status: finalStatus, result_summary: chunkSummary,
+            }).eq("id", importLogId);
+          }
         }
 
         if (commitErrors.length > 0) {
@@ -1941,9 +1984,32 @@ Deno.serve(async (req: Request) => {
             status: "error", error_message: String(bgErr),
           }).eq("id", importLogId);
         }
+        throw bgErr;
       }
     };
 
+    // Chunked mode: synchronous processing, return immediately for this chunk
+    if (isChunked) {
+      try {
+        await processCommit();
+      } catch (err) {
+        return new Response(JSON.stringify({
+          error: "Erro ao processar chunk", details: String(err),
+          import_log_id: importLogId, chunk_index: chunkIndex,
+        }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({
+        status: "chunk_ok",
+        import_log_id: importLogId,
+        chunk_index: chunkIndex,
+        chunk_total: chunkTotal,
+        valid_rows: validRows.length,
+        pendencias: allPending.length,
+        is_last: (chunkIndex! + 1) >= chunkTotal!,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Non-chunked legacy path: background processing
     // @ts-ignore - EdgeRuntime existe no Supabase Edge Runtime
     EdgeRuntime.waitUntil(processCommit());
 

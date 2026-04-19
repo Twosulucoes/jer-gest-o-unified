@@ -226,13 +226,23 @@ export default function ImportacaoPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const callEdgeFunction = async (mode: "validate" | "commit") => {
+  const callEdgeFunction = async (
+    mode: "validate" | "commit",
+    options?: { rowsOverride?: any[]; importLogId?: string; chunkIndex?: number; chunkTotal?: number; rowOffset?: number }
+  ) => {
     if (!file || !selectedEventId || !selectedStageId || !confirmedMapping) return;
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { toast.error("Sessão expirada. Faça login novamente."); return; }
-    const rows = applyMapping(rawParsedRows, confirmedMapping);
+    const rows = options?.rowsOverride ?? applyMapping(rawParsedRows, confirmedMapping);
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
     const url = `https://${projectId}.supabase.co/functions/v1/import-inscricoes`;
+    const payload: Record<string, unknown> = {
+      rows, event_id: selectedEventId, event_stage_id: selectedStageId, mode, file_name: file.name,
+    };
+    if (options?.importLogId) payload.import_log_id = options.importLogId;
+    if (typeof options?.chunkIndex === "number") payload.chunk_index = options.chunkIndex;
+    if (typeof options?.chunkTotal === "number") payload.chunk_total = options.chunkTotal;
+    if (typeof options?.rowOffset === "number") payload.row_offset = options.rowOffset;
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -240,7 +250,7 @@ export default function ImportacaoPage() {
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ rows, event_id: selectedEventId, event_stage_id: selectedStageId, mode, file_name: file.name }),
+      body: JSON.stringify(payload),
     });
     const json = await response.json();
     if (!response.ok) throw new Error(json.error || json.message || "Erro desconhecido");
@@ -322,20 +332,87 @@ export default function ImportacaoPage() {
   const handleCommit = async () => {
     setCommitting(true);
     try {
-      const result = await callEdgeFunction("commit");
-      // Async path: edge function retorna 202 com import_log_id
-      let finalResult: CommitResult;
-      if (result?.async && result?.import_log_id) {
-        toast.info(`Importação iniciada em background (${result?.planned?.valid_rows ?? 0} linhas). Acompanhando progresso…`, { duration: 5000 });
-        finalResult = await pollImportLog(result.import_log_id);
-        toast.dismiss("import-progress");
-      } else {
-        finalResult = result as CommitResult;
+      const CHUNK_SIZE = 400;
+      const allRows = applyMapping(rawParsedRows, confirmedMapping!);
+      const totalRows = allRows.length;
+
+      // Small datasets: keep legacy single-call path (background async)
+      if (totalRows <= CHUNK_SIZE) {
+        const result = await callEdgeFunction("commit");
+        let finalResult: CommitResult;
+        if (result?.async && result?.import_log_id) {
+          toast.info(`Importação iniciada (${result?.planned?.valid_rows ?? 0} linhas). Acompanhando…`, { duration: 4000 });
+          finalResult = await pollImportLog(result.import_log_id);
+          toast.dismiss("import-progress");
+        } else {
+          finalResult = result as CommitResult;
+        }
+        setCommitResult(finalResult);
+        const failed = finalResult?.result?.rows_failed ?? 0;
+        if (failed > 0) toast.warning(`Importação com ${failed} falha(s).`);
+        else toast.success("Importação concluída sem erros.");
+        return;
       }
-      setCommitResult(finalResult);
-      const failed = finalResult?.result?.rows_failed ?? 0;
-      if (failed > 0) toast.warning(`Importação com ${failed} falha(s).`);
-      else toast.success("Importação concluída sem erros.");
+
+      // Chunked path: client-side chunking, synchronous per-chunk processing
+      const chunks: any[][] = [];
+      for (let i = 0; i < totalRows; i += CHUNK_SIZE) chunks.push(allRows.slice(i, i + CHUNK_SIZE));
+      let importLogId: string | undefined;
+
+      toast.info(`Importação iniciada: ${totalRows} linhas em ${chunks.length} lotes…`, { duration: 4000 });
+
+      for (let idx = 0; idx < chunks.length; idx++) {
+        const offset = idx * CHUNK_SIZE;
+        const pct = Math.round((offset / totalRows) * 100);
+        toast.message(`Importando lote ${idx + 1}/${chunks.length} … ${offset}/${totalRows} (${pct}%)`, { id: "import-progress" });
+        const resp = await callEdgeFunction("commit", {
+          rowsOverride: chunks[idx],
+          importLogId,
+          chunkIndex: idx,
+          chunkTotal: chunks.length,
+          rowOffset: offset,
+        });
+        if (!importLogId && resp?.import_log_id) importLogId = resp.import_log_id;
+      }
+      toast.dismiss("import-progress");
+
+      if (importLogId) {
+        const { data } = await supabase
+          .from("import_logs")
+          .select("id, status, result_summary, file_name, event_id, event_stage_id")
+          .eq("id", importLogId).maybeSingle();
+        const summary = (data?.result_summary as Record<string, unknown> | null) ?? {};
+        const finalResult: CommitResult = {
+          status: data?.status === "success" ? "committed" : ((data?.status as any) ?? "committed"),
+          partial_success: data?.status === "partial",
+          operator_id: "",
+          event_id: (data?.event_id as string) ?? selectedEventId!,
+          event_stage_id: (data?.event_stage_id as string) ?? selectedStageId!,
+          file_name: (data?.file_name as string) ?? file?.name ?? null,
+          timestamp: new Date().toISOString(),
+          result: {
+            people_created: Number(summary.people_created ?? 0),
+            people_reused: Number(summary.people_reused ?? 0),
+            participants_created: Number(summary.participants_created ?? 0),
+            participants_reused: Number(summary.participants_reused ?? 0),
+            participant_event_stages_created: Number(summary.participant_event_stages_created ?? 0),
+            participant_event_stages_reused: Number(summary.participant_event_stages_reused ?? 0),
+            participant_sport_events_created: Number(summary.participant_sport_events_created ?? 0),
+            participant_sport_events_reused: Number(summary.participant_sport_events_reused ?? 0),
+            institutions_created: Number(summary.institutions_created ?? 0),
+            delegations_created: Number(summary.delegations_created ?? 0),
+            pendencias_created: Number(summary.pendencias_created ?? 0),
+            rows_skipped_as_duplicate: Number(summary.rows_skipped_as_duplicate ?? 0),
+            rows_failed: Number(summary.rows_failed ?? 0),
+          },
+          errors_preview: [],
+          warnings: [],
+        };
+        setCommitResult(finalResult);
+        const failed = finalResult.result.rows_failed ?? 0;
+        if (failed > 0) toast.warning(`Importação concluída com ${failed} falha(s).`);
+        else toast.success(`Importação concluída: ${totalRows} linhas processadas.`);
+      }
     } catch (err) {
       toast.dismiss("import-progress");
       toast.error(`Erro na importação: ${(err as Error).message}`, { duration: 10000 });
