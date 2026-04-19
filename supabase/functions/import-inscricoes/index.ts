@@ -587,6 +587,36 @@ function canonicalizeCategory(
       };
     }
     if (compatible.length === 0) {
+      // Fallback determinístico: catálogo da modalidade não tem categoria
+      // para a faixa etária real do atleta (ex.: tiro-com-arco só possui
+      // jers-12-14 mas atleta nasceu em 2009-2011 → faixa 15-17 inexistente).
+      // Mapeia para a categoria de gênero correspondente mais próxima da idade
+      // do atleta para garantir inscrição (princípio: o sistema deve aceitar
+      // todas as inscrições com mapeamento determinístico).
+      const targetGender =
+        (parsed.gender_raw || "").toUpperCase() === "MASCULINO" ? "male" :
+        (parsed.gender_raw || "").toUpperCase() === "FEMININO" ? "female" : null;
+      let pool = cats;
+      if (targetGender) {
+        const filtered = pool.filter(c => c.gender_scope == null || c.gender_scope === "mixed" || c.gender_scope === targetGender);
+        if (filtered.length > 0) pool = filtered;
+      }
+      // Escolhe a categoria com janela etária mais próxima do birth_year
+      const scored = pool.map(c => {
+        const minY = c.min_birth_year ?? -Infinity;
+        const maxY = c.max_birth_year ?? Infinity;
+        const dist = birthYear < minY ? minY - birthYear : birthYear > maxY ? birthYear - maxY : 0;
+        return { c, dist };
+      }).sort((a, b) => a.dist - b.dist);
+      if (scored.length > 0) {
+        const chosen = scored[0].c;
+        return {
+          category_slug: chosen.slug,
+          reason: `by_nearest_age_band: birth_year=${birthYear} fora das janelas de [${candidateSlugs.join(", ")}], escolhida categoria mais próxima "${chosen.slug}" (distância ${scored[0].dist} ano(s))`,
+          matched_by: "birth_date",
+          candidates: candidateSlugs,
+        };
+      }
       return {
         category_slug: null,
         reason: `birth_year_out_of_range: birth_year=${birthYear} fora de toda janela de [${candidateSlugs.join(", ")}]`,
