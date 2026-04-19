@@ -83,102 +83,83 @@ export default function ParticipantesPage() {
     queryKey: ["all-participants", selectedEventId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase
-        .from("participants")
-        .select("id, status, participant_type, person_id, delegation_id, created_at")
-        .eq("event_id", selectedEventId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      // Paginate to bypass PostgREST default 1000-row cap and fetch joined data in one query
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      const all: any[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("participants")
+          .select(
+            "id, status, participant_type, person_id, delegation_id, created_at, " +
+              "person:people(id, full_name, cpf, gender), " +
+              "delegation:delegations(id, institution_id, institution:institutions(id, name))"
+          )
+          .eq("event_id", selectedEventId)
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      return all;
     },
     enabled: !!selectedEventId,
   });
 
-  const personIds = participants?.map((p) => p.person_id) ?? [];
-  const delegationIds = [...new Set(participants?.map((p) => p.delegation_id) ?? [])];
+  // Build lookup maps from embedded relations
+  const peopleMapEmbedded = new Map<string, any>();
+  const delegationMapEmbedded = new Map<string, any>();
+  const institutionMapEmbedded = new Map<string, any>();
+  for (const p of participants ?? []) {
+    if ((p as any).person) peopleMapEmbedded.set((p as any).person.id, (p as any).person);
+    const del = (p as any).delegation;
+    if (del) {
+      delegationMapEmbedded.set(del.id, del);
+      if (del.institution) institutionMapEmbedded.set(del.institution.id, del.institution);
+    }
+  }
+  const people = Array.from(peopleMapEmbedded.values());
+  const delegations = Array.from(delegationMapEmbedded.values());
+  const institutions = Array.from(institutionMapEmbedded.values());
 
-  const { data: people = [] } = useQuery({
-    queryKey: ["participants-people", personIds],
-    queryFn: async () => {
-      if (personIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("people").select("id, full_name, cpf, gender").in("id", personIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: personIds.length > 0,
-  });
-
-  const { data: delegations = [] } = useQuery({
-    queryKey: ["participants-delegations", delegationIds],
-    queryFn: async () => {
-      if (delegationIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("delegations").select("id, institution_id").in("id", delegationIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: delegationIds.length > 0,
-  });
-
-  const instIds = [...new Set(delegations.map((d) => d.institution_id))];
-  const { data: institutions = [] } = useQuery({
-    queryKey: ["participants-institutions", instIds],
-    queryFn: async () => {
-      if (instIds.length === 0) return [];
-      const { data, error } = await supabase.from("institutions").select("id, name").in("id", instIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: instIds.length > 0,
-  });
-
-  // Load sport enrollments for these participants
+  // Load sport enrollments for these participants (chunked to avoid URL length limits)
   const partIds = participants?.map((p) => p.id) ?? [];
   const { data: enrollments = [] } = useQuery({
-    queryKey: ["participants-enrollments", partIds],
+    queryKey: ["participants-enrollments", selectedEventId, partIds.length],
     queryFn: async () => {
       if (partIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("participant_sport_events")
-        .select("participant_id, sport_event_id")
-        .in("participant_id", partIds);
-      if (error) throw error;
-      return data;
+      const CHUNK = 200;
+      const out: any[] = [];
+      for (let i = 0; i < partIds.length; i += CHUNK) {
+        const slice = partIds.slice(i, i + CHUNK);
+        const { data, error } = await supabase
+          .from("participant_sport_events")
+          .select("participant_id, sport_event_id, sport_event:sport_events(id, name, sport_id, sport:sports(id, name))")
+          .in("participant_id", slice);
+        if (error) throw error;
+        out.push(...(data ?? []));
+      }
+      return out;
     },
     enabled: partIds.length > 0,
   });
 
-  const seIds = [...new Set(enrollments.map((e) => e.sport_event_id))];
-  const { data: sportEvents = [] } = useQuery({
-    queryKey: ["participants-sport-events", seIds],
-    queryFn: async () => {
-      if (seIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("sport_events").select("id, name, sport_id").in("id", seIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: seIds.length > 0,
-  });
+  const sportEventMap = new Map<string, any>();
+  const sportMap = new Map<string, any>();
+  for (const e of enrollments) {
+    const se = (e as any).sport_event;
+    if (se) {
+      sportEventMap.set(se.id, se);
+      if (se.sport) sportMap.set(se.sport.id, se.sport);
+    }
+  }
 
-  const sportIds = [...new Set(sportEvents.map((se) => se.sport_id))];
-  const { data: sports = [] } = useQuery({
-    queryKey: ["participants-sports", sportIds],
-    queryFn: async () => {
-      if (sportIds.length === 0) return [];
-      const { data, error } = await supabase.from("sports").select("id, name").in("id", sportIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: sportIds.length > 0,
-  });
-
-  const peopleMap = new Map(people.map((p) => [p.id, p]));
-  const delegationMap = new Map(delegations.map((d) => [d.id, d]));
-  const institutionMap = new Map(institutions.map((i) => [i.id, i]));
-  const sportEventMap = new Map(sportEvents.map((se) => [se.id, se]));
-  const sportMap = new Map(sports.map((s) => [s.id, s]));
+  const peopleMap = new Map(people.map((p: any) => [p.id, p]));
+  const delegationMap = new Map(delegations.map((d: any) => [d.id, d]));
+  const institutionMap = new Map(institutions.map((i: any) => [i.id, i]));
 
   const getInstitutionName = (delegationId: string) => {
     const del = delegationMap.get(delegationId);
