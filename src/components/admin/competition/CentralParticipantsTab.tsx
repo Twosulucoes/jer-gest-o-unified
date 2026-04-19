@@ -89,7 +89,7 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
   const [activeTab, setActiveTab] = useState("aptos");
 
   // Escopo de etapa (se a página estiver dentro de /admin/etapa/:stageId/...)
-  const { isStageScoped, participantIds: stageParticipantIds, isLoading: loadingStageScope } = useStageScope();
+  const { isStageScoped, participantIds: stageParticipantIds } = useStageScope();
 
   // Individual enrollments
   const { data: enrolledRaw = [], isLoading: loadingEnrolled, error: errorEnrolled } = useQuery({
