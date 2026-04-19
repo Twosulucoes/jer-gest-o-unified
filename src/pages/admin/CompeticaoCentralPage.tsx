@@ -16,6 +16,7 @@ import WizardStepper, { type WizardStep } from "@/components/admin/competition/W
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { useStageScope } from "@/hooks/useStageScope";
 
 export default function CompeticaoCentralPage() {
   const eventId = useActiveEventId();
@@ -27,7 +28,10 @@ export default function CompeticaoCentralPage() {
     searchParams.get("step") ?? "participants"
   );
 
-  const { data: summary, isLoading: summaryLoading } = useQuery({
+  // Escopo de etapa (se a página estiver dentro de /admin/etapa/:stageId/...)
+  const { isStageScoped, stageId, participantIds: stageParticipantIds } = useStageScope();
+
+  const { data: summaryRaw, isLoading: summaryLoading } = useQuery({
     queryKey: ["competition-summary", eventId, sportEventId],
     queryFn: async () => {
       if (!sportEventId) return null;
@@ -47,7 +51,46 @@ export default function CompeticaoCentralPage() {
     enabled: !!sportEventId,
   });
 
-  const isCollective = summary?.is_collective ?? false;
+  const isCollective = summaryRaw?.is_collective ?? false;
+
+  // Recalcula contadores escopados por etapa (quando aplicável)
+  const { data: stageScoped } = useQuery({
+    queryKey: ["competition-summary-stage", eventId, sportEventId, stageId, isCollective, stageParticipantIds?.size ?? 0],
+    enabled: !!sportEventId && isStageScoped && !!stageParticipantIds,
+    queryFn: async () => {
+      const ids = Array.from(stageParticipantIds!);
+      if (ids.length === 0) return { enrolled_count: 0, teams_count: 0 };
+
+      // Inscritos individuais da prova que pertencem à etapa
+      const { count: enrolledCount } = await supabase
+        .from("participant_sport_events")
+        .select("id", { count: "exact", head: true })
+        .eq("sport_event_id", sportEventId!)
+        .in("participant_id", ids);
+
+      let teamsCount = 0;
+      if (isCollective) {
+        const { data: tm } = await supabase
+          .from("team_members")
+          .select("team_id, teams!inner(sport_event_id)")
+          .in("participant_id", ids)
+          .eq("teams.sport_event_id", sportEventId!);
+        teamsCount = new Set((tm ?? []).map((r: any) => r.team_id)).size;
+      }
+
+      return { enrolled_count: enrolledCount ?? 0, teams_count: teamsCount };
+    },
+  });
+
+  const summary = useMemo(() => {
+    if (!summaryRaw) return summaryRaw;
+    if (!isStageScoped || !stageScoped) return summaryRaw;
+    return {
+      ...summaryRaw,
+      enrolled_count: stageScoped.enrolled_count,
+      teams_count: stageScoped.teams_count,
+    };
+  }, [summaryRaw, isStageScoped, stageScoped]);
 
   const steps: WizardStep[] = useMemo(() => [
     { key: "participants", label: isCollective ? "Inscritos (Equipes)" : "Inscritos (Atletas)" },
