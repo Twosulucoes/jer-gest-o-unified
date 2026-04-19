@@ -283,8 +283,10 @@ interface ParsedSportText {
   is_paralimpic: boolean;
 }
 
-function parseSportText(modalidadeRaw: string, competicaoRaw: string): ParsedSportText {
-  const combined = normalizeStr(`${modalidadeRaw} ${competicaoRaw}`);
+function parseSportText(modalidadeRaw: string, competicaoRaw: string, provaRaw: string = ""): ParsedSportText {
+  // SIGECOM: PROVA frequentemente carrega faixa etária e gênero (ex.: "BASQUETE 15 A 17 ANOS MASCULINO",
+  // "3000 METROS", "14 A 16 ANOS - 50 METROS LIVRE - FEMININO"). Incluímos para extrair age_band/gender.
+  const combined = normalizeStr(`${modalidadeRaw} ${competicaoRaw} ${provaRaw}`);
   let cleaned = ` ${combined} `;
 
   // Remove tokens de etapa
@@ -297,8 +299,11 @@ function parseSportText(modalidadeRaw: string, competicaoRaw: string): ParsedSpo
   const gender = genderMatch?.[1] ?? null;
   if (genderMatch) cleaned = cleaned.replace(genderMatch[0], " ");
 
-  // Extrai faixa etária (ex.: "15-17 ANOS", "12 A 14 ANOS", "17 ANOS")
-  const rangeMatch = cleaned.match(/\b(\d{1,2})\s*(?:[-/]|A)\s*(\d{1,2})\s*ANOS?\b/);
+  // Extrai faixa etária. SIGECOM: "ANOS" às vezes está ausente em provas de
+  // combate/ciclismo (ex.: "KATA INDIVIDUAL 15 A 17 FEMININO", "CICLISMO 15 A 17").
+  // Aceitamos intervalo numérico (\d{1,2}-\d{1,2} ou \d A \d) com ANOS opcional;
+  // valor único só se vier seguido de ANOS para evitar falso positivo com pesos/distâncias.
+  const rangeMatch = cleaned.match(/\b(\d{1,2})\s*(?:[-/]|A)\s*(\d{1,2})\s*(?:ANOS?\b)?/);
   const singleMatch = !rangeMatch ? cleaned.match(/\b(\d{1,2})\s*ANOS?\b/) : null;
   let ageBandRaw: string | null = null;
   let ageBandNormalized: string | null = null;
@@ -622,11 +627,15 @@ function normalizeHeaders(rows: RawRow[]): RawRow[] {
 }
 
 function deriveParticipantType(userType: string, funcao: string): string {
-  const ut = userType.toLowerCase();
+  const ut = (userType || "").toLowerCase();
+  const fn = (funcao || "").toLowerCase();
+  // Atleta sempre vence (mesmo se TIPO USUARIO vier composto)
   if (ut.includes("atleta")) return "athlete";
-  if (funcao.toLowerCase().includes("técnico") || funcao.toLowerCase().includes("tecnico")) return "coach";
-  if (funcao.toLowerCase().includes("chefe de delegação") || funcao.toLowerCase().includes("chefe de delegacao")) return "head_of_delegation";
-  if (ut.includes("comissão técnica") || ut.includes("comissao tecnica")) return "coach";
+  // Chefe de delegação tem prioridade sobre técnico/prestador
+  if (fn.includes("chefe de delegação") || fn.includes("chefe de delegacao") || ut.includes("chefe de delegação") || ut.includes("chefe de delegacao")) return "head_of_delegation";
+  // Comissão técnica / técnico antes de prestador (para casos compostos do SIGECOM
+  // como "Prestador de serviço, Comissão técnica")
+  if (ut.includes("comissão técnica") || ut.includes("comissao tecnica") || fn.includes("técnico") || fn.includes("tecnico")) return "coach";
   if (ut.includes("prestador")) return "staff";
   return "staff";
 }
@@ -662,7 +671,7 @@ function mapColumns(
   const birthDate = parseDate(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"]);
 
   // ── Parser canônico: modalidade + categoria do catálogo ──
-  const parsed = parseSportText(sportRaw, competicaoRaw);
+  const parsed = parseSportText(sportRaw, competicaoRaw, prova);
   const sportRes = canonicalizeSport(parsed, catalog.sportsSet, catalog.sportAliases ?? {});
   let categoryRes: CategoryResolution = {
     category_slug: null, reason: "modalidade não resolvida", matched_by: null, candidates: [],
