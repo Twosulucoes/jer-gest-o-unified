@@ -784,6 +784,7 @@ async function loadReadOnlyMaps(
       slug: c.slug,
       min_birth_year: c.min_birth_year ?? null,
       max_birth_year: c.max_birth_year ?? null,
+      gender_scope: (c as any).gender_scope ?? null,
     });
   }
 
