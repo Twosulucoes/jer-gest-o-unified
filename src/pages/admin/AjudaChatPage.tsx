@@ -27,12 +27,14 @@ interface ProviderStatus {
 }
 
 const PROVIDERS = [
+  { id: "lovable", label: "Lovable AI", sub: "Gemini (padrão)" },
   { id: "claude", label: "Claude", sub: "Anthropic" },
   { id: "grok", label: "Grok", sub: "xAI" },
   { id: "deepseek", label: "DeepSeek", sub: "DeepSeek AI" },
 ] as const;
 
 const PROVIDER_COLORS: Record<string, string> = {
+  lovable: "bg-emerald-100 text-emerald-800 border-emerald-200",
   claude: "bg-violet-100 text-violet-800 border-violet-200",
   grok: "bg-blue-100 text-blue-800 border-blue-200",
   deepseek: "bg-teal-100 text-teal-800 border-teal-200",
@@ -288,7 +290,7 @@ export default function AjudaChatPage() {
                 Testar todos
               </Button>
               <p className="text-[10px] text-muted-foreground">
-                Ordem de fallback: Claude → Grok → DeepSeek
+                Ordem de fallback: Lovable AI → Claude → Grok → DeepSeek
               </p>
             </CardContent>
           </Card>
