@@ -668,7 +668,7 @@ function mapColumns(
   const birthDate = parseDate(raw["DATA NASCIMENTO"] ?? raw["DATA_NASCIMENTO"]);
 
   // ── Parser canônico: modalidade + categoria do catálogo ──
-  const parsed = parseSportText(sportRaw, competicaoRaw);
+  const parsed = parseSportText(sportRaw, competicaoRaw, prova);
   const sportRes = canonicalizeSport(parsed, catalog.sportsSet, catalog.sportAliases ?? {});
   let categoryRes: CategoryResolution = {
     category_slug: null, reason: "modalidade não resolvida", matched_by: null, candidates: [],
