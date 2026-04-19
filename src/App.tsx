@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { EventProvider } from "@/contexts/EventContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SuperAdminRoute from "@/components/SuperAdminRoute";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import AdminLayout from "@/components/AdminLayout";
 import RedirectToEtapas from "@/components/admin/RedirectToEtapas";
 import StageLayout from "@/components/StageLayout";
@@ -177,6 +178,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <EventProvider>
           <Routes>
