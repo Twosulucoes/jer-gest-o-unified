@@ -38,7 +38,7 @@ export default function SuperManualPage() {
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("help_manual_sections")
       .select("*")
       .order("category", { ascending: true })
@@ -64,8 +64,8 @@ export default function SuperManualPage() {
       is_published: editing.is_published ?? true,
     };
     const { error } = editing.id
-      ? await supabase.from("help_manual_sections").update(payload).eq("id", editing.id)
-      : await supabase.from("help_manual_sections").insert(payload);
+      ? await (supabase as any).from("help_manual_sections").update(payload).eq("id", editing.id)
+      : await (supabase as any).from("help_manual_sections").insert(payload);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Seção salva");
@@ -75,14 +75,14 @@ export default function SuperManualPage() {
 
   async function handleDelete(id: string) {
     if (!confirm("Excluir esta seção do manual?")) return;
-    const { error } = await supabase.from("help_manual_sections").delete().eq("id", id);
+    const { error } = await (supabase as any).from("help_manual_sections").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Seção excluída");
     load();
   }
 
   async function reorder(sec: Section, delta: number) {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("help_manual_sections")
       .update({ sort_order: sec.sort_order + delta })
       .eq("id", sec.id);

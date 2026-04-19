@@ -24,7 +24,7 @@ export default function AjudaManualPage() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("help_manual_sections")
         .select("id,category,title,content_md,sort_order")
         .eq("is_published", true)
