@@ -8,6 +8,7 @@ import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle } from "lucide
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
+import { isVoucherQr, tryRedeemVoucher, voucherReasonLabel } from "@/lib/voucherScan";
 import { useAuth } from "@/hooks/useAuth";
 import {
   loadScanPreferences,
@@ -89,17 +90,39 @@ export default function AlimentacaoScanPage() {
     }
 
     try {
-      const resolved = await resolveQrCredential(rawValue);
+      let participantId: string | null = null;
+      let participantName: string | null = null;
+      const foodRestrictions: string | null = null;
+      let viaVoucher = false;
 
-      if (!resolved) {
-        setResult({ ok: false, message: "Credencial não encontrada ou inativa" });
+      // Auto-detecção: voucher tem prefixo `voucher:`
+      if (isVoucherQr(rawValue)) {
+        const voucher = await tryRedeemVoucher(rawValue, "meals", windowId);
+        if (!voucher || !voucher.ok) {
+          setResult({ ok: false, message: voucherReasonLabel(voucher?.reason) });
+          recordOutcome("error");
+          reopenIfContinuous();
+          return;
+        }
+        participantId = voucher.participant_id ?? null;
+        participantName = voucher.person_name ?? null;
+        viaVoucher = true;
+      } else {
+        const resolved = await resolveQrCredential(rawValue);
+        if (!resolved) {
+          setResult({ ok: false, message: "Credencial não encontrada ou inativa" });
+          recordOutcome("error");
+          return;
+        }
+        participantId = resolved.participant_id;
+        participantName = resolved.full_name;
+      }
+
+      if (!participantId) {
+        setResult({ ok: false, message: "Não foi possível identificar a pessoa" });
         recordOutcome("error");
         return;
       }
-
-      const participantId = resolved.participant_id;
-      const participantName = resolved.full_name;
-      const foodRestrictions: string | null = null;
 
       const { count } = await supabase
         .from("meal_consumptions")
@@ -125,7 +148,7 @@ export default function AlimentacaoScanPage() {
       const { error } = await supabase.from("meal_consumptions").insert({
         participant_id: participantId,
         meal_window_id: windowId,
-        method: "qr_scan",
+        method: viaVoucher ? "voucher" : "qr_scan",
         registered_by: session.user.id,
       });
 
@@ -133,7 +156,7 @@ export default function AlimentacaoScanPage() {
 
       setResult({
         ok: true,
-        message: `Consumo registrado: ${participantName || ""}`,
+        message: `${viaVoucher ? "🎫 Voucher · " : ""}Consumo registrado: ${participantName || ""}`,
         restrictions: foodRestrictions || undefined,
       });
       recordOutcome("ok");
