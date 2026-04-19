@@ -436,7 +436,7 @@ const SINGLE_CATEGORY_FALLBACK_WHITELIST = new Set<string>([
   "wrestling",
 ]);
 
-interface CategoryWindow { slug: string; min_birth_year: number | null; max_birth_year: number | null; }
+interface CategoryWindow { slug: string; min_birth_year: number | null; max_birth_year: number | null; gender_scope: string | null; }
 
 /**
  * Resolve categoria canônica em até 3 estágios:
@@ -460,25 +460,72 @@ function canonicalizeCategory(
   );
   const candidateSlugs = cats.map(c => c.slug);
 
-  // 1. Faixa etária explícita
+  // 1. Faixa etária explícita — resolução DINÂMICA via janelas do catálogo
+  //    (sem mapa hardcoded; funciona para qualquer evento/modalidade).
   if (parsed.age_band_normalized) {
-    for (const rule of AGE_BAND_TO_CATEGORY) {
-      if (rule.ageBand !== parsed.age_band_normalized) continue;
-      if (!rule.sportPattern.test(sportSlug)) continue;
-      if (!catalogPairs.has(`${sportSlug}|${rule.categorySlug}`)) continue;
-      return {
-        category_slug: rule.categorySlug,
-        reason: `by_age_band: faixa "${parsed.age_band_normalized}" + "${sportSlug}" -> ${rule.categorySlug}`,
-        matched_by: "age_band",
-        candidates: candidateSlugs,
-      };
+    const ageParts = parsed.age_band_normalized.split("-").map(n => Number(n)).filter(n => Number.isFinite(n));
+    const ageMin = ageParts[0];
+    const ageMax = ageParts.length > 1 ? ageParts[1] : ageParts[0];
+    if (Number.isFinite(ageMin) && Number.isFinite(ageMax) && eventYear) {
+      // Faixa de birth_year derivada da faixa etária + ano-base
+      const derivedBirthMin = eventYear - ageMax;
+      const derivedBirthMax = eventYear - ageMin;
+
+      // Gênero alvo a partir do texto da planilha
+      const g = (parsed.gender_raw || "").toUpperCase();
+      const targetGender: string | null =
+        g === "MASCULINO" ? "male" :
+        g === "FEMININO" ? "female" :
+        (g === "MISTO" || g === "MISTA") ? "mixed" : null;
+
+      // Filtra candidatas por sobreposição de janela e (se houver) gênero
+      const matches = cats.filter(c => {
+        const winMin = c.min_birth_year ?? -Infinity;
+        const winMax = c.max_birth_year ?? Infinity;
+        const overlaps = winMax >= derivedBirthMin && winMin <= derivedBirthMax;
+        if (!overlaps) return false;
+        if (targetGender && c.gender_scope && c.gender_scope !== "mixed" && c.gender_scope !== targetGender) return false;
+        return true;
+      });
+
+      if (matches.length === 1) {
+        return {
+          category_slug: matches[0].slug,
+          reason: `by_age_band: faixa "${parsed.age_band_normalized}"${targetGender ? `/${targetGender}` : ""} -> birth ∈ [${derivedBirthMin},${derivedBirthMax}] -> ${matches[0].slug}`,
+          matched_by: "age_band",
+          candidates: candidateSlugs,
+        };
+      }
+
+      // Múltiplos matches: tentar desempate fino por birth_date dentro do subset
+      if (matches.length > 1 && birthDate) {
+        const by = Number(birthDate.slice(0, 4));
+        if (Number.isFinite(by)) {
+          const tight = matches.filter(c =>
+            (c.min_birth_year == null || by >= c.min_birth_year) &&
+            (c.max_birth_year == null || by <= c.max_birth_year)
+          );
+          if (tight.length === 1) {
+            return {
+              category_slug: tight[0].slug,
+              reason: `by_age_band+birth_date: faixa "${parsed.age_band_normalized}"${targetGender ? `/${targetGender}` : ""} + birth_year=${by} -> ${tight[0].slug}`,
+              matched_by: "age_band",
+              candidates: candidateSlugs,
+            };
+          }
+        }
+      }
+
+      if (matches.length === 0) {
+        return {
+          category_slug: null,
+          reason: `by_age_band_failed: faixa "${parsed.age_band_normalized}"${targetGender ? `/${targetGender}` : ""} (birth ∈ [${derivedBirthMin},${derivedBirthMax}]) sem categoria compatível em [${candidateSlugs.join(", ")}]`,
+          matched_by: null,
+          candidates: candidateSlugs,
+        };
+      }
+      // Cai para fluxo de birth_date abaixo se ainda ambíguo
     }
-    return {
-      category_slug: null,
-      reason: `by_age_band_failed: faixa "${parsed.age_band_normalized}" sem mapeamento para "${sportSlug}"`,
-      matched_by: null,
-      candidates: candidateSlugs,
-    };
   }
 
   if (cats.length === 0) {
@@ -755,7 +802,7 @@ async function loadReadOnlyMaps(
   const [instRes, sportRes, catRes, seRes, delRes, evRes, aliasRes] = await Promise.all([
     supabase.from("institutions").select("id, slug").eq("is_active", true),
     supabase.from("sports").select("id, slug").eq("event_id", eventId),
-    supabase.from("categories").select("id, slug, min_birth_year, max_birth_year").eq("event_id", eventId),
+    supabase.from("categories").select("id, slug, min_birth_year, max_birth_year, gender_scope").eq("event_id", eventId),
     supabase.from("sport_events").select("id, sport_id, category_id, slug").eq("event_id", eventId),
     supabase.from("delegations").select("id, institution_id").eq("event_id", eventId),
     supabase.from("events").select("year").eq("id", eventId).maybeSingle(),
@@ -784,6 +831,7 @@ async function loadReadOnlyMaps(
       slug: c.slug,
       min_birth_year: c.min_birth_year ?? null,
       max_birth_year: c.max_birth_year ?? null,
+      gender_scope: (c as any).gender_scope ?? null,
     });
   }
 
