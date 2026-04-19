@@ -16,6 +16,7 @@ import { format } from "date-fns";
 
 export default function AlimentacaoDashboardPage() {
   const eventId = useActiveEventId();
+  const { isStageScoped, stageId, stage, participantIds: stageParticipantIds, error: stageError } = useStageScope();
   const [filterDate, setFilterDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [filterDelegation, setFilterDelegation] = useState("all");
   const [filterMealType, setFilterMealType] = useState("all");
@@ -43,37 +44,43 @@ export default function AlimentacaoDashboardPage() {
     enabled: !!eventId,
   });
 
-  // Meal windows for the selected date
+  // Meal windows for the selected date — restritos à etapa quando aplicável
   const { data: mealWindows = [] } = useQuery({
-    queryKey: ["meal-windows-dash", eventId, filterDate],
+    queryKey: ["meal-windows-dash", eventId, filterDate, stageId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("meal_windows")
-        .select("id, label, meal_type_id, start_time, end_time, service_date")
+        .select("id, label, meal_type_id, start_time, end_time, service_date, event_stage_id")
         .eq("event_id", eventId)
         .eq("service_date", filterDate)
         .eq("is_active", true)
         .order("start_time");
+      if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
     enabled: !!eventId,
   });
 
-  // Consumptions for the date
+  // Consumptions for the date — também filtradas por participantes da etapa
   const { data: consumptions = [], isLoading, isError } = useQuery({
-    queryKey: ["meal-consumptions-dash", eventId, filterDate, refreshKey],
+    queryKey: ["meal-consumptions-dash", eventId, filterDate, refreshKey, stageId, stageParticipantIds?.size ?? -1],
     queryFn: async () => {
       const windowIds = mealWindows.map((w) => w.id);
       if (!windowIds.length) return [];
-      const { data, error } = await supabase
+      let q = supabase
         .from("meal_consumptions")
         .select("id, meal_window_id, participant_id, consumed_at, method")
         .in("meal_window_id", windowIds);
+      if (isStageScoped && stageParticipantIds && stageParticipantIds.size > 0) {
+        q = q.in("participant_id", Array.from(stageParticipantIds));
+      }
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
-    enabled: mealWindows.length > 0,
+    enabled: mealWindows.length > 0 && (!isStageScoped || !!stageParticipantIds),
   });
 
   // Participants with delegations
@@ -116,10 +123,11 @@ export default function AlimentacaoDashboardPage() {
     [delegations]
   );
 
-  // Total participants in event
+  // Total participants in event (ou na etapa, se estamos em escopo de etapa)
   const { data: totalParticipants = 0 } = useQuery({
-    queryKey: ["total-participants-dash", eventId],
+    queryKey: ["total-participants-dash", eventId, stageId, stageParticipantIds?.size ?? -1],
     queryFn: async () => {
+      if (isStageScoped) return stageParticipantIds?.size ?? 0;
       const { count, error } = await supabase
         .from("participants")
         .select("id", { count: "exact", head: true })
@@ -128,7 +136,7 @@ export default function AlimentacaoDashboardPage() {
       if (error) throw error;
       return count ?? 0;
     },
-    enabled: !!eventId,
+    enabled: !!eventId && (!isStageScoped || !!stageParticipantIds),
   });
 
   // Filtered consumptions
@@ -224,6 +232,26 @@ export default function AlimentacaoDashboardPage() {
         <h1 className="font-heading text-2xl font-bold text-foreground">Dashboard de Alimentação</h1>
         <p className="text-sm text-muted-foreground">Visão consolidada do consumo de refeições em tempo real</p>
       </div>
+
+      {isStageScoped && stage && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Etapa: {stage.name}</AlertTitle>
+          <AlertDescription>
+            Exibindo apenas janelas de refeição e consumos vinculados a esta etapa.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {stageError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro ao carregar escopo da etapa</AlertTitle>
+          <AlertDescription>
+            Não foi possível filtrar o dashboard pela etapa ({stageError.message}).
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
