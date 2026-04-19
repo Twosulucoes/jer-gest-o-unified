@@ -838,14 +838,14 @@ async function loadReadOnlyMaps(
   }
 
   const sportEvents = new Map<string, string>();
-  const sportEventsBySportCat = new Map<string, Array<{ id: string; slug: string }>>();
+  const sportEventsBySportCat = new Map<string, Array<{ id: string; slug: string; name: string }>>();
   const sportCategoryPairs = new Set<string>();
   const categoriesBySport = new Map<string, CategoryWindow[]>();
   for (const se of (seRes.data ?? []) as any[]) {
     sportEvents.set(`${se.sport_id}|${se.category_id}|${se.slug}`, se.id);
     const pairKey = `${se.sport_id}|${se.category_id}`;
     const arrSE = sportEventsBySportCat.get(pairKey) ?? [];
-    arrSE.push({ id: se.id, slug: se.slug });
+    arrSE.push({ id: se.id, slug: se.slug, name: se.name ?? se.slug });
     sportEventsBySportCat.set(pairKey, arrSE);
     const sSlug = sportsById.get(se.sport_id);
     const cSlug = catsById.get(se.category_id);
