@@ -187,17 +187,48 @@ const RULES: DeterministicRule[] = [
     if (/\bSALTO\b.*\bTRIPLO\b|SALTO\s+TRIPLO/.test(raw))
       return findInCatalog(cat, s => /salto-triplo/.test(s));
 
-    // 3) Barreiras / marcha
-    if (/BARREIRAS?/.test(raw)) {
+    // 3) Barreiras / marcha — se existir slug específico use; senão fallback
+    //    determinístico p/ distância de corrida mais próxima (catálogo JERS
+    //    não possui slugs de barreira/marcha — mapeia 110→100, 80→75, etc.)
+    if (/BARREIRAS?|HURDLES?/.test(raw)) {
       const m = raw.match(/(\d{2,4})/);
-      if (m) {
+      const exactBarreira = findInCatalog(cat, s => /barreira|hurdle/.test(s));
+      if (exactBarreira && m) {
         const dist = m[1];
-        const exact = findInCatalog(cat, s => new RegExp(`-${dist}m?-.*barreira|barreira.*${dist}`).test(s));
-        if (exact) return exact;
+        const distSpecific = findInCatalog(cat, s => new RegExp(`-${dist}m?-.*barreira|barreira.*${dist}`).test(s));
+        if (distSpecific) return distSpecific;
       }
-      return findInCatalog(cat, s => /barreira/.test(s));
+      if (exactBarreira) return exactBarreira;
+      // Fallback: barreira é prova de velocidade — mapeia p/ corrida mais próxima
+      if (m) {
+        const target = Number(m[1]);
+        const distances = cat
+          .map(c => {
+            const mm = c.slug.match(/atletismo-(\d{2,4})m-/);
+            return mm ? { c, d: Number(mm[1]) } : null;
+          })
+          .filter((x): x is { c: CatalogEvent; d: number } => x !== null);
+        if (distances.length > 0) {
+          distances.sort((a, b) => Math.abs(a.d - target) - Math.abs(b.d - target));
+          return distances[0].c;
+        }
+      }
     }
-    if (/MARCHA/.test(raw)) return findInCatalog(cat, s => /marcha/.test(s));
+    if (/MARCHA|WALK/.test(raw)) {
+      const exactMarcha = findInCatalog(cat, s => /marcha|walk/.test(s));
+      if (exactMarcha) return exactMarcha;
+      // Fallback: marcha atlética é prova de longa distância → mapeia p/ maior corrida
+      const distances = cat
+        .map(c => {
+          const mm = c.slug.match(/atletismo-(\d{2,4})m-/);
+          return mm ? { c, d: Number(mm[1]) } : null;
+        })
+        .filter((x): x is { c: CatalogEvent; d: number } => x !== null);
+      if (distances.length > 0) {
+        distances.sort((a, b) => b.d - a.d);
+        return distances[0].c;
+      }
+    }
 
     // 4) Revezamento NxDistancia
     const relayMatch = raw.match(/(?:REVEZAMENTO|REV)\s*(\d)\s*X\s*(\d{2,3})|(\d)\s*X\s*(\d{2,3})/);
