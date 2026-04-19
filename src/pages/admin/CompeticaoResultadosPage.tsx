@@ -75,7 +75,7 @@ export default function CompeticaoResultadosPage() {
 
   const sportEventIds = sportEvents.map((se: any) => se.id);
 
-  const { data: matches = [], isLoading: loadingMatches } = useQuery({
+  const { data: matchesRaw = [], isLoading: loadingMatches } = useQuery({
     queryKey: ["competition_matches_results_overview", selectedEventId, sportEventIds],
     queryFn: async () => {
       if (!selectedEventId) return [];
@@ -90,6 +90,11 @@ export default function CompeticaoResultadosPage() {
     },
     enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
   });
+
+  // Filtro estrito de etapa: se há escopo de etapa, mantém apenas partidas vinculadas
+  const matches = isStageScoped && stageMatchIds
+    ? matchesRaw.filter((m) => stageMatchIds.has(m.id))
+    : matchesRaw;
 
   const matchIds = matches.map((m) => m.id);
   const { data: allResults = [] } = useQuery({
