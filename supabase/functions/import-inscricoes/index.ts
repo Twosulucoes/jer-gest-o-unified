@@ -283,8 +283,10 @@ interface ParsedSportText {
   is_paralimpic: boolean;
 }
 
-function parseSportText(modalidadeRaw: string, competicaoRaw: string): ParsedSportText {
-  const combined = normalizeStr(`${modalidadeRaw} ${competicaoRaw}`);
+function parseSportText(modalidadeRaw: string, competicaoRaw: string, provaRaw: string = ""): ParsedSportText {
+  // SIGECOM: PROVA frequentemente carrega faixa etária e gênero (ex.: "BASQUETE 15 A 17 ANOS MASCULINO",
+  // "3000 METROS", "14 A 16 ANOS - 50 METROS LIVRE - FEMININO"). Incluímos para extrair age_band/gender.
+  const combined = normalizeStr(`${modalidadeRaw} ${competicaoRaw} ${provaRaw}`);
   let cleaned = ` ${combined} `;
 
   // Remove tokens de etapa
