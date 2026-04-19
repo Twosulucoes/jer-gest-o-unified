@@ -258,18 +258,33 @@ export default function CredenciamentoPage() {
   const participants = allParticipants;
 
   // --- Active credentials ---
+  // Quando há filtro de etapa, busca somente credenciais cujos participant_id estejam na etapa.
   const { data: activeCredentials = [] } = useQuery({
-    queryKey: ["credenciamento-credentials", selectedEventId],
+    queryKey: ["credenciamento-credentials", selectedEventId, stageId, effectiveStageFilter?.length ?? -1],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase
-        .from("participant_credentials")
-        .select("id, participant_id, credential_code, status")
-        .eq("event_id", selectedEventId)
-        .eq("status", "active")
-        .limit(2000);
-      if (error) throw error;
-      return data;
+      if (effectiveStageFilter && effectiveStageFilter.length === 0) return [];
+
+      const CHUNK = 1000;
+      const all: any[] = [];
+      const idChunks: (string[] | null)[] = effectiveStageFilter
+        ? Array.from({ length: Math.ceil(effectiveStageFilter.length / CHUNK) }, (_, i) =>
+            effectiveStageFilter.slice(i * CHUNK, (i + 1) * CHUNK))
+        : [null];
+
+      for (const ids of idChunks) {
+        let q = supabase
+          .from("participant_credentials")
+          .select("id, participant_id, credential_code, status")
+          .eq("event_id", selectedEventId)
+          .eq("status", "active")
+          .limit(2000);
+        if (ids) q = q.in("participant_id", ids);
+        const { data, error } = await q;
+        if (error) throw error;
+        all.push(...(data ?? []));
+      }
+      return all;
     },
     enabled: !!selectedEventId,
   });

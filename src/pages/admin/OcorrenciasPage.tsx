@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEventContext } from "@/contexts/EventContext";
+import { useStageScope } from "@/hooks/useStageScope";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
 
 export default function OcorrenciasPage() {
   const { activeEvent } = useEventContext();
+  const { isStageScoped, stageId, stage, error: stageError } = useStageScope();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -69,6 +71,11 @@ export default function OcorrenciasPage() {
       .eq("event_id", activeEvent.id)
       .order("created_at", { ascending: false });
 
+    // Filtro estrito de etapa: se estamos no contexto de etapa, restringe ocorrências.
+    if (isStageScoped && stageId) {
+      query = query.eq("event_stage_id", stageId);
+    }
+
     if (filterModule !== "all") query = query.eq("module", filterModule as any);
     if (filterStatus !== "all") query = query.eq("incident_status", filterStatus as any);
 
@@ -76,7 +83,7 @@ export default function OcorrenciasPage() {
     if (error) console.error(error);
     setIncidents((data as any) || []);
     setLoading(false);
-  }, [activeEvent, filterModule, filterStatus]);
+  }, [activeEvent, filterModule, filterStatus, isStageScoped, stageId]);
 
   useEffect(() => { fetchIncidents(); }, [fetchIncidents]);
 
