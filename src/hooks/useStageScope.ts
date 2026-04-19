@@ -47,7 +47,13 @@ export function useStageScope() {
       const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
         .select("participant_id")
         .eq("event_stage_id", stageId);
-      if (error) throw error;
+      if (error) {
+        // RLS pode bloquear esta tabela para alguns perfis (ex.: coordenador_modalidade).
+        // Em vez de retornar Set vazio (que esconde TODOS os participantes da etapa),
+        // retornamos null para desabilitar o filtro de etapa e evitar estado falso de "vazio".
+        console.warn("[useStageScope] Falha ao carregar participantes da etapa (RLS?). Filtro de etapa desabilitado.", error);
+        return null as Set<string> | null;
+      }
       return new Set<string>((data ?? []).map((r: any) => r.participant_id as string));
     },
   });
