@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { smartMatch } from "./matcher.ts";
+import { smartMatch, matchEventInCatalog } from "./matcher.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
