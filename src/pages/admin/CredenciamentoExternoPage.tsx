@@ -18,6 +18,7 @@ import {
 import { AlertTriangle, CheckCircle, ScanLine, Search, User, XCircle, Users, ShieldCheck, Clock } from "lucide-react";
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import { generateQrCodeValue } from "@/lib/credentialUtils";
 
 import {
   AlertDialog,
@@ -196,6 +197,7 @@ export default function CredenciamentoExternoPage() {
   const linkMutation = useMutation({
     mutationFn: async ({ code, replaceId }: { code: string; replaceId?: string }) => {
       if (!eventId || !selectedParticipant || !user) throw new Error("Dados insuficientes");
+      const nowIso = new Date().toISOString();
 
       const { data: existing } = await supabase
         .from("external_credentials")
@@ -214,6 +216,15 @@ export default function CredenciamentoExternoPage() {
           .from("external_credentials")
           .update({ status: "replaced" })
           .eq("id", replaceId);
+
+        // Revoga o participant_credentials que foi criado pelo vínculo externo anterior
+        await supabase
+          .from("participant_credentials")
+          .update({ status: "reissued", is_active: false, revoked_at: nowIso })
+          .eq("participant_id", selectedParticipant.id)
+          .eq("event_id", eventId)
+          .eq("binding_source", "external")
+          .eq("status", "active");
       }
 
       const { error } = await supabase.from("external_credentials").insert({
@@ -224,9 +235,51 @@ export default function CredenciamentoExternoPage() {
       });
 
       if (error) throw error;
+
+      // Cria participant_credentials apenas se não houver credencial ativa ainda
+      const { data: activeCred } = await supabase
+        .from("participant_credentials")
+        .select("id")
+        .eq("participant_id", selectedParticipant.id)
+        .eq("event_id", eventId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (!activeCred) {
+        const qrCodeValue = generateQrCodeValue(eventId, selectedParticipant.id, code);
+        const { error: credErr } = await supabase.from("participant_credentials").insert({
+          participant_id: selectedParticipant.id,
+          event_id: eventId,
+          credential_code: code,
+          qr_code_value: qrCodeValue,
+          status: "active",
+          is_active: true,
+          binding_source: "external",
+          issued_at: nowIso,
+          activated_at: nowIso,
+          issued_by: user.id,
+          activated_by: user.id,
+        });
+        if (credErr) throw credErr;
+      }
+
+      // Atualiza status do participante para credenciado se ainda não estiver
+      const { data: part } = await supabase
+        .from("participants")
+        .select("status")
+        .eq("id", selectedParticipant.id)
+        .maybeSingle();
+
+      if (part && part.status !== "credentialed") {
+        const { error: statusErr } = await supabase
+          .from("participants")
+          .update({ status: "credentialed", credentialed_at: nowIso, credentialed_by: user.id })
+          .eq("id", selectedParticipant.id);
+        if (statusErr) throw statusErr;
+      }
     },
     onSuccess: () => {
-      toast.success("Credencial vinculada com sucesso!");
+      toast.success("Credencial vinculada! Participante credenciado e apto a competir.");
       if (navigator.vibrate) navigator.vibrate(200);
       qc.invalidateQueries({ queryKey: ["ext-cred-participants", eventId] });
       setSelectedParticipant(null);
@@ -239,11 +292,38 @@ export default function CredenciamentoExternoPage() {
   // Cancel credential mutation
   const cancelMutation = useMutation({
     mutationFn: async (credId: string) => {
+      if (!selectedParticipant) throw new Error("Participante não selecionado");
+      const nowIso = new Date().toISOString();
+
       const { error } = await supabase
         .from("external_credentials")
         .update({ status: "cancelled" })
         .eq("id", credId);
       if (error) throw error;
+
+      // Revoga o participant_credentials criado pelo vínculo externo
+      await supabase
+        .from("participant_credentials")
+        .update({ status: "revoked", is_active: false, revoked_at: nowIso })
+        .eq("participant_id", selectedParticipant.id)
+        .eq("event_id", eventId)
+        .eq("binding_source", "external")
+        .eq("status", "active");
+
+      // Se não restar nenhuma credencial ativa, reverte status do participante
+      const { count } = await supabase
+        .from("participant_credentials")
+        .select("id", { count: "exact", head: true })
+        .eq("participant_id", selectedParticipant.id)
+        .eq("event_id", eventId)
+        .eq("status", "active");
+
+      if ((count ?? 0) === 0) {
+        await supabase
+          .from("participants")
+          .update({ status: "confirmed" })
+          .eq("id", selectedParticipant.id);
+      }
     },
     onSuccess: () => {
       toast.success("Credencial cancelada");

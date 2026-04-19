@@ -87,6 +87,7 @@ import RegrasLotePage from "./pages/admin/RegrasLotePage";
 // RegrasEventoPage removed — consolidated into RegrasPage
 import RegrasPage from "./pages/admin/RegrasPage";
 import ImportacaoAliasesPage from "./pages/admin/ImportacaoAliasesPage";
+import AjudaChatPage from "./pages/admin/AjudaChatPage";
 import DemoSeedsPage from "./pages/admin/DemoSeedsPage";
 import SeedLogisticaEtapaPage from "./pages/admin/SeedLogisticaEtapaPage";
 import DebugPublicadosPage from "./pages/admin/DebugPublicadosPage";
@@ -300,6 +301,7 @@ const App = () => (
               <Route path="pesquisa/eventos/:eventId/form" element={<RedirectToEtapas />} />
               <Route path="pesquisa/pesquisadores" element={<RedirectToEtapas />} />
               {/* Links & Páginas */}
+              <Route path="ajuda" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
               <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinksPage /></ProtectedRoute>} />
               <Route path="links/novo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
               <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />

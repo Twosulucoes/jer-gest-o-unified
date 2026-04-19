@@ -147,6 +147,7 @@ export default function CompeticaoCentralPage() {
           setSportEventId(id);
           setCurrentStep("participants");
         }}
+        stageId={stageId}
       />
 
       {sportEventId && (

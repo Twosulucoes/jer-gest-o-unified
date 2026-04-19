@@ -17,13 +17,14 @@ interface Props {
   eventId: string;
   value: string | null;
   onChange: (id: string | null) => void;
+  stageId?: string | null;
 }
 
-export default function SportEventPicker({ eventId, value, onChange }: Props) {
+export default function SportEventPicker({ eventId, value, onChange, stageId }: Props) {
   const { sportIds: mySportIds } = useUserSportLinks();
 
   const { data: sportEvents = [], isLoading } = useQuery({
-    queryKey: ["sport-events-picker", eventId, mySportIds],
+    queryKey: ["sport-events-picker", eventId, mySportIds, stageId],
     queryFn: async () => {
       let q = supabase
         .from("sport_events")
@@ -45,10 +46,21 @@ export default function SportEventPicker({ eventId, value, onChange }: Props) {
         (rules ?? []).map((r: any) => [r.sport_event_id, r.released_at])
       );
 
-      return (data ?? []).map((se: any) => ({
-        ...se,
-        released_at: releaseMap.get(se.id) ?? null,
-      }));
+      let withEnrollmentIds: Set<string> | null = null;
+      if (stageId) {
+        const { data: pse } = await supabase
+          .from("participant_sport_events")
+          .select("sport_event_id")
+          .eq("event_stage_id", stageId);
+        withEnrollmentIds = new Set((pse ?? []).map((r: any) => r.sport_event_id as string));
+      }
+
+      return (data ?? [])
+        .filter((se: any) => withEnrollmentIds === null || withEnrollmentIds.has(se.id))
+        .map((se: any) => ({
+          ...se,
+          released_at: releaseMap.get(se.id) ?? null,
+        }));
     },
   });
 
@@ -63,6 +75,16 @@ export default function SportEventPicker({ eventId, value, onChange }: Props) {
 
   return (
     <div className="space-y-3">
+      {/* Callout: no provas with enrollments in this stage */}
+      {stageId && counts.total === 0 && !isLoading && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Nenhuma prova possui inscrições nesta etapa.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Callout: none released */}
       {counts.total > 0 && counts.released === 0 && (
         <Alert variant="destructive">

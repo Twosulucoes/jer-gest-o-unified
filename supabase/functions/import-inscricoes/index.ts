@@ -1363,6 +1363,47 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
 
+    // ── Ação: marcar pendência como revisada (qualquer tipo, com sugestão IA opcional) ──
+    // Body: { action: "mark_reviewed", pending_id, ai_suggestion? }
+    if ((body as any)?.action === "mark_reviewed") {
+      const pendingId = (body as any).pending_id as string | undefined;
+      if (!pendingId) {
+        return new Response(JSON.stringify({ error: "pending_id obrigatório" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const serviceClientMR = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+      const { data: pend, error: pendErr } = await serviceClientMR
+        .from("import_pendencias")
+        .select("id, raw_payload_json")
+        .eq("id", pendingId)
+        .maybeSingle();
+      if (pendErr || !pend) {
+        return new Response(JSON.stringify({ error: "Pendência não encontrada" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const payload = ((pend as any).raw_payload_json as Record<string, unknown>) ?? {};
+      const aiSuggestion = (body as any).ai_suggestion;
+      if (aiSuggestion) payload["ai_resolution"] = aiSuggestion;
+      const { error: upErr } = await serviceClientMR
+        .from("import_pendencias")
+        .update({
+          raw_payload_json: payload,
+          resolution_status: "resolved",
+          resolved_by: operatorId,
+          resolved_at: new Date().toISOString(),
+        })
+        .eq("id", pendingId);
+      if (upErr) {
+        return new Response(JSON.stringify({ error: upErr.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ ok: true, pending_id: pendingId }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ── Ação especial: gravar escolha manual de categoria para TM 2012 ──
     // Body: { action: "apply_manual_resolution", pending_id, chosen_category_slug }
     if ((body as any)?.action === "apply_manual_resolution") {
