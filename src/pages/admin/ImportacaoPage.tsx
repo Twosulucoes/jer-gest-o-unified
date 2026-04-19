@@ -266,15 +266,78 @@ export default function ImportacaoPage() {
     }
   };
 
+  const pollImportLog = async (importLogId: string, planned: { valid_rows: number }): Promise<CommitResult> => {
+    const maxAttempts = 360; // ~12 min (2s interval)
+    let attempt = 0;
+    while (attempt < maxAttempts) {
+      await new Promise((r) => setTimeout(r, 2000));
+      attempt++;
+      const { data, error } = await supabase
+        .from("import_logs")
+        .select("id, status, result_summary, error_message, file_name, event_id, event_stage_id")
+        .eq("id", importLogId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) continue;
+
+      const summary = (data.result_summary as Record<string, unknown> | null) ?? {};
+      const progress = (summary.progress as { processed: number; total: number } | undefined);
+      if (progress) {
+        const pct = Math.min(100, Math.round((progress.processed / Math.max(1, progress.total)) * 100));
+        toast.message(`Importando… ${progress.processed}/${progress.total} (${pct}%)`, { id: "import-progress" });
+      }
+
+      if (data.status === "success" || data.status === "partial" || data.status === "error") {
+        return {
+          status: data.status === "success" ? "committed" : data.status,
+          partial_success: data.status === "partial",
+          operator_id: "",
+          event_id: data.event_id as string,
+          event_stage_id: data.event_stage_id as string | undefined,
+          file_name: data.file_name as string | null,
+          timestamp: new Date().toISOString(),
+          result: {
+            people_created: Number(summary.people_created ?? 0),
+            people_reused: Number(summary.people_reused ?? 0),
+            participants_created: Number(summary.participants_created ?? 0),
+            participants_reused: Number(summary.participants_reused ?? 0),
+            participant_event_stages_created: Number(summary.participant_event_stages_created ?? 0),
+            participant_event_stages_reused: Number(summary.participant_event_stages_reused ?? 0),
+            participant_sport_events_created: Number(summary.participant_sport_events_created ?? 0),
+            participant_sport_events_reused: Number(summary.participant_sport_events_reused ?? 0),
+            institutions_created: Number(summary.institutions_created ?? 0),
+            delegations_created: Number(summary.delegations_created ?? 0),
+            pendencias_created: Number(summary.pendencias_created ?? 0),
+            rows_skipped_as_duplicate: Number(summary.rows_skipped_as_duplicate ?? 0),
+            rows_failed: Number(summary.rows_failed ?? 0),
+          },
+          errors_preview: [],
+          warnings: [],
+        };
+      }
+    }
+    throw new Error("Tempo de processamento excedido. Verifique os logs de importação.");
+  };
+
   const handleCommit = async () => {
     setCommitting(true);
     try {
       const result = await callEdgeFunction("commit");
-      setCommitResult(result);
-      const failed = result?.result?.rows_failed ?? 0;
+      // Async path: edge function retorna 202 com import_log_id
+      let finalResult: CommitResult;
+      if (result?.async && result?.import_log_id) {
+        toast.info(`Importação iniciada em background (${result?.planned?.valid_rows ?? 0} linhas). Acompanhando progresso…`, { duration: 5000 });
+        finalResult = await pollImportLog(result.import_log_id, result.planned ?? { valid_rows: 0 });
+        toast.dismiss("import-progress");
+      } else {
+        finalResult = result as CommitResult;
+      }
+      setCommitResult(finalResult);
+      const failed = finalResult?.result?.rows_failed ?? 0;
       if (failed > 0) toast.warning(`Importação com ${failed} falha(s).`);
       else toast.success("Importação concluída sem erros.");
     } catch (err) {
+      toast.dismiss("import-progress");
       toast.error(`Erro na importação: ${(err as Error).message}`, { duration: 10000 });
     } finally {
       setCommitting(false);
