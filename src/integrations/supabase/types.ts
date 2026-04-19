@@ -6136,6 +6136,7 @@ export type Database = {
       }
       import_inscricoes_batch: { Args: { payload: Json }; Returns: Json }
       is_admin_or_secretaria: { Args: never; Returns: boolean }
+      is_protected_user: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       list_alojamento_facilities: { Args: never; Returns: Json }
       list_blocked_participants: {
