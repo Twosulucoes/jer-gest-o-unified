@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -62,7 +61,7 @@ export default function SuperChamadosPage() {
 
   const updateMut = useMutation({
     mutationFn: async (payload: { id: string; patch: Record<string, unknown> }) => {
-      const { error } = await supabase.from("support_tickets").update(payload.patch).eq("id", payload.id);
+      const { error } = await supabase.from("support_tickets").update(payload.patch as never).eq("id", payload.id);
       if (error) throw error;
     },
     onSuccess: () => {
