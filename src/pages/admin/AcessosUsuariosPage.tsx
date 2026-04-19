@@ -195,7 +195,7 @@ export default function AcessosUsuariosPage() {
         const s = statusLabel(u);
         if (filterStatus === "ativo") return s.text === "Ativo";
         if (filterStatus === "inativo") return s.text === "Inativo";
-        if (filterStatus === "pendente") return s.text === "Convite pendente";
+        if (filterStatus === "pendente") return s.text === "Convite enviado";
         return true;
       });
     }
