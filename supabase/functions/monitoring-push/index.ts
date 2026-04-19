@@ -10,7 +10,15 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY")!;
 const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY")!;
-const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "mailto:admin@example.com";
+// VAPID subject precisa ser uma URL (https://...) ou mailto:
+// Se vier inválido, sanitiza para evitar 500 no boot.
+const RAW_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "";
+const VAPID_SUBJECT = (() => {
+  const s = RAW_SUBJECT.trim();
+  if (s.startsWith("mailto:") || s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.includes("@") && !s.includes(" ")) return `mailto:${s}`;
+  return "mailto:admin@jers.com.br";
+})();
 
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
 
@@ -18,7 +26,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { title, body, url, userIds } = await req.json();
+    const payload = await req.json().catch(() => ({}));
+    const { title = "JER Monitor", body = "Teste de notificação", url, userIds } = payload;
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     // Busca assinaturas ativas dos super_admin
