@@ -219,6 +219,7 @@ const App = () => (
               }
             >
               <Route index element={<DashboardPage />} />
+              <Route path="ajuda/chamados" element={<AjudaChamadosPage />} />
               <Route path="eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventosPage /></ProtectedRoute>} />
               <Route path="eventos/etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventStagesPage /></ProtectedRoute>} />
               <Route path="etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapasIndexPage /></ProtectedRoute>} />
