@@ -36,7 +36,7 @@ export function StageModuleTabs({ items, className }: StageModuleTabsProps) {
   return (
     <nav
       className={cn(
-        "flex flex-wrap gap-1 border-b border-border -mb-px overflow-x-auto",
+        "flex flex-wrap gap-1 p-1 rounded-lg bg-muted/40 border border-border/60",
         className,
       )}
       aria-label="Subnavegação do módulo"
@@ -50,10 +50,10 @@ export function StageModuleTabs({ items, className }: StageModuleTabsProps) {
             end={it.end}
             className={({ isActive }) =>
               cn(
-                "inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors",
+                "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-all",
                 isActive
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border",
+                  ? "bg-background text-foreground shadow-sm ring-1 ring-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/50",
               )
             }
           >
