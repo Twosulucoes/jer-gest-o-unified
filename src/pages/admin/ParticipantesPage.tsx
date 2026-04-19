@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, XCircle, User, Layers, X } from "lucide-react";
+import { Search, Users, XCircle, User, Layers, X, Plus, Edit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { useActiveEventId } from "@/contexts/EventContext";
+import PessoaFormDialog from "@/components/admin/people/PessoaFormDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -33,8 +35,12 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
 export default function ParticipantesPage() {
   const navigate = useNavigate();
   const selectedEventId = useActiveEventId();
+  const { hasRole } = useAuth();
+  const canManage = hasRole("admin") || hasRole("secretaria") || hasRole("super_admin");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const stageFilterId = searchParams.get("stage");
 
   // Carrega etapa filtrada (se houver)
@@ -195,11 +201,18 @@ export default function ParticipantesPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Participantes</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Visualizar todos os participantes importados por evento
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Participantes</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Cadastre e gerencie todas as pessoas do evento — atletas, técnicos, staff, terceiros.
+          </p>
+        </div>
+        {canManage && selectedEventId && (
+          <Button onClick={() => { setEditingId(null); setFormOpen(true); }}>
+            <Plus className="h-4 w-4 mr-1" />Cadastrar pessoa
+          </Button>
+        )}
       </div>
 
       {stageFilterId && stageInfo && (
@@ -330,6 +343,11 @@ export default function ParticipantesPage() {
                        <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/participantes/${p.id}`)} title="Ver participante">
                          <User className="h-4 w-4 mr-1" />Ver
                        </Button>
+                       {canManage && (
+                         <Button variant="ghost" size="sm" onClick={() => { setEditingId(p.id); setFormOpen(true); }} title="Editar">
+                           <Edit className="h-4 w-4" />
+                         </Button>
+                       )}
                      </TableCell>
                   </TableRow>
                 );
@@ -338,6 +356,12 @@ export default function ParticipantesPage() {
           </Table>
         </div>
       )}
+
+      <PessoaFormDialog
+        open={formOpen}
+        onOpenChange={(v) => { setFormOpen(v); if (!v) setEditingId(null); }}
+        participantId={editingId}
+      />
     </div>
   );
 }
