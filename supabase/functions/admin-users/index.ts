@@ -58,8 +58,21 @@ Deno.serve(async (req) => {
       .eq("user_id", caller.id);
     
     const roles = (callerRoles || []).map((r: any) => r.role);
-    if (!roles.includes("admin") && !roles.includes("secretaria")) {
+    const callerIsSuper = roles.includes("super_admin");
+    if (!roles.includes("admin") && !roles.includes("secretaria") && !callerIsSuper) {
       return jsonResponse({ error: "NOT_AUTHORIZED" }, 403);
+    }
+
+    // Helper: bloqueia operações sobre super_admins por callers não-super
+    async function isProtectedTarget(targetUserId: string): Promise<boolean> {
+      if (callerIsSuper) return false;
+      const { data } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", targetUserId)
+        .eq("role", "super_admin")
+        .maybeSingle();
+      return !!data;
     }
 
 
@@ -88,18 +101,25 @@ Deno.serve(async (req) => {
           rolesMap.set(r.user_id, arr);
         }
 
-        const result = users.map((u: any) => {
-          const profile = profilesMap.get(u.id);
-          return {
-            user_id: u.id,
-            email: u.email,
-            full_name: profile?.full_name || null,
-            active: profile?.active ?? true,
-            roles: rolesMap.get(u.id) || [],
-            last_sign_in_at: u.last_sign_in_at,
-            created_at: u.created_at,
-          };
-        });
+        const result = users
+          .filter((u: any) => {
+            // Esconde super_admins de callers não-super
+            if (callerIsSuper) return true;
+            const userRoles = rolesMap.get(u.id) || [];
+            return !userRoles.includes("super_admin");
+          })
+          .map((u: any) => {
+            const profile = profilesMap.get(u.id);
+            return {
+              user_id: u.id,
+              email: u.email,
+              full_name: profile?.full_name || null,
+              active: profile?.active ?? true,
+              roles: rolesMap.get(u.id) || [],
+              last_sign_in_at: u.last_sign_in_at,
+              created_at: u.created_at,
+            };
+          });
 
         return jsonResponse({ users: result });
       }
