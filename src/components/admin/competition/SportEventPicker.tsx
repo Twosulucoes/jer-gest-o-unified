@@ -48,11 +48,23 @@ export default function SportEventPicker({ eventId, value, onChange, stageId }: 
 
       let withEnrollmentIds: Set<string> | null = null;
       if (stageId) {
-        const { data: pse } = await supabase
+        const { data: pse, error: pseError } = await supabase
           .from("participant_sport_events")
           .select("sport_event_id")
           .eq("event_stage_id", stageId);
-        withEnrollmentIds = new Set((pse ?? []).map((r: any) => r.sport_event_id as string));
+        if (pseError) {
+          // Sob RLS, alguns perfis (ex.: coordenador_modalidade) podem não ter SELECT
+          // direto em participant_sport_events. Em vez de tratar silenciosamente
+          // como "vazio" (e esconder todas as provas), logamos e desabilitamos o
+          // filtro de etapa — exibindo as provas do evento normalmente.
+          console.warn(
+            "[SportEventPicker] Falha ao filtrar provas por etapa (RLS?). Ignorando filtro de etapa.",
+            pseError,
+          );
+          withEnrollmentIds = null;
+        } else {
+          withEnrollmentIds = new Set((pse ?? []).map((r: any) => r.sport_event_id as string));
+        }
       }
 
       return (data ?? [])
