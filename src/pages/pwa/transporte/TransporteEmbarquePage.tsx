@@ -287,7 +287,7 @@ export default function TransporteEmbarquePage() {
         if (error) throw error;
       }
 
-      toast.success(`${name} embarcado com sucesso`);
+      toast.success(`${viaVoucher ? "🎫 " : ""}${name} embarcado com sucesso`);
       if (navigator.vibrate) navigator.vibrate(200);
       await fetchPassengers();
     } catch (err: any) {
