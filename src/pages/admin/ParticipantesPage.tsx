@@ -157,11 +157,9 @@ export default function ParticipantesPage() {
     }
   }
 
-  const peopleMap = new Map(people.map((p) => [p.id, p]));
-  const delegationMap = new Map(delegations.map((d) => [d.id, d]));
-  const institutionMap = new Map(institutions.map((i) => [i.id, i]));
-  const sportEventMap = new Map(sportEvents.map((se) => [se.id, se]));
-  const sportMap = new Map(sports.map((s) => [s.id, s]));
+  const peopleMap = new Map(people.map((p: any) => [p.id, p]));
+  const delegationMap = new Map(delegations.map((d: any) => [d.id, d]));
+  const institutionMap = new Map(institutions.map((i: any) => [i.id, i]));
 
   const getInstitutionName = (delegationId: string) => {
     const del = delegationMap.get(delegationId);
