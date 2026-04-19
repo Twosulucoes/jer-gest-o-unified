@@ -1186,27 +1186,16 @@ function classifyRow(
       if (candidates.length === 1) {
         seId = candidates[0].id;
       } else if (candidates.length > 1) {
-        // (2) Motor inteligente: usa smartMatch para extrair o slug da prova
-        // a partir do texto bruto (PROVA + COMPETIÇÃO + MODALIDADE).
-        const sm = smartMatch({
-          modalidadeRaw: row.sport_raw,
-          provaRaw: row.prova_name,
-          competicaoRaw: row.competicao_raw,
-          sexoColumn: row.gender === "female" ? "F" : "M",
-          birthYear: row.birth_date ? Number(row.birth_date.slice(0, 4)) : null,
-          eventYear: maps.eventYear,
-        });
-        if (sm.prova_slug) {
-          // Procura por slug de SE que termine com o slug da prova do matcher
-          const found = candidates.find(c => c.slug.includes(`-${sm.prova_slug}-`) || c.slug.includes(`-${sm.prova_slug}`));
-          if (found) {
-            seId = found.id;
-          }
-        }
-        if (!seId) {
+        // Motor genérico: scoring por tokens contra o catálogo REAL.
+        // Funciona para QUALQUER prova (não depende de listas hardcoded).
+        const rawText = `${row.prova_name || ""} ${row.competicao_raw || ""} ${row.sport_raw || ""}`;
+        const mr = matchEventInCatalog(rawText, candidates);
+        if (mr.event_id) {
+          seId = mr.event_id;
+        } else {
           pending.push({
             row_number: row.row_number, reason_code: "SPORT_EVENT_AMBIGUOUS",
-            reason_detail: `Modalidade "${row.sport_slug}" / categoria "${row.category_slug}" tem ${candidates.length} provas no catálogo e o motor não conseguiu identificar a prova específica. PROVA bruta="${row.prova_name || "—"}". Smart match: ${sm.prova_slug ?? "n/a"} (conf=${sm.confidence}). Opções: [${candidates.map(c => c.slug).join(", ")}]`,
+            reason_detail: `Modalidade "${row.sport_slug}" / categoria "${row.category_slug}": catálogo tem ${candidates.length} provas e o motor não conseguiu decidir. PROVA bruta="${row.prova_name || "—"}". Top scores: ${mr.candidates.map(c => `${c.slug}=${c.score}`).join(", ")}. Razões: ${mr.reasons.join(" | ")}`,
             row, fingerprint, candidate_person_id: null,
           });
           return { status: "pendencia", errors, warnings, pending, resolved };
