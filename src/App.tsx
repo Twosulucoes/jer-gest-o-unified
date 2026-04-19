@@ -65,6 +65,7 @@ import SincronizarEquipesPage from "./pages/admin/SincronizarEquipesPage";
 import PreValidacaoPage from "./pages/admin/PreValidacaoPage";
 import CompeticaoPainelPage from "./pages/admin/CompeticaoPainelPage";
 import ParticipantesPage from "./pages/admin/ParticipantesPage";
+import VoucherValidarPage from "./pages/admin/VoucherValidarPage";
 import ParticipanteHistoricoPage from "./pages/admin/ParticipanteHistoricoPage";
 import ParticipanteDetalhePage from "./pages/admin/ParticipanteDetalhePage";
 import DelegacaoDetalhePage from "./pages/admin/DelegacaoDetalhePage";
@@ -343,6 +344,7 @@ const App = () => (
               <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoPage /></ProtectedRoute>} />
               <Route path="credenciamento-externo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoExternoPage /></ProtectedRoute>} />
               <Route path="validacao-qr" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ValidacaoQRPage /></ProtectedRoute>} />
+              <Route path="voucher/validar" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento"]}><VoucherValidarPage /></ProtectedRoute>} />
               {/* Competição */}
               <Route path="competicao" element={<Navigate to="painel" replace />} />
               <Route path="competicao/painel" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelPage /></ProtectedRoute>} />

@@ -1284,6 +1284,42 @@ export type Database = {
           },
         ]
       }
+      event_role_catalog: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_rules_audit_log: {
         Row: {
           action: string
@@ -3899,7 +3935,7 @@ export type Database = {
           created_at: string
           credentialed_at: string | null
           credentialed_by: string | null
-          delegation_id: string
+          delegation_id: string | null
           disability_type: string | null
           eja_flag: boolean | null
           enrollment_date: string | null
@@ -3908,7 +3944,12 @@ export type Database = {
           guardian_phone: string | null
           id: string
           is_active: boolean
+          logistics_notes: string | null
+          logistics_restrictions: string | null
           national_ban_until: string | null
+          needs_lodging: boolean
+          needs_meals: boolean
+          needs_transport: boolean
           notes: string | null
           participant_type: string
           person_id: string
@@ -3929,7 +3970,7 @@ export type Database = {
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
-          delegation_id: string
+          delegation_id?: string | null
           disability_type?: string | null
           eja_flag?: boolean | null
           enrollment_date?: string | null
@@ -3938,7 +3979,12 @@ export type Database = {
           guardian_phone?: string | null
           id?: string
           is_active?: boolean
+          logistics_notes?: string | null
+          logistics_restrictions?: string | null
           national_ban_until?: string | null
+          needs_lodging?: boolean
+          needs_meals?: boolean
+          needs_transport?: boolean
           notes?: string | null
           participant_type?: string
           person_id: string
@@ -3959,7 +4005,7 @@ export type Database = {
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
-          delegation_id?: string
+          delegation_id?: string | null
           disability_type?: string | null
           eja_flag?: boolean | null
           enrollment_date?: string | null
@@ -3968,7 +4014,12 @@ export type Database = {
           guardian_phone?: string | null
           id?: string
           is_active?: boolean
+          logistics_notes?: string | null
+          logistics_restrictions?: string | null
           national_ban_until?: string | null
+          needs_lodging?: boolean
+          needs_meals?: boolean
+          needs_transport?: boolean
           notes?: string | null
           participant_type?: string
           person_id?: string
@@ -4741,6 +4792,125 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_voucher_uses: {
+        Row: {
+          context_id: string | null
+          id: string
+          notes: string | null
+          service_kind: string
+          used_at: string
+          used_by: string | null
+          voucher_id: string
+        }
+        Insert: {
+          context_id?: string | null
+          id?: string
+          notes?: string | null
+          service_kind: string
+          used_at?: string
+          used_by?: string | null
+          voucher_id: string
+        }
+        Update: {
+          context_id?: string | null
+          id?: string
+          notes?: string | null
+          service_kind?: string
+          used_at?: string
+          used_by?: string | null
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_voucher_uses_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "service_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_vouchers: {
+        Row: {
+          created_at: string
+          current_uses: number
+          event_id: string
+          id: string
+          issued_by: string | null
+          max_uses: number | null
+          notes: string | null
+          participant_id: string
+          qr_code_value: string
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          scope_lodging: boolean
+          scope_meals: boolean
+          scope_transport: boolean
+          status: string
+          updated_at: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_uses?: number
+          event_id: string
+          id?: string
+          issued_by?: string | null
+          max_uses?: number | null
+          notes?: string | null
+          participant_id: string
+          qr_code_value: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          scope_lodging?: boolean
+          scope_meals?: boolean
+          scope_transport?: boolean
+          status?: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_uses?: number
+          event_id?: string
+          id?: string
+          issued_by?: string | null
+          max_uses?: number | null
+          notes?: string | null
+          participant_id?: string
+          qr_code_value?: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          scope_lodging?: boolean
+          scope_meals?: boolean
+          scope_transport?: boolean
+          status?: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_vouchers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
             referencedColumns: ["id"]
           },
         ]
@@ -6201,6 +6371,14 @@ export type Database = {
       }
       recompute_participation_irregularities: {
         Args: { p_event_id: string }
+        Returns: Json
+      }
+      redeem_voucher: {
+        Args: {
+          p_context_id?: string
+          p_qr_value: string
+          p_service_kind: string
+        }
         Returns: Json
       }
       refresh_sport_event_prova_map: {
