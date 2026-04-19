@@ -61,10 +61,20 @@ function roleBadgeVariant(role: string): "default" | "secondary" | "outline" {
   return "outline";
 }
 
-function statusLabel(u: any): { text: string; variant: "default" | "secondary" | "destructive" | "outline" } {
-  if (!u.last_sign_in_at && u.active) return { text: "Convite pendente", variant: "outline" };
-  if (!u.active) return { text: "Inativo", variant: "destructive" };
-  return { text: "Ativo", variant: "default" };
+function statusLabel(u: any): {
+  text: string;
+  variant: "default" | "secondary" | "destructive" | "outline";
+  tooltip?: string;
+} {
+  if (!u.active) return { text: "Inativo", variant: "destructive", tooltip: "Conta desativada — sessões revogadas." };
+  if (!u.last_sign_in_at) {
+    return {
+      text: "Convite enviado",
+      variant: "outline",
+      tooltip: "Convite criado, mas o usuário ainda não definiu senha nem fez o primeiro login. Reenvie o convite se necessário.",
+    };
+  }
+  return { text: "Ativo", variant: "default", tooltip: "Usuário já concluiu o primeiro login." };
 }
 
 async function callAdminUsers(action: string, body: Record<string, unknown> = {}) {
