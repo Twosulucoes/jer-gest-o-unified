@@ -25,8 +25,8 @@ function buildHtml(opts: {
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;border:1px solid #E2E8F0;overflow:hidden;">
           <tr>
             <td style="background-color:${PRIMARY_COLOR};padding:28px 32px;text-align:center;">
-              <h1 style="margin:0;font-size:22px;font-weight:700;color:${PRIMARY_FOREGROUND};letter-spacing:0.5px;">JER's Gestão</h1>
-              <p style="margin:4px 0 0;font-size:13px;color:#E2E8F0;font-weight:400;">Jogos Escolares de Roraima</p>
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:${PRIMARY_FOREGROUND};letter-spacing:0.5px;">JER Gestão</h1>
+              <p style="margin:4px 0 0;font-size:13px;color:#E2E8F0;font-weight:400;">Plataforma de Gestão do JERs</p>
             </td>
           </tr>
           <tr>
@@ -48,7 +48,7 @@ function buildHtml(opts: {
                 <a href="{{ .SiteURL }}" target="_blank" style="color:${ACCENT_COLOR};text-decoration:none;font-weight:600;">{{ .SiteURL }}</a>
               </p>
               <p style="margin:0;font-size:12px;line-height:1.5;color:#94A3B8;text-align:center;">
-                © ${new Date().getFullYear()} JER's Gestão — Jogos Escolares de Roraima
+                © ${new Date().getFullYear()} JER Gestão — Plataforma de Gestão do JERs
               </p>
             </td>
           </tr>
@@ -72,78 +72,78 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
   {
     id: "confirm",
     label: "Confirmar E-mail",
-    subject: "JER's Gestão — Confirmação de cadastro",
+    subject: "JER Gestão — Confirmação de cadastro",
     html: buildHtml({
       title: "Confirmação de cadastro",
       greeting: "Olá,",
-      body: "Recebemos seu cadastro no <strong>JER's Gestão</strong>. Para concluir, confirme seu endereço de e-mail no botão abaixo.",
+      body: "Recebemos seu cadastro no <strong>JER Gestão</strong>. Para concluir, confirme seu endereço de e-mail no botão abaixo.",
       cta: "Confirmar cadastro",
       link: "{{ .ConfirmationURL }}",
     }),
     text: `Olá,
 
-Recebemos seu cadastro no JER's Gestão. Para concluir, confirme seu endereço de e-mail acessando:
+Recebemos seu cadastro no JER Gestão. Para concluir, confirme seu endereço de e-mail acessando:
 
 {{ .ConfirmationURL }}
 
-— JER's Gestão · Jogos Escolares de Roraima`,
+— JER Gestão · Plataforma de Gestão do JERs`,
   },
   {
     id: "magic-link",
     label: "Link de Acesso (Magic Link)",
-    subject: "JER's Gestão — Seu acesso ao sistema",
+    subject: "JER Gestão — Seu acesso ao sistema",
     html: buildHtml({
       title: "Acesso ao sistema",
       greeting: "Olá,",
-      body: "Conforme solicitado, segue o acesso à sua conta no <strong>JER's Gestão</strong>. O endereço abaixo é de uso individual.",
+      body: "Conforme solicitado, segue o acesso à sua conta no <strong>JER Gestão</strong>. O endereço abaixo é de uso individual.",
       cta: "Entrar no sistema",
       link: "{{ .ConfirmationURL }}",
     }),
     text: `Olá,
 
-Conforme solicitado, segue o acesso à sua conta no JER's Gestão. O endereço abaixo é de uso individual:
+Conforme solicitado, segue o acesso à sua conta no JER Gestão. O endereço abaixo é de uso individual:
 
 {{ .ConfirmationURL }}
 
-— JER's Gestão · Jogos Escolares de Roraima`,
+— JER Gestão · Plataforma de Gestão do JERs`,
   },
   {
     id: "recovery",
     label: "Redefinir Senha",
-    subject: "JER's Gestão — Atualização de senha",
+    subject: "JER Gestão — Atualização de senha",
     html: buildHtml({
       title: "Atualização de senha",
       greeting: "Olá,",
-      body: "Recebemos um pedido para atualizar a senha da sua conta no <strong>JER's Gestão</strong>. Use o botão abaixo para definir uma nova.",
+      body: "Recebemos um pedido para atualizar a senha da sua conta no <strong>JER Gestão</strong>. Use o botão abaixo para definir uma nova.",
       cta: "Definir nova senha",
       link: "{{ .ConfirmationURL }}",
     }),
     text: `Olá,
 
-Recebemos um pedido para atualizar a senha da sua conta no JER's Gestão. Use o endereço abaixo para definir uma nova:
+Recebemos um pedido para atualizar a senha da sua conta no JER Gestão. Use o endereço abaixo para definir uma nova:
 
 {{ .ConfirmationURL }}
 
-— JER's Gestão · Jogos Escolares de Roraima`,
+— JER Gestão · Plataforma de Gestão do JERs`,
   },
   {
     id: "invite",
     label: "Convite de Acesso",
-    subject: "JER's Gestão — Acesso ao sistema",
+    subject: "JER Gestão — Acesso ao sistema",
     html: buildHtml({
       title: "Acesso ao sistema",
       greeting: "Olá,",
-      body: "Sua conta no <strong>JER's Gestão</strong> — sistema dos Jogos Escolares de Roraima — foi criada. Use o botão abaixo para configurar seu acesso.",
+      body: "Sua conta no <strong>JER Gestão</strong> — Plataforma de Gestão do JERs — foi criada. Use o botão abaixo para configurar seu acesso.",
       cta: "Configurar acesso",
       link: "{{ .ConfirmationURL }}",
     }),
     text: `Olá,
 
-Sua conta no JER's Gestão — sistema dos Jogos Escolares de Roraima — foi criada. Use o endereço abaixo para configurar seu acesso:
+Sua conta no JER Gestão — Plataforma de Gestão do JERs — foi criada. Use o endereço abaixo para configurar seu acesso:
 
 {{ .ConfirmationURL }}
 
-— JER's Gestão · Jogos Escolares de Roraima`,
+— JER Gestão · Plataforma de Gestão do JERs`,
   },
 ];
 

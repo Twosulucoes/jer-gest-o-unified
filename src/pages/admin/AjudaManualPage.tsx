@@ -62,7 +62,7 @@ export default function AjudaManualPage() {
           Manual de Instruções
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Guia completo de operação do JER's Gestão.
+          Guia completo de operação do JER Gestão.
         </p>
       </div>
 

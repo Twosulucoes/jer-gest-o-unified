@@ -111,8 +111,8 @@ export default function ResetPasswordPage() {
     >
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center">
-          <img src="/brand/logo.png" alt="JER's Gestão" className="mx-auto mb-4 h-16 object-contain dark:hidden" />
-          <img src="/brand/logo-dark.png" alt="JER's Gestão" className="mx-auto mb-4 h-16 object-contain hidden dark:block" />
+          <img src="/brand/logo.png" alt="JER Gestão" className="mx-auto mb-4 h-16 object-contain dark:hidden" />
+          <img src="/brand/logo-dark.png" alt="JER Gestão" className="mx-auto mb-4 h-16 object-contain hidden dark:block" />
         </div>
 
         <Card className="shadow-app-lg">

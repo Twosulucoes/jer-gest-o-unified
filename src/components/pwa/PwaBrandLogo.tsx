@@ -15,7 +15,7 @@ export function PwaBrandLogo({ className, size = "md" }: PwaBrandLogoProps) {
   return (
     <img
       src="/brand/logo.png"
-      alt="JER's Gestão"
+      alt="JER Gestão"
       className={cn(sizeMap[size], "object-contain", className)}
     />
   );

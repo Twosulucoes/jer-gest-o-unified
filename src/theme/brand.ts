@@ -1,7 +1,7 @@
-/** JER's Gestão — Brand Design Tokens (source of truth) */
+/** JER Gestão — Brand Design Tokens (source of truth) */
 
 export const brand = {
-  brandName: "JER's Gestão",
+  brandName: "JER Gestão",
   colors: {
     primary: '#0B2B5A',
     primaryHover: '#072044',

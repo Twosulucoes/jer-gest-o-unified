@@ -1,4 +1,4 @@
-// Report Design Tokens - aligned with JER's Gestão brand identity
+// Report Design Tokens - aligned with JER Gestão brand identity
 
 export const reportTokens = {
   brand: {

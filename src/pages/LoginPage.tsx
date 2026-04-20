@@ -141,16 +141,16 @@ export default function LoginPage() {
         <div className="mb-8 text-center">
           <img
             src="/brand/logo.png"
-            alt="JER's Gestão"
+            alt="JER Gestão"
             className="mx-auto mb-4 h-20 object-contain dark:hidden"
           />
           <img
             src="/brand/logo-dark.png"
-            alt="JER's Gestão"
+            alt="JER Gestão"
             className="mx-auto mb-4 h-20 object-contain hidden dark:block"
           />
           <p className="mt-1 text-sm text-muted-foreground">
-            Jogos Escolares de Roraima
+            Plataforma de Gestão do JERs
           </p>
         </div>
 
