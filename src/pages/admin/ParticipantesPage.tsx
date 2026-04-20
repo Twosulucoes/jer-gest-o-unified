@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Users, XCircle, User, Layers, X, Plus, Edit } from "lucide-react";
@@ -17,6 +17,8 @@ import {
 import { useActiveEventId } from "@/contexts/EventContext";
 import PessoaFormDialog from "@/components/admin/people/PessoaFormDialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useDebounce } from "@/hooks/useDebounce";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -38,12 +40,16 @@ export default function ParticipantesPage() {
   const { hasRole } = useAuth();
   const canManage = hasRole("admin") || hasRole("secretaria") || hasRole("super_admin");
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 350);
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
   const [searchParams, setSearchParams] = useSearchParams();
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const stageFilterId = searchParams.get("stage");
 
-  // Carrega etapa filtrada (se houver)
   const { data: stageInfo } = useQuery({
     queryKey: ["participantes-stage-info", stageFilterId],
     enabled: !!stageFilterId,
@@ -57,7 +63,6 @@ export default function ParticipantesPage() {
     },
   });
 
-  // IDs de participantes vinculados à etapa
   const { data: stageParticipantIds } = useQuery({
     queryKey: ["participantes-stage-participants", stageFilterId],
     enabled: !!stageFilterId,
@@ -66,7 +71,7 @@ export default function ParticipantesPage() {
         .select("participant_id")
         .eq("event_stage_id", stageFilterId);
       if (error) throw error;
-      return new Set((data ?? []).map((r: any) => r.participant_id as string));
+      return (data ?? []).map((r: any) => r.participant_id as string);
     },
   });
 
@@ -85,119 +90,138 @@ export default function ParticipantesPage() {
     },
   });
 
-  const { data: participants, isLoading } = useQuery({
-    queryKey: ["all-participants", selectedEventId],
+  // Person IDs matching free-text search (executed only when searching)
+  const { data: matchingPersonIds } = useQuery({
+    queryKey: ["participants-search-people", debouncedSearch],
+    enabled: debouncedSearch.trim().length >= 2,
     queryFn: async () => {
-      if (!selectedEventId) return [];
-      // Paginate to bypass PostgREST default 1000-row cap and fetch joined data in one query
-      const PAGE_SIZE = 1000;
-      let from = 0;
-      const all: any[] = [];
-      while (true) {
-        const { data, error } = await supabase
-          .from("participants")
-          .select(
-            "id, status, participant_type, person_id, delegation_id, created_at, " +
-              "person:people(id, full_name, cpf, gender), " +
-              "delegation:delegations(id, institution_id, institution:institutions(id, name))"
-          )
-          .eq("event_id", selectedEventId)
-          .order("created_at", { ascending: false })
-          .range(from, from + PAGE_SIZE - 1);
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        all.push(...data);
-        if (data.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
-      }
-      return all;
+      const term = debouncedSearch.trim();
+      const isCpf = /^\d+$/.test(term.replace(/\D/g, "")) && term.replace(/\D/g, "").length >= 3;
+      const cpfClean = term.replace(/\D/g, "");
+      const orParts = [`full_name.ilike.%${term}%`];
+      if (isCpf) orParts.push(`cpf.ilike.%${cpfClean}%`);
+      const { data, error } = await supabase
+        .from("people")
+        .select("id")
+        .or(orParts.join(","))
+        .limit(2000);
+      if (error) throw error;
+      return (data ?? []).map((p: any) => p.id as string);
     },
-    enabled: !!selectedEventId,
   });
 
-  // Build lookup maps from embedded relations
-  const peopleMapEmbedded = new Map<string, any>();
-  const delegationMapEmbedded = new Map<string, any>();
-  const institutionMapEmbedded = new Map<string, any>();
-  for (const p of participants ?? []) {
-    if ((p as any).person) peopleMapEmbedded.set((p as any).person.id, (p as any).person);
-    const del = (p as any).delegation;
-    if (del) {
-      delegationMapEmbedded.set(del.id, del);
-      if (del.institution) institutionMapEmbedded.set(del.institution.id, del.institution);
-    }
-  }
-  const people = Array.from(peopleMapEmbedded.values());
-  const delegations = Array.from(delegationMapEmbedded.values());
-  const institutions = Array.from(institutionMapEmbedded.values());
+  // Reset page when filters change
+  useMemo(() => { setPage(0); }, [debouncedSearch, typeFilter, statusFilter, stageFilterId, selectedEventId]);
 
-  // Load sport enrollments for these participants (chunked to avoid URL length limits)
-  const partIds = participants?.map((p) => p.id) ?? [];
+  const isSearching = debouncedSearch.trim().length >= 2;
+  const noSearchMatches = isSearching && matchingPersonIds && matchingPersonIds.length === 0;
+
+  // Compute the constrained id set when stage and/or search filter
+  const constrainedIds = useMemo(() => {
+    if (stageFilterId && isSearching) {
+      const stageSet = new Set(stageParticipantIds ?? []);
+      // Need participant ids that are in stage AND have person in matchingPersonIds
+      // We'll handle person filter via .in person_id below; stage requires participant ids
+      return Array.from(stageSet);
+    }
+    if (stageFilterId) return stageParticipantIds ?? null;
+    return null;
+  }, [stageFilterId, stageParticipantIds, isSearching]);
+
+  const { data: pageData, isLoading, isFetching } = useQuery({
+    queryKey: [
+      "participants-page",
+      selectedEventId,
+      page,
+      pageSize,
+      typeFilter,
+      statusFilter,
+      isSearching ? (matchingPersonIds ?? []).join(",") : "",
+      stageFilterId,
+      (constrainedIds ?? []).length,
+    ],
+    enabled:
+      !!selectedEventId &&
+      (!stageFilterId || !!stageParticipantIds) &&
+      (!isSearching || !!matchingPersonIds),
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      if (noSearchMatches) return { rows: [] as any[], total: 0 };
+
+      let q = supabase
+        .from("participants")
+        .select(
+          "id, status, participant_type, person_id, delegation_id, created_at, " +
+            "person:people(id, full_name, cpf, gender), " +
+            "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))",
+          { count: "exact" }
+        )
+        .eq("event_id", selectedEventId!);
+
+      if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      if (isSearching && matchingPersonIds && matchingPersonIds.length > 0) {
+        q = q.in("person_id", matchingPersonIds);
+      }
+      if (stageFilterId) {
+        const ids = stageParticipantIds ?? [];
+        if (ids.length === 0) return { rows: [], total: 0 };
+        q = q.in("id", ids);
+      }
+
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      const { data, error, count } = await q
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (error) throw error;
+      return { rows: data ?? [], total: count ?? 0 };
+    },
+  });
+
+  const rows = pageData?.rows ?? [];
+  const total = pageData?.total ?? 0;
+
+  // Enrollments only for the visible page
+  const partIds = rows.map((p: any) => p.id);
   const { data: enrollments = [] } = useQuery({
-    queryKey: ["participants-enrollments", selectedEventId, partIds.length],
-    queryFn: async () => {
-      if (partIds.length === 0) return [];
-      const CHUNK = 200;
-      const out: any[] = [];
-      for (let i = 0; i < partIds.length; i += CHUNK) {
-        const slice = partIds.slice(i, i + CHUNK);
-        const { data, error } = await supabase
-          .from("participant_sport_events")
-          .select("participant_id, sport_event_id, sport_event:sport_events(id, name, sport_id, sport:sports(id, name))")
-          .in("participant_id", slice);
-        if (error) throw error;
-        out.push(...(data ?? []));
-      }
-      return out;
-    },
+    queryKey: ["participants-enrollments-page", partIds.join(",")],
     enabled: partIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("participant_sport_events")
+        .select("participant_id, sport_event_id, sport_event:sport_events(id, name, sport_id, sport:sports(id, name))")
+        .in("participant_id", partIds);
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
-  const sportEventMap = new Map<string, any>();
-  const sportMap = new Map<string, any>();
-  for (const e of enrollments) {
-    const se = (e as any).sport_event;
-    if (se) {
-      sportEventMap.set(se.id, se);
-      if (se.sport) sportMap.set(se.sport.id, se.sport);
-    }
-  }
-
-  const peopleMap = new Map(people.map((p: any) => [p.id, p]));
-  const delegationMap = new Map(delegations.map((d: any) => [d.id, d]));
-  const institutionMap = new Map(institutions.map((i: any) => [i.id, i]));
-
-  const getInstitutionName = (delegationId: string) => {
-    const del = delegationMap.get(delegationId);
-    if (!del) return "—";
-    return institutionMap.get(del.institution_id)?.name ?? "—";
-  };
+  // Counters (total in event) - cheap head queries
+  const { data: counters } = useQuery({
+    queryKey: ["participants-counters", selectedEventId],
+    enabled: !!selectedEventId,
+    queryFn: async () => {
+      const [totalRes, athleteRes] = await Promise.all([
+        supabase.from("participants").select("id", { count: "exact", head: true }).eq("event_id", selectedEventId!),
+        supabase.from("participants").select("id", { count: "exact", head: true }).eq("event_id", selectedEventId!).eq("participant_type", "athlete"),
+      ]);
+      return {
+        total: totalRes.count ?? 0,
+        athletes: athleteRes.count ?? 0,
+        staff: (totalRes.count ?? 0) - (athleteRes.count ?? 0),
+      };
+    },
+  });
 
   const getEnrollmentSummary = (participantId: string) => {
-    const pEnrollments = enrollments.filter((e) => e.participant_id === participantId);
-    if (pEnrollments.length === 0) return "—";
-    return pEnrollments.map((e) => {
-      const se = sportEventMap.get(e.sport_event_id);
-      if (!se) return "?";
-      const sport = sportMap.get(se.sport_id);
-      return `${sport?.name ?? "?"} / ${se.name}`;
+    const list = enrollments.filter((e: any) => e.participant_id === participantId);
+    if (list.length === 0) return "—";
+    return list.map((e: any) => {
+      const se = e.sport_event;
+      return `${se?.sport?.name ?? "?"} / ${se?.name ?? "?"}`;
     }).join("; ");
   };
-
-  const filtered = (participants ?? []).filter((p) => {
-    if (stageFilterId && stageParticipantIds && !stageParticipantIds.has(p.id)) return false;
-    if (!searchTerm) return true;
-    const person = peopleMap.get(p.person_id);
-    if (!person) return false;
-    const term = searchTerm.toLowerCase();
-    return (
-      person.full_name.toLowerCase().includes(term) ||
-      (person.cpf && person.cpf.includes(term))
-    );
-  });
-
-  const athleteCount = (participants ?? []).filter((p) => p.participant_type === "athlete").length;
-  const staffCount = (participants ?? []).filter((p) => p.participant_type !== "athlete").length;
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -223,7 +247,7 @@ export default function ParticipantesPage() {
             <strong className="text-foreground">{stageInfo.name}</strong>
             {stageParticipantIds && (
               <Badge variant="outline" className="ml-1 text-xs">
-                {stageParticipantIds.size} vinculados
+                {stageParticipantIds.length} vinculados
               </Badge>
             )}
           </div>
@@ -240,13 +264,11 @@ export default function ParticipantesPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
               <Select value={selectedEventId} onValueChange={() => {}}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o evento" />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {events.map((e) => (
                     <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>
@@ -255,11 +277,11 @@ export default function ParticipantesPage() {
               </Select>
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-foreground">Buscar</label>
+              <label className="text-sm font-medium text-foreground">Buscar (nome ou CPF)</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Nome ou CPF..."
+                  placeholder="Mín. 2 caracteres..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -267,23 +289,43 @@ export default function ParticipantesPage() {
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Tipo</label>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {Object.entries(TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Status:</span>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-8 w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {selectedEventId && participants && (
+      {selectedEventId && counters && (
         <div className="grid grid-cols-3 gap-3">
           <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Total</p>
-            <p className="text-2xl font-bold text-foreground">{participants.length}</p>
+            <p className="text-xs text-muted-foreground">Total no evento</p>
+            <p className="text-2xl font-bold text-foreground">{counters.total}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-4 pb-4">
             <p className="text-xs text-muted-foreground">Atletas</p>
-            <p className="text-2xl font-bold text-primary">{athleteCount}</p>
+            <p className="text-2xl font-bold text-primary">{counters.athletes}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-4 pb-4">
             <p className="text-xs text-muted-foreground">Comissão/Staff</p>
-            <p className="text-2xl font-bold text-muted-foreground">{staffCount}</p>
+            <p className="text-2xl font-bold text-muted-foreground">{counters.staff}</p>
           </CardContent></Card>
         </div>
       )}
@@ -299,12 +341,12 @@ export default function ParticipantesPage() {
             <Skeleton key={i} className="h-14 w-full rounded-md" />
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : rows.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <XCircle className="h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground font-medium">Nenhum participante encontrado</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {searchTerm ? "Tente outro termo de busca." : "Importe participantes primeiro."}
+            {searchTerm ? "Tente outro termo de busca." : "Importe ou cadastre participantes."}
           </p>
         </div>
       ) : (
@@ -322,14 +364,15 @@ export default function ParticipantesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((p) => {
-                const person = peopleMap.get(p.person_id);
+              {rows.map((p: any) => {
+                const person = p.person;
                 const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
+                const institutionName = p.delegation?.institution?.name ?? p.delegation?.school_name ?? "—";
                 return (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className={isFetching ? "opacity-70" : ""}>
                     <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
                     <TableCell className="text-muted-foreground font-mono text-xs">{person?.cpf ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{getInstitutionName(p.delegation_id)}</TableCell>
+                    <TableCell className="text-muted-foreground">{institutionName}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
                     </TableCell>
@@ -339,21 +382,28 @@ export default function ParticipantesPage() {
                     <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
                       {getEnrollmentSummary(p.id)}
                     </TableCell>
-                     <TableCell className="flex gap-1">
-                       <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/participantes/${p.id}`)} title="Ver participante">
-                         <User className="h-4 w-4 mr-1" />Ver
-                       </Button>
-                       {canManage && (
-                         <Button variant="ghost" size="sm" onClick={() => { setEditingId(p.id); setFormOpen(true); }} title="Editar">
-                           <Edit className="h-4 w-4" />
-                         </Button>
-                       )}
-                     </TableCell>
+                    <TableCell className="flex gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/participantes/${p.id}`)} title="Ver participante">
+                        <User className="h-4 w-4 mr-1" />Ver
+                      </Button>
+                      {canManage && (
+                        <Button variant="ghost" size="sm" onClick={() => { setEditingId(p.id); setFormOpen(true); }} title="Editar">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 );
               })}
             </TableBody>
           </Table>
+          <DataPagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
+          />
         </div>
       )}
 

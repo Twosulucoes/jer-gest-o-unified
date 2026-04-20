@@ -1,20 +1,24 @@
-import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Plus, Pencil, Users, Eye } from "lucide-react";
+import { Plus, Pencil, Users, Eye, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
+import { useDebounce } from "@/hooks/useDebounce";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import DelegationFormDialog, { type DelegationFormValues } from "@/components/admin/DelegationFormDialog";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Pendente", variant: "outline" },
@@ -28,6 +32,11 @@ export default function DelegacoesPage() {
   const { hasRole } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDelegation, setEditingDelegation] = useState<Tables<"delegations"> | null>(null);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 350);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
 
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
@@ -42,7 +51,6 @@ export default function DelegacoesPage() {
 
   const { stageId } = useStageParticipantFilter();
 
-  // Quando filtrando por etapa, calcula os delegation_id que têm participantes na etapa
   const { data: stageDelegationIds } = useQuery({
     queryKey: ["stage_delegation_ids", stageId],
     enabled: !!stageId,
@@ -51,27 +59,62 @@ export default function DelegacoesPage() {
         .select("participants!inner(delegation_id)")
         .eq("event_stage_id", stageId);
       if (error) throw error;
-      return new Set<string>((data ?? []).map((r: any) => r.participants?.delegation_id).filter(Boolean));
+      return Array.from(new Set<string>((data ?? []).map((r: any) => r.participants?.delegation_id).filter(Boolean)));
     },
   });
 
-  const { data: allDelegations, isLoading } = useQuery({
-    queryKey: ["delegations"],
+  // Reset page when filters change
+  useEffect(() => { setPage(0); }, [debouncedSearch, statusFilter, stageId]);
+
+  const { data: pageData, isLoading, isFetching } = useQuery({
+    queryKey: [
+      "delegations-page",
+      page,
+      pageSize,
+      debouncedSearch,
+      statusFilter,
+      stageId,
+      (stageDelegationIds ?? []).length,
+    ],
+    enabled: !stageId || !!stageDelegationIds,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data, error } = await supabase.from("delegations").select("*").order("created_at", { ascending: false });
+      let q = supabase
+        .from("delegations")
+        .select("*", { count: "exact" });
+
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+
+      if (debouncedSearch.trim().length >= 2) {
+        const term = debouncedSearch.trim().replace(/[%,]/g, "");
+        q = q.or(
+          [
+            `school_name.ilike.%${term}%`,
+            `school_official_name.ilike.%${term}%`,
+            `school_city.ilike.%${term}%`,
+            `chief_name.ilike.%${term}%`,
+          ].join(",")
+        );
+      }
+
+      if (stageId) {
+        const ids = stageDelegationIds ?? [];
+        if (ids.length === 0) return { rows: [], total: 0 };
+        q = q.in("id", ids);
+      }
+
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      const { data, error, count } = await q
+        .order("created_at", { ascending: false })
+        .range(from, to);
       if (error) throw error;
-      return data;
+      return { rows: data ?? [], total: count ?? 0 };
     },
   });
 
-  const delegations = useMemo(() => {
-    if (!allDelegations) return allDelegations;
-    if (!stageId) return allDelegations;
-    if (!stageDelegationIds) return [];
-    return allDelegations.filter((d) => stageDelegationIds.has(d.id));
-  }, [allDelegations, stageId, stageDelegationIds]);
-
-  
+  const delegations = pageData?.rows ?? [];
+  const total = pageData?.total ?? 0;
 
   const toPayload = (values: DelegationFormValues) => ({
     event_id: values.event_id,
@@ -101,13 +144,15 @@ export default function DelegacoesPage() {
     }
   };
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["delegations-page"] });
+
   const createMutation = useMutation({
     mutationFn: async (values: DelegationFormValues) => {
       const { error } = await (supabase.from("delegations") as any).insert(toPayload(values));
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["delegations"] });
+      invalidate();
       toast.success("Delegação criada com sucesso");
       setDialogOpen(false);
     },
@@ -121,7 +166,7 @@ export default function DelegacoesPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["delegations"] });
+      invalidate();
       toast.success("Delegação atualizada com sucesso");
       setDialogOpen(false);
       setEditingDelegation(null);
@@ -155,17 +200,37 @@ export default function DelegacoesPage() {
         )}
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por escola, cidade ou chefe..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
       {isLoading ? (
         <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-14 w-full rounded-md" />
           ))}
         </div>
-      ) : !delegations?.length ? (
+      ) : !delegations.length ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <Users className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhuma delegação cadastrada</p>
-          <p className="text-sm text-muted-foreground mt-1">Registre a primeira delegação para começar.</p>
+          <p className="text-muted-foreground font-medium">Nenhuma delegação encontrada</p>
+          <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou registre a primeira delegação.</p>
         </div>
       ) : (
         <div className="rounded-lg border bg-card">
@@ -187,10 +252,8 @@ export default function DelegacoesPage() {
                 const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
                 const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
                 return (
-                  <TableRow key={del.id}>
-                    <TableCell className="font-medium">
-                      {d.school_name ?? "—"}
-                    </TableCell>
+                  <TableRow key={del.id} className={isFetching ? "opacity-70" : ""}>
+                    <TableCell className="font-medium">{d.school_name ?? "—"}</TableCell>
                     <TableCell className="text-muted-foreground">{cityState || "—"}</TableCell>
                     <TableCell className="text-muted-foreground capitalize">{d.school_network_type ?? "—"}</TableCell>
                     <TableCell>
@@ -217,6 +280,13 @@ export default function DelegacoesPage() {
               })}
             </TableBody>
           </Table>
+          <DataPagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
+          />
         </div>
       )}
 
