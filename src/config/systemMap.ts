@@ -653,18 +653,6 @@ export const systemMap: SystemMapGroup[] = [
         gaps: [],
         nextActions: [],
       },
-      {
-        id: "demo",
-        label: "Demo Seeds",
-        route: "/admin/demo",
-        pageFile: "src/pages/admin/DemoPage.tsx",
-        description: "Geração de cenários completos de teste (seed_event_demo / reset_demo).",
-        roles: ["admin", "secretaria"],
-        status: ModuleStatus.DONE,
-        dataSources: [],
-        gaps: [],
-        nextActions: [],
-      },
     ],
   },
 ];
