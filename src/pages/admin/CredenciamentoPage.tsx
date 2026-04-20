@@ -833,6 +833,13 @@ export default function CredenciamentoPage() {
         </div>
       )}
 
+      {/* Indicador discreto: dados ainda carregando em segundo plano */}
+      <BackgroundLoadingIndicator
+        loaded={participants.length}
+        isLoading={participantsBgLoading && firstPageReady}
+        label="participantes"
+      />
+
       {/* Empty / Loading states */}
       {!selectedEventId ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
