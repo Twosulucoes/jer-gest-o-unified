@@ -13,6 +13,51 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
+/**
+ * Normaliza o conteúdo escaneado do QR.
+ * Aceita:
+ *  - JSON ({ qr, code, credential_code, cpf })
+ *  - URLs com query (?qr=... | ?code=... | ?cpf=...)
+ *  - Texto puro
+ */
+function extractCandidates(raw: string): { values: string[]; cpfDigits: string | null } {
+  const set = new Set<string>();
+  const value = raw.trim();
+  set.add(value);
+
+  // JSON?
+  if (value.startsWith("{")) {
+    try {
+      const obj = JSON.parse(value);
+      for (const k of ["qr", "qr_code", "qr_code_value", "code", "credential_code", "cpf", "id"]) {
+        if (obj?.[k]) set.add(String(obj[k]).trim());
+      }
+    } catch (_) { /* ignore */ }
+  }
+
+  // URL?
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      const u = new URL(value);
+      for (const k of ["qr", "code", "credential_code", "cpf", "id"]) {
+        const v = u.searchParams.get(k);
+        if (v) set.add(v.trim());
+      }
+      // último segmento do path
+      const seg = u.pathname.split("/").filter(Boolean).pop();
+      if (seg) set.add(seg);
+    } catch (_) { /* ignore */ }
+  }
+
+  // Versão só com dígitos (útil para CPF)
+  const digits = value.replace(/\D/g, "");
+  if (digits) set.add(digits);
+
+  const cpfDigits = digits.length === 11 ? digits : null;
+
+  return { values: Array.from(set).filter(Boolean), cpfDigits };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -53,17 +98,125 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // 1. Find credential by QR code
-    const { data: credential, error: credError } = await serviceClient
-      .from("participant_credentials")
-      .select(
-        "id, status, credential_code, event_id, participant_id, activated_at, revoked_at"
-      )
-      .eq("qr_code_value", qr_code_value)
-      .maybeSingle();
+    const { values: candidates, cpfDigits } = extractCandidates(String(qr_code_value));
 
-    if (credError) {
-      return jsonResponse({ error: "Erro ao buscar credencial" }, 500);
+    // ── 1. Busca em participant_credentials por qr_code_value OU credential_code ──
+    let credential: any = null;
+    let matchedSource: "qr_code_value" | "credential_code" | "external_credential" | "cpf" | null = null;
+
+    {
+      const { data, error } = await serviceClient
+        .from("participant_credentials")
+        .select("id, status, credential_code, qr_code_value, event_id, participant_id, activated_at, revoked_at")
+        .eq("event_id", event_id)
+        .or(
+          [
+            `qr_code_value.in.(${candidates.map((v) => `"${v.replace(/"/g, '\\"')}"`).join(",")})`,
+            `credential_code.in.(${candidates.map((v) => `"${v.replace(/"/g, '\\"')}"`).join(",")})`,
+          ].join(",")
+        )
+        .limit(1)
+        .maybeSingle();
+      if (error) console.error("participant_credentials lookup error:", error);
+      if (data) {
+        credential = data;
+        matchedSource = candidates.includes(data.qr_code_value)
+          ? "qr_code_value"
+          : "credential_code";
+      }
+    }
+
+    // ── 2. Fallback: external_credentials.credential_code ──
+    if (!credential) {
+      const { data: ext, error: extErr } = await serviceClient
+        .from("external_credentials")
+        .select("id, credential_code, event_id, participant_id, status")
+        .eq("event_id", event_id)
+        .in("credential_code", candidates)
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle();
+      if (extErr) console.error("external_credentials lookup error:", extErr);
+
+      if (ext) {
+        // Tenta achar a credencial "real" do participante
+        const { data: pc } = await serviceClient
+          .from("participant_credentials")
+          .select("id, status, credential_code, qr_code_value, event_id, participant_id, activated_at, revoked_at")
+          .eq("participant_id", ext.participant_id)
+          .eq("event_id", event_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (pc) {
+          credential = pc;
+        } else {
+          // Sem participant_credentials: monta um "virtual" para validar pelo participante
+          credential = {
+            id: ext.id,
+            status: "active",
+            credential_code: ext.credential_code,
+            qr_code_value: null,
+            event_id: ext.event_id,
+            participant_id: ext.participant_id,
+            activated_at: null,
+            revoked_at: null,
+            __virtual_external: true,
+          };
+        }
+        matchedSource = "external_credential";
+      }
+    }
+
+    // ── 3. Fallback: CPF (11 dígitos) → people → participants → credenciais ──
+    if (!credential && cpfDigits) {
+      const { data: person } = await serviceClient
+        .from("people")
+        .select("id")
+        .or(`cpf.eq.${cpfDigits},cpf.eq.${cpfDigits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (person) {
+        const { data: part } = await serviceClient
+          .from("participants")
+          .select("id")
+          .eq("person_id", person.id)
+          .eq("event_id", event_id)
+          .limit(1)
+          .maybeSingle();
+
+        if (part) {
+          const { data: pc } = await serviceClient
+            .from("participant_credentials")
+            .select("id, status, credential_code, qr_code_value, event_id, participant_id, activated_at, revoked_at")
+            .eq("participant_id", part.id)
+            .eq("event_id", event_id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (pc) {
+            credential = pc;
+            matchedSource = "cpf";
+          } else {
+            // Tem participante mas sem credencial: também bloqueia, mas com mensagem mais clara
+            credential = {
+              id: part.id,
+              status: "no_credential",
+              credential_code: null,
+              qr_code_value: null,
+              event_id,
+              participant_id: part.id,
+              activated_at: null,
+              revoked_at: null,
+              __virtual_external: true,
+            };
+            matchedSource = "cpf";
+          }
+        }
+      }
     }
 
     let scanResult: string;
@@ -85,6 +238,9 @@ Deno.serve(async (req: Request) => {
     } else if (credential.status === "pending") {
       scanResult = "not_activated";
       scanNotes = "Credencial ainda não ativada";
+    } else if (credential.status === "no_credential") {
+      scanResult = "not_activated";
+      scanNotes = "Participante encontrado por CPF, mas sem credencial emitida";
     } else if (credential.status === "active") {
       scanResult = "valid";
 
@@ -129,21 +285,24 @@ Deno.serve(async (req: Request) => {
           photo_url: person?.photo_url,
           institution: institutionName,
           credential_code: credential.credential_code,
+          matched_by: matchedSource,
         };
       }
 
-      // Update last_validated_at
-      await serviceClient
-        .from("participant_credentials")
-        .update({ last_validated_at: new Date().toISOString() })
-        .eq("id", credential.id);
+      // Update last_validated_at apenas se for credencial real (não virtual)
+      if (!credential.__virtual_external) {
+        await serviceClient
+          .from("participant_credentials")
+          .update({ last_validated_at: new Date().toISOString() })
+          .eq("id", credential.id);
+      }
     } else {
       scanResult = "unknown_status";
       scanNotes = `Status desconhecido: ${credential.status}`;
     }
 
-    // 2. Register scan in credential_scans
-    if (credential) {
+    // 2. Register scan in credential_scans (apenas se for credencial real do participant_credentials)
+    if (credential && !credential.__virtual_external) {
       await serviceClient.from("credential_scans").insert({
         credential_id: credential.id,
         event_id: event_id,
@@ -158,6 +317,7 @@ Deno.serve(async (req: Request) => {
       result: scanResult,
       message: scanNotes,
       participant: participantInfo,
+      matched_by: matchedSource,
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
