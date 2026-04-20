@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MealWindowFormDialog, { type MealWindowFormValues } from "@/components/admin/MealWindowFormDialog";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScope } from "@/hooks/useStageScope";
 
 export default function AlimentacaoJanelasPage() {
   const qc = useQueryClient();
@@ -19,6 +20,7 @@ export default function AlimentacaoJanelasPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const selectedEventId = useActiveEventId();
+  const { stageId, isStageScoped } = useStageScope();
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
   const { data: events = [] } = useQuery({
@@ -42,10 +44,12 @@ export default function AlimentacaoJanelasPage() {
   });
 
   const { data: windows, isLoading } = useQuery({
-    queryKey: ["meal_windows", selectedEventId],
+    queryKey: ["meal_windows", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("meal_windows").select("*").eq("event_id", selectedEventId).order("service_date").order("start_time");
+      let q = supabase.from("meal_windows").select("*").eq("event_id", selectedEventId);
+      if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
+      const { data, error } = await q.order("service_date").order("start_time");
       if (error) throw error;
       return data;
     },
@@ -56,7 +60,7 @@ export default function AlimentacaoJanelasPage() {
 
   const createMut = useMutation({
     mutationFn: async (v: MealWindowFormValues) => {
-      const { error } = await supabase.from("meal_windows").insert({
+      const payload: any = {
         event_id: selectedEventId,
         meal_type_id: v.meal_type_id,
         label: v.label || null,
@@ -65,7 +69,9 @@ export default function AlimentacaoJanelasPage() {
         end_time: v.end_time,
         location: v.location || null,
         is_active: v.is_active,
-      });
+      };
+      if (isStageScoped && stageId) payload.event_stage_id = stageId;
+      const { error } = await supabase.from("meal_windows").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["meal_windows"] }); toast.success("Janela criada"); setDialogOpen(false); },
