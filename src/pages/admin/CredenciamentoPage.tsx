@@ -80,6 +80,12 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const PAGE_SIZE = 25;
+const FILTER_CHUNK_SIZE = 150;
+
+const chunkArray = <T,>(items: T[], size: number) =>
+  Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+    items.slice(index * size, (index + 1) * size),
+  );
 
 const buildDefaultFieldConfig = (w: number, h: number) => {
   const cx = w / 2;
@@ -225,24 +231,21 @@ export default function CredenciamentoPage() {
   // Nesse caso, ignoramos o filtro de etapa (melhor mostrar todos do evento que mostrar vazio falso).
   const effectiveStageFilter = stageId && stageIdsArray ? stageIdsArray : null;
 
-  const { data: allParticipants, isLoading } = useQuery({
+  const { data: allParticipants, isLoading, error: participantsError } = useQuery({
     queryKey: ["credenciamento-participants", selectedEventId, stageId, effectiveStageFilter?.length ?? -1],
     queryFn: async () => {
       if (!selectedEventId) return [];
       if (effectiveStageFilter && effectiveStageFilter.length === 0) return [];
 
-      const CHUNK = 1000;
+      const CHUNK = FILTER_CHUNK_SIZE;
       const all: any[] = [];
 
-      // Quando há filtro de etapa válido, fatia os IDs em blocos de 1000 (limite prático do filtro IN).
       const idChunks: (string[] | null)[] = effectiveStageFilter
-        ? Array.from({ length: Math.ceil(effectiveStageFilter.length / CHUNK) }, (_, i) =>
-            effectiveStageFilter.slice(i * CHUNK, (i + 1) * CHUNK))
+        ? chunkArray(effectiveStageFilter, CHUNK)
         : [null];
 
       for (const ids of idChunks) {
         let from = 0;
-        // Loop por range para escapar do limite default do PostgREST (1000 linhas).
         // eslint-disable-next-line no-constant-condition
         while (true) {
           let q = supabase
@@ -254,12 +257,12 @@ export default function CredenciamentoPage() {
           if (ids) q = q.in("id", ids);
           const { data, error } = await q
             .order("id", { ascending: true })
-            .range(from, from + CHUNK - 1);
+            .range(from, from + 999);
           if (error) throw error;
           if (!data || data.length === 0) break;
           all.push(...data);
-          if (data.length < CHUNK) break;
-          from += CHUNK;
+          if (data.length < 1000) break;
+          from += 1000;
         }
       }
 
@@ -272,30 +275,37 @@ export default function CredenciamentoPage() {
 
   // --- Active credentials ---
   // Quando há filtro de etapa, busca somente credenciais cujos participant_id estejam na etapa.
-  const { data: activeCredentials = [] } = useQuery({
+  const { data: activeCredentials = [], error: credentialsError } = useQuery({
     queryKey: ["credenciamento-credentials", selectedEventId, stageId, effectiveStageFilter?.length ?? -1],
     queryFn: async () => {
       if (!selectedEventId) return [];
       if (effectiveStageFilter && effectiveStageFilter.length === 0) return [];
 
-      const CHUNK = 1000;
+      const CHUNK = FILTER_CHUNK_SIZE;
       const all: any[] = [];
       const idChunks: (string[] | null)[] = effectiveStageFilter
-        ? Array.from({ length: Math.ceil(effectiveStageFilter.length / CHUNK) }, (_, i) =>
-            effectiveStageFilter.slice(i * CHUNK, (i + 1) * CHUNK))
+        ? chunkArray(effectiveStageFilter, CHUNK)
         : [null];
 
       for (const ids of idChunks) {
-        let q = supabase
-          .from("participant_credentials")
-          .select("id, participant_id, credential_code, status")
-          .eq("event_id", selectedEventId)
-          .eq("status", "active")
-          .limit(2000);
-        if (ids) q = q.in("participant_id", ids);
-        const { data, error } = await q;
-        if (error) throw error;
-        all.push(...(data ?? []));
+        let from = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          let q = supabase
+            .from("participant_credentials")
+            .select("id, participant_id, credential_code, status")
+            .eq("event_id", selectedEventId)
+            .eq("status", "active");
+          if (ids) q = q.in("participant_id", ids);
+          const { data, error } = await q
+            .order("participant_id", { ascending: true })
+            .range(from, from + 999);
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          all.push(...data);
+          if (data.length < 1000) break;
+          from += 1000;
+        }
       }
       return all;
     },
@@ -305,42 +315,54 @@ export default function CredenciamentoPage() {
   const activeCredMap = new Map(activeCredentials.map((c) => [c.participant_id, c]));
 
   // --- People ---
-  const personIds = participants?.map((p) => p.person_id) ?? [];
-  const { data: people = [] } = useQuery({
+  const personIds = [...new Set(participants?.map((p) => p.person_id).filter(Boolean) ?? [])];
+  const { data: people = [], error: peopleError } = useQuery({
     queryKey: ["credenciamento-people", personIds],
     queryFn: async () => {
       if (personIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("people")
-        .select("id, full_name, birth_date, gender, cpf")
-        .in("id", personIds);
-      if (error) throw error;
-      return data;
+      const all: any[] = [];
+      for (const chunk of chunkArray(personIds, FILTER_CHUNK_SIZE)) {
+        const { data, error } = await supabase
+          .from("people")
+          .select("id, full_name, birth_date, gender, cpf")
+          .in("id", chunk);
+        if (error) throw error;
+        all.push(...(data ?? []));
+      }
+      return all;
     },
     enabled: personIds.length > 0,
   });
 
   // --- Delegations & Institutions ---
-  const delegationIds = [...new Set(participants?.map((p) => p.delegation_id) ?? [])];
-  const { data: delegations = [] } = useQuery({
+  const delegationIds = [...new Set((participants?.map((p) => p.delegation_id) ?? []).filter(Boolean))];
+  const { data: delegations = [], error: delegationsError } = useQuery({
     queryKey: ["credenciamento-delegations", delegationIds],
     queryFn: async () => {
       if (delegationIds.length === 0) return [];
-      const { data, error } = await supabase.from("delegations").select("id, institution_id").in("id", delegationIds);
-      if (error) throw error;
-      return data;
+      const all: any[] = [];
+      for (const chunk of chunkArray(delegationIds, FILTER_CHUNK_SIZE)) {
+        const { data, error } = await supabase.from("delegations").select("id, institution_id").in("id", chunk);
+        if (error) throw error;
+        all.push(...(data ?? []));
+      }
+      return all;
     },
     enabled: delegationIds.length > 0,
   });
 
-  const instIds = [...new Set(delegations.map((d) => d.institution_id))];
-  const { data: institutions = [] } = useQuery({
+  const instIds = [...new Set(delegations.map((d) => d.institution_id).filter(Boolean))];
+  const { data: institutions = [], error: institutionsError } = useQuery({
     queryKey: ["credenciamento-institutions", instIds],
     queryFn: async () => {
       if (instIds.length === 0) return [];
-      const { data, error } = await supabase.from("institutions").select("id, name").in("id", instIds);
-      if (error) throw error;
-      return data;
+      const all: any[] = [];
+      for (const chunk of chunkArray(instIds, FILTER_CHUNK_SIZE)) {
+        const { data, error } = await supabase.from("institutions").select("id, name").in("id", chunk);
+        if (error) throw error;
+        all.push(...(data ?? []));
+      }
+      return all;
     },
     enabled: instIds.length > 0,
   });
@@ -428,6 +450,7 @@ export default function CredenciamentoPage() {
   // --- Pagination ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginatedItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const loadError = participantsError ?? credentialsError ?? peopleError ?? delegationsError ?? institutionsError;
 
   // --- Mutations ---
   // Fluxo unificado: registrar presença + emitir credencial em um único passo
@@ -863,6 +886,14 @@ export default function CredenciamentoPage() {
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-14 w-full rounded-md" />
           ))}
+        </div>
+      ) : loadError ? (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
+          <AlertCircle className="h-10 w-10 text-destructive mb-3" />
+          <p className="text-foreground font-medium">Erro ao carregar participantes da etapa</p>
+          <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+            {loadError.message || "A consulta retornou erro antes de montar a lista. Reduzi os lotes para etapas grandes; recarregue a página."}
+          </p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
