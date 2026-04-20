@@ -35,7 +35,7 @@ export default function CompeticaoResultadosPage() {
   const navigate = useNavigate();
   const selectedEventId = useActiveEventId();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
-  const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError } = useStageScope();
+  const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError, stageId, participantIds: stageParticipantIds } = useStageScope();
   const [statusFilter, setStatusFilter] = useState<ResultStatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
@@ -131,9 +131,13 @@ export default function CompeticaoResultadosPage() {
     }
   });
 
+  const stageScopedMatches = isStageScoped
+    ? (stageMatchIds ? matches.filter((m) => stageMatchIds.has(m.id)) : [])
+    : matches;
+
   const filtered = statusFilter === "all"
-    ? matches
-    : matches.filter((m) => matchResultStatus.get(m.id) === statusFilter);
+    ? stageScopedMatches
+    : stageScopedMatches.filter((m) => matchResultStatus.get(m.id) === statusFilter);
 
   const formatDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR") : "—";
 
@@ -143,8 +147,8 @@ export default function CompeticaoResultadosPage() {
   };
 
   // Counts
-  const counts = { all: matches.length, sem_resultado: 0, resultado_lancado: 0, resultado_validado: 0, publicado: 0 };
-  matches.forEach((m) => { const s = matchResultStatus.get(m.id) ?? "sem_resultado"; counts[s as keyof typeof counts]++; });
+  const counts = { all: stageScopedMatches.length, sem_resultado: 0, resultado_lancado: 0, resultado_validado: 0, publicado: 0 };
+  stageScopedMatches.forEach((m) => { const s = matchResultStatus.get(m.id) ?? "sem_resultado"; counts[s as keyof typeof counts]++; });
 
   return (
     <div className="animate-fade-in space-y-6">

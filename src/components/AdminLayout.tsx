@@ -11,7 +11,7 @@ import {
   Shield, Settings, AlertTriangle, FileSearch, FileBarChart,
   Info, Zap, ExternalLink, ChevronsLeft,
   ChevronsRight, User, FolderOpen, Cog,
-  Home, Bot, BookOpen, HelpCircle, LifeBuoy,
+  Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import StageFilterBanner from "@/components/admin/StageFilterBanner";
@@ -73,8 +73,9 @@ const navGroups: NavGroup[] = [
       { label: "Central de Relatórios", to: "/admin/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Boletins por Modalidade", to: "/admin/relatorios/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Dashboard Operacional", to: "/admin/relatorios/dashboard", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-     { label: "Quadro de Medalhas", to: "/admin/relatorios/quadro-medalhas", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
-     { label: "Prestação de Contas (OSC)", to: "/admin/relatorios/osc", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Quadro de Medalhas", to: "/admin/relatorios/quadro-medalhas", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Prestação de Contas (OSC)", to: "/admin/relatorios/osc", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Pesquisa de Satisfação", to: "/admin/pesquisa", icon: <ClipboardList className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
   {

@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
   if (sportEventId && uuidRegex.test(sportEventId)) {
     query = query.eq("sport_event_id", sportEventId);
   }
-  if (eventStageId) {
+  if (eventStageId && uuidRegex.test(eventStageId)) {
     query = query.eq("event_stage_id", eventStageId);
   }
   if (bulletinNumberStr) {
@@ -140,6 +140,7 @@ Deno.serve(async (req) => {
   return new Response(
     JSON.stringify({
       event_id: eventId,
+      event_stage_id: stageId ?? null,
       generated_at: new Date().toISOString(),
       items: data || [],
     }),

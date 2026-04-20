@@ -289,6 +289,11 @@ export default function CredenciamentoPage() {
     enabled: !!selectedEventId,
   });
 
+  // Limit credential map to stage participants when scoped
+  const activeCredentials = stageId && stageParticipantIds
+    ? allActiveCredentials.filter((c) => stageParticipantIds.has(c.participant_id))
+    : allActiveCredentials;
+
   const activeCredMap = new Map(activeCredentials.map((c) => [c.participant_id, c]));
 
   // --- People ---

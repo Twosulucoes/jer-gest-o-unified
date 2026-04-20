@@ -21,6 +21,7 @@ import { ptBR } from "date-fns/locale";
 interface Incident {
   id: string;
   event_id: string;
+  event_stage_id: string | null;
   module: string;
   reference_id: string | null;
   reference_label: string | null;
@@ -71,10 +72,10 @@ export default function OcorrenciasPage() {
       .eq("event_id", activeEvent.id)
       .order("created_at", { ascending: false });
 
-    // Filtro estrito de etapa: se estamos no contexto de etapa, restringe ocorrências.
     if (isStageScoped && stageId) {
       query = query.eq("event_stage_id", stageId);
     }
+
 
     if (filterModule !== "all") query = query.eq("module", filterModule as any);
     if (filterStatus !== "all") query = query.eq("incident_status", filterStatus as any);

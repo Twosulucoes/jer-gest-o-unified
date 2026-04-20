@@ -17,10 +17,11 @@ interface Researcher {
   id: string;
   name: string;
   event_id: string;
+  event_stage_id: string | null;
   active: boolean;
   last_login_at: string | null;
   assigned_location?: string | null;
-  pesquisa_events?: { name: string } | null;
+  pesquisa_events?: { name: string; event_stage_id: string | null } | null;
 }
 
 export default function PesquisaPesquisadoresPage() {
@@ -39,8 +40,8 @@ export default function PesquisaPesquisadoresPage() {
   const { data: events } = useQuery({
     queryKey: ['pesquisa-events-list'],
     queryFn: async () => {
-      const { data } = await supabase.from('pesquisa_events').select('id, name').order('name');
-      return data || [];
+      const { data } = await supabase.from('pesquisa_events').select('id, name, event_stage_id').order('name');
+      return (data || []) as { id: string; name: string; event_stage_id: string | null }[];
     },
   });
 
@@ -49,7 +50,7 @@ export default function PesquisaPesquisadoresPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pesquisa_researchers')
-        .select('id, name, event_id, active, last_login_at, assigned_location, pesquisa_events(name)')
+        .select('id, name, event_id, event_stage_id, active, last_login_at, assigned_location, pesquisa_events(name, event_stage_id)')
         .order('name');
       if (error) throw error;
       return data as unknown as Researcher[];
@@ -58,11 +59,14 @@ export default function PesquisaPesquisadoresPage() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const selectedEvent = events?.find(e => e.id === form.event_id);
+      const eventStageId = selectedEvent?.event_stage_id ?? null;
       if (editing) {
         const { error } = await supabase.from('pesquisa_researchers')
           .update({
             name: form.name.trim(),
             event_id: form.event_id,
+            event_stage_id: eventStageId,
             active: form.active,
             assigned_location: form.assigned_location.trim() || null,
           })
@@ -76,6 +80,7 @@ export default function PesquisaPesquisadoresPage() {
         const { error } = await supabase.from('pesquisa_researchers').insert({
           name: form.name.trim(),
           event_id: form.event_id,
+          event_stage_id: eventStageId,
           active: form.active,
           pin_hash: hash as string,
           assigned_location: form.assigned_location.trim() || null,
@@ -188,8 +193,10 @@ export default function PesquisaPesquisadoresPage() {
               <div>
                 <p className="font-medium">{r.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {(r as any).pesquisa_events?.name || '?'} · {r.active ? '✅' : '⏸'}
-                  {r.last_login_at && ` · Último login: ${new Date(r.last_login_at).toLocaleDateString('pt-BR')}`}
+                  {(r as any).pesquisa_events?.name || '?'}
+                  {r.event_stage_id && <span className="ml-1 text-xs">· etapa vinculada</span>}
+                  {' · '}{r.active ? '✅ Ativo' : '⏸ Inativo'}
+                  {r.last_login_at && ` · Login: ${new Date(r.last_login_at).toLocaleDateString('pt-BR')}`}
                 </p>
                 {r.assigned_location && (
                   <p className="text-xs text-muted-foreground">Local padrão: {r.assigned_location}</p>

@@ -144,10 +144,14 @@ export default function AlojamentoOcupacaoPage() {
       const { data: parts, error: partsErr } = await pq;
       if (partsErr) throw partsErr;
 
-      return parts.map((pt) => ({
+      const mapped = parts.map((pt) => ({
         ...pt,
         person: ppl.find((p) => p.id === pt.person_id),
       }));
+      if (isStageScoped && stageParticipantIds) {
+        return mapped.filter((pt) => stageParticipantIds.has(pt.id));
+      }
+      return mapped;
     },
     enabled: !!searchTerm && searchTerm.length >= 2 && !!selectedEventId && (!isStageScoped || !!stageParticipantIds),
   });

@@ -124,7 +124,7 @@ export default function AlimentacaoDashboardPage() {
   );
 
   // Total participants in event (ou na etapa, se estamos em escopo de etapa)
-  const { data: totalParticipants = 0 } = useQuery({
+  const { data: eventTotalParticipants = 0 } = useQuery({
     queryKey: ["total-participants-dash", eventId, stageId, stageParticipantIds?.size ?? -1],
     queryFn: async () => {
       if (isStageScoped) return stageParticipantIds?.size ?? 0;
@@ -139,9 +139,15 @@ export default function AlimentacaoDashboardPage() {
     enabled: !!eventId && (!isStageScoped || !!stageParticipantIds),
   });
 
-  // Filtered consumptions
+  const totalParticipants = isStageScoped
+    ? (stageParticipantIds?.size ?? 0)
+    : eventTotalParticipants;
+
+  // Filtered consumptions — also apply stage participant filter when scoped
   const filteredConsumptions = useMemo(() => {
-    let result = consumptions;
+    let result = isStageScoped && stageParticipantIds
+      ? consumptions.filter((c) => stageParticipantIds.has(c.participant_id))
+      : consumptions;
     if (filterMealType !== "all") {
       const windowIdsForType = mealWindows
         .filter((w) => w.meal_type_id === filterMealType)

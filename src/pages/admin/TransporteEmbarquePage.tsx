@@ -116,9 +116,22 @@ export default function TransporteEmbarquePage() {
     return part ? peopleMap.get(part.person_id) : null;
   };
 
-  // Search participants to add
+  // Stage participant IDs for the trip's stage (for search scoping)
+  const { data: tripStageParticipantIds } = useQuery({
+    queryKey: ["stage_participant_ids", trip?.event_stage_id],
+    enabled: !!(trip as any)?.event_stage_id,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+        .select("participant_id")
+        .eq("event_stage_id", (trip as any).event_stage_id);
+      if (error) throw error;
+      return new Set<string>((data ?? []).map((r: any) => r.participant_id as string));
+    },
+  });
+
+  // Search participants to add — limited to trip's stage when available
   const { data: searchResults = [], isFetching: searching } = useQuery({
-    queryKey: ["search-participants-transport", trip?.event_id, searchTerm],
+    queryKey: ["search-participants-transport", trip?.event_id, (trip as any)?.event_stage_id, searchTerm],
     queryFn: async () => {
       if (!searchTerm || searchTerm.length < 2 || !trip?.event_id) return [];
 
@@ -140,10 +153,14 @@ export default function TransporteEmbarquePage() {
         .in("person_id", personIds);
       if (partsErr) throw partsErr;
 
-      return parts.map((pt) => ({
+      const mapped = parts.map((pt) => ({
         ...pt,
         person: ppl.find((p) => p.id === pt.person_id),
       }));
+      if ((trip as any).event_stage_id && tripStageParticipantIds) {
+        return mapped.filter((pt) => tripStageParticipantIds.has(pt.id));
+      }
+      return mapped;
     },
     enabled: !!searchTerm && searchTerm.length >= 2 && !!trip?.event_id,
   });

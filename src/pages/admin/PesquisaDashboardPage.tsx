@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Download, MessageSquare, LayoutDashboard, ClipboardList, Users } from 'lucide-react';
 import { format } from 'date-fns';
@@ -35,6 +36,7 @@ export default function PesquisaDashboardPage() {
 
   const [eventFilter, setEventFilter] = useState<string>('all');
   const [researcherFilter, setResearcherFilter] = useState<string>('all');
+  const [stageFilter, setStageFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -42,7 +44,10 @@ export default function PesquisaDashboardPage() {
   const { data: events } = useQuery({
     queryKey: ['pesquisa-events'],
     queryFn: async () => {
-      const { data } = await supabase.from('pesquisa_events').select('id, name').order('created_at', { ascending: false });
+      const { data } = await supabase
+        .from('pesquisa_events')
+        .select('id, name, event_stage_id')
+        .order('created_at', { ascending: false });
       return data || [];
     },
   });
@@ -57,8 +62,20 @@ export default function PesquisaDashboardPage() {
     },
   });
 
+  // Load stages that are linked to at least one pesquisa_event
+  const { data: stages } = useQuery({
+    queryKey: ['pesquisa-stages'],
+    queryFn: async () => {
+      const { data } = await (supabase.from('event_stages' as never) as any)
+        .select('id, name, kind')
+        .eq('status', 'active')
+        .order('sort_order');
+      return (data || []) as { id: string; name: string; kind: string }[];
+    },
+  });
+
   const { data: surveys, isLoading } = useQuery({
-    queryKey: ['pesquisa-surveys', eventFilter, researcherFilter, dateFrom, dateTo, typeFilter],
+    queryKey: ['pesquisa-surveys', eventFilter, researcherFilter, stageFilter, dateFrom, dateTo, typeFilter],
     queryFn: async () => {
       let query = supabase
         .from('pesquisa_surveys')
@@ -67,6 +84,8 @@ export default function PesquisaDashboardPage() {
         .limit(1000);
       if (eventFilter !== 'all') query = query.eq('event_id', eventFilter);
       if (researcherFilter !== 'all') query = query.eq('researcher_id', researcherFilter);
+      if (stageFilter === 'none') query = (query as any).is('event_stage_id', null);
+      else if (stageFilter !== 'all') query = (query as any).eq('event_stage_id', stageFilter);
       if (dateFrom) query = query.gte('collected_at', dateFrom);
       if (dateTo) query = query.lte('collected_at', dateTo + 'T23:59:59');
       if (typeFilter !== 'all') query = query.eq('respondent_type', typeFilter);
@@ -112,7 +131,7 @@ export default function PesquisaDashboardPage() {
   const handleExport = () => {
     if (!surveys || surveys.length === 0) return;
     const headers = [
-      'event_id', 'respondent_type', 'respondent_age', 'respondent_gender', 'mode',
+      'event_id', 'event_stage_id', 'respondent_type', 'respondent_age', 'respondent_gender', 'mode',
       'researcher_id', 'researcher_name', 'event_name', 'event_location', 'application_location',
       ...QUESTION_KEYS, 'ponto_positivo', 'sugestao', 'collected_at', 'device_id', 'client_uuid'
     ];
@@ -167,11 +186,27 @@ export default function PesquisaDashboardPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <Select value={eventFilter} onValueChange={setEventFilter}>
-          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Evento" /></SelectTrigger>
+        <Select value={eventFilter} onValueChange={(v) => { setEventFilter(v); setStageFilter('all'); }}>
+          <SelectTrigger className="w-[220px]"><SelectValue placeholder="Evento de pesquisa" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos eventos</SelectItem>
-            {events?.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+            {events?.map(e => (
+              <SelectItem key={e.id} value={e.id}>
+                {e.name}
+                {(e as any).event_stage_id && <span className="ml-1 text-xs text-muted-foreground">· etapa</span>}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={stageFilter} onValueChange={setStageFilter}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Etapa" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas etapas</SelectItem>
+            <SelectItem value="none">Sem etapa</SelectItem>
+            {stages?.map(s => (
+              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -202,6 +237,18 @@ export default function PesquisaDashboardPage() {
           <Download className="h-4 w-4 mr-2" /> Exportar CSV
         </Button>
       </div>
+
+      {/* Stage context badge */}
+      {stageFilter !== 'all' && stageFilter !== 'none' && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">
+            Etapa: {stages?.find(s => s.id === stageFilter)?.name ?? stageFilter}
+          </Badge>
+          <button className="text-xs text-muted-foreground underline" onClick={() => setStageFilter('all')}>
+            limpar
+          </button>
+        </div>
+      )}
 
       {isLoading ? (
         <p className="text-muted-foreground">Carregando...</p>
@@ -268,17 +315,23 @@ export default function PesquisaDashboardPage() {
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" /> Últimos Comentários
               </h3>
-              {stats.recentComments.map((s, i) => (
-                <div key={i} className="border-l-2 border-primary pl-3 space-y-1">
-                  <p className="text-xs text-muted-foreground">
-                    {s.respondent_type} · {format(new Date(s.collected_at), 'dd/MM HH:mm')}
-                    {` · ${(s as any).pesquisa_researchers?.name || 'Pesquisador'}`}
-                    {` · Local: ${(s as any).application_location || (s as any).pesquisa_events?.location || 'não informado'}`}
-                  </p>
-                  {s.ponto_positivo && <p className="text-sm"><span className="font-medium">👍</span> {s.ponto_positivo}</p>}
-                  {s.sugestao && <p className="text-sm"><span className="font-medium">💡</span> {s.sugestao}</p>}
-                </div>
-              ))}
+              {stats.recentComments.map((s, i) => {
+                const stageName = (s as any).event_stage_id
+                  ? stages?.find(st => st.id === (s as any).event_stage_id)?.name
+                  : null;
+                return (
+                  <div key={i} className="border-l-2 border-primary pl-3 space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      {s.respondent_type} · {format(new Date(s.collected_at), 'dd/MM HH:mm')}
+                      {` · ${(s as any).pesquisa_researchers?.name || 'Pesquisador'}`}
+                      {` · Local: ${(s as any).application_location || (s as any).pesquisa_events?.location || 'não informado'}`}
+                      {stageName && <span className="ml-1">· <Badge variant="outline" className="text-xs py-0">{stageName}</Badge></span>}
+                    </p>
+                    {s.ponto_positivo && <p className="text-sm"><span className="font-medium">👍</span> {s.ponto_positivo}</p>}
+                    {s.sugestao && <p className="text-sm"><span className="font-medium">💡</span> {s.sugestao}</p>}
+                  </div>
+                );
+              })}
             </Card>
           )}
 
