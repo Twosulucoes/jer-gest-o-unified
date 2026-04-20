@@ -240,47 +240,52 @@ export default function ParticipanteDetalhePage() {
     <div className="space-y-4 animate-fade-in">
       {/* Breadcrumbs + back */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0 h-8 w-8">
+        <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0 h-9 w-9">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <Breadcrumb>
+        <Breadcrumb className="min-w-0">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
                 <Link to="/admin/participantes">Participantes</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{person?.full_name ?? "Detalhe"}</BreadcrumbPage>
+            <BreadcrumbSeparator className="hidden sm:inline-flex" />
+            <BreadcrumbItem className="hidden sm:inline-flex min-w-0">
+              <BreadcrumbPage className="truncate max-w-[48vw]">{person?.full_name ?? "Detalhe"}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
       </div>
 
       {/* Header */}
-      <div className="flex items-start gap-4">
-        <Avatar className="h-14 w-14 shrink-0 ring-2 ring-primary/20">
-          <AvatarImage src={person?.photo_url ?? undefined} />
-          <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">{initials}</AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold text-foreground truncate">{person?.full_name ?? "Participante"}</h1>
-          <div className="flex flex-wrap items-center gap-2 mt-1">
-            <Badge variant="outline">{TYPE_LABELS[participant.participant_type] ?? participant.participant_type}</Badge>
-            <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-            {!participant.is_active && <Badge variant="destructive">Inativo</Badge>}
+      <div className="rounded-xl border bg-card p-3 sm:p-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <Avatar className="h-14 w-14 shrink-0 ring-2 ring-primary/20">
+            <AvatarImage src={person?.photo_url ?? undefined} />
+            <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">{initials}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-bold text-foreground leading-tight break-words">
+              {person?.full_name ?? "Participante"}
+            </h1>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <Badge variant="outline">{TYPE_LABELS[participant.participant_type] ?? participant.participant_type}</Badge>
+              <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+              {!participant.is_active && <Badge variant="destructive">Inativo</Badge>}
+            </div>
             {institution && (
-              <span className="text-sm text-muted-foreground">• {institution.name}</span>
+              <p className="text-sm text-muted-foreground mt-2 break-words leading-snug">{institution.name}</p>
             )}
           </div>
         </div>
 
         {/* Quick actions — permission-gated */}
         {canManageCredentials && (
-          <div className="flex gap-1.5 shrink-0 flex-wrap">
+          <div className="flex flex-col sm:flex-row gap-2">
             {canCredential && (
               <Button
+                className="w-full sm:w-auto"
                 size="sm"
                 onClick={() => emitCredentialMutation.mutate()}
                 disabled={emitCredentialMutation.isPending}
@@ -290,13 +295,13 @@ export default function ParticipanteDetalhePage() {
               </Button>
             )}
             {hasCredential && (
-              <>
+              <div className="grid grid-cols-3 sm:flex gap-2 w-full sm:w-auto">
                 {credentialTemplate && (
-                  <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+                  <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)} className="w-full">
                     <Eye className="h-3.5 w-3.5 mr-1" />Credencial
                   </Button>
                 )}
-                <Button size="sm" variant="outline" onClick={() => setLabelOpen(true)}>
+                <Button size="sm" variant="outline" onClick={() => setLabelOpen(true)} className="w-full">
                   <Tag className="h-3.5 w-3.5 mr-1" />Etiqueta
                 </Button>
                 <Button
@@ -304,11 +309,12 @@ export default function ParticipanteDetalhePage() {
                   variant="outline"
                   onClick={() => setReissueConfirmOpen(true)}
                   disabled={reissueCredentialMutation.isPending}
+                  className="w-full"
                 >
                   <RefreshCw className="h-3.5 w-3.5 mr-1" />
                   {reissueCredentialMutation.isPending ? "Reemitindo..." : "2ª Via"}
                 </Button>
-              </>
+              </div>
             )}
           </div>
         )}
@@ -316,7 +322,7 @@ export default function ParticipanteDetalhePage() {
 
       {/* Tabs */}
       <Tabs defaultValue="resumo" className="w-full">
-        <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
+        <TabsList className="w-full justify-start h-auto gap-1 overflow-x-auto overscroll-x-contain touch-pan-x whitespace-nowrap">
           <TabsTrigger value="resumo" className="gap-1.5">
             <User className="h-3.5 w-3.5" />Resumo
           </TabsTrigger>
