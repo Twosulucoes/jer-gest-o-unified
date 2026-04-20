@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, XCircle, User, Layers, X, Plus, Edit } from "lucide-react";
+import { Search, Users, XCircle, User, Layers, X, Plus, Edit, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
