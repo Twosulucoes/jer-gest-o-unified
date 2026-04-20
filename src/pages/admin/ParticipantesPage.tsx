@@ -234,8 +234,30 @@ export default function ParticipantesPage() {
     },
   });
 
-  const rows = pageData?.rows ?? [];
+  const rawRows = pageData?.rows ?? [];
   const total = pageData?.total ?? 0;
+  const rows = useMemo(() => {
+    const arr = [...rawRows];
+    const dir = sortDir === "asc" ? 1 : -1;
+    arr.sort((a: any, b: any) => {
+      let va = "", vb = "";
+      switch (sortBy) {
+        case "name":
+          va = a.person?.full_name ?? ""; vb = b.person?.full_name ?? ""; break;
+        case "type":
+          va = a.participant_type ?? ""; vb = b.participant_type ?? ""; break;
+        case "status":
+          va = a.status ?? ""; vb = b.status ?? ""; break;
+        case "institution":
+          va = a.delegation?.institution?.name ?? a.delegation?.school_name ?? "";
+          vb = b.delegation?.institution?.name ?? b.delegation?.school_name ?? ""; break;
+        case "created":
+          va = a.created_at ?? ""; vb = b.created_at ?? ""; break;
+      }
+      return va.localeCompare(vb, "pt-BR", { numeric: true }) * dir;
+    });
+    return arr;
+  }, [rawRows, sortBy, sortDir]);
 
   // Enrollments only for the visible page
   const partIds = rows.map((p: any) => p.id);
