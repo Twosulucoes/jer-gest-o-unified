@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Settings, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { dispatchGlobalRefresh } from "@/lib/systemRefresh";
@@ -19,6 +20,15 @@ export default function SuperConfigPage() {
   const [editKey, setEditKey] = useState("");
   const [editValue, setEditValue] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
+  const [brandingForm, setBrandingForm] = useState({
+    system_name: "",
+    subtitle: "",
+    footer_text: "",
+    developer_name: "",
+    developer_role: "",
+    developer_logo_url: "",
+    version: "",
+  });
 
   const { data: configs, isLoading } = useQuery({
     queryKey: ["super-config"],
@@ -64,6 +74,30 @@ export default function SuperConfigPage() {
     },
   });
 
+  const saveBrandingMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        ...brandingForm,
+        updated_at: new Date().toISOString(),
+      };
+      const existing = (configs ?? []).find((c) => c.key === "system_branding");
+      if (existing) {
+        const { error } = await supabase.from("system_config").update({ value: payload }).eq("id", existing.id);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await supabase.from("system_config").insert({ key: "system_branding", value: payload });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["super-config"] });
+      toast({ title: "Branding global salvo" });
+    },
+    onError: (e: Error) => {
+      toast({ title: "Erro ao salvar branding", description: e.message, variant: "destructive" });
+    },
+  });
+
   const refreshAllMutation = useMutation({
     mutationFn: dispatchGlobalRefresh,
     onSuccess: () => {
@@ -88,6 +122,18 @@ export default function SuperConfigPage() {
     setDialogOpen(true);
   };
 
+  const applyInstitutionalPreset = () => {
+    setBrandingForm({
+      system_name: "JER Gestão",
+      subtitle: "Plataforma oficial de gestão dos Jogos Escolares",
+      footer_text: "JER Gestão • Solução oficial de gestão esportiva • Desenvolvido por Two Soluções",
+      developer_name: "Two Soluções",
+      developer_role: "Desenvolvedora da Plataforma",
+      developer_logo_url: "",
+      version: "1.0.0",
+    });
+  };
+
   const handleSave = () => {
     try {
       JSON.parse(editValue);
@@ -97,6 +143,45 @@ export default function SuperConfigPage() {
     }
     saveMutation.mutate({ id: editId, key: editKey, value: editValue });
   };
+
+  const applySystemBrandingIntoForm = () => {
+    const cfg = (configs ?? []).find((c) => c.key === "system_branding");
+    const raw = (cfg?.value ?? {}) as Record<string, unknown>;
+    setBrandingForm({
+      system_name: String(raw.system_name ?? ""),
+      subtitle: String(raw.subtitle ?? ""),
+      footer_text: String(raw.footer_text ?? ""),
+      developer_name: String(raw.developer_name ?? ""),
+      developer_role: String(raw.developer_role ?? ""),
+      developer_logo_url: String(raw.developer_logo_url ?? ""),
+      version: String(raw.version ?? ""),
+    });
+  };
+
+  useEffect(() => {
+    if (!configs) return;
+    const isEmpty =
+      !brandingForm.system_name &&
+      !brandingForm.subtitle &&
+      !brandingForm.footer_text &&
+      !brandingForm.developer_name &&
+      !brandingForm.developer_role &&
+      !brandingForm.developer_logo_url &&
+      !brandingForm.version;
+    if (!isEmpty) return;
+    const cfg = configs.find((c) => c.key === "system_branding");
+    if (!cfg) return;
+    const raw = (cfg.value ?? {}) as Record<string, unknown>;
+    setBrandingForm({
+      system_name: String(raw.system_name ?? ""),
+      subtitle: String(raw.subtitle ?? ""),
+      footer_text: String(raw.footer_text ?? ""),
+      developer_name: String(raw.developer_name ?? ""),
+      developer_role: String(raw.developer_role ?? ""),
+      developer_logo_url: String(raw.developer_logo_url ?? ""),
+      version: String(raw.version ?? ""),
+    });
+  }, [configs, brandingForm.system_name, brandingForm.subtitle, brandingForm.footer_text, brandingForm.developer_name, brandingForm.developer_role, brandingForm.developer_logo_url, brandingForm.version]);
 
   return (
     <div className="space-y-6">
@@ -152,6 +237,96 @@ export default function SuperConfigPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Personalização do Sistema (Super Admin)</CardTitle>
+          <CardDescription>
+            Configure nome, propriedade/desenvolvedora, versão e logo da Two Soluções em uma chave global
+            <code className="mx-1 rounded bg-muted px-1 py-0.5 text-xs">system_branding</code>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nome do sistema</Label>
+              <Input
+                value={brandingForm.system_name}
+                onChange={(e) => setBrandingForm((v) => ({ ...v, system_name: e.target.value }))}
+                placeholder="Ex: JER Gestão"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Versão</Label>
+              <Input
+                value={brandingForm.version}
+                onChange={(e) => setBrandingForm((v) => ({ ...v, version: e.target.value }))}
+                placeholder="Ex: 1.0.0"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Subtítulo</Label>
+            <Input
+              value={brandingForm.subtitle}
+              onChange={(e) => setBrandingForm((v) => ({ ...v, subtitle: e.target.value }))}
+              placeholder="Ex: Plataforma oficial de gestão dos Jogos Escolares"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Rodapé</Label>
+            <Textarea
+              rows={2}
+              value={brandingForm.footer_text}
+              onChange={(e) => setBrandingForm((v) => ({ ...v, footer_text: e.target.value }))}
+              placeholder="Texto exibido no rodapé dos materiais."
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Desenvolvedora (Nome)</Label>
+              <Input
+                value={brandingForm.developer_name}
+                onChange={(e) => setBrandingForm((v) => ({ ...v, developer_name: e.target.value }))}
+                placeholder="Ex: Two Soluções"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Desenvolvedora (Cargo)</Label>
+              <Input
+                value={brandingForm.developer_role}
+                onChange={(e) => setBrandingForm((v) => ({ ...v, developer_role: e.target.value }))}
+                placeholder="Ex: Desenvolvedora da Plataforma"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Logo da desenvolvedora (URL)</Label>
+            <Input
+              value={brandingForm.developer_logo_url}
+              onChange={(e) => setBrandingForm((v) => ({ ...v, developer_logo_url: e.target.value }))}
+              placeholder="https://.../logo-two-solucoes.png"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" onClick={applySystemBrandingIntoForm}>
+              Carregar atual
+            </Button>
+            <Button type="button" variant="outline" onClick={applyInstitutionalPreset}>
+              Aplicar preset institucional
+            </Button>
+            <Button type="button" onClick={() => saveBrandingMutation.mutate()} disabled={saveBrandingMutation.isPending}>
+              <Save className="mr-2 h-4 w-4" />
+              Salvar personalização
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {isLoading ? (
         <div className="space-y-3">
