@@ -49,6 +49,7 @@ export default function LocaisPage() {
 
   const toPayload = (values: VenueFormValues) => ({
     event_id: values.event_id,
+    event_stage_id: values.event_stage_id,
     name: values.name,
     venue_type: values.venue_type,
     city: values.city || null,
