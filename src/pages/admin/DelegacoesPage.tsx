@@ -21,6 +21,7 @@ import {
 import DelegationFormDialog, { type DelegationFormValues } from "@/components/admin/DelegationFormDialog";
 import { DataPagination } from "@/components/ui/data-pagination";
 import ExportButton from "@/components/admin/ExportButton";
+import PdfFieldsPicker, { type PdfFieldOption } from "@/components/admin/PdfFieldsPicker";
 import type { ExportColumn } from "@/lib/exportData";
 import { useEventBranding } from "@/hooks/useEventBranding";
 import { exportListPdf, downloadBlob, type PdfListColumn, type PdfListGroup } from "@/lib/listReportPdf";
@@ -438,15 +439,48 @@ export default function DelegacoesPage() {
     return acc;
   };
 
-  // ── PDF: colunas compactas para o relatório ──
-  const pdfColumns: PdfListColumn<any>[] = [
-    { header: "Escola", width: "30%", accessor: (d) => d.school_name ?? "" },
-    { header: "Rede", width: "10%", accessor: (d) => NETWORK_LABEL[d.school_network_type] ?? d.school_network_type ?? "" },
-    { header: "Município/UF", width: "18%", accessor: (d) => `${d.school_city ?? "—"}${d.school_state ? "/" + d.school_state : ""}` },
-    { header: "Status", width: "10%", accessor: (d) => STATUS_MAP[d.status]?.label ?? d.status ?? "" },
-    { header: "Chefe", width: "16%", accessor: (d) => d.chief_name ?? "" },
-    { header: "Contato", width: "16%", accessor: (d) => d.chief_phone || d.chief_email || d.school_contact_phone || "" },
+  // ── PDF: catálogo de campos disponíveis (usuário escolhe até 8) ──
+  const PDF_FIELD_CATALOG: Array<PdfFieldOption & {
+    weight: number; // peso para distribuir largura
+    accessor: (d: any) => string;
+  }> = [
+    { key: "school_name", label: "Escola", weight: 28, accessor: (d) => d.school_name ?? "" },
+    { key: "school_official_name", label: "Nome oficial", weight: 22, accessor: (d) => d.school_official_name ?? "" },
+    { key: "network", label: "Rede", weight: 10, accessor: (d) => NETWORK_LABEL[d.school_network_type] ?? d.school_network_type ?? "" },
+    { key: "city_uf", label: "Município/UF", weight: 16, accessor: (d) => `${d.school_city ?? "—"}${d.school_state ? "/" + d.school_state : ""}` },
+    { key: "city", label: "Município", weight: 14, accessor: (d) => d.school_city ?? "" },
+    { key: "district", label: "Distrito", weight: 12, accessor: (d) => d.school_district ?? "" },
+    { key: "status", label: "Status", weight: 10, accessor: (d) => STATUS_MAP[d.status]?.label ?? d.status ?? "" },
+    { key: "chief_name", label: "Chefe", weight: 16, accessor: (d) => d.chief_name ?? "" },
+    { key: "chief_phone", label: "Tel. Chefe", weight: 12, accessor: (d) => d.chief_phone ?? "" },
+    { key: "chief_email", label: "E-mail Chefe", weight: 18, accessor: (d) => d.chief_email ?? "" },
+    { key: "school_contact_name", label: "Contato (escola)", weight: 16, accessor: (d) => d.school_contact_name ?? "" },
+    { key: "school_contact_phone", label: "Tel. Contato", weight: 12, accessor: (d) => d.school_contact_phone ?? "" },
+    { key: "stages", label: "Etapas", weight: 18, accessor: (d) => {
+      const ids = stagesByDelegation.get(d.id);
+      if (!ids || ids.size === 0) return "";
+      return Array.from(ids).map((id) => stageMap.get(id)?.name).filter(Boolean).join(", ");
+    } },
+    { key: "is_active", label: "Ativa?", weight: 8, accessor: (d) => (d.school_is_active ? "Sim" : "Não") },
   ];
+
+  const PDF_DEFAULT_FIELDS = ["school_name", "network", "city_uf", "status", "chief_name", "chief_phone"];
+  const [pdfFields, setPdfFields] = useState<string[]>(PDF_DEFAULT_FIELDS);
+
+  const pdfFieldOptions: PdfFieldOption[] = PDF_FIELD_CATALOG.map(({ key, label }) => ({ key, label }));
+
+  const pdfColumns: PdfListColumn<any>[] = useMemo(() => {
+    const selected = PDF_FIELD_CATALOG.filter((f) => pdfFields.includes(f.key));
+    const ordered = pdfFields
+      .map((k) => selected.find((s) => s.key === k))
+      .filter(Boolean) as typeof selected;
+    const totalWeight = ordered.reduce((acc, f) => acc + f.weight, 0) || 1;
+    return ordered.map((f) => ({
+      header: f.label,
+      width: `${((f.weight / totalWeight) * 100).toFixed(2)}%`,
+      accessor: f.accessor,
+    }));
+  }, [pdfFields, stagesByDelegation, stageMap]);
 
   const buildGroups = (rows: any[]): PdfListGroup<any>[] => {
     if (groupBy === "none") return [{ label: "", rows }];
@@ -516,6 +550,13 @@ export default function DelegacoesPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <PdfFieldsPicker
+            options={pdfFieldOptions}
+            value={pdfFields}
+            onChange={setPdfFields}
+            defaults={PDF_DEFAULT_FIELDS}
+            max={8}
+          />
           <ExportButton
             filteredRows={delegations as any[]}
             fetchFilteredRows={fetchAllFilteredDelegations}

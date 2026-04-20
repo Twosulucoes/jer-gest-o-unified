@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DataPagination } from "@/components/ui/data-pagination";
 import ExportButton from "@/components/admin/ExportButton";
+import PdfFieldsPicker, { type PdfFieldOption } from "@/components/admin/PdfFieldsPicker";
 import type { ExportColumn } from "@/lib/exportData";
 import { useEventBranding } from "@/hooks/useEventBranding";
 import { exportListPdf, downloadBlob, type PdfListColumn, type PdfListGroup } from "@/lib/listReportPdf";
@@ -491,18 +492,47 @@ export default function ParticipantesPage() {
     return acc;
   };
 
-  // ── PDF: colunas compactas para o relatório ──
-  const pdfColumns: PdfListColumn<any>[] = [
-    { header: "Nome", width: "26%", accessor: (p) => p.person?.full_name ?? "" },
-    { header: "CPF", width: "12%", accessor: (p) => p.person?.cpf ?? "" },
-    { header: "Tipo", width: "10%", accessor: (p) => TYPE_LABELS[p.participant_type] ?? p.participant_type ?? "" },
-    { header: "Status", width: "10%", accessor: (p) => STATUS_LABELS[p.status]?.label ?? p.status ?? "" },
-    { header: "Instituição", width: "22%", accessor: (p) => p.delegation?.institution?.name ?? p.delegation?.school_name ?? "" },
-    { header: "Etapas", width: "20%", accessor: (p) => {
+  // ── PDF: catálogo de campos disponíveis (usuário escolhe até 8) ──
+  const PDF_FIELD_CATALOG: Array<PdfFieldOption & {
+    weight: number;
+    accessor: (p: any) => string;
+  }> = [
+    { key: "name", label: "Nome", weight: 26, accessor: (p) => p.person?.full_name ?? "" },
+    { key: "cpf", label: "CPF", weight: 12, accessor: (p) => p.person?.cpf ?? "" },
+    { key: "gender", label: "Gênero", weight: 8, accessor: (p) => p.person?.gender ?? "" },
+    { key: "type", label: "Tipo", weight: 10, accessor: (p) => TYPE_LABELS[p.participant_type] ?? p.participant_type ?? "" },
+    { key: "status", label: "Status", weight: 10, accessor: (p) => STATUS_LABELS[p.status]?.label ?? p.status ?? "" },
+    { key: "institution", label: "Instituição", weight: 22, accessor: (p) => p.delegation?.institution?.name ?? p.delegation?.school_name ?? "" },
+    { key: "school", label: "Escola (delegação)", weight: 20, accessor: (p) => p.delegation?.school_name ?? "" },
+    { key: "enrollments", label: "Modalidade/Prova", weight: 22, accessor: (p) => {
+      const list = enrollments.filter((e: any) => e.participant_id === p.id);
+      if (list.length === 0) return "";
+      return list.map((e: any) => `${e.sport_event?.sport?.name ?? "?"}/${e.sport_event?.name ?? "?"}`).join(", ");
+    } },
+    { key: "stages", label: "Etapas", weight: 18, accessor: (p) => {
       const ids = linksByParticipant.get(p.id) ?? [];
       return ids.map((id) => stageMap.get(id)?.name).filter(Boolean).join(", ");
     } },
+    { key: "created_at", label: "Cadastrado em", weight: 14, accessor: (p) => p.created_at ? new Date(p.created_at).toLocaleDateString("pt-BR") : "" },
   ];
+
+  const PDF_DEFAULT_FIELDS = ["name", "cpf", "type", "status", "institution", "stages"];
+  const [pdfFields, setPdfFields] = useState<string[]>(PDF_DEFAULT_FIELDS);
+
+  const pdfFieldOptions: PdfFieldOption[] = PDF_FIELD_CATALOG.map(({ key, label }) => ({ key, label }));
+
+  const pdfColumns: PdfListColumn<any>[] = useMemo(() => {
+    const selected = PDF_FIELD_CATALOG.filter((f) => pdfFields.includes(f.key));
+    const ordered = pdfFields
+      .map((k) => selected.find((s) => s.key === k))
+      .filter(Boolean) as typeof selected;
+    const totalWeight = ordered.reduce((acc, f) => acc + f.weight, 0) || 1;
+    return ordered.map((f) => ({
+      header: f.label,
+      width: `${((f.weight / totalWeight) * 100).toFixed(2)}%`,
+      accessor: f.accessor,
+    }));
+  }, [pdfFields, enrollments, linksByParticipant, stageMap]);
 
   const handleParticipantesPdf = async (scope: "filtered" | "all", rowsAll: any[]) => {
     const filters: Array<{ label: string; value: string }> = [];
@@ -539,6 +569,13 @@ export default function ParticipantesPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <PdfFieldsPicker
+            options={pdfFieldOptions}
+            value={pdfFields}
+            onChange={setPdfFields}
+            defaults={PDF_DEFAULT_FIELDS}
+            max={8}
+          />
           <ExportButton
             filteredRows={rows as any[]}
             fetchFilteredRows={fetchAllFilteredParticipants}
