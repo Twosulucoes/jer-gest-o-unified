@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Plus, Save, Trash2 } from "lucide-react";
+import { Settings, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { dispatchGlobalRefresh } from "@/lib/systemRefresh";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
@@ -63,6 +64,16 @@ export default function SuperConfigPage() {
     },
   });
 
+  const refreshAllMutation = useMutation({
+    mutationFn: dispatchGlobalRefresh,
+    onSuccess: () => {
+      toast({ title: "Refresh global enviado", description: "Todas as máquinas conectadas irão recarregar." });
+    },
+    onError: (e: Error) => {
+      toast({ title: "Erro ao enviar refresh", description: e.message, variant: "destructive" });
+    },
+  });
+
   const openNew = () => {
     setEditId(null);
     setEditKey("");
@@ -95,12 +106,23 @@ export default function SuperConfigPage() {
           <p className="text-sm text-zinc-400 mt-1">Feature flags, limites e parâmetros do sistema.</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" onClick={openNew} className="bg-amber-500 text-black hover:bg-amber-400">
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Config
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => refreshAllMutation.mutate()}
+              disabled={refreshAllMutation.isPending}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh global
             </Button>
-          </DialogTrigger>
+            <DialogTrigger asChild>
+              <Button size="sm" onClick={openNew} className="bg-amber-500 text-black hover:bg-amber-400">
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Config
+              </Button>
+            </DialogTrigger>
+          </div>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editId ? "Editar Configuração" : "Nova Configuração"}</DialogTitle>
