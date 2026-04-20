@@ -478,66 +478,80 @@ export default function DelegacoesPage() {
         </div>
       ) : (
         <>
-          {/* Mobile: Card list */}
-          <div className={`grid gap-3 sm:hidden ${isFetching ? "opacity-70" : ""}`}>
-            {delegations.map((del) => {
-              const d = del as any;
-              const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
-              const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
-              return (
-                <Link
-                  key={del.id}
-                  to={`/admin/delegacoes/${del.id}`}
-                  className="rounded-lg border bg-card p-3 active:scale-[0.99] transition-transform hover:border-primary/40"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-sm text-foreground line-clamp-2 flex-1">
-                      {d.school_name ?? "—"}
+          {/* Mobile: Card list (com agrupamento) */}
+          <div className={`space-y-4 sm:hidden ${isFetching ? "opacity-70" : ""}`}>
+            {groups.map((g) => (
+              <div key={g.key} className="space-y-2">
+                {groupBy !== "none" && (
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {g.label}
                     </h3>
-                    <Badge variant={statusInfo.variant} className="shrink-0 text-[10px] px-1.5 py-0">
-                      {statusInfo.label}
-                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">{g.rows.length}</Badge>
                   </div>
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    {cityState && (
-                      <p className="flex items-center gap-1">
-                        <span className="font-medium text-foreground/70">Local:</span> {cityState}
-                        {d.school_network_type && (
-                          <span className="capitalize ml-1">· {d.school_network_type}</span>
-                        )}
-                      </p>
-                    )}
-                    {del.chief_name && (
-                      <p>
-                        <span className="font-medium text-foreground/70">Chefe:</span> {del.chief_name}
-                      </p>
-                    )}
-                    {del.chief_phone && (
-                      <p>
-                        <span className="font-medium text-foreground/70">Tel:</span> {del.chief_phone}
-                      </p>
-                    )}
-                  </div>
-                  <div className="mt-2">{renderStageBadges(del.id)}</div>
-                  {canWrite && (
-                    <div className="flex justify-end mt-2 pt-2 border-t border-border/50">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingDelegation(del); setDialogOpen(true); }}
+                )}
+                <div className="grid gap-3">
+                  {g.rows.map((del: any) => {
+                    const d = del;
+                    const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
+                    const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
+                    return (
+                      <Link
+                        key={del.id}
+                        to={`/admin/delegacoes/${del.id}`}
+                        className="rounded-lg border bg-card p-3 active:scale-[0.99] transition-transform hover:border-primary/40"
                       >
-                        <Pencil className="h-3 w-3 mr-1" />
-                        Editar
-                      </Button>
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-sm text-foreground line-clamp-2 flex-1">
+                            {d.school_name ?? "—"}
+                          </h3>
+                          <Badge variant={statusInfo.variant} className="shrink-0 text-[10px] px-1.5 py-0">
+                            {statusInfo.label}
+                          </Badge>
+                        </div>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          {cityState && (
+                            <p className="flex items-center gap-1">
+                              <span className="font-medium text-foreground/70">Local:</span> {cityState}
+                              {d.school_network_type && (
+                                <span className="capitalize ml-1">· {d.school_network_type}</span>
+                              )}
+                            </p>
+                          )}
+                          {del.chief_name && (
+                            <p>
+                              <span className="font-medium text-foreground/70">Chefe:</span> {del.chief_name}
+                            </p>
+                          )}
+                          {del.chief_phone && (
+                            <p>
+                              <span className="font-medium text-foreground/70">Tel:</span> {del.chief_phone}
+                            </p>
+                          )}
+                        </div>
+                        <div className="mt-2">{renderStageBadges(del.id)}</div>
+                        {canWrite && (
+                          <div className="flex justify-end mt-2 pt-2 border-t border-border/50">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingDelegation(del); setDialogOpen(true); }}
+                            >
+                              <Pencil className="h-3 w-3 mr-1" />
+                              Editar
+                            </Button>
+                          </div>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Desktop: Table */}
+          {/* Desktop: Table (com agrupamento) */}
           <div className="hidden sm:block rounded-lg border bg-card overflow-hidden">
             <Table>
               <TableHeader>
@@ -553,38 +567,53 @@ export default function DelegacoesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {delegations.map((del) => {
-                  const d = del as any;
-                  const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
-                  const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
-                  return (
-                    <TableRow key={del.id} className={isFetching ? "opacity-70" : ""}>
-                      <TableCell className="font-medium">{d.school_name ?? "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{cityState || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground capitalize">{d.school_network_type ?? "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                      </TableCell>
-                      <TableCell>{del.chief_name || "—"}</TableCell>
-                      <TableCell>{del.chief_phone || "—"}</TableCell>
-                      <TableCell>{renderStageBadges(del.id) ?? <span className="text-xs text-muted-foreground">—</span>}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link to={`/admin/delegacoes/${del.id}`}>
-                              <Eye className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          {canWrite && (
-                            <Button variant="ghost" size="icon" onClick={() => { setEditingDelegation(del); setDialogOpen(true); }}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {groups.map((g) => (
+                  <>
+                    {groupBy !== "none" && (
+                      <TableRow key={`grp-${g.key}`} className="bg-muted/40 hover:bg-muted/40">
+                        <TableCell colSpan={8} className="py-2">
+                          <div className="flex items-center gap-2">
+                            <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-xs font-semibold uppercase tracking-wide text-foreground">{g.label}</span>
+                            <Badge variant="outline" className="text-[10px]">{g.rows.length}</Badge>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {g.rows.map((del: any) => {
+                      const d = del;
+                      const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
+                      const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
+                      return (
+                        <TableRow key={del.id} className={isFetching ? "opacity-70" : ""}>
+                          <TableCell className="font-medium">{d.school_name ?? "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{cityState || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground capitalize">{d.school_network_type ?? "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                          </TableCell>
+                          <TableCell>{del.chief_name || "—"}</TableCell>
+                          <TableCell>{del.chief_phone || "—"}</TableCell>
+                          <TableCell>{renderStageBadges(del.id) ?? <span className="text-xs text-muted-foreground">—</span>}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" asChild>
+                                <Link to={`/admin/delegacoes/${del.id}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              {canWrite && (
+                                <Button variant="ghost" size="icon" onClick={() => { setEditingDelegation(del); setDialogOpen(true); }}>
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </>
+                ))}
               </TableBody>
             </Table>
           </div>
