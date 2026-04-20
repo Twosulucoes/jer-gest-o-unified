@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Plus, Pencil, Users, Eye, Search, Layers } from "lucide-react";
+import { Plus, Pencil, Users, Eye, Search, Layers, ArrowUp, ArrowDown, ArrowUpDown, FolderOpen } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -38,6 +38,11 @@ export default function DelegacoesPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 350);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [networkFilter, setNetworkFilter] = useState<string>("all");
+  const [cityFilter, setCityFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"school_name" | "school_city" | "school_network_type" | "status" | "created_at">("school_name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [groupBy, setGroupBy] = useState<"none" | "school_city" | "status" | "school_network_type" | "stage">("none");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
 
@@ -89,15 +94,20 @@ export default function DelegacoesPage() {
   });
 
   // Reset page when filters change
-  useEffect(() => { setPage(0); }, [debouncedSearch, statusFilter, stageId]);
+  useEffect(() => { setPage(0); }, [debouncedSearch, statusFilter, stageId, networkFilter, cityFilter, sortBy, sortDir]);
 
   const { data: pageData, isLoading, isFetching } = useQuery({
     queryKey: [
       "delegations-page",
+      selectedEventId,
       page,
       pageSize,
       debouncedSearch,
       statusFilter,
+      networkFilter,
+      cityFilter,
+      sortBy,
+      sortDir,
       stageId,
       (stageDelegationIds ?? []).length,
     ],
@@ -108,7 +118,10 @@ export default function DelegacoesPage() {
         .from("delegations")
         .select("*", { count: "exact" });
 
+      if (selectedEventId) q = q.eq("event_id", selectedEventId);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      if (networkFilter !== "all") q = q.eq("school_network_type", networkFilter);
+      if (cityFilter !== "all") q = q.eq("school_city", cityFilter);
 
       if (debouncedSearch.trim().length >= 2) {
         const term = debouncedSearch.trim().replace(/[%,]/g, "");
@@ -131,7 +144,7 @@ export default function DelegacoesPage() {
       const from = page * pageSize;
       const to = from + pageSize - 1;
       const { data, error, count } = await q
-        .order("created_at", { ascending: false })
+        .order(sortBy, { ascending: sortDir === "asc", nullsFirst: false })
         .range(from, to);
       if (error) throw error;
       return { rows: data ?? [], total: count ?? 0 };
@@ -140,6 +153,25 @@ export default function DelegacoesPage() {
 
   const delegations = pageData?.rows ?? [];
   const total = pageData?.total ?? 0;
+
+  // Distinct cities for the city filter (no escopo do evento)
+  const { data: cityOptions = [] } = useQuery({
+    queryKey: ["delegacoes-cities", selectedEventId],
+    enabled: !!selectedEventId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("delegations")
+        .select("school_city")
+        .eq("event_id", selectedEventId!)
+        .not("school_city", "is", null)
+        .order("school_city", { ascending: true })
+        .limit(2000);
+      if (error) throw error;
+      const set = new Set<string>();
+      (data ?? []).forEach((r: any) => { if (r.school_city) set.add(r.school_city); });
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+    },
+  });
 
   // Etapas por delegação (badges nas linhas)
   const delegIds = delegations.map((d: any) => d.id);
@@ -203,6 +235,49 @@ export default function DelegacoesPage() {
       </div>
     );
   };
+
+  const NETWORK_LABEL: Record<string, string> = {
+    estadual: "Estadual",
+    municipal: "Municipal",
+    federal: "Federal",
+    privada: "Privada",
+    particular: "Particular",
+  };
+
+  // Agrupa as delegações conforme groupBy (após a query/ordenação)
+  const groups = useMemo(() => {
+    if (groupBy === "none") return [{ key: "__all__", label: "", rows: delegations }];
+    const map = new Map<string, { key: string; label: string; rows: any[] }>();
+    for (const d of delegations as any[]) {
+      let keys: { key: string; label: string }[] = [];
+      if (groupBy === "school_city") {
+        const city = d.school_city || "Sem município";
+        keys = [{ key: city, label: city }];
+      } else if (groupBy === "status") {
+        const k = d.status || "—";
+        keys = [{ key: k, label: STATUS_MAP[k]?.label ?? k }];
+      } else if (groupBy === "school_network_type") {
+        const k = d.school_network_type || "—";
+        keys = [{ key: k, label: NETWORK_LABEL[k] ?? k }];
+      } else if (groupBy === "stage") {
+        const ids = stagesByDelegation.get(d.id);
+        if (!ids || ids.size === 0) {
+          keys = [{ key: "__no_stage__", label: "Sem etapa" }];
+        } else {
+          keys = Array.from(ids).map((id) => {
+            const s = stageMap.get(id);
+            return { key: id, label: s?.name ?? id };
+          });
+        }
+      }
+      for (const { key, label } of keys) {
+        const g = map.get(key) ?? { key, label, rows: [] };
+        g.rows.push(d);
+        map.set(key, g);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+  }, [delegations, groupBy, stagesByDelegation, stageMap]);
 
   const toPayload = (values: DelegationFormValues) => ({
     event_id: values.event_id,
@@ -292,39 +367,94 @@ export default function DelegacoesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar escola, cidade ou chefe..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar escola, cidade ou chefe..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={networkFilter} onValueChange={setNetworkFilter}>
+            <SelectTrigger className="w-full sm:w-[150px]"><SelectValue placeholder="Rede" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as redes</SelectItem>
+              {Object.entries(NETWORK_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={cityFilter} onValueChange={setCityFilter} disabled={!cityOptions.length}>
+            <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Município" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os municípios</SelectItem>
+              {cityOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select
+            value={stageId ?? "all"}
+            onValueChange={setStageFilter}
+            disabled={!selectedEventId || eventStages.length === 0}
+          >
+            <SelectTrigger className="w-full sm:w-[220px]">
+              <Layers className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
+              <SelectValue placeholder="Todas as etapas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as etapas</SelectItem>
+              {eventStages.map((s) => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os status</SelectItem>
-            {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select
-          value={stageId ?? "all"}
-          onValueChange={setStageFilter}
-          disabled={!selectedEventId || eventStages.length === 0}
-        >
-          <SelectTrigger className="w-full sm:w-[280px]">
-            <Layers className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
-            <SelectValue placeholder="Todas as etapas" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as etapas</SelectItem>
-            {eventStages.map((s) => (
-              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+            <ArrowUpDown className="h-3.5 w-3.5" /> Ordenar:
+          </span>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+            <SelectTrigger className="h-8 w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="school_name">Escola</SelectItem>
+              <SelectItem value="school_city">Município</SelectItem>
+              <SelectItem value="school_network_type">Rede</SelectItem>
+              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="created_at">Cadastro</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 px-2"
+            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+            title={sortDir === "asc" ? "Crescente (A→Z)" : "Decrescente (Z→A)"}
+          >
+            {sortDir === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+            <span className="ml-1 text-xs">{sortDir === "asc" ? "Asc" : "Desc"}</span>
+          </Button>
+
+          <span className="text-xs text-muted-foreground inline-flex items-center gap-1 sm:ml-2">
+            <FolderOpen className="h-3.5 w-3.5" /> Agrupar por:
+          </span>
+          <Select value={groupBy} onValueChange={(v) => setGroupBy(v as any)}>
+            <SelectTrigger className="h-8 w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Sem agrupamento</SelectItem>
+              <SelectItem value="school_city">Município</SelectItem>
+              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="school_network_type">Rede</SelectItem>
+              <SelectItem value="stage">Etapa</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Result count (mobile) */}
@@ -348,66 +478,80 @@ export default function DelegacoesPage() {
         </div>
       ) : (
         <>
-          {/* Mobile: Card list */}
-          <div className={`grid gap-3 sm:hidden ${isFetching ? "opacity-70" : ""}`}>
-            {delegations.map((del) => {
-              const d = del as any;
-              const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
-              const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
-              return (
-                <Link
-                  key={del.id}
-                  to={`/admin/delegacoes/${del.id}`}
-                  className="rounded-lg border bg-card p-3 active:scale-[0.99] transition-transform hover:border-primary/40"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-sm text-foreground line-clamp-2 flex-1">
-                      {d.school_name ?? "—"}
+          {/* Mobile: Card list (com agrupamento) */}
+          <div className={`space-y-4 sm:hidden ${isFetching ? "opacity-70" : ""}`}>
+            {groups.map((g) => (
+              <div key={g.key} className="space-y-2">
+                {groupBy !== "none" && (
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {g.label}
                     </h3>
-                    <Badge variant={statusInfo.variant} className="shrink-0 text-[10px] px-1.5 py-0">
-                      {statusInfo.label}
-                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">{g.rows.length}</Badge>
                   </div>
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    {cityState && (
-                      <p className="flex items-center gap-1">
-                        <span className="font-medium text-foreground/70">Local:</span> {cityState}
-                        {d.school_network_type && (
-                          <span className="capitalize ml-1">· {d.school_network_type}</span>
-                        )}
-                      </p>
-                    )}
-                    {del.chief_name && (
-                      <p>
-                        <span className="font-medium text-foreground/70">Chefe:</span> {del.chief_name}
-                      </p>
-                    )}
-                    {del.chief_phone && (
-                      <p>
-                        <span className="font-medium text-foreground/70">Tel:</span> {del.chief_phone}
-                      </p>
-                    )}
-                  </div>
-                  <div className="mt-2">{renderStageBadges(del.id)}</div>
-                  {canWrite && (
-                    <div className="flex justify-end mt-2 pt-2 border-t border-border/50">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingDelegation(del); setDialogOpen(true); }}
+                )}
+                <div className="grid gap-3">
+                  {g.rows.map((del: any) => {
+                    const d = del;
+                    const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
+                    const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
+                    return (
+                      <Link
+                        key={del.id}
+                        to={`/admin/delegacoes/${del.id}`}
+                        className="rounded-lg border bg-card p-3 active:scale-[0.99] transition-transform hover:border-primary/40"
                       >
-                        <Pencil className="h-3 w-3 mr-1" />
-                        Editar
-                      </Button>
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-sm text-foreground line-clamp-2 flex-1">
+                            {d.school_name ?? "—"}
+                          </h3>
+                          <Badge variant={statusInfo.variant} className="shrink-0 text-[10px] px-1.5 py-0">
+                            {statusInfo.label}
+                          </Badge>
+                        </div>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          {cityState && (
+                            <p className="flex items-center gap-1">
+                              <span className="font-medium text-foreground/70">Local:</span> {cityState}
+                              {d.school_network_type && (
+                                <span className="capitalize ml-1">· {d.school_network_type}</span>
+                              )}
+                            </p>
+                          )}
+                          {del.chief_name && (
+                            <p>
+                              <span className="font-medium text-foreground/70">Chefe:</span> {del.chief_name}
+                            </p>
+                          )}
+                          {del.chief_phone && (
+                            <p>
+                              <span className="font-medium text-foreground/70">Tel:</span> {del.chief_phone}
+                            </p>
+                          )}
+                        </div>
+                        <div className="mt-2">{renderStageBadges(del.id)}</div>
+                        {canWrite && (
+                          <div className="flex justify-end mt-2 pt-2 border-t border-border/50">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingDelegation(del); setDialogOpen(true); }}
+                            >
+                              <Pencil className="h-3 w-3 mr-1" />
+                              Editar
+                            </Button>
+                          </div>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Desktop: Table */}
+          {/* Desktop: Table (com agrupamento) */}
           <div className="hidden sm:block rounded-lg border bg-card overflow-hidden">
             <Table>
               <TableHeader>
@@ -423,38 +567,53 @@ export default function DelegacoesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {delegations.map((del) => {
-                  const d = del as any;
-                  const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
-                  const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
-                  return (
-                    <TableRow key={del.id} className={isFetching ? "opacity-70" : ""}>
-                      <TableCell className="font-medium">{d.school_name ?? "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{cityState || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground capitalize">{d.school_network_type ?? "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                      </TableCell>
-                      <TableCell>{del.chief_name || "—"}</TableCell>
-                      <TableCell>{del.chief_phone || "—"}</TableCell>
-                      <TableCell>{renderStageBadges(del.id) ?? <span className="text-xs text-muted-foreground">—</span>}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link to={`/admin/delegacoes/${del.id}`}>
-                              <Eye className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          {canWrite && (
-                            <Button variant="ghost" size="icon" onClick={() => { setEditingDelegation(del); setDialogOpen(true); }}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {groups.map((g) => (
+                  <React.Fragment key={`grp-${g.key}`}>
+                    {groupBy !== "none" && (
+                      <TableRow className="bg-muted/40 hover:bg-muted/40">
+                        <TableCell colSpan={8} className="py-2">
+                          <div className="flex items-center gap-2">
+                            <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-xs font-semibold uppercase tracking-wide text-foreground">{g.label}</span>
+                            <Badge variant="outline" className="text-[10px]">{g.rows.length}</Badge>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {g.rows.map((del: any) => {
+                      const d = del;
+                      const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
+                      const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
+                      return (
+                        <TableRow key={del.id} className={isFetching ? "opacity-70" : ""}>
+                          <TableCell className="font-medium">{d.school_name ?? "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{cityState || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground capitalize">{d.school_network_type ?? "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                          </TableCell>
+                          <TableCell>{del.chief_name || "—"}</TableCell>
+                          <TableCell>{del.chief_phone || "—"}</TableCell>
+                          <TableCell>{renderStageBadges(del.id) ?? <span className="text-xs text-muted-foreground">—</span>}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" asChild>
+                                <Link to={`/admin/delegacoes/${del.id}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              {canWrite && (
+                                <Button variant="ghost" size="icon" onClick={() => { setEditingDelegation(del); setDialogOpen(true); }}>
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
               </TableBody>
             </Table>
           </div>

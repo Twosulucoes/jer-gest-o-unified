@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, XCircle, User, Layers, X, Plus, Edit } from "lucide-react";
+import { Search, Users, XCircle, User, Layers, X, Plus, Edit, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +43,8 @@ export default function ParticipantesPage() {
   const debouncedSearch = useDebounce(searchTerm, 350);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"name" | "created" | "type" | "status" | "institution">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -232,8 +234,30 @@ export default function ParticipantesPage() {
     },
   });
 
-  const rows = pageData?.rows ?? [];
+  const rawRows = pageData?.rows ?? [];
   const total = pageData?.total ?? 0;
+  const rows = useMemo(() => {
+    const arr = [...rawRows];
+    const dir = sortDir === "asc" ? 1 : -1;
+    arr.sort((a: any, b: any) => {
+      let va = "", vb = "";
+      switch (sortBy) {
+        case "name":
+          va = a.person?.full_name ?? ""; vb = b.person?.full_name ?? ""; break;
+        case "type":
+          va = a.participant_type ?? ""; vb = b.participant_type ?? ""; break;
+        case "status":
+          va = a.status ?? ""; vb = b.status ?? ""; break;
+        case "institution":
+          va = a.delegation?.institution?.name ?? a.delegation?.school_name ?? "";
+          vb = b.delegation?.institution?.name ?? b.delegation?.school_name ?? ""; break;
+        case "created":
+          va = a.created_at ?? ""; vb = b.created_at ?? ""; break;
+      }
+      return va.localeCompare(vb, "pt-BR", { numeric: true }) * dir;
+    });
+    return arr;
+  }, [rawRows, sortBy, sortDir]);
 
   // Enrollments only for the visible page
   const partIds = rows.map((p: any) => p.id);
@@ -467,6 +491,30 @@ export default function ParticipantesPage() {
                 ))}
               </SelectContent>
             </Select>
+
+            <span className="text-xs text-muted-foreground sm:ml-2 inline-flex items-center gap-1">
+              <ArrowUpDown className="h-3.5 w-3.5" /> Ordenar:
+            </span>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+              <SelectTrigger className="h-8 w-full sm:w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Nome</SelectItem>
+                <SelectItem value="institution">Instituição</SelectItem>
+                <SelectItem value="type">Tipo</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="created">Cadastro</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-2"
+              onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+              title={sortDir === "asc" ? "Crescente (A→Z)" : "Decrescente (Z→A)"}
+            >
+              {sortDir === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+              <span className="ml-1 text-xs">{sortDir === "asc" ? "Asc" : "Desc"}</span>
+            </Button>
           </div>
         </CardContent>
       </Card>
