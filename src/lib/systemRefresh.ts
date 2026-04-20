@@ -5,7 +5,7 @@ const RELOAD_GUARD_KEY = "jer-global-refresh-at";
 const RELOAD_GUARD_WINDOW_MS = 10_000;
 
 export async function dispatchGlobalRefresh() {
-  const { error } = await supabase.from("system_commands").insert({
+  const { error } = await (supabase as any).from("system_commands").insert({
     command: REFRESH_EVENT,
     payload: {
       reason: "manual_super_admin",
