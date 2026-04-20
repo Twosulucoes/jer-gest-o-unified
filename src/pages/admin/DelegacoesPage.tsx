@@ -367,39 +367,94 @@ export default function DelegacoesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar escola, cidade ou chefe..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar escola, cidade ou chefe..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={networkFilter} onValueChange={setNetworkFilter}>
+            <SelectTrigger className="w-full sm:w-[150px]"><SelectValue placeholder="Rede" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as redes</SelectItem>
+              {Object.entries(NETWORK_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={cityFilter} onValueChange={setCityFilter} disabled={!cityOptions.length}>
+            <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Município" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os municípios</SelectItem>
+              {cityOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select
+            value={stageId ?? "all"}
+            onValueChange={setStageFilter}
+            disabled={!selectedEventId || eventStages.length === 0}
+          >
+            <SelectTrigger className="w-full sm:w-[220px]">
+              <Layers className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
+              <SelectValue placeholder="Todas as etapas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as etapas</SelectItem>
+              {eventStages.map((s) => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os status</SelectItem>
-            {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select
-          value={stageId ?? "all"}
-          onValueChange={setStageFilter}
-          disabled={!selectedEventId || eventStages.length === 0}
-        >
-          <SelectTrigger className="w-full sm:w-[280px]">
-            <Layers className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
-            <SelectValue placeholder="Todas as etapas" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as etapas</SelectItem>
-            {eventStages.map((s) => (
-              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+            <ArrowUpDown className="h-3.5 w-3.5" /> Ordenar:
+          </span>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+            <SelectTrigger className="h-8 w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="school_name">Escola</SelectItem>
+              <SelectItem value="school_city">Município</SelectItem>
+              <SelectItem value="school_network_type">Rede</SelectItem>
+              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="created_at">Cadastro</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 px-2"
+            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+            title={sortDir === "asc" ? "Crescente (A→Z)" : "Decrescente (Z→A)"}
+          >
+            {sortDir === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+            <span className="ml-1 text-xs">{sortDir === "asc" ? "Asc" : "Desc"}</span>
+          </Button>
+
+          <span className="text-xs text-muted-foreground inline-flex items-center gap-1 sm:ml-2">
+            <FolderOpen className="h-3.5 w-3.5" /> Agrupar por:
+          </span>
+          <Select value={groupBy} onValueChange={(v) => setGroupBy(v as any)}>
+            <SelectTrigger className="h-8 w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Sem agrupamento</SelectItem>
+              <SelectItem value="school_city">Município</SelectItem>
+              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="school_network_type">Rede</SelectItem>
+              <SelectItem value="stage">Etapa</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Result count (mobile) */}
