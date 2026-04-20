@@ -7,6 +7,7 @@ import {
   ChevronsLeft, ChevronsRight, User, ChevronLeft, Activity, BookOpen, LifeBuoy,
 } from "lucide-react";
 import { useState } from "react";
+import { brand } from "@/theme/brand";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -163,6 +164,17 @@ export default function SuperAdminLayout() {
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair
               </Button>
+              <p className="mt-2 text-[10px] text-zinc-600 text-center leading-tight">
+                Desenvolvido por{" "}
+                <a
+                  href={brand.developer.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-zinc-400 transition-colors"
+                >
+                  {brand.developer.name}
+                </a>
+              </p>
             </div>
           )}
         </aside>

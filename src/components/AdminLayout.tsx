@@ -22,6 +22,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import type { Database } from "@/integrations/supabase/types";
 import { NavigationHistoryTracker } from "@/hooks/useNavigationHistory";
 import { useMobileBackGuard } from "@/hooks/useMobileBackGuard";
+import { brand } from "@/theme/brand";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -368,6 +369,17 @@ export default function AdminLayout() {
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair
               </Button>
+              <p className="mt-2 text-[10px] text-sidebar-foreground/30 text-center leading-tight">
+                Desenvolvido por{" "}
+                <a
+                  href={brand.developer.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-sidebar-foreground/60 transition-colors"
+                >
+                  {brand.developer.name}
+                </a>
+              </p>
             </div>
           )}
         </aside>

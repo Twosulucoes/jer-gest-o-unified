@@ -38,6 +38,11 @@ export const brand = {
     headerText: '#FFFFFF',
     border: '#E2E8F0',
   },
+  developer: {
+    name: 'Two Soluções',
+    role: 'Desenvolvedora da Plataforma',
+    website: 'https://twosulucoes.com.br',
+  },
 } as const;
 
 export type Brand = typeof brand;
