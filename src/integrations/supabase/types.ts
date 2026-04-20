@@ -1821,6 +1821,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "import_pendencias_candidate_person_id_fkey"
+            columns: ["candidate_person_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["person_id"]
+          },
+          {
             foreignKeyName: "import_pendencias_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -4193,6 +4200,13 @@ export type Database = {
             referencedRelation: "people"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "participants_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["person_id"]
+          },
         ]
       }
       participation_irregularities: {
@@ -6377,13 +6391,6 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "participants_person_id_fkey"
-            columns: ["person_id"]
-            isOneToOne: false
-            referencedRelation: "people"
             referencedColumns: ["id"]
           },
         ]
