@@ -163,6 +163,18 @@ export const systemMap: SystemMapGroup[] = [
         gaps: [],
         nextActions: [],
       },
+      {
+        id: "logistica-consolidada",
+        label: "Logística Consolidada",
+        route: "/admin/logistica/consolidada",
+        pageFile: "src/pages/admin/LogisticaConsolidadaPage.tsx",
+        description: "Painel agregado por pessoa: necessidades vs consumo de transporte, alimentação, alojamento e vouchers. KPIs, filtros por delegação/escopo/status e drill-down por pessoa com export CSV.",
+        roles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento"],
+        status: ModuleStatus.DONE,
+        dataSources: ["vw_person_logistics_consumption", "service_vouchers", "service_voucher_uses"],
+        gaps: [],
+        nextActions: [],
+      },
     ],
   },
   {
