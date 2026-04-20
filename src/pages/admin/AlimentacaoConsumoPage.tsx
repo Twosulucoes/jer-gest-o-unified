@@ -214,23 +214,54 @@ export default function AlimentacaoConsumoPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Janela de Refeição</label>
+              <label className="text-sm font-medium text-foreground">
+                Janela de Refeição
+                {windows.length > 0 && (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    ({windows.length} {windows.length === 1 ? "janela" : "janelas"}
+                    {isStageScoped && stageId && stageWindowsCount > 0 ? " desta etapa" : ""})
+                  </span>
+                )}
+              </label>
               <Select value={selectedWindowId} onValueChange={setSelectedWindowId} disabled={!selectedEventId || windowsLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder={windowsLoading ? "Carregando…" : (windows.length === 0 ? "Nenhuma janela cadastrada" : "Selecione a janela")} />
                 </SelectTrigger>
-                <SelectContent>
-                  {windows.map((w: any) => {
-                    const mt = mealTypesMap.get(w.meal_type_id);
-                    const dateStr = new Date(w.service_date + "T00:00:00").toLocaleDateString("pt-BR");
-                    const title = w.label || mt?.name || "Refeição";
-                    const subtitle = mt?.name && w.label && w.label !== mt.name ? ` (${mt.name})` : "";
-                    return (
-                      <SelectItem key={w.id} value={w.id}>
-                        {title}{subtitle} — {dateStr} {w.start_time?.slice(0, 5)}–{w.end_time?.slice(0, 5)}{w.location ? ` · ${w.location}` : ""}
-                      </SelectItem>
-                    );
-                  })}
+                <SelectContent className="max-h-[360px]">
+                  {(() => {
+                    const byDate = new Map<string, any[]>();
+                    windows.forEach((w: any) => {
+                      const k = w.service_date;
+                      if (!byDate.has(k)) byDate.set(k, []);
+                      byDate.get(k)!.push(w);
+                    });
+                    const dates = Array.from(byDate.keys()).sort();
+                    return dates.map((d) => {
+                      const items = byDate.get(d)!;
+                      const dateLabel = new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
+                      return (
+                        <div key={d}>
+                          <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted/40">
+                            {dateLabel}
+                          </div>
+                          {items.map((w: any) => {
+                            const mt = mealTypesMap.get(w.meal_type_id);
+                            const title = w.label || mt?.name || "Refeição";
+                            const time = `${w.start_time?.slice(0, 5)}–${w.end_time?.slice(0, 5)}`;
+                            const stageHint = isStageScoped && stageId && !w.event_stage_id ? " · sem etapa" : "";
+                            return (
+                              <SelectItem key={w.id} value={w.id}>
+                                <span className="font-medium">{title}</span>
+                                <span className="text-muted-foreground"> · {time}</span>
+                                {w.location ? <span className="text-muted-foreground"> · {w.location}</span> : null}
+                                {stageHint && <span className="text-warning text-xs">{stageHint}</span>}
+                              </SelectItem>
+                            );
+                          })}
+                        </div>
+                      );
+                    });
+                  })()}
                 </SelectContent>
               </Select>
               {showingFallbackWindows && (
