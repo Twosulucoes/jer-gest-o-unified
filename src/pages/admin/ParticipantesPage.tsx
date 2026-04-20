@@ -224,25 +224,25 @@ export default function ParticipantesPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Participantes</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+    <div className="animate-fade-in space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">Participantes</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Cadastre e gerencie todas as pessoas do evento — atletas, técnicos, staff, terceiros.
           </p>
         </div>
         {canManage && selectedEventId && (
-          <Button onClick={() => { setEditingId(null); setFormOpen(true); }}>
+          <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-1" />Cadastrar pessoa
           </Button>
         )}
       </div>
 
       {stageFilterId && stageInfo && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
-          <div className="flex items-center gap-2 text-sm">
-            <Layers className="h-4 w-4 text-primary" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 sm:px-4 py-3">
+          <div className="flex items-center gap-2 text-xs sm:text-sm flex-wrap">
+            <Layers className="h-4 w-4 text-primary shrink-0" />
             <span className="text-muted-foreground">Filtrando por etapa:</span>
             <strong className="text-foreground">{stageInfo.name}</strong>
             {stageParticipantIds && (
@@ -251,7 +251,7 @@ export default function ParticipantesPage() {
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <Button variant="ghost" size="sm" asChild>
               <Link to={`/admin/etapas/${stageFilterId}`}>Ver etapa</Link>
             </Button>
@@ -263,8 +263,8 @@ export default function ParticipantesPage() {
       )}
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardContent className="pt-5 sm:pt-6 px-4 sm:px-5">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
               <Select value={selectedEventId} onValueChange={() => {}}>
@@ -303,7 +303,7 @@ export default function ParticipantesPage() {
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">Status:</span>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-8 w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
                 {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
@@ -314,18 +314,18 @@ export default function ParticipantesPage() {
       </Card>
 
       {selectedEventId && counters && (
-        <div className="grid grid-cols-3 gap-3">
-          <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Total no evento</p>
-            <p className="text-2xl font-bold text-foreground">{counters.total}</p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <Card><CardContent className="pt-3 pb-3 sm:pt-4 sm:pb-4 px-3 sm:px-5">
+            <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">Total no evento</p>
+            <p className="text-xl sm:text-2xl font-bold text-foreground">{counters.total}</p>
           </CardContent></Card>
-          <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Atletas</p>
-            <p className="text-2xl font-bold text-primary">{counters.athletes}</p>
+          <Card><CardContent className="pt-3 pb-3 sm:pt-4 sm:pb-4 px-3 sm:px-5">
+            <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">Atletas</p>
+            <p className="text-xl sm:text-2xl font-bold text-primary">{counters.athletes}</p>
           </CardContent></Card>
-          <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Comissão/Staff</p>
-            <p className="text-2xl font-bold text-muted-foreground">{counters.staff}</p>
+          <Card><CardContent className="pt-3 pb-3 sm:pt-4 sm:pb-4 px-3 sm:px-5">
+            <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">Comissão/Staff</p>
+            <p className="text-xl sm:text-2xl font-bold text-muted-foreground">{counters.staff}</p>
           </CardContent></Card>
         </div>
       )}
@@ -350,53 +350,106 @@ export default function ParticipantesPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>CPF</TableHead>
-                <TableHead>Instituição</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Modalidade / Prova</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((p: any) => {
-                const person = p.person;
-                const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
-                const institutionName = p.delegation?.institution?.name ?? p.delegation?.school_name ?? "—";
-                return (
-                  <TableRow key={p.id} className={isFetching ? "opacity-70" : ""}>
-                    <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground font-mono text-xs">{person?.cpf ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{institutionName}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
-                      {getEnrollmentSummary(p.id)}
-                    </TableCell>
-                    <TableCell className="flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/participantes/${p.id}`)} title="Ver participante">
-                        <User className="h-4 w-4 mr-1" />Ver
-                      </Button>
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground sm:hidden">
+            {total} participante{total !== 1 ? "s" : ""} encontrado{total !== 1 ? "s" : ""}
+          </p>
+
+          {/* Mobile cards */}
+          <div className="grid grid-cols-1 gap-2 sm:hidden">
+            {rows.map((p: any) => {
+              const person = p.person;
+              const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
+              const institutionName = p.delegation?.institution?.name ?? p.delegation?.school_name ?? "—";
+              return (
+                <Card
+                  key={p.id}
+                  onClick={() => navigate(`/admin/participantes/${p.id}`)}
+                  className={`cursor-pointer active:scale-[0.99] transition-transform ${isFetching ? "opacity-70" : ""}`}
+                >
+                  <CardContent className="p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm text-foreground truncate">{person?.full_name ?? "—"}</p>
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">{person?.cpf ?? "—"}</p>
+                      </div>
+                      <Badge variant={statusInfo.variant} className="text-[10px] shrink-0">{statusInfo.label}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{institutionName}</p>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[10px]">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
                       {canManage && (
-                        <Button variant="ghost" size="sm" onClick={() => { setEditingId(p.id); setFormOpen(true); }} title="Editar">
-                          <Edit className="h-4 w-4" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2"
+                          onClick={(e) => { e.stopPropagation(); setEditingId(p.id); setFormOpen(true); }}
+                        >
+                          <Edit className="h-3.5 w-3.5 mr-1" />Editar
                         </Button>
                       )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    </div>
+                    {getEnrollmentSummary(p.id) !== "—" && (
+                      <p className="text-[11px] text-muted-foreground border-t pt-2 line-clamp-2">
+                        {getEnrollmentSummary(p.id)}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block rounded-lg border bg-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>CPF</TableHead>
+                  <TableHead>Instituição</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Modalidade / Prova</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((p: any) => {
+                  const person = p.person;
+                  const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
+                  const institutionName = p.delegation?.institution?.name ?? p.delegation?.school_name ?? "—";
+                  return (
+                    <TableRow key={p.id} className={isFetching ? "opacity-70" : ""}>
+                      <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground font-mono text-xs">{person?.cpf ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{institutionName}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
+                        {getEnrollmentSummary(p.id)}
+                      </TableCell>
+                      <TableCell className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/participantes/${p.id}`)} title="Ver participante">
+                          <User className="h-4 w-4 mr-1" />Ver
+                        </Button>
+                        {canManage && (
+                          <Button variant="ghost" size="sm" onClick={() => { setEditingId(p.id); setFormOpen(true); }} title="Editar">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
           <DataPagination
             page={page}
             pageSize={pageSize}
