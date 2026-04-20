@@ -8,9 +8,9 @@ import {
   Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree,
   Building2, Users, Upload, KeyRound,
   UsersRound, ChevronDown,
-  Shield, Settings, AlertTriangle, FileSearch, FileBarChart,
-  Info, Zap, ExternalLink, ChevronsLeft,
-  ChevronsRight, User, FolderOpen, Cog,
+  Shield, Settings, AlertTriangle, FileBarChart,
+  Info, ExternalLink, ChevronsLeft,
+  ChevronsRight, User, FolderOpen,
   Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList,
 } from "lucide-react";
 import { useState, useMemo } from "react";
