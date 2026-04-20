@@ -43,6 +43,8 @@ export default function ParticipantesPage() {
   const debouncedSearch = useDebounce(searchTerm, 350);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"name" | "created" | "type" | "status" | "institution">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [searchParams, setSearchParams] = useSearchParams();
