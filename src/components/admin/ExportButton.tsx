@@ -12,20 +12,22 @@ type Format = "csv" | "xlsx";
 type Scope = "filtered" | "all";
 
 interface Props<T> {
-  /** Linhas atualmente filtradas/visíveis (para "Exportar filtrados") */
+  /** Linhas atualmente visíveis (página atual). Usadas como fallback se não houver fetchFilteredRows. */
   filteredRows: T[];
-  /** Função que retorna TODAS as linhas do contexto atual (ignorando filtros) */
+  /** Função opcional que retorna TODAS as linhas filtradas (todas as páginas) */
+  fetchFilteredRows?: () => Promise<T[]>;
+  /** Função opcional que retorna TODAS as linhas (ignorando filtros) */
   fetchAllRows?: () => Promise<T[]>;
   columns: ExportColumn<T>[];
   filenamePrefix: string;
   sheetName?: string;
-  /** Texto extra junto ao botão (ex.: contagem) */
   label?: string;
   disabled?: boolean;
 }
 
 export default function ExportButton<T>({
   filteredRows,
+  fetchFilteredRows,
   fetchAllRows,
   columns,
   filenamePrefix,
@@ -39,7 +41,7 @@ export default function ExportButton<T>({
     try {
       setBusy(true);
       const rows = scope === "filtered"
-        ? filteredRows
+        ? (fetchFilteredRows ? await fetchFilteredRows() : filteredRows)
         : (fetchAllRows ? await fetchAllRows() : filteredRows);
       if (!rows || rows.length === 0) {
         toast.warning("Nenhum registro para exportar");
