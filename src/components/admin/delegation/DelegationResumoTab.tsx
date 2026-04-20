@@ -118,12 +118,12 @@ export default function DelegationResumoTab({ delegation, institution, event }: 
   const credentialedParticipants = participants.filter(p => p.status === "credentialed").length;
 
   return (
-    <div className="space-y-4 mt-4">
-      {/* Quick indicators */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+    <div className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
+      {/* Quick indicators — 3 colunas no mobile pra caber bem */}
+      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3">
         <IndicatorCard icon={<Users className="h-4 w-4 text-primary" />} label="Total" value={participants.length} />
         <IndicatorCard icon={<UserCheck className="h-4 w-4 text-green-600" />} label="Credenciados" value={credentialedParticipants} />
-        <IndicatorCard icon={<IdCard className="h-4 w-4 text-emerald-600" />} label="Credenciais ativas" value={credentialedCount} />
+        <IndicatorCard icon={<IdCard className="h-4 w-4 text-emerald-600" />} label="Credenciais" value={credentialedCount} />
         <IndicatorCard icon={<Trophy className="h-4 w-4 text-blue-600" />} label="Inscrições" value={sportEventCount} />
         <IndicatorCard icon={<BedDouble className="h-4 w-4 text-purple-600" />} label="Alojados" value={lodgingCount} />
         <IndicatorCard icon={<UtensilsCrossed className="h-4 w-4 text-orange-600" />} label="Refeições" value={mealCount} />
