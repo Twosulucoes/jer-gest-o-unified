@@ -224,16 +224,16 @@ export default function ParticipantesPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Participantes</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+    <div className="animate-fade-in space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">Participantes</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Cadastre e gerencie todas as pessoas do evento — atletas, técnicos, staff, terceiros.
           </p>
         </div>
         {canManage && selectedEventId && (
-          <Button onClick={() => { setEditingId(null); setFormOpen(true); }}>
+          <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-1" />Cadastrar pessoa
           </Button>
         )}
