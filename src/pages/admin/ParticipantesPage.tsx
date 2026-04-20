@@ -56,6 +56,8 @@ export default function ParticipantesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const stageFilterId = searchParams.get("stage");
 
+  const { data: branding } = useEventBranding(selectedEventId);
+
   // Lista de etapas ativas do evento (para o select e para os badges das linhas)
   const { data: eventStages = [] } = useQuery({
     queryKey: ["participantes-event-stages", selectedEventId],
