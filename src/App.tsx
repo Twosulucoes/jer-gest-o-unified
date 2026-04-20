@@ -307,7 +307,6 @@ const App = () => (
               <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
               <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><QuadroMedalhasPage /></ProtectedRoute>} />
               <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
-              <Route path="demo" element={<ProtectedRoute allowedRoles={["admin", "coordenacao_tecnica"]}><DemoSeedsPage /></ProtectedRoute>} />
               <Route path="seed-logistica" element={<ProtectedRoute allowedRoles={["admin"]}><SeedLogisticaEtapaPage /></ProtectedRoute>} />
               <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DebugPublicadosPage /></ProtectedRoute>} />
               <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EmailTemplatesPage /></ProtectedRoute>} />
