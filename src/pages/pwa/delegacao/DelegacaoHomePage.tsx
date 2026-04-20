@@ -6,7 +6,7 @@ import { AppKPI } from "@/components/app/AppKPI";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import {
   Users, UserCheck, Calendar, MapPin,
-  ClipboardList, Trophy, Bus,
+  ClipboardList, Trophy, Bus, Gavel,
 } from "lucide-react";
 
 export default function DelegacaoHomePage() {
@@ -64,6 +64,7 @@ export default function DelegacaoHomePage() {
     { label: "Agenda", icon: Calendar, to: "/pwa/delegacao/agenda" },
     { label: "Logística", icon: Bus, to: "/pwa/delegacao/logistica" },
     { label: "Locais", icon: MapPin, to: "/pwa/delegacao/locais" },
+    { label: "Protestos", icon: Gavel, to: "/pwa/delegacao/protestos" },
   ];
 
   return (

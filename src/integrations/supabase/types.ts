@@ -4701,6 +4701,216 @@ export type Database = {
         }
         Relationships: []
       }
+      protest_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          mime_type: string | null
+          protest_id: string
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          mime_type?: string | null
+          protest_id: string
+          size_bytes?: number | null
+          storage_path: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          mime_type?: string | null
+          protest_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protest_attachments_protest_id_fkey"
+            columns: ["protest_id"]
+            isOneToOne: false
+            referencedRelation: "protests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protest_audit_log: {
+        Row: {
+          action: string
+          id: number
+          new_value: Json | null
+          notes: string | null
+          old_value: Json | null
+          performed_at: string
+          performed_by: string | null
+          protest_id: string
+        }
+        Insert: {
+          action: string
+          id?: number
+          new_value?: Json | null
+          notes?: string | null
+          old_value?: Json | null
+          performed_at?: string
+          performed_by?: string | null
+          protest_id: string
+        }
+        Update: {
+          action?: string
+          id?: number
+          new_value?: Json | null
+          notes?: string | null
+          old_value?: Json | null
+          performed_at?: string
+          performed_by?: string | null
+          protest_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protest_audit_log_protest_id_fkey"
+            columns: ["protest_id"]
+            isOneToOne: false
+            referencedRelation: "protests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protests: {
+        Row: {
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string
+          deadline_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision: string | null
+          decision_reason: string | null
+          delegation_id: string
+          disciplinary_case_id: number | null
+          event_id: string
+          fundamentation: string
+          id: string
+          match_end_at: string | null
+          match_id: string
+          protocol_number: string
+          request: string
+          sport_event_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by: string
+          deadline_at: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          decision_reason?: string | null
+          delegation_id: string
+          disciplinary_case_id?: number | null
+          event_id: string
+          fundamentation: string
+          id?: string
+          match_end_at?: string | null
+          match_id: string
+          protocol_number: string
+          request: string
+          sport_event_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string
+          deadline_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          decision_reason?: string | null
+          delegation_id?: string
+          disciplinary_case_id?: number | null
+          event_id?: string
+          fundamentation?: string
+          id?: string
+          match_end_at?: string | null
+          match_id?: string
+          protocol_number?: string
+          request?: string
+          sport_event_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protests_delegation_id_fkey"
+            columns: ["delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protests_disciplinary_case_id_fkey"
+            columns: ["disciplinary_case_id"]
+            isOneToOne: false
+            referencedRelation: "disciplinary_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protests_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protests_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
+          },
+          {
+            foreignKeyName: "protests_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "protests_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prova_aliases: {
         Row: {
           created_at: string
@@ -6672,6 +6882,84 @@ export type Database = {
         Args: { p_content_md?: string; p_event_id: string; p_title: string }
         Returns: Json
       }
+      rpc_create_protest: {
+        Args: {
+          p_contact_email?: string
+          p_contact_name?: string
+          p_contact_phone?: string
+          p_fundamentation: string
+          p_match_id: string
+          p_request: string
+        }
+        Returns: {
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string
+          deadline_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision: string | null
+          decision_reason: string | null
+          delegation_id: string
+          disciplinary_case_id: number | null
+          event_id: string
+          fundamentation: string
+          id: string
+          match_end_at: string | null
+          match_id: string
+          protocol_number: string
+          request: string
+          sport_event_id: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "protests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_decide_protest: {
+        Args: {
+          p_decision: string
+          p_decision_reason: string
+          p_new_status?: string
+          p_protest_id: string
+        }
+        Returns: {
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string
+          deadline_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision: string | null
+          decision_reason: string | null
+          delegation_id: string
+          disciplinary_case_id: number | null
+          event_id: string
+          fundamentation: string
+          id: string
+          match_end_at: string | null
+          match_id: string
+          protocol_number: string
+          request: string
+          sport_event_id: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "protests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       rpc_detect_schedule_conflicts: {
         Args: { p_event_id: string; p_sport_event_id: string }
         Returns: Json
@@ -6835,6 +7123,10 @@ export type Database = {
           p_max_individual_sports_per_athlete: number
         }
         Returns: undefined
+      }
+      user_belongs_to_delegation: {
+        Args: { _delegation_id: string; _user_id: string }
+        Returns: boolean
       }
       user_can_access_stage: {
         Args: { _stage_id: string; _user_id: string }
