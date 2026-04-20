@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -28,6 +30,7 @@ const VENUE_TYPE_OPTIONS = [
 
 const venueSchema = z.object({
   event_id: z.string().min(1, "Selecione um evento"),
+  event_stage_id: z.string().min(1, "Selecione a etapa"),
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres"),
   venue_type: z.string().min(1, "Selecione o tipo"),
   city: z.string().optional().or(z.literal("")),
@@ -40,7 +43,7 @@ export type VenueFormValues = z.infer<typeof venueSchema>;
 interface VenueFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  venue?: Tables<"venues"> | null;
+  venue?: (Tables<"venues"> & { event_stage_id?: string | null }) | null;
   events: Tables<"events">[];
   onSubmit: (values: VenueFormValues) => void;
   isPending: boolean;
@@ -55,6 +58,7 @@ export default function VenueFormDialog({
     resolver: zodResolver(venueSchema),
     defaultValues: {
       event_id: "",
+      event_stage_id: "",
       name: "",
       venue_type: "arena",
       city: "",
@@ -63,10 +67,27 @@ export default function VenueFormDialog({
     },
   });
 
+  const selectedEventId = form.watch("event_id");
+
+  const { data: stages = [] } = useQuery({
+    queryKey: ["event_stages", selectedEventId],
+    enabled: !!selectedEventId && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_stages")
+        .select("id, name, status, sort_order")
+        .eq("event_id", selectedEventId)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   useEffect(() => {
     if (venue) {
       form.reset({
         event_id: venue.event_id,
+        event_stage_id: venue.event_stage_id ?? "",
         name: venue.name,
         venue_type: venue.venue_type,
         city: venue.city ?? "",
@@ -76,6 +97,7 @@ export default function VenueFormDialog({
     } else {
       form.reset({
         event_id: events.length === 1 ? events[0].id : "",
+        event_stage_id: "",
         name: "",
         venue_type: "arena",
         city: "",
@@ -103,7 +125,14 @@ export default function VenueFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Evento</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
+                  <Select
+                    onValueChange={(v) => {
+                      field.onChange(v);
+                      form.setValue("event_stage_id", "");
+                    }}
+                    value={field.value}
+                    disabled={isEditing}
+                  >
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                     </FormControl>
@@ -113,6 +142,32 @@ export default function VenueFormDialog({
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="event_stage_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Etapa do evento</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={!selectedEventId || !stages.length}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={!selectedEventId ? "Selecione um evento primeiro" : !stages.length ? "Nenhuma etapa cadastrada" : "Selecione a etapa"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {stages.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}{s.status === "active" ? " (ativa)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>Cada local pertence a uma única etapa.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
