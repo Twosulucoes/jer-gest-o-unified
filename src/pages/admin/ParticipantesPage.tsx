@@ -544,6 +544,7 @@ export default function ParticipantesPage() {
             fetchFilteredRows={fetchAllFilteredParticipants}
             fetchAllRows={fetchAllParticipants}
             columns={exportColumns}
+            onPdf={handleParticipantesPdf}
             filenamePrefix="participantes"
             sheetName="Participantes"
             disabled={!selectedEventId}
