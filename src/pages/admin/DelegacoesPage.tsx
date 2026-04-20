@@ -236,7 +236,48 @@ export default function DelegacoesPage() {
     );
   };
 
-  const toPayload = (values: DelegationFormValues) => ({
+  const NETWORK_LABEL: Record<string, string> = {
+    estadual: "Estadual",
+    municipal: "Municipal",
+    federal: "Federal",
+    privada: "Privada",
+    particular: "Particular",
+  };
+
+  // Agrupa as delegações conforme groupBy (após a query/ordenação)
+  const groups = useMemo(() => {
+    if (groupBy === "none") return [{ key: "__all__", label: "", rows: delegations }];
+    const map = new Map<string, { key: string; label: string; rows: any[] }>();
+    for (const d of delegations as any[]) {
+      let keys: { key: string; label: string }[] = [];
+      if (groupBy === "school_city") {
+        const city = d.school_city || "Sem município";
+        keys = [{ key: city, label: city }];
+      } else if (groupBy === "status") {
+        const k = d.status || "—";
+        keys = [{ key: k, label: STATUS_MAP[k]?.label ?? k }];
+      } else if (groupBy === "school_network_type") {
+        const k = d.school_network_type || "—";
+        keys = [{ key: k, label: NETWORK_LABEL[k] ?? k }];
+      } else if (groupBy === "stage") {
+        const ids = stagesByDelegation.get(d.id);
+        if (!ids || ids.size === 0) {
+          keys = [{ key: "__no_stage__", label: "Sem etapa" }];
+        } else {
+          keys = Array.from(ids).map((id) => {
+            const s = stageMap.get(id);
+            return { key: id, label: s?.name ?? id };
+          });
+        }
+      }
+      for (const { key, label } of keys) {
+        const g = map.get(key) ?? { key, label, rows: [] };
+        g.rows.push(d);
+        map.set(key, g);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+  }, [delegations, groupBy, stagesByDelegation, stageMap]);
     event_id: values.event_id,
     status: values.status,
     school_name: values.school_name,
