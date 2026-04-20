@@ -50,18 +50,29 @@ export default function ParticipantesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const stageFilterId = searchParams.get("stage");
 
-  const { data: stageInfo } = useQuery({
-    queryKey: ["participantes-stage-info", stageFilterId],
-    enabled: !!stageFilterId,
+  // Lista de etapas ativas do evento (para o select e para os badges das linhas)
+  const { data: eventStages = [] } = useQuery({
+    queryKey: ["participantes-event-stages", selectedEventId],
+    enabled: !!selectedEventId,
     queryFn: async () => {
       const { data, error } = await (supabase.from("event_stages" as never) as any)
-        .select("id, name, slug")
-        .eq("id", stageFilterId)
-        .maybeSingle();
+        .select("id, name, slug, kind, sort_order, status")
+        .eq("event_id", selectedEventId!)
+        .eq("status", "active")
+        .order("sort_order", { ascending: true });
       if (error) throw error;
-      return data as { id: string; name: string; slug: string } | null;
+      return (data ?? []) as Array<{ id: string; name: string; slug: string; kind: string; sort_order: number; status: string }>;
     },
   });
+
+  const stageInfo = stageFilterId ? eventStages.find((s) => s.id === stageFilterId) ?? null : null;
+
+  const setStageFilter = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (id === "all") next.delete("stage");
+    else next.set("stage", id);
+    setSearchParams(next, { replace: true });
+  };
 
   const { data: stageParticipantIds } = useQuery({
     queryKey: ["participantes-stage-participants", stageFilterId],
