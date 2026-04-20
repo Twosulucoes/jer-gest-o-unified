@@ -234,7 +234,7 @@ export default function AlimentacaoConsumoPage() {
                 </SelectContent>
               </Select>
               {showingFallbackWindows && (
-                <p className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1">
+                <p className="text-xs text-warning flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
                   Esta etapa não possui janelas próprias — exibindo todas do evento.
                 </p>
