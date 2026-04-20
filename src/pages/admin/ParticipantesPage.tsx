@@ -506,11 +506,12 @@ export default function ParticipantesPage() {
             sheetName="Participantes"
             disabled={!selectedEventId}
           />
-        {canManage && selectedEventId && (
-          <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-1" />Cadastrar pessoa
-          </Button>
-        )}
+          {canManage && selectedEventId && (
+            <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-1" />Cadastrar pessoa
+            </Button>
+          )}
+        </div>
       </div>
 
       {stageFilterId && stageInfo && (
