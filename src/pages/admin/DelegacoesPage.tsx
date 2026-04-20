@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Plus, Pencil, Users, Eye, Search, Layers } from "lucide-react";
+import { Plus, Pencil, Users, Eye, Search, Layers, ArrowUp, ArrowDown, ArrowUpDown, FolderOpen } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
 import { useDebounce } from "@/hooks/useDebounce";
