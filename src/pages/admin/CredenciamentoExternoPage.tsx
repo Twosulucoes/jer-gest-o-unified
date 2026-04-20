@@ -24,6 +24,8 @@ import {
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { generateQrCodeValue } from "@/lib/credentialUtils";
+import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
+import { BackgroundLoadingIndicator } from "@/components/credenciamento/BackgroundLoadingIndicator";
 
 interface ParticipantRow {
   id: string;
@@ -118,107 +120,74 @@ export default function CredenciamentoExternoPage() {
     enabled: !!eventId,
   });
 
-  // Main query: participants filtered by stage when in stage context
-  const { data: allParticipants = [], isLoading: searchLoading } = useQuery({
-    queryKey: ["ext-cred-participants", eventId, stageId, isStageScoped, stageParticipantIds?.size ?? 0],
-    queryFn: async () => {
-      if (!eventId) return [];
+  // ====== Carregamento progressivo dos participantes ======
+  // 1ª página renderiza imediatamente; demais entram em segundo plano.
+  const PARTICIPANT_SELECT =
+    "id, participant_type, delegation_id, person:people!participants_person_id_fkey(full_name, cpf, photo_url), delegation:delegations!participants_delegation_id_fkey(institution:institutions(name))";
 
-      const PARTICIPANT_SELECT =
-        "id, participant_type, delegation_id, person:people!participants_person_id_fkey(full_name, cpf, photo_url), delegation:delegations!participants_delegation_id_fkey(institution:institutions(name))";
-      const PAGE = 1000;
-      const CHUNK = 300; // limite seguro para .in() na URL do PostgREST
+  const stageScopeIds = useMemo(
+    () => (isStageScoped ? (stageParticipantIds ? Array.from(stageParticipantIds) : []) : null),
+    [isStageScoped, stageParticipantIds],
+  );
 
-      // Pagina uma query qualquer até esgotar resultados (evita cap silencioso de 1000)
-      const paginate = async (
-        build: (from: number, to: number) => any,
-      ): Promise<any[]> => {
-        const acc: any[] = [];
-        let from = 0;
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          const { data, error } = await build(from, from + PAGE - 1);
-          if (error) throw error;
-          const rows = (data ?? []) as any[];
-          acc.push(...rows);
-          if (rows.length < PAGE) break;
-          from += PAGE;
-        }
-        return acc;
-      };
-
-      // Dispara participantes e credenciais ativas em paralelo — não há dependência entre as duas queries.
-      const credsPromise = supabase
-        .from("external_credentials")
-        .select("id, participant_id, credential_code, status")
-        .eq("event_id", eventId)
-        .eq("status", "active");
-
-      let partsPromise: Promise<any[]>;
-
-      if (isStageScoped) {
-        if (!stageParticipantIds || stageParticipantIds.size === 0) {
-          // Aguarda creds só para não deixar promise pendente, mas retorna vazio.
-          await credsPromise;
-          return [];
-        }
-
-        const allIds = Array.from(stageParticipantIds);
-        // Busca chunks de IDs em paralelo (Promise.all) ao invés de sequencial.
-        partsPromise = Promise.all(
-          Array.from({ length: Math.ceil(allIds.length / CHUNK) }, (_, i) => {
-            const slice = allIds.slice(i * CHUNK, (i + 1) * CHUNK);
-            return paginate((from, to) =>
-              supabase
-                .from("participants")
-                .select(PARTICIPANT_SELECT)
-                .eq("event_id", eventId)
-                .eq("is_active", true)
-                .in("id", slice)
-                .order("person_id")
-                .range(from, to),
-            );
-          }),
-        ).then((chunks) => chunks.flat());
-      } else {
-        partsPromise = paginate((from, to) =>
-          supabase
-            .from("participants")
-            .select(PARTICIPANT_SELECT)
-            .eq("event_id", eventId)
-            .eq("is_active", true)
-            .order("person_id")
-            .range(from, to),
-        );
-      }
-
-      const [parts, credsResult] = await Promise.all([partsPromise, credsPromise]);
-
-      if (parts.length === 0) return [];
-
-      const credMap = new Map<string, { id: string; code: string; status: string }>();
-      (credsResult.data ?? []).forEach((c: any) => {
-        credMap.set(c.participant_id, { id: c.id, code: c.credential_code, status: c.status });
-      });
-
-      return (parts as ParticipantsQueryRow[]).map((p) => {
-        const cred = credMap.get(p.id);
-        return {
-          id: p.id,
-          full_name: p.person?.full_name ?? "—",
-          cpf: p.person?.cpf ?? null,
-          photo_url: p.person?.photo_url ?? null,
-          delegation_id: p.delegation_id,
-          delegation_name: p.delegation?.institution?.name ?? null,
-          participant_type: p.participant_type,
-          ext_cred_id: cred?.id ?? null,
-          ext_cred_code: cred?.code ?? null,
-          ext_cred_status: cred?.status ?? null,
-        } as ParticipantRow;
-      });
-    },
+  const {
+    data: rawParts,
+    firstPageReady,
+    isBackgroundLoading: partsBgLoading,
+  } = useProgressiveParticipants<ParticipantsQueryRow>({
+    eventId,
+    select: PARTICIPANT_SELECT,
+    onlyActive: true,
+    orderBy: "person_id",
+    participantIdsScope: stageScopeIds,
+    cacheKey: `ext-cred-${stageId ?? "all"}`,
     enabled: !!eventId && (!isStageScoped || !!stageParticipantIds),
   });
+
+  // Credenciais ativas — query rápida em paralelo.
+  const { data: activeCreds = [], isLoading: credsLoading } = useQuery({
+    queryKey: ["ext-cred-active", eventId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("external_credentials")
+        .select("id, participant_id, credential_code, status")
+        .eq("event_id", eventId!)
+        .eq("status", "active");
+      return data ?? [];
+    },
+    enabled: !!eventId,
+    staleTime: 30_000,
+  });
+
+  const credMap = useMemo(() => {
+    const m = new Map<string, { id: string; code: string; status: string }>();
+    (activeCreds as any[]).forEach((c) => {
+      m.set(c.participant_id, { id: c.id, code: c.credential_code, status: c.status });
+    });
+    return m;
+  }, [activeCreds]);
+
+  const allParticipants: ParticipantRow[] = useMemo(() => {
+    return (rawParts as ParticipantsQueryRow[]).map((p) => {
+      const cred = credMap.get(p.id);
+      return {
+        id: p.id,
+        full_name: p.person?.full_name ?? "—",
+        cpf: p.person?.cpf ?? null,
+        photo_url: p.person?.photo_url ?? null,
+        delegation_id: p.delegation_id,
+        delegation_name: p.delegation?.institution?.name ?? null,
+        participant_type: p.participant_type,
+        ext_cred_id: cred?.id ?? null,
+        ext_cred_code: cred?.code ?? null,
+        ext_cred_status: cred?.status ?? null,
+      } as ParticipantRow;
+    });
+  }, [rawParts, credMap]);
+
+  // Loading inicial: aguarda 1ª página de participantes + creds para evitar flash de "vazio".
+  const searchLoading = (!firstPageReady || credsLoading);
+  const isBackgroundLoading = partsBgLoading && firstPageReady;
 
   // Apply filters client-side
   const filtered = useMemo(() => {
