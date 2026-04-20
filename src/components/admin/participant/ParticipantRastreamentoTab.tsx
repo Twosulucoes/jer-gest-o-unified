@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useId } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,11 @@ export default function ParticipantRastreamentoTab({ participantId, eventId }: P
   const [filters, setFilters] = useState({ lodging: true, meal: true, transport: true, competition: true });
   const [period, setPeriod] = useState("all");
   const [contactModalOpen, setContactModalOpen] = useState(false);
+  const lodgingFilterId = useId();
+  const mealFilterId = useId();
+  const transportFilterId = useId();
+  const competitionFilterId = useId();
+  const periodLabelId = useId();
 
   // --- Current lodging ---
   const { data: currentLodging, isLoading: loadingLodging } = useQuery({
@@ -313,26 +318,35 @@ export default function ParticipantRastreamentoTab({ participantId, eventId }: P
           {/* Filters */}
           <Card>
             <CardContent className="pt-4 pb-3 flex flex-wrap items-center gap-4">
-              {(["lodging", "meal", "transport", "competition"] as const).map(key => (
-                <label key={key} className="flex items-center gap-1.5 text-sm cursor-pointer">
+              {([
+                { key: "lodging", label: "Alojamento", id: lodgingFilterId },
+                { key: "meal", label: "Alimentação", id: mealFilterId },
+                { key: "transport", label: "Transporte", id: transportFilterId },
+                { key: "competition", label: "Competição", id: competitionFilterId },
+              ] as const).map(({ key, label, id }) => (
+                <div key={key} className="flex items-center gap-1.5 text-sm">
                   <Checkbox
+                    id={id}
                     checked={filters[key]}
                     onCheckedChange={v => setFilters(f => ({ ...f, [key]: !!v }))}
                   />
-                  {{ lodging: "Alojamento", meal: "Alimentação", transport: "Transporte", competition: "Competição" }[key]}
-                </label>
+                  <Label htmlFor={id} className="cursor-pointer">{label}</Label>
+                </div>
               ))}
-              <Select value={period} onValueChange={setPeriod}>
-                <SelectTrigger className="w-[140px] h-8 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="today">Hoje</SelectItem>
-                  <SelectItem value="3days">3 dias</SelectItem>
-                  <SelectItem value="week">Semana</SelectItem>
-                  <SelectItem value="all">Todo evento</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <Label id={periodLabelId} className="sr-only">Filtrar período</Label>
+                <Select value={period} onValueChange={setPeriod}>
+                  <SelectTrigger className="w-[140px] h-8 text-sm" aria-labelledby={periodLabelId} aria-label="Filtrar período">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Hoje</SelectItem>
+                    <SelectItem value="3days">3 dias</SelectItem>
+                    <SelectItem value="week">Semana</SelectItem>
+                    <SelectItem value="all">Todo evento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
@@ -418,6 +432,11 @@ function EditContactsDialog({ open, onOpenChange, participantId, initial }: {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const contactTypeLabelId = useId();
+  const guardianRadioId = useId();
+  const coachRadioId = useId();
+  const nameInputId = useId();
+  const phoneInputId = useId();
 
   const handleSave = async () => {
     if (!name.trim() || !phone.trim()) {
@@ -444,22 +463,27 @@ function EditContactsDialog({ open, onOpenChange, participantId, initial }: {
         <DialogHeader>
           <DialogTitle>Cadastrar Contato</DialogTitle>
         </DialogHeader>
-        <RadioGroup value={contactType} onValueChange={v => setContactType(v as "guardian" | "coach")} className="flex gap-4">
-          <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-            <RadioGroupItem value="guardian" /> Responsável Legal
-          </label>
-          <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-            <RadioGroupItem value="coach" /> Professor/Técnico
-          </label>
-        </RadioGroup>
+        <div className="space-y-2">
+          <Label id={contactTypeLabelId}>Tipo de contato</Label>
+          <RadioGroup value={contactType} onValueChange={v => setContactType(v as "guardian" | "coach")} className="flex gap-4" aria-labelledby={contactTypeLabelId}>
+            <div className="flex items-center gap-1.5 text-sm">
+              <RadioGroupItem id={guardianRadioId} value="guardian" />
+              <Label htmlFor={guardianRadioId} className="cursor-pointer">Responsável Legal</Label>
+            </div>
+            <div className="flex items-center gap-1.5 text-sm">
+              <RadioGroupItem id={coachRadioId} value="coach" />
+              <Label htmlFor={coachRadioId} className="cursor-pointer">Professor/Técnico</Label>
+            </div>
+          </RadioGroup>
+        </div>
         <div className="space-y-3 mt-2">
           <div>
-            <Label>Nome</Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nome completo" />
+            <Label htmlFor={nameInputId}>Nome</Label>
+            <Input id={nameInputId} name="contactName" value={name} onChange={e => setName(e.target.value)} placeholder="Nome completo" />
           </div>
           <div>
-            <Label>Telefone</Label>
-            <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(99) 99999-9999" />
+            <Label htmlFor={phoneInputId}>Telefone</Label>
+            <Input id={phoneInputId} name="contactPhone" value={phone} onChange={e => setPhone(e.target.value)} placeholder="(99) 99999-9999" />
           </div>
         </div>
         <DialogFooter>
