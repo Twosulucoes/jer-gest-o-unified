@@ -240,9 +240,9 @@ export default function ParticipantesPage() {
       </div>
 
       {stageFilterId && stageInfo && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
-          <div className="flex items-center gap-2 text-sm">
-            <Layers className="h-4 w-4 text-primary" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 sm:px-4 py-3">
+          <div className="flex items-center gap-2 text-xs sm:text-sm flex-wrap">
+            <Layers className="h-4 w-4 text-primary shrink-0" />
             <span className="text-muted-foreground">Filtrando por etapa:</span>
             <strong className="text-foreground">{stageInfo.name}</strong>
             {stageParticipantIds && (
@@ -251,7 +251,7 @@ export default function ParticipantesPage() {
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <Button variant="ghost" size="sm" asChild>
               <Link to={`/admin/etapas/${stageFilterId}`}>Ver etapa</Link>
             </Button>
@@ -263,8 +263,8 @@ export default function ParticipantesPage() {
       )}
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardContent className="pt-5 sm:pt-6 px-4 sm:px-5">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
               <Select value={selectedEventId} onValueChange={() => {}}>
@@ -303,7 +303,7 @@ export default function ParticipantesPage() {
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">Status:</span>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-8 w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
                 {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
@@ -314,18 +314,18 @@ export default function ParticipantesPage() {
       </Card>
 
       {selectedEventId && counters && (
-        <div className="grid grid-cols-3 gap-3">
-          <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Total no evento</p>
-            <p className="text-2xl font-bold text-foreground">{counters.total}</p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <Card><CardContent className="pt-3 pb-3 sm:pt-4 sm:pb-4 px-3 sm:px-5">
+            <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">Total no evento</p>
+            <p className="text-xl sm:text-2xl font-bold text-foreground">{counters.total}</p>
           </CardContent></Card>
-          <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Atletas</p>
-            <p className="text-2xl font-bold text-primary">{counters.athletes}</p>
+          <Card><CardContent className="pt-3 pb-3 sm:pt-4 sm:pb-4 px-3 sm:px-5">
+            <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">Atletas</p>
+            <p className="text-xl sm:text-2xl font-bold text-primary">{counters.athletes}</p>
           </CardContent></Card>
-          <Card><CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Comissão/Staff</p>
-            <p className="text-2xl font-bold text-muted-foreground">{counters.staff}</p>
+          <Card><CardContent className="pt-3 pb-3 sm:pt-4 sm:pb-4 px-3 sm:px-5">
+            <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">Comissão/Staff</p>
+            <p className="text-xl sm:text-2xl font-bold text-muted-foreground">{counters.staff}</p>
           </CardContent></Card>
         </div>
       )}
