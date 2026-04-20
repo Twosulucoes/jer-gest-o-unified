@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { getStatusEmoji } from "@/lib/systemMapHelpers";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Database } from "@/integrations/supabase/types";
+import { NavigationHistoryTracker } from "@/hooks/useNavigationHistory";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -439,6 +440,7 @@ export default function AdminLayout() {
           </header>
 
           <StageFilterBanner />
+          <NavigationHistoryTracker />
 
           <main className="flex-1 p-3 sm:p-4 lg:p-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-4 lg:pb-6">
             {location.pathname === "/admin/eventos" ? (

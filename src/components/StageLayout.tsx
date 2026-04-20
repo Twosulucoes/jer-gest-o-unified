@@ -21,6 +21,9 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Database } from "@/integrations/supabase/types";
+import { NavigationHistoryTracker } from "@/hooks/useNavigationHistory";
+import { EtapaSwitcher } from "@/components/navigation/EtapaSwitcher";
+import { BackButton } from "@/components/navigation/BackButton";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -301,8 +304,10 @@ export default function StageLayout() {
 
               <div className="flex-1" />
 
-              <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="hidden sm:inline-flex">
-                <ArrowLeft className="mr-1.5 h-4 w-4" /> Voltar ao Geral
+              <EtapaSwitcher className="hidden md:inline-flex" />
+
+              <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="hidden lg:inline-flex">
+                <ArrowLeft className="mr-1.5 h-4 w-4" /> Geral
               </Button>
 
               <ThemeToggle className="text-muted-foreground" />
@@ -330,6 +335,7 @@ export default function StageLayout() {
             </header>
 
             <main className="flex-1 p-3 sm:p-4 lg:p-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-4 lg:pb-6">
+              <NavigationHistoryTracker />
               <StageWrappedOutlet key={location.pathname} />
             </main>
           </div>
