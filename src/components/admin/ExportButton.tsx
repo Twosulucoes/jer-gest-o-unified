@@ -67,7 +67,7 @@ export default function ExportButton<T>({
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>Filtrados ({filteredRows.length})</DropdownMenuLabel>
         <DropdownMenuItem onClick={() => run("filtered", "xlsx")}>
-          <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600" />
+          <FileSpreadsheet className="h-4 w-4 mr-2 text-primary" />
           Exportar filtrados (Excel)
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => run("filtered", "csv")}>
@@ -79,7 +79,7 @@ export default function ExportButton<T>({
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Geral (todos)</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => run("all", "xlsx")}>
-              <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600" />
+              <FileSpreadsheet className="h-4 w-4 mr-2 text-primary" />
               Exportar tudo (Excel)
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => run("all", "csv")}>
