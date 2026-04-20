@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Plus, Pencil, Users, Eye, Search } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Plus, Pencil, Users, Eye, Search, Layers } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
