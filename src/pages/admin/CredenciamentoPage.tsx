@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +20,6 @@ import {
   Tag,
   ChevronLeft,
   ChevronRight,
-  Filter,
   AlertCircle,
   ShieldAlert,
 } from "lucide-react";
@@ -222,7 +221,7 @@ export default function CredenciamentoPage() {
     if (selectedEventId && templateFetched && eventTemplate === null && !createDefaultTemplateMutation.isPending) {
       createDefaultTemplateMutation.mutate();
     }
-  }, [selectedEventId, templateFetched, eventTemplate]);
+  }, [selectedEventId, templateFetched, eventTemplate, createDefaultTemplateMutation]);
 
   // --- Stage filter (?stage= na URL ou /admin/etapa/:stageId) ---
   const { stageId, participantIds: stageParticipantIds, isLoading: stageLoading } = useStageParticipantFilter();
@@ -294,7 +293,7 @@ export default function CredenciamentoPage() {
     enabled: !!selectedEventId,
   });
 
-  const participants = (allParticipants ?? []) as CredentialParticipantRow[];
+  const participants = useMemo(() => (allParticipants ?? []) as CredentialParticipantRow[], [allParticipants]);
 
   // --- Active credentials ---
   // Quando há filtro de etapa, busca somente credenciais cujos participant_id estejam na etapa.
@@ -350,18 +349,18 @@ export default function CredenciamentoPage() {
     return [...types].sort();
   }, [participants]);
 
-  const getInstitutionId = (participant: CredentialParticipantRow) => participant.delegation?.institution?.id ?? "";
-  const getInstitutionName = (participant: CredentialParticipantRow) => participant.delegation?.institution?.name ?? "—";
+  const getInstitutionId = useCallback((participant: CredentialParticipantRow) => participant.delegation?.institution?.id ?? "", []);
+  const getInstitutionName = useCallback((participant: CredentialParticipantRow) => participant.delegation?.institution?.name ?? "—", []);
 
   // --- Determine participant state ---
-  const getParticipantState = (p: { status: string; id: string }): ParticipantState => {
+  const getParticipantState = useCallback((p: { status: string; id: string }): ParticipantState => {
     if (p.status === "pending") return "pending_import";
     const isCredentialed = p.status === "credentialed";
     const hasActiveCred = activeCredMap.has(p.id);
     if (!isCredentialed) return "awaiting";
     if (isCredentialed && !hasActiveCred) return "ready_to_emit";
     return "complete";
-  };
+  }, [activeCredMap]);
 
   // --- Filter & Sort ---
   const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, pending_import: 2, complete: 3 };
@@ -402,7 +401,7 @@ export default function CredenciamentoPage() {
         const nameB = b.person?.full_name ?? "";
         return nameA.localeCompare(nameB);
       });
-  }, [participants, searchTerm, filterType, filterState, filterInstitution, blockedParticipantIds, activeCredMap]);
+  }, [participants, searchTerm, filterType, filterState, filterInstitution, blockedParticipantIds, getParticipantState, getInstitutionId]);
 
   // --- Pagination ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
