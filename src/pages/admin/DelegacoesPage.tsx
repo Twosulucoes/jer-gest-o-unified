@@ -443,16 +443,27 @@ export default function DelegacoesPage() {
             Gestão das delegações de instituições nos eventos
           </p>
         </div>
-        {canWrite && (
-          <Button
-            onClick={() => { setEditingDelegation(null); setDialogOpen(true); }}
-            disabled={!events.length}
-            className="w-full sm:w-auto"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nova delegação
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <ExportButton
+            filteredRows={delegations as any[]}
+            fetchFilteredRows={fetchAllFilteredDelegations}
+            fetchAllRows={fetchAllDelegations}
+            columns={exportColumns}
+            filenamePrefix="delegacoes"
+            sheetName="Delegações"
+            disabled={!selectedEventId}
+          />
+          {canWrite && (
+            <Button
+              onClick={() => { setEditingDelegation(null); setDialogOpen(true); }}
+              disabled={!events.length}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nova delegação
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
