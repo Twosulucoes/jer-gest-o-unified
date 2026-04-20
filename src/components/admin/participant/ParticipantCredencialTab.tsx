@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useId } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { IdCard, Clock, Eye, Tag, ScanLine, CheckCircle, XCircle, AlertCircle, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +41,7 @@ const SCAN_POINT_LABELS: Record<string, string> = {
 
 export default function ParticipantCredencialTab({ participantId, eventId, onEmitLabel, onPreviewCredential }: Props) {
   const [scanFilter, setScanFilter] = useState<string>("all");
+  const scanFilterLabelId = useId();
 
   const { data: credentials = [], isLoading } = useQuery({
     queryKey: ["participant_credentials", participantId, eventId],
@@ -72,7 +74,6 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
     enabled: credentialIds.length > 0,
   });
 
-  // Fetch operator profiles for scans
   const operatorIds = [...new Set(scans.map(s => s.scanned_by).filter(Boolean))];
   const { data: operators = [] } = useQuery({
     queryKey: ["scan_operators", operatorIds],
@@ -90,17 +91,14 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
 
   const operatorMap = new Map(operators.map(o => [o.id, o.full_name]));
 
-  // Filter scans
   const filteredScans = useMemo(() => {
     if (scanFilter === "all") return scans;
-    // Check if filter is a scan_point or scan_result
     if (Object.keys(SCAN_POINT_LABELS).includes(scanFilter)) {
       return scans.filter(s => s.scan_point === scanFilter);
     }
     return scans.filter(s => s.scan_result === scanFilter);
   }, [scans, scanFilter]);
 
-  // Collect unique filter options
   const filterOptions = useMemo(() => {
     const points = [...new Set(scans.map(s => s.scan_point))];
     const results = [...new Set(scans.map(s => s.scan_result))];
@@ -167,7 +165,6 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
         </Card>
       )}
 
-      {/* Scan history */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2">
@@ -178,25 +175,28 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
               )}
             </CardTitle>
             {scans.length > 1 && (
-              <Select value={scanFilter} onValueChange={setScanFilter}>
-                <SelectTrigger className="w-[160px] h-8 text-xs">
-                  <Filter className="h-3 w-3 mr-1" />
-                  <SelectValue placeholder="Filtrar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {filterOptions.points.length > 1 && filterOptions.points.map(p => (
-                    <SelectItem key={`p-${p}`} value={p}>
-                      📍 {SCAN_POINT_LABELS[p] ?? p}
-                    </SelectItem>
-                  ))}
-                  {filterOptions.results.length > 1 && filterOptions.results.map(r => (
-                    <SelectItem key={`r-${r}`} value={r}>
-                      {r === "valid" ? "✅" : "❌"} {SCAN_RESULT_INFO[r]?.label ?? r}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div>
+                <Label id={scanFilterLabelId} className="sr-only">Filtrar validações</Label>
+                <Select value={scanFilter} onValueChange={setScanFilter}>
+                  <SelectTrigger className="w-[160px] h-8 text-xs" aria-labelledby={scanFilterLabelId} aria-label="Filtrar validações">
+                    <Filter className="h-3 w-3 mr-1" />
+                    <SelectValue placeholder="Filtrar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {filterOptions.points.length > 1 && filterOptions.points.map(p => (
+                      <SelectItem key={`p-${p}`} value={p}>
+                        📍 {SCAN_POINT_LABELS[p] ?? p}
+                      </SelectItem>
+                    ))}
+                    {filterOptions.results.length > 1 && filterOptions.results.map(r => (
+                      <SelectItem key={`r-${r}`} value={r}>
+                        {r === "valid" ? "✅" : "❌"} {SCAN_RESULT_INFO[r]?.label ?? r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
         </CardHeader>
