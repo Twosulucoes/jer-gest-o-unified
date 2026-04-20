@@ -350,53 +350,106 @@ export default function ParticipantesPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>CPF</TableHead>
-                <TableHead>Instituição</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Modalidade / Prova</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((p: any) => {
-                const person = p.person;
-                const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
-                const institutionName = p.delegation?.institution?.name ?? p.delegation?.school_name ?? "—";
-                return (
-                  <TableRow key={p.id} className={isFetching ? "opacity-70" : ""}>
-                    <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground font-mono text-xs">{person?.cpf ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{institutionName}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
-                      {getEnrollmentSummary(p.id)}
-                    </TableCell>
-                    <TableCell className="flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/participantes/${p.id}`)} title="Ver participante">
-                        <User className="h-4 w-4 mr-1" />Ver
-                      </Button>
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground sm:hidden">
+            {total} participante{total !== 1 ? "s" : ""} encontrado{total !== 1 ? "s" : ""}
+          </p>
+
+          {/* Mobile cards */}
+          <div className="grid grid-cols-1 gap-2 sm:hidden">
+            {rows.map((p: any) => {
+              const person = p.person;
+              const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
+              const institutionName = p.delegation?.institution?.name ?? p.delegation?.school_name ?? "—";
+              return (
+                <Card
+                  key={p.id}
+                  onClick={() => navigate(`/admin/participantes/${p.id}`)}
+                  className={`cursor-pointer active:scale-[0.99] transition-transform ${isFetching ? "opacity-70" : ""}`}
+                >
+                  <CardContent className="p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm text-foreground truncate">{person?.full_name ?? "—"}</p>
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">{person?.cpf ?? "—"}</p>
+                      </div>
+                      <Badge variant={statusInfo.variant} className="text-[10px] shrink-0">{statusInfo.label}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{institutionName}</p>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[10px]">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
                       {canManage && (
-                        <Button variant="ghost" size="sm" onClick={() => { setEditingId(p.id); setFormOpen(true); }} title="Editar">
-                          <Edit className="h-4 w-4" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2"
+                          onClick={(e) => { e.stopPropagation(); setEditingId(p.id); setFormOpen(true); }}
+                        >
+                          <Edit className="h-3.5 w-3.5 mr-1" />Editar
                         </Button>
                       )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    </div>
+                    {getEnrollmentSummary(p.id) !== "—" && (
+                      <p className="text-[11px] text-muted-foreground border-t pt-2 line-clamp-2">
+                        {getEnrollmentSummary(p.id)}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block rounded-lg border bg-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>CPF</TableHead>
+                  <TableHead>Instituição</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Modalidade / Prova</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((p: any) => {
+                  const person = p.person;
+                  const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
+                  const institutionName = p.delegation?.institution?.name ?? p.delegation?.school_name ?? "—";
+                  return (
+                    <TableRow key={p.id} className={isFetching ? "opacity-70" : ""}>
+                      <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground font-mono text-xs">{person?.cpf ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{institutionName}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
+                        {getEnrollmentSummary(p.id)}
+                      </TableCell>
+                      <TableCell className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/participantes/${p.id}`)} title="Ver participante">
+                          <User className="h-4 w-4 mr-1" />Ver
+                        </Button>
+                        {canManage && (
+                          <Button variant="ghost" size="sm" onClick={() => { setEditingId(p.id); setFormOpen(true); }} title="Editar">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
           <DataPagination
             page={page}
             pageSize={pageSize}
