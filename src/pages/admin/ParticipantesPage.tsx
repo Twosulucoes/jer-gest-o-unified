@@ -270,11 +270,33 @@ export default function ParticipantesPage() {
     );
   };
 
-  // Counters (total in event) - cheap head queries
+  // Counters (total no evento OU escopado pela etapa selecionada)
   const { data: counters } = useQuery({
-    queryKey: ["participants-counters", selectedEventId],
-    enabled: !!selectedEventId,
+    queryKey: ["participants-counters", selectedEventId, stageFilterId, (stageParticipantIds ?? []).length],
+    enabled: !!selectedEventId && (!stageFilterId || !!stageParticipantIds),
     queryFn: async () => {
+      if (stageFilterId) {
+        const ids = stageParticipantIds ?? [];
+        if (ids.length === 0) return { total: 0, athletes: 0, staff: 0 };
+        // Busca os tipos em chunks para evitar URL gigante
+        const CHUNK = 500;
+        let total = 0;
+        let athletes = 0;
+        for (let i = 0; i < ids.length; i += CHUNK) {
+          const chunk = ids.slice(i, i + CHUNK);
+          const { data, error } = await supabase
+            .from("participants")
+            .select("participant_type")
+            .eq("event_id", selectedEventId!)
+            .in("id", chunk);
+          if (error) throw error;
+          for (const row of data ?? []) {
+            total += 1;
+            if ((row as any).participant_type === "athlete") athletes += 1;
+          }
+        }
+        return { total, athletes, staff: total - athletes };
+      }
       const [totalRes, athleteRes] = await Promise.all([
         supabase.from("participants").select("id", { count: "exact", head: true }).eq("event_id", selectedEventId!),
         supabase.from("participants").select("id", { count: "exact", head: true }).eq("event_id", selectedEventId!).eq("participant_type", "athlete"),
@@ -410,7 +432,9 @@ export default function ParticipantesPage() {
       {selectedEventId && counters && (
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <Card><CardContent className="pt-3 pb-3 sm:pt-4 sm:pb-4 px-3 sm:px-5">
-            <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">Total no evento</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">
+              {stageFilterId ? "Total na etapa" : "Total no evento"}
+            </p>
             <p className="text-xl sm:text-2xl font-bold text-foreground">{counters.total}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-3 pb-3 sm:pt-4 sm:pb-4 px-3 sm:px-5">
