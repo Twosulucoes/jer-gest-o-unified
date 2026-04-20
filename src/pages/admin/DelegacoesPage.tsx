@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -612,7 +612,7 @@ export default function DelegacoesPage() {
                         </TableRow>
                       );
                     })}
-                  </>
+                  </React.Fragment>
                 ))}
               </TableBody>
             </Table>
