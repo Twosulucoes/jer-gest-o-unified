@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/table";
 import DelegationFormDialog, { type DelegationFormValues } from "@/components/admin/DelegationFormDialog";
 import { DataPagination } from "@/components/ui/data-pagination";
+import ExportButton from "@/components/admin/ExportButton";
+import type { ExportColumn } from "@/lib/exportData";
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Pendente", variant: "outline" },
