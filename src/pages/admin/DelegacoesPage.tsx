@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/table";
 import DelegationFormDialog, { type DelegationFormValues } from "@/components/admin/DelegationFormDialog";
 import { DataPagination } from "@/components/ui/data-pagination";
+import ExportButton from "@/components/admin/ExportButton";
+import type { ExportColumn } from "@/lib/exportData";
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Pendente", variant: "outline" },
@@ -345,6 +347,93 @@ export default function DelegacoesPage() {
     }
   };
 
+  // Colunas de exportação (Delegações)
+  const exportColumns: ExportColumn<any>[] = [
+    { header: "Escola", accessor: (d) => d.school_name ?? "" },
+    { header: "Nome oficial", accessor: (d) => d.school_official_name ?? "" },
+    { header: "Slug", accessor: (d) => d.school_slug ?? "" },
+    { header: "Rede", accessor: (d) => NETWORK_LABEL[d.school_network_type] ?? d.school_network_type ?? "" },
+    { header: "Município", accessor: (d) => d.school_city ?? "" },
+    { header: "UF", accessor: (d) => d.school_state ?? "" },
+    { header: "Distrito", accessor: (d) => d.school_district ?? "" },
+    { header: "Status", accessor: (d) => STATUS_MAP[d.status]?.label ?? d.status ?? "" },
+    { header: "Chefe", accessor: (d) => d.chief_name ?? "" },
+    { header: "Tel. Chefe", accessor: (d) => d.chief_phone ?? "" },
+    { header: "E-mail Chefe", accessor: (d) => d.chief_email ?? "" },
+    { header: "Contato (escola)", accessor: (d) => d.school_contact_name ?? "" },
+    { header: "Tel. Contato", accessor: (d) => d.school_contact_phone ?? "" },
+    { header: "E-mail Contato", accessor: (d) => d.school_contact_email ?? "" },
+    { header: "Ativa?", accessor: (d) => (d.school_is_active ? "Sim" : "Não") },
+    {
+      header: "Etapas",
+      accessor: (d) => {
+        const ids = stagesByDelegation.get(d.id);
+        if (!ids || ids.size === 0) return "";
+        return Array.from(ids).map((id) => stageMap.get(id)?.name).filter(Boolean).join("; ");
+      },
+    },
+    { header: "Criada em", accessor: (d) => (d.created_at ? new Date(d.created_at).toLocaleString("pt-BR") : "") },
+  ];
+
+  const fetchAllDelegations = async () => {
+    if (!selectedEventId) return [];
+    const PAGE = 1000;
+    let from = 0;
+    const acc: any[] = [];
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { data, error } = await supabase
+        .from("delegations")
+        .select("*")
+        .eq("event_id", selectedEventId)
+        .order("school_name", { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      const rows = data ?? [];
+      acc.push(...rows);
+      if (rows.length < PAGE) break;
+      from += PAGE;
+    }
+    return acc;
+  };
+
+  const fetchAllFilteredDelegations = async () => {
+    const PAGE = 1000;
+    let from = 0;
+    const acc: any[] = [];
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      let q = supabase.from("delegations").select("*");
+      if (selectedEventId) q = q.eq("event_id", selectedEventId);
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      if (networkFilter !== "all") q = q.eq("school_network_type", networkFilter);
+      if (cityFilter !== "all") q = q.eq("school_city", cityFilter);
+      if (debouncedSearch.trim().length >= 2) {
+        const term = debouncedSearch.trim().replace(/[%,]/g, "");
+        q = q.or([
+          `school_name.ilike.%${term}%`,
+          `school_official_name.ilike.%${term}%`,
+          `school_city.ilike.%${term}%`,
+          `chief_name.ilike.%${term}%`,
+        ].join(","));
+      }
+      if (stageId) {
+        const ids = stageDelegationIds ?? [];
+        if (ids.length === 0) return acc;
+        q = q.in("id", ids);
+      }
+      const { data, error } = await q
+        .order(sortBy, { ascending: sortDir === "asc", nullsFirst: false })
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      const rows = data ?? [];
+      acc.push(...rows);
+      if (rows.length < PAGE) break;
+      from += PAGE;
+    }
+    return acc;
+  };
+
   return (
     <div className="animate-fade-in space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -354,16 +443,27 @@ export default function DelegacoesPage() {
             Gestão das delegações de instituições nos eventos
           </p>
         </div>
-        {canWrite && (
-          <Button
-            onClick={() => { setEditingDelegation(null); setDialogOpen(true); }}
-            disabled={!events.length}
-            className="w-full sm:w-auto"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nova delegação
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <ExportButton
+            filteredRows={delegations as any[]}
+            fetchFilteredRows={fetchAllFilteredDelegations}
+            fetchAllRows={fetchAllDelegations}
+            columns={exportColumns}
+            filenamePrefix="delegacoes"
+            sheetName="Delegações"
+            disabled={!selectedEventId}
+          />
+          {canWrite && (
+            <Button
+              onClick={() => { setEditingDelegation(null); setDialogOpen(true); }}
+              disabled={!events.length}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nova delegação
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}

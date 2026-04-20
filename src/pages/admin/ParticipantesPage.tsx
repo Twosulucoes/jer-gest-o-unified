@@ -19,6 +19,8 @@ import PessoaFormDialog from "@/components/admin/people/PessoaFormDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DataPagination } from "@/components/ui/data-pagination";
+import ExportButton from "@/components/admin/ExportButton";
+import type { ExportColumn } from "@/lib/exportData";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -384,6 +386,107 @@ export default function ParticipantesPage() {
     }).join("; ");
   };
 
+  // ── Exportação ──
+  const exportColumns: ExportColumn<any>[] = [
+    { header: "Nome", accessor: (p) => p.person?.full_name ?? "" },
+    { header: "CPF", accessor: (p) => p.person?.cpf ?? "" },
+    { header: "Gênero", accessor: (p) => p.person?.gender ?? "" },
+    { header: "Tipo", accessor: (p) => TYPE_LABELS[p.participant_type] ?? p.participant_type ?? "" },
+    { header: "Status", accessor: (p) => STATUS_LABELS[p.status]?.label ?? p.status ?? "" },
+    { header: "Instituição", accessor: (p) => p.delegation?.institution?.name ?? p.delegation?.school_name ?? "" },
+    { header: "Escola (delegação)", accessor: (p) => p.delegation?.school_name ?? "" },
+    { header: "Inscrições (modalidade/prova)", accessor: (p) => getEnrollmentSummary(p.id) === "—" ? "" : getEnrollmentSummary(p.id) },
+    {
+      header: "Etapas",
+      accessor: (p) => {
+        const ids = linksByParticipant.get(p.id) ?? [];
+        return ids.map((id) => stageMap.get(id)?.name).filter(Boolean).join("; ");
+      },
+    },
+    { header: "Cadastrado em", accessor: (p) => p.created_at ? new Date(p.created_at).toLocaleString("pt-BR") : "" },
+  ];
+
+  const baseSelectExport =
+    "id, status, participant_type, person_id, delegation_id, created_at, " +
+    "person:people(id, full_name, cpf, gender), " +
+    "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))";
+
+  const fetchAllParticipants = async () => {
+    if (!selectedEventId) return [];
+    const PAGE = 1000;
+    let from = 0;
+    const acc: any[] = [];
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { data, error } = await supabase
+        .from("participants")
+        .select(baseSelectExport)
+        .eq("event_id", selectedEventId)
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      const rows = (data ?? []) as any[];
+      acc.push(...rows);
+      if (rows.length < PAGE) break;
+      from += PAGE;
+    }
+    return acc;
+  };
+
+  const fetchAllFilteredParticipants = async () => {
+    if (!selectedEventId) return [];
+
+    // Caso especial: filtro por etapa usa lista de IDs em chunks
+    if (stageFilterId) {
+      const ids = stageParticipantIds ?? [];
+      if (ids.length === 0) return [];
+      const CHUNK = 300;
+      const all: any[] = [];
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const chunk = ids.slice(i, i + CHUNK);
+        let q = supabase
+          .from("participants")
+          .select(baseSelectExport)
+          .eq("event_id", selectedEventId)
+          .in("id", chunk);
+        if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
+        if (statusFilter !== "all") q = q.eq("status", statusFilter);
+        if (isSearching && matchingPersonIds && matchingPersonIds.length > 0) {
+          q = q.in("person_id", matchingPersonIds);
+        }
+        const { data, error } = await q;
+        if (error) throw error;
+        all.push(...((data as any[]) ?? []));
+      }
+      return all;
+    }
+
+    const PAGE = 1000;
+    let from = 0;
+    const acc: any[] = [];
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      let q = supabase
+        .from("participants")
+        .select(baseSelectExport)
+        .eq("event_id", selectedEventId);
+      if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      if (isSearching && matchingPersonIds && matchingPersonIds.length > 0) {
+        q = q.in("person_id", matchingPersonIds);
+      }
+      const { data, error } = await q
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      const rowsPage = (data ?? []) as any[];
+      acc.push(...rowsPage);
+      if (rowsPage.length < PAGE) break;
+      from += PAGE;
+    }
+    return acc;
+  };
+
   return (
     <div className="animate-fade-in space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -393,11 +496,22 @@ export default function ParticipantesPage() {
             Cadastre e gerencie todas as pessoas do evento — atletas, técnicos, staff, terceiros.
           </p>
         </div>
-        {canManage && selectedEventId && (
-          <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-1" />Cadastrar pessoa
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <ExportButton
+            filteredRows={rows as any[]}
+            fetchFilteredRows={fetchAllFilteredParticipants}
+            fetchAllRows={fetchAllParticipants}
+            columns={exportColumns}
+            filenamePrefix="participantes"
+            sheetName="Participantes"
+            disabled={!selectedEventId}
+          />
+          {canManage && selectedEventId && (
+            <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-1" />Cadastrar pessoa
+            </Button>
+          )}
+        </div>
       </div>
 
       {stageFilterId && stageInfo && (
