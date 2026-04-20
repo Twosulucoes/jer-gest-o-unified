@@ -38,6 +38,11 @@ export default function DelegacoesPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 350);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [networkFilter, setNetworkFilter] = useState<string>("all");
+  const [cityFilter, setCityFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"school_name" | "school_city" | "school_network_type" | "status" | "created_at">("school_name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [groupBy, setGroupBy] = useState<"none" | "school_city" | "status" | "school_network_type" | "stage">("none");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
 
