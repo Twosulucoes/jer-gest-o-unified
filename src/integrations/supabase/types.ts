@@ -5605,30 +5605,6 @@ export type Database = {
         }
         Relationships: []
       }
-      system_commands: {
-        Row: {
-          command: string
-          created_at: string
-          created_by: string | null
-          id: string
-          payload: Json
-        }
-        Insert: {
-          command: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          payload?: Json
-        }
-        Update: {
-          command?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          payload?: Json
-        }
-        Relationships: []
-      }
       team_members: {
         Row: {
           created_at: string
