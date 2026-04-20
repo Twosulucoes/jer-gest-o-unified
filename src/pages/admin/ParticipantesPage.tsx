@@ -78,11 +78,26 @@ export default function ParticipantesPage() {
     queryKey: ["participantes-stage-participants", stageFilterId],
     enabled: !!stageFilterId,
     queryFn: async () => {
-      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
-        .select("participant_id")
-        .eq("event_stage_id", stageFilterId);
-      if (error) throw error;
-      return (data ?? []).map((r: any) => r.participant_id as string);
+      // Paginar para evitar o cap silencioso de 1000 linhas do PostgREST.
+      // Sem isso, etapas grandes (ex.: Boa Vista, com 2700+ vínculos) viam só
+      // os 1000 primeiros IDs e a tela aparecia vazia ou com KPIs travados em 1000.
+      const PAGE = 1000;
+      const acc = new Set<string>();
+      let from = 0;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+          .select("participant_id")
+          .eq("event_stage_id", stageFilterId)
+          .order("participant_id", { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const rows = (data ?? []) as Array<{ participant_id: string }>;
+        rows.forEach((r) => r?.participant_id && acc.add(r.participant_id));
+        if (rows.length < PAGE) break;
+        from += PAGE;
+      }
+      return Array.from(acc);
     },
   });
 
