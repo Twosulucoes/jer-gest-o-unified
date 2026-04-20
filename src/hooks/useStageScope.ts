@@ -41,20 +41,47 @@ export function useStageScope() {
   });
 
   const { data: participantIds, isLoading, error: participantsError } = useQuery({
-    queryKey: ["stage_participant_ids", stageId],
-    enabled: !!stageId,
+    queryKey: ["stage_participant_ids", stageId, eventId],
+    enabled: !!stageId && !!eventId,
     queryFn: async () => {
-      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+      // Fonte 1 (principal): vínculo explícito participante-etapa.
+      const { data: pesData, error: pesError } = await (supabase.from("participant_event_stages" as never) as any)
         .select("participant_id")
         .eq("event_stage_id", stageId);
-      if (error) {
-        // Modo ESTRITO: propaga o erro para a UI lidar (lançar tela de erro / bloquear listas).
-        // Decisão de produto: nunca silenciar a falha do filtro de etapa, porque "vazar" dados
-        // entre etapas é pior do que mostrar estado de erro explícito.
-        console.error("[useStageScope] Falha ao carregar participantes da etapa.", error);
-        throw error;
+      if (pesError) {
+        console.error("[useStageScope] Falha ao carregar participant_event_stages.", pesError);
+        throw pesError;
       }
-      return new Set<string>((data ?? []).map((r: any) => r.participant_id as string));
+
+      // Fonte 2 (fallback/backfill): inscrições esportivas já marcadas com event_stage_id.
+      const { data: pseData, error: pseError } = await supabase
+        .from("participant_sport_events")
+        .select("participant_id")
+        .eq("event_stage_id", stageId);
+      if (pseError) {
+        console.error("[useStageScope] Falha ao carregar participant_sport_events por etapa.", pseError);
+        throw pseError;
+      }
+
+      const candidateIds = new Set<string>([
+        ...(pesData ?? []).map((r: any) => r.participant_id as string),
+        ...(pseData ?? []).map((r: any) => r.participant_id as string),
+      ]);
+
+      if (candidateIds.size === 0) return new Set<string>();
+
+      // Sanitiza IDs para o evento ativo (evita filtros quebrados por vínculo legado inconsistente).
+      const { data: validParticipants, error: validError } = await supabase
+        .from("participants")
+        .select("id")
+        .eq("event_id", eventId)
+        .in("id", Array.from(candidateIds));
+      if (validError) {
+        console.error("[useStageScope] Falha ao validar IDs de participantes da etapa.", validError);
+        throw validError;
+      }
+
+      return new Set<string>((validParticipants ?? []).map((r: any) => r.id as string));
     },
   });
 
