@@ -120,97 +120,104 @@ export default function DelegacaoDetalhePage() {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-3 sm:space-y-4 animate-fade-in pb-4">
       {/* Breadcrumbs */}
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0 h-8 w-8">
+      <div className="flex items-center gap-1.5 -mx-1 sm:mx-0">
+        <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0 h-9 w-9">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <Breadcrumb>
-          <BreadcrumbList>
+        <Breadcrumb className="min-w-0 flex-1">
+          <BreadcrumbList className="flex-nowrap">
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/admin/delegacoes">Delegações</Link>
+                <Link to="/admin/delegacoes" className="text-sm">Delegações</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{institution?.name ?? "Detalhe"}</BreadcrumbPage>
+            <BreadcrumbItem className="min-w-0">
+              <BreadcrumbPage className="truncate text-sm">{institution?.name ?? "Detalhe"}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
       </div>
 
-      {/* Header */}
-      <div className="flex items-start gap-4">
-        <div className="h-14 w-14 shrink-0 rounded-full bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
-          <Users className="h-6 w-6 text-primary" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold text-foreground truncate">
-            {institution?.name ?? "Delegação"}
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 mt-1">
-            <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+      {/* Header — card compacto e responsivo */}
+      <div className="rounded-xl border bg-card p-3 sm:p-4 shadow-app-sm">
+        <div className="flex items-start gap-3">
+          <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-full bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
+            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-base sm:text-xl font-bold text-foreground leading-tight line-clamp-2 break-words">
+              {institution?.name ?? "Delegação"}
+            </h1>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
+              <Badge variant={statusInfo.variant} className="text-xs">{statusInfo.label}</Badge>
+              {participantCount != null && (
+                <span className="text-xs text-muted-foreground">
+                  {participantCount} participante{participantCount !== 1 ? "s" : ""}
+                </span>
+              )}
+              {institution?.city && (
+                <span className="text-xs text-muted-foreground truncate">
+                  • {institution.city}{institution.state ? `/${institution.state}` : ""}
+                </span>
+              )}
+            </div>
             {event && (
-              <span className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1 truncate">
                 {event.name} ({event.year})
-              </span>
-            )}
-            {participantCount != null && (
-              <span className="text-sm text-muted-foreground">
-                • {participantCount} participante{participantCount !== 1 ? "s" : ""}
-              </span>
-            )}
-            {institution?.city && (
-              <span className="text-sm text-muted-foreground">
-                • {institution.city}{institution.state ? `/${institution.state}` : ""}
-              </span>
+              </p>
             )}
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className="flex gap-1.5 shrink-0 flex-wrap">
-          <Button size="sm" variant="outline" onClick={() => setActiveTab("participantes")}>
-            <Users className="h-3.5 w-3.5 mr-1" />Participantes
+        {/* Quick actions — grid em mobile, inline em desktop */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mt-3 pt-3 border-t">
+          <Button size="sm" variant="outline" onClick={() => setActiveTab("participantes")} className="justify-center">
+            <Users className="h-3.5 w-3.5" />
+            <span className="truncate">Participantes</span>
           </Button>
           {canCredential && (
-            <Button size="sm" variant="outline" onClick={() => setActiveTab("credenciamento")}>
-              <IdCard className="h-3.5 w-3.5 mr-1" />Credenciamento
+            <Button size="sm" variant="outline" onClick={() => setActiveTab("credenciamento")} className="justify-center">
+              <IdCard className="h-3.5 w-3.5" />
+              <span className="truncate">Credenciar</span>
             </Button>
           )}
           {institution && (
-            <Button size="sm" variant="ghost" asChild>
+            <Button size="sm" variant="ghost" asChild className="justify-center col-span-2 sm:col-span-1">
               <Link to={`/admin/instituicoes`}>
-                <ExternalLink className="h-3.5 w-3.5 mr-1" />Instituição
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span className="truncate">Instituição</span>
               </Link>
             </Button>
           )}
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — scroll horizontal em mobile, sem quebra */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
-          <TabsTrigger value="resumo" className="gap-1.5">
-            <LayoutDashboard className="h-3.5 w-3.5" />Resumo
-          </TabsTrigger>
-          <TabsTrigger value="participantes" className="gap-1.5">
-            <Users className="h-3.5 w-3.5" />Participantes
-          </TabsTrigger>
-          <TabsTrigger value="esportivo" className="gap-1.5">
-            <Trophy className="h-3.5 w-3.5" />Esportivo
-          </TabsTrigger>
-          {canCredential && (
-            <TabsTrigger value="credenciamento" className="gap-1.5">
-              <IdCard className="h-3.5 w-3.5" />Credenciamento
+        <div className="-mx-1 sm:mx-0 overflow-x-auto scrollbar-none [-webkit-overflow-scrolling:touch]">
+          <TabsList className="inline-flex sm:flex w-max sm:w-full justify-start gap-1 px-1 sm:px-1">
+            <TabsTrigger value="resumo" className="gap-1.5 shrink-0">
+              <LayoutDashboard className="h-3.5 w-3.5" />Resumo
             </TabsTrigger>
-          )}
-          <TabsTrigger value="logistica" className="gap-1.5">
-            <Bus className="h-3.5 w-3.5" />Logística
-          </TabsTrigger>
-        </TabsList>
+            <TabsTrigger value="participantes" className="gap-1.5 shrink-0">
+              <Users className="h-3.5 w-3.5" />Participantes
+            </TabsTrigger>
+            <TabsTrigger value="esportivo" className="gap-1.5 shrink-0">
+              <Trophy className="h-3.5 w-3.5" />Esportivo
+            </TabsTrigger>
+            {canCredential && (
+              <TabsTrigger value="credenciamento" className="gap-1.5 shrink-0">
+                <IdCard className="h-3.5 w-3.5" />Credenciamento
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="logistica" className="gap-1.5 shrink-0">
+              <Bus className="h-3.5 w-3.5" />Logística
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="resumo">
           <DelegationResumoTab delegation={delegation} institution={institution} event={event} />

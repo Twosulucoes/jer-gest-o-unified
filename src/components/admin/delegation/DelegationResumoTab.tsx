@@ -118,12 +118,12 @@ export default function DelegationResumoTab({ delegation, institution, event }: 
   const credentialedParticipants = participants.filter(p => p.status === "credentialed").length;
 
   return (
-    <div className="space-y-4 mt-4">
-      {/* Quick indicators */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+    <div className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
+      {/* Quick indicators — 3 colunas no mobile pra caber bem */}
+      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3">
         <IndicatorCard icon={<Users className="h-4 w-4 text-primary" />} label="Total" value={participants.length} />
         <IndicatorCard icon={<UserCheck className="h-4 w-4 text-green-600" />} label="Credenciados" value={credentialedParticipants} />
-        <IndicatorCard icon={<IdCard className="h-4 w-4 text-emerald-600" />} label="Credenciais ativas" value={credentialedCount} />
+        <IndicatorCard icon={<IdCard className="h-4 w-4 text-emerald-600" />} label="Credenciais" value={credentialedCount} />
         <IndicatorCard icon={<Trophy className="h-4 w-4 text-blue-600" />} label="Inscrições" value={sportEventCount} />
         <IndicatorCard icon={<BedDouble className="h-4 w-4 text-purple-600" />} label="Alojados" value={lodgingCount} />
         <IndicatorCard icon={<UtensilsCrossed className="h-4 w-4 text-orange-600" />} label="Refeições" value={mealCount} />
@@ -195,11 +195,11 @@ export default function DelegationResumoTab({ delegation, institution, event }: 
 function IndicatorCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   return (
     <Card>
-      <CardContent className="flex items-center gap-2.5 p-3">
-        {icon}
-        <div>
-          <p className="text-lg font-bold leading-none text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+      <CardContent className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2.5 p-2 sm:p-3 text-center sm:text-left">
+        <span className="shrink-0">{icon}</span>
+        <div className="min-w-0">
+          <p className="text-base sm:text-lg font-bold leading-none text-foreground">{value}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-tight truncate">{label}</p>
         </div>
       </CardContent>
     </Card>
