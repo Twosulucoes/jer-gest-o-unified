@@ -335,6 +335,7 @@ export default function StageLayout() {
             </header>
 
             <main className="flex-1 p-3 sm:p-4 lg:p-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-4 lg:pb-6">
+              <NavigationHistoryTracker />
               <StageWrappedOutlet key={location.pathname} />
             </main>
           </div>
