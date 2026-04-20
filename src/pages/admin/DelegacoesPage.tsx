@@ -31,6 +31,8 @@ const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondar
 export default function DelegacoesPage() {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
+  const selectedEventId = useActiveEventId();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDelegation, setEditingDelegation] = useState<Tables<"delegations"> | null>(null);
   const [search, setSearch] = useState("");
@@ -50,7 +52,29 @@ export default function DelegacoesPage() {
     },
   });
 
+  // Etapas ativas do evento (para o select e badges das linhas)
+  const { data: eventStages = [] } = useQuery({
+    queryKey: ["delegacoes-event-stages", selectedEventId],
+    enabled: !!selectedEventId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("event_stages" as never) as any)
+        .select("id, name, slug, kind, sort_order, status")
+        .eq("event_id", selectedEventId!)
+        .eq("status", "active")
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string; slug: string; kind: string; sort_order: number; status: string }>;
+    },
+  });
+
   const { stageId } = useStageParticipantFilter();
+
+  const setStageFilter = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (id === "all") next.delete("stage");
+    else next.set("stage", id);
+    setSearchParams(next, { replace: true });
+  };
 
   const { data: stageDelegationIds } = useQuery({
     queryKey: ["stage_delegation_ids", stageId],
