@@ -304,8 +304,10 @@ export default function StageLayout() {
 
               <div className="flex-1" />
 
-              <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="hidden sm:inline-flex">
-                <ArrowLeft className="mr-1.5 h-4 w-4" /> Voltar ao Geral
+              <EtapaSwitcher className="hidden md:inline-flex" />
+
+              <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="hidden lg:inline-flex">
+                <ArrowLeft className="mr-1.5 h-4 w-4" /> Geral
               </Button>
 
               <ThemeToggle className="text-muted-foreground" />
