@@ -17,7 +17,7 @@ function rewriteToStagePath(pathname: string, stageId: string): string | null {
 
   // /admin/credenciamento[/...] → /admin/etapa/:stageId/credenciamento[/...]
   const match = pathname.match(
-    /^\/admin\/(credenciamento(?:-externo)?|validacao-qr|competicao(?:\/.*)?|alojamento(?:\/.*)?|alimentacao(?:\/.*)?|transporte(?:\/.*)?|ocorrencias|pesquisa(?:\/.*)?)$/,
+    /^\/admin\/(credenciamento(?:-externo)?|validacao-qr|competicao(?:\/.*)?|alojamento(?:\/.*)?|alimentacao(?:\/.*)?|transporte(?:\/.*)?|ocorrencias|protestos|pesquisa(?:\/.*)?)$/,
   );
   if (!match) return null;
   return `/admin/etapa/${stageId}/${match[1]}`;
