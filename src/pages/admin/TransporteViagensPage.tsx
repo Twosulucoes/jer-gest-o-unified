@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TripFormDialog, { type TripFormValues } from "@/components/admin/TripFormDialog";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScope } from "@/hooks/useStageScope";
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   scheduled: { label: "Agendada", variant: "outline" },
@@ -28,6 +29,7 @@ export default function TransporteViagensPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const selectedEventId = useActiveEventId();
+  const { stageId, isStageScoped } = useStageScope();
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("transporte");
 
   const { data: events = [] } = useQuery({
@@ -40,10 +42,12 @@ export default function TransporteViagensPage() {
   });
 
   const { data: routes = [] } = useQuery({
-    queryKey: ["transport_routes", selectedEventId],
+    queryKey: ["transport_routes", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("transport_routes").select("*").eq("event_id", selectedEventId).order("name");
+      let q = supabase.from("transport_routes").select("*").eq("event_id", selectedEventId).eq("is_active", true);
+      if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
+      const { data, error } = await q.order("name");
       if (error) throw error;
       return data;
     },
@@ -51,10 +55,12 @@ export default function TransporteViagensPage() {
   });
 
   const { data: vehicles = [] } = useQuery({
-    queryKey: ["transport_vehicles", selectedEventId],
+    queryKey: ["transport_vehicles", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("transport_vehicles").select("*").eq("event_id", selectedEventId).order("plate");
+      let q = supabase.from("transport_vehicles").select("*").eq("event_id", selectedEventId).eq("is_active", true);
+      if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
+      const { data, error } = await q.order("plate");
       if (error) throw error;
       return data;
     },
@@ -62,10 +68,12 @@ export default function TransporteViagensPage() {
   });
 
   const { data: trips, isLoading } = useQuery({
-    queryKey: ["transport_trips", selectedEventId],
+    queryKey: ["transport_trips", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("transport_trips").select("*").eq("event_id", selectedEventId).order("scheduled_at", { ascending: false });
+      let q = supabase.from("transport_trips").select("*").eq("event_id", selectedEventId);
+      if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
+      const { data, error } = await q.order("scheduled_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -77,7 +85,7 @@ export default function TransporteViagensPage() {
 
   const createMut = useMutation({
     mutationFn: async (v: TripFormValues) => {
-      const { error } = await supabase.from("transport_trips").insert({
+      const payload: any = {
         event_id: selectedEventId,
         route_id: v.route_id,
         vehicle_id: v.vehicle_id || null,
@@ -86,7 +94,9 @@ export default function TransporteViagensPage() {
         scheduled_at: v.scheduled_at || null,
         notes: v.notes || null,
         created_by: user?.id,
-      });
+      };
+      if (isStageScoped && stageId) payload.event_stage_id = stageId;
+      const { error } = await supabase.from("transport_trips").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["transport_trips"] }); toast.success("Viagem criada"); setDialogOpen(false); },

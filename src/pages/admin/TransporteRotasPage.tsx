@@ -9,10 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import RouteFormDialog, { type RouteFormValues } from "@/components/admin/RouteFormDialog";
+import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScope } from "@/hooks/useStageScope";
 
 export default function TransporteRotasPage() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
+  const selectedEventId = useActiveEventId();
+  const { stageId, isStageScoped } = useStageScope();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const canWrite = hasRole("admin") || hasRole("secretaria");
@@ -27,22 +31,28 @@ export default function TransporteRotasPage() {
   });
 
   const { data: routes, isLoading } = useQuery({
-    queryKey: ["transport_routes"],
+    queryKey: ["transport_routes", selectedEventId, stageId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("transport_routes").select("*").order("name");
+      if (!selectedEventId) return [];
+      let q = supabase.from("transport_routes").select("*").eq("event_id", selectedEventId);
+      if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
+      const { data, error } = await q.order("name");
       if (error) throw error;
       return data;
     },
+    enabled: !!selectedEventId,
   });
 
   const eventsMap = new Map(events.map((e) => [e.id, e]));
 
   const createMut = useMutation({
     mutationFn: async (v: RouteFormValues) => {
-      const { error } = await supabase.from("transport_routes").insert({
+      const payload: any = {
         event_id: v.event_id, name: v.name, origin: v.origin || null,
         destination: v.destination || null, notes: v.notes || null, is_active: v.is_active,
-      });
+      };
+      if (isStageScoped && stageId) payload.event_stage_id = stageId;
+      const { error } = await supabase.from("transport_routes").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["transport_routes"] }); toast.success("Rota criada"); setDialogOpen(false); },
