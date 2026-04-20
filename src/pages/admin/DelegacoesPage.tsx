@@ -359,7 +359,7 @@ export default function DelegacoesPage() {
             onPageChange={setPage}
             onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
           />
-        </div>
+        </>
       )}
 
       <DelegationFormDialog
