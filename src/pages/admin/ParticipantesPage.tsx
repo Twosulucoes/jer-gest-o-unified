@@ -491,6 +491,30 @@ export default function ParticipantesPage() {
                 ))}
               </SelectContent>
             </Select>
+
+            <span className="text-xs text-muted-foreground sm:ml-2 inline-flex items-center gap-1">
+              <ArrowUpDown className="h-3.5 w-3.5" /> Ordenar:
+            </span>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+              <SelectTrigger className="h-8 w-full sm:w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Nome</SelectItem>
+                <SelectItem value="institution">Instituição</SelectItem>
+                <SelectItem value="type">Tipo</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="created">Cadastro</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-2"
+              onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+              title={sortDir === "asc" ? "Crescente (A→Z)" : "Decrescente (Z→A)"}
+            >
+              {sortDir === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+              <span className="ml-1 text-xs">{sortDir === "asc" ? "Asc" : "Desc"}</span>
+            </Button>
           </div>
         </CardContent>
       </Card>
