@@ -78,11 +78,26 @@ export default function ParticipantesPage() {
     queryKey: ["participantes-stage-participants", stageFilterId],
     enabled: !!stageFilterId,
     queryFn: async () => {
-      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
-        .select("participant_id")
-        .eq("event_stage_id", stageFilterId);
-      if (error) throw error;
-      return (data ?? []).map((r: any) => r.participant_id as string);
+      // Paginar para evitar o cap silencioso de 1000 linhas do PostgREST.
+      // Sem isso, etapas grandes (ex.: Boa Vista, com 2700+ vínculos) viam só
+      // os 1000 primeiros IDs e a tela aparecia vazia ou com KPIs travados em 1000.
+      const PAGE = 1000;
+      const acc = new Set<string>();
+      let from = 0;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+          .select("participant_id")
+          .eq("event_stage_id", stageFilterId)
+          .order("participant_id", { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const rows = (data ?? []) as Array<{ participant_id: string }>;
+        rows.forEach((r) => r?.participant_id && acc.add(r.participant_id));
+        if (rows.length < PAGE) break;
+        from += PAGE;
+      }
+      return Array.from(acc);
     },
   });
 
@@ -159,25 +174,52 @@ export default function ParticipantesPage() {
     queryFn: async () => {
       if (noSearchMatches) return { rows: [] as any[], total: 0 };
 
+      const baseSelect =
+        "id, status, participant_type, person_id, delegation_id, created_at, " +
+        "person:people(id, full_name, cpf, gender), " +
+        "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))";
+
+      // Quando há filtro por etapa, o conjunto de IDs pode ser grande (2k+).
+      // PostgREST não aceita .in() com URL gigante, então paginamos por
+      // chunks de IDs no cliente. Sem isso, etapas grandes (Boa Vista) viam
+      // tabela vazia mesmo com vínculos existentes.
+      if (stageFilterId) {
+        const ids = stageParticipantIds ?? [];
+        if (ids.length === 0) return { rows: [], total: 0 };
+
+        const CHUNK = 300;
+        const allRows: any[] = [];
+        for (let i = 0; i < ids.length; i += CHUNK) {
+          const chunk = ids.slice(i, i + CHUNK);
+          let q = supabase
+            .from("participants")
+            .select(baseSelect)
+            .eq("event_id", selectedEventId!)
+            .in("id", chunk);
+          if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
+          if (statusFilter !== "all") q = q.eq("status", statusFilter);
+          if (isSearching && matchingPersonIds && matchingPersonIds.length > 0) {
+            q = q.in("person_id", matchingPersonIds);
+          }
+          const { data, error } = await q;
+          if (error) throw error;
+          allRows.push(...(data ?? []));
+        }
+        allRows.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
+        const from = page * pageSize;
+        const slice = allRows.slice(from, from + pageSize);
+        return { rows: slice, total: allRows.length };
+      }
+
       let q = supabase
         .from("participants")
-        .select(
-          "id, status, participant_type, person_id, delegation_id, created_at, " +
-            "person:people(id, full_name, cpf, gender), " +
-            "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))",
-          { count: "exact" }
-        )
+        .select(baseSelect, { count: "exact" })
         .eq("event_id", selectedEventId!);
 
       if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
       if (isSearching && matchingPersonIds && matchingPersonIds.length > 0) {
         q = q.in("person_id", matchingPersonIds);
-      }
-      if (stageFilterId) {
-        const ids = stageParticipantIds ?? [];
-        if (ids.length === 0) return { rows: [], total: 0 };
-        q = q.in("id", ids);
       }
 
       const from = page * pageSize;
