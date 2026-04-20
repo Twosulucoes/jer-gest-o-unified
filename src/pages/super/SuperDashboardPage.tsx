@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppKPI } from "@/components/app/AppKPI";
 import { Calendar, Users, UserCheck, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import GlobalRefreshButton from "@/components/super/GlobalRefreshButton";
 
 export default function SuperDashboardPage() {
   const navigate = useNavigate();
@@ -37,9 +38,12 @@ export default function SuperDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard Super Admin</h1>
-        <p className="text-sm text-zinc-400 mt-1">Visão global de todos os eventos e clientes.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard Super Admin</h1>
+          <p className="text-sm text-zinc-400 mt-1">Visão global de todos os eventos e clientes.</p>
+        </div>
+        <GlobalRefreshButton label="Refresh todas máquinas" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

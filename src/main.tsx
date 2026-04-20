@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { installGlobalRefreshListener } from "@/lib/systemRefresh";
 
 // Initialize theme from localStorage before render to avoid flash
 const storedTheme = localStorage.getItem("jer-theme");
@@ -64,5 +65,6 @@ window.addEventListener("load", () => {
 
 // Install error reporter (frontend monitoring)
 import("@/lib/monitoring/errorReporter").then((m) => m.installErrorReporter()).catch(() => {});
+installGlobalRefreshListener();
 
 createRoot(document.getElementById("root")!).render(<App />);
