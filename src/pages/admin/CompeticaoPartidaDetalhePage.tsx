@@ -23,6 +23,7 @@ import {
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
 import CollectiveScoreForm, { type ScoreEntry } from "@/components/admin/CollectiveScoreForm";
 import type { MatchConfig } from "@/components/admin/MatchConfigEditor";
+import { BackButton } from "@/components/navigation/BackButton";
 import type { IndividualConfig } from "@/components/admin/IndividualConfigEditor";
 import MatchLineupCard from "@/components/admin/MatchLineupCard";
 import MatchOfficialsCard from "@/components/admin/MatchOfficialsCard";
@@ -625,18 +626,16 @@ export default function CompeticaoPartidaDetalhePage() {
 
   return (
     <div className="animate-fade-in space-y-6">
+      <BackButton fallbackTo="/admin/competicao" />
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="font-heading text-2xl font-bold text-foreground">
+        <div className="flex-1 min-w-0">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground truncate">
             {sportEvent?.name ?? "—"} — {phase?.name ?? "—"}
             {match.match_number ? ` #${match.match_number}` : ""}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">Detalhe da partida/prova</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)}>
             <ClipboardList className="mr-2 h-4 w-4" />Súmula
           </Button>

@@ -1,14 +1,13 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import ParticipantSportHistory from "@/components/admin/ParticipantSportHistory";
+import { BackButton } from "@/components/navigation/BackButton";
 
 export default function ParticipanteHistoricoPage() {
   const { participantId } = useParams<{ participantId: string }>();
-  const navigate = useNavigate();
 
   const { data: participant, isLoading } = useQuery({
     queryKey: ["participant_detail", participantId],
@@ -48,14 +47,10 @@ export default function ParticipanteHistoricoPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h2 className="text-xl font-bold">{person?.full_name ?? "Participante"}</h2>
-          <p className="text-sm text-muted-foreground">Histórico Esportivo</p>
-        </div>
+      <BackButton fallbackTo={`/admin/participantes/${participantId}`} />
+      <div>
+        <h2 className="text-xl font-bold">{person?.full_name ?? "Participante"}</h2>
+        <p className="text-sm text-muted-foreground">Histórico Esportivo</p>
       </div>
 
       <Card>
