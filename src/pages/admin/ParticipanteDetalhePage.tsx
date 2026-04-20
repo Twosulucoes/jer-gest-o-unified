@@ -228,21 +228,11 @@ export default function ParticipanteDetalhePage() {
   const hasCredential = !!activeCredential;
   const canManageCredentials = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
-  const handleBack = () => {
-    if (location.key !== "default") {
-      navigate(-1);
-    } else {
-      navigate("/admin/participantes");
-    }
-  };
-
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Breadcrumbs + back */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0 h-9 w-9">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
+        <BackButton fallbackTo="/admin/participantes" />
         <Breadcrumb className="min-w-0">
           <BreadcrumbList>
             <BreadcrumbItem>

@@ -111,21 +111,11 @@ export default function DelegacaoDetalhePage() {
 
   const statusInfo = STATUS_MAP[delegation.status] ?? { label: delegation.status, variant: "outline" as const };
 
-  const handleBack = () => {
-    if (location.key !== "default") {
-      navigate(-1);
-    } else {
-      navigate("/admin/delegacoes");
-    }
-  };
-
   return (
     <div className="space-y-3 sm:space-y-4 animate-fade-in pb-4">
       {/* Breadcrumbs */}
       <div className="flex items-center gap-1.5 -mx-1 sm:mx-0">
-        <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0 h-9 w-9">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
+        <BackButton fallbackTo="/admin/delegacoes" />
         <Breadcrumb className="min-w-0 flex-1">
           <BreadcrumbList className="flex-nowrap">
             <BreadcrumbItem>
