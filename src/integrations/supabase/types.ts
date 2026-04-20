@@ -714,6 +714,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_delegation_requests_target_participant"
+            columns: ["target_participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+          {
             foreignKeyName: "fk_delegation_requests_target_sport_event"
             columns: ["target_sport_event_id"]
             isOneToOne: false
@@ -886,6 +893,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_disciplinary_cases_complainant"
+            columns: ["complainant_participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+          {
             foreignKeyName: "fk_disciplinary_cases_event"
             columns: ["event_id"]
             isOneToOne: false
@@ -926,6 +940,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_disciplinary_cases_target_participant"
+            columns: ["target_participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
           },
         ]
       }
@@ -1518,6 +1539,13 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "external_credentials_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
         ]
       }
       group_draw_lots: {
@@ -1997,6 +2025,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_jerpa_fc_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+          {
             foreignKeyName: "fk_jerpa_fc_previous_document"
             columns: ["previous_classification_document_id"]
             isOneToOne: false
@@ -2053,6 +2088,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_jerpa_support_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
           },
         ]
       }
@@ -2182,6 +2224,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lodging_occupancies_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+          {
             foreignKeyName: "lodging_occupancies_unit_id_fkey"
             columns: ["unit_id"]
             isOneToOne: false
@@ -2258,6 +2307,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_lodging_supervisions_responsible"
+            columns: ["responsible_participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
           },
         ]
       }
@@ -2466,6 +2522,13 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "match_attempts_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
         ]
       }
       match_discipline: {
@@ -2612,6 +2675,13 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "match_events_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
         ]
       }
       match_lineups: {
@@ -2682,6 +2752,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_lineups_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
           },
           {
             foreignKeyName: "match_lineups_team_member_id_fkey"
@@ -2813,6 +2890,13 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "match_penalties_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
         ]
       }
       match_player_stats: {
@@ -2877,6 +2961,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_player_stats_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
           },
         ]
       }
@@ -3038,6 +3129,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_consumptions_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
           },
         ]
       }
@@ -3556,6 +3654,13 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "participant_credentials_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
         ]
       }
       participant_documents: {
@@ -3621,6 +3726,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participant_documents_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
           },
         ]
       }
@@ -3696,6 +3808,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_participant_event_roles_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+          {
             foreignKeyName: "fk_participant_event_roles_request"
             columns: ["source_request_id"]
             isOneToOne: false
@@ -3757,6 +3876,13 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "participant_event_stages_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
         ]
       }
       participant_national_eligibility: {
@@ -3816,6 +3942,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participant_national_eligibility_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
           },
           {
             foreignKeyName: "fk_participant_national_eligibility_sport_event"
@@ -3908,6 +4041,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_sport_events_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
           },
           {
             foreignKeyName: "participant_sport_events_sport_event_id_fkey"
@@ -4112,6 +4252,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_irregularities_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
           },
         ]
       }
@@ -4913,6 +5060,13 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "service_vouchers_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
         ]
       }
       sport_event_prova_map: {
@@ -5285,6 +5439,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_state_selection_callups_participant"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+          {
             foreignKeyName: "fk_state_selection_callups_sport_event"
             columns: ["sport_event_id"]
             isOneToOne: false
@@ -5470,6 +5631,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "team_members_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+          {
             foreignKeyName: "team_members_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
@@ -5629,6 +5797,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_passengers_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
           },
           {
             foreignKeyName: "transport_passengers_trip_id_fkey"
@@ -6171,6 +6346,48 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_person_logistics_consumption: {
+        Row: {
+          cpf: string | null
+          delegation_id: string | null
+          delegation_name: string | null
+          event_id: string | null
+          full_name: string | null
+          lodging_nights: number | null
+          meals_consumed: number | null
+          needs_lodging: boolean | null
+          needs_meals: boolean | null
+          needs_transport: boolean | null
+          participant_id: string | null
+          participant_type: string | null
+          person_id: string | null
+          transport_boardings: number | null
+          voucher_uses_total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participants_delegation_id_fkey"
+            columns: ["delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participants_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _seed_logistics_sede_code: {
@@ -6220,6 +6437,19 @@ export type Database = {
           p_severity: string
         }
         Returns: undefined
+      }
+      find_duplicate_people: {
+        Args: never
+        Returns: {
+          birth_date: string
+          cpf: string
+          created_at: string
+          full_name: string
+          group_key: string
+          match_kind: string
+          participants_count: number
+          person_id: string
+        }[]
       }
       generate_public_token: { Args: never; Returns: string }
       get_alojamento_duplicates: {
@@ -6314,6 +6544,10 @@ export type Database = {
         Returns: {
           participant_id: string
         }[]
+      }
+      merge_people: {
+        Args: { p_drop_id: string; p_keep_id: string }
+        Returns: Json
       }
       normalize_prova_slug: { Args: { p: string }; Returns: string }
       normalize_text: { Args: { p: string }; Returns: string }

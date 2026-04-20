@@ -1,0 +1,1 @@
+ALTER VIEW public.vw_person_logistics_consumption SET (security_invoker = true);
