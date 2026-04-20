@@ -83,54 +83,35 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
     queryKey: ["stage_participant_ids", stageId, eventId],
     enabled: !!stageId && !!eventId,
     queryFn: async () => {
-      // Fonte 1 (principal): vínculo explícito participante-etapa (paginado).
-      const pesRows = await paginateAll<{ participant_id: string }>((from, to) =>
-        (supabase.from("participant_event_stages" as never) as any)
-          .select("participant_id")
-          .eq("event_stage_id", stageId)
-          .order("participant_id", { ascending: true })
-          .range(from, to),
-      ).catch((err) => {
-        console.error("[useStageScope] Falha ao carregar participant_event_stages.", err);
-        throw err;
-      });
+      const [pesRows, pseRows] = await Promise.all([
+        paginateAll<{ participant_id: string }>((from, to) =>
+          (supabase.from("participant_event_stages" as never) as any)
+            .select("participant_id")
+            .eq("event_stage_id", stageId)
+            .eq("event_id", eventId)
+            .order("participant_id", { ascending: true })
+            .range(from, to),
+        ).catch((err) => {
+          console.error("[useStageScope] Falha ao carregar participant_event_stages.", err);
+          throw err;
+        }),
+        paginateAll<{ participant_id: string }>((from, to) =>
+          supabase
+            .from("participant_sport_events")
+            .select("participant_id")
+            .eq("event_stage_id", stageId)
+            .order("participant_id", { ascending: true })
+            .range(from, to),
+        ).catch((err) => {
+          console.error("[useStageScope] Falha ao carregar participant_sport_events por etapa.", err);
+          throw err;
+        }),
+      ]);
 
-      // Fonte 2 (fallback/backfill): inscrições esportivas marcadas com event_stage_id (paginado).
-      const pseRows = await paginateAll<{ participant_id: string }>((from, to) =>
-        supabase
-          .from("participant_sport_events")
-          .select("participant_id")
-          .eq("event_stage_id", stageId)
-          .order("participant_id", { ascending: true })
-          .range(from, to),
-      ).catch((err) => {
-        console.error("[useStageScope] Falha ao carregar participant_sport_events por etapa.", err);
-        throw err;
-      });
-
-      const candidateIds = new Set<string>();
-      pesRows.forEach((r) => r?.participant_id && candidateIds.add(r.participant_id));
-      pseRows.forEach((r) => r?.participant_id && candidateIds.add(r.participant_id));
-
-      if (candidateIds.size === 0) return new Set<string>();
-
-      // Sanitiza IDs para o evento ativo (evita vínculos legados inconsistentes).
-      // Faz em chunks para não estourar a URL do PostgREST.
-      const valid = new Set<string>();
-      for (const chunk of chunkArray(Array.from(candidateIds), FILTER_CHUNK_SIZE)) {
-        const { data, error } = await supabase
-          .from("participants")
-          .select("id")
-          .eq("event_id", eventId)
-          .in("id", chunk);
-        if (error) {
-          console.error("[useStageScope] Falha ao validar IDs de participantes da etapa.", error);
-          throw error;
-        }
-        (data ?? []).forEach((r: any) => valid.add(r.id as string));
-      }
-
-      return valid;
+      return new Set<string>([
+        ...pesRows.map((row) => row?.participant_id).filter(Boolean),
+        ...pseRows.map((row) => row?.participant_id).filter(Boolean),
+      ] as string[]);
     },
   });
 

@@ -38,6 +38,22 @@ interface ParticipantRow {
   ext_cred_status: string | null;
 }
 
+interface ParticipantsQueryRow {
+  id: string;
+  participant_type: string;
+  delegation_id: string;
+  person: {
+    full_name: string | null;
+    cpf: string | null;
+    photo_url: string | null;
+  } | null;
+  delegation: {
+    institution: {
+      name: string | null;
+    } | null;
+  } | null;
+}
+
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   active: { label: "Ativa", variant: "default" },
   cancelled: { label: "Cancelada", variant: "destructive" },
@@ -109,7 +125,7 @@ export default function CredenciamentoExternoPage() {
       if (!eventId) return [];
 
       const PARTICIPANT_SELECT =
-        "id, delegation_id, participant_type, person:people(full_name, cpf, photo_url), delegation:delegations(institution:institutions(name))";
+        "id, participant_type, delegation_id, person:people!participants_person_id_fkey(full_name, cpf, photo_url), delegation:delegations!participants_delegation_id_fkey(institution:institutions(name))";
       const PAGE = 1000;
       const CHUNK = 300; // limite seguro para .in() na URL do PostgREST
 
@@ -185,7 +201,7 @@ export default function CredenciamentoExternoPage() {
         credMap.set(c.participant_id, { id: c.id, code: c.credential_code, status: c.status });
       });
 
-      return parts.map((p: any) => {
+      return (parts as ParticipantsQueryRow[]).map((p) => {
         const cred = credMap.get(p.id);
         return {
           id: p.id,
@@ -206,12 +222,12 @@ export default function CredenciamentoExternoPage() {
 
   // Apply filters client-side
   const filtered = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
     let result = allParticipants;
 
-    if (search.length >= 2) {
-      const q = search.toLowerCase();
+    if (normalizedSearch.length >= 2) {
       result = result.filter(
-        (p) => p.full_name.toLowerCase().includes(q) || (p.cpf && p.cpf.includes(q))
+        (p) => p.full_name.toLowerCase().includes(normalizedSearch) || (p.cpf && p.cpf.includes(normalizedSearch))
       );
     }
 
@@ -229,15 +245,14 @@ export default function CredenciamentoExternoPage() {
       result = result.filter((p) => p.ext_cred_id === null);
     }
 
-    result.sort((a, b) => a.full_name.localeCompare(b.full_name));
-    return result;
+    return [...result].sort((a, b) => a.full_name.localeCompare(b.full_name));
   }, [allParticipants, search, filterDelegation, filterType, filterStatus]);
 
   const paged = filtered.slice(0, (page + 1) * PAGE_SIZE);
   const hasMore = paged.length < filtered.length;
 
   const totalCount = filtered.length;
-  const linkedCount = filtered.filter((p) => p.ext_cred_id !== null).length;
+  const linkedCount = useMemo(() => filtered.reduce((acc, p) => acc + (p.ext_cred_id ? 1 : 0), 0), [filtered]);
   const pendingCount = totalCount - linkedCount;
 
   const existingCred = selectedParticipant

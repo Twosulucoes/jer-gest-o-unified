@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +20,6 @@ import {
   Tag,
   ChevronLeft,
   ChevronRight,
-  Filter,
   AlertCircle,
   ShieldAlert,
 } from "lucide-react";
@@ -108,6 +107,26 @@ const buildDefaultFieldConfig = (w: number, h: number) => {
 };
 
 type ParticipantState = "pending_import" | "awaiting" | "ready_to_emit" | "complete";
+
+interface CredentialParticipantRow {
+  id: string;
+  status: string;
+  participant_type: string;
+  credentialed_at: string | null;
+  credentialed_by: string | null;
+  person_id: string;
+  delegation_id: string;
+  person: {
+    full_name: string | null;
+    cpf: string | null;
+  } | null;
+  delegation: {
+    institution: {
+      id: string;
+      name: string | null;
+    } | null;
+  } | null;
+}
 
 export default function CredenciamentoPage() {
   const queryClient = useQueryClient();
@@ -202,7 +221,7 @@ export default function CredenciamentoPage() {
     if (selectedEventId && templateFetched && eventTemplate === null && !createDefaultTemplateMutation.isPending) {
       createDefaultTemplateMutation.mutate();
     }
-  }, [selectedEventId, templateFetched, eventTemplate]);
+  }, [selectedEventId, templateFetched, eventTemplate, createDefaultTemplateMutation]);
 
   // --- Stage filter (?stage= na URL ou /admin/etapa/:stageId) ---
   const { stageId, participantIds: stageParticipantIds, isLoading: stageLoading } = useStageParticipantFilter();
@@ -239,6 +258,9 @@ export default function CredenciamentoPage() {
 
       const CHUNK = FILTER_CHUNK_SIZE;
       const all: any[] = [];
+      const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id,
+        person:people!participants_person_id_fkey(full_name, cpf),
+        delegation:delegations!participants_delegation_id_fkey(institution:institutions(id, name))`;
 
       const idChunks: (string[] | null)[] = effectiveStageFilter
         ? chunkArray(effectiveStageFilter, CHUNK)
@@ -250,7 +272,7 @@ export default function CredenciamentoPage() {
         while (true) {
           let q = supabase
             .from("participants")
-            .select("id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id")
+            .select(PARTICIPANT_SELECT)
             .eq("event_id", selectedEventId)
             .eq("is_active", true)
             .in("status", ["pending", "confirmed", "credentialed"]);
@@ -271,7 +293,7 @@ export default function CredenciamentoPage() {
     enabled: !!selectedEventId,
   });
 
-  const participants = allParticipants;
+  const participants = useMemo(() => (allParticipants ?? []) as CredentialParticipantRow[], [allParticipants]);
 
   // --- Active credentials ---
   // Quando há filtro de etapa, busca somente credenciais cujos participant_id estejam na etapa.
@@ -312,112 +334,46 @@ export default function CredenciamentoPage() {
     enabled: !!selectedEventId,
   });
 
-  const activeCredMap = new Map(activeCredentials.map((c) => [c.participant_id, c]));
+  const activeCredMap = useMemo(() => new Map(activeCredentials.map((c) => [c.participant_id, c])), [activeCredentials]);
+  const institutionOptions = useMemo(() => {
+    const unique = new Map<string, string>();
+    participants.forEach((participant) => {
+      const institution = participant.delegation?.institution;
+      if (institution?.id && institution.name) unique.set(institution.id, institution.name);
+    });
+    return Array.from(unique, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [participants]);
 
-  // --- People ---
-  const personIds = [...new Set(participants?.map((p) => p.person_id).filter(Boolean) ?? [])];
-  const { data: people = [], error: peopleError } = useQuery({
-    queryKey: ["credenciamento-people", personIds],
-    queryFn: async () => {
-      if (personIds.length === 0) return [];
-      const all: any[] = [];
-      for (const chunk of chunkArray(personIds, FILTER_CHUNK_SIZE)) {
-        const { data, error } = await supabase
-          .from("people")
-          .select("id, full_name, birth_date, gender, cpf")
-          .in("id", chunk);
-        if (error) throw error;
-        all.push(...(data ?? []));
-      }
-      return all;
-    },
-    enabled: personIds.length > 0,
-  });
+  const participantTypeOptions = useMemo(() => {
+    const types = new Set(participants.map((p) => p.participant_type));
+    return [...types].sort();
+  }, [participants]);
 
-  // --- Delegations & Institutions ---
-  const delegationIds = [...new Set((participants?.map((p) => p.delegation_id) ?? []).filter(Boolean))];
-  const { data: delegations = [], error: delegationsError } = useQuery({
-    queryKey: ["credenciamento-delegations", delegationIds],
-    queryFn: async () => {
-      if (delegationIds.length === 0) return [];
-      const all: any[] = [];
-      for (const chunk of chunkArray(delegationIds, FILTER_CHUNK_SIZE)) {
-        const { data, error } = await supabase.from("delegations").select("id, institution_id").in("id", chunk);
-        if (error) throw error;
-        all.push(...(data ?? []));
-      }
-      return all;
-    },
-    enabled: delegationIds.length > 0,
-  });
-
-  const instIds = [...new Set(delegations.map((d) => d.institution_id).filter(Boolean))];
-  const { data: institutions = [], error: institutionsError } = useQuery({
-    queryKey: ["credenciamento-institutions", instIds],
-    queryFn: async () => {
-      if (instIds.length === 0) return [];
-      const all: any[] = [];
-      for (const chunk of chunkArray(instIds, FILTER_CHUNK_SIZE)) {
-        const { data, error } = await supabase.from("institutions").select("id, name").in("id", chunk);
-        if (error) throw error;
-        all.push(...(data ?? []));
-      }
-      return all;
-    },
-    enabled: instIds.length > 0,
-  });
-
-  // --- Lookup maps ---
-  const peopleMap = new Map(people.map((p) => [p.id, p]));
-  const delegationMap = new Map(delegations.map((d) => [d.id, d]));
-  const institutionMap = new Map(institutions.map((i) => [i.id, i]));
-
-  const getInstitutionName = (delegationId: string) => {
-    const del = delegationMap.get(delegationId);
-    if (!del) return "—";
-    return institutionMap.get(del.institution_id)?.name ?? "—";
-  };
-
-  const getInstitutionId = (delegationId: string) => {
-    const del = delegationMap.get(delegationId);
-    return del?.institution_id ?? "";
-  };
+  const getInstitutionId = useCallback((participant: CredentialParticipantRow) => participant.delegation?.institution?.id ?? "", []);
+  const getInstitutionName = useCallback((participant: CredentialParticipantRow) => participant.delegation?.institution?.name ?? "—", []);
 
   // --- Determine participant state ---
-  const getParticipantState = (p: { status: string; id: string }): ParticipantState => {
+  const getParticipantState = useCallback((p: { status: string; id: string }): ParticipantState => {
     if (p.status === "pending") return "pending_import";
     const isCredentialed = p.status === "credentialed";
     const hasActiveCred = activeCredMap.has(p.id);
     if (!isCredentialed) return "awaiting";
     if (isCredentialed && !hasActiveCred) return "ready_to_emit";
     return "complete";
-  };
-
-  // --- Institution options for filter ---
-  const institutionOptions = useMemo(() => {
-    const opts = institutions.map((i) => ({ id: i.id, name: i.name }));
-    opts.sort((a, b) => a.name.localeCompare(b.name));
-    return opts;
-  }, [institutions]);
-
-  // --- Unique participant types ---
-  const participantTypeOptions = useMemo(() => {
-    const types = new Set(participants?.map((p) => p.participant_type) ?? []);
-    return [...types].sort();
-  }, [participants]);
+  }, [activeCredMap]);
 
   // --- Filter & Sort ---
   const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, pending_import: 2, complete: 3 };
 
   const filtered = useMemo(() => {
+    const normalizedTerm = searchTerm.trim().toLowerCase();
     return (participants ?? [])
       .filter((p) => {
         // Search filter
-        if (searchTerm) {
-          const person = peopleMap.get(p.person_id);
-          if (!person) return false;
-          const term = searchTerm.toLowerCase();
-          if (!person.full_name.toLowerCase().includes(term) && !(person.cpf && person.cpf.includes(term))) return false;
+        if (normalizedTerm) {
+          const fullName = p.person?.full_name?.toLowerCase() ?? "";
+          const cpf = p.person?.cpf ?? "";
+          if (!fullName.includes(normalizedTerm) && !cpf.includes(normalizedTerm)) return false;
         }
         // Type filter
         if (filterType !== "all" && p.participant_type !== filterType) return false;
@@ -430,7 +386,7 @@ export default function CredenciamentoPage() {
         }
         // Institution filter
         if (filterInstitution !== "all") {
-          const instId = getInstitutionId(p.delegation_id);
+          const instId = getInstitutionId(p);
           if (instId !== filterInstitution) return false;
         }
         return true;
@@ -441,16 +397,16 @@ export default function CredenciamentoPage() {
         const prioA = STATE_PRIORITY[stateA] ?? 9;
         const prioB = STATE_PRIORITY[stateB] ?? 9;
         if (prioA !== prioB) return prioA - prioB;
-        const nameA = peopleMap.get(a.person_id)?.full_name ?? "";
-        const nameB = peopleMap.get(b.person_id)?.full_name ?? "";
+        const nameA = a.person?.full_name ?? "";
+        const nameB = b.person?.full_name ?? "";
         return nameA.localeCompare(nameB);
       });
-  }, [participants, searchTerm, filterType, filterState, filterInstitution, peopleMap, activeCredMap, blockedParticipantIds]);
+  }, [participants, searchTerm, filterType, filterState, filterInstitution, blockedParticipantIds, getParticipantState, getInstitutionId]);
 
   // --- Pagination ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginatedItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const loadError = participantsError ?? credentialsError ?? peopleError ?? delegationsError ?? institutionsError;
+  const loadError = participantsError ?? credentialsError;
 
   // --- Mutations ---
   // Fluxo unificado: registrar presença + emitir credencial em um único passo
@@ -1007,7 +963,7 @@ export default function CredenciamentoPage() {
               </TableHeader>
               <TableBody>
                 {paginatedItems.map((p) => {
-                  const person = peopleMap.get(p.person_id);
+                  const person = p.person;
                   const state = getParticipantState(p);
                   const stateInfo = getStateInfo(state);
                   const activeCred = activeCredMap.get(p.id);
@@ -1038,7 +994,7 @@ export default function CredenciamentoPage() {
                         {person?.cpf ?? "—"}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
-                        {getInstitutionName(p.delegation_id)}
+                        {getInstitutionName(p)}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-[10px]">
