@@ -21,7 +21,7 @@ function chunkArray<T>(items: T[], size: number) {
  * Evita o cap silencioso de 1000 linhas do PostgREST.
  */
 async function paginateAll<T>(
-  build: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>,
+  build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: any }>,
 ): Promise<T[]> {
   const acc: T[] = [];
   let from = 0;
