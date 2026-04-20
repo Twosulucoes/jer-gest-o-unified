@@ -336,6 +336,22 @@ export default function CredenciamentoPage() {
   });
 
   const activeCredMap = useMemo(() => new Map(activeCredentials.map((c) => [c.participant_id, c])), [activeCredentials]);
+  const institutionOptions = useMemo(() => {
+    const unique = new Map<string, string>();
+    participants.forEach((participant) => {
+      const institution = participant.delegation?.institution;
+      if (institution?.id && institution.name) unique.set(institution.id, institution.name);
+    });
+    return Array.from(unique, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [participants]);
+
+  const participantTypeOptions = useMemo(() => {
+    const types = new Set(participants.map((p) => p.participant_type));
+    return [...types].sort();
+  }, [participants]);
+
+  const getInstitutionId = (participant: CredentialParticipantRow) => participant.delegation?.institution?.id ?? "";
+  const getInstitutionName = (participant: CredentialParticipantRow) => participant.delegation?.institution?.name ?? "—";
 
   // --- Determine participant state ---
   const getParticipantState = (p: { status: string; id: string }): ParticipantState => {
@@ -347,31 +363,18 @@ export default function CredenciamentoPage() {
     return "complete";
   };
 
-  // --- Institution options for filter ---
-  const institutionOptions = useMemo(() => {
-    const opts = institutions.map((i) => ({ id: i.id, name: i.name }));
-    opts.sort((a, b) => a.name.localeCompare(b.name));
-    return opts;
-  }, [institutions]);
-
-  // --- Unique participant types ---
-  const participantTypeOptions = useMemo(() => {
-    const types = new Set(participants?.map((p) => p.participant_type) ?? []);
-    return [...types].sort();
-  }, [participants]);
-
   // --- Filter & Sort ---
   const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, pending_import: 2, complete: 3 };
 
   const filtered = useMemo(() => {
+    const normalizedTerm = searchTerm.trim().toLowerCase();
     return (participants ?? [])
       .filter((p) => {
         // Search filter
-        if (searchTerm) {
-          const person = peopleMap.get(p.person_id);
-          if (!person) return false;
-          const term = searchTerm.toLowerCase();
-          if (!person.full_name.toLowerCase().includes(term) && !(person.cpf && person.cpf.includes(term))) return false;
+        if (normalizedTerm) {
+          const fullName = p.person?.full_name?.toLowerCase() ?? "";
+          const cpf = p.person?.cpf ?? "";
+          if (!fullName.includes(normalizedTerm) && !cpf.includes(normalizedTerm)) return false;
         }
         // Type filter
         if (filterType !== "all" && p.participant_type !== filterType) return false;
@@ -384,7 +387,7 @@ export default function CredenciamentoPage() {
         }
         // Institution filter
         if (filterInstitution !== "all") {
-          const instId = getInstitutionId(p.delegation_id);
+          const instId = getInstitutionId(p);
           if (instId !== filterInstitution) return false;
         }
         return true;
@@ -395,16 +398,16 @@ export default function CredenciamentoPage() {
         const prioA = STATE_PRIORITY[stateA] ?? 9;
         const prioB = STATE_PRIORITY[stateB] ?? 9;
         if (prioA !== prioB) return prioA - prioB;
-        const nameA = peopleMap.get(a.person_id)?.full_name ?? "";
-        const nameB = peopleMap.get(b.person_id)?.full_name ?? "";
+        const nameA = a.person?.full_name ?? "";
+        const nameB = b.person?.full_name ?? "";
         return nameA.localeCompare(nameB);
       });
-  }, [participants, searchTerm, filterType, filterState, filterInstitution, peopleMap, activeCredMap, blockedParticipantIds]);
+  }, [participants, searchTerm, filterType, filterState, filterInstitution, blockedParticipantIds, activeCredMap]);
 
   // --- Pagination ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginatedItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const loadError = participantsError ?? credentialsError ?? peopleError ?? delegationsError ?? institutionsError;
+  const loadError = participantsError ?? credentialsError;
 
   // --- Mutations ---
   // Fluxo unificado: registrar presença + emitir credencial em um único passo
