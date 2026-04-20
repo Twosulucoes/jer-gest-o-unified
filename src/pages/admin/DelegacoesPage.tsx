@@ -52,6 +52,8 @@ export default function DelegacoesPage() {
 
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
+  const { data: branding } = useEventBranding(selectedEventId);
+
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
     queryFn: async () => {
