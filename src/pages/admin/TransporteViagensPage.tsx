@@ -85,7 +85,7 @@ export default function TransporteViagensPage() {
 
   const createMut = useMutation({
     mutationFn: async (v: TripFormValues) => {
-      const { error } = await supabase.from("transport_trips").insert({
+      const payload: any = {
         event_id: selectedEventId,
         route_id: v.route_id,
         vehicle_id: v.vehicle_id || null,
@@ -94,7 +94,9 @@ export default function TransporteViagensPage() {
         scheduled_at: v.scheduled_at || null,
         notes: v.notes || null,
         created_by: user?.id,
-      });
+      };
+      if (isStageScoped && stageId) payload.event_stage_id = stageId;
+      const { error } = await supabase.from("transport_trips").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["transport_trips"] }); toast.success("Viagem criada"); setDialogOpen(false); },

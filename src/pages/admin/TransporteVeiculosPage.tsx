@@ -51,10 +51,12 @@ export default function TransporteVeiculosPage() {
 
   const createMut = useMutation({
     mutationFn: async (v: VehicleFormValues) => {
-      const { error } = await supabase.from("transport_vehicles").insert({
+      const payload: any = {
         event_id: v.event_id, plate: v.plate.toUpperCase(), label: v.label || null,
         capacity: v.capacity, vehicle_type: v.vehicle_type, is_active: v.is_active,
-      });
+      };
+      if (isStageScoped && stageId) payload.event_stage_id = stageId;
+      const { error } = await supabase.from("transport_vehicles").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["transport_vehicles"] }); toast.success("Veículo criado"); setDialogOpen(false); },

@@ -47,10 +47,12 @@ export default function TransporteRotasPage() {
 
   const createMut = useMutation({
     mutationFn: async (v: RouteFormValues) => {
-      const { error } = await supabase.from("transport_routes").insert({
+      const payload: any = {
         event_id: v.event_id, name: v.name, origin: v.origin || null,
         destination: v.destination || null, notes: v.notes || null, is_active: v.is_active,
-      });
+      };
+      if (isStageScoped && stageId) payload.event_stage_id = stageId;
+      const { error } = await supabase.from("transport_routes").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["transport_routes"] }); toast.success("Rota criada"); setDialogOpen(false); },
