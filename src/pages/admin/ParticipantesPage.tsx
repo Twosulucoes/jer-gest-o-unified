@@ -487,6 +487,7 @@ export default function ParticipantesPage() {
     return acc;
   };
 
+  return (
     <div className="animate-fade-in space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="min-w-0">
@@ -495,6 +496,16 @@ export default function ParticipantesPage() {
             Cadastre e gerencie todas as pessoas do evento — atletas, técnicos, staff, terceiros.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <ExportButton
+            filteredRows={rows as any[]}
+            fetchFilteredRows={fetchAllFilteredParticipants}
+            fetchAllRows={fetchAllParticipants}
+            columns={exportColumns}
+            filenamePrefix="participantes"
+            sheetName="Participantes"
+            disabled={!selectedEventId}
+          />
         {canManage && selectedEventId && (
           <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-1" />Cadastrar pessoa
