@@ -69,6 +69,8 @@ import { SingleLabelDialog, BatchLabelsDialog } from "@/components/admin/Credent
 import { useActiveEventId } from "@/contexts/EventContext";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
+import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
+import { BackgroundLoadingIndicator } from "@/components/credenciamento/BackgroundLoadingIndicator";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
