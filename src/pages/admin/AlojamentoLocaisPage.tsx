@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useStageScope } from "@/hooks/useStageScope";
 import { toast } from "sonner";
 import { Plus, Pencil, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,38 +10,48 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import LodgingLocationFormDialog, { type LodgingLocationFormValues } from "@/components/admin/LodgingLocationFormDialog";
+import type { StageContext } from "@/components/admin/VehicleFormDialog";
 
 export default function AlojamentoLocaisPage() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
+  const { stageId, isStageScoped } = useStageScope();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
-  const { data: events = [] } = useQuery({
-    queryKey: ["events"],
+  const { data: stageInfo } = useQuery({
+    queryKey: ["stage_info", stageId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("events").select("*").order("year", { ascending: false });
-      if (error) throw error;
+      if (!stageId) return null;
+      const { data } = await supabase.from("event_stages").select("id, name, kind, event_id").eq("id", stageId).maybeSingle();
       return data;
     },
+    enabled: !!stageId,
   });
+
+  const stageContext: StageContext | undefined = stageInfo
+    ? { id: stageInfo.id, name: stageInfo.name, kind: stageInfo.kind, event_id: stageInfo.event_id }
+    : undefined;
 
   const { data: locations, isLoading } = useQuery({
-    queryKey: ["lodging_locations"],
+    queryKey: ["lodging_locations", stageId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("lodging_locations").select("*").order("name");
+      if (!stageId) return [];
+      const { data, error } = await (supabase.from("lodging_locations") as any)
+        .select("*, units:lodging_units(id)")
+        .eq("event_stage_id", stageId).order("name");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
+    enabled: !!stageId,
   });
-
-  const eventsMap = new Map(events.map((e) => [e.id, e]));
 
   const createMut = useMutation({
     mutationFn: async (v: LodgingLocationFormValues) => {
-      const { error } = await supabase.from("lodging_locations").insert({
-        event_id: v.event_id, name: v.name, address: v.address || null, notes: v.notes || null, is_active: v.is_active,
+      const { error } = await (supabase.from("lodging_locations") as any).insert({
+        event_id: stageInfo!.event_id, event_stage_id: stageId,
+        name: v.name, address: v.address || null, notes: v.notes || null, is_active: v.is_active,
       });
       if (error) throw error;
     },
@@ -59,21 +70,25 @@ export default function AlojamentoLocaisPage() {
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
-  const handleSubmit = (v: LodgingLocationFormValues) => {
-    if (editing) updateMut.mutate({ id: editing.id, ...v });
-    else createMut.mutate(v);
-  };
+  if (!isStageScoped || !stageId) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
+        <Building className="h-10 w-10 text-muted-foreground mb-3" />
+        <p className="text-muted-foreground font-medium">Acesse pelo menu de uma etapa</p>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Locais de Alojamento</h1>
-          <p className="text-sm text-muted-foreground mt-1">Cadastro de locais para hospedagem</p>
+          <p className="text-sm text-muted-foreground mt-1">Hotéis, escolas e demais locais de hospedagem desta etapa</p>
         </div>
         {canWrite && (
-          <Button onClick={() => { setEditing(null); setDialogOpen(true); }} disabled={!events.length}>
-            <Plus className="mr-2 h-4 w-4" />Novo local
+          <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Novo local
           </Button>
         )}
       </div>
@@ -83,7 +98,12 @@ export default function AlojamentoLocaisPage() {
       ) : !locations?.length ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <Building className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhum local cadastrado</p>
+          <p className="text-muted-foreground font-medium">Nenhum local cadastrado para esta etapa</p>
+          {canWrite && (
+            <Button size="sm" className="mt-3" onClick={() => { setEditing(null); setDialogOpen(true); }}>
+              <Plus className="h-4 w-4 mr-1" /> Cadastrar local
+            </Button>
+          )}
         </div>
       ) : (
         <div className="rounded-lg border bg-card">
@@ -92,17 +112,19 @@ export default function AlojamentoLocaisPage() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Endereço</TableHead>
-                <TableHead>Evento</TableHead>
+                <TableHead>Quartos</TableHead>
                 <TableHead>Status</TableHead>
                 {canWrite && <TableHead className="w-[60px]" />}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {locations.map((l) => (
+              {locations.map((l: any) => (
                 <TableRow key={l.id}>
                   <TableCell className="font-medium">{l.name}</TableCell>
                   <TableCell className="text-muted-foreground">{l.address || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{eventsMap.get(l.event_id)?.name ?? "—"}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{(l.units ?? []).length} quarto{(l.units ?? []).length !== 1 ? "s" : ""}</Badge>
+                  </TableCell>
                   <TableCell><Badge variant={l.is_active ? "default" : "secondary"}>{l.is_active ? "Ativo" : "Inativo"}</Badge></TableCell>
                   {canWrite && (
                     <TableCell>
@@ -122,8 +144,9 @@ export default function AlojamentoLocaisPage() {
         open={dialogOpen}
         onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditing(null); }}
         location={editing}
-        events={events}
-        onSubmit={handleSubmit}
+        events={[]}
+        stageContext={stageContext}
+        onSubmit={(v) => editing ? updateMut.mutate({ id: editing.id, ...v }) : createMut.mutate(v)}
         isPending={createMut.isPending || updateMut.isPending}
       />
     </div>

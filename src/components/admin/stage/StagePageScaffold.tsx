@@ -51,7 +51,7 @@ const MODULES: ModuleConfig[] = [
     tabs: [
       { label: "Visão geral", to: "alojamento", icon: <Building className="h-3.5 w-3.5" />, end: true, roles: LODGING_ROLES },
       { label: "Locais", to: "alojamento/locais", icon: <Building className="h-3.5 w-3.5" />, roles: LODGING_ROLES },
-      { label: "Unidades", to: "alojamento/unidades", icon: <Layers className="h-3.5 w-3.5" />, roles: LODGING_ROLES },
+      { label: "Quartos", to: "alojamento/unidades", icon: <Layers className="h-3.5 w-3.5" />, roles: LODGING_ROLES },
       { label: "Ocupação", to: "alojamento/ocupacao", icon: <KeyRound className="h-3.5 w-3.5" />, roles: LODGING_ROLES },
       { label: "Relatórios", to: "alojamento/relatorios", icon: <FileBarChart className="h-3.5 w-3.5" />, roles: LODGING_ROLES },
     ],

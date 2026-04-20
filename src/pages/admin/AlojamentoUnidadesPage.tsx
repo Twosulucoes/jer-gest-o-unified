@@ -2,164 +2,144 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useStageScope } from "@/hooks/useStageScope";
 import { toast } from "sonner";
-import { Plus, Pencil, DoorOpen } from "lucide-react";
+import { Plus, Pencil, BedDouble } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import LodgingUnitFormDialog, { type LodgingUnitFormValues } from "@/components/admin/LodgingUnitFormDialog";
-import { useActiveEventId } from "@/contexts/EventContext";
 
 export default function AlojamentoUnidadesPage() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
+  const { stageId, isStageScoped } = useStageScope();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const selectedEventId = useActiveEventId();
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
-  const { data: events = [] } = useQuery({
-    queryKey: ["events"],
+  const { data: stageInfo } = useQuery({
+    queryKey: ["stage_info", stageId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("events").select("*").order("year", { ascending: false });
-      if (error) throw error;
+      if (!stageId) return null;
+      const { data } = await supabase.from("event_stages").select("id, name, kind, event_id").eq("id", stageId).maybeSingle();
       return data;
     },
+    enabled: !!stageId,
   });
 
   const { data: locations = [] } = useQuery({
-    queryKey: ["lodging_locations", selectedEventId],
+    queryKey: ["lodging_locations", stageId],
     queryFn: async () => {
-      if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("lodging_locations").select("*").eq("event_id", selectedEventId).order("name");
+      if (!stageId) return [];
+      const { data, error } = await (supabase.from("lodging_locations") as any)
+        .select("*").eq("event_stage_id", stageId).order("name");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
-    enabled: !!selectedEventId,
+    enabled: !!stageId,
   });
 
   const { data: units, isLoading } = useQuery({
-    queryKey: ["lodging_units", selectedEventId],
+    queryKey: ["lodging_units", stageId],
     queryFn: async () => {
-      if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("lodging_units").select("*").eq("event_id", selectedEventId).order("name");
+      if (!stageId) return [];
+      const { data, error } = await (supabase.from("lodging_units") as any)
+        .select("*").eq("event_stage_id", stageId).order("name");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
-    enabled: !!selectedEventId,
+    enabled: !!stageId,
   });
 
-  // Count active occupancies per unit
   const { data: occupancyCounts = [] } = useQuery({
-    queryKey: ["lodging_occupancy_counts", selectedEventId],
+    queryKey: ["lodging_occupancy_counts", stageId],
     queryFn: async () => {
-      if (!selectedEventId) return [];
-      const { data, error } = await supabase
-        .from("lodging_occupancies")
-        .select("unit_id")
-        .eq("event_id", selectedEventId)
-        .in("status", ["allocated", "checked_in"]);
+      if (!stageId) return [];
+      const { data, error } = await (supabase.from("lodging_occupancies") as any)
+        .select("unit_id").eq("event_stage_id", stageId).in("status", ["allocated", "checked_in"]);
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
-    enabled: !!selectedEventId,
+    enabled: !!stageId,
   });
 
   const occCountMap = new Map<string, number>();
-  occupancyCounts.forEach((o) => {
+  occupancyCounts.forEach((o: any) => {
     occCountMap.set(o.unit_id, (occCountMap.get(o.unit_id) || 0) + 1);
   });
 
-  const locationsMap = new Map(locations.map((l) => [l.id, l]));
-
+  const locationsMap = new Map(locations.map((l: any) => [l.id, l]));
   const genderLabel = (g: string) => g === "male" ? "Masculino" : g === "female" ? "Feminino" : "Misto";
 
   const createMut = useMutation({
     mutationFn: async (v: LodgingUnitFormValues) => {
-      const { error } = await supabase.from("lodging_units").insert({
-        event_id: selectedEventId,
-        location_id: v.location_id,
-        name: v.name,
-        capacity: v.capacity,
-        gender_restriction: v.gender_restriction,
-        notes: v.notes || null,
-        is_active: v.is_active,
+      const { error } = await (supabase.from("lodging_units") as any).insert({
+        event_id: stageInfo!.event_id, event_stage_id: stageId,
+        location_id: v.location_id, name: v.name, capacity: v.capacity,
+        gender_restriction: v.gender_restriction, notes: v.notes || null, is_active: v.is_active,
       });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["lodging_units"] }); toast.success("Unidade criada"); setDialogOpen(false); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["lodging_units"] }); toast.success("Quarto criado"); setDialogOpen(false); },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
   const updateMut = useMutation({
     mutationFn: async ({ id, ...v }: LodgingUnitFormValues & { id: string }) => {
       const { error } = await supabase.from("lodging_units").update({
-        location_id: v.location_id,
-        name: v.name,
-        capacity: v.capacity,
-        gender_restriction: v.gender_restriction,
-        notes: v.notes || null,
-        is_active: v.is_active,
+        location_id: v.location_id, name: v.name, capacity: v.capacity,
+        gender_restriction: v.gender_restriction, notes: v.notes || null, is_active: v.is_active,
       }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["lodging_units"] }); toast.success("Unidade atualizada"); setDialogOpen(false); setEditing(null); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["lodging_units"] }); toast.success("Quarto atualizado"); setDialogOpen(false); setEditing(null); },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
-  const handleSubmit = (v: LodgingUnitFormValues) => {
-    if (editing) updateMut.mutate({ id: editing.id, ...v });
-    else createMut.mutate(v);
-  };
+  if (!isStageScoped || !stageId) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
+        <BedDouble className="h-10 w-10 text-muted-foreground mb-3" />
+        <p className="text-muted-foreground font-medium">Acesse pelo menu de uma etapa</p>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Unidades de Alojamento</h1>
-          <p className="text-sm text-muted-foreground mt-1">Quartos, salas e blocos de hospedagem</p>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Quartos</h1>
+          <p className="text-sm text-muted-foreground mt-1">Quartos e unidades de hospedagem desta etapa</p>
         </div>
-        {canWrite && selectedEventId && (
+        {canWrite && (
           <Button onClick={() => { setEditing(null); setDialogOpen(true); }} disabled={!locations.length}>
-            <Plus className="mr-2 h-4 w-4" />Nova unidade
+            <Plus className="mr-2 h-4 w-4" /> Novo quarto
           </Button>
         )}
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-2 max-w-xs">
-            <label className="text-sm font-medium text-foreground">Evento</label>
-            <Select value={selectedEventId} onValueChange={() => {}}>
-              <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
-              <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {!selectedEventId ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-          <DoorOpen className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Selecione um evento</p>
+      {locations.length === 0 && !isLoading && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4 text-sm text-amber-800 dark:text-amber-300">
+          Cadastre ao menos um local (hotel/escola) antes de criar quartos. Acesse a aba <strong>Locais</strong>.
         </div>
-      ) : isLoading ? (
+      )}
+
+      {isLoading ? (
         <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-md" />)}</div>
       ) : !units?.length ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-          <DoorOpen className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhuma unidade cadastrada</p>
-          <p className="text-sm text-muted-foreground mt-1">Cadastre locais antes de criar unidades.</p>
+          <BedDouble className="h-10 w-10 text-muted-foreground mb-3" />
+          <p className="text-muted-foreground font-medium">Nenhum quarto cadastrado para esta etapa</p>
         </div>
       ) : (
         <div className="rounded-lg border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
+                <TableHead>Quarto</TableHead>
                 <TableHead>Local</TableHead>
                 <TableHead>Capacidade</TableHead>
                 <TableHead>Ocupação</TableHead>
@@ -169,7 +149,7 @@ export default function AlojamentoUnidadesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {units.map((u) => {
+              {units.map((u: any) => {
                 const occ = occCountMap.get(u.id) || 0;
                 const full = occ >= u.capacity;
                 return (
@@ -177,11 +157,9 @@ export default function AlojamentoUnidadesPage() {
                     <TableCell className="font-medium">{u.name}</TableCell>
                     <TableCell className="text-muted-foreground">{locationsMap.get(u.location_id)?.name ?? "—"}</TableCell>
                     <TableCell>{u.capacity}</TableCell>
-                    <TableCell>
-                      <Badge variant={full ? "destructive" : "outline"}>{occ}/{u.capacity}</Badge>
-                    </TableCell>
+                    <TableCell><Badge variant={full ? "destructive" : "outline"}>{occ}/{u.capacity}</Badge></TableCell>
                     <TableCell>{genderLabel(u.gender_restriction)}</TableCell>
-                    <TableCell><Badge variant={u.is_active ? "default" : "secondary"}>{u.is_active ? "Ativa" : "Inativa"}</Badge></TableCell>
+                    <TableCell><Badge variant={u.is_active ? "default" : "secondary"}>{u.is_active ? "Ativo" : "Inativo"}</Badge></TableCell>
                     {canWrite && (
                       <TableCell>
                         <Button variant="ghost" size="icon" onClick={() => { setEditing(u); setDialogOpen(true); }}>
@@ -202,7 +180,7 @@ export default function AlojamentoUnidadesPage() {
         onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditing(null); }}
         unit={editing}
         locations={locations}
-        onSubmit={handleSubmit}
+        onSubmit={(v) => editing ? updateMut.mutate({ id: editing.id, ...v }) : createMut.mutate(v)}
         isPending={createMut.isPending || updateMut.isPending}
       />
     </div>
