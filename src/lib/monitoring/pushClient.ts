@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const VAPID_PUBLIC_KEY = "BEh7XcFqhnTF01NHAejxw2MJyly8BvSSp5mok_2wy7sCXtWW3XBrnMrIY5udU7b1SOlqfQQjT8X_NM6SRoT7xWE";
+const VAPID_PUBLIC_KEY = "BO7tm7tZFigzB6q6jfXgSIWJMH_zWXEk5wHmnSXTSDRFgPedKwDj_V6serUrVT1RCLEzG2d4gcGOOrW9jNAqogw";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -41,11 +41,35 @@ export async function subscribeToPush() {
   const reg = await registerMonitorSW();
   await navigator.serviceWorker.ready;
 
+  const appServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+
+  // Se já existe uma assinatura, valida se foi feita com a mesma chave VAPID.
+  // Caso a chave do servidor tenha mudado, recriar a assinatura é obrigatório.
   let sub = await reg.pushManager.getSubscription();
+  if (sub) {
+    const existingKey = sub.options?.applicationServerKey
+      ? new Uint8Array(sub.options.applicationServerKey as ArrayBuffer)
+      : null;
+    const sameKey =
+      existingKey &&
+      existingKey.length === appServerKey.length &&
+      existingKey.every((b, i) => b === appServerKey[i]);
+    if (!sameKey) {
+      try {
+        await supabase
+          .from("push_subscriptions")
+          .update({ active: false })
+          .eq("endpoint", sub.endpoint);
+      } catch { /* ignore */ }
+      await sub.unsubscribe();
+      sub = null;
+    }
+  }
+
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      applicationServerKey: appServerKey,
     });
   }
 
@@ -53,7 +77,7 @@ export async function subscribeToPush() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuário não autenticado");
 
-  await supabase.from("push_subscriptions").upsert({
+  const { error } = await supabase.from("push_subscriptions").upsert({
     user_id: user.id,
     endpoint: sub.endpoint,
     p256dh: json.keys?.p256dh ?? arrayBufferToBase64(sub.getKey("p256dh")),
@@ -61,6 +85,7 @@ export async function subscribeToPush() {
     user_agent: navigator.userAgent,
     active: true,
   }, { onConflict: "endpoint" });
+  if (error) throw error;
 
   return sub;
 }

@@ -1,0 +1,1 @@
+UPDATE public.push_subscriptions SET active = false WHERE active = true;
