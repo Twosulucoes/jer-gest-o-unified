@@ -4,11 +4,11 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, FileType2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { exportToCSV, exportToXLSX, timestampedName, type ExportColumn } from "@/lib/exportData";
 
-type Format = "csv" | "xlsx";
+type Format = "csv" | "xlsx" | "pdf";
 type Scope = "filtered" | "all";
 
 interface Props<T> {
@@ -23,6 +23,8 @@ interface Props<T> {
   sheetName?: string;
   label?: string;
   disabled?: boolean;
+  /** Handler opcional para gerar PDF a partir das linhas (respeita filtros e agrupamento). Recebe escopo. */
+  onPdf?: (scope: Scope, rows: T[]) => Promise<void>;
 }
 
 export default function ExportButton<T>({
@@ -34,6 +36,7 @@ export default function ExportButton<T>({
   sheetName = "Dados",
   label = "Exportar",
   disabled,
+  onPdf,
 }: Props<T>) {
   const [busy, setBusy] = useState(false);
 
@@ -49,7 +52,8 @@ export default function ExportButton<T>({
       }
       const filename = timestampedName(`${filenamePrefix}_${scope === "all" ? "geral" : "filtrado"}`);
       if (format === "csv") exportToCSV(rows, columns, filename);
-      else exportToXLSX(rows, columns, filename, sheetName);
+      else if (format === "xlsx") exportToXLSX(rows, columns, filename, sheetName);
+      else if (format === "pdf" && onPdf) await onPdf(scope, rows);
       toast.success(`${rows.length} registro(s) exportado(s)`);
     } catch (e: any) {
       toast.error(`Falha ao exportar: ${e?.message ?? e}`);
@@ -68,6 +72,12 @@ export default function ExportButton<T>({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>Filtrados ({filteredRows.length})</DropdownMenuLabel>
+        {onPdf && (
+          <DropdownMenuItem onClick={() => run("filtered", "pdf")}>
+            <FileType2 className="h-4 w-4 mr-2 text-destructive" />
+            Relatório PDF (filtrado)
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => run("filtered", "xlsx")}>
           <FileSpreadsheet className="h-4 w-4 mr-2 text-primary" />
           Exportar filtrados (Excel)
@@ -80,6 +90,12 @@ export default function ExportButton<T>({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Geral (todos)</DropdownMenuLabel>
+            {onPdf && (
+              <DropdownMenuItem onClick={() => run("all", "pdf")}>
+                <FileType2 className="h-4 w-4 mr-2 text-destructive" />
+                Relatório PDF (geral)
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => run("all", "xlsx")}>
               <FileSpreadsheet className="h-4 w-4 mr-2 text-primary" />
               Exportar tudo (Excel)
@@ -94,3 +110,4 @@ export default function ExportButton<T>({
     </DropdownMenu>
   );
 }
+
