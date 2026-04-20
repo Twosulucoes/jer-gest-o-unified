@@ -19,6 +19,8 @@ import PessoaFormDialog from "@/components/admin/people/PessoaFormDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DataPagination } from "@/components/ui/data-pagination";
+import ExportButton from "@/components/admin/ExportButton";
+import type { ExportColumn } from "@/lib/exportData";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
