@@ -104,24 +104,68 @@ export default function CredenciamentoExternoPage() {
 
   // Main query: participants filtered by stage when in stage context
   const { data: allParticipants = [], isLoading: searchLoading } = useQuery({
-    queryKey: ["ext-cred-participants", eventId, stageId],
+    queryKey: ["ext-cred-participants", eventId, stageId, isStageScoped, stageParticipantIds?.size ?? 0],
     queryFn: async () => {
       if (!eventId) return [];
 
-      let query = supabase
-        .from("participants")
-        .select("id, delegation_id, participant_type, person:people(full_name, cpf, photo_url), delegation:delegations(institution:institutions(name))")
-        .eq("event_id", eventId)
-        .eq("is_active", true)
-        .order("person_id");
+      const PARTICIPANT_SELECT =
+        "id, delegation_id, participant_type, person:people(full_name, cpf, photo_url), delegation:delegations(institution:institutions(name))";
+      const PAGE = 1000;
+      const CHUNK = 200; // limite seguro para .in() na URL do PostgREST
 
-      // When inside a stage, only show participants enrolled in that stage
-      if (isStageScoped && stageParticipantIds && stageParticipantIds.size > 0) {
-        query = query.in("id", Array.from(stageParticipantIds));
+      // Pagina uma query qualquer até esgotar resultados (evita cap silencioso de 1000)
+      const paginate = async (
+        build: (from: number, to: number) => any,
+      ): Promise<any[]> => {
+        const acc: any[] = [];
+        let from = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { data, error } = await build(from, from + PAGE - 1);
+          if (error) throw error;
+          const rows = (data ?? []) as any[];
+          acc.push(...rows);
+          if (rows.length < PAGE) break;
+          from += PAGE;
+        }
+        return acc;
+      };
+
+      let parts: any[] = [];
+
+      if (isStageScoped) {
+        // Sem IDs ainda? não tem o que buscar.
+        if (!stageParticipantIds || stageParticipantIds.size === 0) return [];
+
+        // Busca em lotes de 200 IDs para não estourar a URL do PostgREST.
+        const allIds = Array.from(stageParticipantIds);
+        for (let i = 0; i < allIds.length; i += CHUNK) {
+          const slice = allIds.slice(i, i + CHUNK);
+          const chunkRows = await paginate((from, to) =>
+            supabase
+              .from("participants")
+              .select(PARTICIPANT_SELECT)
+              .eq("event_id", eventId)
+              .eq("is_active", true)
+              .in("id", slice)
+              .order("person_id")
+              .range(from, to),
+          );
+          parts.push(...chunkRows);
+        }
+      } else {
+        parts = await paginate((from, to) =>
+          supabase
+            .from("participants")
+            .select(PARTICIPANT_SELECT)
+            .eq("event_id", eventId)
+            .eq("is_active", true)
+            .order("person_id")
+            .range(from, to),
+        );
       }
 
-      const { data: parts } = await query;
-      if (!parts) return [];
+      if (parts.length === 0) return [];
 
       // Get active external credentials for this event
       const { data: creds } = await supabase
