@@ -208,6 +208,68 @@ export default function ParticipantesPage() {
     },
   });
 
+  // Etapas vinculadas a cada participante visível (badge "fase" na linha)
+  const { data: rowStageLinks = [] } = useQuery({
+    queryKey: ["participants-stage-links-page", partIds.join(",")],
+    enabled: partIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+        .select("participant_id, event_stage_id")
+        .in("participant_id", partIds);
+      if (error) throw error;
+      return (data ?? []) as Array<{ participant_id: string; event_stage_id: string }>;
+    },
+  });
+  const stageMap = useMemo(() => new Map(eventStages.map((s) => [s.id, s])), [eventStages]);
+  const linksByParticipant = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const l of rowStageLinks) {
+      const arr = m.get(l.participant_id) ?? [];
+      arr.push(l.event_stage_id);
+      m.set(l.participant_id, arr);
+    }
+    return m;
+  }, [rowStageLinks]);
+
+  const STAGE_KIND_LABEL: Record<string, string> = {
+    classificatoria: "Classif.",
+    regional: "Regional",
+    semifinal: "Semi",
+    final: "Final",
+    geral: "Geral",
+    legado: "Legado",
+    outro: "Outro",
+  };
+  const stageShortLabel = (s: { name: string; kind: string }) =>
+    STAGE_KIND_LABEL[s.kind] ?? s.name.slice(0, 14);
+  const renderStageBadges = (participantId: string) => {
+    const ids = linksByParticipant.get(participantId);
+    if (!ids || ids.length === 0) return null;
+    const stages = ids.map((id) => stageMap.get(id)).filter(Boolean) as Array<{ id: string; name: string; kind: string }>;
+    if (stages.length === 0) return null;
+    const visible = stages.slice(0, 2);
+    const extra = stages.length - visible.length;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {visible.map((s) => (
+          <Badge
+            key={s.id}
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 border-primary/40 text-primary bg-primary/5"
+            title={s.name}
+          >
+            <Layers className="h-2.5 w-2.5 mr-1" />{stageShortLabel(s)}
+          </Badge>
+        ))}
+        {extra > 0 && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0" title={stages.slice(2).map((s) => s.name).join(", ")}>
+            +{extra}
+          </Badge>
+        )}
+      </div>
+    );
+  };
+
   // Counters (total in event) - cheap head queries
   const { data: counters } = useQuery({
     queryKey: ["participants-counters", selectedEventId],
