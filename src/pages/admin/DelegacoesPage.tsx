@@ -183,16 +183,19 @@ export default function DelegacoesPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Delegações</h1>
-          <p className="text-sm text-muted-foreground mt-1">Gestão das delegações de instituições nos eventos</p>
+    <div className="animate-fade-in space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">Delegações</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
+            Gestão das delegações de instituições nos eventos
+          </p>
         </div>
         {canWrite && (
           <Button
             onClick={() => { setEditingDelegation(null); setDialogOpen(true); }}
             disabled={!events.length}
+            className="w-full sm:w-auto"
           >
             <Plus className="mr-2 h-4 w-4" />
             Nova delegação
@@ -201,18 +204,18 @@ export default function DelegacoesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        <div className="relative flex-1 min-w-[240px]">
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por escola, cidade ou chefe..."
+            placeholder="Buscar escola, cidade ou chefe..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
             {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
@@ -220,66 +223,135 @@ export default function DelegacoesPage() {
         </Select>
       </div>
 
+      {/* Result count (mobile) */}
+      {!isLoading && delegations.length > 0 && (
+        <p className="text-xs text-muted-foreground sm:hidden -mt-1">
+          {total} {total === 1 ? "delegação encontrada" : "delegações encontradas"}
+        </p>
+      )}
+
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full rounded-md" />
+            <Skeleton key={i} className="h-20 sm:h-14 w-full rounded-md" />
           ))}
         </div>
       ) : !delegations.length ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-12 sm:py-16 text-center px-4">
           <Users className="h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground font-medium">Nenhuma delegação encontrada</p>
           <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou registre a primeira delegação.</p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Escola</TableHead>
-                <TableHead>Cidade/UF</TableHead>
-                <TableHead>Rede</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Chefe</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead className="w-[80px]" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {delegations.map((del) => {
-                const d = del as any;
-                const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
-                const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
-                return (
-                  <TableRow key={del.id} className={isFetching ? "opacity-70" : ""}>
-                    <TableCell className="font-medium">{d.school_name ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{cityState || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground capitalize">{d.school_network_type ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                    </TableCell>
-                    <TableCell>{del.chief_name || "—"}</TableCell>
-                    <TableCell>{del.chief_phone || "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link to={`/admin/delegacoes/${del.id}`}>
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        {canWrite && (
-                          <Button variant="ghost" size="icon" onClick={() => { setEditingDelegation(del); setDialogOpen(true); }}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+        <>
+          {/* Mobile: Card list */}
+          <div className={`grid gap-3 sm:hidden ${isFetching ? "opacity-70" : ""}`}>
+            {delegations.map((del) => {
+              const d = del as any;
+              const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
+              const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
+              return (
+                <Link
+                  key={del.id}
+                  to={`/admin/delegacoes/${del.id}`}
+                  className="rounded-lg border bg-card p-3 active:scale-[0.99] transition-transform hover:border-primary/40"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="font-semibold text-sm text-foreground line-clamp-2 flex-1">
+                      {d.school_name ?? "—"}
+                    </h3>
+                    <Badge variant={statusInfo.variant} className="shrink-0 text-[10px] px-1.5 py-0">
+                      {statusInfo.label}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    {cityState && (
+                      <p className="flex items-center gap-1">
+                        <span className="font-medium text-foreground/70">Local:</span> {cityState}
+                        {d.school_network_type && (
+                          <span className="capitalize ml-1">· {d.school_network_type}</span>
                         )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      </p>
+                    )}
+                    {del.chief_name && (
+                      <p>
+                        <span className="font-medium text-foreground/70">Chefe:</span> {del.chief_name}
+                      </p>
+                    )}
+                    {del.chief_phone && (
+                      <p>
+                        <span className="font-medium text-foreground/70">Tel:</span> {del.chief_phone}
+                      </p>
+                    )}
+                  </div>
+                  {canWrite && (
+                    <div className="flex justify-end mt-2 pt-2 border-t border-border/50">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingDelegation(del); setDialogOpen(true); }}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" />
+                        Editar
+                      </Button>
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Desktop: Table */}
+          <div className="hidden sm:block rounded-lg border bg-card overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Escola</TableHead>
+                  <TableHead>Cidade/UF</TableHead>
+                  <TableHead>Rede</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Chefe</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead className="w-[80px]" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {delegations.map((del) => {
+                  const d = del as any;
+                  const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
+                  const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
+                  return (
+                    <TableRow key={del.id} className={isFetching ? "opacity-70" : ""}>
+                      <TableCell className="font-medium">{d.school_name ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{cityState || "—"}</TableCell>
+                      <TableCell className="text-muted-foreground capitalize">{d.school_network_type ?? "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                      </TableCell>
+                      <TableCell>{del.chief_name || "—"}</TableCell>
+                      <TableCell>{del.chief_phone || "—"}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link to={`/admin/delegacoes/${del.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          {canWrite && (
+                            <Button variant="ghost" size="icon" onClick={() => { setEditingDelegation(del); setDialogOpen(true); }}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
           <DataPagination
             page={page}
             pageSize={pageSize}
@@ -287,7 +359,7 @@ export default function DelegacoesPage() {
             onPageChange={setPage}
             onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
           />
-        </div>
+        </>
       )}
 
       <DelegationFormDialog
