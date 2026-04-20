@@ -151,6 +151,18 @@ export const systemMap: SystemMapGroup[] = [
         gaps: [],
         nextActions: [],
       },
+      {
+        id: "vouchers",
+        label: "Vouchers (QR de serviço)",
+        route: "/admin/vouchers",
+        pageFile: "src/pages/admin/VouchersPage.tsx",
+        description: "Emissão, revogação e auditoria de vouchers QR de serviço (transporte, alimentação, alojamento). Geração de QR imprimível, histórico de uso e filtros por escopo/status.",
+        roles: ["admin", "secretaria"],
+        status: ModuleStatus.DONE,
+        dataSources: ["service_vouchers", "service_voucher_uses", "participants", "people"],
+        gaps: [],
+        nextActions: [],
+      },
     ],
   },
   {

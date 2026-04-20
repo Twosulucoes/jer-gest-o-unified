@@ -68,6 +68,7 @@ import ParticipantesPage from "./pages/admin/ParticipantesPage";
 import VoucherValidarPage from "./pages/admin/VoucherValidarPage";
 import DuplicidadesPessoasPage from "./pages/admin/DuplicidadesPessoasPage";
 import PessoasPage from "./pages/admin/PessoasPage";
+import VouchersPage from "./pages/admin/VouchersPage";
 import ParticipanteHistoricoPage from "./pages/admin/ParticipanteHistoricoPage";
 import ParticipanteDetalhePage from "./pages/admin/ParticipanteDetalhePage";
 import DelegacaoDetalhePage from "./pages/admin/DelegacaoDetalhePage";
@@ -349,6 +350,7 @@ const App = () => (
               <Route path="voucher/validar" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento"]}><VoucherValidarPage /></ProtectedRoute>} />
               <Route path="pessoas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PessoasPage /></ProtectedRoute>} />
               <Route path="pessoas/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
+              <Route path="vouchers" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><VouchersPage /></ProtectedRoute>} />
               {/* Competição */}
               <Route path="competicao" element={<Navigate to="painel" replace />} />
               <Route path="competicao/painel" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelPage /></ProtectedRoute>} />
