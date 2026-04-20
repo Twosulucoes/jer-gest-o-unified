@@ -45,6 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/admin/SearchableSelect";
 import {
   Table,
   TableBody,
@@ -744,17 +745,15 @@ export default function CredenciamentoPage() {
                   )}
                 </SelectContent>
               </Select>
-              <Select value={filterInstitution} onValueChange={setFilterInstitution}>
-                <SelectTrigger className="w-full min-w-0 text-sm">
-                  <SelectValue placeholder="Instituição" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as instituições</SelectItem>
-                  {institutionOptions.map((i) => (
-                    <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={filterInstitution}
+                onChange={setFilterInstitution}
+                options={institutionOptions.map((i) => ({ value: i.id, label: i.name }))}
+                placeholder="Instituição"
+                searchPlaceholder="Pesquisar escola..."
+                allLabel="Todas as instituições"
+                emptyText="Nenhuma escola encontrada."
+              />
               {(filterType !== "all" || filterState !== "all" || filterInstitution !== "all") && (
                 <button
                   onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }}

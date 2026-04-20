@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/admin/SearchableSelect";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -445,17 +446,15 @@ export default function CredenciamentoExternoPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <Select value={filterDelegation} onValueChange={(v) => { setFilterDelegation(v); setPage(0); }}>
-              <SelectTrigger className="w-full min-w-0 text-sm">
-                <SelectValue placeholder="Delegação" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas delegações</SelectItem>
-                {delegations.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={filterDelegation}
+              onChange={(v) => { setFilterDelegation(v); setPage(0); }}
+              options={delegations.map((d) => ({ value: d.id, label: d.name }))}
+              placeholder="Delegação"
+              searchPlaceholder="Pesquisar escola..."
+              allLabel="Todas delegações"
+              emptyText="Nenhuma escola encontrada."
+            />
 
             <Select value={filterType} onValueChange={(v) => { setFilterType(v); setPage(0); }}>
               <SelectTrigger className="w-full min-w-0 text-sm">
