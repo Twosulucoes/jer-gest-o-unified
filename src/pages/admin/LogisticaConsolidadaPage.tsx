@@ -255,9 +255,9 @@ export default function LogisticaConsolidadaPage() {
       </div>
 
       {kpis.inactive > 0 && (
-        <Card className="p-3 border-amber-500/40 bg-amber-50 dark:bg-amber-950/20">
+        <Card className="p-3 border-warning/40 bg-warning/10">
           <p className="text-sm">
-            <TrendingDown className="inline h-4 w-4 mr-1 text-amber-600" />
+            <TrendingDown className="inline h-4 w-4 mr-1 text-warning" />
             <strong>{kpis.inactive}</strong> pessoa(s) elegíveis sem nenhum consumo registrado.
           </p>
         </Card>
