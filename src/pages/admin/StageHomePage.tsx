@@ -2,7 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   BadgeCheck, Trophy, Building, UtensilsCrossed, Bus,
-  AlertTriangle, ClipboardList, FileBarChart, ArrowRight,
+  AlertTriangle, ClipboardList, FileBarChart, ArrowRight, Gavel,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +30,7 @@ const MODULES: ModuleCard[] = [
   { label: "Alimentação", description: "Janelas, tipos e consumos.", icon: <UtensilsCrossed className="h-5 w-5" />, to: "alimentacao", color: "text-orange-600", roles: [...ALL_OPS, "alimentacao"] },
   { label: "Transporte", description: "Veículos, rotas e viagens.", icon: <Bus className="h-5 w-5" />, to: "transporte", color: "text-cyan-600", roles: [...ALL_OPS, "transporte"] },
   { label: "Ocorrências", description: "Registro e acompanhamento de incidentes.", icon: <AlertTriangle className="h-5 w-5" />, to: "ocorrencias", color: "text-red-600", roles: ALL_OPS },
+  { label: "Protestos (CDE)", description: "Fila de julgamento de protestos online.", icon: <Gavel className="h-5 w-5" />, to: "protestos", color: "text-rose-600", roles: [...ALL_OPS, "cde", "super_admin"] },
   { label: "Pesquisa de Satisfação", description: "Coleta de feedback dos participantes.", icon: <ClipboardList className="h-5 w-5" />, to: "pesquisa", color: "text-blue-600", roles: ALL_OPS },
   { label: "Relatórios da Etapa", description: "Relatórios operacionais desta etapa.", icon: <FileBarChart className="h-5 w-5" />, to: "relatorios", color: "text-indigo-600", roles: ALL_OPS },
 ];
