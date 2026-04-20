@@ -742,59 +742,52 @@ export default function CredenciamentoPage() {
 
           {/* Additional filters */}
           {selectedEventId && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                  <Filter className="h-3 w-3" /> Tipo
-                </label>
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os tipos</SelectItem>
-                    {participantTypeOptions.map((t) => (
-                      <SelectItem key={t} value={t}>{TYPE_LABELS[t] ?? t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                  <Filter className="h-3 w-3" /> Situação
-                </label>
-                <Select value={filterState} onValueChange={setFilterState}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as situações</SelectItem>
-                    <SelectItem value="pending_import">Pendente</SelectItem>
-                    <SelectItem value="awaiting">Confirmado</SelectItem>
-                    <SelectItem value="ready_to_emit">Pronto p/ emissão</SelectItem>
-                    <SelectItem value="complete">Credencial ativa</SelectItem>
-                    {blockedParticipantIds.size > 0 && (
-                      <SelectItem value="blocked">⚠ Irregulares ({blockedParticipantIds.size})</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                  <Filter className="h-3 w-3" /> Instituição
-                </label>
-                <Select value={filterInstitution} onValueChange={setFilterInstitution}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as instituições</SelectItem>
-                    {institutionOptions.map((i) => (
-                      <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="h-8 text-xs w-auto min-w-[120px] flex-1 sm:flex-none">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  {participantTypeOptions.map((t) => (
+                    <SelectItem key={t} value={t}>{TYPE_LABELS[t] ?? t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterState} onValueChange={setFilterState}>
+                <SelectTrigger className="h-8 text-xs w-auto min-w-[130px] flex-1 sm:flex-none">
+                  <SelectValue placeholder="Situação" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as situações</SelectItem>
+                  <SelectItem value="pending_import">Pendente</SelectItem>
+                  <SelectItem value="awaiting">Confirmado</SelectItem>
+                  <SelectItem value="ready_to_emit">Pronto p/ emissão</SelectItem>
+                  <SelectItem value="complete">Credencial ativa</SelectItem>
+                  {blockedParticipantIds.size > 0 && (
+                    <SelectItem value="blocked">⚠ Irregulares ({blockedParticipantIds.size})</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <Select value={filterInstitution} onValueChange={setFilterInstitution}>
+                <SelectTrigger className="h-8 text-xs w-auto min-w-[140px] flex-1 sm:flex-none">
+                  <SelectValue placeholder="Instituição" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as instituições</SelectItem>
+                  {institutionOptions.map((i) => (
+                    <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {(filterType !== "all" || filterState !== "all" || filterInstitution !== "all") && (
+                <button
+                  onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }}
+                  className="h-8 px-3 text-xs text-muted-foreground hover:text-foreground border rounded-md hover:bg-muted transition-colors"
+                >
+                  Limpar filtros
+                </button>
+              )}
             </div>
           )}
         </CardContent>
