@@ -3,6 +3,18 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 
+interface UseStageScopeOptions {
+  includeMatchIds?: boolean;
+}
+
+const FILTER_CHUNK_SIZE = 200;
+
+function chunkArray<T>(items: T[], size: number) {
+  return Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+    items.slice(index * size, (index + 1) * size),
+  );
+}
+
 /**
  * Hook unificado de escopo por etapa.
  *
@@ -11,10 +23,11 @@ import { useActiveEventId } from "@/contexts/EventContext";
  *  2. `?stage=` na URL — fallback para compatibilidade com links legados/banner
  *
  * Retorna o `Set<string>` de `participant_id` vinculados à etapa via
- * `participant_event_stages`. Use para filtrar listas de participantes,
- * credenciamento, partidas, etc.
+ * `participant_event_stages`. Quando `includeMatchIds` estiver ativo, também
+ * calcula o conjunto de partidas da etapa sem gerar URLs gigantes no PostgREST.
  */
-export function useStageScope() {
+export function useStageScope(options: UseStageScopeOptions = {}) {
+  const { includeMatchIds = false } = options;
   const eventId = useActiveEventId();
   const params = useParams<{ stageId?: string }>();
   const [searchParams] = useSearchParams();
@@ -44,12 +57,10 @@ export function useStageScope() {
     queryKey: ["stage_participant_ids", stageId],
     enabled: !!stageId,
     queryFn: async () => {
-      // PostgREST devolve no máximo 1000 linhas por requisição. Etapas grandes
-      // (ex.: Boa Vista com 2.7k vínculos) precisam de paginação por range,
-      // senão o filtro vaza só o primeiro lote e participantes "somem" da UI.
       const PAGE = 1000;
       const acc = new Set<string>();
       let from = 0;
+
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
@@ -57,64 +68,67 @@ export function useStageScope() {
           .eq("event_stage_id", stageId)
           .order("participant_id", { ascending: true })
           .range(from, from + PAGE - 1);
+
         if (error) {
-          // Modo ESTRITO: propaga o erro para a UI lidar.
-          // Nunca silenciar — vazar dados entre etapas é pior do que mostrar erro.
           console.error("[useStageScope] Falha ao carregar participantes da etapa.", error);
           throw error;
         }
+
         const rows = (data ?? []) as Array<{ participant_id: string }>;
-        rows.forEach((r) => acc.add(r.participant_id));
+        rows.forEach((row) => acc.add(row.participant_id));
         if (rows.length < PAGE) break;
         from += PAGE;
       }
+
       return acc;
     },
   });
 
-  // Conjunto de partidas (competition_matches.id) cujos participantes/equipes pertencem à etapa.
-  // Usado para filtrar listas de partidas/resultados sem precisar carregar tudo do evento.
   const { data: matchIds, error: matchesError } = useQuery({
-    queryKey: ["stage_match_ids", stageId, participantIds ? Array.from(participantIds).sort().join(",") : null],
-    enabled: !!stageId && !!participantIds,
+    queryKey: ["stage_match_ids", stageId, includeMatchIds, participantIds?.size ?? 0],
+    enabled: !!stageId && !!participantIds && includeMatchIds,
     queryFn: async () => {
       const ids = Array.from(participantIds!);
       if (ids.length === 0) return new Set<string>();
 
-      // 1) Inscrições individuais da etapa
-      const { data: pse, error: pseErr } = await supabase
-        .from("participant_sport_events")
-        .select("id")
-        .in("participant_id", ids);
-      if (pseErr) throw pseErr;
-      const pseIds = (pse ?? []).map((r: any) => r.id as string);
-
-      // 2) Times com algum atleta da etapa
-      const { data: tm, error: tmErr } = await supabase
-        .from("team_members")
-        .select("team_id")
-        .in("participant_id", ids);
-      if (tmErr) throw tmErr;
-      const teamIds = Array.from(new Set((tm ?? []).map((r: any) => r.team_id as string)));
-
-      // 3) Match entries que referenciem essas inscrições ou times
+      const participantChunks = chunkArray(ids, FILTER_CHUNK_SIZE);
+      const participantSportEventIds: string[] = [];
+      const teamIdSet = new Set<string>();
       const matchSet = new Set<string>();
-      if (pseIds.length > 0) {
-        const { data: e1, error: e1Err } = await supabase
+
+      for (const chunk of participantChunks) {
+        const [{ data: pse, error: pseErr }, { data: teamMembers, error: teamErr }] = await Promise.all([
+          supabase.from("participant_sport_events").select("id").in("participant_id", chunk),
+          supabase.from("team_members").select("team_id").in("participant_id", chunk),
+        ]);
+
+        if (pseErr) throw pseErr;
+        if (teamErr) throw teamErr;
+
+        (pse ?? []).forEach((row: any) => participantSportEventIds.push(row.id as string));
+        (teamMembers ?? []).forEach((row: any) => {
+          if (row.team_id) teamIdSet.add(row.team_id as string);
+        });
+      }
+
+      for (const chunk of chunkArray(participantSportEventIds, FILTER_CHUNK_SIZE)) {
+        const { data, error } = await supabase
           .from("competition_match_entries")
           .select("match_id")
-          .in("participant_sport_event_id", pseIds);
-        if (e1Err) throw e1Err;
-        (e1 ?? []).forEach((r: any) => matchSet.add(r.match_id));
+          .in("participant_sport_event_id", chunk);
+        if (error) throw error;
+        (data ?? []).forEach((row: any) => matchSet.add(row.match_id));
       }
-      if (teamIds.length > 0) {
-        const { data: e2, error: e2Err } = await supabase
+
+      for (const chunk of chunkArray(Array.from(teamIdSet), FILTER_CHUNK_SIZE)) {
+        const { data, error } = await supabase
           .from("competition_match_entries")
           .select("match_id")
-          .in("team_id", teamIds);
-        if (e2Err) throw e2Err;
-        (e2 ?? []).forEach((r: any) => matchSet.add(r.match_id));
+          .in("team_id", chunk);
+        if (error) throw error;
+        (data ?? []).forEach((row: any) => matchSet.add(row.match_id));
       }
+
       return matchSet;
     },
   });
