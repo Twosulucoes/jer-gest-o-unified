@@ -198,8 +198,21 @@ export default function CredenciamentoPage() {
     }
   }, [selectedEventId, templateFetched, eventTemplate]);
 
-  // --- Stage filter (?stage= na URL) ---
-  const { stageId, participantIds: stageParticipantIds } = useStageParticipantFilter();
+  // --- Stage filter (?stage= na URL ou /admin/etapa/:stageId) ---
+  const { stageId, participantIds: stageParticipantIds, isLoading: stageLoading } = useStageParticipantFilter();
+
+  // Debug: ajuda a diagnosticar quando o filtro de etapa retorna vazio
+  useEffect(() => {
+    if (stageId) {
+      // eslint-disable-next-line no-console
+      console.log("[CredenciamentoPage] stage scope", {
+        stageId,
+        eventId: selectedEventId,
+        stageLoading,
+        participantIdsSize: stageParticipantIds?.size ?? null,
+      });
+    }
+  }, [stageId, selectedEventId, stageLoading, stageParticipantIds]);
 
   // --- Participants ---
   // Busca todos os participantes do evento (ou da etapa) em chunks de 1000 — sem limite arbitrário.
