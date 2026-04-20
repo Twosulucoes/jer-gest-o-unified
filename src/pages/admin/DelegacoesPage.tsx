@@ -94,15 +94,20 @@ export default function DelegacoesPage() {
   });
 
   // Reset page when filters change
-  useEffect(() => { setPage(0); }, [debouncedSearch, statusFilter, stageId]);
+  useEffect(() => { setPage(0); }, [debouncedSearch, statusFilter, stageId, networkFilter, cityFilter, sortBy, sortDir]);
 
   const { data: pageData, isLoading, isFetching } = useQuery({
     queryKey: [
       "delegations-page",
+      selectedEventId,
       page,
       pageSize,
       debouncedSearch,
       statusFilter,
+      networkFilter,
+      cityFilter,
+      sortBy,
+      sortDir,
       stageId,
       (stageDelegationIds ?? []).length,
     ],
@@ -113,7 +118,10 @@ export default function DelegacoesPage() {
         .from("delegations")
         .select("*", { count: "exact" });
 
+      if (selectedEventId) q = q.eq("event_id", selectedEventId);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      if (networkFilter !== "all") q = q.eq("school_network_type", networkFilter);
+      if (cityFilter !== "all") q = q.eq("school_city", cityFilter);
 
       if (debouncedSearch.trim().length >= 2) {
         const term = debouncedSearch.trim().replace(/[%,]/g, "");
@@ -136,7 +144,7 @@ export default function DelegacoesPage() {
       const from = page * pageSize;
       const to = from + pageSize - 1;
       const { data, error, count } = await q
-        .order("created_at", { ascending: false })
+        .order(sortBy, { ascending: sortDir === "asc", nullsFirst: false })
         .range(from, to);
       if (error) throw error;
       return { rows: data ?? [], total: count ?? 0 };
@@ -145,6 +153,25 @@ export default function DelegacoesPage() {
 
   const delegations = pageData?.rows ?? [];
   const total = pageData?.total ?? 0;
+
+  // Distinct cities for the city filter (no escopo do evento)
+  const { data: cityOptions = [] } = useQuery({
+    queryKey: ["delegacoes-cities", selectedEventId],
+    enabled: !!selectedEventId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("delegations")
+        .select("school_city")
+        .eq("event_id", selectedEventId!)
+        .not("school_city", "is", null)
+        .order("school_city", { ascending: true })
+        .limit(2000);
+      if (error) throw error;
+      const set = new Set<string>();
+      (data ?? []).forEach((r: any) => { if (r.school_city) set.add(r.school_city); });
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+    },
+  });
 
   // Etapas por delegação (badges nas linhas)
   const delegIds = delegations.map((d: any) => d.id);
