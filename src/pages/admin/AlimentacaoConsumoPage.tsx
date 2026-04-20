@@ -215,20 +215,35 @@ export default function AlimentacaoConsumoPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Janela de Refeição</label>
-              <Select value={selectedWindowId} onValueChange={setSelectedWindowId} disabled={!selectedEventId}>
-                <SelectTrigger><SelectValue placeholder="Selecione a janela" /></SelectTrigger>
+              <Select value={selectedWindowId} onValueChange={setSelectedWindowId} disabled={!selectedEventId || windowsLoading}>
+                <SelectTrigger>
+                  <SelectValue placeholder={windowsLoading ? "Carregando…" : (windows.length === 0 ? "Nenhuma janela cadastrada" : "Selecione a janela")} />
+                </SelectTrigger>
                 <SelectContent>
-                  {windows.map((w) => {
+                  {windows.map((w: any) => {
                     const mt = mealTypesMap.get(w.meal_type_id);
                     const dateStr = new Date(w.service_date + "T00:00:00").toLocaleDateString("pt-BR");
+                    const title = w.label || mt?.name || "Refeição";
+                    const subtitle = mt?.name && w.label && w.label !== mt.name ? ` (${mt.name})` : "";
                     return (
                       <SelectItem key={w.id} value={w.id}>
-                        {mt?.name ?? "?"} — {dateStr} {w.start_time?.slice(0, 5)}–{w.end_time?.slice(0, 5)}{w.location ? ` (${w.location})` : ""}
+                        {title}{subtitle} — {dateStr} {w.start_time?.slice(0, 5)}–{w.end_time?.slice(0, 5)}{w.location ? ` · ${w.location}` : ""}
                       </SelectItem>
                     );
                   })}
                 </SelectContent>
               </Select>
+              {showingFallbackWindows && (
+                <p className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Esta etapa não possui janelas próprias — exibindo todas do evento.
+                </p>
+              )}
+              {!windowsLoading && windows.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Cadastre janelas em <span className="font-medium">Alimentação → Janelas</span>.
+                </p>
+              )}
             </div>
           </div>
         </CardContent>
