@@ -21,6 +21,9 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Database } from "@/integrations/supabase/types";
+import { NavigationHistoryTracker } from "@/hooks/useNavigationHistory";
+import { EtapaSwitcher } from "@/components/navigation/EtapaSwitcher";
+import { BackButton } from "@/components/navigation/BackButton";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
