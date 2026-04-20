@@ -6443,6 +6443,7 @@ export type Database = {
           city: string | null
           created_at: string
           event_id: string
+          event_stage_id: string
           id: string
           is_active: boolean
           name: string
@@ -6456,6 +6457,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           event_id: string
+          event_stage_id: string
           id?: string
           is_active?: boolean
           name: string
@@ -6469,6 +6471,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           event_id?: string
+          event_stage_id?: string
           id?: string
           is_active?: boolean
           name?: string
@@ -6483,6 +6486,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venues_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
         ]
