@@ -17,11 +17,11 @@ interface Researcher {
   id: string;
   name: string;
   event_id: string;
-  event_stage_id: string | null;
+  event_stage_id?: string | null;
   active: boolean;
   last_login_at: string | null;
   assigned_location?: string | null;
-  pesquisa_events?: { name: string; event_stage_id: string | null } | null;
+  pesquisa_events?: { name: string; event_stage_id?: string | null } | null;
 }
 
 export default function PesquisaPesquisadoresPage() {
@@ -50,7 +50,7 @@ export default function PesquisaPesquisadoresPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pesquisa_researchers')
-        .select('id, name, event_id, event_stage_id, active, last_login_at, assigned_location, pesquisa_events(name, event_stage_id)')
+        .select('id, name, event_id, active, last_login_at, assigned_location, pesquisa_events(name)')
         .order('name');
       if (error) throw error;
       return data as unknown as Researcher[];
@@ -59,14 +59,11 @@ export default function PesquisaPesquisadoresPage() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const selectedEvent = events?.find(e => e.id === form.event_id);
-      const eventStageId = selectedEvent?.event_stage_id ?? null;
       if (editing) {
         const { error } = await supabase.from('pesquisa_researchers')
           .update({
             name: form.name.trim(),
             event_id: form.event_id,
-            event_stage_id: eventStageId,
             active: form.active,
             assigned_location: form.assigned_location.trim() || null,
           })
@@ -80,7 +77,6 @@ export default function PesquisaPesquisadoresPage() {
         const { error } = await supabase.from('pesquisa_researchers').insert({
           name: form.name.trim(),
           event_id: form.event_id,
-          event_stage_id: eventStageId,
           active: form.active,
           pin_hash: hash as string,
           assigned_location: form.assigned_location.trim() || null,
@@ -224,7 +220,7 @@ export default function PesquisaPesquisadoresPage() {
             <div className="text-center space-y-4 py-4">
               <p className="text-lg font-bold">PIN gerado: <span className="text-primary text-2xl">{generatedPin}</span></p>
               <p className="text-sm text-muted-foreground">Anote o PIN — ele não poderá ser visualizado depois.</p>
-              <Button onClick={() => { copyMessage({ name: form.name, id: '', event_id: form.event_id, active: true, last_login_at: null, assigned_location: form.assigned_location || null }, generatedPin); }}>
+              <Button onClick={() => { copyMessage({ name: form.name, id: '', event_id: form.event_id, event_stage_id: null, active: true, last_login_at: null, assigned_location: form.assigned_location || null }, generatedPin); }}>
                 <Copy className="h-4 w-4 mr-2" /> Copiar mensagem com PIN
               </Button>
               <Button variant="outline" onClick={() => { setDialogOpen(false); setGeneratedPin(''); }}>Fechar</Button>
