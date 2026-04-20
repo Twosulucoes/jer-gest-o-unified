@@ -67,6 +67,9 @@ export function BackButton({
     navigate(moduleHome);
   }, [navigate, moduleKey, currentFullPath, fallbackTo, isAtModuleHome, moduleHome]);
 
+  // Hide on /admin root if there is no history (nothing meaningful to go back to)
+  if (!hasPrev && moduleKey === "_root") return null;
+
   return (
     <Button
       type="button"
