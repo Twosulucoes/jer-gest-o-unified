@@ -66,6 +66,7 @@ import PreValidacaoPage from "./pages/admin/PreValidacaoPage";
 import CompeticaoPainelPage from "./pages/admin/CompeticaoPainelPage";
 import ParticipantesPage from "./pages/admin/ParticipantesPage";
 import VoucherValidarPage from "./pages/admin/VoucherValidarPage";
+import DuplicidadesPessoasPage from "./pages/admin/DuplicidadesPessoasPage";
 import ParticipanteHistoricoPage from "./pages/admin/ParticipanteHistoricoPage";
 import ParticipanteDetalhePage from "./pages/admin/ParticipanteDetalhePage";
 import DelegacaoDetalhePage from "./pages/admin/DelegacaoDetalhePage";
