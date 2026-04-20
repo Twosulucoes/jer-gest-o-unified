@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
   return new Response(
     JSON.stringify({
       event_id: eventId,
-      event_stage_id: stageId ?? null,
+      event_stage_id: eventStageId ?? null,
       generated_at: new Date().toISOString(),
       items: data || [],
     }),
