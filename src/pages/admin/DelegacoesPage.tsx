@@ -438,6 +438,74 @@ export default function DelegacoesPage() {
     return acc;
   };
 
+  // ── PDF: colunas compactas para o relatório ──
+  const pdfColumns: PdfListColumn<any>[] = [
+    { header: "Escola", width: "30%", accessor: (d) => d.school_name ?? "" },
+    { header: "Rede", width: "10%", accessor: (d) => NETWORK_LABEL[d.school_network_type] ?? d.school_network_type ?? "" },
+    { header: "Município/UF", width: "18%", accessor: (d) => `${d.school_city ?? "—"}${d.school_state ? "/" + d.school_state : ""}` },
+    { header: "Status", width: "10%", accessor: (d) => STATUS_MAP[d.status]?.label ?? d.status ?? "" },
+    { header: "Chefe", width: "16%", accessor: (d) => d.chief_name ?? "" },
+    { header: "Contato", width: "16%", accessor: (d) => d.chief_phone || d.chief_email || d.school_contact_phone || "" },
+  ];
+
+  const buildGroups = (rows: any[]): PdfListGroup<any>[] => {
+    if (groupBy === "none") return [{ label: "", rows }];
+    const map = new Map<string, PdfListGroup<any>>();
+    for (const d of rows) {
+      let entries: { key: string; label: string }[] = [];
+      if (groupBy === "school_city") {
+        const c = d.school_city || "Sem município";
+        entries = [{ key: c, label: `Município: ${c}` }];
+      } else if (groupBy === "status") {
+        const k = d.status || "—";
+        entries = [{ key: k, label: `Status: ${STATUS_MAP[k]?.label ?? k}` }];
+      } else if (groupBy === "school_network_type") {
+        const k = d.school_network_type || "—";
+        entries = [{ key: k, label: `Rede: ${NETWORK_LABEL[k] ?? k}` }];
+      } else if (groupBy === "stage") {
+        const ids = stagesByDelegation.get(d.id);
+        if (!ids || ids.size === 0) entries = [{ key: "__no__", label: "Etapa: Sem etapa" }];
+        else entries = Array.from(ids).map((id) => ({ key: id, label: `Etapa: ${stageMap.get(id)?.name ?? id}` }));
+      }
+      for (const { key, label } of entries) {
+        const g = map.get(key) ?? { label, rows: [] };
+        g.rows.push(d);
+        map.set(key, g);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+  };
+
+  const handleDelegacoesPdf = async (scope: "filtered" | "all", rows: any[]) => {
+    const filters: Array<{ label: string; value: string }> = [];
+    if (scope === "filtered") {
+      if (debouncedSearch.trim().length >= 2) filters.push({ label: "Busca", value: debouncedSearch.trim() });
+      if (statusFilter !== "all") filters.push({ label: "Status", value: STATUS_MAP[statusFilter]?.label ?? statusFilter });
+      if (networkFilter !== "all") filters.push({ label: "Rede", value: NETWORK_LABEL[networkFilter] ?? networkFilter });
+      if (cityFilter !== "all") filters.push({ label: "Município", value: cityFilter });
+      if (stageId) {
+        const s = eventStages.find((x) => x.id === stageId);
+        if (s) filters.push({ label: "Etapa", value: s.name });
+      }
+      filters.push({ label: "Ordenação", value: `${sortBy} ${sortDir.toUpperCase()}` });
+    }
+    const groups = buildGroups(rows);
+    const groupingLabel = groupBy !== "none"
+      ? `Agrupado por: ${({ school_city: "Município", status: "Status", school_network_type: "Rede", stage: "Etapa" } as any)[groupBy]}`
+      : undefined;
+    const blob = await exportListPdf(pdfColumns, groups, {
+      title: "Relatório de Delegações",
+      subtitle: scope === "filtered" ? "Listagem filtrada" : "Listagem geral",
+      branding,
+      eventName: events.find((e) => e.id === selectedEventId)?.name,
+      generatedAt: new Date(),
+      filters,
+      groupingLabel,
+      orientation: "landscape",
+    });
+    downloadBlob(blob, `delegacoes_${scope === "all" ? "geral" : "filtrado"}_${Date.now()}.pdf`);
+  };
+
   return (
     <div className="animate-fade-in space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -453,6 +521,7 @@ export default function DelegacoesPage() {
             fetchFilteredRows={fetchAllFilteredDelegations}
             fetchAllRows={fetchAllDelegations}
             columns={exportColumns}
+            onPdf={handleDelegacoesPdf}
             filenamePrefix="delegacoes"
             sheetName="Delegações"
             disabled={!selectedEventId}
