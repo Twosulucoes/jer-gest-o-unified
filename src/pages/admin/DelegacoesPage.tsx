@@ -550,6 +550,13 @@ export default function DelegacoesPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <PdfFieldsPicker
+            options={pdfFieldOptions}
+            value={pdfFields}
+            onChange={setPdfFields}
+            defaults={PDF_DEFAULT_FIELDS}
+            max={8}
+          />
           <ExportButton
             filteredRows={delegations as any[]}
             fetchFilteredRows={fetchAllFilteredDelegations}
