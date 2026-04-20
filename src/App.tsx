@@ -165,6 +165,10 @@ import DelegacaoParticipantesPage from "./pages/pwa/delegacao/DelegacaoParticipa
 import DelegacaoAgendaPage from "./pages/pwa/delegacao/DelegacaoAgendaPage";
 import DelegacaoLogisticaPage from "./pages/pwa/delegacao/DelegacaoLogisticaPage";
 import DelegacaoLocaisPage from "./pages/pwa/delegacao/DelegacaoLocaisPage";
+import DelegacaoProtestosPage from "./pages/pwa/delegacao/DelegacaoProtestosPage";
+import DelegacaoProtestoNovoPage from "./pages/pwa/delegacao/DelegacaoProtestoNovoPage";
+import DelegacaoProtestoDetalhePage from "./pages/pwa/delegacao/DelegacaoProtestoDetalhePage";
+import ProtestosFilaPage from "./pages/admin/ProtestosFilaPage";
 import QrDiagnosticoPage from "./pages/pwa/diagnostico/QrDiagnosticoPage";
 import PwaDebugPage from "./pages/pwa/PwaDebugPage";
 import NotFound from "./pages/NotFound";
@@ -389,6 +393,7 @@ const App = () => (
               <Route path="transporte/relatorios" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteRelatoriosPage /></ProtectedRoute>} />
               {/* Ocorrências */}
               <Route path="ocorrencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><OcorrenciasPage /></ProtectedRoute>} />
+              <Route path="protestos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "cde", "super_admin"]}><ProtestosFilaPage /></ProtectedRoute>} />
               {/* Pesquisa */}
               <Route path="pesquisa" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><PesquisaDashboardPage /></ProtectedRoute>} />
               <Route path="pesquisa/eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><PesquisaEventosPage /></ProtectedRoute>} />
@@ -447,6 +452,9 @@ const App = () => (
             <Route path="/pwa/delegacao/agenda" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoAgendaPage /></PwaRouteGuard>} />
             <Route path="/pwa/delegacao/logistica" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoLogisticaPage /></PwaRouteGuard>} />
             <Route path="/pwa/delegacao/locais" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoLocaisPage /></PwaRouteGuard>} />
+            <Route path="/pwa/delegacao/protestos" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestosPage /></PwaRouteGuard>} />
+            <Route path="/pwa/delegacao/protestos/novo" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
+            <Route path="/pwa/delegacao/protestos/:id" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
             {/* PWA Diagnóstico */}
             <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
             <Route path="/pwa/debug" element={<PwaDebugPage />} />
