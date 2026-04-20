@@ -252,48 +252,29 @@ export default function CredenciamentoPage() {
   // Nesse caso, ignoramos o filtro de etapa (melhor mostrar todos do evento que mostrar vazio falso).
   const effectiveStageFilter = stageId && stageIdsArray ? stageIdsArray : null;
 
-  const { data: allParticipants, isLoading, error: participantsError } = useQuery({
-    queryKey: ["credenciamento-participants", selectedEventId, stageId, effectiveStageFilter?.length ?? -1],
-    queryFn: async () => {
-      if (!selectedEventId) return [];
-      if (effectiveStageFilter && effectiveStageFilter.length === 0) return [];
+  const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id,
+    person:people!participants_person_id_fkey(full_name, cpf),
+    delegation:delegations!participants_delegation_id_fkey(institution:institutions(id, name))`;
 
-      const CHUNK = FILTER_CHUNK_SIZE;
-      const all: any[] = [];
-      const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id,
-        person:people!participants_person_id_fkey(full_name, cpf),
-        delegation:delegations!participants_delegation_id_fkey(institution:institutions(id, name))`;
-
-      const idChunks: (string[] | null)[] = effectiveStageFilter
-        ? chunkArray(effectiveStageFilter, CHUNK)
-        : [null];
-
-      for (const ids of idChunks) {
-        let from = 0;
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          let q = supabase
-            .from("participants")
-            .select(PARTICIPANT_SELECT)
-            .eq("event_id", selectedEventId)
-            .eq("is_active", true)
-            .in("status", ["pending", "confirmed", "credentialed"]);
-          if (ids) q = q.in("id", ids);
-          const { data, error } = await q
-            .order("id", { ascending: true })
-            .range(from, from + 999);
-          if (error) throw error;
-          if (!data || data.length === 0) break;
-          all.push(...data);
-          if (data.length < 1000) break;
-          from += 1000;
-        }
-      }
-
-      return all;
-    },
+  const {
+    data: progressiveParts,
+    firstPageReady,
+    isBackgroundLoading: participantsBgLoading,
+    error: participantsError,
+  } = useProgressiveParticipants<any>({
+    eventId: selectedEventId,
+    select: PARTICIPANT_SELECT,
+    onlyActive: true,
+    statusIn: ["pending", "confirmed", "credentialed"],
+    participantIdsScope: effectiveStageFilter,
+    orderBy: "id",
+    cacheKey: `cred-${stageId ?? "all"}`,
     enabled: !!selectedEventId,
   });
+
+  // Mostra skeleton só até a 1ª página chegar; depois UI já renderiza
+  const isLoading = !firstPageReady && !!selectedEventId;
+  const allParticipants = progressiveParts;
 
   const participants = useMemo(() => (allParticipants ?? []) as CredentialParticipantRow[], [allParticipants]);
 
