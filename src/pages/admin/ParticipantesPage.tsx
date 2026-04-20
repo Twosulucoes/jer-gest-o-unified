@@ -21,6 +21,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { DataPagination } from "@/components/ui/data-pagination";
 import ExportButton from "@/components/admin/ExportButton";
 import type { ExportColumn } from "@/lib/exportData";
+import { useEventBranding } from "@/hooks/useEventBranding";
+import { exportListPdf, downloadBlob, type PdfListColumn, type PdfListGroup } from "@/lib/listReportPdf";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -53,6 +55,8 @@ export default function ParticipantesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const stageFilterId = searchParams.get("stage");
+
+  const { data: branding } = useEventBranding(selectedEventId);
 
   // Lista de etapas ativas do evento (para o select e para os badges das linhas)
   const { data: eventStages = [] } = useQuery({
@@ -487,6 +491,44 @@ export default function ParticipantesPage() {
     return acc;
   };
 
+  // ── PDF: colunas compactas para o relatório ──
+  const pdfColumns: PdfListColumn<any>[] = [
+    { header: "Nome", width: "26%", accessor: (p) => p.person?.full_name ?? "" },
+    { header: "CPF", width: "12%", accessor: (p) => p.person?.cpf ?? "" },
+    { header: "Tipo", width: "10%", accessor: (p) => TYPE_LABELS[p.participant_type] ?? p.participant_type ?? "" },
+    { header: "Status", width: "10%", accessor: (p) => STATUS_LABELS[p.status]?.label ?? p.status ?? "" },
+    { header: "Instituição", width: "22%", accessor: (p) => p.delegation?.institution?.name ?? p.delegation?.school_name ?? "" },
+    { header: "Etapas", width: "20%", accessor: (p) => {
+      const ids = linksByParticipant.get(p.id) ?? [];
+      return ids.map((id) => stageMap.get(id)?.name).filter(Boolean).join(", ");
+    } },
+  ];
+
+  const handleParticipantesPdf = async (scope: "filtered" | "all", rowsAll: any[]) => {
+    const filters: Array<{ label: string; value: string }> = [];
+    if (scope === "filtered") {
+      if (debouncedSearch.trim().length >= 2) filters.push({ label: "Busca", value: debouncedSearch.trim() });
+      if (typeFilter !== "all") filters.push({ label: "Tipo", value: TYPE_LABELS[typeFilter] ?? typeFilter });
+      if (statusFilter !== "all") filters.push({ label: "Status", value: STATUS_LABELS[statusFilter]?.label ?? statusFilter });
+      if (stageFilterId) {
+        const s = eventStages.find((x) => x.id === stageFilterId);
+        if (s) filters.push({ label: "Etapa", value: s.name });
+      }
+      filters.push({ label: "Ordenação", value: `${sortBy} ${sortDir.toUpperCase()}` });
+    }
+    const groups: PdfListGroup<any>[] = [{ label: "", rows: rowsAll }];
+    const blob = await exportListPdf(pdfColumns, groups, {
+      title: "Relatório de Participantes",
+      subtitle: scope === "filtered" ? "Listagem filtrada" : "Listagem geral",
+      branding,
+      eventName: events.find((e) => e.id === selectedEventId)?.name,
+      generatedAt: new Date(),
+      filters,
+      orientation: "landscape",
+    });
+    downloadBlob(blob, `participantes_${scope === "all" ? "geral" : "filtrado"}_${Date.now()}.pdf`);
+  };
+
   return (
     <div className="animate-fade-in space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -502,6 +544,7 @@ export default function ParticipantesPage() {
             fetchFilteredRows={fetchAllFilteredParticipants}
             fetchAllRows={fetchAllParticipants}
             columns={exportColumns}
+            onPdf={handleParticipantesPdf}
             filenamePrefix="participantes"
             sheetName="Participantes"
             disabled={!selectedEventId}
