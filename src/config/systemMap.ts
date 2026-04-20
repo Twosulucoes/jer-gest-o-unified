@@ -153,6 +153,8 @@ export const systemMap: SystemMapGroup[] = [
       },
     ],
   },
+  {
+    id: "credenciamento",
     label: "Credenciamento",
     items: [
       {
