@@ -110,10 +110,7 @@ export default function SuperConfigPage() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => {
-                if (!window.confirm("Confirma o refresh de todas as máquinas conectadas?")) return;
-                refreshAllMutation.mutate();
-              }}
+              onClick={() => refreshAllMutation.mutate()}
               disabled={refreshAllMutation.isPending}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
