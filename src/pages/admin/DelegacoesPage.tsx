@@ -386,6 +386,7 @@ export default function DelegacoesPage() {
                       <p>
                         <span className="font-medium text-foreground/70">Tel:</span> {del.chief_phone}
                       </p>
+                    )}
                   </div>
                   <div className="mt-2">{renderStageBadges(del.id)}</div>
                   {canWrite && (
@@ -417,6 +418,7 @@ export default function DelegacoesPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Chefe</TableHead>
                   <TableHead>Telefone</TableHead>
+                  <TableHead>Etapa(s)</TableHead>
                   <TableHead className="w-[80px]" />
                 </TableRow>
               </TableHeader>
@@ -435,6 +437,7 @@ export default function DelegacoesPage() {
                       </TableCell>
                       <TableCell>{del.chief_name || "—"}</TableCell>
                       <TableCell>{del.chief_phone || "—"}</TableCell>
+                      <TableCell>{renderStageBadges(del.id) ?? <span className="text-xs text-muted-foreground">—</span>}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" asChild>
