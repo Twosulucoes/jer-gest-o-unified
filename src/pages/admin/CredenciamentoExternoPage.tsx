@@ -483,7 +483,14 @@ export default function CredenciamentoExternoPage() {
         </CardContent>
       </Card>
 
-      {/* Loading */}
+      {/* Indicador de carregamento em segundo plano */}
+      <BackgroundLoadingIndicator
+        loaded={allParticipants.length}
+        isLoading={isBackgroundLoading}
+        label="participantes"
+      />
+
+      {/* Loading inicial */}
       {searchLoading && (
         <div className="space-y-2">
           <Skeleton className="h-16 w-full" />
