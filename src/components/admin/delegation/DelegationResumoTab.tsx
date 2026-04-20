@@ -195,11 +195,11 @@ export default function DelegationResumoTab({ delegation, institution, event }: 
 function IndicatorCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   return (
     <Card>
-      <CardContent className="flex items-center gap-2.5 p-3">
-        {icon}
-        <div>
-          <p className="text-lg font-bold leading-none text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+      <CardContent className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2.5 p-2 sm:p-3 text-center sm:text-left">
+        <span className="shrink-0">{icon}</span>
+        <div className="min-w-0">
+          <p className="text-base sm:text-lg font-bold leading-none text-foreground">{value}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-tight truncate">{label}</p>
         </div>
       </CardContent>
     </Card>
