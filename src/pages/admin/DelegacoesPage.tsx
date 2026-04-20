@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Plus, Pencil, Users, Eye, Search } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Plus, Pencil, Users, Eye, Search, Layers } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,8 @@ const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondar
 export default function DelegacoesPage() {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
+  const selectedEventId = useActiveEventId();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDelegation, setEditingDelegation] = useState<Tables<"delegations"> | null>(null);
   const [search, setSearch] = useState("");
@@ -49,7 +52,29 @@ export default function DelegacoesPage() {
     },
   });
 
+  // Etapas ativas do evento (para o select e badges das linhas)
+  const { data: eventStages = [] } = useQuery({
+    queryKey: ["delegacoes-event-stages", selectedEventId],
+    enabled: !!selectedEventId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("event_stages" as never) as any)
+        .select("id, name, slug, kind, sort_order, status")
+        .eq("event_id", selectedEventId!)
+        .eq("status", "active")
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string; slug: string; kind: string; sort_order: number; status: string }>;
+    },
+  });
+
   const { stageId } = useStageParticipantFilter();
+
+  const setStageFilter = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (id === "all") next.delete("stage");
+    else next.set("stage", id);
+    setSearchParams(next, { replace: true });
+  };
 
   const { data: stageDelegationIds } = useQuery({
     queryKey: ["stage_delegation_ids", stageId],
@@ -115,6 +140,69 @@ export default function DelegacoesPage() {
 
   const delegations = pageData?.rows ?? [];
   const total = pageData?.total ?? 0;
+
+  // Etapas por delegação (badges nas linhas)
+  const delegIds = delegations.map((d: any) => d.id);
+  const { data: rowStageLinks = [] } = useQuery({
+    queryKey: ["delegations-stage-links-page", delegIds.join(",")],
+    enabled: delegIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+        .select("event_stage_id, participants!inner(delegation_id)")
+        .in("participants.delegation_id", delegIds);
+      if (error) throw error;
+      return (data ?? []) as Array<{ event_stage_id: string; participants: { delegation_id: string } }>;
+    },
+  });
+  const stageMap = useMemo(() => new Map(eventStages.map((s) => [s.id, s])), [eventStages]);
+  const stagesByDelegation = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const l of rowStageLinks) {
+      const did = l.participants?.delegation_id;
+      if (!did) continue;
+      const set = m.get(did) ?? new Set<string>();
+      set.add(l.event_stage_id);
+      m.set(did, set);
+    }
+    return m;
+  }, [rowStageLinks]);
+
+  const STAGE_KIND_LABEL: Record<string, string> = {
+    classificatoria: "Classif.",
+    regional: "Regional",
+    semifinal: "Semi",
+    final: "Final",
+    geral: "Geral",
+    legado: "Legado",
+    outro: "Outro",
+  };
+  const renderStageBadges = (delegationId: string) => {
+    const ids = stagesByDelegation.get(delegationId);
+    if (!ids || ids.size === 0) return null;
+    const stages = Array.from(ids).map((id) => stageMap.get(id)).filter(Boolean) as Array<{ id: string; name: string; kind: string }>;
+    if (stages.length === 0) return null;
+    const visible = stages.slice(0, 2);
+    const extra = stages.length - visible.length;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {visible.map((s) => (
+          <Badge
+            key={s.id}
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 border-primary/40 text-primary bg-primary/5"
+            title={s.name}
+          >
+            <Layers className="h-2.5 w-2.5 mr-1" />{STAGE_KIND_LABEL[s.kind] ?? s.name.slice(0, 14)}
+          </Badge>
+        ))}
+        {extra > 0 && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0" title={stages.slice(2).map((s) => s.name).join(", ")}>
+            +{extra}
+          </Badge>
+        )}
+      </div>
+    );
+  };
 
   const toPayload = (values: DelegationFormValues) => ({
     event_id: values.event_id,
@@ -221,6 +309,22 @@ export default function DelegacoesPage() {
             {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select
+          value={stageId ?? "all"}
+          onValueChange={setStageFilter}
+          disabled={!selectedEventId || eventStages.length === 0}
+        >
+          <SelectTrigger className="w-full sm:w-[280px]">
+            <Layers className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
+            <SelectValue placeholder="Todas as etapas" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as etapas</SelectItem>
+            {eventStages.map((s) => (
+              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Result count (mobile) */}
@@ -284,6 +388,7 @@ export default function DelegacoesPage() {
                       </p>
                     )}
                   </div>
+                  <div className="mt-2">{renderStageBadges(del.id)}</div>
                   {canWrite && (
                     <div className="flex justify-end mt-2 pt-2 border-t border-border/50">
                       <Button
@@ -313,6 +418,7 @@ export default function DelegacoesPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Chefe</TableHead>
                   <TableHead>Telefone</TableHead>
+                  <TableHead>Etapa(s)</TableHead>
                   <TableHead className="w-[80px]" />
                 </TableRow>
               </TableHeader>
@@ -331,6 +437,7 @@ export default function DelegacoesPage() {
                       </TableCell>
                       <TableCell>{del.chief_name || "—"}</TableCell>
                       <TableCell>{del.chief_phone || "—"}</TableCell>
+                      <TableCell>{renderStageBadges(del.id) ?? <span className="text-xs text-muted-foreground">—</span>}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" asChild>

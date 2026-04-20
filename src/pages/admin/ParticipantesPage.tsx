@@ -50,18 +50,29 @@ export default function ParticipantesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const stageFilterId = searchParams.get("stage");
 
-  const { data: stageInfo } = useQuery({
-    queryKey: ["participantes-stage-info", stageFilterId],
-    enabled: !!stageFilterId,
+  // Lista de etapas ativas do evento (para o select e para os badges das linhas)
+  const { data: eventStages = [] } = useQuery({
+    queryKey: ["participantes-event-stages", selectedEventId],
+    enabled: !!selectedEventId,
     queryFn: async () => {
       const { data, error } = await (supabase.from("event_stages" as never) as any)
-        .select("id, name, slug")
-        .eq("id", stageFilterId)
-        .maybeSingle();
+        .select("id, name, slug, kind, sort_order, status")
+        .eq("event_id", selectedEventId!)
+        .eq("status", "active")
+        .order("sort_order", { ascending: true });
       if (error) throw error;
-      return data as { id: string; name: string; slug: string } | null;
+      return (data ?? []) as Array<{ id: string; name: string; slug: string; kind: string; sort_order: number; status: string }>;
     },
   });
+
+  const stageInfo = stageFilterId ? eventStages.find((s) => s.id === stageFilterId) ?? null : null;
+
+  const setStageFilter = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (id === "all") next.delete("stage");
+    else next.set("stage", id);
+    setSearchParams(next, { replace: true });
+  };
 
   const { data: stageParticipantIds } = useQuery({
     queryKey: ["participantes-stage-participants", stageFilterId],
@@ -197,6 +208,68 @@ export default function ParticipantesPage() {
     },
   });
 
+  // Etapas vinculadas a cada participante visível (badge "fase" na linha)
+  const { data: rowStageLinks = [] } = useQuery({
+    queryKey: ["participants-stage-links-page", partIds.join(",")],
+    enabled: partIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+        .select("participant_id, event_stage_id")
+        .in("participant_id", partIds);
+      if (error) throw error;
+      return (data ?? []) as Array<{ participant_id: string; event_stage_id: string }>;
+    },
+  });
+  const stageMap = useMemo(() => new Map(eventStages.map((s) => [s.id, s])), [eventStages]);
+  const linksByParticipant = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const l of rowStageLinks) {
+      const arr = m.get(l.participant_id) ?? [];
+      arr.push(l.event_stage_id);
+      m.set(l.participant_id, arr);
+    }
+    return m;
+  }, [rowStageLinks]);
+
+  const STAGE_KIND_LABEL: Record<string, string> = {
+    classificatoria: "Classif.",
+    regional: "Regional",
+    semifinal: "Semi",
+    final: "Final",
+    geral: "Geral",
+    legado: "Legado",
+    outro: "Outro",
+  };
+  const stageShortLabel = (s: { name: string; kind: string }) =>
+    STAGE_KIND_LABEL[s.kind] ?? s.name.slice(0, 14);
+  const renderStageBadges = (participantId: string) => {
+    const ids = linksByParticipant.get(participantId);
+    if (!ids || ids.length === 0) return null;
+    const stages = ids.map((id) => stageMap.get(id)).filter(Boolean) as Array<{ id: string; name: string; kind: string }>;
+    if (stages.length === 0) return null;
+    const visible = stages.slice(0, 2);
+    const extra = stages.length - visible.length;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {visible.map((s) => (
+          <Badge
+            key={s.id}
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 border-primary/40 text-primary bg-primary/5"
+            title={s.name}
+          >
+            <Layers className="h-2.5 w-2.5 mr-1" />{stageShortLabel(s)}
+          </Badge>
+        ))}
+        {extra > 0 && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0" title={stages.slice(2).map((s) => s.name).join(", ")}>
+            +{extra}
+          </Badge>
+        )}
+      </div>
+    );
+  };
+
   // Counters (total in event) - cheap head queries
   const { data: counters } = useQuery({
     queryKey: ["participants-counters", selectedEventId],
@@ -309,6 +382,27 @@ export default function ParticipantesPage() {
                 {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
               </SelectContent>
             </Select>
+
+            <span className="text-xs text-muted-foreground sm:ml-2 inline-flex items-center gap-1">
+              <Layers className="h-3.5 w-3.5" /> Etapa:
+            </span>
+            <Select
+              value={stageFilterId ?? "all"}
+              onValueChange={setStageFilter}
+              disabled={!selectedEventId || eventStages.length === 0}
+            >
+              <SelectTrigger className="h-8 w-full sm:w-[280px]">
+                <SelectValue placeholder="Todas as etapas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as etapas</SelectItem>
+                {eventStages.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -376,6 +470,7 @@ export default function ParticipantesPage() {
                       <Badge variant={statusInfo.variant} className="text-[10px] shrink-0">{statusInfo.label}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{institutionName}</p>
+                    {renderStageBadges(p.id)}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <Badge variant="outline" className="text-[10px]">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
                       {canManage && (
@@ -411,6 +506,7 @@ export default function ParticipantesPage() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Modalidade / Prova</TableHead>
+                  <TableHead>Etapa(s)</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -433,6 +529,7 @@ export default function ParticipantesPage() {
                       <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
                         {getEnrollmentSummary(p.id)}
                       </TableCell>
+                      <TableCell>{renderStageBadges(p.id) ?? <span className="text-xs text-muted-foreground">—</span>}</TableCell>
                       <TableCell className="flex gap-1">
                         <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/participantes/${p.id}`)} title="Ver participante">
                           <User className="h-4 w-4 mr-1" />Ver
