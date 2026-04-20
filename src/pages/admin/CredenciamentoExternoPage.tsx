@@ -111,7 +111,7 @@ export default function CredenciamentoExternoPage() {
       const PARTICIPANT_SELECT =
         "id, delegation_id, participant_type, person:people(full_name, cpf, photo_url), delegation:delegations(institution:institutions(name))";
       const PAGE = 1000;
-      const CHUNK = 200; // limite seguro para .in() na URL do PostgREST
+      const CHUNK = 300; // limite seguro para .in() na URL do PostgREST
 
       // Pagina uma query qualquer até esgotar resultados (evita cap silencioso de 1000)
       const paginate = async (
@@ -131,30 +131,41 @@ export default function CredenciamentoExternoPage() {
         return acc;
       };
 
-      let parts: any[] = [];
+      // Dispara participantes e credenciais ativas em paralelo — não há dependência entre as duas queries.
+      const credsPromise = supabase
+        .from("external_credentials")
+        .select("id, participant_id, credential_code, status")
+        .eq("event_id", eventId)
+        .eq("status", "active");
+
+      let partsPromise: Promise<any[]>;
 
       if (isStageScoped) {
-        // Sem IDs ainda? não tem o que buscar.
-        if (!stageParticipantIds || stageParticipantIds.size === 0) return [];
-
-        // Busca em lotes de 200 IDs para não estourar a URL do PostgREST.
-        const allIds = Array.from(stageParticipantIds);
-        for (let i = 0; i < allIds.length; i += CHUNK) {
-          const slice = allIds.slice(i, i + CHUNK);
-          const chunkRows = await paginate((from, to) =>
-            supabase
-              .from("participants")
-              .select(PARTICIPANT_SELECT)
-              .eq("event_id", eventId)
-              .eq("is_active", true)
-              .in("id", slice)
-              .order("person_id")
-              .range(from, to),
-          );
-          parts.push(...chunkRows);
+        if (!stageParticipantIds || stageParticipantIds.size === 0) {
+          // Aguarda creds só para não deixar promise pendente, mas retorna vazio.
+          await credsPromise;
+          return [];
         }
+
+        const allIds = Array.from(stageParticipantIds);
+        // Busca chunks de IDs em paralelo (Promise.all) ao invés de sequencial.
+        partsPromise = Promise.all(
+          Array.from({ length: Math.ceil(allIds.length / CHUNK) }, (_, i) => {
+            const slice = allIds.slice(i * CHUNK, (i + 1) * CHUNK);
+            return paginate((from, to) =>
+              supabase
+                .from("participants")
+                .select(PARTICIPANT_SELECT)
+                .eq("event_id", eventId)
+                .eq("is_active", true)
+                .in("id", slice)
+                .order("person_id")
+                .range(from, to),
+            );
+          }),
+        ).then((chunks) => chunks.flat());
       } else {
-        parts = await paginate((from, to) =>
+        partsPromise = paginate((from, to) =>
           supabase
             .from("participants")
             .select(PARTICIPANT_SELECT)
@@ -165,17 +176,12 @@ export default function CredenciamentoExternoPage() {
         );
       }
 
+      const [parts, credsResult] = await Promise.all([partsPromise, credsPromise]);
+
       if (parts.length === 0) return [];
 
-      // Get active external credentials for this event
-      const { data: creds } = await supabase
-        .from("external_credentials")
-        .select("id, participant_id, credential_code, status")
-        .eq("event_id", eventId)
-        .eq("status", "active");
-
       const credMap = new Map<string, { id: string; code: string; status: string }>();
-      (creds ?? []).forEach((c: any) => {
+      (credsResult.data ?? []).forEach((c: any) => {
         credMap.set(c.participant_id, { id: c.id, code: c.credential_code, status: c.status });
       });
 
