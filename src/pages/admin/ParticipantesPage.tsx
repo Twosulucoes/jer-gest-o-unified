@@ -21,6 +21,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { DataPagination } from "@/components/ui/data-pagination";
 import ExportButton from "@/components/admin/ExportButton";
 import type { ExportColumn } from "@/lib/exportData";
+import { useEventBranding } from "@/hooks/useEventBranding";
+import { exportListPdf, downloadBlob, type PdfListColumn, type PdfListGroup } from "@/lib/listReportPdf";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",

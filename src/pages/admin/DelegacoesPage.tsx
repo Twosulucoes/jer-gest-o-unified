@@ -22,6 +22,8 @@ import DelegationFormDialog, { type DelegationFormValues } from "@/components/ad
 import { DataPagination } from "@/components/ui/data-pagination";
 import ExportButton from "@/components/admin/ExportButton";
 import type { ExportColumn } from "@/lib/exportData";
+import { useEventBranding } from "@/hooks/useEventBranding";
+import { exportListPdf, downloadBlob, type PdfListColumn, type PdfListGroup } from "@/lib/listReportPdf";
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Pendente", variant: "outline" },
