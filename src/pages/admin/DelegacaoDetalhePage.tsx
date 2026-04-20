@@ -10,6 +10,7 @@ import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useAuth } from "@/hooks/useAuth";
+import { BackButton } from "@/components/navigation/BackButton";
 
 import DelegationResumoTab from "@/components/admin/delegation/DelegationResumoTab";
 import DelegationParticipantesTab from "@/components/admin/delegation/DelegationParticipantesTab";

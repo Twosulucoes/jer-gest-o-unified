@@ -25,6 +25,7 @@ import ParticipantRastreamentoTab from "@/components/admin/participant/Participa
 import ParticipantVoucherTab from "@/components/admin/participant/ParticipantVoucherTab";
 import { SingleLabelDialog } from "@/components/admin/CredentialLabelPrint";
 import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
+import { BackButton } from "@/components/navigation/BackButton";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta", coach: "Técnico", head_of_delegation: "Chefe Delegação", staff: "Staff",
