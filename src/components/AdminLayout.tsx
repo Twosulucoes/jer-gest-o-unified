@@ -64,7 +64,7 @@ const navGroups: NavGroup[] = [
       { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Normalização", to: "/admin/normalizacao-provas", icon: <FileSearch className="h-4 w-4" />, roles: ADMIN_ROLES },
+      
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
@@ -107,15 +107,6 @@ const navGroups: NavGroup[] = [
       { label: "Manual de Instruções", to: "/admin/ajuda/manual", icon: <BookOpen className="h-4 w-4" />, roles: "all" },
       { label: "Chat com IA", to: "/admin/ajuda/chat", icon: <Bot className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as AppRole[] },
       { label: "Abrir Chamado", to: "/admin/ajuda/chamados", icon: <LifeBuoy className="h-4 w-4" />, roles: "all" },
-    ],
-  },
-  {
-    id: "sistema", label: "Sistema", description: "Diagnóstico e manutenção.",
-    icon: <Cog className="h-4 w-4" />,
-    items: [
-      { label: "Diagnóstico do Sistema", to: "/admin/sistema/diagnostico", icon: <Info className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Demo / Seeds", to: "/admin/demo", icon: <Zap className="h-4 w-4" />, roles: ["admin", "coordenacao_tecnica"] as AppRole[] },
-      { label: "Seed Logística (Etapa)", to: "/admin/seed-logistica", icon: <Zap className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
     ],
   },
 ];
