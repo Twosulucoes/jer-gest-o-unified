@@ -126,6 +126,7 @@
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
+    height: 100%;
   }
 
   body {
@@ -135,17 +136,20 @@
     -webkit-overflow-scrolling: touch;
     position: fixed;
     width: 100%;
-    height: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
     overflow: hidden;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   #root {
     width: 100%;
-    height: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   h1, h2, h3, h4, h5, h6 {
