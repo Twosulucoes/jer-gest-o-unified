@@ -44,17 +44,31 @@ export function useStageScope() {
     queryKey: ["stage_participant_ids", stageId],
     enabled: !!stageId,
     queryFn: async () => {
-      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
-        .select("participant_id")
-        .eq("event_stage_id", stageId);
-      if (error) {
-        // Modo ESTRITO: propaga o erro para a UI lidar (lançar tela de erro / bloquear listas).
-        // Decisão de produto: nunca silenciar a falha do filtro de etapa, porque "vazar" dados
-        // entre etapas é pior do que mostrar estado de erro explícito.
-        console.error("[useStageScope] Falha ao carregar participantes da etapa.", error);
-        throw error;
+      // PostgREST devolve no máximo 1000 linhas por requisição. Etapas grandes
+      // (ex.: Boa Vista com 2.7k vínculos) precisam de paginação por range,
+      // senão o filtro vaza só o primeiro lote e participantes "somem" da UI.
+      const PAGE = 1000;
+      const acc = new Set<string>();
+      let from = 0;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+          .select("participant_id")
+          .eq("event_stage_id", stageId)
+          .order("participant_id", { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) {
+          // Modo ESTRITO: propaga o erro para a UI lidar.
+          // Nunca silenciar — vazar dados entre etapas é pior do que mostrar erro.
+          console.error("[useStageScope] Falha ao carregar participantes da etapa.", error);
+          throw error;
+        }
+        const rows = (data ?? []) as Array<{ participant_id: string }>;
+        rows.forEach((r) => acc.add(r.participant_id));
+        if (rows.length < PAGE) break;
+        from += PAGE;
       }
-      return new Set<string>((data ?? []).map((r: any) => r.participant_id as string));
+      return acc;
     },
   });
 
