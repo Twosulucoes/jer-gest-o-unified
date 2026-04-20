@@ -109,6 +109,26 @@ const buildDefaultFieldConfig = (w: number, h: number) => {
 
 type ParticipantState = "pending_import" | "awaiting" | "ready_to_emit" | "complete";
 
+interface CredentialParticipantRow {
+  id: string;
+  status: string;
+  participant_type: string;
+  credentialed_at: string | null;
+  credentialed_by: string | null;
+  person_id: string;
+  delegation_id: string;
+  person: {
+    full_name: string | null;
+    cpf: string | null;
+  } | null;
+  delegation: {
+    institution: {
+      id: string;
+      name: string | null;
+    } | null;
+  } | null;
+}
+
 export default function CredenciamentoPage() {
   const queryClient = useQueryClient();
   const { hasRole, user } = useAuth();
@@ -239,6 +259,9 @@ export default function CredenciamentoPage() {
 
       const CHUNK = FILTER_CHUNK_SIZE;
       const all: any[] = [];
+      const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id,
+        person:people!participants_person_id_fkey(full_name, cpf),
+        delegation:delegations!participants_delegation_id_fkey(institution:institutions(id, name))`;
 
       const idChunks: (string[] | null)[] = effectiveStageFilter
         ? chunkArray(effectiveStageFilter, CHUNK)
@@ -250,7 +273,7 @@ export default function CredenciamentoPage() {
         while (true) {
           let q = supabase
             .from("participants")
-            .select("id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id")
+            .select(PARTICIPANT_SELECT)
             .eq("event_id", selectedEventId)
             .eq("is_active", true)
             .in("status", ["pending", "confirmed", "credentialed"]);
@@ -271,7 +294,7 @@ export default function CredenciamentoPage() {
     enabled: !!selectedEventId,
   });
 
-  const participants = allParticipants;
+  const participants = (allParticipants ?? []) as CredentialParticipantRow[];
 
   // --- Active credentials ---
   // Quando há filtro de etapa, busca somente credenciais cujos participant_id estejam na etapa.
@@ -312,76 +335,7 @@ export default function CredenciamentoPage() {
     enabled: !!selectedEventId,
   });
 
-  const activeCredMap = new Map(activeCredentials.map((c) => [c.participant_id, c]));
-
-  // --- People ---
-  const personIds = [...new Set(participants?.map((p) => p.person_id).filter(Boolean) ?? [])];
-  const { data: people = [], error: peopleError } = useQuery({
-    queryKey: ["credenciamento-people", personIds],
-    queryFn: async () => {
-      if (personIds.length === 0) return [];
-      const all: any[] = [];
-      for (const chunk of chunkArray(personIds, FILTER_CHUNK_SIZE)) {
-        const { data, error } = await supabase
-          .from("people")
-          .select("id, full_name, birth_date, gender, cpf")
-          .in("id", chunk);
-        if (error) throw error;
-        all.push(...(data ?? []));
-      }
-      return all;
-    },
-    enabled: personIds.length > 0,
-  });
-
-  // --- Delegations & Institutions ---
-  const delegationIds = [...new Set((participants?.map((p) => p.delegation_id) ?? []).filter(Boolean))];
-  const { data: delegations = [], error: delegationsError } = useQuery({
-    queryKey: ["credenciamento-delegations", delegationIds],
-    queryFn: async () => {
-      if (delegationIds.length === 0) return [];
-      const all: any[] = [];
-      for (const chunk of chunkArray(delegationIds, FILTER_CHUNK_SIZE)) {
-        const { data, error } = await supabase.from("delegations").select("id, institution_id").in("id", chunk);
-        if (error) throw error;
-        all.push(...(data ?? []));
-      }
-      return all;
-    },
-    enabled: delegationIds.length > 0,
-  });
-
-  const instIds = [...new Set(delegations.map((d) => d.institution_id).filter(Boolean))];
-  const { data: institutions = [], error: institutionsError } = useQuery({
-    queryKey: ["credenciamento-institutions", instIds],
-    queryFn: async () => {
-      if (instIds.length === 0) return [];
-      const all: any[] = [];
-      for (const chunk of chunkArray(instIds, FILTER_CHUNK_SIZE)) {
-        const { data, error } = await supabase.from("institutions").select("id, name").in("id", chunk);
-        if (error) throw error;
-        all.push(...(data ?? []));
-      }
-      return all;
-    },
-    enabled: instIds.length > 0,
-  });
-
-  // --- Lookup maps ---
-  const peopleMap = new Map(people.map((p) => [p.id, p]));
-  const delegationMap = new Map(delegations.map((d) => [d.id, d]));
-  const institutionMap = new Map(institutions.map((i) => [i.id, i]));
-
-  const getInstitutionName = (delegationId: string) => {
-    const del = delegationMap.get(delegationId);
-    if (!del) return "—";
-    return institutionMap.get(del.institution_id)?.name ?? "—";
-  };
-
-  const getInstitutionId = (delegationId: string) => {
-    const del = delegationMap.get(delegationId);
-    return del?.institution_id ?? "";
-  };
+  const activeCredMap = useMemo(() => new Map(activeCredentials.map((c) => [c.participant_id, c])), [activeCredentials]);
 
   // --- Determine participant state ---
   const getParticipantState = (p: { status: string; id: string }): ParticipantState => {
