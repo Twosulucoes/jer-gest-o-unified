@@ -386,8 +386,8 @@ export default function DelegacoesPage() {
                       <p>
                         <span className="font-medium text-foreground/70">Tel:</span> {del.chief_phone}
                       </p>
-                    )}
                   </div>
+                  <div className="mt-2">{renderStageBadges(del.id)}</div>
                   {canWrite && (
                     <div className="flex justify-end mt-2 pt-2 border-t border-border/50">
                       <Button
