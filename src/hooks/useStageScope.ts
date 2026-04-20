@@ -8,11 +8,33 @@ interface UseStageScopeOptions {
 }
 
 const FILTER_CHUNK_SIZE = 200;
+const PAGE_SIZE = 1000;
 
 function chunkArray<T>(items: T[], size: number) {
   return Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
     items.slice(index * size, (index + 1) * size),
   );
+}
+
+/**
+ * Pagina uma query Supabase em lotes de PAGE_SIZE até esgotar os resultados.
+ * Evita o cap silencioso de 1000 linhas do PostgREST.
+ */
+async function paginateAll<T>(
+  build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: any }>,
+): Promise<T[]> {
+  const acc: T[] = [];
+  let from = 0;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await build(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const rows = (data ?? []) as T[];
+    acc.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return acc;
 }
 
 /**
@@ -22,9 +44,13 @@ function chunkArray<T>(items: T[], size: number) {
  *  1. `useParams().stageId` — quando a página está dentro de `/admin/etapa/:stageId/...` (StageLayout)
  *  2. `?stage=` na URL — fallback para compatibilidade com links legados/banner
  *
- * Retorna o `Set<string>` de `participant_id` vinculados à etapa via
- * `participant_event_stages`. Quando `includeMatchIds` estiver ativo, também
- * calcula o conjunto de partidas da etapa sem gerar URLs gigantes no PostgREST.
+ * Retorna o `Set<string>` de `participant_id` vinculados à etapa via:
+ *  - Fonte 1 (principal): `participant_event_stages` (vínculo explícito)
+ *  - Fonte 2 (fallback/backfill): `participant_sport_events.event_stage_id`
+ *
+ * Os IDs são sanitizados contra `participants.event_id` para evitar vínculos
+ * legados inconsistentes. Quando `includeMatchIds` estiver ativo, também
+ * calcula o conjunto de partidas sem gerar URLs gigantes no PostgREST.
  */
 export function useStageScope(options: UseStageScopeOptions = {}) {
   const { includeMatchIds = false } = options;
@@ -54,33 +80,57 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
   });
 
   const { data: participantIds, isLoading, error: participantsError } = useQuery({
-    queryKey: ["stage_participant_ids", stageId],
-    enabled: !!stageId,
+    queryKey: ["stage_participant_ids", stageId, eventId],
+    enabled: !!stageId && !!eventId,
     queryFn: async () => {
-      const PAGE = 1000;
-      const acc = new Set<string>();
-      let from = 0;
-
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+      // Fonte 1 (principal): vínculo explícito participante-etapa (paginado).
+      const pesRows = await paginateAll<{ participant_id: string }>((from, to) =>
+        (supabase.from("participant_event_stages" as never) as any)
           .select("participant_id")
           .eq("event_stage_id", stageId)
           .order("participant_id", { ascending: true })
-          .range(from, from + PAGE - 1);
+          .range(from, to),
+      ).catch((err) => {
+        console.error("[useStageScope] Falha ao carregar participant_event_stages.", err);
+        throw err;
+      });
 
+      // Fonte 2 (fallback/backfill): inscrições esportivas marcadas com event_stage_id (paginado).
+      const pseRows = await paginateAll<{ participant_id: string }>((from, to) =>
+        supabase
+          .from("participant_sport_events")
+          .select("participant_id")
+          .eq("event_stage_id", stageId)
+          .order("participant_id", { ascending: true })
+          .range(from, to),
+      ).catch((err) => {
+        console.error("[useStageScope] Falha ao carregar participant_sport_events por etapa.", err);
+        throw err;
+      });
+
+      const candidateIds = new Set<string>();
+      pesRows.forEach((r) => r?.participant_id && candidateIds.add(r.participant_id));
+      pseRows.forEach((r) => r?.participant_id && candidateIds.add(r.participant_id));
+
+      if (candidateIds.size === 0) return new Set<string>();
+
+      // Sanitiza IDs para o evento ativo (evita vínculos legados inconsistentes).
+      // Faz em chunks para não estourar a URL do PostgREST.
+      const valid = new Set<string>();
+      for (const chunk of chunkArray(Array.from(candidateIds), FILTER_CHUNK_SIZE)) {
+        const { data, error } = await supabase
+          .from("participants")
+          .select("id")
+          .eq("event_id", eventId)
+          .in("id", chunk);
         if (error) {
-          console.error("[useStageScope] Falha ao carregar participantes da etapa.", error);
+          console.error("[useStageScope] Falha ao validar IDs de participantes da etapa.", error);
           throw error;
         }
-
-        const rows = (data ?? []) as Array<{ participant_id: string }>;
-        rows.forEach((row) => acc.add(row.participant_id));
-        if (rows.length < PAGE) break;
-        from += PAGE;
+        (data ?? []).forEach((r: any) => valid.add(r.id as string));
       }
 
-      return acc;
+      return valid;
     },
   });
 
