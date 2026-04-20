@@ -6641,6 +6641,10 @@ export type Database = {
         Args: { p_sport_event_id: string }
         Returns: Json
       }
+      clear_logistics_seed_all_stages: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
       clear_logistics_seed_by_stage: {
         Args: { p_event_id: string }
         Returns: Json
@@ -7105,6 +7109,7 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      seed_logistics_all_stages: { Args: { p_event_id: string }; Returns: Json }
       seed_logistics_by_stage: { Args: { p_event_id: string }; Returns: Json }
       seed_logistics_stage_template: {
         Args: { p_event_id: string; p_seed_tag?: string; p_stage_name?: string }
