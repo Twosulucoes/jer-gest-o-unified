@@ -21,6 +21,7 @@ import { getStatusEmoji } from "@/lib/systemMapHelpers";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Database } from "@/integrations/supabase/types";
 import { NavigationHistoryTracker } from "@/hooks/useNavigationHistory";
+import { useMobileBackGuard } from "@/hooks/useMobileBackGuard";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -212,6 +213,7 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  useMobileBackGuard();
 
   const isItemVisible = (item: NavItem) =>
     item.roles === "all" || item.roles.some((r) => hasRole(r));

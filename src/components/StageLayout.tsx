@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Database } from "@/integrations/supabase/types";
 import { NavigationHistoryTracker } from "@/hooks/useNavigationHistory";
+import { useMobileBackGuard } from "@/hooks/useMobileBackGuard";
 import { EtapaSwitcher } from "@/components/navigation/EtapaSwitcher";
 import { BackButton } from "@/components/navigation/BackButton";
 
@@ -63,6 +64,7 @@ export default function StageLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  useMobileBackGuard();
 
   const { data: stage, isLoading, isError } = useQuery({
     queryKey: ["event_stage", stageId, eventId],
