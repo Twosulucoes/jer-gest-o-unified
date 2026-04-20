@@ -309,6 +309,22 @@ export default function DelegacoesPage() {
             {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select
+          value={stageId ?? "all"}
+          onValueChange={setStageFilter}
+          disabled={!selectedEventId || eventStages.length === 0}
+        >
+          <SelectTrigger className="w-full sm:w-[280px]">
+            <Layers className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
+            <SelectValue placeholder="Todas as etapas" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as etapas</SelectItem>
+            {eventStages.map((s) => (
+              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Result count (mobile) */}
