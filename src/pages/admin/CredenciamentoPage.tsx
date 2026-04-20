@@ -964,7 +964,7 @@ export default function CredenciamentoPage() {
               </TableHeader>
               <TableBody>
                 {paginatedItems.map((p) => {
-                  const person = peopleMap.get(p.person_id);
+                  const person = p.person;
                   const state = getParticipantState(p);
                   const stateInfo = getStateInfo(state);
                   const activeCred = activeCredMap.get(p.id);
@@ -995,7 +995,7 @@ export default function CredenciamentoPage() {
                         {person?.cpf ?? "—"}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
-                        {getInstitutionName(p.delegation_id)}
+                        {getInstitutionName(p)}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-[10px]">
