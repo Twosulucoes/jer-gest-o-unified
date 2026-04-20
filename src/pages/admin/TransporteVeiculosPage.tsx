@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import VehicleFormDialog, { type VehicleFormValues } from "@/components/admin/VehicleFormDialog";
+import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScope } from "@/hooks/useStageScope";
 
 const TYPE_MAP: Record<string, string> = {
   bus: "Ônibus", van: "Van", micro: "Micro-ônibus", car: "Carro", outro: "Outro",
@@ -17,6 +19,8 @@ const TYPE_MAP: Record<string, string> = {
 export default function TransporteVeiculosPage() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
+  const selectedEventId = useActiveEventId();
+  const { stageId, isStageScoped } = useStageScope();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const canWrite = hasRole("admin") || hasRole("secretaria");
@@ -31,12 +35,16 @@ export default function TransporteVeiculosPage() {
   });
 
   const { data: vehicles, isLoading } = useQuery({
-    queryKey: ["transport_vehicles"],
+    queryKey: ["transport_vehicles", selectedEventId, stageId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("transport_vehicles").select("*").order("plate");
+      if (!selectedEventId) return [];
+      let q = supabase.from("transport_vehicles").select("*").eq("event_id", selectedEventId);
+      if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
+      const { data, error } = await q.order("plate");
       if (error) throw error;
       return data;
     },
+    enabled: !!selectedEventId,
   });
 
   const eventsMap = new Map(events.map((e) => [e.id, e]));

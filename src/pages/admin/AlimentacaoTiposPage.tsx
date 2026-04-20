@@ -9,12 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import MealTypeFormDialog, { type MealTypeFormValues } from "@/components/admin/MealTypeFormDialog";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 export default function AlimentacaoTiposPage() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const selectedEventId = useActiveEventId();
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
   const { data: events = [] } = useQuery({
@@ -27,12 +29,14 @@ export default function AlimentacaoTiposPage() {
   });
 
   const { data: mealTypes, isLoading } = useQuery({
-    queryKey: ["meal_types"],
+    queryKey: ["meal_types", selectedEventId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("meal_types").select("*").order("sort_order");
+      if (!selectedEventId) return [];
+      const { data, error } = await supabase.from("meal_types").select("*").eq("event_id", selectedEventId).order("sort_order");
       if (error) throw error;
       return data;
     },
+    enabled: !!selectedEventId,
   });
 
   const eventsMap = new Map(events.map((e) => [e.id, e]));
