@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import QRCode from "qrcode";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -35,15 +36,14 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedParticipantId, setSelectedParticipantId] = useState(fixedParticipantId || "");
   const [_rendering, setRendering] = useState(false);
+  const participantLabelId = useId();
 
-  // Reset selected participant when fixedParticipantId changes
   useEffect(() => {
     if (fixedParticipantId) setSelectedParticipantId(fixedParticipantId);
   }, [fixedParticipantId]);
 
   const eventId = template?.event_id;
 
-  // Fetch event name for default background
   const { data: event } = useQuery({
     queryKey: ["preview-event", eventId],
     queryFn: async () => {
@@ -160,7 +160,7 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
   const drawFittedText = (
     ctx: CanvasRenderingContext2D,
     text: string,
-    fc: FieldConfig
+    fc: FieldConfig,
   ) => {
     const baseFontSize = fc.fontSize ?? 14;
     const weight = fc.fontWeight ?? "normal";
@@ -182,9 +182,7 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     ctx.fillText(text, fc.x, fc.y, maxW > 0 ? maxW : undefined);
   };
 
-  /** Draw a clean default background when no background image is set */
   const drawDefaultBackground = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    // Gradient background
     const grad = ctx.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, "#1e3a5f");
     grad.addColorStop(0.15, "#1e3a5f");
@@ -193,11 +191,9 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    // Header bar
     ctx.fillStyle = "#1e3a5f";
     ctx.fillRect(0, 0, w, 120);
 
-    // Event name in header
     const eventName = event?.name ?? "EVENTO ESPORTIVO";
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 22px sans-serif";
@@ -205,19 +201,16 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     ctx.textBaseline = "middle";
     ctx.fillText(eventName.toUpperCase(), w / 2, 50, w - 40);
 
-    // Year subtitle
     if (event?.year) {
       ctx.font = "16px sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.8)";
       ctx.fillText(String(event.year), w / 2, 80);
     }
 
-    // "CREDENCIAL" label
     ctx.fillStyle = "#1e3a5f";
     ctx.font = "bold 14px sans-serif";
     ctx.fillText("CREDENCIAL OFICIAL", w / 2, 145);
 
-    // Subtle border lines
     ctx.strokeStyle = "#c8d6e5";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -225,7 +218,6 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     ctx.lineTo(w - 40, 160);
     ctx.stroke();
 
-    // Bottom bar
     ctx.fillStyle = "#1e3a5f";
     ctx.fillRect(0, h - 30, w, 30);
     ctx.fillStyle = "rgba(255,255,255,0.6)";
@@ -245,7 +237,6 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw background: custom art or default
     if (template.background_url) {
       try {
         const img = await loadImage(template.background_url);
@@ -274,7 +265,6 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
       credential_code: useDemo ? "JER-DEMO-0042" : credential?.credential_code ?? "—",
     };
 
-    // Draw photo
     const photoConfig = fieldConfig.photo;
     if (photoConfig?.visible) {
       const photoW = photoConfig.width ?? 120;
@@ -298,14 +288,12 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
       }
     }
 
-    // Draw text fields
     for (const [key, value] of Object.entries(data)) {
       const fc = fieldConfig[key];
       if (!fc || !fc.visible) continue;
       drawFittedText(ctx, value, fc);
     }
 
-    // Draw QR Code
     const qrConfig = fieldConfig.qr_code;
     if (qrConfig?.visible) {
       const qrValue = useDemo ? "demo-qr-code-12345" : credential?.qr_code_value ?? "no-qr";
@@ -318,7 +306,6 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
         const qrImg = await loadImage(qrDataUrl);
         ctx.drawImage(qrImg, qrConfig.x, qrConfig.y, qrConfig.width ?? 110, qrConfig.height ?? 110);
       } catch {
-        // QR generation failed
       }
     }
 
@@ -372,9 +359,9 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
         <div className="space-y-4">
           {!fixedParticipantId && (
             <div className="space-y-2 max-w-md">
-              <label className="text-sm font-medium">Participante (com credencial emitida)</label>
+              <Label id={participantLabelId} className="text-sm font-medium">Participante (com credencial emitida)</Label>
               <Select value={selectedParticipantId} onValueChange={setSelectedParticipantId}>
-                <SelectTrigger>
+                <SelectTrigger aria-labelledby={participantLabelId} aria-label="Participante com credencial emitida">
                   <SelectValue placeholder={credentials.length === 0 ? "Nenhuma credencial emitida" : "Selecione ou veja demo"} />
                 </SelectTrigger>
                 <SelectContent>

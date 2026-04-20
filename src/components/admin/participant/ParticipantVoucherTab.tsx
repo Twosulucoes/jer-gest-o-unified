@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,6 +44,14 @@ export default function ParticipantVoucherTab({ participantId, eventId }: Props)
   const [maxUses, setMaxUses] = useState("");
   const [notes, setNotes] = useState("");
   const [qrPreview, setQrPreview] = useState<{ value: string; dataUrl: string } | null>(null);
+
+  const servicesGroupLabelId = useId();
+  const transportScopeId = useId();
+  const mealsScopeId = useId();
+  const lodgingScopeId = useId();
+  const validUntilInputId = useId();
+  const maxUsesInputId = useId();
+  const notesInputId = useId();
 
   const { data: vouchers = [], isLoading } = useQuery({
     queryKey: ["service_vouchers", participantId],
@@ -129,7 +137,7 @@ export default function ParticipantVoucherTab({ participantId, eventId }: Props)
       ) : vouchers.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8 text-sm text-muted-foreground">
-            Nenhum voucher emitido. {canManage && "Clique em \"Emitir voucher\" para criar um."}
+            Nenhum voucher emitido. {canManage && 'Clique em "Emitir voucher" para criar um.'}
           </CardContent>
         </Card>
       ) : (
@@ -174,7 +182,6 @@ export default function ParticipantVoucherTab({ participantId, eventId }: Props)
         </div>
       )}
 
-      {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
@@ -183,35 +190,35 @@ export default function ParticipantVoucherTab({ participantId, eventId }: Props)
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>Serviços liberados *</Label>
-              <div className="grid grid-cols-3 gap-2 mt-1">
-                <label className="flex items-center gap-2 border rounded p-2 cursor-pointer">
-                  <Checkbox checked={scopeT} onCheckedChange={v => setScopeT(!!v)} />
-                  <span className="text-sm">Transporte</span>
-                </label>
-                <label className="flex items-center gap-2 border rounded p-2 cursor-pointer">
-                  <Checkbox checked={scopeM} onCheckedChange={v => setScopeM(!!v)} />
-                  <span className="text-sm">Alimentação</span>
-                </label>
-                <label className="flex items-center gap-2 border rounded p-2 cursor-pointer">
-                  <Checkbox checked={scopeL} onCheckedChange={v => setScopeL(!!v)} />
-                  <span className="text-sm">Alojamento</span>
-                </label>
+              <Label id={servicesGroupLabelId}>Serviços liberados *</Label>
+              <div role="group" aria-labelledby={servicesGroupLabelId} className="grid grid-cols-3 gap-2 mt-1">
+                <div className="flex items-center gap-2 border rounded p-2">
+                  <Checkbox id={transportScopeId} checked={scopeT} onCheckedChange={v => setScopeT(!!v)} />
+                  <Label htmlFor={transportScopeId} className="text-sm cursor-pointer">Transporte</Label>
+                </div>
+                <div className="flex items-center gap-2 border rounded p-2">
+                  <Checkbox id={mealsScopeId} checked={scopeM} onCheckedChange={v => setScopeM(!!v)} />
+                  <Label htmlFor={mealsScopeId} className="text-sm cursor-pointer">Alimentação</Label>
+                </div>
+                <div className="flex items-center gap-2 border rounded p-2">
+                  <Checkbox id={lodgingScopeId} checked={scopeL} onCheckedChange={v => setScopeL(!!v)} />
+                  <Label htmlFor={lodgingScopeId} className="text-sm cursor-pointer">Alojamento</Label>
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Válido até</Label>
-                <Input type="datetime-local" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
+                <Label htmlFor={validUntilInputId}>Válido até</Label>
+                <Input id={validUntilInputId} name="validUntil" type="datetime-local" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
               </div>
               <div>
-                <Label>Limite de usos</Label>
-                <Input type="number" min={1} value={maxUses} onChange={e => setMaxUses(e.target.value)} placeholder="Ilimitado" />
+                <Label htmlFor={maxUsesInputId}>Limite de usos</Label>
+                <Input id={maxUsesInputId} name="maxUses" type="number" min={1} value={maxUses} onChange={e => setMaxUses(e.target.value)} placeholder="Ilimitado" />
               </div>
             </div>
             <div>
-              <Label>Observações</Label>
-              <Input value={notes} onChange={e => setNotes(e.target.value)} />
+              <Label htmlFor={notesInputId}>Observações</Label>
+              <Input id={notesInputId} name="notes" value={notes} onChange={e => setNotes(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
@@ -224,7 +231,6 @@ export default function ParticipantVoucherTab({ participantId, eventId }: Props)
         </DialogContent>
       </Dialog>
 
-      {/* QR preview */}
       <Dialog open={!!qrPreview} onOpenChange={(v) => !v && setQrPreview(null)}>
         <DialogContent>
           <DialogHeader>
