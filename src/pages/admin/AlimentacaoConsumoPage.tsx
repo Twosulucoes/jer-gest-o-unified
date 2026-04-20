@@ -50,18 +50,33 @@ export default function AlimentacaoConsumoPage() {
     enabled: !!selectedEventId,
   });
 
-  const { data: windows = [] } = useQuery({
+  const { data: windows = [], isLoading: windowsLoading } = useQuery({
     queryKey: ["meal_windows", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      let q = supabase.from("meal_windows").select("*").eq("event_id", selectedEventId).eq("is_active", true).order("service_date").order("start_time");
-      if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
-      const { data, error } = await q;
+      // Carrega TODAS as janelas ativas do evento; filtramos por etapa em memória
+      // para conseguir tolerar janelas legadas sem event_stage_id (fallback).
+      const { data, error } = await supabase
+        .from("meal_windows")
+        .select("*")
+        .eq("event_id", selectedEventId)
+        .eq("is_active", true)
+        .order("service_date")
+        .order("start_time");
       if (error) throw error;
-      return data;
+      const all = data ?? [];
+      if (!isStageScoped || !stageId) return all;
+      const ofStage = all.filter((w: any) => w.event_stage_id === stageId);
+      const legacy = all.filter((w: any) => !w.event_stage_id);
+      // Se a etapa tem janelas próprias, usa só elas + legadas (sem stage).
+      // Se não tem nenhuma, mostra todas do evento como fallback (com aviso na UI).
+      return ofStage.length > 0 ? [...ofStage, ...legacy] : all;
     },
     enabled: !!selectedEventId,
   });
+
+  const stageWindowsCount = windows.filter((w: any) => w.event_stage_id === stageId).length;
+  const showingFallbackWindows = isStageScoped && !!stageId && stageWindowsCount === 0 && windows.length > 0;
 
   const mealTypesMap = new Map(mealTypes.map((m) => [m.id, m]));
 
