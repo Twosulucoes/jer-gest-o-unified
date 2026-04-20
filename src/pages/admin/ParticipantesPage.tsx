@@ -432,7 +432,9 @@ export default function ParticipantesPage() {
       {selectedEventId && counters && (
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <Card><CardContent className="pt-3 pb-3 sm:pt-4 sm:pb-4 px-3 sm:px-5">
-            <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">Total no evento</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">
+              {stageFilterId ? "Total na etapa" : "Total no evento"}
+            </p>
             <p className="text-xl sm:text-2xl font-bold text-foreground">{counters.total}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-3 pb-3 sm:pt-4 sm:pb-4 px-3 sm:px-5">
