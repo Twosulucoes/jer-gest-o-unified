@@ -470,6 +470,7 @@ export default function ParticipantesPage() {
                       <Badge variant={statusInfo.variant} className="text-[10px] shrink-0">{statusInfo.label}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{institutionName}</p>
+                    {renderStageBadges(p.id)}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <Badge variant="outline" className="text-[10px]">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
                       {canManage && (
@@ -505,6 +506,7 @@ export default function ParticipantesPage() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Modalidade / Prova</TableHead>
+                  <TableHead>Etapa(s)</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -527,6 +529,7 @@ export default function ParticipantesPage() {
                       <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
                         {getEnrollmentSummary(p.id)}
                       </TableCell>
+                      <TableCell>{renderStageBadges(p.id) ?? <span className="text-xs text-muted-foreground">—</span>}</TableCell>
                       <TableCell className="flex gap-1">
                         <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/participantes/${p.id}`)} title="Ver participante">
                           <User className="h-4 w-4 mr-1" />Ver
