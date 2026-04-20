@@ -278,6 +278,8 @@ export default function DelegacoesPage() {
     }
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
   }, [delegations, groupBy, stagesByDelegation, stageMap]);
+
+  const toPayload = (values: DelegationFormValues) => ({
     event_id: values.event_id,
     status: values.status,
     school_name: values.school_name,
