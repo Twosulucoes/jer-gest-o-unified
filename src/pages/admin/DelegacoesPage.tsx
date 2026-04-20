@@ -141,6 +141,69 @@ export default function DelegacoesPage() {
   const delegations = pageData?.rows ?? [];
   const total = pageData?.total ?? 0;
 
+  // Etapas por delegação (badges nas linhas)
+  const delegIds = delegations.map((d: any) => d.id);
+  const { data: rowStageLinks = [] } = useQuery({
+    queryKey: ["delegations-stage-links-page", delegIds.join(",")],
+    enabled: delegIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
+        .select("event_stage_id, participants!inner(delegation_id)")
+        .in("participants.delegation_id", delegIds);
+      if (error) throw error;
+      return (data ?? []) as Array<{ event_stage_id: string; participants: { delegation_id: string } }>;
+    },
+  });
+  const stageMap = useMemo(() => new Map(eventStages.map((s) => [s.id, s])), [eventStages]);
+  const stagesByDelegation = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const l of rowStageLinks) {
+      const did = l.participants?.delegation_id;
+      if (!did) continue;
+      const set = m.get(did) ?? new Set<string>();
+      set.add(l.event_stage_id);
+      m.set(did, set);
+    }
+    return m;
+  }, [rowStageLinks]);
+
+  const STAGE_KIND_LABEL: Record<string, string> = {
+    classificatoria: "Classif.",
+    regional: "Regional",
+    semifinal: "Semi",
+    final: "Final",
+    geral: "Geral",
+    legado: "Legado",
+    outro: "Outro",
+  };
+  const renderStageBadges = (delegationId: string) => {
+    const ids = stagesByDelegation.get(delegationId);
+    if (!ids || ids.size === 0) return null;
+    const stages = Array.from(ids).map((id) => stageMap.get(id)).filter(Boolean) as Array<{ id: string; name: string; kind: string }>;
+    if (stages.length === 0) return null;
+    const visible = stages.slice(0, 2);
+    const extra = stages.length - visible.length;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {visible.map((s) => (
+          <Badge
+            key={s.id}
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 border-primary/40 text-primary bg-primary/5"
+            title={s.name}
+          >
+            <Layers className="h-2.5 w-2.5 mr-1" />{STAGE_KIND_LABEL[s.kind] ?? s.name.slice(0, 14)}
+          </Badge>
+        ))}
+        {extra > 0 && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0" title={stages.slice(2).map((s) => s.name).join(", ")}>
+            +{extra}
+          </Badge>
+        )}
+      </div>
+    );
+  };
+
   const toPayload = (values: DelegationFormValues) => ({
     event_id: values.event_id,
     status: values.status,
