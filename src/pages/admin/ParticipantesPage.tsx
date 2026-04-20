@@ -382,6 +382,27 @@ export default function ParticipantesPage() {
                 {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
               </SelectContent>
             </Select>
+
+            <span className="text-xs text-muted-foreground sm:ml-2 inline-flex items-center gap-1">
+              <Layers className="h-3.5 w-3.5" /> Etapa:
+            </span>
+            <Select
+              value={stageFilterId ?? "all"}
+              onValueChange={setStageFilter}
+              disabled={!selectedEventId || eventStages.length === 0}
+            >
+              <SelectTrigger className="h-8 w-full sm:w-[280px]">
+                <SelectValue placeholder="Todas as etapas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as etapas</SelectItem>
+                {eventStages.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
