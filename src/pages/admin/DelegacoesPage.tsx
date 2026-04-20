@@ -397,6 +397,43 @@ export default function DelegacoesPage() {
     return acc;
   };
 
+  const fetchAllFilteredDelegations = async () => {
+    const PAGE = 1000;
+    let from = 0;
+    const acc: any[] = [];
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      let q = supabase.from("delegations").select("*");
+      if (selectedEventId) q = q.eq("event_id", selectedEventId);
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      if (networkFilter !== "all") q = q.eq("school_network_type", networkFilter);
+      if (cityFilter !== "all") q = q.eq("school_city", cityFilter);
+      if (debouncedSearch.trim().length >= 2) {
+        const term = debouncedSearch.trim().replace(/[%,]/g, "");
+        q = q.or([
+          `school_name.ilike.%${term}%`,
+          `school_official_name.ilike.%${term}%`,
+          `school_city.ilike.%${term}%`,
+          `chief_name.ilike.%${term}%`,
+        ].join(","));
+      }
+      if (stageId) {
+        const ids = stageDelegationIds ?? [];
+        if (ids.length === 0) return acc;
+        q = q.in("id", ids);
+      }
+      const { data, error } = await q
+        .order(sortBy, { ascending: sortDir === "asc", nullsFirst: false })
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      const rows = data ?? [];
+      acc.push(...rows);
+      if (rows.length < PAGE) break;
+      from += PAGE;
+    }
+    return acc;
+  };
+
   return (
     <div className="animate-fade-in space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
