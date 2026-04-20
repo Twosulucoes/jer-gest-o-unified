@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   AlertTriangle, CheckCircle, ScanLine, Search, User, XCircle,
-  Users, ShieldCheck, Clock, ArrowLeft, Link2, Check, IdCard,
+  Users, ShieldCheck, Clock, ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
@@ -55,7 +55,6 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const PAGE_SIZE = 50;
-const normalizeCredentialCode = (value: string) => value.trim().replace(/\s+/g, "").toUpperCase();
 
 export default function CredenciamentoExternoPage() {
   const eventId = useActiveEventId();
@@ -235,22 +234,13 @@ export default function CredenciamentoExternoPage() {
 
       const { data: activeCred } = await supabase
         .from("participant_credentials")
-        .select("id, credential_code, binding_source")
+        .select("id")
         .eq("participant_id", selectedParticipant.id)
         .eq("event_id", eventId)
         .eq("status", "active")
         .maybeSingle();
 
-      // Keep participant_credentials synced with external credential code so
-      // other external modules consume the same credential value.
-      if (!activeCred || activeCred.credential_code !== code || activeCred.binding_source !== "external") {
-        if (activeCred?.id) {
-          await supabase
-            .from("participant_credentials")
-            .update({ status: "reissued", is_active: false, revoked_at: nowIso })
-            .eq("id", activeCred.id);
-        }
-
+      if (!activeCred) {
         const qrCodeValue = generateQrCodeValue(eventId, selectedParticipant.id, code);
         const { error: credErr } = await supabase.from("participant_credentials").insert({
           participant_id: selectedParticipant.id,
@@ -296,6 +286,7 @@ export default function CredenciamentoExternoPage() {
         .update({ status: "revoked", is_active: false, revoked_at: nowIso })
         .eq("participant_id", selectedParticipant.id)
         .eq("event_id", eventId)
+        .eq("binding_source", "external")
         .eq("status", "active");
 
       const { count } = await supabase
@@ -319,7 +310,7 @@ export default function CredenciamentoExternoPage() {
 
   const handleScan = useCallback((rawValue: string) => {
     setScannerOpen(false);
-    const code = normalizeCredentialCode(rawValue);
+    const code = rawValue.trim();
     if (!code) return;
     if (hasActiveCred) { setPendingCode(code); setReplaceDialogOpen(true); }
     else { linkMutation.mutate({ code }); }
@@ -332,7 +323,7 @@ export default function CredenciamentoExternoPage() {
   };
 
   const handleManualSubmit = () => {
-    const code = normalizeCredentialCode(manualCode);
+    const code = manualCode.trim();
     if (!code) return;
     setManualCode("");
     if (hasActiveCred) { setPendingCode(code); setReplaceDialogOpen(true); }
@@ -347,107 +338,78 @@ export default function CredenciamentoExternoPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <IdCard className="h-5 w-5 text-primary" />
-            Credenciamento Externo
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Vincule a credencial física uma única vez. O mesmo código será reutilizado nos demais módulos externos.
-          </p>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="inline-flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
-            <Link2 className="h-3.5 w-3.5" />
-            Vinculação única por participante
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Card>
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Users className="h-4 w-4" />
-              Participantes
-            </div>
-            <p className="mt-1 text-2xl font-bold">{totalCount}</p>
-            <p className="text-xs text-muted-foreground">{isStageScoped ? "somente desta etapa" : "em todo evento"}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-emerald-200">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 text-xs text-emerald-700">
-              <ShieldCheck className="h-4 w-4" />
-              Vinculadas
-            </div>
-            <p className="mt-1 text-2xl font-bold text-emerald-700">{linkedCount}</p>
-            <p className="text-xs text-muted-foreground">aptas para módulos externos</p>
-          </CardContent>
-        </Card>
-        <Card className="border-amber-200">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 text-xs text-amber-700">
-              <Clock className="h-4 w-4" />
-              Pendentes
-            </div>
-            <p className="mt-1 text-2xl font-bold text-amber-700">{pendingCount}</p>
-            <p className="text-xs text-muted-foreground">aguardando vinculação</p>
-          </CardContent>
-        </Card>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Credenciamento Externo</h1>
+        <p className="text-sm text-muted-foreground">Vincular credenciais físicas pré-impressas aos participantes</p>
       </div>
 
-      <Card>
-        <CardContent className="space-y-3 p-3 sm:p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou CPF..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-              className="pl-10"
-            />
-          </div>
+      {/* Stats */}
+      <div className="flex flex-wrap gap-4">
+        <div className="flex items-center gap-2 text-sm">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{totalCount}</span>
+          <span className="text-muted-foreground">participantes{isStageScoped ? " na etapa" : ""}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <ShieldCheck className="h-4 w-4 text-green-500" />
+          <span className="font-medium">{linkedCount}</span>
+          <span className="text-muted-foreground">credenciados</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Clock className="h-4 w-4 text-yellow-500" />
+          <span className="font-medium">{pendingCount}</span>
+          <span className="text-muted-foreground">pendentes</span>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <Select value={filterDelegation} onValueChange={(v) => { setFilterDelegation(v); setPage(0); }}>
-              <SelectTrigger className="w-full min-w-0 text-sm">
-                <SelectValue placeholder="Delegação" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas delegações</SelectItem>
-                {delegations.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por nome ou CPF..."
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+          className="pl-10"
+        />
+      </div>
 
-            <Select value={filterType} onValueChange={(v) => { setFilterType(v); setPage(0); }}>
-              <SelectTrigger className="w-full min-w-0 text-sm">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
-                {participantTypes.map((t) => (
-                  <SelectItem key={t} value={t}>{TYPE_LABELS[t] ?? t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2">
+        <Select value={filterDelegation} onValueChange={(v) => { setFilterDelegation(v); setPage(0); }}>
+          <SelectTrigger className="flex-1 min-w-[140px] h-9 text-xs">
+            <SelectValue placeholder="Delegação" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas delegações</SelectItem>
+            {delegations.map((d) => (
+              <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-            <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setPage(0); }}>
-              <SelectTrigger className="w-full min-w-0 text-sm">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="vinculada">✓ Vinculada</SelectItem>
-                <SelectItem value="pendente">Pendente</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+        <Select value={filterType} onValueChange={(v) => { setFilterType(v); setPage(0); }}>
+          <SelectTrigger className="flex-1 min-w-[120px] h-9 text-xs">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os tipos</SelectItem>
+            {participantTypes.map((t) => (
+              <SelectItem key={t} value={t}>{TYPE_LABELS[t] ?? t}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setPage(0); }}>
+          <SelectTrigger className="flex-1 min-w-[110px] h-9 text-xs">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="vinculada">✓ Vinculada</SelectItem>
+            <SelectItem value="pendente">Pendente</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Loading */}
       {searchLoading && (
@@ -475,36 +437,28 @@ export default function CredenciamentoExternoPage() {
           >
             <CardContent className="p-3 flex items-center gap-3">
               {p.photo_url ? (
-                <img src={p.photo_url} alt="" className="h-12 w-12 rounded-full object-cover shrink-0" />
+                <img src={p.photo_url} alt="" className="h-10 w-10 rounded-full object-cover shrink-0" />
               ) : (
-                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
                   <User className="h-5 w-5 text-muted-foreground" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{p.full_name}</p>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                <p className="font-medium text-sm truncate">{p.full_name}</p>
+                <p className="text-xs text-muted-foreground truncate">
                   {p.delegation_name || "Sem delegação"}
                   {p.cpf ? ` • ${p.cpf}` : ""}
                 </p>
-                <div className="mt-1 flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px]">
-                    {TYPE_LABELS[p.participant_type] ?? p.participant_type}
-                  </Badge>
-                  {p.ext_cred_code && (
-                    <p className="text-[10px] font-mono text-muted-foreground truncate">{p.ext_cred_code}</p>
-                  )}
-                </div>
+                {p.ext_cred_code && (
+                  <p className="text-[10px] font-mono text-muted-foreground">{p.ext_cred_code}</p>
+                )}
               </div>
-              <div className="shrink-0 flex flex-col items-end gap-2">
+              <div className="shrink-0">
                 {p.ext_cred_id ? (
                   <Badge variant="default" className="text-[10px]">✓ Vinculada</Badge>
                 ) : (
                   <Badge variant="secondary" className="text-[10px]">Pendente</Badge>
                 )}
-                <Button variant={p.ext_cred_id ? "outline" : "default"} size="sm" className="h-9 px-3 text-xs">
-                  {p.ext_cred_id ? "Gerenciar" : "Vincular"}
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -519,7 +473,7 @@ export default function CredenciamentoExternoPage() {
 
       {/* Participant detail — Sheet (modal) for both mobile and desktop */}
       <Sheet open={sheetOpen} onOpenChange={(o) => { if (!o) closeSheet(); }}>
-        <SheetContent side="bottom" className="h-[88vh] overflow-y-auto rounded-t-xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:max-w-xl sm:mx-auto">
+        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto rounded-t-xl px-4 pb-8">
           {selectedParticipant && (
             <>
               <SheetHeader className="text-left pb-4">
@@ -558,9 +512,6 @@ export default function CredenciamentoExternoPage() {
                     <div className="bg-muted rounded-lg p-4 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Código da credencial</p>
                       <p className="font-mono text-2xl font-bold tracking-wider">{existingCred!.credential_code}</p>
-                    </div>
-                    <div className="rounded-md border border-border/70 bg-background px-3 py-2 text-xs text-muted-foreground">
-                      Este código é o mesmo usado nos demais módulos externos.
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -604,7 +555,7 @@ export default function CredenciamentoExternoPage() {
                       <Input
                         placeholder="Código da credencial"
                         value={manualCode}
-                        onChange={(e) => setManualCode(normalizeCredentialCode(e.target.value))}
+                        onChange={(e) => setManualCode(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleManualSubmit()}
                         className="font-mono flex-1"
                         autoCapitalize="characters"
@@ -613,11 +564,9 @@ export default function CredenciamentoExternoPage() {
                         onClick={handleManualSubmit}
                         disabled={!manualCode.trim() || linkMutation.isPending}
                       >
-                        <Check className="h-4 w-4 mr-1.5" />
                         Vincular
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">Dica: remova espaços e confira o código antes de confirmar.</p>
                   </div>
                 )}
               </div>

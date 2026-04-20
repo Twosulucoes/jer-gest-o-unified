@@ -92,7 +92,7 @@ export default function SuperAdminLayout() {
         <aside
           className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-zinc-900 text-zinc-300 border-r border-zinc-800 transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } ${collapsed ? "w-16" : "w-[86vw] max-w-80 lg:w-64"}`}
+          } ${collapsed ? "w-16" : "w-64"}`}
         >
           {/* Logo */}
           <div className={`flex h-16 items-center border-b border-zinc-800 ${collapsed ? "justify-center px-2" : "justify-between px-4"}`}>
@@ -169,10 +169,10 @@ export default function SuperAdminLayout() {
 
         {/* Main area */}
         <div className="flex flex-1 flex-col min-w-0">
-          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md px-3 sm:px-4 lg:h-14 lg:px-6">
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md px-4 lg:px-6">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 lg:hidden transition-colors"
+              className="text-zinc-400 hover:text-zinc-200 lg:hidden transition-colors"
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -190,7 +190,7 @@ export default function SuperAdminLayout() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors">
+                <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors">
                   <User className="h-4 w-4" />
                 </button>
               </DropdownMenuTrigger>
@@ -214,7 +214,7 @@ export default function SuperAdminLayout() {
             </DropdownMenu>
           </header>
 
-          <main className="flex-1 p-3 sm:p-4 lg:p-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-4 lg:pb-6 bg-zinc-950 text-zinc-100">
+          <main className="flex-1 p-4 lg:p-6 bg-zinc-950 text-zinc-100">
             <Outlet />
           </main>
         </div>

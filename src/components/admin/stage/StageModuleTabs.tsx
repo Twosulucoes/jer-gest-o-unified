@@ -36,7 +36,7 @@ export function StageModuleTabs({ items, className }: StageModuleTabsProps) {
   return (
     <nav
       className={cn(
-        "flex gap-1 overflow-x-auto overscroll-x-contain touch-pan-x p-1 rounded-lg bg-muted/40 border border-border/60",
+        "flex flex-wrap gap-1 p-1 rounded-lg bg-muted/40 border border-border/60",
         className,
       )}
       aria-label="Subnavegação do módulo"

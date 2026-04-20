@@ -698,8 +698,8 @@ export default function CredenciamentoPage() {
       {/* Flow guide */}
       <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5">
         <Info className="h-4 w-4 text-muted-foreground shrink-0" />
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Fluxo:</span>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Fluxo:</span>
           <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700 text-[10px] gap-1">
             <AlertCircle className="h-3 w-3" /> Pendente
           </Badge>
@@ -755,9 +755,9 @@ export default function CredenciamentoPage() {
 
           {/* Additional filters */}
           {selectedEventId && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-4 pt-4 border-t border-border">
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
               <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-full min-w-0 text-sm">
+                <SelectTrigger className="h-8 text-xs w-auto min-w-[120px] flex-1 sm:flex-none">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -768,7 +768,7 @@ export default function CredenciamentoPage() {
                 </SelectContent>
               </Select>
               <Select value={filterState} onValueChange={setFilterState}>
-                <SelectTrigger className="w-full min-w-0 text-sm">
+                <SelectTrigger className="h-8 text-xs w-auto min-w-[130px] flex-1 sm:flex-none">
                   <SelectValue placeholder="Situação" />
                 </SelectTrigger>
                 <SelectContent>
@@ -783,7 +783,7 @@ export default function CredenciamentoPage() {
                 </SelectContent>
               </Select>
               <Select value={filterInstitution} onValueChange={setFilterInstitution}>
-                <SelectTrigger className="w-full min-w-0 text-sm">
+                <SelectTrigger className="h-8 text-xs w-auto min-w-[140px] flex-1 sm:flex-none">
                   <SelectValue placeholder="Instituição" />
                 </SelectTrigger>
                 <SelectContent>
@@ -796,7 +796,7 @@ export default function CredenciamentoPage() {
               {(filterType !== "all" || filterState !== "all" || filterInstitution !== "all") && (
                 <button
                   onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }}
-                  className="h-11 px-3 text-sm text-muted-foreground hover:text-foreground border rounded-md hover:bg-muted transition-colors"
+                  className="h-8 px-3 text-xs text-muted-foreground hover:text-foreground border rounded-md hover:bg-muted transition-colors"
                 >
                   Limpar filtros
                 </button>
