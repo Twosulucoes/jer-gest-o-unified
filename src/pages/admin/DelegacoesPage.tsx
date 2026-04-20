@@ -568,9 +568,9 @@ export default function DelegacoesPage() {
               </TableHeader>
               <TableBody>
                 {groups.map((g) => (
-                  <>
+                  <React.Fragment key={`grp-${g.key}`}>
                     {groupBy !== "none" && (
-                      <TableRow key={`grp-${g.key}`} className="bg-muted/40 hover:bg-muted/40">
+                      <TableRow className="bg-muted/40 hover:bg-muted/40">
                         <TableCell colSpan={8} className="py-2">
                           <div className="flex items-center gap-2">
                             <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
