@@ -46,13 +46,9 @@ export function BackButton({
   const currentFullPath = location.pathname + location.search;
   const moduleKey = getModuleKey(location.pathname);
 
-  // For UX disclosure: only render if there's somewhere meaningful to go.
   const hasPrev = !!peekPreviousInModule(moduleKey, currentFullPath);
   const moduleHome = getModuleFallbackPath(moduleKey);
   const isAtModuleHome = currentFullPath === moduleHome;
-
-  // If we're at /admin (root) with no history, hide.
-  if (!hasPrev && moduleKey === "_root") return null;
 
   const handleClick = useCallback(() => {
     const previous = popPreviousInModule(moduleKey, currentFullPath);
