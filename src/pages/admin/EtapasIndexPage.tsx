@@ -71,8 +71,14 @@ export default function EtapasIndexPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {stages.map((stage) => (
+        (() => {
+          const classificatorias = stages.filter((s) => s.kind === "classificatoria");
+          const finais = stages.filter((s) => ["regional", "semifinal", "final"].includes(s.kind));
+          const outras = stages.filter(
+            (s) => !["classificatoria", "regional", "semifinal", "final"].includes(s.kind),
+          );
+
+          const renderCard = (stage: EventStage) => (
             <Link key={stage.id} to={`/admin/etapa/${stage.id}`} className="group">
               <Card className="h-full hover:border-primary hover:shadow-app-md transition-all">
                 <CardHeader className="pb-3">
@@ -98,8 +104,69 @@ export default function EtapasIndexPage() {
                 </CardContent>
               </Card>
             </Link>
-          ))}
-        </div>
+          );
+
+          const Section = ({
+            title,
+            description,
+            accent,
+            items,
+          }: {
+            title: string;
+            description: string;
+            accent: string;
+            items: EventStage[];
+          }) => (
+            <section className="space-y-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className={`h-8 w-1.5 rounded-full ${accent}`} />
+                <div>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    {title}
+                    <Badge variant="outline" className="text-xs">{items.length}</Badge>
+                  </h2>
+                  <p className="text-xs text-muted-foreground">{description}</p>
+                </div>
+              </div>
+              {items.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="py-6 text-center text-xs text-muted-foreground">
+                    Nenhuma etapa nesta categoria.
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {items.map(renderCard)}
+                </div>
+              )}
+            </section>
+          );
+
+          return (
+            <div className="space-y-8">
+              <Section
+                title="Fase Classificatória"
+                description="Etapas iniciais e seletivas que definem os classificados para as fases seguintes."
+                accent="bg-secondary"
+                items={classificatorias}
+              />
+              <Section
+                title="Fases Finais"
+                description="Regionais, semifinais e finais — etapas decisivas da competição."
+                accent="bg-primary"
+                items={finais}
+              />
+              {outras.length > 0 && (
+                <Section
+                  title="Outras Etapas"
+                  description="Etapas gerais ou de propósito específico."
+                  accent="bg-muted-foreground"
+                  items={outras}
+                />
+              )}
+            </div>
+          );
+        })()
       )}
     </div>
   );
