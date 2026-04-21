@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -19,6 +21,65 @@ import {
   Building2, Users, AlertTriangle, RefreshCw, Search, ExternalLink, Eye,
   XCircle, Loader2, ChevronRight, Database as DatabaseIcon
 } from "lucide-react";
+
+type QueryOperator = "eq" | "neq" | "contains" | "gt" | "lt" | "in";
+type QueryEntityKey = "participants" | "delegations" | "irregularities";
+
+type QueryField = {
+  key: string;
+  label: string;
+  operators: QueryOperator[];
+};
+
+type QueryFilter = {
+  id: string;
+  field: string;
+  operator: QueryOperator;
+  value: string;
+};
+
+const OPERATOR_LABEL: Record<QueryOperator, string> = {
+  eq: "Igual",
+  neq: "Diferente",
+  contains: "Contém",
+  gt: "Maior que",
+  lt: "Menor que",
+  in: "Lista (A,B,C)",
+};
+
+const QUERY_ENTITY_CONFIG: Record<QueryEntityKey, { label: string; table: string; select: string; fields: QueryField[] }> = {
+  participants: {
+    label: "Participantes",
+    table: "participants",
+    select: "id, status, participant_type, delegation_id, created_at, person:people(full_name, cpf)",
+    fields: [
+      { key: "status", label: "Status", operators: ["eq", "neq", "in"] },
+      { key: "participant_type", label: "Tipo", operators: ["eq", "neq", "in"] },
+      { key: "delegation_id", label: "Delegação (ID)", operators: ["eq", "in"] },
+    ],
+  },
+  delegations: {
+    label: "Delegações",
+    table: "delegations",
+    select: "id, status, notes, created_at, institution:institutions(name)",
+    fields: [
+      { key: "status", label: "Status", operators: ["eq", "neq", "in"] },
+      { key: "notes", label: "Observações", operators: ["contains"] },
+    ],
+  },
+  irregularities: {
+    label: "Irregularidades",
+    table: "participation_irregularities",
+    select: "id, rule_code, severity, status, message, participant_id, created_at",
+    fields: [
+      { key: "rule_code", label: "Regra", operators: ["eq", "contains", "in"] },
+      { key: "severity", label: "Severidade", operators: ["eq", "neq", "in"] },
+      { key: "status", label: "Status", operators: ["eq", "neq", "in"] },
+      { key: "participant_id", label: "Participante (ID)", operators: ["eq", "in"] },
+      { key: "message", label: "Mensagem", operators: ["contains"] },
+    ],
+  },
+};
 
 // ── Delegações Tab ──
 function DelegacoesTab() {
@@ -647,6 +708,193 @@ function AcoesLoteTab() {
   );
 }
 
+function QueryBuilderTab() {
+  const eventId = useActiveEventId();
+  const [entity, setEntity] = useState<QueryEntityKey>("participants");
+  const [limit, setLimit] = useState("50");
+  const [filters, setFilters] = useState<QueryFilter[]>([
+    { id: crypto.randomUUID(), field: "status", operator: "eq", value: "" },
+  ]);
+  const [result, setResult] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const entityConfig = QUERY_ENTITY_CONFIG[entity];
+
+  const setFilter = (id: string, patch: Partial<QueryFilter>) => {
+    setFilters((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
+  };
+
+  const addFilter = () => {
+    const firstField = entityConfig.fields[0];
+    setFilters((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), field: firstField.key, operator: firstField.operators[0], value: "" },
+    ]);
+  };
+
+  const removeFilter = (id: string) => setFilters((prev) => prev.filter((f) => f.id !== id));
+
+  const runQuery = async () => {
+    setIsLoading(true);
+    try {
+      let query = supabase.from(entityConfig.table).select(entityConfig.select).eq("event_id", eventId);
+
+      filters.forEach((filter) => {
+        const rawValue = filter.value.trim();
+        if (!rawValue) return;
+        if (filter.operator === "eq") query = query.eq(filter.field, rawValue);
+        if (filter.operator === "neq") query = query.neq(filter.field, rawValue);
+        if (filter.operator === "contains") query = query.ilike(filter.field, `%${rawValue}%`);
+        if (filter.operator === "gt") query = query.gt(filter.field, rawValue);
+        if (filter.operator === "lt") query = query.lt(filter.field, rawValue);
+        if (filter.operator === "in") query = query.in(filter.field, rawValue.split(",").map((v) => v.trim()).filter(Boolean));
+      });
+
+      const parsedLimit = Number(limit);
+      if (Number.isFinite(parsedLimit) && parsedLimit > 0) query = query.limit(parsedLimit);
+      else query = query.limit(50);
+
+      const { data, error } = await query.order("created_at", { ascending: false });
+      if (error) throw error;
+      setResult(data || []);
+      toast.success(`Consulta executada com sucesso (${(data || []).length} linha(s)).`);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao executar consulta.");
+      setResult([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const columns = result.length > 0 ? Object.keys(result[0]) : [];
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Construtor de Consulta</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="space-y-1">
+              <Label>Entidade</Label>
+              <Select
+                value={entity}
+                onValueChange={(value: QueryEntityKey) => {
+                  setEntity(value);
+                  const firstField = QUERY_ENTITY_CONFIG[value].fields[0];
+                  setFilters([{ id: crypto.randomUUID(), field: firstField.key, operator: firstField.operators[0], value: "" }]);
+                }}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(QUERY_ENTITY_CONFIG).map(([key, cfg]) => (
+                    <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Limite</Label>
+              <Input value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="50" />
+            </div>
+            <div className="flex items-end gap-2">
+              <Button onClick={runQuery} disabled={isLoading}>
+                {isLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Search className="h-4 w-4 mr-1" />}
+                Executar consulta
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Filtros</Label>
+              <Button size="sm" variant="outline" onClick={addFilter}>Adicionar filtro</Button>
+            </div>
+            {filters.map((filter) => {
+              const fieldMeta = entityConfig.fields.find((f) => f.key === filter.field) || entityConfig.fields[0];
+              return (
+                <div key={filter.id} className="grid gap-2 md:grid-cols-12">
+                  <div className="md:col-span-4">
+                    <Select
+                      value={filter.field}
+                      onValueChange={(value) => {
+                        const selected = entityConfig.fields.find((f) => f.key === value) || entityConfig.fields[0];
+                        setFilter(filter.id, { field: value, operator: selected.operators[0] });
+                      }}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {entityConfig.fields.map((f) => (
+                          <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-3">
+                    <Select value={filter.operator} onValueChange={(value: QueryOperator) => setFilter(filter.id, { operator: value })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {fieldMeta.operators.map((op) => (
+                          <SelectItem key={op} value={op}>{OPERATOR_LABEL[op]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-4">
+                    <Input
+                      value={filter.value}
+                      onChange={(e) => setFilter(filter.id, { value: e.target.value })}
+                      placeholder={filter.operator === "in" ? "a,b,c" : "valor"}
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <Button size="icon" variant="ghost" onClick={() => removeFilter(filter.id)} disabled={filters.length === 1}>
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-sm">Resultado</CardTitle></CardHeader>
+        <CardContent>
+          {result.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Execute uma consulta para visualizar os dados.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {columns.map((c) => (
+                      <TableHead key={c}>{c}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {result.map((row, rowIndex) => (
+                    <TableRow key={row.id || rowIndex}>
+                      {columns.map((column) => (
+                        <TableCell key={column} className="max-w-[280px] truncate">
+                          {typeof row[column] === "object" && row[column] !== null ? JSON.stringify(row[column]) : String(row[column] ?? "—")}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ── Main Page ──
 export default function CentralDadosPage() {
   return (
@@ -661,16 +909,18 @@ export default function CentralDadosPage() {
         </div>
 
         <Tabs defaultValue="delegacoes">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="delegacoes" className="flex items-center gap-1"><Building2 className="h-3 w-3" /> Delegações</TabsTrigger>
             <TabsTrigger value="atletas" className="flex items-center gap-1"><Users className="h-3 w-3" /> Atletas</TabsTrigger>
             <TabsTrigger value="pendencias" className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Pendências</TabsTrigger>
             <TabsTrigger value="acoes" className="flex items-center gap-1"><RefreshCw className="h-3 w-3" /> Ações em lote</TabsTrigger>
+            <TabsTrigger value="consulta" className="flex items-center gap-1"><Search className="h-3 w-3" /> Consulta</TabsTrigger>
           </TabsList>
           <TabsContent value="delegacoes"><DelegacoesTab /></TabsContent>
           <TabsContent value="atletas"><AtletasTab /></TabsContent>
           <TabsContent value="pendencias"><PendenciasTab /></TabsContent>
           <TabsContent value="acoes"><AcoesLoteTab /></TabsContent>
+          <TabsContent value="consulta"><QueryBuilderTab /></TabsContent>
         </Tabs>
       </div>
     </RequireActiveEvent>
