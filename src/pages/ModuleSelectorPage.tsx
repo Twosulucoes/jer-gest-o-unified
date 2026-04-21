@@ -166,8 +166,8 @@ export default function ModuleSelectorPage() {
     >
       <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
         <div className="text-center">
-          <img src="/brand/logo.png" alt="JER's Gestão" className="mx-auto mb-4 h-16 object-contain dark:hidden" />
-          <img src="/brand/logo-dark.png" alt="JER's Gestão" className="mx-auto mb-4 h-16 object-contain hidden dark:block" />
+          <img src="/brand/logo.png" alt="JER Gestão" className="mx-auto mb-4 h-16 object-contain dark:hidden" />
+          <img src="/brand/logo-dark.png" alt="JER Gestão" className="mx-auto mb-4 h-16 object-contain hidden dark:block" />
           <h1 className="font-heading text-xl font-bold text-foreground">Selecione o módulo</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Olá, <span className="font-medium">{userName}</span>! Você tem acesso a múltiplos módulos. Escolha onde deseja trabalhar:

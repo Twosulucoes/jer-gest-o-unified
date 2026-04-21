@@ -1,7 +1,7 @@
-/** JER's Gestão — Brand Design Tokens (source of truth) */
+/** JER Gestão — Brand Design Tokens (source of truth) */
 
 export const brand = {
-  brandName: "JER's Gestão",
+  brandName: "JER Gestão",
   colors: {
     primary: '#0B2B5A',
     primaryHover: '#072044',
@@ -37,6 +37,11 @@ export const brand = {
     headerBg: '#0B2B5A',
     headerText: '#FFFFFF',
     border: '#E2E8F0',
+  },
+  developer: {
+    name: 'Two Soluções',
+    role: 'Desenvolvedora da Plataforma',
+    website: 'https://twosulucoes.com.br',
   },
 } as const;
 

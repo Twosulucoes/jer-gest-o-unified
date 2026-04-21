@@ -14,8 +14,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, X, Plus, AlertTriangle } from "lucide-react";
+import { Loader2, X, Plus, AlertTriangle, ChevronsUpDown, Check } from "lucide-react";
 import { z } from "zod";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -48,6 +51,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
   const [gender, setGender] = useState<"male" | "female" | "">("");
   const [participantType, setParticipantType] = useState("colaborador");
   const [delegationId, setDelegationId] = useState<string>("");
+  const [delegationOpen, setDelegationOpen] = useState(false);
   const [needsTransport, setNeedsTransport] = useState(false);
   const [needsMeals, setNeedsMeals] = useState(false);
   const [needsLodging, setNeedsLodging] = useState(false);
@@ -317,15 +321,50 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
                 </div>
                 <div>
                   <Label>Delegação (opcional)</Label>
-                  <Select value={delegationId || "__none"} onValueChange={(v) => setDelegationId(v === "__none" ? "" : v)}>
-                    <SelectTrigger><SelectValue placeholder="Sem delegação" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">Sem delegação</SelectItem>
-                      {delegations.map((d: any) => (
-                        <SelectItem key={d.id} value={d.id}>{d.school_name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={delegationOpen} onOpenChange={setDelegationOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={delegationOpen}
+                        className="w-full justify-between font-normal"
+                      >
+                        <span className="truncate">
+                          {delegationId
+                            ? delegations.find((d: any) => d.id === delegationId)?.school_name
+                            : "Sem delegação"}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar delegação..." />
+                        <CommandList>
+                          <CommandEmpty>Nenhuma delegação encontrada.</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem
+                              value="__none"
+                              onSelect={() => { setDelegationId(""); setDelegationOpen(false); }}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", !delegationId ? "opacity-100" : "opacity-0")} />
+                              Sem delegação
+                            </CommandItem>
+                            {delegations.map((d: any) => (
+                              <CommandItem
+                                key={d.id}
+                                value={d.school_name}
+                                onSelect={() => { setDelegationId(d.id); setDelegationOpen(false); }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", delegationId === d.id ? "opacity-100" : "opacity-0")} />
+                                {d.school_name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 

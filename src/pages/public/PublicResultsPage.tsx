@@ -230,7 +230,7 @@ export default function PublicResultsPage() {
       </main>
 
       <footer className="border-t py-4 text-center text-sm text-muted-foreground">
-        JER Gestão — Jogos Escolares de Roraima
+        JER Gestão — Plataforma de Gestão do JERs
       </footer>
     </div>
   );

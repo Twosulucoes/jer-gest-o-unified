@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Settings, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { brand } from "@/theme/brand";
 import { dispatchGlobalRefresh } from "@/lib/systemRefresh";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -124,11 +125,11 @@ export default function SuperConfigPage() {
 
   const applyInstitutionalPreset = () => {
     setBrandingForm({
-      system_name: "JER Gestão",
-      subtitle: "Plataforma oficial de gestão dos Jogos Escolares",
-      footer_text: "JER Gestão • Solução oficial de gestão esportiva • Desenvolvido por Two Soluções",
-      developer_name: "Two Soluções",
-      developer_role: "Desenvolvedora da Plataforma",
+      system_name: brand.brandName,
+      subtitle: "Plataforma de Gestão do JERs",
+      footer_text: `${brand.brandName} • Plataforma de Gestão do JERs • Desenvolvido por ${brand.developer.name}`,
+      developer_name: brand.developer.name,
+      developer_role: brand.developer.role,
       developer_logo_url: "",
       version: "1.0.0",
     });

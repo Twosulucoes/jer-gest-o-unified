@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { brand } from "@/theme/brand";
 
 const ROLE_REDIRECT_MAP: Record<string, string> = {
   admin: "/admin",
@@ -141,16 +142,16 @@ export default function LoginPage() {
         <div className="mb-8 text-center">
           <img
             src="/brand/logo.png"
-            alt="JER's Gestão"
+            alt="JER Gestão"
             className="mx-auto mb-4 h-20 object-contain dark:hidden"
           />
           <img
             src="/brand/logo-dark.png"
-            alt="JER's Gestão"
+            alt="JER Gestão"
             className="mx-auto mb-4 h-20 object-contain hidden dark:block"
           />
           <p className="mt-1 text-sm text-muted-foreground">
-            Jogos Escolares de Roraima
+            Plataforma de Gestão do JERs
           </p>
         </div>
 
@@ -285,6 +286,17 @@ export default function LoginPage() {
           )}
         </DialogContent>
       </Dialog>
+      <p className="mt-6 text-center text-[11px] text-muted-foreground/50">
+        Desenvolvido por{" "}
+        <a
+          href={brand.developer.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-muted-foreground transition-colors"
+        >
+          {brand.developer.name}
+        </a>
+      </p>
     </div>
   );
 }

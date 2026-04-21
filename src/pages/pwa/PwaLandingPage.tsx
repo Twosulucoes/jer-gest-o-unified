@@ -116,7 +116,7 @@ export default function PwaLandingPage() {
           <div className="flex items-center gap-3">
             <img src="/brand/symbol.png" alt="" className="h-10 w-10 rounded-lg shadow-lg" />
             <div>
-              <h1 className="text-lg font-heading font-bold text-primary-foreground">JER's Gestão</h1>
+              <h1 className="text-lg font-heading font-bold text-primary-foreground">JER Gestão</h1>
               <p className="text-sm text-primary-foreground/70">
                 Olá, {profile.full_name || "Usuário"}
               </p>

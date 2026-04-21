@@ -22,6 +22,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import type { Database } from "@/integrations/supabase/types";
 import { NavigationHistoryTracker } from "@/hooks/useNavigationHistory";
 import { useMobileBackGuard } from "@/hooks/useMobileBackGuard";
+import { brand } from "@/theme/brand";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -248,11 +249,11 @@ export default function AdminLayout() {
           {/* Logo */}
           <div className={`flex h-16 items-center border-b border-sidebar-border ${collapsed ? "justify-center px-2" : "justify-between px-4"}`}>
             {collapsed ? (
-              <img src="/brand/icon-dark.png" alt="JER's Gestão" className="h-8 w-8 rounded-lg object-contain" />
+              <img src="/brand/icon-dark.png" alt="JER Gestão" className="h-8 w-8 rounded-lg object-contain" />
             ) : (
               <div className="flex items-center gap-2.5">
-                <img src="/brand/icon-dark.png" alt="JER's Gestão" className="h-8 w-8 rounded-lg object-contain" />
-                <span className="font-heading text-base font-bold text-sidebar-foreground">JER's Gestão</span>
+                <img src="/brand/icon-dark.png" alt="JER Gestão" className="h-8 w-8 rounded-lg object-contain" />
+                <span className="font-heading text-base font-bold text-sidebar-foreground">JER Gestão</span>
               </div>
             )}
             <button onClick={closeSidebar} className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground">
@@ -368,6 +369,17 @@ export default function AdminLayout() {
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair
               </Button>
+              <p className="mt-2 text-[10px] text-sidebar-foreground/30 text-center leading-tight">
+                Desenvolvido por{" "}
+                <a
+                  href={brand.developer.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-sidebar-foreground/60 transition-colors"
+                >
+                  {brand.developer.name}
+                </a>
+              </p>
             </div>
           )}
         </aside>
@@ -385,7 +397,7 @@ export default function AdminLayout() {
             </button>
 
             <h2 className="font-heading text-sm font-semibold text-foreground truncate">
-              Jogos Escolares de Roraima
+              Plataforma de Gestão do JERs
             </h2>
 
             <div className="flex-1" />
