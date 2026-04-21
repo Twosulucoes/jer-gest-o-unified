@@ -105,6 +105,7 @@ import SuperEventosPage from "./pages/super/SuperEventosPage";
 import SuperLogsPage from "./pages/super/SuperLogsPage";
 import SuperConfigPage from "./pages/super/SuperConfigPage";
 import SuperMonitorPage from "./pages/super/SuperMonitorPage";
+import SuperInspectorPage from "./pages/super/SuperInspectorPage";
 import EmailTemplatesPage from "./pages/admin/EmailTemplatesPage";
 import LinksPage from "./pages/admin/LinksPage";
 import LinkFormPage from "./pages/admin/LinkFormPage";
@@ -216,6 +217,7 @@ const App = () => (
               <Route path="manual" element={<SuperManualPage />} />
               <Route path="chamados" element={<SuperChamadosPage />} />
               <Route path="validador" element={<SchemaValidadorPage />} />
+              <Route path="inspector" element={<SuperInspectorPage />} />
             </Route>
             <Route
               path="/admin"
