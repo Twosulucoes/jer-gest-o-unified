@@ -479,6 +479,227 @@ const TABLE_CONFIGS: TableConfig[] = [
       },
     ],
   },
+  {
+    name: "meal_consumptions",
+    label: "Consumo de Refeições",
+    menuGroup: "Logística",
+    orderBy: "consumed_at",
+    select: [
+      "id", "consumed_at",
+      "participant_id", "participant:participants(participant_type,person:people(full_name,cpf),delegation:delegations(school_name))",
+      "meal_window_id", "meal_window:meal_windows(starts_at,ends_at,meal_type:meal_types(name),event:events(name))",
+    ].join(","),
+    colGroups: [
+      {
+        label: "Consumo", hex: "#b45309",
+        cols: [
+          { key: "consumed_at", label: "Consumido em", type: "date" },
+        ],
+      },
+      {
+        label: "Participante", hex: "#475569",
+        cols: [
+          { key: "participant.person.full_name", label: "Nome" },
+          { key: "participant.person.cpf", label: "CPF" },
+          { key: "participant.participant_type", label: "Tipo", type: "badge" },
+          { key: "participant.delegation.school_name", label: "Delegação" },
+        ],
+      },
+      {
+        label: "Janela de Refeição", hex: "#92400e",
+        cols: [
+          { key: "meal_window.meal_type.name", label: "Tipo" },
+          { key: "meal_window.event.name", label: "Evento" },
+          { key: "meal_window.starts_at", label: "Início", type: "date" },
+          { key: "meal_window.ends_at", label: "Fim", type: "date" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "lodging_occupancies",
+    label: "Hospedagens",
+    menuGroup: "Logística",
+    orderBy: "created_at",
+    select: [
+      "id", "check_in_at", "check_out_at", "created_at",
+      "participant_id", "participant:participants(participant_type,person:people(full_name,cpf),delegation:delegations(school_name))",
+      "unit_id", "unit:lodging_units(name,location:lodging_locations(name))",
+      "event_id", "event:events(name,year)",
+    ].join(","),
+    colGroups: [
+      {
+        label: "Hospedagem", hex: "#0e7490",
+        cols: [
+          { key: "check_in_at", label: "Check-in", type: "date" },
+          { key: "check_out_at", label: "Check-out", type: "date" },
+          { key: "created_at", label: "Criado em", type: "date" },
+        ],
+      },
+      {
+        label: "Participante", hex: "#475569",
+        cols: [
+          { key: "participant.person.full_name", label: "Nome" },
+          { key: "participant.person.cpf", label: "CPF" },
+          { key: "participant.participant_type", label: "Tipo", type: "badge" },
+          { key: "participant.delegation.school_name", label: "Delegação" },
+        ],
+      },
+      {
+        label: "Acomodação", hex: "#155e75",
+        cols: [
+          { key: "unit.location.name", label: "Local" },
+          { key: "unit.name", label: "Unidade" },
+        ],
+      },
+      {
+        label: "Evento", hex: "#7c3aed",
+        cols: [{ key: "event.name", label: "Evento" }],
+      },
+    ],
+  },
+  {
+    name: "transport_passengers",
+    label: "Passageiros (Transporte)",
+    menuGroup: "Logística",
+    orderBy: "created_at",
+    select: [
+      "id", "created_at",
+      "participant_id", "participant:participants(participant_type,person:people(full_name,cpf),delegation:delegations(school_name))",
+      "trip_id", "trip:transport_trips(departure_at,route:transport_routes(name),vehicle:transport_vehicles(plate,capacity))",
+    ].join(","),
+    colGroups: [
+      {
+        label: "Passageiro", hex: "#065f46",
+        cols: [
+          { key: "created_at", label: "Adicionado em", type: "date" },
+        ],
+      },
+      {
+        label: "Participante", hex: "#475569",
+        cols: [
+          { key: "participant.person.full_name", label: "Nome" },
+          { key: "participant.person.cpf", label: "CPF" },
+          { key: "participant.participant_type", label: "Tipo", type: "badge" },
+          { key: "participant.delegation.school_name", label: "Delegação" },
+        ],
+      },
+      {
+        label: "Viagem", hex: "#047857",
+        cols: [
+          { key: "trip.route.name", label: "Rota" },
+          { key: "trip.vehicle.plate", label: "Veículo" },
+          { key: "trip.vehicle.capacity", label: "Capacidade" },
+          { key: "trip.departure_at", label: "Partida", type: "date" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "lodging_units",
+    label: "Unidades de Hospedagem",
+    menuGroup: "Logística",
+    orderBy: "name",
+    select: [
+      "id", "name", "capacity", "floor", "created_at",
+      "location_id", "location:lodging_locations(name,address)",
+      "event_id", "event:events(name,year)",
+    ].join(","),
+    colGroups: [
+      {
+        label: "Unidade", hex: "#0e7490",
+        cols: [
+          { key: "name", label: "Nome" },
+          { key: "capacity", label: "Capacidade" },
+          { key: "floor", label: "Andar" },
+          { key: "created_at", label: "Criado em", type: "date" },
+        ],
+      },
+      {
+        label: "Local", hex: "#155e75",
+        cols: [
+          { key: "location.name", label: "Local" },
+          { key: "location.address", label: "Endereço" },
+        ],
+      },
+      {
+        label: "Evento", hex: "#7c3aed",
+        cols: [{ key: "event.name", label: "Evento" }],
+      },
+    ],
+  },
+  {
+    name: "transport_trips",
+    label: "Viagens (Transporte)",
+    menuGroup: "Logística",
+    orderBy: "departure_at",
+    select: [
+      "id", "departure_at", "status", "created_at",
+      "route_id", "route:transport_routes(name)",
+      "vehicle_id", "vehicle:transport_vehicles(plate,capacity)",
+      "event_id", "event:events(name,year)",
+    ].join(","),
+    colGroups: [
+      {
+        label: "Viagem", hex: "#065f46",
+        cols: [
+          { key: "status", label: "Status", type: "badge" },
+          { key: "departure_at", label: "Partida", type: "date" },
+          { key: "created_at", label: "Criado em", type: "date" },
+        ],
+      },
+      {
+        label: "Rota", hex: "#047857",
+        cols: [{ key: "route.name", label: "Rota" }],
+      },
+      {
+        label: "Veículo", hex: "#064e3b",
+        cols: [
+          { key: "vehicle.plate", label: "Placa" },
+          { key: "vehicle.capacity", label: "Capacidade" },
+        ],
+      },
+      {
+        label: "Evento", hex: "#7c3aed",
+        cols: [{ key: "event.name", label: "Evento" }],
+      },
+    ],
+  },
+  {
+    name: "meal_windows",
+    label: "Janelas de Refeição",
+    menuGroup: "Logística",
+    orderBy: "starts_at",
+    select: [
+      "id", "starts_at", "ends_at", "quota", "created_at",
+      "meal_type_id", "meal_type:meal_types(name)",
+      "event_id", "event:events(name,year)",
+      "event_stage_id", "event_stage:event_stages(name)",
+    ].join(","),
+    colGroups: [
+      {
+        label: "Janela", hex: "#b45309",
+        cols: [
+          { key: "starts_at", label: "Início", type: "date" },
+          { key: "ends_at", label: "Fim", type: "date" },
+          { key: "quota", label: "Cota" },
+          { key: "created_at", label: "Criado em", type: "date" },
+        ],
+      },
+      {
+        label: "Tipo de Refeição", hex: "#92400e",
+        cols: [{ key: "meal_type.name", label: "Tipo" }],
+      },
+      {
+        label: "Etapa", hex: "#78350f",
+        cols: [{ key: "event_stage.name", label: "Etapa" }],
+      },
+      {
+        label: "Evento", hex: "#7c3aed",
+        cols: [{ key: "event.name", label: "Evento" }],
+      },
+    ],
+  },
 ];
 
 const MENU_GROUPS = Array.from(new Set(TABLE_CONFIGS.map((t) => t.menuGroup)));
