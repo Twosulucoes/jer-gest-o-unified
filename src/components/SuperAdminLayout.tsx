@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   LayoutDashboard, Calendar, LogOut, Menu, X, ScrollText, Settings,
-  ChevronsLeft, ChevronsRight, User, ChevronLeft, Activity, BookOpen, LifeBuoy,
+  ChevronsLeft, ChevronsRight, User, ChevronLeft, Activity, BookOpen, LifeBuoy, DatabaseZap,
 } from "lucide-react";
 import { useState } from "react";
 import { brand } from "@/theme/brand";
@@ -26,6 +26,7 @@ const navItems: NavItem[] = [
   { label: "Monitor (PWA)", to: "/super/monitor", icon: <Activity className="h-4 w-4" /> },
   { label: "Chamados", to: "/super/chamados", icon: <LifeBuoy className="h-4 w-4" /> },
   { label: "Manual de Instruções", to: "/super/manual", icon: <BookOpen className="h-4 w-4" /> },
+  { label: "Inspetor de Dados", to: "/super/inspector", icon: <DatabaseZap className="h-4 w-4" /> },
   { label: "Logs do Sistema", to: "/super/logs", icon: <ScrollText className="h-4 w-4" /> },
   { label: "Configurações", to: "/super/config", icon: <Settings className="h-4 w-4" /> },
 ];
