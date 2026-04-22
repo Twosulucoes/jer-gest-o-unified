@@ -153,16 +153,16 @@ export default function LoginPage() {
           {/* Topo: só a marca — sem caixa nem repetir o nome */}
           <header className="shrink-0 pb-5 text-center sm:pb-6">
             <h1 className="sr-only">JER Gestão</h1>
-            <div className="mx-auto flex max-w-[280px] justify-center sm:max-w-[340px]">
+            <div className="mx-auto flex max-w-[320px] justify-center sm:max-w-[400px]">
               <img
                 src="/brand/logo.png"
                 alt="JER Gestão"
-                className="h-20 w-auto max-w-full object-contain object-center dark:hidden sm:h-24"
+                className="h-32 w-auto max-w-full object-contain object-center dark:hidden sm:h-40"
               />
               <img
                 src="/brand/logo-dark.png"
                 alt="JER Gestão"
-                className="hidden h-20 w-auto max-w-full object-contain object-center dark:block sm:h-24"
+                className="hidden h-32 w-auto max-w-full object-contain object-center dark:block sm:h-40"
               />
             </div>
             <p className="mx-auto mt-4 max-w-[320px] text-base leading-snug text-muted-foreground/90 font-medium">
