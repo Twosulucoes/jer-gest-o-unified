@@ -18,11 +18,29 @@ import { useStageScope } from "@/hooks/useStageScope";
 
 export default function AlojamentoOcupacaoPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
-  const { isStageScoped, stageId } = useStageScope();
-  const [selectedUnitId, setSelectedUnitId] = useState("");
-  const canOperate = hasRole("admin") || hasRole("secretaria");
+  const { isStageScoped, stageId, stage } = useStageScope();
+  const [selectedUnitId, setSelectedUnitId] = useState(searchParams.get("unitId") || "");
+  const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alojamento");
+
+  // Sync unitId from search params
+  useEffect(() => {
+    const unitId = searchParams.get("unitId");
+    if (unitId && unitId !== selectedUnitId) {
+      setSelectedUnitId(unitId);
+    }
+  }, [searchParams]);
+
+  const handleUnitChange = (v: string) => {
+    setSelectedUnitId(v);
+    setSearchParams((prev) => {
+      prev.set("unitId", v);
+      return prev;
+    });
+  };
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
