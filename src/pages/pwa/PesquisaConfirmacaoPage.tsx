@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Plus, Home } from 'lucide-react';
+import { CheckCircle2, Plus, Home, ScanLine } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function PesquisaConfirmacaoPage() {
