@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { saveSession, getDeviceId, getSession } from '@/lib/pesquisaSession';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { ClipboardList } from 'lucide-react';
-import { useEffect } from 'react';
+import { ClipboardList, Loader2, Delete } from 'lucide-react';
 import { PwaBrandLogo } from '@/components/pwa/PwaBrandLogo';
 
 export default function PesquisaLoginPage() {
