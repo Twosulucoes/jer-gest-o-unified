@@ -44,18 +44,23 @@ export default function ParticipantesPage() {
   const selectedEventId = useActiveEventId();
   const { hasRole } = useAuth();
   const canManage = hasRole("admin") || hasRole("secretaria") || hasRole("super_admin");
-  const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearch = useDebounce(searchTerm, 350);
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"name" | "created" | "type" | "status" | "institution">("name");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(50);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Load state from URL search params
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+  const debouncedSearch = useDebounce(searchTerm, 350);
+  const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") || "all");
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all");
+  const [sortBy, setSortBy] = useState<"name" | "created" | "type" | "status" | "institution">(
+    (searchParams.get("sort") as any) || "name"
+  );
+  const [sortDir, setSortDir] = useState<"asc" | "desc">((searchParams.get("dir") as any) || "asc");
+  const [page, setPage] = useState(Number(searchParams.get("page")) || 0);
+  const [pageSize, setPageSize] = useState(50);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const stageFilterId = searchParams.get("stage");
+
 
   const { data: branding } = useEventBranding(selectedEventId);
 
