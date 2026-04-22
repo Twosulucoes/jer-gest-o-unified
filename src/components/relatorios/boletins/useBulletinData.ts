@@ -179,11 +179,30 @@ export function useBulletinData(filters: BulletinFilters) {
         validationAlerts.push({
           type: "warning",
           message: `${matchesMissingStartTime.length} partida(s) sem horário definido.`,
-          details: "Considere preencher os horários para garantir a ordenação correta e informações completas no boletim."
+          details: "Considere preencher os horários para garantir a ordenação correta no boletim.",
+          links: matchesMissingStartTime.slice(0, 5).map(m => ({
+            label: `Editar Partida #${m.match_number || m.id.slice(0, 4)}`,
+            url: `/admin/competicao/partida/${m.id}`
+          }))
         });
       }
 
-      // Checa match_id em resultados
+      // Checa partidas finalizadas sem resultados lançados
+      const resultsByMatchId = new Set(results.map(r => r.match_id));
+      const finishedMissingResults = (matchesRaw || []).filter(m => m.status === 'finished' && !resultsByMatchId.has(m.id));
+      if (finishedMissingResults.length > 0) {
+        validationAlerts.push({
+          type: "error",
+          message: `${finishedMissingResults.length} partida(s) finalizada(s) sem resultados vinculados.`,
+          details: "Partidas concluídas devem ter resultados registrados para aparecerem no boletim oficial.",
+          links: finishedMissingResults.slice(0, 5).map(m => ({
+            label: `Lançar Resultados #${m.match_number || m.id.slice(0, 4)}`,
+            url: `/admin/competicao/partida/${m.id}`
+          }))
+        });
+      }
+
+      // Checa se há resultados órfãos (se por acaso algum resultado escapou do matchIdToIndex)
       const resultsMissingMatchId = results.filter((r) => !r.match_id);
       if (resultsMissingMatchId.length > 0) {
         validationAlerts.push({
