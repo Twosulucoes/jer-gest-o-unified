@@ -135,7 +135,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
           event_id: eventId,
           number: nextNumber,
           title: newTitle.trim(),
-          status: "published",
+          status: "publicado",
           published_at: new Date().toISOString(),
           published_by: user?.id ?? null,
           content_md: `# Boletim Oficial #${nextNumber}\n\n${newTitle.trim()}`,
