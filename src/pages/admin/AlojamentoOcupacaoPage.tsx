@@ -282,107 +282,26 @@ export default function AlojamentoOcupacaoPage() {
         </div>
       )}
 
-      {/* Search to allocate */}
+      {/* Alocar participante - Substituído por botão para PWA */}
       {canOperate && selectedUnitId && !unitFull && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Alocar participante</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* QR Code lookup */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block flex items-center gap-1">
-                <QrCode className="h-3 w-3" /> Busca por QR Code
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Escanear ou colar código QR..."
-                  value={qrCode}
-                  onChange={(e) => { setQrCode(e.target.value); setQrResult(null); setQrError(null); }}
-                  onKeyDown={async (e) => {
-                    if (e.key === "Enter" && qrCode.trim() && selectedEventId) {
-                      const { data, error } = await lookupByQrCode(qrCode.trim(), selectedEventId);
-                      if (error) { setQrError(error.message); setQrResult(null); }
-                      else if (data) {
-                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, gender: data.gender ?? "male" });
-                        setQrError(null);
-                      }
-                    }
-                  }}
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!qrCode.trim() || qrLoading}
-                  onClick={async () => {
-                    if (qrCode.trim() && selectedEventId) {
-                      const { data, error } = await lookupByQrCode(qrCode.trim(), selectedEventId);
-                      if (error) { setQrError(error.message); setQrResult(null); }
-                      else if (data) {
-                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, gender: data.gender ?? "male" });
-                        setQrError(null);
-                      }
-                    }
-                  }}
-                >
-                  {qrLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
-                </Button>
-              </div>
-              {qrError && (
-                <div className="mt-2 flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="h-4 w-4" /> {qrError}
-                </div>
-              )}
-              {qrResult && (
-                <div className="mt-2 flex items-center justify-between rounded-lg border px-4 py-2.5 bg-muted/30">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{qrResult.name}</p>
-                    <p className="text-xs text-muted-foreground">{qrResult.cpf ?? "Sem CPF"} • {qrResult.gender === "male" ? "M" : "F"}</p>
-                  </div>
-                  {activeParticipantIds.has(qrResult.participantId) ? (
-                    <Badge variant="secondary">Já alocado</Badge>
-                  ) : (
-                    <Button size="sm" onClick={() => { allocateMut.mutate(qrResult.participantId); setQrCode(""); setQrResult(null); }} disabled={allocateMut.isPending}>
-                      <UserPlus className="mr-1 h-3 w-3" /> Alocar
-                    </Button>
-                  )}
-                </div>
-              )}
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="pt-6 pb-6 flex flex-col items-center text-center space-y-4">
+            <div className="bg-primary/10 p-3 rounded-full">
+              <QrCode className="h-8 w-8 text-primary" />
             </div>
-
-            {/* Manual search */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block flex items-center gap-1">
-                <Search className="h-3 w-3" /> Busca manual por nome/CPF
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar por nome ou CPF..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
-              </div>
+            <div className="max-w-md">
+              <h3 className="text-lg font-bold text-foreground">Alocar Participante</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                A alocação de participantes e realização de check-in agora deve ser feita através do módulo PWA para melhor experiência e suporte a leitura de QR Code.
+              </p>
             </div>
-            {searching && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Buscando...</div>}
-            {searchResults.length > 0 && (
-              <div className="rounded-lg border divide-y max-h-60 overflow-y-auto">
-                {searchResults.map((sr) => {
-                  const alreadyHere = activeParticipantIds.has(sr.id);
-                  return (
-                    <div key={sr.id} className="flex items-center justify-between px-4 py-2.5">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{sr.person?.full_name ?? "—"}</p>
-                        <p className="text-xs text-muted-foreground">{sr.person?.cpf ?? "Sem CPF"} • {sr.person?.gender === "male" ? "M" : "F"}</p>
-                      </div>
-                      {alreadyHere ? (
-                        <Badge variant="secondary">Já alocado</Badge>
-                      ) : (
-                        <Button size="sm" onClick={() => allocateMut.mutate(sr.id)} disabled={allocateMut.isPending}>
-                          <UserPlus className="mr-1 h-3 w-3" /> Alocar
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <Button 
+              size="lg" 
+              className="w-full max-w-xs"
+              onClick={() => window.location.href = "/pwa/alojamento"}
+            >
+              Ir para Alocação (PWA)
+            </Button>
           </CardContent>
         </Card>
       )}
