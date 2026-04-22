@@ -10,6 +10,9 @@ interface CredentialLookupResult {
   credential_code: string | null;
   food_restrictions?: string | null;
   gender?: string;
+  birth_date?: string | null;
+  photo_url?: string | null;
+  institution?: string | null;
   matched_by?: "qr_code_value" | "credential_code" | "external_credential" | "cpf";
 }
 
