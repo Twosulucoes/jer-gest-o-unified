@@ -22,13 +22,128 @@ export const boletimInformativoReport: ReportDefinition = {
   ],
   datasource: {
     type: 'custom',
-    customLoader: async (_filters) => {
-      // Mock data for boletim structure
-      return [
-        { section: 'Avisos Gerais', content: 'Informações sobre transporte e alimentação.' },
-        { section: 'Programação', content: 'Próximas partidas e eventos sociais.' },
-        { section: 'Resultados', content: 'Placar das partidas finalizadas no período.' },
-      ];
+    customLoader: async (filters, _ctx, supabase) => {
+      const eventId = filters.event_id as string;
+      const date = filters.date as string;
+      const resultsData: { section: string; content: string }[] = [];
+
+      // 1. Avisos (from official_bulletins)
+      // Buscamos boletins publicados no dia ou que foram publicados e referem-se ao período.
+      // Como não há 'bulletin_date', usamos a data de publicação ou criação.
+      const { data: bulletins } = await supabase
+        .from('official_bulletins')
+        .select('title, content_md')
+        .eq('event_id', eventId)
+        .eq('status', 'published')
+        .gte('published_at', `${date}T00:00:00Z`)
+        .lte('published_at', `${date}T23:59:59Z`);
+
+      if (bulletins && bulletins.length > 0) {
+        bulletins.forEach(b => {
+          resultsData.push({
+            section: 'Avisos Gerais',
+            content: `${b.title.toUpperCase()}\n${b.content_md}`
+          });
+        });
+      } else {
+        resultsData.push({ 
+          section: 'Avisos Gerais', 
+          content: 'Nenhum comunicado oficial publicado para esta data.' 
+        });
+      }
+
+      // 2. Programação (from competition_matches)
+      if (filters.include_schedule !== false) {
+        const { data: matches } = await supabase
+          .from('competition_matches')
+          .select(`
+            start_time,
+            sport_events(name),
+            venues(name)
+          `)
+          .eq('event_id', eventId)
+          .eq('match_date', date)
+          .order('start_time', { ascending: true });
+
+        if (matches && matches.length > 0) {
+          const scheduleText = matches.map(m => {
+            const sportName = (m.sport_events as any)?.name || 'Modalidade';
+            const venueName = (m.venues as any)?.name || 'Local a definir';
+            return `• ${m.start_time || '--:--'} - ${sportName} (${venueName})`;
+          }).join('\n');
+          
+          resultsData.push({
+            section: 'Programação do Dia',
+            content: scheduleText
+          });
+        } else {
+          resultsData.push({ 
+            section: 'Programação do Dia', 
+            content: 'Nenhuma atividade programada para esta data.' 
+          });
+        }
+      }
+
+      // 3. Resultados (from competition_match_results)
+      if (filters.include_results !== false) {
+        const { data: matchResults } = await supabase
+          .from('competition_match_results')
+          .select(`
+            match_id,
+            score,
+            outcome,
+            result_text,
+            competition_matches!inner(
+              match_number,
+              sport_events(name)
+            )
+          `)
+          .eq('competition_matches.event_id', eventId)
+          .eq('competition_matches.match_date', date)
+          .eq('result_status', 'resultado_validado');
+
+        if (matchResults && matchResults.length > 0) {
+          // Agrupar resultados por partida para mostrar de forma consolidada
+          const grouped: Record<string, { title: string; results: string[] }> = {};
+          
+          matchResults.forEach(r => {
+            const match = r.competition_matches as any;
+            const sportName = match?.sport_events?.name || 'Modalidade';
+            const key = r.match_id;
+            
+            if (!grouped[key]) {
+              grouped[key] = {
+                title: `${sportName} - Partida #${match?.match_number || '?'}`,
+                results: []
+              };
+            }
+            
+            if (r.score) {
+              grouped[key].results.push(r.score);
+            } else if (r.result_text) {
+              grouped[key].results.push(r.result_text);
+            } else if (r.outcome) {
+              grouped[key].results.push(r.outcome);
+            }
+          });
+
+          const resultsText = Object.values(grouped).map(g => 
+            `${g.title}: ${g.results.join(' x ')}`
+          ).join('\n');
+
+          resultsData.push({
+            section: 'Resultados Oficiais',
+            content: resultsText
+          });
+        } else {
+          resultsData.push({ 
+            section: 'Resultados Oficiais', 
+            content: 'Nenhum resultado publicado para esta data.' 
+          });
+        }
+      }
+
+      return resultsData;
     }
   },
   layout: { orientation: 'portrait', showLogo: true, showPageNumbers: true },
