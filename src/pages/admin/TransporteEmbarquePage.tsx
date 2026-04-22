@@ -301,8 +301,17 @@ export default function TransporteEmbarquePage() {
                       const { data, error } = await lookupByQrCode(qrCode.trim(), trip.event_id);
                       if (error) { setQrError(error.message); setQrResult(null); }
                       else if (data) {
-                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, type: data.participant_type });
+                        setQrResult({ 
+                          name: data.person_name, 
+                          participantId: data.participant_id, 
+                          cpf: data.person_cpf, 
+                          type: data.participant_type,
+                          photo_url: data.photo_url,
+                          institution: data.institution,
+                          birth_date: data.birth_date
+                        });
                         setQrError(null);
+                        setShowReview(true);
                       }
                     }
                   }}
