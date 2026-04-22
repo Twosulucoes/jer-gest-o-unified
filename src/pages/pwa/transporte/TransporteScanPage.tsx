@@ -105,7 +105,9 @@ export default function TransporteScanPage() {
 
       if (existing) {
         if (existing.status === "boarded") {
-          setResult({ ok: true, source, message: `${name} já embarcou anteriormente` });
+          const msg = `${name} já embarcou anteriormente`;
+          setResult({ ok: true, source, message: msg });
+          toast.info(msg);
           recordOutcome("ok");
           reopenIfContinuous();
           return;
