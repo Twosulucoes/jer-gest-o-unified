@@ -11,7 +11,8 @@ import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useEventContext } from "@/contexts/EventContext";
-import { isVoucherQr, tryRedeemVoucher, voucherReasonLabel } from "@/lib/voucherScan";
+import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
+import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAuth } from "@/hooks/useAuth";
 import {
   loadScanPreferences,
