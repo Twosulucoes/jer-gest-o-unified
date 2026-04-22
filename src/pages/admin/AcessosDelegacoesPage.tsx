@@ -464,7 +464,12 @@ export default function AcessosDelegacoesPage() {
                     const modas = sportsByUser[u.user_id] || [];
                     return (
                       <TableRow key={u.user_id}>
-                        <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <span>{u.full_name || "—"}</span>
+                            {!u.active && <Badge variant="destructive" className="text-[10px] h-4 px-1">Inativo</Badge>}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
                         <TableCell>
                           {modas.length === 0 ? (
