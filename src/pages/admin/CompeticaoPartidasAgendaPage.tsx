@@ -10,7 +10,7 @@ import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import { useStageScope } from "@/hooks/useStageScope";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Pencil, Swords, CalendarDays, MapPin, Eye, Filter, List, Calendar, AlertTriangle, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Swords, MapPin, Eye, List, Calendar, AlertTriangle, AlertCircle } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
