@@ -66,9 +66,11 @@ const navGroups: NavGroup[] = [
       { label: "Eventos", to: "/admin/eventos", icon: <Calendar className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Histórico do Participante", to: "/admin/participantes/historico", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Instituições", to: "/admin/instituicoes", icon: <Building className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Credencial (Modelos)", to: "/admin/credenciais/modelos", icon: <BadgeCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Vínculos de Importação", to: "/admin/importacao/aliases", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
@@ -122,16 +124,6 @@ const navGroups: NavGroup[] = [
       { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Modalidades", to: "/admin/modalidades", icon: <Dumbbell className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Categorias", to: "/admin/categorias", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
-    ],
-  },
-  {
-    id: "diagnostico", label: "Diagnóstico e Dados", description: "Ferramentas para Super Admin.",
-    icon: <Activity className="h-4 w-4" />,
-    items: [
-      { label: "Painel Super Admin", to: "/super", icon: <Shield className="h-4 w-4" />, roles: ["super_admin"] },
-      { label: "Central de Dados", to: "/admin/dados", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["super_admin"] },
-      { label: "Diagnóstico Sistema", to: "/admin/sistema/diagnostico", icon: <Info className="h-4 w-4" />, roles: ["super_admin"] },
-      { label: "Validador de Schema", to: "/admin/schema/validador", icon: <CheckCircle className="h-4 w-4" />, roles: ["super_admin"] },
     ],
   },
   {

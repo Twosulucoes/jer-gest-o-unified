@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   LayoutDashboard, Calendar, LogOut, Menu, X, ScrollText, Settings,
   ChevronsLeft, ChevronsRight, User, ChevronLeft, Activity, BookOpen, LifeBuoy, DatabaseZap,
-  ShieldCheck,
+  ShieldCheck, Database as DatabaseIcon, Info, CheckCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { brand } from "@/theme/brand";
@@ -31,6 +31,9 @@ const navItems: NavItem[] = [
   { label: "Logs do Sistema", to: "/super/logs", icon: <ScrollText className="h-4 w-4" /> },
   { label: "Configurações", to: "/super/config", icon: <Settings className="h-4 w-4" /> },
   { label: "Permissões", to: "/super/permissoes", icon: <ShieldCheck className="h-4 w-4" /> },
+  { label: "Central de Dados", to: "/admin/dados", icon: <DatabaseIcon className="h-4 w-4" /> },
+  { label: "Diagnóstico Sistema", to: "/admin/sistema/diagnostico", icon: <Info className="h-4 w-4" /> },
+  { label: "Validador de Schema", to: "/admin/schema/validador", icon: <CheckCircle className="h-4 w-4" /> },
 ];
 
 function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: boolean; onClick?: () => void }) {
