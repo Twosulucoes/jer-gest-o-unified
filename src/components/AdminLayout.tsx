@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree,
-  Building2, Users, Upload, KeyRound,
+  Building2, Users, Upload, KeyRound, BadgeCheck, Gavel,
   UsersRound, ChevronDown,
   Shield, Settings, AlertTriangle, FileBarChart,
   Info, ExternalLink, ChevronsLeft,
@@ -64,8 +64,9 @@ const navGroups: NavGroup[] = [
     icon: <FolderOpen className="h-4 w-4" />,
     items: [
       { label: "Eventos", to: "/admin/eventos", icon: <Calendar className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Credencial (Modelos)", to: "/admin/credenciais/modelos", icon: <BadgeCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
@@ -88,6 +89,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Acessos e Vínculos", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Protestos (Fila CDE)", to: "/admin/etapa/redirect/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde", "super_admin"] as AppRole[] },
       { label: "Links Externos", to: "/admin/links", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
     ],
   },
