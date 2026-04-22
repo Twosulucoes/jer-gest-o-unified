@@ -463,6 +463,23 @@ export default function TransporteEmbarquePage() {
           )}
         </CardContent>
       </Card>
+      <ParticipantReviewDialog
+        open={showReview}
+        onOpenChange={setShowReview}
+        participant={qrResult}
+        onConfirm={() => {
+          if (qrResult) {
+            boardMut.mutate(qrResult.participantId);
+          }
+        }}
+        confirmLabel={boardedIds.has(qrResult?.participantId ?? "") ? "Já Embarcado" : "Registrar Embarque"}
+        loading={boardMut.isPending}
+        title="Validar Embarque"
+        statusLabel={boardedIds.has(qrResult?.participantId ?? "") ? "JÁ EMBARCADO" : "PRONTO PARA EMBARCAR"}
+        statusColor={boardedIds.has(qrResult?.participantId ?? "") ? "bg-muted border-border" : "bg-blue-50 border-blue-200 text-blue-700"}
+        statusIcon={boardedIds.has(qrResult?.participantId ?? "") ? <AlertTriangle className="h-8 w-8 text-muted-foreground" /> : <CheckCircle2 className="h-8 w-8 text-blue-600" />}
+        message={boardedIds.has(qrResult?.participantId ?? "") ? "Este participante já está registrado nesta viagem." : "Confirme os dados para registrar o embarque."}
+      />
     </div>
   );
 }
