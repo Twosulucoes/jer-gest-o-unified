@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { getSelectedFacility } from "@/hooks/useAlojamento";
 import { useEventContext } from "@/contexts/EventContext";
-import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 import {
   PwaSectionLabel,
@@ -16,8 +16,7 @@ import {
   occupancyBarClass,
   occupancyTone,
 } from "@/components/pwa/PwaDashboardPrimitives";
-import { Building, FileBarChart, ScanLine, Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Building, FileBarChart, ScanLine, Search, X, Users } from "lucide-react";
 
 interface RoomInfo {
   id: string;
@@ -38,6 +37,7 @@ export default function AlojamentoOcupacaoPage() {
   const { activeEvent } = useEventContext();
   const [blocks, setBlocks] = useState<BlockInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [kpiLoading, setKpiLoading] = useState(true);
   const [kpis, setKpis] = useState({ assigned: 0, total: 0, hospedados: 0 });
   const facilityId = getSelectedFacility();
@@ -62,16 +62,24 @@ export default function AlojamentoOcupacaoPage() {
   }, [facilityId]);
 
   const livres = Math.max(0, kpis.total - kpis.assigned);
-  const pctGlobal = Math.round((kpis.assigned / kpis.total) * 100);
+
+  const filteredBlocks = useMemo(() => {
+    if (!search.trim()) return blocks;
+    const q = search.toLowerCase();
+    return blocks.filter(b => 
+      b.name.toLowerCase().includes(q) || 
+      b.rooms.some(r => r.code.toLowerCase().includes(q))
+    );
+  }, [blocks, search]);
 
   const blockSummaries = useMemo(() => {
-    return blocks.map((block) => {
+    return filteredBlocks.map((block) => {
       const cap = block.rooms.reduce((s, r) => s + r.capacity, 0);
       const occ = block.rooms.reduce((s, r) => s + r.occupied, 0);
       const pct = cap > 0 ? Math.round((occ / cap) * 100) : 0;
       return { block, cap, occ, pct };
     });
-  }, [blocks]);
+  }, [filteredBlocks]);
 
   const genderLabel: Record<string, string> = {
     misto: "Misto",
@@ -79,18 +87,30 @@ export default function AlojamentoOcupacaoPage() {
     feminino: "Feminino",
   };
 
-  const eventSubtitle = activeEvent?.name
-    ? `${activeEvent.name}${activeEvent.year ? ` — ${activeEvent.year}` : ""}`
-    : "Ocupação por local";
-
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
-      <PwaHeader title="Alojamento" icon={Building} backTo="/pwa/alojamento" />
+      
+      <AlojamentoNavHeader currentPathLabel="Ocupação" />
 
-      <main className="relative max-w-md mx-auto space-y-4 px-4 pb-28 pt-2">
-        <div>
-          <p className="text-xs text-muted-foreground">{eventSubtitle}</p>
+      <main className="relative max-w-md mx-auto space-y-4 px-4 pb-28 pt-4">
+        {/* Search Bar */}
+        <div className="relative group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+          <Input
+            placeholder="Buscar bloco ou quarto..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 pr-9 h-11 rounded-xl bg-card/90 backdrop-blur-sm border-border/80 focus:ring-primary/20"
+          />
+          {search && (
+            <button 
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-muted/80 text-muted-foreground hover:bg-muted"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
         </div>
 
         <PwaStatTriplet
@@ -102,54 +122,66 @@ export default function AlojamentoOcupacaoPage() {
           ]}
         />
 
-        <div className="space-y-2">
-          <PwaSectionLabel>Locais de alojamento</PwaSectionLabel>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <PwaSectionLabel>Blocos e Quartos</PwaSectionLabel>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase bg-muted/50 px-2 py-0.5 rounded-full">
+              {filteredBlocks.length} resultados
+            </span>
+          </div>
+          
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-28 w-full rounded-2xl" />
               ))}
             </div>
-          ) : blocks.length === 0 ? (
-            <Card className="border-border/80 bg-card/95">
-              <CardContent className="p-6 text-center text-sm text-muted-foreground">Nenhum bloco cadastrado</CardContent>
+          ) : filteredBlocks.length === 0 ? (
+            <Card className="border-dashed bg-muted/20">
+              <CardContent className="p-10 text-center space-y-2">
+                <Search className="h-10 w-10 mx-auto text-muted-foreground/40" />
+                <p className="text-sm text-muted-foreground">Nenhum bloco encontrado</p>
+                <Button variant="link" size="sm" onClick={() => setSearch("")}>Limpar busca</Button>
+              </CardContent>
             </Card>
           ) : (
             blockSummaries.map(({ block, cap, occ, pct }) => (
               <Card
                 key={block.id}
-                className="overflow-hidden border-border/80 bg-card/95 shadow-app-sm transition-shadow hover:shadow-app-md"
+                className="overflow-hidden border-border/60 bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all active:scale-[0.99]"
               >
                 <CardContent className="space-y-3 p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-foreground">{block.name}</p>
-                      <p className="text-xs text-muted-foreground">{genderLabel[block.gender_policy] || block.gender_policy}</p>
+                      <p className="truncate font-bold text-foreground">{block.name}</p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
+                        {genderLabel[block.gender_policy] || block.gender_policy}
+                      </p>
                     </div>
                     <Badge
                       variant="outline"
-                      className={`shrink-0 rounded-full border-0 px-2.5 py-0.5 text-xs font-bold ${
-                        pct >= 85
+                      className={`shrink-0 rounded-full border-0 px-2 py-0.5 text-[10px] font-bold ${
+                        pct >= 90
                           ? "bg-red-500/15 text-red-600 dark:text-red-400"
-                          : pct >= 65
+                          : pct >= 70
                             ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
                             : "bg-green-500/15 text-green-700 dark:text-green-400"
                       }`}
                     >
-                      {pct}%
+                      {pct}% Ocupado
                     </Badge>
                   </div>
-                  <Progress value={pct} indicatorClassName={occupancyBarClass(pct)} className="h-2.5 bg-muted" />
-                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                  <Progress value={pct} indicatorClassName={occupancyBarClass(pct)} className="h-2 bg-muted/40" />
+                  <div className="flex justify-between text-[11px] text-muted-foreground font-medium">
                     <span>
-                      <span className={occupancyTone(pct) === "red" ? "font-medium text-red-600 dark:text-red-400" : "font-medium text-foreground"}>
+                      <span className={occupancyTone(pct) === "red" ? "text-red-600 font-bold" : "text-foreground font-bold"}>
                         {occ}
                       </span>{" "}
-                      ocupados
+                      alocados
                     </span>
                     <span>
-                      <span className="font-medium text-foreground">{Math.max(0, cap - occ)}</span> vagas de{" "}
-                      <span className="font-medium text-foreground">{cap}</span>
+                      <span className="text-foreground font-bold">{Math.max(0, cap - occ)}</span> livres de{" "}
+                      <span className="text-foreground font-bold">{cap}</span>
                     </span>
                   </div>
                 </CardContent>
@@ -159,15 +191,23 @@ export default function AlojamentoOcupacaoPage() {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border/80 bg-background/95 p-4 backdrop-blur-md">
+      {/* Floating Actions */}
+      <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border/60 bg-background/80 p-4 backdrop-blur-lg">
         <div className="mx-auto flex max-w-md gap-3">
-          <Button variant="module" className="h-12 flex-1 rounded-xl font-semibold" onClick={() => navigate("/pwa/alojamento/scan")}>
-            <ScanLine className="mr-2 h-4 w-4" />
-            Check-in
+          <Button 
+            variant="module" 
+            className="h-12 flex-1 rounded-2xl font-bold shadow-lg shadow-primary/10" 
+            onClick={() => navigate("/pwa/alojamento/scan")}
+          >
+            <ScanLine className="mr-2 h-5 w-5" />
+            Scanner
           </Button>
-          <Button variant="outline" className="h-12 flex-1 rounded-xl border-purple-500/50 font-semibold text-purple-700 hover:bg-purple-500/10 dark:text-purple-300" onClick={() => navigate("/pwa/alojamento/lista-completa")}>
-            <FileBarChart className="mr-2 h-4 w-4" />
-            Relatório
+          <Button 
+            variant="outline" 
+            className="h-12 w-12 rounded-2xl border-border/80 bg-card flex items-center justify-center p-0" 
+            onClick={() => navigate("/pwa/alojamento/lista-completa")}
+          >
+            <Users className="h-5 w-5 text-purple-500" />
           </Button>
         </div>
       </div>
