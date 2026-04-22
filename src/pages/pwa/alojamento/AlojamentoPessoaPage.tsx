@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
-import { ArrowLeft, User, LogIn, LogOut, Bed } from "lucide-react";
+import { ArrowLeft, User, LogIn, LogOut, Bed, ScanLine } from "lucide-react";
 
 interface PersonDetail {
   full_name: string;
@@ -118,12 +118,22 @@ export default function AlojamentoPessoaPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate(-1)} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <User className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Perfil</span>
+      <header className="flex items-center justify-between border-b bg-card px-4 h-14">
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate(-1)} className="text-muted-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <User className="h-5 w-5 text-primary" />
+          <span className="font-semibold text-foreground">Perfil</span>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-primary"
+          onClick={() => navigate("/pwa/alojamento/scan")}
+        >
+          <ScanLine className="h-5 w-5" />
+        </Button>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-4">
@@ -170,16 +180,26 @@ export default function AlojamentoPessoaPage() {
               </CardContent>
             </Card>
 
-            <div className="flex gap-2">
-              {!person.is_checked_in ? (
-                <Button className="flex-1 h-12" onClick={handleCheckin} disabled={actionLoading}>
-                  <LogIn className="h-4 w-4 mr-2" /> Check-in
-                </Button>
-              ) : (
-                <Button variant="outline" className="flex-1 h-12" onClick={handleCheckout} disabled={actionLoading}>
-                  <LogOut className="h-4 w-4 mr-2" /> Check-out
-                </Button>
-              )}
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                {!person.is_checked_in ? (
+                  <Button className="flex-1 h-12" onClick={handleCheckin} disabled={actionLoading}>
+                    <LogIn className="h-4 w-4 mr-2" /> Check-in
+                  </Button>
+                ) : (
+                  <Button variant="outline" className="flex-1 h-12" onClick={handleCheckout} disabled={actionLoading}>
+                    <LogOut className="h-4 w-4 mr-2" /> Check-out
+                  </Button>
+                )}
+              </div>
+              
+              <Button 
+                variant="module" 
+                className="w-full h-12" 
+                onClick={() => navigate("/pwa/alojamento/scan")}
+              >
+                <ScanLine className="h-4 w-4 mr-2" /> Próximo Scan
+              </Button>
             </div>
           </>
         )}

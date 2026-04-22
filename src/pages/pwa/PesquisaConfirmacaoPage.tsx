@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Plus, Home } from 'lucide-react';
+import { CheckCircle2, Plus, Home, ScanLine } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function PesquisaConfirmacaoPage() {
@@ -35,10 +35,18 @@ export default function PesquisaConfirmacaoPage() {
 
         <div className="space-y-3">
           <Button 
-            onClick={() => navigate('/pwa/pesquisa/nova', { replace: true })} 
+            onClick={() => navigate('/pwa/pesquisa/nova?scan=true', { replace: true })} 
             className="w-full h-14 text-lg gap-2 shadow-app-md"
           >
-            <Plus className="h-5 w-5" /> Próxima coleta
+            <ScanLine className="h-5 w-5" /> Próxima coleta (Scan)
+          </Button>
+          
+          <Button 
+            variant="outline"
+            onClick={() => navigate('/pwa/pesquisa/nova', { replace: true })} 
+            className="w-full h-12 gap-2 text-muted-foreground"
+          >
+            <Plus className="h-4 w-4" /> Nova coleta manual
           </Button>
           
           <Button 
