@@ -174,6 +174,7 @@ import DelegacaoProtestoNovoPage from "./pages/pwa/delegacao/DelegacaoProtestoNo
 import DelegacaoProtestoDetalhePage from "./pages/pwa/delegacao/DelegacaoProtestoDetalhePage";
 import ProtestosFilaPage from "./pages/admin/ProtestosFilaPage";
 import QrDiagnosticoPage from "./pages/pwa/diagnostico/QrDiagnosticoPage";
+import SuperPermissionsPage from "./pages/super/SuperPermissionsPage";
 import PwaDebugPage from "./pages/pwa/PwaDebugPage";
 import NotFound from "./pages/NotFound";
 import PwaRouteGuard from "./components/pwa/PwaRouteGuard";
@@ -221,8 +222,9 @@ const App = () => (
               <Route path="monitor" element={<SuperMonitorPage />} />
               <Route path="manual" element={<SuperManualPage />} />
               <Route path="chamados" element={<SuperChamadosPage />} />
-              <Route path="validador" element={<SchemaValidadorPage />} />
-              <Route path="inspector" element={<SuperInspectorPage />} />
+               <Route path="validador" element={<SchemaValidadorPage />} />
+               <Route path="inspector" element={<SuperInspectorPage />} />
+               <Route path="permissoes" element={<SuperPermissionsPage />} />
             </Route>
             <Route
               path="/admin"
