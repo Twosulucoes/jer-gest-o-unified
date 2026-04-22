@@ -141,7 +141,9 @@ export default function AlimentacaoScanPage() {
       .eq("meal_window_id", windowId);
 
     if ((count || 0) > 0) {
-      setResult({ ok: false, message: getPwaMessage("ERR_ALREADY_REGISTERED", lang), source: resultSource });
+      const errorMsg = getPwaMessage("ERR_ALREADY_REGISTERED", lang);
+      setResult({ ok: false, message: errorMsg, source: resultSource });
+      toast.error(errorMsg);
       recordOutcome("error");
       reopenIfContinuous();
       return;
