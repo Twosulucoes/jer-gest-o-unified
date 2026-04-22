@@ -189,6 +189,7 @@ export default function ValidacaoQRPage() {
               <label className="text-sm font-medium text-foreground">Código QR</label>
               <div className="flex gap-2">
                 <Input
+                  id="qr-input-field"
                   placeholder="Escaneie ou cole o QR Code..."
                   value={qrInput}
                   onChange={(e) => setQrInput(e.target.value)}
