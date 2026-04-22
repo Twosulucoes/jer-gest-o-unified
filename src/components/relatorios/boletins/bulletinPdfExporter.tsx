@@ -57,6 +57,20 @@ function BulletinDocument({ data, meta }: { data: BulletinDataset; meta: ExportM
           {meta.phaseName ? ` • ${meta.phaseName}` : ""}
         </Text>
         <View style={styles.divider} />
+        
+        {/* Alertas de validação no PDF */}
+        {data.validationAlerts && data.validationAlerts.length > 0 && (
+          <View style={{ marginBottom: 12, padding: 8, backgroundColor: "#fffbeb", borderLeftWidth: 3, borderLeftColor: "#f59e0b" }}>
+            <Text style={{ fontSize: 9, fontWeight: "bold", color: "#92400e", marginBottom: 4 }}>
+              Alertas de inconsistência nos dados (Boletim Informativo):
+            </Text>
+            {data.validationAlerts.map((alert, i) => (
+              <Text key={i} style={{ fontSize: 8, color: "#92400e", marginBottom: 2 }}>
+                • {alert.message} {alert.details ? `(${alert.details})` : ""}
+              </Text>
+            ))}
+          </View>
+        )}
 
         {/* Classificação score */}
         {data.family === "score" && [...standings.entries()].map(([gid, list]: any) => {

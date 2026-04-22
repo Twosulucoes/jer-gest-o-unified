@@ -48,6 +48,12 @@ export interface RawResult {
 export interface RawPhase { id: string; name: string; phase_type: string; sort_order: number; status: string; bracket_config: any; }
 export interface RawGroup { id: string; phase_id: string; name: string; sort_order: number; }
 
+export interface ValidationAlert {
+  type: "warning" | "error";
+  message: string;
+  details?: string;
+}
+
 export interface BulletinDataset {
   family: BulletinFamily;
   rules: any | null;
@@ -60,6 +66,7 @@ export interface BulletinDataset {
   sportName: string | null;
   categoryName: string | null;
   genderScope: string | null;
+  validationAlerts: ValidationAlert[];
 }
 
 export function useBulletinData(filters: BulletinFilters) {
@@ -162,6 +169,34 @@ export function useBulletinData(filters: BulletinFilters) {
         results = ress as RawResult[];
       }
 
+      // 7) Validação de dados (inconsistências)
+      const validationAlerts: ValidationAlert[] = [];
+      
+      // Checa start_time em partidas
+      const matchesMissingStartTime = (matchesRaw || []).filter((m: any) => !m.start_time);
+      if (matchesMissingStartTime.length > 0) {
+        validationAlerts.push({
+          type: "warning",
+          message: `${matchesMissingStartTime.length} partida(s) sem horário definido.`,
+          details: "Considere preencher os horários para garantir a ordenação correta e informações completas no boletim."
+        });
+      }
+
+      // Checa match_id em resultados
+      const resultsMissingMatchId = results.filter((r) => !r.match_id);
+      if (resultsMissingMatchId.length > 0) {
+        validationAlerts.push({
+          type: "error",
+          message: `${resultsMissingMatchId.length} resultado(s) sem associação com partida (match_id ausente).`,
+          details: "Estes resultados não aparecerão corretamente no boletim e indicam erro de integridade nos dados."
+        });
+      }
+
+      // Log alerts for debugging
+      if (validationAlerts.length > 0) {
+        console.warn(`[Bulletin Validation] Found ${validationAlerts.length} issues:`, validationAlerts);
+      }
+
       // Garantir ordenação por data, hora e número (mesmo que venha do banco)
       const sortedMatches = [...(matchesRaw || [])].sort((a, b) => {
         const dateA = a.match_date || "9999-12-31";
@@ -203,6 +238,7 @@ export function useBulletinData(filters: BulletinFilters) {
         sportName: (se as any)?.sports?.name ?? null,
         categoryName: (se as any)?.categories?.name ?? null,
         genderScope: (se as any)?.categories?.gender_scope ?? null,
+        validationAlerts,
       };
     },
   });
