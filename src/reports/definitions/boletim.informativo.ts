@@ -65,8 +65,8 @@ export const boletimInformativoReport: ReportDefinition = {
         .select('title, content_md', { count: 'exact' })
         .eq('event_id', eventId)
         .eq('status', 'publicado')
-        .gte('published_at', `${date}T00:00:00Z`)
-        .lte('published_at', `${date}T23:59:59Z`)
+        .gte('published_at', dayStart)
+        .lte('published_at', dayEnd)
         .range(from, to);
 
       if (bulletins && bulletins.length > 0) {
