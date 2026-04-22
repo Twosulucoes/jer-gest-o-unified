@@ -17,6 +17,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 export default function AlojamentoRelatoriosPage() {
   const eventId = useActiveEventId();
+  const navigate = useNavigate();
   const { hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("secretaria") || hasRole("alojamento");
   const [locationFilter, setLocationFilter] = useState("all");
