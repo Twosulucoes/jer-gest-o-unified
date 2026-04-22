@@ -189,7 +189,7 @@ export const boletimInformativoReport: ReportDefinition = {
         } else {
           resultsData.push({ 
             section: 'Resultados Oficiais', 
-            content: 'Nenhum resultado validado para esta data.' 
+            content: 'Nenhum resultado validado para esta data. Tente alterar o filtro de data.' 
           });
         }
       }
