@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,18 +9,55 @@ import { rpcResolveQr, rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility
 import { extractQrToken } from "@/lib/resolveQrCredential";
 import { isVoucherQr, tryRedeemVoucher, voucherReasonLabel } from "@/lib/voucherScan";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  loadScanPreferences,
+  saveScanPreferences,
+  loadScanTelemetry,
+  bumpScanTelemetry,
+  resetScanTelemetry,
+  type ScanPreferences,
+  type ScanTelemetry,
+} from "@/lib/pwaScan";
+import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 import { ArrowLeft, ScanLine, CheckCircle2, XCircle } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 
 type ScanMode = "validate" | "checkin" | "checkout";
 
+const MODULE = "alojamento" as const;
+
 export default function AlojamentoScanPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const { enqueue, isOnline } = useAlojamentoOffline();
   const [mode, setMode] = useState<ScanMode>("checkin");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [result, setResult] = useState<Record<string, any> | null>(null);
+  const [prefs, setPrefs] = useState<ScanPreferences>(() => loadScanPreferences(MODULE, userId));
+  const [telemetry, setTelemetry] = useState<ScanTelemetry>(() => loadScanTelemetry(MODULE, userId));
+
   const facilityId = getSelectedFacility();
+
+  useEffect(() => {
+    setPrefs(loadScanPreferences(MODULE, userId));
+    setTelemetry(loadScanTelemetry(MODULE, userId));
+  }, [userId]);
+
+  const updatePrefs = (next: ScanPreferences) => {
+    setPrefs(next);
+    saveScanPreferences(MODULE, next, userId);
+  };
+
+  const reopenIfContinuous = useCallback(() => {
+    if (!prefs.continuousMode) return;
+    setTimeout(() => setScannerOpen(true), prefs.reopenDelayMs);
+  }, [prefs.continuousMode, prefs.reopenDelayMs]);
+
+  const recordOutcome = useCallback((outcome: "ok" | "error") => {
+    setTelemetry(bumpScanTelemetry(MODULE, outcome, userId));
+  }, [userId]);
 
   const handleScan = useCallback(async (rawValue: string) => {
     setScannerOpen(false);
@@ -47,7 +84,9 @@ export default function AlojamentoScanPage() {
         message: `Voucher validado · ${voucher.remaining_uses ?? "∞"} usos restantes`,
       });
       toast.success(`🎫 Voucher validado — ${voucher.person_name ?? ""}`);
+      recordOutcome("ok");
       if (navigator.vibrate) navigator.vibrate(200);
+      reopenIfContinuous();
       return;
     }
 
@@ -94,7 +133,9 @@ export default function AlojamentoScanPage() {
           mode === "validate" ? "QR válido" :
           mode === "checkin" ? "Check-in realizado!" : "Check-out realizado!"
         );
+        recordOutcome("ok");
         if (navigator.vibrate) navigator.vibrate(200);
+        reopenIfContinuous();
       } else {
         const errorMessages: Record<string, string> = {
           INVALID_TOKEN: "Token inválido ou expirado",
@@ -104,12 +145,16 @@ export default function AlojamentoScanPage() {
           NOT_CHECKED_IN: "Pessoa não está hospedada neste local",
         };
         toast.error(errorMessages[res.error] || res.error || "Erro desconhecido");
+        recordOutcome("error");
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        reopenIfContinuous();
       }
     } catch (err: any) {
       toast.error("Erro ao processar: " + (err.message || "desconhecido"));
+      recordOutcome("error");
+      reopenIfContinuous();
     }
-  }, [mode, facilityId, isOnline, enqueue, navigate]);
+  }, [mode, facilityId, isOnline, enqueue, navigate, recordOutcome, reopenIfContinuous]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -127,6 +172,15 @@ export default function AlojamentoScanPage() {
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-4">
+        <ScanPreferencesPanel
+          prefs={prefs}
+          telemetry={telemetry}
+          onChangeContinuous={(v) => updatePrefs({ ...prefs, continuousMode: v })}
+          onChangeDelay={(v) => updatePrefs({ ...prefs, reopenDelayMs: v })}
+          onResetTelemetry={() => setTelemetry(resetScanTelemetry(MODULE, userId))}
+          switchId="continuous-lodging-scan"
+        />
+
         <Tabs value={mode} onValueChange={(v) => setMode(v as ScanMode)}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="checkin">Check-in</TabsTrigger>
