@@ -126,6 +126,51 @@ export default function PesquisaNovaPage() {
       });
   }, [session?.researcher?.event_id]);
 
+  const handleScan = async (payload: string) => {
+    setScannerOpen(false);
+    setIdentifying(true);
+    try {
+      const resolved = await resolveQrCredential(payload, { eventId: session?.researcher?.event_id });
+      if (!resolved) {
+        toast.error("Participante não encontrado");
+        return;
+      }
+
+      // Fetch more details (age, gender)
+      const { data: part, error } = await supabase
+        .from("participants")
+        .select("birth_date, biological_sex, participant_type")
+        .eq("id", resolved.participant_id)
+        .single();
+
+      if (error) throw error;
+
+      if (part) {
+        setRespondentType(part.participant_type === 'athlete' ? 'atleta' : 
+                          part.participant_type === 'coach' ? 'tecnico' : 'outro');
+        
+        if (part.biological_sex) {
+          setRespondentGender(part.biological_sex === 'male' ? 'masculino' : 'feminino');
+        }
+
+        if (part.birth_date) {
+          const age = differenceInYears(new Date(), parseISO(part.birth_date));
+          if (age <= 12) setRespondentAge('ate_12');
+          else if (age <= 17) setRespondentAge('13_17');
+          else if (age <= 30) setRespondentAge('18_30');
+          else setRespondentAge('acima_30');
+        }
+
+        toast.success(`Identificado: ${resolved.full_name}`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao identificar participante");
+    } finally {
+      setIdentifying(false);
+    }
+  };
+
   if (!session) return null;
 
   const isKiosk = mode === 'autopreenchimento';
