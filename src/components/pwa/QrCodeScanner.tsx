@@ -88,17 +88,26 @@ export default function QrCodeScanner({
     (raw: string) => {
       if (debounceRef.current) return;
       if (!isValidPayload(raw)) {
-        toast.error("Código inválido — QR não reconhecido pelo sistema");
+        toast.error("CÓDIGO INVÁLIDO — PADRÃO NÃO RECONHECIDO");
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         return;
       }
       if (raw === lastScannedRef.current) return;
 
       debounceRef.current = true;
       lastScannedRef.current = raw;
-      if (navigator.vibrate) navigator.vibrate(100);
+      
+      if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+      setShowSuccess(true);
+      setTimeout(() => {
+        if (mountedRef.current) setShowSuccess(false);
+      }, 1500);
 
       if (!continuousRef.current) {
-        void stopScanner();
+        // brief delay to show success overlay before closing
+        setTimeout(() => {
+          if (mountedRef.current) void stopScanner();
+        }, 500);
       }
 
       onScanRef.current(raw);
