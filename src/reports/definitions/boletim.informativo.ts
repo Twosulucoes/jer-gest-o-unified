@@ -94,7 +94,7 @@ export const boletimInformativoReport: ReportDefinition = {
       }
 
       // 3. Resultados (from competition_match_results)
-      if (filters.include_results !== false) {
+      if (includeResults) {
         const { data: matchResults } = await supabase
           .from('competition_match_results')
           .select(`
