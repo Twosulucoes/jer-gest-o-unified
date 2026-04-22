@@ -11,6 +11,11 @@ export default function BulletinValidationAlerts({ alerts }: BulletinValidationA
 
   return (
     <div className="space-y-3 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+      <div className="flex items-center gap-2 mb-2 px-1">
+        <CheckSquare className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">Checklist de Integridade do Boletim</h3>
+      </div>
+      
       {alerts.map((alert, i) => (
         <Alert 
           key={i} 
@@ -24,23 +29,32 @@ export default function BulletinValidationAlerts({ alerts }: BulletinValidationA
           ) : (
             <Info className="h-4 w-4" />
           )}
-          <AlertTitle className="font-semibold">{alert.type === "error" ? "Inconsistência Crítica" : "Alerta de Inconsistência"}</AlertTitle>
+          <AlertTitle className="font-semibold text-sm flex items-center justify-between">
+            {alert.type === "error" ? "Inconsistência Crítica" : "Alerta de Inconsistência"}
+            {alert.links && <Badge variant="outline" className="text-[10px] h-4 font-normal ml-2">{alert.links.length} pendente(s)</Badge>}
+          </AlertTitle>
           <AlertDescription className="text-sm opacity-90">
-            <div>
-              {alert.message}
-              {alert.details && <p className="mt-1 text-xs">{alert.details}</p>}
+            <div className="space-y-1">
+              <p>{alert.message}</p>
+              {alert.details && <p className="text-xs opacity-75">{alert.details}</p>}
             </div>
             {alert.links && alert.links.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {alert.links.map((link, j) => (
                   <a
                     key={j}
                     href={link.url}
-                    className="inline-flex items-center gap-1 rounded bg-background/20 px-2 py-1 text-[10px] font-medium transition hover:bg-background/30"
+                    className="flex items-center gap-2 rounded-md bg-background/50 border border-border/50 px-2 py-1.5 text-[11px] font-medium transition hover:bg-background/80 hover:border-primary/50 group"
                   >
-                    {link.label}
+                    <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <span className="truncate">{link.label}</span>
                   </a>
                 ))}
+                {alert.links.length > 5 && (
+                  <div className="text-[10px] text-muted-foreground pt-1 px-1">
+                    ... e mais {alert.links.length - 5}
+                  </div>
+                )}
               </div>
             )}
           </AlertDescription>
