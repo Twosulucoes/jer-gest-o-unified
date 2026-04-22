@@ -242,7 +242,7 @@ export default function TransporteEmbarquePage() {
       if (isVoucherQr(rawValue)) {
         const voucher = await tryRedeemVoucher(rawValue, "transport", tripId);
         if (!voucher || !voucher.ok) {
-          toast.error(voucherReasonLabel(voucher?.reason));
+          toast.error(getVoucherMessage(voucher?.reason, lang));
           return;
         }
         participantId = voucher.participant_id ?? null;
@@ -257,7 +257,7 @@ export default function TransporteEmbarquePage() {
       }
 
       if (!participantId) {
-        toast.error("Credencial não encontrada");
+        toast.error(getPwaMessage("ERR_NOT_FOUND", lang));
         return;
       }
 
@@ -266,7 +266,7 @@ export default function TransporteEmbarquePage() {
 
       if (passenger) {
         if (passenger.boarded) {
-          toast.info(`${name} já embarcou`);
+          toast.info(`${name} ${getPwaMessage("ALREADY_BOARDED", lang)}`);
           return;
         }
         const { error } = await supabase
@@ -289,11 +289,11 @@ export default function TransporteEmbarquePage() {
         if (error) throw error;
       }
 
-      toast.success(`${viaVoucher ? "🎫 " : ""}${name} embarcado com sucesso`);
+      toast.success(`${viaVoucher ? "🎫 " : ""}${name} ${getPwaMessage("SUCCESS_BOARDING", lang)}`);
       if (navigator.vibrate) navigator.vibrate(200);
       await fetchPassengers();
     } catch (err: any) {
-      toast.error("Erro ao registrar embarque: " + (err.message || "desconhecido"));
+      toast.error(`${getPwaMessage("ERR_UNKNOWN", lang)}: ` + (err.message || "desconhecido"));
     }
   };
 
