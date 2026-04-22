@@ -111,6 +111,7 @@ export default function AlojamentoScanPage() {
 
     try {
       if (!isOnline) {
+        // ... enfileiramento offline omitido para brevidade ou mantido se possível
         if (mode === "checkin") {
           enqueue("checkin", { token, facility_id: facilityId, mode: "person_qr" });
           toast.info("Check-in enfileirado (offline)");
@@ -119,6 +120,42 @@ export default function AlojamentoScanPage() {
           toast.info("Check-out enfileirado (offline)");
         }
         return;
+      }
+
+      // Validação de Credencial Ativa na Etapa (Requirement)
+      if (mode === "checkin") {
+        const { data: stage } = await supabase
+          .from("event_stages")
+          .select("id")
+          .eq("event_id", activeEvent?.id)
+          .eq("status", "active")
+          .maybeSingle();
+
+        if (stage) {
+          const resolved = await rpcResolveQr(token);
+          if (resolved.ok && resolved.entity_id) {
+            const { data: pse, error: pseErr } = await supabase
+              .from("participant_event_stages")
+              .select("status")
+              .eq("participant_id", resolved.entity_id)
+              .eq("event_stage_id", stage.id)
+              .maybeSingle();
+
+            if (pseErr || !pse || pse.status !== "active") {
+              setResult({
+                ok: false,
+                error: "CREDENTIAL_INACTIVE",
+                message: "Participante não possui credencial ativa para esta etapa.",
+                full_name: resolved.full_name
+              });
+              toast.error("Atenção: Participante sem credencial ativa para esta etapa!");
+              if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
+              recordOutcome("error");
+              reopenIfContinuous();
+              return;
+            }
+          }
+        }
       }
 
       let res: Record<string, any>;
