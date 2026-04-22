@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -39,6 +39,7 @@ type TabKey = "saidas" | "veiculos" | "linhas";
 export default function TransporteHubPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const { stageId } = useParams<{ stageId: string }>();
   const { hasRole, user } = useAuth();
   const selectedEventId = useActiveEventId();
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("transporte");
@@ -46,12 +47,17 @@ export default function TransporteHubPage() {
   const [tab, setTab] = useState<TabKey>("saidas");
   const [searchParams, setSearchParams] = useSearchParams();
   const stageParam = searchParams.get("stage") ?? "";
-  const [selectedStageId, setSelectedStageIdState] = useState(stageParam);
+  
+  // Use stageId from URL if available, otherwise fallback to query param or state
+  const [selectedStageId, setSelectedStageIdState] = useState(stageId || stageParam);
+  
   const setSelectedStageId = (id: string) => {
     setSelectedStageIdState(id);
-    const next = new URLSearchParams(searchParams);
-    if (id) next.set("stage", id); else next.delete("stage");
-    setSearchParams(next, { replace: true });
+    if (!stageId) {
+      const next = new URLSearchParams(searchParams);
+      if (id) next.set("stage", id); else next.delete("stage");
+      setSearchParams(next, { replace: true });
+    }
   };
 
   const [vehicleDialog, setVehicleDialog] = useState(false);
@@ -84,12 +90,18 @@ export default function TransporteHubPage() {
   });
 
   useEffect(() => {
+    // If we have a stageId in the URL, that's our source of truth
+    if (stageId) {
+      setSelectedStageIdState(stageId);
+      return;
+    }
+
     if (stages.length > 0 && !stages.find(s => s.id === selectedStageId)) {
       const fromUrl = stages.find(s => s.id === stageParam);
       setSelectedStageId(fromUrl ? fromUrl.id : stages[0].id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages, stageParam]);
+  }, [stages, stageParam, stageId]);
 
   const selectedStage = stages.find(s => s.id === selectedStageId);
   const stageContext: StageContext | undefined = selectedStage
