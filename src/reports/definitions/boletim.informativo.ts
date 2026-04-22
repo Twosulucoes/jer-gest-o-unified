@@ -10,7 +10,7 @@ export const boletimInformativoReport: ReportDefinition = {
   name: 'Boletim Informativo',
   description: 'Informativo geral com avisos, programação e resultados consolidados do dia.',
   scope: 'event',
-  formats: ['pdf'],
+  formats: ['pdf', 'excel'],
   filters: [
     { key: 'event_id', label: 'Evento', type: 'uuid', required: true },
     { key: 'date', label: 'Data de Referência', type: 'date', required: true },
@@ -21,7 +21,7 @@ export const boletimInformativoReport: ReportDefinition = {
   ],
   columns: [
     { key: 'section', label: 'Seção', width: 30 },
-    { key: 'content', label: 'Conteúdo Resumido', width: 70 },
+    { key: 'content', label: 'Conteúdo Resumido', width: 70, excel: { wrap: true } },
   ],
   datasource: {
     type: 'custom',
@@ -83,13 +83,24 @@ export const boletimInformativoReport: ReportDefinition = {
 
       const uniqueMatchesWithResults = new Set(resultsForCount?.map(r => r.match_id) || []).size;
 
+      const formattedDate = format(parsedDate, 'dd/MM/yyyy');
+      let summaryContent = [
+        `Data: **${formattedDate}**`,
+        `• Avisos Publicados: **${bulletinsCountTotal || 0}**`,
+        `• Jogos no Dia: **${matchesCountTotal || 0}**`,
+        `• Partidas com Resultado Publicado: **${uniqueMatchesWithResults || 0}**`
+      ];
+
+      // Caso não haja conteúdo principal, destacamos a causa da ausência
+      if ((bulletinsCountTotal || 0) === 0 && (matchesCountTotal || 0) === 0) {
+        summaryContent.push('\n**Causa da Ausência de Dados:** Sem registros (não há comunicados ou jogos para esta data).');
+      } else if ((bulletinsCountTotal || 0) === 0) {
+        summaryContent.push('\n**Causa da Ausência de Dados:** Sem publicação oficial de avisos (há jogos programados, mas nenhum comunicado publicado).');
+      }
+
       resultsData.push({
         section: 'Sumário',
-        content: [
-          `• Avisos Publicados: **${bulletinsCountTotal || 0}**`,
-          `• Jogos no Dia: **${matchesCountTotal || 0}**`,
-          `• Partidas com Resultado Publicado: **${uniqueMatchesWithResults || 0}**`
-        ].join('\n')
+        content: summaryContent.join('\n')
       });
 
       const { data: bulletins, count: bulletinsCount } = await supabase
