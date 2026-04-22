@@ -330,6 +330,7 @@ function DiffPanel() {
   const sincronizado = data.sincronizado;
   const onlyInTruth: string[] = data.modalidades_apenas_no_regulamento ?? [];
   const onlyInDb: string[] = data.modalidades_apenas_no_banco ?? [];
+  const discrepancies: any[] = data.parameter_discrepancies ?? [];
 
   return (
     <div className="space-y-4">
@@ -340,8 +341,8 @@ function DiffPanel() {
         </AlertTitle>
         <AlertDescription>
           {sincronizado
-            ? "Todas as modalidades do regulamento estão presentes no banco."
-            : "O banco não reflete o regulamento atual. Vá para a aba Sincronizar."}
+            ? "Todas as modalidades e parâmetros do regulamento estão refletidos no banco."
+            : "Existem diferenças entre o regulamento (.ts) e o banco de dados. Sincronize para corrigir."}
         </AlertDescription>
       </Alert>
 
@@ -394,6 +395,45 @@ function DiffPanel() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {discrepancies.length > 0 && (
+        <Card borderClassName="border-amber-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base text-amber-600 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" /> Discrepâncias de parâmetros ({discrepancies.length})
+            </CardTitle>
+            <CardDescription>
+              Valores configurados no banco diferem da fonte de verdade.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-muted">
+                  <tr className="text-left">
+                    <th className="p-2">Slug</th>
+                    <th className="p-2 text-rose-600 text-center">Banco</th>
+                    <th className="p-2 text-emerald-600 text-center">Regulamento</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {discrepancies.map((d, i) => (
+                    <tr key={i}>
+                      <td className="p-2 font-mono">{d.slug}</td>
+                      <td className="p-2 text-center text-rose-600 font-medium">
+                        {d.db_min}–{d.db_max}
+                      </td>
+                      <td className="p-2 text-center text-emerald-600 font-medium">
+                        {d.truth_min}–{d.truth_max}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
@@ -450,12 +490,12 @@ function SyncPanel() {
 
   return (
     <div className="space-y-4 max-w-3xl">
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Operação destrutiva</AlertTitle>
-        <AlertDescription>
-          Esta ação <strong>apaga e regrava</strong> todas as categorias, provas, regras técnicas
-          e aliases de importação do evento atual. Use sempre que o regulamento mudar.
+      <Alert variant="default" className="border-blue-200 bg-blue-50/50">
+        <Sparkles className="h-4 w-4 text-blue-600" />
+        <AlertTitle className="text-blue-800">Sincronização Inteligente</AlertTitle>
+        <AlertDescription className="text-blue-700">
+          Esta ação atualiza categorias, provas e regras técnicas sem apagar inscrições existentes.
+          Provas que não constam mais no regulamento serão <strong>desativadas</strong>.
         </AlertDescription>
       </Alert>
 
