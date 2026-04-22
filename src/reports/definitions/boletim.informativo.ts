@@ -15,6 +15,8 @@ export const boletimInformativoReport: ReportDefinition = {
     { key: 'date', label: 'Data de Referência', type: 'date', required: true },
     { key: 'include_results', label: 'Incluir Resultados', type: 'boolean', defaultValue: true },
     { key: 'include_schedule', label: 'Incluir Programação', type: 'boolean', defaultValue: true },
+    { key: 'page_size', label: 'Itens por Seção', type: 'number', defaultValue: 50 },
+    { key: 'page', label: 'Página', type: 'number', defaultValue: 1 },
   ],
   columns: [
     { key: 'section', label: 'Seção', width: 30 },
@@ -33,6 +35,10 @@ export const boletimInformativoReport: ReportDefinition = {
 
       const includeSchedule = filters.include_schedule ?? true;
       const includeResults = filters.include_results ?? true;
+      const pageSize = Number(filters.page_size || 50);
+      const page = Number(filters.page || 1);
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
 
       const resultsData: { section: string; content: string }[] = [];
 
@@ -43,7 +49,8 @@ export const boletimInformativoReport: ReportDefinition = {
         .eq('event_id', eventId)
         .eq('status', 'publicado')
         .gte('published_at', `${date}T00:00:00Z`)
-        .lte('published_at', `${date}T23:59:59Z`);
+        .lte('published_at', `${date}T23:59:59Z`)
+        .range(from, to);
 
       if (bulletins && bulletins.length > 0) {
         const bulletinsText = bulletins.map(b => 
@@ -72,7 +79,8 @@ export const boletimInformativoReport: ReportDefinition = {
           `)
           .eq('event_id', eventId)
           .eq('match_date', date)
-          .order('start_time', { ascending: true });
+          .order('start_time', { ascending: true })
+          .range(from, to);
 
         if (matches && matches.length > 0) {
           const scheduleText = matches.map(m => {
@@ -96,6 +104,8 @@ export const boletimInformativoReport: ReportDefinition = {
 
       // 3. Resultados (from competition_match_results)
       if (includeResults) {
+        // Para resultados, como temos uma relação complexa, o range pode ser mais difícil se quisermos paginar partidas.
+        // Mas vamos aplicar o range na query base.
         const { data: matchResults } = await supabase
           .from('competition_match_results')
           .select(`
@@ -111,7 +121,8 @@ export const boletimInformativoReport: ReportDefinition = {
           `)
           .eq('competition_matches.event_id', eventId)
           .eq('competition_matches.match_date', date)
-          .eq('result_status', 'resultado_validado');
+          .eq('result_status', 'resultado_validado')
+          .range(from, to);
 
         if (matchResults && matchResults.length > 0) {
           // Sort matchResults by start_time in JS to be safe and consistent
