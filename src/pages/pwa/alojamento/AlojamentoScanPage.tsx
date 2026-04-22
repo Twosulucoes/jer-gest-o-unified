@@ -156,7 +156,7 @@ export default function AlojamentoScanPage() {
       recordOutcome("error");
       reopenIfContinuous();
     }
-  }, [mode, facilityId, isOnline, enqueue, navigate, recordOutcome, reopenIfContinuous]);
+  }, [mode, facilityId, isOnline, enqueue, navigate, recordOutcome, reopenIfContinuous, lang]);
 
   return (
     <div className="min-h-screen bg-background">
