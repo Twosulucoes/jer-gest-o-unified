@@ -261,7 +261,7 @@ export default function CompeticaoPartidasAgendaPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Modalidade/Prova</label>
-              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => { setSelectedSportEventId(v === "__all__" ? "" : v); setSelectedPhaseId(""); setCurrentPage(1); }} disabled={!selectedEventId}>
+              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => { setSelectedSportEventId(v === "__all__" ? null : v); setSelectedPhaseId(""); setCurrentPage(1); }} disabled={!selectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todas</SelectItem>
