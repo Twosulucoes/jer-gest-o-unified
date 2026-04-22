@@ -171,7 +171,7 @@ Deno.serve(async (req: Request) => {
         .from("external_credentials")
         .select("id, credential_code, event_id, participant_id, status")
         .eq("event_id", event_id)
-        .in("credential_code", candidates)
+        .in("credential_code", safeCandidates)
         .eq("status", "active")
         .limit(1)
         .maybeSingle();
@@ -375,7 +375,7 @@ Deno.serve(async (req: Request) => {
   } catch (err) {
     console.error("validate-qr error:", err);
     return jsonResponse(
-      { error: "Erro interno", details: String(err) },
+      { error: "Erro interno" },
       500
     );
   }
