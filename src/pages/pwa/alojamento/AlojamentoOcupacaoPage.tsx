@@ -44,8 +44,8 @@ export default function AlojamentoOcupacaoPage() {
     if (!facilityId) return;
     (async () => {
       const [{ data: occ }, { data: kpi }] = await Promise.all([
-        supabase.rpc("get_alojamento_ocupacao" as never, { p_facility_id: facilityId }),
-        supabase.rpc("get_alojamento_kpis" as never, { p_facility_id: facilityId }),
+        supabase.rpc("get_alojamento_ocupacao" as any, { p_facility_id: facilityId }),
+        supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId }),
       ]);
       setBlocks((Array.isArray(occ) ? occ : []) as BlockInfo[]);
       setLoading(false);
