@@ -49,9 +49,10 @@ export interface RawPhase { id: string; name: string; phase_type: string; sort_o
 export interface RawGroup { id: string; phase_id: string; name: string; sort_order: number; }
 
 export interface ValidationAlert {
-  type: "warning" | "error";
+  type: "warning" | "error" | "info";
   message: string;
   details?: string;
+  links?: { label: string; url: string }[];
 }
 
 export interface BulletinDataset {
@@ -172,17 +173,52 @@ export function useBulletinData(filters: BulletinFilters) {
       // 7) Validação de dados (inconsistências)
       const validationAlerts: ValidationAlert[] = [];
       
+      const entriesByMatchId = new Set(entries.map(e => e.match_id));
+      const resultsByMatchId = new Set(results.map(r => r.match_id));
+
       // Checa start_time em partidas
       const matchesMissingStartTime = (matchesRaw || []).filter((m: any) => !m.start_time);
       if (matchesMissingStartTime.length > 0) {
         validationAlerts.push({
           type: "warning",
           message: `${matchesMissingStartTime.length} partida(s) sem horário definido.`,
-          details: "Considere preencher os horários para garantir a ordenação correta e informações completas no boletim."
+          details: "Considere preencher os horários para garantir a ordenação correta no boletim.",
+          links: matchesMissingStartTime.slice(0, 5).map(m => ({
+            label: `Editar Partida #${m.match_number || m.id.slice(0, 4)}`,
+            url: `/admin/competicao/partida/${m.id}`
+          }))
         });
       }
 
-      // Checa match_id em resultados
+      // Checa partidas sem participantes (vincular resultados)
+      const matchesMissingEntries = (matchesRaw || []).filter(m => !entriesByMatchId.has(m.id));
+      if (matchesMissingEntries.length > 0) {
+        validationAlerts.push({
+          type: "error",
+          message: `${matchesMissingEntries.length} partida(s) sem participantes vinculados.`,
+          details: "Para lançar resultados, as partidas precisam ter participantes. Vincule equipes ou atletas.",
+          links: matchesMissingEntries.slice(0, 5).map(m => ({
+            label: `Gerenciar Participantes #${m.match_number || m.id.slice(0, 4)}`,
+            url: `/admin/competicao/partida/${m.id}`
+          }))
+        });
+      }
+
+      // Checa partidas finalizadas sem resultados lançados
+      const finishedMissingResults = (matchesRaw || []).filter(m => m.status === 'finished' && !resultsByMatchId.has(m.id));
+      if (finishedMissingResults.length > 0) {
+        validationAlerts.push({
+          type: "error",
+          message: `${finishedMissingResults.length} partida(s) finalizada(s) sem resultados vinculados.`,
+          details: "Partidas concluídas devem ter resultados registrados para aparecerem no boletim oficial.",
+          links: finishedMissingResults.slice(0, 5).map(m => ({
+            label: `Lançar Resultados #${m.match_number || m.id.slice(0, 4)}`,
+            url: `/admin/competicao/partida/${m.id}`
+          }))
+        });
+      }
+
+      // Checa se há resultados órfãos (se por acaso algum resultado escapou do matchIdToIndex)
       const resultsMissingMatchId = results.filter((r) => !r.match_id);
       if (resultsMissingMatchId.length > 0) {
         validationAlerts.push({
