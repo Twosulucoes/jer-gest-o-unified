@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCredentialLookup } from "@/hooks/useCredentialLookup";
 import { toast } from "sonner";
 import {
-  UtensilsCrossed, Search, Loader2, CheckCircle2, AlertTriangle, QrCode,
+  UtensilsCrossed, Search, Loader2, CheckCircle2, AlertTriangle, QrCode, User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
+import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 
 export default function AlimentacaoConsumoPage() {
   const qc = useQueryClient();
@@ -25,8 +26,9 @@ export default function AlimentacaoConsumoPage() {
   const [selectedWindowId, setSelectedWindowId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [qrCode, setQrCode] = useState("");
-  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; type: string; foodRestrictions: string | null } | null>(null);
+  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; type: string; foodRestrictions: string | null; photo_url?: string | null; institution?: string | null; birth_date?: string | null } | null>(null);
   const [qrError, setQrError] = useState<string | null>(null);
+  const [showReview, setShowReview] = useState(false);
   const { lookupByQrCode, loading: qrLoading } = useCredentialLookup();
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
 
@@ -180,6 +182,9 @@ export default function AlimentacaoConsumoPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["meal_consumptions", selectedWindowId] });
       toast.success("Consumo registrado!");
+      setShowReview(false);
+      setQrCode("");
+      setQrResult(null);
     },
     onError: (e: any) => {
       const msg = e?.message ?? "";
@@ -326,8 +331,18 @@ export default function AlimentacaoConsumoPage() {
                       const { data, error } = await lookupByQrCode(qrCode.trim(), selectedEventId);
                       if (error) { setQrError(error.message); setQrResult(null); }
                       else if (data) {
-                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, type: data.participant_type, foodRestrictions: data.food_restrictions ?? null });
+                        setQrResult({ 
+                          name: data.person_name, 
+                          participantId: data.participant_id, 
+                          cpf: data.person_cpf, 
+                          type: data.participant_type, 
+                          foodRestrictions: data.food_restrictions ?? null,
+                          photo_url: data.photo_url,
+                          institution: data.institution,
+                          birth_date: data.birth_date
+                        });
                         setQrError(null);
+                        setShowReview(true);
                       }
                     }
                   }}
@@ -341,8 +356,18 @@ export default function AlimentacaoConsumoPage() {
                       const { data, error } = await lookupByQrCode(qrCode.trim(), selectedEventId);
                       if (error) { setQrError(error.message); setQrResult(null); }
                       else if (data) {
-                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, type: data.participant_type, foodRestrictions: data.food_restrictions ?? null });
+                        setQrResult({ 
+                          name: data.person_name, 
+                          participantId: data.participant_id, 
+                          cpf: data.person_cpf, 
+                          type: data.participant_type, 
+                          foodRestrictions: data.food_restrictions ?? null,
+                          photo_url: data.photo_url,
+                          institution: data.institution,
+                          birth_date: data.birth_date
+                        });
                         setQrError(null);
+                        setShowReview(true);
                       }
                     }
                   }}
@@ -502,6 +527,23 @@ export default function AlimentacaoConsumoPage() {
           <p className="text-muted-foreground font-medium">Selecione uma janela de refeição</p>
         </div>
       )}
+      <ParticipantReviewDialog
+        open={showReview}
+        onOpenChange={setShowReview}
+        participant={qrResult}
+        onConfirm={() => {
+          if (qrResult) {
+            consumeMut.mutate(qrResult.participantId);
+          }
+        }}
+        confirmLabel={consumedParticipantIds.has(qrResult?.participantId ?? "") ? "Já Consumido" : "Registrar Consumo"}
+        loading={consumeMut.isPending}
+        title="Validar Alimentação"
+        statusLabel={consumedParticipantIds.has(qrResult?.participantId ?? "") ? "JÁ CONSUMIU" : "PRONTO PARA REGISTRAR"}
+        statusColor={consumedParticipantIds.has(qrResult?.participantId ?? "") ? "bg-muted border-border" : "bg-green-50 border-green-200 text-green-700"}
+        statusIcon={consumedParticipantIds.has(qrResult?.participantId ?? "") ? <AlertTriangle className="h-8 w-8 text-muted-foreground" /> : <CheckCircle2 className="h-8 w-8 text-green-600" />}
+        message={consumedParticipantIds.has(qrResult?.participantId ?? "") ? "Este participante já registrou consumo nesta janela." : "Confirme os dados para registrar o consumo."}
+      />
     </div>
   );
 }

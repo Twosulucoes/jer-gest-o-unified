@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCredentialLookup } from "@/hooks/useCredentialLookup";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Search, UserPlus, LogOut as AlightIcon, Users, Loader2, XCircle, QrCode, AlertTriangle,
+  ArrowLeft, Search, UserPlus, LogOut as AlightIcon, Users, Loader2, XCircle, QrCode, AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 
 const PASSENGER_STATUS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   boarded: { label: "Embarcado", variant: "default" },
@@ -29,8 +30,9 @@ export default function TransporteEmbarquePage() {
   const { user, hasRole } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [qrCode, setQrCode] = useState("");
-  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; type: string } | null>(null);
+  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; type: string; photo_url?: string | null; institution?: string | null; birth_date?: string | null } | null>(null);
   const [qrError, setQrError] = useState<string | null>(null);
+  const [showReview, setShowReview] = useState(false);
   const { lookupByQrCode, loading: qrLoading } = useCredentialLookup();
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("transporte");
 
@@ -185,6 +187,9 @@ export default function TransporteEmbarquePage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transport_passengers", tripId] });
       toast.success("Participante embarcado!");
+      setShowReview(false);
+      setQrCode("");
+      setQrResult(null);
     },
     onError: (e: Error) => {
       if (e.message?.includes("uq_transport_passenger_active")) {
@@ -296,8 +301,17 @@ export default function TransporteEmbarquePage() {
                       const { data, error } = await lookupByQrCode(qrCode.trim(), trip.event_id);
                       if (error) { setQrError(error.message); setQrResult(null); }
                       else if (data) {
-                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, type: data.participant_type });
+                        setQrResult({ 
+                          name: data.person_name, 
+                          participantId: data.participant_id, 
+                          cpf: data.person_cpf, 
+                          type: data.participant_type,
+                          photo_url: data.photo_url,
+                          institution: data.institution,
+                          birth_date: data.birth_date
+                        });
                         setQrError(null);
+                        setShowReview(true);
                       }
                     }
                   }}
@@ -311,8 +325,17 @@ export default function TransporteEmbarquePage() {
                       const { data, error } = await lookupByQrCode(qrCode.trim(), trip.event_id);
                       if (error) { setQrError(error.message); setQrResult(null); }
                       else if (data) {
-                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, type: data.participant_type });
+                        setQrResult({ 
+                          name: data.person_name, 
+                          participantId: data.participant_id, 
+                          cpf: data.person_cpf, 
+                          type: data.participant_type,
+                          photo_url: data.photo_url,
+                          institution: data.institution,
+                          birth_date: data.birth_date
+                        });
                         setQrError(null);
+                        setShowReview(true);
                       }
                     }
                   }}
@@ -440,6 +463,23 @@ export default function TransporteEmbarquePage() {
           )}
         </CardContent>
       </Card>
+      <ParticipantReviewDialog
+        open={showReview}
+        onOpenChange={setShowReview}
+        participant={qrResult}
+        onConfirm={() => {
+          if (qrResult) {
+            boardMut.mutate(qrResult.participantId);
+          }
+        }}
+        confirmLabel={boardedIds.has(qrResult?.participantId ?? "") ? "Já Embarcado" : "Registrar Embarque"}
+        loading={boardMut.isPending}
+        title="Validar Embarque"
+        statusLabel={boardedIds.has(qrResult?.participantId ?? "") ? "JÁ EMBARCADO" : "PRONTO PARA EMBARCAR"}
+        statusColor={boardedIds.has(qrResult?.participantId ?? "") ? "bg-muted border-border" : "bg-blue-50 border-blue-200 text-blue-700"}
+        statusIcon={boardedIds.has(qrResult?.participantId ?? "") ? <AlertTriangle className="h-8 w-8 text-muted-foreground" /> : <CheckCircle2 className="h-8 w-8 text-blue-600" />}
+        message={boardedIds.has(qrResult?.participantId ?? "") ? "Este participante já está registrado nesta viagem." : "Confirme os dados para registrar o embarque."}
+      />
     </div>
   );
 }

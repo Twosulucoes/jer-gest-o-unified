@@ -10,6 +10,9 @@ interface CredentialLookupResult {
   credential_code: string | null;
   food_restrictions?: string | null;
   gender?: string;
+  birth_date?: string | null;
+  photo_url?: string | null;
+  institution?: string | null;
   matched_by?: "qr_code_value" | "credential_code" | "external_credential" | "cpf";
 }
 
@@ -190,7 +193,7 @@ export function useCredentialLookup() {
       // Carrega participante + pessoa
       const { data: participant, error: partErr } = await supabase
         .from("participants")
-        .select("id, person_id, participant_type, is_active, status")
+        .select("id, person_id, participant_type, is_active, status, institution:event_institutions(name)")
         .eq("id", credential.participant_id)
         .single();
 
@@ -204,7 +207,7 @@ export function useCredentialLookup() {
 
       const { data: person, error: personErr } = await supabase
         .from("people")
-        .select("full_name, cpf, food_restrictions, gender")
+        .select("full_name, cpf, food_restrictions, gender, birth_date, photo_url")
         .eq("id", participant.person_id)
         .single();
 
@@ -222,6 +225,9 @@ export function useCredentialLookup() {
           credential_code: credential.credential_code,
           food_restrictions: person.food_restrictions,
           gender: person.gender,
+          birth_date: person.birth_date,
+          photo_url: person.photo_url,
+          institution: (participant as any).institution?.name || null,
           matched_by: matchedSource ?? undefined,
         },
         error: null,

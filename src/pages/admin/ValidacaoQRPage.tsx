@@ -25,9 +25,10 @@ import {
 } from "@/components/ui/select";
 import { useActiveEventId } from "@/contexts/EventContext";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 
 interface ValidationResult {
-  result: string;
+  result: "valid" | "not_found" | "revoked" | "suspended" | "not_activated" | "wrong_event" | string;
   message: string | null;
   participant: {
     participant_id: string;
@@ -58,6 +59,7 @@ export default function ValidacaoQRPage() {
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
@@ -101,6 +103,7 @@ export default function ValidacaoQRPage() {
       if (!response.ok) throw new Error(json.error || "Erro desconhecido");
 
       setResult(json);
+      setShowConfirm(true);
     } catch (err) {
       toast.error(`Erro: ${(err as Error).message}`);
     } finally {
@@ -118,6 +121,7 @@ export default function ValidacaoQRPage() {
   const handleNewScan = () => {
     setQrInput("");
     setResult(null);
+    setShowConfirm(false);
   };
 
   const handleCameraScan = useCallback((raw: string) => {
@@ -144,7 +148,6 @@ export default function ValidacaoQRPage() {
         </p>
       </div>
 
-      {/* Controls */}
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -214,7 +217,6 @@ export default function ValidacaoQRPage() {
         </CardContent>
       </Card>
 
-      {/* Result */}
       {result && resultConfig && (
         <Card className={`border-2 ${resultConfig.color}`}>
           <CardContent className="pt-6">
@@ -268,7 +270,6 @@ export default function ValidacaoQRPage() {
         </Card>
       )}
 
-      {/* Empty state */}
       {!result && selectedEventId && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <ScanLine className="h-10 w-10 text-muted-foreground mb-3" />
@@ -288,6 +289,28 @@ export default function ValidacaoQRPage() {
         onScan={handleCameraScan}
         title="Validar Credencial"
       />
+
+      {result && (
+        <ParticipantReviewDialog
+          open={showConfirm}
+          onOpenChange={setShowConfirm}
+          participant={result.participant ? {
+            name: result.participant.full_name,
+            participantId: result.participant.participant_id,
+            cpf: null,
+            type: result.participant.participant_type,
+            institution: result.participant.institution,
+            photo_url: result.participant.photo_url,
+            birth_date: result.participant.birth_date,
+          } : null}
+          onConfirm={handleNewScan}
+          confirmLabel="Confirmar e Próximo"
+          statusLabel={resultConfig?.label}
+          statusIcon={resultConfig?.icon}
+          statusColor={resultConfig?.color.split(" ")[1] + " border-b " + (resultConfig?.color.split(" ")[2] || "")}
+          message={result.message}
+        />
+      )}
     </div>
   );
 }
