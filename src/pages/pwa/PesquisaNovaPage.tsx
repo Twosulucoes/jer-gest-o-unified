@@ -392,7 +392,15 @@ export default function PesquisaNovaPage() {
             </Button>
           </div>
         )}
+        {/* Step 3 content above ... */}
       </div>
+
+      <QrCodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScan}
+        title="Identificar Respondente"
+      />
     </div>
   );
 }
