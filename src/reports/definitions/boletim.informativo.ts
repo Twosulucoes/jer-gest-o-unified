@@ -85,10 +85,10 @@ export const boletimInformativoReport: ReportDefinition = {
 
       const formattedDate = format(parsedDate, 'dd/MM/yyyy');
       let summaryContent = [
-        `Data: **${formattedDate}**`,
-        `• Avisos: **${bulletinsCountTotal || 0}**`,
-        `• Jogos: **${matchesCountTotal || 0}**`,
-        `• Resultados: **${uniqueMatchesWithResults || 0}**`
+        `**Data:** ${formattedDate}`,
+        `• **Avisos:** ${bulletinsCountTotal || 0}`,
+        `• **Jogos:** ${matchesCountTotal || 0}`,
+        `• **Resultados:** ${uniqueMatchesWithResults || 0}`
       ];
 
       // Caso não haja conteúdo principal, destacamos a causa da ausência
