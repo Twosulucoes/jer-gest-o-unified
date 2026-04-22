@@ -154,9 +154,24 @@ export default function CredenciamentoPage() {
   const [blockingDialogData, setBlockingDialogData] = useState<{ participantName: string; items: any[] } | null>(null);
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
+  // Persist filters to URL
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (searchTerm) next.set("search", searchTerm); else next.delete("search");
+    if (filterType !== "all") next.set("type", filterType); else next.delete("type");
+    if (filterState !== "all") next.set("status", filterState); else next.delete("status");
+    if (filterInstitution !== "all") next.set("inst", filterInstitution); else next.delete("inst");
+    if (currentPage > 1) next.set("page", String(currentPage)); else next.delete("page");
+    
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchTerm, filterType, filterState, filterInstitution, currentPage, searchParams, setSearchParams]);
+
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution]);
   useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }, [selectedEventId]);
+
 
   // --- Blocked participants ---
   const { data: blockedParticipantIds = new Set<string>() } = useQuery({
