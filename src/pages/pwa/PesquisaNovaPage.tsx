@@ -261,7 +261,19 @@ export default function PesquisaNovaPage() {
         {/* STEP 1: Profile */}
         {step === 'profile' && (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold">Perfil do Respondente</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">Perfil do Respondente</h2>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 border-primary/20 text-primary"
+                onClick={() => setScannerOpen(true)}
+                disabled={identifying}
+              >
+                {identifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanLine className="h-4 w-4" />}
+                Identificar QR
+              </Button>
+            </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">Tipo</label>
