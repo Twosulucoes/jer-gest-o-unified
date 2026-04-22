@@ -143,7 +143,7 @@ export default function LoginPage() {
           "linear-gradient(165deg, rgba(11,43,90,0.07) 0%, rgba(15,90,166,0.05) 40%, rgba(11,163,163,0.04) 72%, rgba(51,178,73,0.03) 100%), hsl(var(--background))",
       }}
     >
-      <div className="pointer-events-none absolute inset-0 bg-grid opacity-[0.22] dark:opacity-30" />
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-[0.05] dark:opacity-[0.08]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,hsla(222,72%,36%,0.14),transparent_50%)] dark:bg-[radial-gradient(ellipse_120%_80%_at_50%_-15%,hsla(41,100%,47%,0.12),transparent_52%)]" />
 
       <div className="relative z-10 flex min-h-[100dvh] flex-1 flex-col px-5 sm:px-6">
@@ -153,19 +153,19 @@ export default function LoginPage() {
           {/* Topo: só a marca — sem caixa nem repetir o nome */}
           <header className="shrink-0 pb-5 text-center sm:pb-6">
             <h1 className="sr-only">JER Gestão</h1>
-            <div className="mx-auto flex max-w-[220px] justify-center sm:max-w-[260px]">
+            <div className="mx-auto flex max-w-[320px] justify-center sm:max-w-[400px]">
               <img
                 src="/brand/logo.png"
                 alt="JER Gestão"
-                className="h-14 w-auto max-w-full object-contain object-center dark:hidden sm:h-16"
+                className="h-32 w-auto max-w-full object-contain object-center dark:hidden sm:h-40"
               />
               <img
                 src="/brand/logo-dark.png"
                 alt="JER Gestão"
-                className="hidden h-14 w-auto max-w-full object-contain object-center dark:block sm:h-16"
+                className="hidden h-32 w-auto max-w-full object-contain object-center dark:block sm:h-40"
               />
             </div>
-            <p className="mx-auto mt-3 max-w-[280px] text-sm leading-snug text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-[320px] text-base leading-snug text-muted-foreground/90 font-medium">
               Entre com o e-mail e a senha da sua instituição.
             </p>
           </header>
@@ -235,10 +235,10 @@ export default function LoginPage() {
                     <Button
                       type="submit"
                       size="lg"
-                      className="h-12 w-full rounded-2xl text-base font-semibold shadow-app-md sm:h-11 sm:text-sm"
+                      className="h-14 w-full rounded-2xl text-lg font-bold shadow-app-md sm:h-12 sm:text-base transition-all active:scale-[0.98]"
                       disabled={loading}
                     >
-                      {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                      {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : null}
                       Entrar
                     </Button>
                     <button
@@ -256,10 +256,10 @@ export default function LoginPage() {
 
           {/* Rodapé: fixo no fim da viewport em telas curtas */}
           <footer className="mt-auto shrink-0 space-y-4 border-t border-border/40 pt-6 text-center dark:border-border/30">
-            <p className="mx-auto max-w-[300px] text-[11px] leading-relaxed text-muted-foreground/85">
+            <p className="mx-auto max-w-[320px] text-[13px] leading-relaxed text-muted-foreground/85 font-medium">
               Acesso restrito a usuários autorizados pela secretaria ou coordenação do evento.
             </p>
-            <p className="text-[10px] text-muted-foreground/55">
+            <p className="text-xs text-muted-foreground/60 font-medium pb-2">
               Desenvolvido por{" "}
               <a
                 href={brand.developer.website}
