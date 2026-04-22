@@ -54,12 +54,10 @@ export const boletimInformativoReport: ReportDefinition = {
           section: 'Avisos Gerais',
           content: bulletinsText
         });
-      } else {
         resultsData.push({ 
           section: 'Avisos Gerais', 
-          content: 'Nenhum comunicado oficial publicado para esta data.' 
+          content: 'Nenhum comunicado oficial publicado para esta data. Verifique se a data selecionada está correta ou consulte os comunicados de outros dias alterando o filtro de data.' 
         });
-      }
 
       // 2. Programação (from competition_matches)
       if (includeSchedule) {
