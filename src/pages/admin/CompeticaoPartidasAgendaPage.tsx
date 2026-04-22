@@ -34,12 +34,12 @@ export default function CompeticaoPartidasAgendaPage() {
   const { hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
-  const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError } = useStageScope({ includeMatchIds: true });
+  const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError, stageId } = useStageScope({ includeMatchIds: true });
+  const { selectedSportEventId, setSelectedSportEventId, selectedStageId, setSelectedStageId } = useCompetitionContext();
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem("partidas-view") as ViewMode) || "list");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [selectedSportEventId, setSelectedSportEventId] = useState("");
   const [selectedPhaseId, setSelectedPhaseId] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
