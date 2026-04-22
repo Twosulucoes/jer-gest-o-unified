@@ -99,7 +99,7 @@ export default function AlojamentoOcupacaoPage() {
     queryKey: ["occ-participants", occParticipantIds],
     queryFn: async () => {
       if (!occParticipantIds.length) return [];
-      const { data, error } = await supabase.from("participants").select("id, person_id, delegation_id").in("id", occParticipantIds);
+      const { data, error } = await supabase.from("participants").select("id, person_id, delegation_id, delegations(institutions(name))").in("id", occParticipantIds);
       if (error) throw error;
       return data;
     },
