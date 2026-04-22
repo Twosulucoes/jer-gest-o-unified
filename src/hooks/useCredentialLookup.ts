@@ -207,7 +207,7 @@ export function useCredentialLookup() {
 
       const { data: person, error: personErr } = await supabase
         .from("people")
-        .select("full_name, cpf, food_restrictions, gender")
+        .select("full_name, cpf, food_restrictions, gender, birth_date, photo_url")
         .eq("id", participant.person_id)
         .single();
 
