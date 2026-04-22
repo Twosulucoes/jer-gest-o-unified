@@ -276,6 +276,3 @@ export default function AlojamentoPessoaPage() {
     </div>
   );
 }
-
-// Omitted icons not used
-import { Building, Loader2 } from "lucide-react";
