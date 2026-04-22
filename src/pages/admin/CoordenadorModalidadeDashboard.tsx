@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 
 export default function CoordenadorModalidadeDashboard() {
-  const { profile, roles } = useAuth();
+  const { profile } = useAuth();
   const eventId = useActiveEventId();
   const { activeEvent } = useEventContext();
   const { sportIds, isLoading: loadingLinks } = useUserSportLinks();
@@ -278,11 +278,20 @@ export default function CoordenadorModalidadeDashboard() {
 }
 
 function QuickActionCard({ title, description, icon, to, color }: { title: string; description: string; icon: React.ReactNode; to: string; color: string }) {
+  // Use a more accessible color system or consistent tokens
+  const colorMap: Record<string, string> = {
+    "bg-amber-500": "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
+    "bg-emerald-500": "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
+    "bg-blue-500": "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+    "bg-purple-500": "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+  };
+  const colorClass = colorMap[color] || "bg-primary/10 text-primary";
+
   return (
     <Link to={to} className="group">
       <Card className="h-full border border-border/50 transition-all duration-200 hover:shadow-app-md hover:border-primary/20 active:scale-[0.98]">
         <CardContent className="p-5 flex flex-col gap-3">
-          <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color} text-white shadow-sm group-hover:scale-110 transition-transform`}>
+          <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${colorClass} shadow-sm group-hover:scale-110 transition-transform`}>
             {icon}
           </div>
           <div>
