@@ -46,6 +46,12 @@ export default function CompeticaoCentralPage() {
     if (stageId) setSelectedStageId(stageId);
   }, [stageId, setSelectedStageId]);
 
+  // Sincroniza fase detectada se houver via param/contexto
+  useEffect(() => {
+    const phaseParam = searchParams.get("phase");
+    if (phaseParam) setSelectedPhaseId(phaseParam);
+  }, [searchParams, setSelectedPhaseId]);
+
   // Sincroniza sportEventId selecionado com o contexto global
   useEffect(() => {
     setSelectedSportEventId(sportEventId);

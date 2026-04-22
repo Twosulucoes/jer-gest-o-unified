@@ -160,6 +160,7 @@ export default function CompeticaoResultadosPage() {
   const filtered = matches.filter((m) => {
     if (statusFilter !== "all" && matchResultStatus.get(m.id) !== statusFilter) return false;
     if (localSportEventId !== "__all__" && m.sport_event_id !== localSportEventId) return false;
+    if (selectedPhaseId && m.phase_id !== selectedPhaseId) return false;
     return true;
   });
 
@@ -172,7 +173,12 @@ export default function CompeticaoResultadosPage() {
 
   // Counts
   const counts = { all: stageScopedMatches.length, sem_resultado: 0, [RESULT_STATUS.LAUNCHED]: 0, [RESULT_STATUS.VALIDATED]: 0, [RESULT_STATUS.PUBLISHED]: 0 };
-  stageScopedMatches.forEach((m) => { const s = matchResultStatus.get(m.id) ?? "sem_resultado"; counts[s as keyof typeof counts]++; });
+  stageScopedMatches.forEach((m) => { 
+    if (localSportEventId !== "__all__" && m.sport_event_id !== localSportEventId) return;
+    if (selectedPhaseId && m.phase_id !== selectedPhaseId) return;
+    const s = matchResultStatus.get(m.id) ?? "sem_resultado"; 
+    counts[s as keyof typeof counts]++; 
+  });
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -201,21 +207,33 @@ export default function CompeticaoResultadosPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setStatusFilter("all"); setCurrentPage(1); }}>
+              <Select value={selectedEventId} onValueChange={(v) => { setStatusFilter("all"); setCurrentPage(1); setSelectedPhaseId(null); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Modalidade/Prova</label>
-              <Select value={localSportEventId} onValueChange={(v) => { setLocalSportEventId(v); setCurrentPage(1); }}>
+              <Select value={localSportEventId} onValueChange={(v) => { setLocalSportEventId(v); setSelectedPhaseId(null); setCurrentPage(1); }}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todas</SelectItem>
                   {sportEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Fase</label>
+              <Select value={selectedPhaseId || "__all__"} onValueChange={(v) => { setSelectedPhaseId(v === "__all__" ? null : v); setCurrentPage(1); }} disabled={!selectedEventId}>
+                <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas</SelectItem>
+                  {phases.filter(p => localSportEventId === "__all__" || p.sport_event_id === localSportEventId).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
