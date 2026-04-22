@@ -55,6 +55,11 @@ const MODULES: ModuleCard[] = [
 export default function EtapaHubPage() {
   const { stageId } = useParams<{ stageId: string }>();
   const eventId = useActiveEventId();
+  const { setSelectedStageId } = useCompetitionContext();
+
+  useEffect(() => {
+    if (stageId) setSelectedStageId(stageId);
+  }, [stageId, setSelectedStageId]);
 
   const { data: stage, isLoading } = useQuery({
     queryKey: ["event_stage", stageId],
