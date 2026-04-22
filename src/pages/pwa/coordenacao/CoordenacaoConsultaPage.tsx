@@ -24,7 +24,7 @@ interface ParticipantDetail {
 }
 
 export default function CoordenacaoConsultaPage() {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const [scannerOpen, setScannerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,9 +39,9 @@ export default function CoordenacaoConsultaPage() {
         .from("participants")
         .select(`
           id, 
-          full_name, 
           participant_type, 
           status,
+          person:people(full_name),
           delegation:delegations(name),
           category:categories(name),
           sport:sports(name)
@@ -53,7 +53,7 @@ export default function CoordenacaoConsultaPage() {
 
       const detail: ParticipantDetail = {
         id: data.id,
-        full_name: data.full_name,
+        full_name: (data as any).person?.full_name || "Desconhecido",
         participant_type: data.participant_type,
         status: data.status,
         delegation_name: (data as any).delegation?.name,
@@ -81,7 +81,7 @@ export default function CoordenacaoConsultaPage() {
       } else {
         toast.error("QR Code não reconhecido ou inválido para este evento");
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error("Erro ao processar QR Code");
     } finally {
       setLoading(false);
@@ -98,22 +98,22 @@ export default function CoordenacaoConsultaPage() {
         .from("participants")
         .select(`
           id, 
-          full_name, 
           participant_type,
+          person:people!inner(full_name),
           delegation:delegations(name)
         `)
-        .or(`full_name.ilike.%${query.trim()}%,cpf.ilike.%${query.trim()}%`)
+        .or(`full_name.ilike.%${query.trim()}%,cpf.ilike.%${query.trim()}%`, { foreignTable: 'people' })
         .limit(10);
 
       if (error) throw error;
 
-      setResults(data.map(d => ({
+      setResults((data as any[]).map(d => ({
         id: d.id,
-        full_name: d.full_name,
+        full_name: d.person?.full_name || "Sem nome",
         participant_type: d.participant_type,
-        delegation_name: (d as any).delegation?.name
+        delegation_name: d.delegation?.name
       })));
-    } catch (err) {
+    } catch (_err) {
       toast.error("Erro na busca");
     } finally {
       setLoading(false);
