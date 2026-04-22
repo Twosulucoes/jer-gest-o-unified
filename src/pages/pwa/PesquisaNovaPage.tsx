@@ -8,7 +8,11 @@ import OfflineBadge from '@/components/pesquisa/OfflineBadge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Send, ScanLine, User as UserIcon, Loader2 } from 'lucide-react';
+import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import { resolveQrCredential } from "@/lib/resolveQrCredential";
+import { toast } from "sonner";
+import { differenceInYears, parseISO } from "date-fns";
 
 type Step = 'profile' | 'questionnaire' | 'open';
 
