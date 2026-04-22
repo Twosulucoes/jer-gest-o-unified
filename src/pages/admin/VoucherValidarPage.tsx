@@ -54,7 +54,7 @@ export default function VoucherValidarPage() {
       const res = data as RedeemResult;
       setResult(res);
       if (res.ok) {
-        toast({ title: "Voucher validado", description: `${res.person_name ?? "Pessoa"} - ${SERVICE_LABELS[serviceKind]}` });
+        toast({ title: "Voucher validado com sucesso!", description: `${res.person_name ?? "Pessoa"} - ${SERVICE_LABELS[serviceKind]}` });
       } else {
         toast({ title: "Voucher inválido", description: REASON_MESSAGES[res.reason ?? ""] ?? res.reason, variant: "destructive" });
       }

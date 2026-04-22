@@ -5,12 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScanLine, CheckCircle, XCircle, Search, Loader2, User } from "lucide-react";
+import { toast } from "sonner";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
+import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
 import {
   loadScanPreferences,
   saveScanPreferences,
@@ -28,6 +30,7 @@ export default function TransporteScanPage() {
   const { user } = useAuth();
   const { activeEventId } = useEventContext();
   const userId = user?.id ?? null;
+  const lang = getPwaLang();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get("tripId");
   const [result, setResult] = useState<{ ok: boolean; message: string; source?: "qr" | "manual" } | null>(null);
@@ -105,7 +108,9 @@ export default function TransporteScanPage() {
 
       if (existing) {
         if (existing.status === "boarded") {
-          setResult({ ok: true, source, message: `${name} já embarcou anteriormente` });
+          const msg = `${name} já embarcou anteriormente`;
+          setResult({ ok: true, source, message: msg });
+          toast.info(msg);
           recordOutcome("ok");
           reopenIfContinuous();
           return;
@@ -128,7 +133,9 @@ export default function TransporteScanPage() {
       }
     }
 
-    setResult({ ok: true, source, message: `Embarque registrado: ${name}` });
+    const successMsg = `Embarque registrado: ${name}`;
+    setResult({ ok: true, source, message: successMsg });
+    toast.success(successMsg);
     recordOutcome("ok");
     if (navigator.vibrate) navigator.vibrate(200);
     reopenIfContinuous();
@@ -141,7 +148,9 @@ export default function TransporteScanPage() {
     try {
       const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
       if (!resolved) {
-        setResult({ ok: false, message: "Credencial não encontrada ou inativa" });
+        const errorMsg = "Credencial não encontrada ou inativa";
+        setResult({ ok: false, message: errorMsg });
+        toast.error(errorMsg);
         recordOutcome("error");
         return;
       }
@@ -256,7 +265,7 @@ export default function TransporteScanPage() {
               <div className="min-w-0">
                 {result.ok && (
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                    {result.source === "manual" ? "Busca manual" : "QR válido"}
+                    {result.source === "manual" ? getPwaMessage("MANUAL_SEARCH", lang) : getPwaMessage("QR_VALID", lang)}
                   </p>
                 )}
                 <span className="text-sm font-medium leading-snug">{result.message}</span>

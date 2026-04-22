@@ -141,7 +141,9 @@ export default function AlimentacaoScanPage() {
       .eq("meal_window_id", windowId);
 
     if ((count || 0) > 0) {
-      setResult({ ok: false, message: getPwaMessage("ERR_ALREADY_REGISTERED", lang), source: resultSource });
+      const errorMsg = getPwaMessage("ERR_ALREADY_REGISTERED", lang);
+      setResult({ ok: false, message: errorMsg, source: resultSource });
+      toast.error(errorMsg);
       recordOutcome("error");
       reopenIfContinuous();
       return;
@@ -167,12 +169,16 @@ export default function AlimentacaoScanPage() {
     if (error) throw error;
 
     const prefix = method === "voucher" ? "Voucher · " : method === "manual" ? `${getPwaMessage("MANUAL_SEARCH", lang)} · ` : "";
+    const successMsg = `${prefix}${getPwaMessage("SUCCESS_REGISTERED", lang)}: ${participantName || ""}`;
+    
     setResult({
       ok: true,
       source: resultSource,
-      message: `${prefix}${getPwaMessage("SUCCESS_REGISTERED", lang)}: ${participantName || ""}`,
+      message: successMsg,
       restrictions: foodRestrictions || undefined,
     });
+    
+    toast.success(successMsg);
     recordOutcome("ok");
     if (navigator.vibrate) navigator.vibrate(200);
     reopenIfContinuous();
@@ -196,7 +202,9 @@ export default function AlimentacaoScanPage() {
       if (isVoucherQr(rawValue)) {
         const voucher = await tryRedeemVoucher(rawValue, "meals", windowId);
         if (!voucher || !voucher.ok) {
-          setResult({ ok: false, message: getVoucherMessage(voucher?.reason, lang), source: "qr" });
+          const errorMsg = getVoucherMessage(voucher?.reason, lang);
+          setResult({ ok: false, message: errorMsg, source: "qr" });
+          toast.error(errorMsg);
           recordOutcome("error");
           reopenIfContinuous();
           return;
@@ -207,7 +215,9 @@ export default function AlimentacaoScanPage() {
       } else {
         const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
         if (!resolved) {
-          setResult({ ok: false, message: getPwaMessage("ERR_NOT_FOUND", lang), source: "qr" });
+          const errorMsg = getPwaMessage("ERR_NOT_FOUND", lang);
+          setResult({ ok: false, message: errorMsg, source: "qr" });
+          toast.error(errorMsg);
           recordOutcome("error");
           return;
         }

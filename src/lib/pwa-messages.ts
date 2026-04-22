@@ -106,8 +106,8 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
     es: "Búsqueda manual",
   },
   QR_VALID: {
-    pt: "QR válido",
-    es: "QR válido",
+    pt: "QR Code validado!",
+    es: "¡QR Code validado!",
   },
   VOUCHER_NOT_FOUND: {
     pt: "Voucher não encontrado",
