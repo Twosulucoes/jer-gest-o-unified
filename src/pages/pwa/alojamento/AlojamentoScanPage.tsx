@@ -32,6 +32,7 @@ export default function AlojamentoScanPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const userId = user?.id ?? null;
+  const lang = getPwaLang();
   const { enqueue, isOnline } = useAlojamentoOffline();
   const [mode, setMode] = useState<ScanMode>("checkin");
   const [scannerOpen, setScannerOpen] = useState(false);
