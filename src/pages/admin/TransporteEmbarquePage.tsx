@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCredentialLookup } from "@/hooks/useCredentialLookup";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Search, UserPlus, LogOut as AlightIcon, Users, Loader2, XCircle, QrCode, AlertTriangle,
+  ArrowLeft, Search, UserPlus, LogOut as AlightIcon, Users, Loader2, XCircle, QrCode, AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 
 const PASSENGER_STATUS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   boarded: { label: "Embarcado", variant: "default" },
