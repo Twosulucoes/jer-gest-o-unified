@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useCompetitionContext } from "@/contexts/CompetitionContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import { useStageScope } from "@/hooks/useStageScope";
 import ModuleHeader from "@/components/admin/ModuleHeader";
