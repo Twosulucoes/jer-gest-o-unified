@@ -194,12 +194,22 @@ export default function CompeticaoResultadosPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
               <Select value={selectedEventId} onValueChange={(v) => { setStatusFilter("all"); setCurrentPage(1); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Modalidade/Prova</label>
+              <Select value={localSportEventId} onValueChange={(v) => { setLocalSportEventId(v); setCurrentPage(1); }}>
+                <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas</SelectItem>
+                  {sportEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
