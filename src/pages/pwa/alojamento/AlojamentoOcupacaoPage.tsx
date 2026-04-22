@@ -9,13 +9,15 @@ import { Progress } from "@/components/ui/progress";
 import { getSelectedFacility } from "@/hooks/useAlojamento";
 import { useEventContext } from "@/contexts/EventContext";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 import {
   PwaSectionLabel,
   PwaStatTriplet,
   occupancyBarClass,
   occupancyTone,
 } from "@/components/pwa/PwaDashboardPrimitives";
-import { Building, FileBarChart, ScanLine } from "lucide-react";
+import { Building, FileBarChart, ScanLine, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface RoomInfo {
   id: string;
