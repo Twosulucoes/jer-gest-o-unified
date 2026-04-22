@@ -1,12 +1,18 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useEventContext } from "@/contexts/EventContext";
 import { toast } from "sonner";
-import { Plus, Trash2, Link2, Users } from "lucide-react";
+import {
+  Plus, Trash2, Link2, Search, AlertTriangle, UserPlus, Trophy, Shield,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -16,63 +22,72 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AppPageHeader } from "@/components/app/AppPageHeader";
+import SportLinksDialog from "@/components/admin/SportLinksDialog";
+
+async function callAdminUsers(action: string, body: Record<string, unknown> = {}) {
+  const { data, error } = await supabase.functions.invoke("admin-users", {
+    body: { action, ...body },
+  });
+  if (error) throw new Error(error.message);
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
 
 export default function AcessosDelegacoesPage() {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
+  const { activeEvent, activeEventId } = useEventContext();
+  const canManage = hasRole("admin") || hasRole("secretaria");
+
+  // ---- Tab state ----
+  const [tab, setTab] = useState<"delegacao" | "modalidades">("delegacao");
+
+  // ---- Delegação tab ----
+  const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedDelegationId, setSelectedDelegationId] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; user: string; institution: string } | null>(null);
 
-  const canManage = hasRole("admin") || hasRole("secretaria");
+  // Users list (with emails) via admin-users edge fn
+  const { data: users = [] } = useQuery({
+    queryKey: ["admin-users-list"],
+    queryFn: async () => {
+      const result = await callAdminUsers("list_users");
+      return result.users || [];
+    },
+  });
 
-  // Fetch existing links
-  const { data: links = [], isLoading } = useQuery({
-    queryKey: ["user_delegations"],
+  // Vínculos delegação (filtrados por evento ativo via join lógico)
+  const { data: links = [], isLoading: loadingLinks } = useQuery({
+    queryKey: ["user_delegations", activeEventId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_delegations")
         .select("id, user_id, delegation_id, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
-    },
-  });
-
-  // Fetch profiles (users with role delegacao)
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles_delegacao"],
-    queryFn: async () => {
-      // Get user_ids with delegacao role
-      const { data: roleData, error: roleErr } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "delegacao");
-      if (roleErr) throw roleErr;
-      if (!roleData?.length) return [];
-
-      const userIds = roleData.map((r) => r.user_id);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", userIds);
-      if (error) throw error;
       return data ?? [];
     },
   });
 
-  // Fetch delegations with institution name
   const { data: delegations = [] } = useQuery({
-    queryKey: ["delegations_for_link"],
+    queryKey: ["delegations_for_link", activeEventId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("delegations")
-        .select("id, event_id, institution_id, status")
-        .order("created_at", { ascending: false });
+      let q = supabase.from("delegations").select("id, event_id, institution_id, status").order("created_at", { ascending: false });
+      if (activeEventId) q = q.eq("event_id", activeEventId);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
+    enabled: !!activeEventId,
   });
 
   const { data: institutions = [] } = useQuery({
@@ -84,22 +99,95 @@ export default function AcessosDelegacoesPage() {
     },
   });
 
-  const { data: events = [] } = useQuery({
-    queryKey: ["events"],
+  // ---- Maps ----
+  const institutionsMap = useMemo(
+    () => new Map(institutions.map((i) => [i.id, i.name])),
+    [institutions]
+  );
+  const usersMap = useMemo(
+    () => new Map(users.map((u: any) => [u.user_id, u])),
+    [users]
+  );
+
+  // Apenas delegações deste evento
+  const delegationIdsThisEvent = useMemo(
+    () => new Set(delegations.map((d) => d.id)),
+    [delegations]
+  );
+
+  // Vínculos restritos ao evento ativo
+  const linksThisEvent = useMemo(
+    () => links.filter((l) => delegationIdsThisEvent.has(l.delegation_id)),
+    [links, delegationIdsThisEvent]
+  );
+
+  // Conta vínculos por delegação (alerta de duplicado)
+  const linksByDelegation = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of linksThisEvent) m.set(l.delegation_id, (m.get(l.delegation_id) || 0) + 1);
+    return m;
+  }, [linksThisEvent]);
+
+  // Usuários com perfil delegação (a partir do list_users)
+  const delegationUsers = useMemo(
+    () => users.filter((u: any) => u.roles?.includes("delegacao")),
+    [users]
+  );
+
+  const linkedUserIds = new Set(linksThisEvent.map((l) => l.user_id));
+  const availableUsers = delegationUsers.filter((u: any) => !linkedUserIds.has(u.user_id));
+
+  // Coord. modalidade users (para aba Modalidades)
+  const coordUsers = useMemo(
+    () => users.filter((u: any) => u.roles?.includes("coordenador_modalidade")),
+    [users]
+  );
+
+  // Sport links (pré-carrega contagem)
+  const coordUserIds = useMemo(() => coordUsers.map((u: any) => u.user_id), [coordUsers]);
+  const { data: sportLinks = [] } = useQuery({
+    queryKey: ["user-sport-links-all", activeEventId, coordUserIds],
     queryFn: async () => {
-      const { data, error } = await supabase.from("events").select("id, name, year").order("year", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
+      if (!activeEventId || coordUserIds.length === 0) return [];
+      const { data } = await supabase
+        .from("user_sport_links")
+        .select("id, user_id, sport_id, sports(name)")
+        .eq("event_id", activeEventId)
+        .in("user_id", coordUserIds);
+      return data || [];
     },
+    enabled: !!activeEventId && coordUserIds.length > 0,
   });
 
-  const institutionsMap = new Map(institutions.map((i) => [i.id, i.name]));
-  const eventsMap = new Map(events.map((e) => [e.id, `${e.name} (${e.year})`]));
-  const profilesMap = new Map(profiles.map((p) => [p.id, p.full_name || p.id]));
-  const linkedUserIds = new Set(links.map((l) => l.user_id));
+  const sportsByUser = useMemo(() => {
+    const m: Record<string, string[]> = {};
+    for (const l of sportLinks as any[]) {
+      const uid = l.user_id as string;
+      if (!m[uid]) m[uid] = [];
+      m[uid].push(l.sports?.name || "—");
+    }
+    return m;
+  }, [sportLinks]);
 
-  const availableProfiles = profiles.filter((p) => !linkedUserIds.has(p.id));
+  // ---- Filter (search) ----
+  const filteredLinks = useMemo(() => {
+    if (!search.trim()) return linksThisEvent;
+    const q = search.toLowerCase();
+    return linksThisEvent.filter((l) => {
+      const u = usersMap.get(l.user_id) as any;
+      const d = delegations.find((x) => x.id === l.delegation_id);
+      const inst = d ? institutionsMap.get(d.institution_id) || "" : "";
+      const name = u?.full_name || "";
+      const email = u?.email || "";
+      return (
+        name.toLowerCase().includes(q) ||
+        email.toLowerCase().includes(q) ||
+        inst.toLowerCase().includes(q)
+      );
+    });
+  }, [linksThisEvent, search, usersMap, delegations, institutionsMap]);
 
+  // ---- Mutations ----
   const createMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("user_delegations").insert({
@@ -132,84 +220,252 @@ export default function AcessosDelegacoesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user_delegations"] });
       toast.success("Vínculo removido");
+      setConfirmDelete(null);
     },
     onError: (err: Error) => toast.error(`Erro ao remover: ${err.message}`),
   });
 
+  // ---- Modalidades tab ----
+  const [sportLinksUser, setSportLinksUser] = useState<{ id: string; name: string } | null>(null);
+  const [coordSearch, setCoordSearch] = useState("");
+
+  const filteredCoords = useMemo(() => {
+    if (!coordSearch.trim()) return coordUsers;
+    const q = coordSearch.toLowerCase();
+    return coordUsers.filter((u: any) =>
+      (u.full_name || "").toLowerCase().includes(q) ||
+      (u.email || "").toLowerCase().includes(q)
+    );
+  }, [coordUsers, coordSearch]);
+
+  // ---- Render ----
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Vínculos Delegação → Usuário</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Associe usuários com perfil <strong>delegação</strong> à sua delegação. O RLS restringe o acesso com base neste vínculo.
-          </p>
-        </div>
+      <AppPageHeader
+        title="Acessos e Vínculos"
+        description={
+          activeEvent
+            ? `Gerencie vínculos de delegação e modalidade — Evento ativo: ${activeEvent.name}`
+            : "Selecione um evento ativo para gerenciar vínculos."
+        }
+      >
         {canManage && (
-          <Button onClick={() => setDialogOpen(true)} disabled={!availableProfiles.length || !delegations.length}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo vínculo
+          <Button asChild variant="outline" size="sm">
+            <RouterLink to="/admin/acessos/usuarios">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Gerenciar usuários
+            </RouterLink>
           </Button>
         )}
-      </div>
+      </AppPageHeader>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full rounded-md" />
-          ))}
-        </div>
-      ) : !links.length ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-          <Link2 className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhum vínculo configurado</p>
-          <p className="text-sm text-muted-foreground mt-1">Vincule usuários com perfil delegação à sua delegação para restringir o acesso.</p>
-        </div>
-      ) : (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Usuário</TableHead>
-                <TableHead>Delegação (Instituição)</TableHead>
-                <TableHead>Evento</TableHead>
-                <TableHead className="w-[60px]" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {links.map((link) => {
-                const delegation = delegations.find((d) => d.id === link.delegation_id);
-                return (
-                  <TableRow key={link.id}>
-                    <TableCell className="font-medium">
-                      {profilesMap.get(link.user_id) || link.user_id.slice(0, 8) + "…"}
-                    </TableCell>
-                    <TableCell>
-                      {delegation ? institutionsMap.get(delegation.institution_id) || "—" : "—"}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {delegation ? eventsMap.get(delegation.event_id) || "—" : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {canManage && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteMutation.mutate(link.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      )}
-                    </TableCell>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as "delegacao" | "modalidades")}>
+        <TabsList>
+          <TabsTrigger value="delegacao">
+            <Shield className="mr-2 h-4 w-4" />
+            Delegação
+          </TabsTrigger>
+          <TabsTrigger value="modalidades">
+            <Trophy className="mr-2 h-4 w-4" />
+            Modalidades
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ---------------- TAB: DELEGAÇÃO ---------------- */}
+        <TabsContent value="delegacao" className="space-y-4 mt-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+            <div className="relative w-full sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, e-mail ou instituição..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            {canManage && (
+              <Button
+                onClick={() => setDialogOpen(true)}
+                disabled={!availableUsers.length || !delegations.length || !activeEventId}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Novo vínculo
+              </Button>
+            )}
+          </div>
+
+          {!activeEventId ? (
+            <div className="rounded-lg border border-dashed bg-muted/30 py-10 text-center">
+              <AlertTriangle className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">Selecione um evento ativo para listar vínculos.</p>
+            </div>
+          ) : loadingLinks ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-md" />
+              ))}
+            </div>
+          ) : !filteredLinks.length ? (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
+              <Link2 className="h-10 w-10 text-muted-foreground mb-3" />
+              <p className="text-muted-foreground font-medium">
+                {linksThisEvent.length === 0 ? "Nenhum vínculo configurado" : "Nenhum resultado para sua busca"}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {linksThisEvent.length === 0
+                  ? "Vincule usuários com perfil delegação à sua delegação para restringir o acesso."
+                  : "Ajuste o termo de busca ou limpe o filtro."}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-lg border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>E-mail</TableHead>
+                    <TableHead>Delegação (Instituição)</TableHead>
+                    <TableHead className="w-[60px]" />
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                </TableHeader>
+                <TableBody>
+                  {filteredLinks.map((link) => {
+                    const u = usersMap.get(link.user_id) as any;
+                    const delegation = delegations.find((d) => d.id === link.delegation_id);
+                    const instName = delegation ? institutionsMap.get(delegation.institution_id) || "—" : "—";
+                    const dupCount = linksByDelegation.get(link.delegation_id) || 1;
+                    return (
+                      <TableRow key={link.id}>
+                        <TableCell className="font-medium">
+                          {u?.full_name || link.user_id.slice(0, 8) + "…"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {u?.email || "—"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span>{instName}</span>
+                            {dupCount > 1 && (
+                              <Badge variant="outline" className="gap-1 text-amber-600 border-amber-500/40">
+                                <AlertTriangle className="h-3 w-3" />
+                                {dupCount} usuários
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {canManage && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setConfirmDelete({
+                                  id: link.id,
+                                  user: u?.full_name || "este usuário",
+                                  institution: instName,
+                                })
+                              }
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
 
+        {/* ---------------- TAB: MODALIDADES ---------------- */}
+        <TabsContent value="modalidades" className="space-y-4 mt-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+            <div className="relative w-full sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar coordenador..."
+                value={coordSearch}
+                onChange={(e) => setCoordSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Vincule cada Coordenador de Modalidade às modalidades que ele opera.
+            </p>
+          </div>
+
+          {!activeEventId ? (
+            <div className="rounded-lg border border-dashed bg-muted/30 py-10 text-center">
+              <AlertTriangle className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">Selecione um evento ativo para listar coordenadores.</p>
+            </div>
+          ) : !filteredCoords.length ? (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
+              <Trophy className="h-10 w-10 text-muted-foreground mb-3" />
+              <p className="text-muted-foreground font-medium">
+                {coordUsers.length === 0
+                  ? "Nenhum usuário com perfil 'Coord. Modalidade'"
+                  : "Nenhum resultado para sua busca"}
+              </p>
+              {coordUsers.length === 0 && (
+                <Button asChild variant="link" size="sm" className="mt-2">
+                  <RouterLink to="/admin/acessos/usuarios">Criar usuário</RouterLink>
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-lg border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Coordenador</TableHead>
+                    <TableHead>E-mail</TableHead>
+                    <TableHead>Modalidades vinculadas</TableHead>
+                    <TableHead className="w-[140px]" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCoords.map((u: any) => {
+                    const modas = sportsByUser[u.user_id] || [];
+                    return (
+                      <TableRow key={u.user_id}>
+                        <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
+                        <TableCell>
+                          {modas.length === 0 ? (
+                            <span className="text-sm text-muted-foreground">Nenhuma</span>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              {modas.map((n, i) => (
+                                <Badge key={i} variant="secondary">{n}</Badge>
+                              ))}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {canManage && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSportLinksUser({ id: u.user_id, name: u.full_name || u.email || "Coord." })}
+                            >
+                              Gerenciar
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Diálogo: novo vínculo delegação */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -223,13 +479,22 @@ export default function AcessosDelegacoesPage() {
                   <SelectValue placeholder="Selecione um usuário" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableProfiles.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.full_name || p.id.slice(0, 8) + "…"}
+                  {availableUsers.map((u: any) => (
+                    <SelectItem key={u.user_id} value={u.user_id}>
+                      {u.full_name || u.email || u.user_id.slice(0, 8) + "…"}
+                      {u.email && <span className="text-muted-foreground ml-2 text-xs">({u.email})</span>}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {availableUsers.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Sem usuários disponíveis. Crie um em{" "}
+                  <RouterLink to="/admin/acessos/usuarios" className="underline text-primary">
+                    Gerenciar usuários
+                  </RouterLink>.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Delegação</Label>
@@ -238,11 +503,17 @@ export default function AcessosDelegacoesPage() {
                   <SelectValue placeholder="Selecione uma delegação" />
                 </SelectTrigger>
                 <SelectContent>
-                  {delegations.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {institutionsMap.get(d.institution_id) || "—"} — {eventsMap.get(d.event_id) || "—"}
-                    </SelectItem>
-                  ))}
+                  {delegations.map((d) => {
+                    const count = linksByDelegation.get(d.id) || 0;
+                    return (
+                      <SelectItem key={d.id} value={d.id}>
+                        {institutionsMap.get(d.institution_id) || "—"}
+                        {count > 0 && (
+                          <span className="text-amber-600 ml-2 text-xs">⚠ {count} já vinculado(s)</span>
+                        )}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -258,6 +529,42 @@ export default function AcessosDelegacoesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmação de remoção */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover vínculo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDelete && (
+                <>
+                  O usuário <strong>{confirmDelete.user}</strong> perderá o acesso à delegação{" "}
+                  <strong>{confirmDelete.institution}</strong>. Esta ação pode ser desfeita criando o vínculo novamente.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmDelete && deleteMutation.mutate(confirmDelete.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo de modalidades */}
+      {sportLinksUser && (
+        <SportLinksDialog
+          open={!!sportLinksUser}
+          onOpenChange={(o) => !o && setSportLinksUser(null)}
+          userId={sportLinksUser.id}
+          userName={sportLinksUser.name}
+        />
+      )}
     </div>
   );
 }
