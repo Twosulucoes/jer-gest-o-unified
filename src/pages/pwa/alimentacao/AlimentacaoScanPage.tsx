@@ -351,7 +351,7 @@ export default function AlimentacaoScanPage() {
                   </div>
                 )}
                 {!manualSearching && manualHits.length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhum participante encontrado neste evento.</p>
+                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">{getPwaMessage("NO_RESULTS", lang)}</p>
                 )}
                 {!manualSearching &&
                   manualHits.map((h) => (
