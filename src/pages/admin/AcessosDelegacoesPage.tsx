@@ -343,7 +343,10 @@ export default function AcessosDelegacoesPage() {
                     return (
                       <TableRow key={u.user_id}>
                         <TableCell className="font-medium">
-                          {u.full_name || "—"}
+                          <div className="flex items-center gap-2">
+                            <span>{u.full_name || "—"}</span>
+                            {!u.active && <Badge variant="destructive" className="text-[10px] h-4 px-1">Inativo</Badge>}
+                          </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {u.email || "—"}
