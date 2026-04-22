@@ -320,7 +320,7 @@ export default function TransporteEmbarquePage() {
             <button onClick={() => navigate("/pwa/transporte")} className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <span className="font-heading font-semibold tracking-tight text-sm">Embarque</span>
+            <span className="font-heading font-semibold tracking-tight text-sm">{getPwaMessage("EMBARQUE", lang)}</span>
           </div>
           <div className="flex items-center gap-1 text-xs bg-[hsl(var(--module-accent)/0.16)] rounded-full px-2.5 py-1">
             <Users className="h-3.5 w-3.5" />
@@ -331,16 +331,16 @@ export default function TransporteEmbarquePage() {
         </div>
         <div className="flex items-center gap-2 mt-2">
           <Button size="sm" variant="module" className="h-8 text-xs flex-1" onClick={() => setManualOpen(true)}>
-            <UserPlus className="h-3.5 w-3.5 mr-1" /> Manual
+            <UserPlus className="h-3.5 w-3.5 mr-1" /> {getPwaMessage("MANUAL", lang)}
           </Button>
           <Button size="sm" variant="module" className="h-8 text-xs flex-1" onClick={() => setScannerOpen(true)}>
-            <ScanLine className="h-3.5 w-3.5 mr-1" /> Scan
+            <ScanLine className="h-3.5 w-3.5 mr-1" /> {getPwaMessage("SCAN", lang)}
           </Button>
           <Button size="sm" variant="module" className="h-8 text-xs" onClick={() => navigate(`/pwa/transporte/viagem/${tripId}/passageiros`)}>
             <Users className="h-3.5 w-3.5" />
           </Button>
           <Button size="sm" variant="destructive" className="h-8 text-xs flex-1" onClick={() => setFinishOpen(true)}>
-            Finalizar
+            {getPwaMessage("FINALIZAR", lang)}
           </Button>
         </div>
       </header>
