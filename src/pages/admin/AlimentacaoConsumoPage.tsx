@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCredentialLookup } from "@/hooks/useCredentialLookup";
 import { toast } from "sonner";
 import {
-  UtensilsCrossed, Search, Loader2, CheckCircle2, AlertTriangle, QrCode,
+  UtensilsCrossed, Search, Loader2, CheckCircle2, AlertTriangle, QrCode, User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
+import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 
 export default function AlimentacaoConsumoPage() {
   const qc = useQueryClient();
