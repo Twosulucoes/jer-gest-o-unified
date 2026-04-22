@@ -32,12 +32,24 @@ interface BlockInfo {
   rooms: RoomInfo[];
 }
 
+interface PersonResult {
+  participant_id: string;
+  full_name: string;
+  participant_type: string;
+  bed_code: string | null;
+  room_code: string | null;
+  block_name: string | null;
+  delegation_name: string | null;
+}
+
 export default function AlojamentoOcupacaoPage() {
   const navigate = useNavigate();
   const { activeEvent } = useEventContext();
   const [blocks, setBlocks] = useState<BlockInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<PersonResult[]>([]);
+  const [searching, setSearching] = useState(false);
   const [kpiLoading, setKpiLoading] = useState(true);
   const [kpis, setKpis] = useState({ assigned: 0, total: 0, hospedados: 0 });
   const facilityId = getSelectedFacility();
@@ -60,6 +72,24 @@ export default function AlojamentoOcupacaoPage() {
       setKpiLoading(false);
     })();
   }, [facilityId]);
+
+  useEffect(() => {
+    if (!search.trim() || search.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      const { data } = await supabase.rpc("pwa_search_person" as any, {
+        p_query: search.trim(),
+        p_facility_id: facilityId,
+        p_limit: 10
+      });
+      setSearchResults((data as any)?.results || []);
+      setSearching(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, facilityId]);
 
   const livres = Math.max(0, kpis.total - kpis.assigned);
 
