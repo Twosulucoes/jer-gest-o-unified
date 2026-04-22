@@ -150,9 +150,11 @@ export default function CompeticaoResultadosPage() {
     ? (stageMatchIds ? matches.filter((m) => stageMatchIds.has(m.id)) : [])
     : matches;
 
-  const filtered = statusFilter === "all"
-    ? stageScopedMatches
-    : stageScopedMatches.filter((m) => matchResultStatus.get(m.id) === statusFilter);
+  const filtered = matches.filter((m) => {
+    if (statusFilter !== "all" && matchResultStatus.get(m.id) !== statusFilter) return false;
+    if (localSportEventId !== "__all__" && m.sport_event_id !== localSportEventId) return false;
+    return true;
+  });
 
   const formatDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR") : "—";
 
