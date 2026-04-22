@@ -331,7 +331,16 @@ export default function QrCodeScanner({
       </header>
 
       {/* Main */}
-      <main className="flex-1 flex flex-col overflow-auto" style={{ background: "hsl(var(--tac-bg))" }}>
+      <main className="flex-1 flex flex-col overflow-auto relative" style={{ background: "hsl(var(--tac-bg))" }}>
+        {/* Success Overlay */}
+        {showSuccess && (
+          <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-[hsl(var(--tac-accent)/0.95)] text-black backdrop-blur-md tac-rise">
+            <CheckCircle2 className="h-24 w-24 mb-4 animate-bounce" />
+            <span className="text-2xl font-black uppercase tracking-[0.3em] font-mono">SCAN OK</span>
+            <span className="text-[10px] font-mono mt-2 font-bold opacity-60">SYST-AUTH-001 // VALIDATED</span>
+          </div>
+        )}
+
         {!manualMode && (
           <>
             {/* Viewfinder area */}
