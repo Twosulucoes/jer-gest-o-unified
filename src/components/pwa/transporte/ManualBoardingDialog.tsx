@@ -119,7 +119,7 @@ export function ManualBoardingDialog({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-sm">Foto do documento</Label>
+            <Label className="text-sm">{getPwaMessage("TAKE_PHOTO", lang)}</Label>
             <input
               ref={fileRef}
               type="file"
@@ -142,7 +142,7 @@ export function ManualBoardingDialog({
               </div>
             ) : (
               <Button variant="outline" className="w-full" onClick={() => fileRef.current?.click()}>
-                <Camera className="h-4 w-4 mr-2" /> Tirar foto do documento
+                <Camera className="h-4 w-4 mr-2" /> {getPwaMessage("TAKE_PHOTO", lang)}
               </Button>
             )}
           </div>
@@ -150,10 +150,10 @@ export function ManualBoardingDialog({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancelar
+            {getPwaMessage("CANCEL", lang)}
           </Button>
           <Button onClick={handleSave} disabled={saving || !name.trim()}>
-            {saving ? "Salvando..." : "Registrar Embarque"}
+            {saving ? getPwaMessage("SAVING", lang) : getPwaMessage("REGISTER_BOARDING", lang)}
           </Button>
         </DialogFooter>
       </DialogContent>
