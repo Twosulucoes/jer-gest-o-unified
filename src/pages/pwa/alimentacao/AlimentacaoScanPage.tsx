@@ -328,11 +328,11 @@ export default function AlimentacaoScanPage() {
         )}
 
         <div className="space-y-2">
-          <p className="text-center text-xs text-muted-foreground">ou buscar manualmente</p>
+          <p className="text-center text-xs text-muted-foreground">{getPwaMessage("SEARCH_MANUALLY", lang)}</p>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome ou CPF…"
+              placeholder={getPwaMessage("SEARCH_PLACEHOLDER", lang)}
               value={manualQuery}
               onChange={(e) => setManualQuery(e.target.value)}
               className="h-11 border-border/80 bg-card/90 pl-10"
