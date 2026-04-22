@@ -4,16 +4,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { AppKPI } from "@/components/app/AppKPI";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
 import {
   Users, UserCheck, Calendar, MapPin,
-  ClipboardList, Trophy, Bus, Gavel,
+  ClipboardList, Trophy, Bus, Gavel, ChevronRight, AlertTriangle,
 } from "lucide-react";
 
 export default function DelegacaoHomePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [delegationId, setDelegationId] = useState<string | null>(null);
-  const [kpis, setKpis] = useState({ participantes: 0, atletas: 0, comissao: 0, partidasHoje: 0 });
+  const [delegationLabel, setDelegationLabel] = useState<string>("");
+  const [kpis, setKpis] = useState({
+    participantes: 0,
+    atletas: 0,
+    comissao: 0,
+    partidasHoje: 0,
+    credenciados: 0,
+    pendentesCred: 0,
+  });
 
   useEffect(() => {
     (async () => {
@@ -37,10 +46,23 @@ export default function DelegacaoHomePage() {
       const delId = userDelegation.delegation_id;
       setDelegationId(delId);
 
-      const [partRes, atletasRes, comissaoRes] = await Promise.all([
+      const { data: delRow } = await supabase
+        .from("delegations")
+        .select("school_name, chief_name")
+        .eq("id", delId)
+        .maybeSingle();
+
+      if (delRow) {
+        const chief = delRow.chief_name ? ` — Chefe: ${delRow.chief_name}` : "";
+        setDelegationLabel(`Del. ${delRow.school_name ?? "Delegação"}${chief}`);
+      }
+
+      const [partRes, atletasRes, comissaoRes, credRes, pendRes] = await Promise.all([
         supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId),
         supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId).eq("participant_type", "athlete"),
         supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId).in("participant_type", ["coach", "head_of_delegation", "official", "staff"]),
+        supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId).eq("participant_type", "athlete").eq("status", "confirmed"),
+        supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId).eq("participant_type", "athlete").eq("status", "pending"),
       ]);
 
       setKpis({
@@ -48,6 +70,8 @@ export default function DelegacaoHomePage() {
         atletas: atletasRes.count || 0,
         comissao: comissaoRes.count || 0,
         partidasHoje: 0,
+        credenciados: credRes.count || 0,
+        pendentesCred: pendRes.count || 0,
       });
 
       setLoading(false);
@@ -68,10 +92,11 @@ export default function DelegacaoHomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <PwaHeader title="Delegação" icon={Users} backTo="/pwa" onSignOut={handleSignOut} />
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-30" />
+      <PwaHeader title="Minha Delegação" icon={Users} backTo="/pwa" onSignOut={handleSignOut} />
 
-      <main className="p-4 max-w-md mx-auto space-y-4">
+      <main className="relative max-w-md mx-auto space-y-4 p-4">
         {!delegationId && !loading && (
           <Card className="border-warning/50">
             <CardContent className="p-4 text-center text-sm text-muted-foreground">
@@ -80,19 +105,51 @@ export default function DelegacaoHomePage() {
           </Card>
         )}
 
+        {delegationId && delegationLabel && (
+          <p className="text-center text-xs text-muted-foreground">{delegationLabel}</p>
+        )}
+
+        {delegationId && (
+          <PwaStatTriplet
+            loading={loading}
+            items={[
+              { label: "Atletas", value: kpis.atletas, tone: "amber" },
+              { label: "Credenciados", value: kpis.credenciados, tone: "green" },
+              { label: "Pendentes", value: kpis.pendentesCred, tone: "red" },
+            ]}
+          />
+        )}
+
+        {delegationId && kpis.pendentesCred > 0 && (
+          <button
+            type="button"
+            onClick={() => navigate("/pwa/delegacao/participantes")}
+            className="flex w-full items-center gap-3 rounded-2xl border border-red-500/35 bg-red-500/10 p-4 text-left transition-colors hover:bg-red-500/15"
+          >
+            <AlertTriangle className="h-5 w-5 shrink-0 text-red-500" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                {kpis.pendentesCred} pendência{kpis.pendentesCred > 1 ? "s" : ""} de credencial
+              </p>
+              <p className="text-xs text-muted-foreground">Documento ausente ou inválido</p>
+            </div>
+            <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+          </button>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <AppKPI label="Participantes" value={kpis.participantes} icon={Users} loading={loading} />
-          <AppKPI label="Atletas" value={kpis.atletas} icon={Trophy} loading={loading} />
           <AppKPI label="Comissão" value={kpis.comissao} icon={UserCheck} loading={loading} />
           <AppKPI label="Jogos hoje" value={kpis.partidasHoje} icon={Calendar} loading={loading} />
+          <AppKPI label="Total atletas" value={kpis.atletas} icon={Trophy} loading={loading} />
         </div>
 
         {delegationId && (
           <div className="grid grid-cols-2 gap-3">
             {actions.map((action) => (
-              <Card key={action.label} className="cursor-pointer hover:shadow-app-md active:scale-[0.98] transition-all" onClick={() => navigate(action.to)}>
-                <CardContent className="p-4 flex flex-col items-center gap-2">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Card key={action.label} className="cursor-pointer border-border/80 bg-card/95 transition-all hover:-translate-y-0.5 hover:shadow-app-lg active:scale-[0.98]" onClick={() => navigate(action.to)}>
+                <CardContent className="flex flex-col items-center gap-2 p-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[hsl(var(--module-accent)/0.14)] text-[hsl(var(--module-accent))] shadow-app-sm">
                     <action.icon className="h-6 w-6" />
                   </div>
                   <span className="text-sm font-medium">{action.label}</span>

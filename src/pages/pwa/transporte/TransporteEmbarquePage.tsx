@@ -312,15 +312,15 @@ export default function TransporteEmbarquePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b bg-primary text-primary-foreground px-3 py-2">
+      <header className="sticky top-0 z-30 border-b border-border bg-surface text-text px-3 py-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate("/pwa/transporte")} className="text-primary-foreground/70 hover:text-primary-foreground">
+            <button onClick={() => navigate("/pwa/transporte")} className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </button>
             <span className="font-heading font-semibold tracking-tight text-sm">Embarque</span>
           </div>
-          <div className="flex items-center gap-1 text-xs bg-primary-foreground/10 rounded-full px-2.5 py-1">
+          <div className="flex items-center gap-1 text-xs bg-[hsl(var(--module-accent)/0.16)] rounded-full px-2.5 py-1">
             <Users className="h-3.5 w-3.5" />
             <span className="font-bold">{boardedCount}</span>
             <span className="opacity-70">/</span>
@@ -328,13 +328,13 @@ export default function TransporteEmbarquePage() {
           </div>
         </div>
         <div className="flex items-center gap-2 mt-2">
-          <Button size="sm" variant="secondary" className="h-8 text-xs flex-1" onClick={() => setManualOpen(true)}>
+          <Button size="sm" variant="module" className="h-8 text-xs flex-1" onClick={() => setManualOpen(true)}>
             <UserPlus className="h-3.5 w-3.5 mr-1" /> Manual
           </Button>
-          <Button size="sm" variant="secondary" className="h-8 text-xs flex-1" onClick={() => setScannerOpen(true)}>
+          <Button size="sm" variant="module" className="h-8 text-xs flex-1" onClick={() => setScannerOpen(true)}>
             <ScanLine className="h-3.5 w-3.5 mr-1" /> Scan
           </Button>
-          <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={() => navigate(`/pwa/transporte/viagem/${tripId}/passageiros`)}>
+          <Button size="sm" variant="module" className="h-8 text-xs" onClick={() => navigate(`/pwa/transporte/viagem/${tripId}/passageiros`)}>
             <Users className="h-3.5 w-3.5" />
           </Button>
           <Button size="sm" variant="destructive" className="h-8 text-xs flex-1" onClick={() => setFinishOpen(true)}>
@@ -365,13 +365,13 @@ export default function TransporteEmbarquePage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {passengers.map((p) => (
-            <Card key={p.id} className={p.boarded ? "border-primary/30 bg-primary/5" : ""}>
+            <Card key={p.id} className={p.boarded ? "border-[hsl(var(--module-accent)/0.45)] bg-[hsl(var(--module-accent)/0.09)]" : ""}>
               <CardContent className="p-2.5 flex items-center justify-between">
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate">{p.full_name}</span>
                   {p.is_manual && <span className="text-[10px] text-muted-foreground">Embarque manual</span>}
                 </div>
-                <Badge variant={p.boarded ? "default" : "outline"} className="text-[10px] shrink-0">
+                <Badge variant={p.boarded ? "module" : "outline"} className="text-[10px] shrink-0">
                   {p.boarded ? "Embarcado" : "Pendente"}
                 </Badge>
               </CardContent>

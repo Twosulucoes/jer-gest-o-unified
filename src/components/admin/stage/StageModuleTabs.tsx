@@ -52,7 +52,7 @@ export function StageModuleTabs({ items, className }: StageModuleTabsProps) {
               cn(
                 "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-all",
                 isActive
-                  ? "bg-background text-foreground shadow-sm ring-1 ring-border"
+                  ? "bg-[hsl(var(--module-accent)/0.14)] text-[hsl(var(--module-accent))] shadow-sm ring-1 ring-[hsl(var(--module-accent)/0.35)]"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/50",
               )
             }

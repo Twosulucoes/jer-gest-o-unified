@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ScanLine, CheckCircle, XCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ScanLine, CheckCircle, XCircle, Search, Loader2, User } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
+import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useAuth } from "@/hooks/useAuth";
+import { useEventContext } from "@/contexts/EventContext";
 import {
   loadScanPreferences,
   saveScanPreferences,
@@ -22,12 +25,16 @@ import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 const MODULE = "transporte" as const;
 
 export default function TransporteScanPage() {
-  const _navigate = useNavigate();
   const { user } = useAuth();
+  const { activeEventId } = useEventContext();
   const userId = user?.id ?? null;
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get("tripId");
-  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [result, setResult] = useState<{ ok: boolean; message: string; source?: "qr" | "manual" } | null>(null);
+  const [manualQuery, setManualQuery] = useState("");
+  const [debouncedManual, setDebouncedManual] = useState("");
+  const [manualHits, setManualHits] = useState<ParticipantManualSearchRow[]>([]);
+  const [manualSearching, setManualSearching] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [prefs, setPrefs] = useState<ScanPreferences>(() => loadScanPreferences(MODULE, userId));
   const [telemetry, setTelemetry] = useState<ScanTelemetry>(() => loadScanTelemetry(MODULE, userId));
@@ -56,12 +63,83 @@ export default function TransporteScanPage() {
     setTelemetry(bumpScanTelemetry(MODULE, outcome, userId));
   };
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
+    return () => clearTimeout(t);
+  }, [manualQuery]);
+
+  useEffect(() => {
+    if (!activeEventId || debouncedManual.length < 2) {
+      setManualHits([]);
+      setManualSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setManualSearching(true);
+    void searchParticipantsByNameOrCpf(debouncedManual, activeEventId)
+      .then((rows) => {
+        if (!cancelled) setManualHits(rows);
+      })
+      .finally(() => {
+        if (!cancelled) setManualSearching(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedManual, activeEventId]);
+
+  async function applyBoarding(participantId: string, displayName: string, source: "qr" | "manual") {
+    const name = displayName || "Participante identificado";
+
+    if (tripId) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const { data: existing } = await supabase
+        .from("transport_passengers")
+        .select("id, status")
+        .eq("trip_id", tripId)
+        .eq("participant_id", participantId)
+        .maybeSingle();
+
+      if (existing) {
+        if (existing.status === "boarded") {
+          setResult({ ok: true, source, message: `${name} já embarcou anteriormente` });
+          recordOutcome("ok");
+          reopenIfContinuous();
+          return;
+        }
+        const { error } = await supabase
+          .from("transport_passengers")
+          .update({ status: "boarded", boarded_at: new Date().toISOString(), boarded_by: session?.user.id ?? null })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("transport_passengers").insert({
+          trip_id: tripId,
+          participant_id: participantId,
+          status: "boarded",
+          boarded_at: new Date().toISOString(),
+          boarded_by: session?.user.id ?? null,
+          is_manual: source === "manual",
+        });
+        if (error) throw error;
+      }
+    }
+
+    setResult({ ok: true, source, message: `Embarque registrado: ${name}` });
+    recordOutcome("ok");
+    if (navigator.vibrate) navigator.vibrate(200);
+    reopenIfContinuous();
+  }
+
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
     if (!rawValue.trim()) return;
 
     try {
-      const resolved = await resolveQrCredential(rawValue);
+      const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
       if (!resolved) {
         setResult({ ok: false, message: "Credencial não encontrada ou inativa" });
         recordOutcome("error");
@@ -69,48 +147,18 @@ export default function TransporteScanPage() {
       }
 
       const name = resolved.full_name || "Participante identificado";
+      await applyBoarding(resolved.participant_id, name, "qr");
+    } catch (err: unknown) {
+      setResult({ ok: false, message: `Erro ao validar: ${getErrorMessage(err)}` });
+      recordOutcome("error");
+    }
+  };
 
-      if (tripId) {
-        const { data: { session } } = await supabase.auth.getSession();
-
-        const { data: existing } = await supabase
-          .from("transport_passengers")
-          .select("id, status")
-          .eq("trip_id", tripId)
-          .eq("participant_id", resolved.participant_id)
-          .maybeSingle();
-
-        if (existing) {
-          if (existing.status === "boarded") {
-            setResult({ ok: true, message: `${name} já embarcou anteriormente` });
-            recordOutcome("ok");
-            reopenIfContinuous();
-            return;
-          }
-          const { error } = await supabase
-            .from("transport_passengers")
-            .update({ status: "boarded", boarded_at: new Date().toISOString(), boarded_by: session?.user.id ?? null })
-            .eq("id", existing.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase
-            .from("transport_passengers")
-            .insert({
-              trip_id: tripId,
-              participant_id: resolved.participant_id,
-              status: "boarded",
-              boarded_at: new Date().toISOString(),
-              boarded_by: session?.user.id ?? null,
-              is_manual: false,
-            });
-          if (error) throw error;
-        }
-      }
-
-      setResult({ ok: true, message: `Embarque registrado: ${name}` });
-      recordOutcome("ok");
-      if (navigator.vibrate) navigator.vibrate(200);
-      reopenIfContinuous();
+  const handleManualPick = async (row: ParticipantManualSearchRow) => {
+    setManualQuery("");
+    setManualHits([]);
+    try {
+      await applyBoarding(row.participant_id, row.full_name, "manual");
     } catch (err: unknown) {
       setResult({ ok: false, message: `Erro ao validar: ${getErrorMessage(err)}` });
       recordOutcome("error");
@@ -118,14 +166,17 @@ export default function TransporteScanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
       <PwaHeader
-        title="Scan Embarque"
+        title="Escanear QR"
         icon={ScanLine}
         backTo={tripId ? `/pwa/transporte/embarque?tripId=${tripId}` : "/pwa/transporte"}
       />
 
-      <main className="p-4 max-w-md mx-auto space-y-4">
+      <main className="relative mx-auto max-w-md space-y-4 p-4">
+        <p className="text-center text-sm text-muted-foreground">Credencial ou voucher</p>
+
         <ScanPreferencesPanel
           prefs={prefs}
           telemetry={telemetry}
@@ -135,20 +186,81 @@ export default function TransporteScanPage() {
           switchId="continuous-transport-scan"
         />
 
-        <Button className="w-full min-h-[44px]" onClick={() => setScannerOpen(true)}>
-          <ScanLine className="h-5 w-5 mr-2" />
+        <Button variant="module" className="h-12 w-full rounded-xl text-base font-semibold shadow-app-md" onClick={() => setScannerOpen(true)}>
+          <ScanLine className="mr-2 h-5 w-5" />
           Escanear QR Code
         </Button>
 
+        <div className="space-y-2">
+          <p className="text-center text-xs text-muted-foreground">ou buscar manualmente</p>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome ou CPF…"
+              value={manualQuery}
+              onChange={(e) => setManualQuery(e.target.value)}
+              className="h-11 border-border/80 bg-card/90 pl-10"
+            />
+          </div>
+          {!activeEventId && (
+            <p className="text-center text-[11px] text-amber-600 dark:text-amber-400">Selecione o evento ativo para habilitar a busca.</p>
+          )}
+          {activeEventId && debouncedManual.length >= 2 && (
+            <Card className="max-h-52 overflow-y-auto border-border/80 bg-card/95 shadow-app-sm">
+              <CardContent className="p-0">
+                {manualSearching && (
+                  <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-sm">Buscando…</span>
+                  </div>
+                )}
+                {!manualSearching && manualHits.length === 0 && (
+                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhum participante encontrado neste evento.</p>
+                )}
+                {!manualSearching &&
+                  manualHits.map((h) => (
+                    <button
+                      key={h.participant_id}
+                      type="button"
+                      onClick={() => void handleManualPick(h)}
+                      className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">{h.full_name}</p>
+                        <p className="truncate text-xs text-muted-foreground">{h.participant_type}</p>
+                      </div>
+                    </button>
+                  ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
         {result && (
-          <Card className={result.ok ? "border-success/50" : "border-destructive/50"}>
-            <CardContent className="p-4 flex items-center gap-3">
+          <Card
+            className={
+              result.ok
+                ? "border-blue-500/50 bg-card/95 shadow-app-lg ring-1 ring-blue-500/20"
+                : "border-destructive/50 bg-card/95"
+            }
+          >
+            <CardContent className="flex items-start gap-3 p-4">
               {result.ok ? (
-                <CheckCircle className="h-6 w-6 text-success shrink-0" />
+                <CheckCircle className="h-6 w-6 shrink-0 text-blue-500" />
               ) : (
-                <XCircle className="h-6 w-6 text-destructive shrink-0" />
+                <XCircle className="h-6 w-6 shrink-0 text-destructive" />
               )}
-              <span className="text-sm font-medium">{result.message}</span>
+              <div className="min-w-0">
+                {result.ok && (
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+                    {result.source === "manual" ? "Busca manual" : "QR válido"}
+                  </p>
+                )}
+                <span className="text-sm font-medium leading-snug">{result.message}</span>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -158,7 +270,7 @@ export default function TransporteScanPage() {
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleScan}
-        title="Scan Embarque"
+        title="Escanear QR"
       />
     </div>
   );

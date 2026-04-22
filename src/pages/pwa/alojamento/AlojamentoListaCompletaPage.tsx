@@ -290,7 +290,7 @@ export default function AlojamentoListaCompletaPage() {
                   <div className="flex items-center gap-2">
                     <Avatar className="h-9 w-9">
                       {g.photo_url && <AvatarImage src={g.photo_url} />}
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(g.full_name)}</AvatarFallback>
+                      <AvatarFallback className="text-xs bg-[hsl(var(--module-accent)/0.15)] text-[hsl(var(--module-accent))]">{getInitials(g.full_name)}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{g.full_name}</p>
@@ -363,7 +363,7 @@ export default function AlojamentoListaCompletaPage() {
                 <div className="flex items-center gap-3">
                   <Avatar className="h-14 w-14">
                     {selectedGuest.photo_url && <AvatarImage src={selectedGuest.photo_url} />}
-                    <AvatarFallback className="bg-primary/10 text-primary">{getInitials(selectedGuest.full_name)}</AvatarFallback>
+                    <AvatarFallback className="bg-[hsl(var(--module-accent)/0.15)] text-[hsl(var(--module-accent))]">{getInitials(selectedGuest.full_name)}</AvatarFallback>
                   </Avatar>
                   <div className="text-sm space-y-0.5">
                     <p className="font-medium">{selectedGuest.full_name}</p>
@@ -412,7 +412,7 @@ export default function AlojamentoListaCompletaPage() {
                   <div className="bg-destructive/10 rounded-lg p-3 text-center">
                     <AlertTriangle className="h-5 w-5 mx-auto text-destructive mb-1" />
                     <p className="text-sm text-destructive font-medium mb-2">Nenhum contato cadastrado</p>
-                    <Button size="sm" variant="outline" onClick={() => { setContactModal(selectedGuest); setContactType("guardian"); }}>
+                    <Button size="sm" variant="module" onClick={() => { setContactModal(selectedGuest); setContactType("guardian"); }}>
                       Cadastrar Contato
                     </Button>
                   </div>
@@ -451,7 +451,7 @@ export default function AlojamentoListaCompletaPage() {
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setContactModal(null)}>Cancelar</Button>
-            <Button onClick={saveContact} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+            <Button variant="module" onClick={saveContact} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

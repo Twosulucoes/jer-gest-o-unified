@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-
-const STORAGE_KEY = "jer_last_active_stage_id";
+import { LAST_ACTIVE_STAGE_STORAGE_KEY } from "@/lib/activeStageStorage";
 
 /**
  * Map old top-level operational paths to their stage-scoped equivalent.
@@ -32,7 +31,7 @@ function rewriteToStagePath(pathname: string, stageId: string): string | null {
 export default function RedirectToEtapas() {
   const location = useLocation();
   const lastStageId = (() => {
-    try { return localStorage.getItem(STORAGE_KEY); } catch { return null; }
+    try { return localStorage.getItem(LAST_ACTIVE_STAGE_STORAGE_KEY); } catch { return null; }
   })();
 
   const target = lastStageId ? rewriteToStagePath(location.pathname, lastStageId) : null;

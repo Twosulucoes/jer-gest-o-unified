@@ -182,7 +182,7 @@ export default function PesquisaNovaPage() {
       onClick={onClick}
       className={`min-h-[48px] px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
         selected
-          ? 'bg-primary text-primary-foreground border-primary'
+          ? 'bg-[hsl(var(--module-accent))] text-black border-[hsl(var(--module-accent))]'
           : 'bg-card text-foreground border-border hover:border-primary/50'
       }`}
     >

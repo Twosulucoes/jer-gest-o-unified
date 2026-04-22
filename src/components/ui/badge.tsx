@@ -11,11 +11,11 @@ const badgeVariants = cva(
         default:
           "border-transparent bg-primary text-primary-foreground",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground",
+          "border-transparent bg-surface3 text-text",
         destructive:
           "border-transparent bg-destructive/12 text-destructive border-destructive/20",
         outline:
-          "text-foreground border-border",
+          "text-foreground border-border bg-surface",
         success:
           "border-transparent bg-success/12 text-success border-success/20",
         warning:
@@ -24,8 +24,10 @@ const badgeVariants = cva(
           "border-transparent bg-info/12 text-info border-info/20",
         sport:
           "border-transparent btn-sport text-[hsl(221,83%,8%)] font-bold",
+        module:
+          "border-transparent bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))] border-[hsl(var(--module-accent)/0.35)]",
         muted:
-          "border-transparent bg-muted text-muted-foreground",
+          "border-transparent bg-surface3 text-muted-foreground",
       },
     },
     defaultVariants: {

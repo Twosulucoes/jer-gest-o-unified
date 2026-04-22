@@ -350,7 +350,7 @@ export default function AoVivoMatchPage() {
       </header>
 
       {/* Timer + Period */}
-      <div className="flex items-center justify-center gap-3 py-3 border-b border-slate-800">
+      <div className="flex items-center justify-center gap-3 py-3 border-b border-slate-800 bg-slate-900/60">
         <span className="text-3xl font-mono font-bold tabular-nums">{formatTimer(timerSeconds)}</span>
         <button
           onClick={() => setTimerRunning(!timerRunning)}
@@ -374,7 +374,7 @@ export default function AoVivoMatchPage() {
 
       {/* Scoreboard */}
       {sideA && sideB && (
-        <div className="flex items-center justify-center gap-4 py-4 border-b border-slate-800">
+        <div className="flex items-center justify-center gap-4 py-4 border-b border-slate-800 bg-slate-900/40">
           <div className="text-center flex-1">
             <p className="text-xs font-medium text-emerald-400 truncate px-2">{sideA.label}</p>
             <p className="text-5xl font-bold font-mono tabular-nums mt-1">{getScore(sideA.id)}</p>
@@ -395,7 +395,7 @@ export default function AoVivoMatchPage() {
               <button
                 key={`a-${evt.key}`}
                 onClick={() => handleEventClick(sideA.id, evt.key)}
-                className="w-full min-h-[64px] rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-200 text-sm font-semibold active:bg-emerald-800 transition-colors"
+                className="w-full min-h-[64px] rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-200 text-sm font-semibold active:bg-emerald-800 transition-colors shadow-[0_8px_18px_-12px_rgba(16,185,129,0.55)]"
               >
                 {evt.label}
               </button>
@@ -406,7 +406,7 @@ export default function AoVivoMatchPage() {
               <button
                 key={`b-${evt.key}`}
                 onClick={() => handleEventClick(sideB.id, evt.key)}
-                className="w-full min-h-[64px] rounded-xl bg-blue-900/40 border border-blue-700/50 text-blue-200 text-sm font-semibold active:bg-blue-800 transition-colors"
+                className="w-full min-h-[64px] rounded-xl bg-blue-900/40 border border-blue-700/50 text-blue-200 text-sm font-semibold active:bg-blue-800 transition-colors shadow-[0_8px_18px_-12px_rgba(59,130,246,0.55)]"
               >
                 {evt.label}
               </button>

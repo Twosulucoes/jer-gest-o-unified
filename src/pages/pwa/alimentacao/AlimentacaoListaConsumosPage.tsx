@@ -325,7 +325,7 @@ export default function AlimentacaoListaConsumosPage() {
                   <div className="flex items-center gap-2">
                     <Avatar className="h-9 w-9">
                       {c.photo_url && <AvatarImage src={c.photo_url} />}
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(c.full_name)}</AvatarFallback>
+                      <AvatarFallback className="text-xs bg-[hsl(var(--module-accent)/0.15)] text-[hsl(var(--module-accent))]">{getInitials(c.full_name)}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{c.full_name}</p>
@@ -407,7 +407,7 @@ export default function AlimentacaoListaConsumosPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setContactModal(null)}>Cancelar</Button>
-            <Button onClick={saveContact} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+            <Button variant="module" onClick={saveContact} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

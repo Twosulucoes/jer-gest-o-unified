@@ -17,34 +17,32 @@ export function PwaHeader({ title, icon: Icon, backTo, onSignOut, rightSlot }: P
   const showSwitcher = roles.length >= 2;
 
   return (
-    <header className="relative overflow-hidden border-b bg-primary text-primary-foreground">
-      {/* Gradient accent bar */}
+    <header className="relative overflow-hidden border-b border-border/90 bg-card text-card-foreground shadow-app-sm">
       <div
-        className="absolute inset-0 opacity-20"
+        className="absolute inset-x-0 top-0 h-0.5"
         style={{
-          background:
-            "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(212 84% 36%) 35%, hsl(174 87% 34%) 65%, hsl(133 55% 45%) 100%)",
+          background: "hsl(var(--module-accent))",
         }}
       />
       <div className="relative flex items-center justify-between px-4 h-14">
         <div className="flex items-center gap-2">
           {backTo && (
-            <button onClick={() => navigate(backTo)} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+            <button onClick={() => navigate(backTo)} className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
-          {Icon && <Icon className="h-5 w-5" />}
+          {Icon && <Icon className="h-5 w-5" style={{ color: "hsl(var(--module-accent))" }} />}
           <span className="font-heading font-semibold tracking-tight">{title}</span>
         </div>
         <div className="flex items-center gap-2">
           {rightSlot}
           {showSwitcher && (
-            <Button variant="ghost" size="icon" onClick={() => navigate("/selecionar-modulo")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" title="Trocar módulo">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/selecionar-modulo")} className="text-muted-foreground hover:text-foreground hover:bg-muted" title="Trocar módulo">
               <ArrowLeftRight className="h-5 w-5" />
             </Button>
           )}
           {onSignOut && (
-            <Button variant="ghost" size="icon" onClick={onSignOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
+            <Button variant="ghost" size="icon" onClick={onSignOut} className="text-muted-foreground hover:text-foreground hover:bg-muted">
               <LogOut className="h-5 w-5" />
             </Button>
           )}

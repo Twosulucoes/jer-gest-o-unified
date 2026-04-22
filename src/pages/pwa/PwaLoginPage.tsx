@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { PwaBrandLogo } from "@/components/pwa/PwaBrandLogo";
 
@@ -78,7 +79,8 @@ export default function PwaLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-35" />
       <div
         className="relative flex flex-col items-center justify-center px-6 pt-12 pb-8"
         style={{
@@ -90,27 +92,34 @@ export default function PwaLoginPage() {
         <p className="text-primary-foreground/80 text-sm mt-2 font-body">Acesso ao módulo operacional</p>
       </div>
 
-      <div className="flex flex-1 items-start justify-center px-4 pt-8">
-        <form onSubmit={handleLogin} className="w-full max-w-sm space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className="h-12 text-base" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" className="h-12 text-base" />
-          </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Entrar"}
-          </Button>
+      <div className="relative flex flex-1 items-start justify-center px-4 pt-8">
+        <Card className="w-full max-w-sm border-border/80 bg-card/95 shadow-app-xl backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <h2 className="font-heading text-base font-semibold text-card-foreground">Entrar no módulo</h2>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className="h-12 text-base" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" className="h-12 text-base" />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
+                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Entrar"}
+              </Button>
 
-          <div className="text-center">
-            <button type="button" onClick={() => navigate("/pwa/recover")} className="text-sm text-primary underline">
-              Esqueci minha senha
-            </button>
-          </div>
-        </form>
+              <div className="text-center">
+                <button type="button" onClick={() => navigate("/pwa/recover")} className="text-sm text-primary underline">
+                  Esqueci minha senha
+                </button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

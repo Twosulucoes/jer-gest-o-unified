@@ -26,12 +26,24 @@ AvatarImage.displayName = AvatarPrimitive.Image.displayName;
 const AvatarFallback = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Fallback>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({ className, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => (
   <AvatarPrimitive.Fallback
     ref={ref}
-    className={cn("flex h-full w-full items-center justify-center rounded-full bg-muted", className)}
+    className={cn(
+      "flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-muted text-muted-foreground",
+      className,
+    )}
     {...props}
-  />
+  >
+    {children ?? (
+      <img
+        src="/placeholder.svg"
+        alt=""
+        aria-hidden
+        className="max-h-[52%] max-w-[72%] object-contain opacity-65 dark:invert dark:opacity-75"
+      />
+    )}
+  </AvatarPrimitive.Fallback>
 ));
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 

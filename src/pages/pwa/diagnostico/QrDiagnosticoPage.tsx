@@ -124,11 +124,11 @@ export default function QrDiagnosticoPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
+      <header className="flex items-center gap-2 border-b border-border bg-surface px-4 h-14">
         <button onClick={() => navigate("/pwa")} className="text-muted-foreground">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <ShieldCheck className="h-5 w-5 text-primary" />
+        <ShieldCheck className="h-5 w-5 text-[hsl(var(--module-accent))]" />
         <span className="font-semibold text-foreground">Diagnóstico QR</span>
       </header>
 
@@ -202,7 +202,7 @@ export default function QrDiagnosticoPage() {
               {(["alojamento", "transporte", "alimentacao"] as TestModule[]).map((m) => (
                 <Button
                   key={m}
-                  variant={testModule === m ? "default" : "outline"}
+                  variant={testModule === m ? "module" : "outline"}
                   size="sm"
                   onClick={() => {
                     setTestModule(testModule === m ? null : m);

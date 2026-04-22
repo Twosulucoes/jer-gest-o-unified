@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { useAoVivoManifest } from "./useAoVivoManifest";
 
 export default function AoVivoLoginPage() {
+  useAoVivoManifest();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,14 +29,14 @@ export default function AoVivoLoginPage() {
     <div className="flex min-h-[100dvh] flex-col bg-slate-950 text-white">
       <div className="flex flex-col items-center justify-center px-6 pt-16 pb-8">
         <div className="flex items-center gap-3 mb-2">
-          <img src="/aovivo/icon-192.png" alt="JER" className="h-14 w-14 rounded-xl" />
+          <img src="/pwa/icon-192.png" alt="JER" className="h-14 w-14 rounded-xl" />
           <h1 className="text-2xl font-bold tracking-tight">JER Ao Vivo</h1>
         </div>
         <p className="text-slate-400 text-sm">Registro de partidas em tempo real</p>
       </div>
 
       <div className="flex flex-1 items-start justify-center px-6 pt-6">
-        <form onSubmit={handleLogin} className="w-full max-w-sm space-y-5">
+        <form onSubmit={handleLogin} className="w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900/95 p-5 shadow-[0_16px_30px_-18px_rgba(0,0,0,0.75)]">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-slate-300">Email</label>
             <input

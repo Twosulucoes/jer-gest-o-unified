@@ -1,6 +1,7 @@
 {
   "name": "JER Gestão",
   "short_name": "JER Gestão",
+  "description": "Plataforma de Gestão do JERs",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F6F8FC",
@@ -9,5 +10,14 @@
     { "src": "/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/pwa/icon-512.png", "sizes": "512x512", "type": "image/png" },
     { "src": "/pwa/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable any" }
+  ],
+  "screenshots": [
+    {
+      "src": "/pwa/splash.png",
+      "sizes": "1024x1536",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "JER Gestão"
+    }
   ]
 }

@@ -169,7 +169,7 @@ export default function AoVivoHomePage() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 h-14 border-b border-slate-800 shrink-0">
         <div className="flex items-center gap-3">
-          <img src="/aovivo/icon-192.png" alt="JER" className="h-8 w-8 rounded-lg" />
+          <img src="/pwa/icon-192.png" alt="JER" className="h-8 w-8 rounded-lg" />
           <div>
             <h1 className="text-sm font-bold tracking-tight">JER Ao Vivo</h1>
             <p className="text-[11px] text-slate-400 truncate max-w-[180px]">{profile?.full_name ?? user.email}</p>
@@ -225,7 +225,7 @@ export default function AoVivoHomePage() {
             const canEnter = m.status === "scheduled" || m.status === "in_progress";
 
             return (
-              <div key={m.id} className="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3">
+              <div key={m.id} className="rounded-2xl bg-slate-900/95 border border-slate-800 p-4 space-y-3 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.65)]">
                 <div className="flex items-start justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-sm leading-tight">{getMatchLabel(m)}</p>
@@ -242,7 +242,7 @@ export default function AoVivoHomePage() {
                   {canEnter ? (
                     <button
                       onClick={() => navigate(`/aovivo/partida/${m.id}`)}
-                      className="h-10 px-5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-2 transition-colors"
+                      className="h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-2 transition-colors"
                     >
                       <Radio className="h-4 w-4" />
                       Entrar ao vivo
@@ -250,7 +250,7 @@ export default function AoVivoHomePage() {
                   ) : (
                     <button
                       onClick={() => navigate(`/aovivo/partida/${m.id}`)}
-                      className="h-10 px-5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium flex items-center gap-2 transition-colors"
+                      className="h-10 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium flex items-center gap-2 transition-colors"
                     >
                       <Eye className="h-4 w-4" />
                       Ver resumo
