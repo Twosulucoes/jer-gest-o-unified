@@ -26,6 +26,19 @@ export async function exportBulletinXlsx(
   meta_ws.getColumn(1).width = 22;
   meta_ws.getColumn(2).width = 50;
 
+  // Adiciona aba de alertas se houver inconsistências
+  if (data.validationAlerts && data.validationAlerts.length > 0) {
+    const alerts_ws = wb.addWorksheet("Alertas de Inconsistência");
+    alerts_ws.addRow(["Tipo", "Mensagem", "Detalhes"]);
+    alerts_ws.getRow(1).font = { bold: true };
+    data.validationAlerts.forEach((a) => {
+      alerts_ws.addRow([a.type.toUpperCase(), a.message, a.details ?? ""]);
+    });
+    alerts_ws.getColumn(1).width = 12;
+    alerts_ws.getColumn(2).width = 50;
+    alerts_ws.getColumn(3).width = 80;
+  }
+
   // Classificação (apenas score/sets fazem sentido)
   if (data.family === "score" || data.family === "sets") {
     const ws = wb.addWorksheet("Classificação");
