@@ -113,6 +113,7 @@ import ReportCenterPage from "./reports/ui/ReportCenterPage";
 import RelatoriosHubPage from "./pages/admin/RelatoriosHubPage";
 import IdentidadeVisualPage from "./pages/admin/IdentidadeVisualPage";
 import LinkPreviewPage from "./pages/admin/LinkPreviewPage";
+import CoordenadorModalidadeDashboard from "./pages/admin/CoordenadorModalidadeDashboard";
 import GoRedirectPage from "./pages/public/GoRedirectPage";
 // Evento Rules Center pages removed — consolidated into RegrasEventoPage
 import PublicPagePage from "./pages/public/PublicPagePage";
