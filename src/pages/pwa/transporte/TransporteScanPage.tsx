@@ -12,6 +12,7 @@ import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
+import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
 import {
   loadScanPreferences,
   saveScanPreferences,
@@ -29,6 +30,7 @@ export default function TransporteScanPage() {
   const { user } = useAuth();
   const { activeEventId } = useEventContext();
   const userId = user?.id ?? null;
+  const lang = getPwaLang();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get("tripId");
   const [result, setResult] = useState<{ ok: boolean; message: string; source?: "qr" | "manual" } | null>(null);
@@ -263,7 +265,7 @@ export default function TransporteScanPage() {
               <div className="min-w-0">
                 {result.ok && (
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                    {result.source === "manual" ? "Busca manual" : "QR válido"}
+                    {result.source === "manual" ? getPwaMessage("MANUAL_SEARCH", lang) : getPwaMessage("QR_VALID", lang)}
                   </p>
                 )}
                 <span className="text-sm font-medium leading-snug">{result.message}</span>
