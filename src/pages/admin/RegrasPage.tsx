@@ -398,7 +398,7 @@ function DiffPanel() {
       )}
 
       {discrepancies.length > 0 && (
-        <Card borderClassName="border-amber-200">
+        <Card className="border-amber-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-amber-600 flex items-center gap-2">
               <AlertCircle className="h-4 w-4" /> Discrepâncias de parâmetros ({discrepancies.length})
