@@ -58,7 +58,40 @@ export const boletimInformativoReport: ReportDefinition = {
 
       const resultsData: { section: string; content: string }[] = [];
 
-      // 1. Avisos (from official_bulletins)
+      // 0. Contagem para o Sumário
+      // Buscamos as contagens totais (ignorando paginação para o sumário)
+      const { count: bulletinsCountTotal } = await supabase
+        .from('official_bulletins')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', eventId)
+        .eq('status', 'publicado')
+        .gte('published_at', dayStart)
+        .lte('published_at', dayEnd);
+
+      const { count: matchesCountTotal } = await supabase
+        .from('competition_matches')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', eventId)
+        .eq('match_date', date);
+
+      const { data: resultsForCount } = await supabase
+        .from('competition_match_results')
+        .select('match_id, competition_matches!inner(id)')
+        .eq('competition_matches.event_id', eventId)
+        .eq('competition_matches.match_date', date)
+        .eq('result_status', 'resultado_validado');
+
+      const uniqueMatchesWithResults = new Set(resultsForCount?.map(r => r.match_id) || []).size;
+
+      resultsData.push({
+        section: 'Sumário',
+        content: [
+          `• Avisos Publicados: **${bulletinsCountTotal || 0}**`,
+          `• Jogos no Dia: **${matchesCountTotal || 0}**`,
+          `• Partidas com Resultado Publicado: **${uniqueMatchesWithResults || 0}**`
+        ].join('\n')
+      });
+
       const { data: bulletins, count: bulletinsCount } = await supabase
         .from('official_bulletins')
         .select('title, content_md', { count: 'exact' })
