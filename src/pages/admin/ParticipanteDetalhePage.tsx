@@ -339,9 +339,11 @@ export default function ParticipanteDetalhePage() {
         <TabsContent value="resumo">
           <ParticipantResumoTab participant={participant} person={person} institution={institution} />
         </TabsContent>
-        <TabsContent value="historico">
-          <ParticipantHistoricoTab participantId={participant.id} />
-        </TabsContent>
+        {participant.participant_type === "athlete" && (
+          <TabsContent value="historico">
+            <ParticipantHistoricoTab participantId={participant.id} />
+          </TabsContent>
+        )}
         <TabsContent value="credencial">
           <ParticipantCredencialTab
             participantId={participant.id}
