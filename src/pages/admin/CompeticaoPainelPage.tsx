@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useCompetitionContext } from "@/contexts/CompetitionContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
