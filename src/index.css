@@ -217,16 +217,14 @@
     --tac-success: 142 71% 45%;
     --tac-danger: 0 84% 60%;
   }
+
+  /* Scoped components for Tactical Cockpit */
   .tactical-cockpit .carbon-texture {
     background-image: radial-gradient(circle at 2px 2px, hsl(0 0% 100% / 0.025) 1px, transparent 0);
     background-size: 4px 4px;
   }
-  @keyframes tac-scan {
-    0%, 100% { transform: translateY(0%); opacity: 0; }
-    10%, 90% { opacity: 1; }
-    50% { transform: translateY(100%); opacity: 1; }
-  }
-  .tac-scan-line {
+
+  .tactical-cockpit .tac-scan-line {
     position: absolute;
     left: 0;
     right: 0;
@@ -236,11 +234,21 @@
     box-shadow: 0 0 12px hsl(var(--tac-accent) / 0.6);
     animation: tac-scan 2.4s ease-in-out infinite;
   }
+
+  .tactical-cockpit .tac-rise { 
+    animation: tac-rise 220ms ease-out both; 
+  }
+
+  @keyframes tac-scan {
+    0%, 100% { transform: translateY(0%); opacity: 0; }
+    10%, 90% { opacity: 1; }
+    50% { transform: translateY(100%); opacity: 1; }
+  }
+
   @keyframes tac-rise {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .tac-rise { animation: tac-rise 220ms ease-out both; }
 
   /* === Glassmorphism === */
   .glass-panel {
