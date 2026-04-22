@@ -17,18 +17,19 @@ import { useStageScope } from "@/hooks/useStageScope";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { RESULT_STATUS, RESULT_STATUS_LABEL, RESULT_STATUS_VARIANT } from "@/lib/resultStatus";
 
-type ResultStatusFilter = "all" | "sem_resultado" | "resultado_lancado" | "resultado_validado" | "publicado";
+type ResultStatusFilter = "all" | "sem_resultado" | typeof RESULT_STATUS.LAUNCHED | typeof RESULT_STATUS.VALIDATED | typeof RESULT_STATUS.PUBLISHED;
 
 const STATUS_LABELS: Record<string, string> = {
-  resultado_lancado: "Lançado",
-  resultado_validado: "Validado",
-  publicado: "Publicado",
+  [RESULT_STATUS.LAUNCHED]: RESULT_STATUS_LABEL[RESULT_STATUS.LAUNCHED],
+  [RESULT_STATUS.VALIDATED]: RESULT_STATUS_LABEL[RESULT_STATUS.VALIDATED],
+  [RESULT_STATUS.PUBLISHED]: RESULT_STATUS_LABEL[RESULT_STATUS.PUBLISHED],
 };
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  resultado_lancado: "outline",
-  resultado_validado: "default",
-  publicado: "secondary",
+  [RESULT_STATUS.LAUNCHED]: RESULT_STATUS_VARIANT[RESULT_STATUS.LAUNCHED],
+  [RESULT_STATUS.VALIDATED]: RESULT_STATUS_VARIANT[RESULT_STATUS.VALIDATED],
+  [RESULT_STATUS.PUBLISHED]: RESULT_STATUS_VARIANT[RESULT_STATUS.PUBLISHED],
 };
 
 export default function CompeticaoResultadosPage() {
