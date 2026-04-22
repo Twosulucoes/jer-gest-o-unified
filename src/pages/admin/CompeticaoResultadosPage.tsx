@@ -38,7 +38,14 @@ export default function CompeticaoResultadosPage() {
   const selectedEventId = useActiveEventId();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
   const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError, stageId, participantIds: stageParticipantIds } = useStageScope({ includeMatchIds: true });
-  const { selectedSportEventId, setSelectedSportEventId, setSelectedStageId } = useCompetitionContext();
+  const { 
+    selectedSportEventId, 
+    setSelectedSportEventId, 
+    selectedStageId, 
+    setSelectedStageId,
+    selectedPhaseId,
+    setSelectedPhaseId
+  } = useCompetitionContext();
 
   const [statusFilter, setStatusFilter] = useState<ResultStatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
