@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
-  Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree,
+  Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree, Trophy,
   Building2, Users, Upload, KeyRound, BadgeCheck, Gavel,
   UsersRound, ChevronDown,
   Shield, Settings, AlertTriangle, FileBarChart,
