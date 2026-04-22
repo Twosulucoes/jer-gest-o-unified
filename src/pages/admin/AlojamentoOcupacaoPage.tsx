@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import {
-  Building, QrCode,
+  Building, QrCode, LogIn, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -109,9 +110,39 @@ export default function AlojamentoOcupacaoPage() {
   const selectedUnit = units.find((u) => u.id === selectedUnitId);
   const unitFull = selectedUnit ? activeOccupancies.length >= selectedUnit.capacity : false;
 
-  const activeParticipantIds = new Set(activeOccupancies.map((o) => o.participant_id));
-  const selectedUnit = units.find((u) => u.id === selectedUnitId);
-  const unitFull = selectedUnit ? activeOccupancies.length >= selectedUnit.capacity : false;
+  // Check-in
+  const checkinMut = useMutation({
+    mutationFn: async (occId: string) => {
+      const { error } = await supabase.from("lodging_occupancies").update({
+        status: "checked_in",
+        checked_in_at: new Date().toISOString(),
+        checked_in_by: user!.id,
+      }).eq("id", occId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["lodging_occupancies", selectedUnitId] });
+      toast.success("Check-in realizado!");
+    },
+    onError: (e: Error) => toast.error("Erro: " + e.message),
+  });
+
+  // Check-out
+  const checkoutMut = useMutation({
+    mutationFn: async (occId: string) => {
+      const { error } = await supabase.from("lodging_occupancies").update({
+        status: "checked_out",
+        checked_out_at: new Date().toISOString(),
+        checked_out_by: user!.id,
+      }).eq("id", occId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["lodging_occupancies", selectedUnitId] });
+      toast.success("Check-out realizado!");
+    },
+    onError: (e: Error) => toast.error("Erro: " + e.message),
+  });
 
   // Check-out
   const checkoutMut = useMutation({
