@@ -232,16 +232,19 @@ export default function BoletinsPorModalidadePage() {
         )}
 
         {sportEventId && !loadingData && bulletinData && (
-          <ReportShell eventId={eventId}>
-            <div className="text-center mb-4">
-              <h2 className="text-lg font-bold">Boletim de Resultado</h2>
-              <p className="text-sm text-muted-foreground">
-                {bulletinData.sportName} • {bulletinData.categoryName} • {meta.gender}
-                {meta.phaseName ? ` • ${meta.phaseName}` : ""}
-              </p>
-            </div>
-            <BulletinRouter data={bulletinData} />
-          </ReportShell>
+          <div className="space-y-6">
+            <BulletinValidationAlerts alerts={bulletinData.validationAlerts} />
+            <ReportShell eventId={eventId}>
+              <div className="text-center mb-4">
+                <h2 className="text-lg font-bold">Boletim de Resultado</h2>
+                <p className="text-sm text-muted-foreground">
+                  {bulletinData.sportName} • {bulletinData.categoryName} • {meta.gender}
+                  {meta.phaseName ? ` • ${meta.phaseName}` : ""}
+                </p>
+              </div>
+              <BulletinRouter data={bulletinData} />
+            </ReportShell>
+          </div>
         )}
       </div>
     </RequireActiveEvent>
