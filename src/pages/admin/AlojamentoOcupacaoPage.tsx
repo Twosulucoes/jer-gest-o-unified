@@ -167,26 +167,37 @@ export default function AlojamentoOcupacaoPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Ocupação / Check-in</h1>
-        <p className="text-sm text-muted-foreground mt-1">Gestão operacional de alojamento</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Ocupação / Check-in</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isStageScoped && stage ? `Etapa: ${stage.name}` : "Gestão operacional de alojamento"}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => navigate("../alojamento")}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Visão Geral
+        </Button>
       </div>
 
       {/* Controls */}
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setSelectedUnitId(""); }}>
-                <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
-                <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Unidade</label>
-              <Select value={selectedUnitId} onValueChange={setSelectedUnitId} disabled={!selectedEventId}>
-                <SelectTrigger><SelectValue placeholder="Selecione a unidade" /></SelectTrigger>
+            {!isStageScoped && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Evento</label>
+                <Select value={selectedEventId} onValueChange={() => handleUnitChange("")}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
+                  <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className={`space-y-2 ${isStageScoped ? "md:col-span-2" : ""}`}>
+              <label className="text-sm font-medium text-foreground">Unidade (Quarto)</label>
+              <Select value={selectedUnitId} onValueChange={handleUnitChange} disabled={!selectedEventId}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Selecione a unidade" />
+                </SelectTrigger>
                 <SelectContent>
                   {units.map((u) => {
                     const loc = locationsMap.get(u.location_id);
