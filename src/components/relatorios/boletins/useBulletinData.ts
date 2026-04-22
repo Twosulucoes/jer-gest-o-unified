@@ -192,6 +192,11 @@ export function useBulletinData(filters: BulletinFilters) {
         });
       }
 
+      // Log alerts for debugging
+      if (validationAlerts.length > 0) {
+        console.warn(`[Bulletin Validation] Found ${validationAlerts.length} issues:`, validationAlerts);
+      }
+
       // Garantir ordenação por data, hora e número (mesmo que venha do banco)
       const sortedMatches = [...(matchesRaw || [])].sort((a, b) => {
         const dateA = a.match_date || "9999-12-31";
