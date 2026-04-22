@@ -126,7 +126,11 @@ export default function AlojamentoListaCompletaPage() {
     return guests.filter(g => {
       if (search) {
         const q = search.toLowerCase();
-        if (!g.full_name.toLowerCase().includes(q) && !(g.cpf || "").includes(q)) return false;
+        const matchesName = g.full_name.toLowerCase().includes(q);
+        const matchesCpf = (g.cpf || "").includes(q);
+        const matchesDelegation = (g.delegation_name || "").toLowerCase().includes(q);
+        const matchesUnit = (g.unit_name || "").toLowerCase().includes(q);
+        if (!matchesName && !matchesCpf && !matchesDelegation && !matchesUnit) return false;
       }
       if (unitFilter !== "all" && g.unit_id !== unitFilter) return false;
       if (delegationFilter !== "all" && g.delegation_id !== delegationFilter) return false;
