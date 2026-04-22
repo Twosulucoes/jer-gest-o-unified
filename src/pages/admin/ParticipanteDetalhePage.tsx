@@ -317,9 +317,11 @@ export default function ParticipanteDetalhePage() {
           <TabsTrigger value="resumo" className="gap-1.5">
             <User className="h-3.5 w-3.5" />Resumo
           </TabsTrigger>
-          <TabsTrigger value="historico" className="gap-1.5">
-            <Trophy className="h-3.5 w-3.5" />Esportivo
-          </TabsTrigger>
+          {participant.participant_type === "athlete" && (
+            <TabsTrigger value="historico" className="gap-1.5">
+              <Trophy className="h-3.5 w-3.5" />Esportivo
+            </TabsTrigger>
+          )}
           <TabsTrigger value="credencial" className="gap-1.5">
             <IdCard className="h-3.5 w-3.5" />Credencial
           </TabsTrigger>
