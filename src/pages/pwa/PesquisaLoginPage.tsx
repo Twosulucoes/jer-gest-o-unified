@@ -19,18 +19,15 @@ export default function PesquisaLoginPage() {
     if (session) navigate('/pwa/pesquisa/home', { replace: true });
   }, [navigate]);
 
-  const handleLogin = async () => {
-    if (pin.length !== 4) {
-      setError('Digite um PIN de 4 dígitos');
-      return;
-    }
+  const handleLogin = async (currentPin: string) => {
+    if (currentPin.length !== 4) return;
 
     setLoading(true);
     setError('');
 
     try {
       const { data, error: rpcError } = await supabase.rpc('pesquisa_login_with_pin', {
-        p_pin: pin,
+        p_pin: currentPin,
         p_device_id: getDeviceId(),
       });
 
@@ -39,6 +36,7 @@ export default function PesquisaLoginPage() {
       const result = data as any;
       if (result?.error) {
         setError(result.error === 'PIN_INVALID' ? 'PIN inválido' : 'Evento inativo');
+        setPin(''); // Clear PIN on error
         return;
       }
 
@@ -49,6 +47,22 @@ export default function PesquisaLoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleKeyPress = (num: string) => {
+    if (loading) return;
+    const nextPin = pin + num;
+    if (nextPin.length <= 4) {
+      setPin(nextPin);
+      if (nextPin.length === 4) {
+        handleLogin(nextPin);
+      }
+    }
+  };
+
+  const handleBackspace = () => {
+    if (loading) return;
+    setPin(pin.slice(0, -1));
   };
 
   return (
