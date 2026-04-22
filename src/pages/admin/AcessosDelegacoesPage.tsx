@@ -359,10 +359,12 @@ export default function AcessosDelegacoesPage() {
                               linksForUser.map((link) => {
                                 const delegation = delegations.find((d) => d.id === link.delegation_id);
                                 const instName = delegation ? institutionsMap.get(delegation.institution_id) || "—" : "—";
+                                const isInactiveDelegation = delegation?.status === "inactive";
                                 return (
                                   <div key={link.id} className="flex items-center gap-2">
-                                    <Badge variant="secondary" className="font-normal">
+                                    <Badge variant={isInactiveDelegation ? "outline" : "secondary"} className="font-normal gap-1">
                                       {instName}
+                                      {isInactiveDelegation && <span className="text-[10px] text-muted-foreground">(Inativa)</span>}
                                     </Badge>
                                     {canManage && (
                                       <Button
