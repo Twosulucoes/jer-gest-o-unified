@@ -504,7 +504,10 @@ export default function AcessosDelegacoesPage() {
       </Tabs>
 
       {/* Diálogo: novo vínculo delegação */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(o) => {
+        setDialogOpen(o);
+        if (!o) setSelectedUserId("");
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Vincular Usuário à Delegação</DialogTitle>
