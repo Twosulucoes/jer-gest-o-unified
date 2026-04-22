@@ -79,7 +79,7 @@ export const boletimInformativoReport: ReportDefinition = {
         .select('match_id, competition_matches!inner(id)')
         .eq('competition_matches.event_id', eventId)
         .eq('competition_matches.match_date', date)
-        .eq('result_status', 'resultado_validado');
+        .in('result_status', ['resultado_validado', 'publicado']);
 
       const uniqueMatchesWithResults = new Set(resultsForCount?.map(r => r.match_id) || []).size;
 
@@ -187,7 +187,7 @@ export const boletimInformativoReport: ReportDefinition = {
           `, { count: 'exact' })
           .eq('competition_matches.event_id', eventId)
           .eq('competition_matches.match_date', date)
-          .eq('result_status', 'resultado_validado')
+          .in('result_status', ['resultado_validado', 'publicado'])
           .range(from, to);
 
         if (matchResults && matchResults.length > 0) {
