@@ -172,10 +172,11 @@ export default function CompeticaoResultadosPage() {
   };
 
   // Counts
-  const counts = { all: stageScopedMatches.length, sem_resultado: 0, [RESULT_STATUS.LAUNCHED]: 0, [RESULT_STATUS.VALIDATED]: 0, [RESULT_STATUS.PUBLISHED]: 0 };
+  const counts = { all: 0, sem_resultado: 0, [RESULT_STATUS.LAUNCHED]: 0, [RESULT_STATUS.VALIDATED]: 0, [RESULT_STATUS.PUBLISHED]: 0 };
   stageScopedMatches.forEach((m) => { 
     if (localSportEventId !== "__all__" && m.sport_event_id !== localSportEventId) return;
     if (selectedPhaseId && m.phase_id !== selectedPhaseId) return;
+    counts.all++;
     const s = matchResultStatus.get(m.id) ?? "sem_resultado"; 
     counts[s as keyof typeof counts]++; 
   });
