@@ -206,6 +206,42 @@
 }
 
 @layer components {
+  /* === Tactical Cockpit (PWA scanner) === */
+  .tactical-cockpit {
+    --tac-bg: 0 0% 2%;
+    --tac-surface: 0 0% 7%;
+    --tac-surface-2: 0 0% 10%;
+    --tac-border: 0 0% 16%;
+    --tac-muted: 0 0% 53%;
+    --tac-accent: 22 100% 50%;      /* #FF5C00 */
+    --tac-success: 142 71% 45%;
+    --tac-danger: 0 84% 60%;
+  }
+  .tactical-cockpit .carbon-texture {
+    background-image: radial-gradient(circle at 2px 2px, hsl(0 0% 100% / 0.025) 1px, transparent 0);
+    background-size: 4px 4px;
+  }
+  @keyframes tac-scan {
+    0%, 100% { transform: translateY(0%); opacity: 0; }
+    10%, 90% { opacity: 1; }
+    50% { transform: translateY(100%); opacity: 1; }
+  }
+  .tac-scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, hsl(var(--tac-accent)), transparent);
+    box-shadow: 0 0 12px hsl(var(--tac-accent) / 0.6);
+    animation: tac-scan 2.4s ease-in-out infinite;
+  }
+  @keyframes tac-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .tac-rise { animation: tac-rise 220ms ease-out both; }
+
   /* === Glassmorphism === */
   .glass-panel {
     @apply bg-card/75 backdrop-blur-md border border-border/60;
