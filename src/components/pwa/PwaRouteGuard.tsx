@@ -28,5 +28,9 @@ export default function PwaRouteGuard({ children, allowedRoles }: PwaRouteGuardP
     }
   }
 
-  return <>{children}</>;
+  return (
+    <div className="tactical-cockpit min-h-screen">
+      {children}
+    </div>
+  );
 }
