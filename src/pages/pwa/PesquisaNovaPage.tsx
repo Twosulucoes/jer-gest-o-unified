@@ -8,7 +8,11 @@ import OfflineBadge from '@/components/pesquisa/OfflineBadge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Send, ScanLine, User as UserIcon, Loader2 } from 'lucide-react';
+import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import { resolveQrCredential } from "@/lib/resolveQrCredential";
+import { toast } from "sonner";
+import { differenceInYears, parseISO } from "date-fns";
 
 type Step = 'profile' | 'questionnaire' | 'open';
 
@@ -61,6 +65,8 @@ export default function PesquisaNovaPage() {
   const [step, setStep] = useState<Step>('profile');
   const [questionIdx, setQuestionIdx] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [identifying, setIdentifying] = useState(false);
   const [QUESTIONS, setQUESTIONS] = useState(DEFAULT_QUESTIONS);
 
   // Profile fields
@@ -119,6 +125,51 @@ export default function PesquisaNovaPage() {
         }
       });
   }, [session?.researcher?.event_id]);
+
+  const handleScan = async (payload: string) => {
+    setScannerOpen(false);
+    setIdentifying(true);
+    try {
+      const resolved = await resolveQrCredential(payload, { eventId: session?.researcher?.event_id });
+      if (!resolved) {
+        toast.error("Participante não encontrado");
+        return;
+      }
+
+      // Fetch more details (age, gender)
+      const { data: part, error } = await supabase
+        .from("participants")
+        .select("birth_date, biological_sex, participant_type")
+        .eq("id", resolved.participant_id)
+        .single();
+
+      if (error) throw error;
+
+      if (part) {
+        setRespondentType(part.participant_type === 'athlete' ? 'atleta' : 
+                          part.participant_type === 'coach' ? 'tecnico' : 'outro');
+        
+        if (part.biological_sex) {
+          setRespondentGender(part.biological_sex === 'male' ? 'masculino' : 'feminino');
+        }
+
+        if (part.birth_date) {
+          const age = differenceInYears(new Date(), parseISO(part.birth_date));
+          if (age <= 12) setRespondentAge('ate_12');
+          else if (age <= 17) setRespondentAge('13_17');
+          else if (age <= 30) setRespondentAge('18_30');
+          else setRespondentAge('acima_30');
+        }
+
+        toast.success(`Identificado: ${resolved.full_name}`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao identificar participante");
+    } finally {
+      setIdentifying(false);
+    }
+  };
 
   if (!session) return null;
 
@@ -210,7 +261,19 @@ export default function PesquisaNovaPage() {
         {/* STEP 1: Profile */}
         {step === 'profile' && (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold">Perfil do Respondente</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">Perfil do Respondente</h2>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 border-primary/20 text-primary"
+                onClick={() => setScannerOpen(true)}
+                disabled={identifying}
+              >
+                {identifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanLine className="h-4 w-4" />}
+                Identificar QR
+              </Button>
+            </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">Tipo</label>
@@ -329,7 +392,15 @@ export default function PesquisaNovaPage() {
             </Button>
           </div>
         )}
+        {/* Step 3 content above ... */}
       </div>
+
+      <QrCodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScan}
+        title="Identificar Respondente"
+      />
     </div>
   );
 }

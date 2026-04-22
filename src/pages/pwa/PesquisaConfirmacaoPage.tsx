@@ -33,19 +33,27 @@ export default function PesquisaConfirmacaoPage() {
           </p>
         </div>
 
-        {!state?.isKiosk && (
-          <div className="space-y-3">
-            <Button onClick={() => navigate('/pwa/pesquisa/nova', { replace: true })} className="w-full h-12 gap-2">
-              <Plus className="h-4 w-4" /> Nova coleta
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/pwa/pesquisa/home', { replace: true })} className="w-full h-12 gap-2">
-              <Home className="h-4 w-4" /> Voltar para Home
-            </Button>
-          </div>
-        )}
+        <div className="space-y-3">
+          <Button 
+            onClick={() => navigate('/pwa/pesquisa/nova', { replace: true })} 
+            className="w-full h-14 text-lg gap-2 shadow-app-md"
+          >
+            <Plus className="h-5 w-5" /> Próxima coleta
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/pwa/pesquisa/home', { replace: true })} 
+            className="w-full h-12 gap-2 text-muted-foreground"
+          >
+            <Home className="h-4 w-4" /> Painel inicial
+          </Button>
+        </div>
 
         {state?.isKiosk && (
-          <p className="text-sm text-muted-foreground animate-pulse">Retornando em 3 segundos...</p>
+          <p className="text-xs text-muted-foreground animate-pulse mt-4 italic">
+            Retornando automaticamente em 3 segundos...
+          </p>
         )}
       </div>
     </div>
