@@ -150,10 +150,29 @@ export default function ParticipantesPage() {
     },
   });
 
+  // Persist filters to URL
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (debouncedSearch) next.set("search", debouncedSearch); else next.delete("search");
+    if (typeFilter !== "all") next.set("type", typeFilter); else next.delete("type");
+    if (statusFilter !== "all") next.set("status", statusFilter); else next.delete("status");
+    if (sortBy !== "name") next.set("sort", sortBy); else next.delete("sort");
+    if (sortDir !== "asc") next.set("dir", sortDir); else next.delete("dir");
+    if (page > 0) next.set("page", String(page)); else next.delete("page");
+    
+    // Only update if something changed
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [debouncedSearch, typeFilter, statusFilter, sortBy, sortDir, page, searchParams, setSearchParams]);
+
   // Reset page when filters change
-  useMemo(() => { setPage(0); }, [debouncedSearch, typeFilter, statusFilter, stageFilterId, selectedEventId]);
+  useEffect(() => { 
+    setPage(0); 
+  }, [debouncedSearch, typeFilter, statusFilter, stageFilterId, selectedEventId]);
 
   const isSearching = debouncedSearch.trim().length >= 2;
+
   const noSearchMatches = isSearching && matchingPersonIds && matchingPersonIds.length === 0;
 
   // Compute the constrained id set when stage and/or search filter
