@@ -88,13 +88,13 @@ export function ManualBoardingDialog({
 
       if (error) throw error;
 
-      toast.success(`${name.trim()} embarcado (manual)`);
+      toast.success(`${name.trim()} ${getPwaMessage("SUCCESS_BOARDING", lang)} (${getPwaMessage("MANUAL_SEARCH", lang)})`);
       if (navigator.vibrate) navigator.vibrate(200);
       reset();
       onOpenChange(false);
       onSuccess();
     } catch (err: any) {
-      toast.error("Erro: " + (err.message || "desconhecido"));
+      toast.error(`${getPwaMessage("ERR_UNKNOWN", lang)}: ` + (err.message || "desconhecido"));
     } finally {
       setSaving(false);
     }
