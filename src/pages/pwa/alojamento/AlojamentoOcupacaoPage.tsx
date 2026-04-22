@@ -16,7 +16,7 @@ import {
   occupancyBarClass,
   occupancyTone,
 } from "@/components/pwa/PwaDashboardPrimitives";
-import { Building, FileBarChart, ScanLine, Search, X, Users } from "lucide-react";
+import { Building, ScanLine, Search, X, Users } from "lucide-react";
 
 interface RoomInfo {
   id: string;
@@ -80,13 +80,19 @@ export default function AlojamentoOcupacaoPage() {
     }
     const timer = setTimeout(async () => {
       setSearching(true);
-      const { data } = await supabase.rpc("pwa_search_person" as any, {
-        p_query: search.trim(),
-        p_facility_id: facilityId,
-        p_limit: 10
-      });
-      setSearchResults((data as any)?.results || []);
-      setSearching(false);
+      try {
+        const { data } = await supabase.rpc("pwa_search_person" as any, {
+          p_query: search.trim(),
+          p_facility_id: facilityId,
+          p_limit: 10
+        });
+        setSearchResults((data as any)?.results || []);
+      } catch (err) {
+        console.error("Search error:", err);
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
     }, 300);
     return () => clearTimeout(timer);
   }, [search, facilityId]);
@@ -128,7 +134,7 @@ export default function AlojamentoOcupacaoPage() {
         <div className="relative group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
           <Input
-            placeholder="Buscar bloco ou quarto..."
+            placeholder="Buscar por bloco, quarto ou nome..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 pr-9 h-11 rounded-xl bg-card/90 backdrop-blur-sm border-border/80 focus:ring-primary/20"
@@ -152,12 +158,61 @@ export default function AlojamentoOcupacaoPage() {
           ]}
         />
 
+        {/* Real-time search for occupants */}
+        {search.length >= 3 && (
+          <div className="space-y-3">
+            <PwaSectionLabel>Ocupantes encontrados</PwaSectionLabel>
+            {searching ? (
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full rounded-2xl" />
+                <Skeleton className="h-16 w-full rounded-2xl" />
+              </div>
+            ) : searchResults.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4 italic bg-muted/20 rounded-xl">
+                Nenhum ocupante encontrado pelo nome
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {searchResults.map((p) => (
+                  <Card 
+                    key={p.participant_id} 
+                    className="border-primary/20 bg-primary/5 cursor-pointer shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+                    onClick={() => navigate(`/pwa/alojamento/pessoa/${p.participant_id}`)}
+                  >
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div className="min-w-0 pr-2">
+                        <p className="font-bold text-sm truncate">{p.full_name}</p>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase truncate">
+                          {p.delegation_name || p.participant_type}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <Badge variant="outline" className="text-[10px] font-bold bg-background/80 border-primary/20">
+                          {p.block_name} / {p.room_code}
+                        </Badge>
+                        {p.bed_code && (
+                          <p className="text-[10px] font-bold text-primary mt-1 uppercase tracking-tight">
+                            Leito {p.bed_code}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+            <div className="border-b border-border/40 my-6" />
+          </div>
+        )}
+
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <PwaSectionLabel>Blocos e Quartos</PwaSectionLabel>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase bg-muted/50 px-2 py-0.5 rounded-full">
-              {filteredBlocks.length} resultados
-            </span>
+            <PwaSectionLabel>Locais (Blocos / Unidades)</PwaSectionLabel>
+            {filteredBlocks.length > 0 && (
+              <span className="text-[10px] font-bold text-muted-foreground uppercase bg-muted/50 px-2 py-0.5 rounded-full">
+                {filteredBlocks.length} blocos
+              </span>
+            )}
           </div>
           
           {loading ? (
@@ -169,21 +224,21 @@ export default function AlojamentoOcupacaoPage() {
           ) : filteredBlocks.length === 0 ? (
             <Card className="border-dashed bg-muted/20">
               <CardContent className="p-10 text-center space-y-2">
-                <Search className="h-10 w-10 mx-auto text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">Nenhum bloco encontrado</p>
-                <Button variant="link" size="sm" onClick={() => setSearch("")}>Limpar busca</Button>
+                <Building className="h-10 w-10 mx-auto text-muted-foreground/40" />
+                <p className="text-sm text-muted-foreground">Nenhum bloco ou unidade encontrada</p>
+                <Button variant="link" size="sm" onClick={() => setSearch("")} className="font-bold">Limpar busca</Button>
               </CardContent>
             </Card>
           ) : (
             blockSummaries.map(({ block, cap, occ, pct }) => (
               <Card
                 key={block.id}
-                className="overflow-hidden border-border/60 bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all active:scale-[0.99]"
+                className="overflow-hidden border-border/60 bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all active:scale-[0.99] rounded-2xl"
               >
                 <CardContent className="space-y-3 p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate font-bold text-foreground">{block.name}</p>
+                      <p className="truncate font-bold text-foreground text-base">{block.name}</p>
                       <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
                         {genderLabel[block.gender_policy] || block.gender_policy}
                       </p>
@@ -201,17 +256,17 @@ export default function AlojamentoOcupacaoPage() {
                       {pct}% Ocupado
                     </Badge>
                   </div>
-                  <Progress value={pct} indicatorClassName={occupancyBarClass(pct)} className="h-2 bg-muted/40" />
-                  <div className="flex justify-between text-[11px] text-muted-foreground font-medium">
+                  <Progress value={pct} indicatorClassName={occupancyBarClass(pct)} className="h-2 bg-muted/40 rounded-full" />
+                  <div className="flex justify-between text-[11px] text-muted-foreground font-bold">
                     <span>
-                      <span className={occupancyTone(pct) === "red" ? "text-red-600 font-bold" : "text-foreground font-bold"}>
+                      <span className={occupancyTone(pct) === "red" ? "text-red-600 font-black" : "text-foreground font-black"}>
                         {occ}
                       </span>{" "}
                       alocados
                     </span>
                     <span>
-                      <span className="text-foreground font-bold">{Math.max(0, cap - occ)}</span> livres de{" "}
-                      <span className="text-foreground font-bold">{cap}</span>
+                      <span className="text-foreground font-black">{Math.max(0, cap - occ)}</span> livres de{" "}
+                      <span className="text-foreground font-black">{cap}</span>
                     </span>
                   </div>
                 </CardContent>
@@ -226,7 +281,7 @@ export default function AlojamentoOcupacaoPage() {
         <div className="mx-auto flex max-w-md gap-3">
           <Button 
             variant="module" 
-            className="h-12 flex-1 rounded-2xl font-bold shadow-lg shadow-primary/10" 
+            className="h-12 flex-1 rounded-2xl font-bold shadow-lg shadow-primary/10 transition-transform active:scale-95" 
             onClick={() => navigate("/pwa/alojamento/scan")}
           >
             <ScanLine className="mr-2 h-5 w-5" />
@@ -234,7 +289,7 @@ export default function AlojamentoOcupacaoPage() {
           </Button>
           <Button 
             variant="outline" 
-            className="h-12 w-12 rounded-2xl border-border/80 bg-card flex items-center justify-center p-0" 
+            className="h-12 w-12 rounded-2xl border-border/80 bg-card flex items-center justify-center p-0 transition-transform active:scale-95 hover:bg-muted" 
             onClick={() => navigate("/pwa/alojamento/lista-completa")}
           >
             <Users className="h-5 w-5 text-purple-500" />
