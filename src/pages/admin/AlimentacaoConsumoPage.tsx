@@ -527,6 +527,23 @@ export default function AlimentacaoConsumoPage() {
           <p className="text-muted-foreground font-medium">Selecione uma janela de refeição</p>
         </div>
       )}
+      <ParticipantReviewDialog
+        open={showReview}
+        onOpenChange={setShowReview}
+        participant={qrResult}
+        onConfirm={() => {
+          if (qrResult) {
+            consumeMut.mutate(qrResult.participantId);
+          }
+        }}
+        confirmLabel={consumedParticipantIds.has(qrResult?.participantId ?? "") ? "Já Consumido" : "Registrar Consumo"}
+        loading={consumeMut.isPending}
+        title="Validar Alimentação"
+        statusLabel={consumedParticipantIds.has(qrResult?.participantId ?? "") ? "JÁ CONSUMIU" : "PRONTO PARA REGISTRAR"}
+        statusColor={consumedParticipantIds.has(qrResult?.participantId ?? "") ? "bg-muted border-border" : "bg-green-50 border-green-200 text-green-700"}
+        statusIcon={consumedParticipantIds.has(qrResult?.participantId ?? "") ? <AlertTriangle className="h-8 w-8 text-muted-foreground" /> : <CheckCircle2 className="h-8 w-8 text-green-600" />}
+        message={consumedParticipantIds.has(qrResult?.participantId ?? "") ? "Este participante já registrou consumo nesta janela." : "Confirme os dados para registrar o consumo."}
+      />
     </div>
   );
 }
