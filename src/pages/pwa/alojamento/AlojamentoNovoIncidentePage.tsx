@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { getSelectedFacility } from "@/hooks/useAlojamento";
+import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 import { ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
 
 export default function AlojamentoNovoIncidentePage() {
