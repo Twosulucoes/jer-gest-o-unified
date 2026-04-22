@@ -516,12 +516,17 @@ export default function QrCodeScanner({
         )}
 
         {manualMode && (
-          <div className="flex-1 flex flex-col px-6 py-8 tac-rise">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Keyboard className="h-4 w-4" style={{ color: accent }} />
-                <span className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: accent }}>
-                  Entrada manual
+          <div className="flex-1 flex flex-col px-6 py-8 tac-rise max-w-lg mx-auto w-full carbon-texture">
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <Keyboard className="h-4 w-4" style={{ color: accent }} />
+                  <span className="text-xs font-mono font-bold uppercase tracking-[0.25em]" style={{ color: accent }}>
+                    MODO MANUAL
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono uppercase tracking-[0.1em]" style={{ color: muted }}>
+                  CONSO-01 // FIELD INPUT
                 </span>
               </div>
               <button
@@ -529,38 +534,96 @@ export default function QrCodeScanner({
                   setManualMode(false);
                   void startScanner(useFront);
                 }}
-                className="text-xs font-semibold uppercase tracking-tight px-3 h-9 rounded-lg border active:scale-95 transition-transform"
-                style={{ borderColor: "hsl(var(--tac-border))", color: "white" }}
+                className="text-[10px] font-bold uppercase tracking-[0.15em] px-4 h-9 rounded border-2 active:scale-95 transition-all flex items-center gap-2"
+                style={{ borderColor: "hsl(var(--tac-border))", background: "hsl(var(--tac-surface))", color: "white" }}
               >
-                Usar câmera
+                <Camera className="h-3.5 w-3.5" />
+                Câmera
               </button>
             </div>
 
-            <label className="text-[10px] font-mono uppercase tracking-[0.2em] mb-2 px-1" style={{ color: muted }}>
-              Código da credencial / voucher
-            </label>
-            <input
-              autoFocus
-              value={manualCode}
-              onChange={(e) => setManualCode(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleManualSubmit()}
-              placeholder="Cole ou digite o código…"
-              className="w-full h-14 px-4 rounded-lg border outline-none text-base font-mono transition-colors focus:border-[hsl(var(--tac-accent))]"
-              style={{
-                background: "hsl(var(--tac-surface))",
-                borderColor: "hsl(var(--tac-border))",
-                color: "white",
-              }}
-            />
+            <div className="space-y-6 flex-1">
+              <div className="relative group">
+                <label className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] mb-2 block px-1" style={{ color: muted }}>
+                  CÓDIGO DA CREDENCIAL / VOUCHER
+                </label>
+                
+                <div className="relative">
+                  <input
+                    autoFocus
+                    value={manualCode}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => e.key === "Enter" && !isValidating && handleManualSubmit()}
+                    placeholder="DIGITE O CÓDIGO…"
+                    className="w-full h-16 px-4 pr-12 rounded-xl border-2 outline-none text-xl font-mono transition-all focus:ring-4 focus:ring-[hsl(var(--tac-accent)/0.15)] placeholder:opacity-30"
+                    style={{
+                      background: "hsl(var(--tac-surface))",
+                      borderColor: manualError ? "hsl(var(--tac-danger)/0.6)" : "hsl(var(--tac-border))",
+                      color: manualError ? "hsl(var(--tac-danger))" : "white",
+                      boxShadow: manualError ? "0 0 15px hsl(var(--tac-danger)/0.2)" : "none"
+                    }}
+                  />
+                  {manualCode && !isValidating && (
+                    <button
+                      onClick={() => { setManualCode(""); setManualError(""); }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-90 transition-all"
+                      style={{ color: muted }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                  {isValidating && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-5 w-5 animate-spin" style={{ color: accent }} />
+                    </div>
+                  )}
+                </div>
 
-            <button
-              disabled={!manualCode.trim()}
-              onClick={handleManualSubmit}
-              className="mt-6 h-14 rounded-lg font-bold uppercase tracking-tight text-base active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: accent, color: "hsl(var(--tac-bg))" }}
-            >
-              Validar código
-            </button>
+                {manualError ? (
+                  <div className="mt-3 flex items-center gap-2 px-2 tac-pulse">
+                    <AlertTriangle className="h-4 w-4 shrink-0" style={{ color: "hsl(var(--tac-danger))" }} />
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{ color: "hsl(var(--tac-danger))" }}>
+                      {manualError} — VERIFIQUE E TENTE NOVAMENTE
+                    </span>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex items-center gap-2 px-2 opacity-50">
+                    <Search className="h-3 w-3 shrink-0" style={{ color: muted }} />
+                    <span className="text-[10px] font-mono uppercase tracking-tight" style={{ color: muted }}>
+                      PRONTO PARA VALIDAÇÃO
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4">
+                <button
+                  disabled={!manualCode.trim() || isValidating}
+                  onClick={handleManualSubmit}
+                  className="w-full h-16 rounded-xl font-black uppercase tracking-[0.2em] text-lg active:scale-[0.97] transition-all disabled:opacity-20 disabled:grayscale flex items-center justify-center gap-3 border-b-4 border-black/40"
+                  style={{ 
+                    background: manualError ? "hsl(var(--tac-danger))" : accent, 
+                    color: "hsl(var(--tac-bg))" 
+                  }}
+                >
+                  {isValidating ? (
+                    <>
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      PROCESSANDO…
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-6 w-6" />
+                      VALIDAR CÓDIGO
+                    </>
+                  )}
+                </button>
+                
+                <p className="text-center mt-6 text-[10px] font-mono uppercase tracking-[0.2em] opacity-40">
+                  ESTADO: {isValidating ? "SYNC" : "READY"} // V.4.2
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </main>
