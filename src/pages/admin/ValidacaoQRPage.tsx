@@ -8,15 +8,12 @@ import {
   XCircle,
   AlertTriangle,
   Loader2,
-  User,
   Camera,
-  Check,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -24,16 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useActiveEventId } from "@/contexts/EventContext";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 
 interface ValidationResult {
   result: "valid" | "not_found" | "revoked" | "suspended" | "not_activated" | "wrong_event" | string;
