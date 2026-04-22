@@ -11,7 +11,7 @@ import {
   Shield, Settings, AlertTriangle, FileBarChart,
   Info, ExternalLink, ChevronsLeft,
   ChevronsRight, User, FolderOpen,
-  Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList, Radio, Database as DatabaseIcon, Activity, CheckCircle,
+  Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList, Radio, Database as DatabaseIcon, Activity, CheckCircle, Layers,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import StageFilterBanner from "@/components/admin/StageFilterBanner";
