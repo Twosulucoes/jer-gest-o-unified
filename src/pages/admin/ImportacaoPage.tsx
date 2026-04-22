@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { read, utils } from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { useParams } from "react-router-dom";
 import { useActiveEventId } from "@/contexts/EventContext";
 import ImportErrorsTable from "@/components/admin/ImportErrorsTable";
 import ModuleHeader from "@/components/admin/ModuleHeader";
@@ -481,34 +482,36 @@ export default function ImportacaoPage() {
               </Select>
               <p className="text-xs text-muted-foreground">Definido pelo seletor global de evento ativo.</p>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Etapa <span className="text-destructive">*</span>
-              </label>
-              <Select
-                value={selectedStageId}
-                onValueChange={(v) => { setSelectedStageId(v); setValidateResult(null); setCommitResult(null); }}
-                disabled={!!commitResult || stages.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={stages.length === 0 ? "Nenhuma etapa cadastrada" : "Selecione a etapa"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {stages.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} <span className="text-xs text-muted-foreground">({s.kind})</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {stages.length === 0 ? (
-                <p className="text-xs text-destructive">
-                  Cadastre uma etapa em <a href="/admin/eventos/etapas" className="underline">Eventos → Etapas</a>.
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">Obrigatório. Toda inscrição será vinculada a esta etapa.</p>
-              )}
-            </div>
+            {!stageId && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Etapa <span className="text-destructive">*</span>
+                </label>
+                <Select
+                  value={selectedStageId}
+                  onValueChange={(v) => { setSelectedStageId(v); setValidateResult(null); setCommitResult(null); }}
+                  disabled={!!commitResult || stages.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={stages.length === 0 ? "Nenhuma etapa cadastrada" : "Selecione a etapa"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stages.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name} <span className="text-xs text-muted-foreground">({s.kind})</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {stages.length === 0 ? (
+                  <p className="text-xs text-destructive">
+                    Cadastre uma etapa em <a href="/admin/eventos/etapas" className="underline">Eventos → Etapas</a>.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Obrigatório. Toda inscrição será vinculada a esta etapa.</p>
+                )}
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Planilha (.xlsx)</label>
               <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileChange} disabled={!!commitResult || !selectedStageId}

@@ -210,32 +210,34 @@ export default function PesquisaFormEditorPage() {
       </Card>
 
       {/* Etapa */}
-      <Card className="card-accent-top">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Layers className="h-4 w-4 text-accent" />
-            Etapa da Competição
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Select value={eventStageId || 'none'} onValueChange={v => setEventStageId(v === 'none' ? '' : v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione uma etapa" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">— Sem etapa vinculada —</SelectItem>
-              {stageOptions.map(s => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.event_name} · {s.name} ({KIND_LABELS[s.kind] ?? s.kind})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Vinculando uma etapa, as respostas ficam rastreáveis por fase — essencial para prestação de contas da OSC.
-          </p>
-        </CardContent>
-      </Card>
+      {!stageId && (
+        <Card className="card-accent-top">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Layers className="h-4 w-4 text-accent" />
+              Etapa da Competição
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Select value={eventStageId || 'none'} onValueChange={v => setEventStageId(v === 'none' ? '' : v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma etapa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— Sem etapa vinculada —</SelectItem>
+                {stageOptions.map(s => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.event_name} · {s.name} ({KIND_LABELS[s.kind] ?? s.kind})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Vinculando uma etapa, as respostas ficam rastreáveis por fase — essencial para prestação de contas da OSC.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Modelos prontos */}
       <Card>
