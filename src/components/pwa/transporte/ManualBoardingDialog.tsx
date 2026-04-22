@@ -51,7 +51,7 @@ export function ManualBoardingDialog({
 
   const handleSave = async () => {
     if (!name.trim()) {
-      toast.error("Nome é obrigatório");
+      toast.error(getPwaMessage("ERR_NAME_REQUIRED", lang));
       return;
     }
     setSaving(true);
