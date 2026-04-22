@@ -6,6 +6,8 @@ import { dashboardOperacionalReport } from '../definitions/dashboard.operacional
 import { quadroMedalhasReport } from '../definitions/quadro.medalhas';
 import { prestacaoContasOscReport } from '../definitions/prestacao.contas.osc';
 import { consolidatedPersonReport } from '../definitions/pessoa.consumoConsolidado';
+import { sumulaPartidaReport } from '../definitions/competicao.sumula';
+import { boletimInformativoReport } from '../definitions/boletim.informativo';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const reportRegistry: ReportDefinition<any>[] = [
@@ -15,6 +17,8 @@ export const reportRegistry: ReportDefinition<any>[] = [
   quadroMedalhasReport,
   prestacaoContasOscReport,
   consolidatedPersonReport,
+  sumulaPartidaReport,
+  boletimInformativoReport,
   // Engine genérica (samples)
   resultsByGroupReport,
   delegationRosterReport,

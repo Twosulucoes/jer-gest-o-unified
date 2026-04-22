@@ -6,7 +6,7 @@ import { AppKPI } from "@/components/app/AppKPI";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import {
   Trophy, Calendar, ClipboardList,
-  Medal, BarChart3, Clock, CheckCircle,
+  Medal, BarChart3, Clock, CheckCircle, Search
 } from "lucide-react";
 
 export default function CoordenacaoHomePage() {
@@ -47,6 +47,7 @@ export default function CoordenacaoHomePage() {
   };
 
   const actions = [
+    { label: "Consulta Rápida", icon: Search, to: "/pwa/coordenacao-tecnica/consulta" },
     { label: "Agenda", icon: Calendar, to: "/pwa/coordenacao-tecnica/agenda" },
     { label: "Partidas", icon: ClipboardList, to: "/pwa/coordenacao-tecnica/partidas" },
     { label: "Resultados", icon: Medal, to: "/pwa/coordenacao-tecnica/resultados" },
