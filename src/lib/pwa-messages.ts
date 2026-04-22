@@ -34,7 +34,11 @@ export type PwaMessageCode =
   | "ERR_SELECT_FACILITY"
   | "ERR_UNDER_12"
   | "ERR_ALREADY_STAYING"
-  | "ERR_NOT_STAYING";
+  | "ERR_NOT_STAYING"
+  | "SCAN_QR"
+  | "SCAN_TITLE"
+  | "SCAN"
+  | "BUSCANDO";
 
 export type PwaLang = "pt" | "es";
 
@@ -178,6 +182,22 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
   ERR_NOT_STAYING: {
     pt: "Pessoa não está hospedada neste local",
     es: "Persona no está alojada en este lugar",
+  },
+  SCAN_QR: {
+    pt: "Escanear QR",
+    es: "Escanear QR",
+  },
+  SCAN_TITLE: {
+    pt: "Credencial ou voucher",
+    es: "Credencial o voucher",
+  },
+  SCAN: {
+    pt: "Scan",
+    es: "Scan",
+  },
+  BUSCANDO: {
+    pt: "Buscando…",
+    es: "Buscando…",
   },
 };
 
