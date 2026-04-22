@@ -112,12 +112,15 @@ export default function CompeticaoPartidasAgendaPage() {
     enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
   });
 
+  const isLoading = loadingMatches || loadingSportLinks;
+
   // Apply stage filter if present
   const matches = isStageScoped && stageMatchIds
     ? matchesRaw.filter((m) => stageMatchIds.has(m.id))
     : matchesRaw;
 
   const phasesMap = new Map(phases.map((p) => [p.id, p]));
+
   const groupsMap = new Map(groups.map((g) => [g.id, g]));
   const venuesMap = new Map(venues.map((v) => [v.id, v]));
   const sportEventsMap = new Map(sportEvents.map((se) => [se.id, se]));
