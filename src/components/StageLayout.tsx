@@ -298,10 +298,9 @@ export default function StageLayout() {
                 <Menu className="h-5 w-5" />
               </button>
 
-              {/* Contexto sempre visível */}
+              {/* Contexto sempre visível via Switcher */}
               <div className="flex items-center gap-2 min-w-0">
-                <Badge variant="default" className="shrink-0">Etapa</Badge>
-                <span className="font-semibold text-sm truncate">{stage.name}</span>
+                <EtapaSwitcher className="border-none bg-transparent hover:bg-muted/50 font-bold text-base px-2 h-auto" />
                 <Badge variant="outline" className="hidden sm:inline-flex text-[10px]">{stage.status}</Badge>
               </div>
 
