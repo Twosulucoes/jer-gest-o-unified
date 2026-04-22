@@ -34,6 +34,16 @@ export default function CompeticaoCentralPage() {
   // Escopo de etapa (se a página estiver dentro de /admin/etapa/:stageId/...)
   const { isStageScoped, stageId, participantIds: stageParticipantIds } = useStageScope();
 
+  // Sincroniza etapa detectada com o contexto global
+  useEffect(() => {
+    if (stageId) setSelectedStageId(stageId);
+  }, [stageId, setSelectedStageId]);
+
+  // Sincroniza sportEventId selecionado com o contexto global
+  useEffect(() => {
+    setSelectedSportEventId(sportEventId);
+  }, [sportEventId, setSelectedSportEventId]);
+
   const { data: summaryRaw, isLoading: summaryLoading } = useQuery({
     queryKey: ["competition-summary", eventId, sportEventId],
     queryFn: async () => {
