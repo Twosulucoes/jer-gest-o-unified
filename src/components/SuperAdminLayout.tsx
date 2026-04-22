@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   LayoutDashboard, Calendar, LogOut, Menu, X, ScrollText, Settings,
   ChevronsLeft, ChevronsRight, User, ChevronLeft, Activity, BookOpen, LifeBuoy, DatabaseZap,
-  ShieldCheck, Database as DatabaseIcon, Info, CheckCircle,
+  ShieldCheck, Database as DatabaseIcon, Info, CheckCircle, Layers,
 } from "lucide-react";
 import { useState } from "react";
 import { brand } from "@/theme/brand";
