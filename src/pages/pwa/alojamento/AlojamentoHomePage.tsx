@@ -75,22 +75,9 @@ export default function AlojamentoHomePage() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-30" />
-      <PwaHeader
-        title="Alojamento"
-        icon={Building}
-        backTo="/pwa"
-        onSignOut={handleSignOut}
-        rightSlot={
-          <div className="flex items-center gap-2">
-            {isOnline ? <Wifi className="h-4 w-4 text-green-400" /> : <WifiOff className="h-4 w-4 text-red-300" />}
-            {pendingCount > 0 && (
-              <span className="text-xs bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-full font-medium">
-                {pendingCount} pendência{pendingCount > 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-        }
-      />
+      <AlojamentoNavHeader showQuickNav={false} />
+
+      <main className="relative p-4 max-w-md mx-auto space-y-4">
 
       <main className="relative p-4 max-w-md mx-auto space-y-4">
         {loading ? (
