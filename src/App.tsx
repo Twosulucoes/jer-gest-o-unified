@@ -9,6 +9,7 @@ import { EventProvider } from "@/contexts/EventContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SuperAdminRoute from "@/components/SuperAdminRoute";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { CompetitionProvider } from "@/contexts/CompetitionContext";
 import AdminLayout from "@/components/AdminLayout";
 import RedirectToEtapas from "@/components/admin/RedirectToEtapas";
 import StageLayout from "@/components/StageLayout";
