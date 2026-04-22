@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
@@ -20,10 +20,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export default function CoordenadorModalidadeDashboard() {
   const { profile } = useAuth();
+  const { stageId } = useParams<{ stageId: string }>();
   const eventId = useActiveEventId();
   const { activeEvent } = useEventContext();
   const { sportIds, isLoading: loadingLinks } = useUserSportLinks();
   const [selectedStageId, setSelectedStageId] = useState<string>("");
+
+  // Sync with URL stageId if present
+  useEffect(() => {
+    if (stageId) setSelectedStageId(stageId);
+  }, [stageId]);
 
   // Fetch event stages
   const { data: stages = [], isLoading: loadingStages } = useQuery({
