@@ -26,8 +26,23 @@ export default function BulletinValidationAlerts({ alerts }: BulletinValidationA
           )}
           <AlertTitle className="font-semibold">{alert.type === "error" ? "Inconsistência Crítica" : "Alerta de Inconsistência"}</AlertTitle>
           <AlertDescription className="text-sm opacity-90">
-            {alert.message}
-            {alert.details && <p className="mt-1 text-xs">{alert.details}</p>}
+            <div>
+              {alert.message}
+              {alert.details && <p className="mt-1 text-xs">{alert.details}</p>}
+            </div>
+            {alert.links && alert.links.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {alert.links.map((link, j) => (
+                  <a
+                    key={j}
+                    href={link.url}
+                    className="inline-flex items-center gap-1 rounded bg-background/20 px-2 py-1 text-[10px] font-medium transition hover:bg-background/30"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       ))}
