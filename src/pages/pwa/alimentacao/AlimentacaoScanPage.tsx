@@ -215,7 +215,9 @@ export default function AlimentacaoScanPage() {
       } else {
         const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
         if (!resolved) {
-          setResult({ ok: false, message: getPwaMessage("ERR_NOT_FOUND", lang), source: "qr" });
+          const errorMsg = getPwaMessage("ERR_NOT_FOUND", lang);
+          setResult({ ok: false, message: errorMsg, source: "qr" });
+          toast.error(errorMsg);
           recordOutcome("error");
           return;
         }
