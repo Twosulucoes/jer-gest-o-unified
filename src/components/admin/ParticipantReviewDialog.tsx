@@ -26,7 +26,9 @@ interface ParticipantReviewDialogProps {
   onOpenChange: (open: boolean) => void;
   participant: ParticipantData | null;
   onConfirm: () => void;
+  onCancel?: () => void;
   confirmLabel?: string;
+  cancelLabel?: string;
   title?: string;
   statusColor?: string;
   statusLabel?: string;
@@ -40,7 +42,9 @@ export function ParticipantReviewDialog({
   onOpenChange,
   participant,
   onConfirm,
+  onCancel,
   confirmLabel = "Confirmar",
+  cancelLabel = "Nova leitura",
   title = "Revisar Dados",
   statusColor = "bg-muted/30 border-border",
   statusLabel,
@@ -122,7 +126,15 @@ export function ParticipantReviewDialog({
             )}
           </div>
 
-          <DialogFooter className="p-6 bg-muted/20 border-t flex-col sm:flex-row gap-3">
+          <DialogFooter className="p-6 bg-muted/20 border-t flex flex-col sm:flex-row gap-3">
+            <Button
+              variant="outline"
+              className="w-full h-14 text-lg font-bold uppercase tracking-widest"
+              onClick={onCancel}
+              disabled={loading}
+            >
+              {cancelLabel}
+            </Button>
             <Button 
               className="w-full h-14 text-lg font-bold uppercase tracking-widest shadow-lg" 
               onClick={onConfirm}

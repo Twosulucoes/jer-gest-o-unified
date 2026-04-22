@@ -226,45 +226,49 @@ Deno.serve(async (req: Request) => {
     if (!credential) {
       scanResult = "not_found";
       scanNotes = "QR Code não encontrado no sistema";
-    } else if (credential.event_id !== event_id) {
-      scanResult = "wrong_event";
-      scanNotes = "Credencial pertence a outro evento";
-    } else if (credential.status === "revoked") {
-      scanResult = "revoked";
-      scanNotes = "Credencial revogada";
-    } else if (credential.status === "suspended") {
-      scanResult = "suspended";
-      scanNotes = "Credencial suspensa";
-    } else if (credential.status === "pending") {
-      scanResult = "not_activated";
-      scanNotes = "Credencial ainda não ativada";
-    } else if (credential.status === "no_credential") {
-      scanResult = "not_activated";
-      scanNotes = "Participante encontrado por CPF, mas sem credencial emitida";
-    } else if (credential.status === "active") {
-      scanResult = "valid";
+    } else {
+      // Basic info checking
+      if (credential.event_id !== event_id) {
+        scanResult = "wrong_event";
+        scanNotes = "Credencial pertence a outro evento";
+      } else if (credential.status === "revoked") {
+        scanResult = "revoked";
+        scanNotes = "Credencial revogada";
+      } else if (credential.status === "suspended") {
+        scanResult = "suspended";
+        scanNotes = "Credencial suspensa";
+      } else if (credential.status === "pending") {
+        scanResult = "not_activated";
+        scanNotes = "Credencial ainda não ativada";
+      } else if (credential.status === "no_credential") {
+        scanResult = "not_activated";
+        scanNotes = "Participante encontrado por CPF, mas sem credencial emitida";
+      } else if (credential.status === "active") {
+        scanResult = "valid";
+      } else {
+        scanResult = "unknown_status";
+        scanNotes = `Status desconhecido: ${credential.status}`;
+      }
 
-      // Fetch participant + person info
+      // Fetch participant + person info for ANY found credential (to show who it is)
       const { data: participant } = await serviceClient
         .from("participants")
-        .select(
-          "id, participant_type, status, delegation_id, person_id"
-        )
+        .select("id, participant_type, status, delegation_id, person_id")
         .eq("id", credential.participant_id)
-        .single();
+        .maybeSingle();
 
       if (participant) {
         const { data: person } = await serviceClient
           .from("people")
           .select("full_name, birth_date, gender, photo_url, cpf")
           .eq("id", participant.person_id)
-          .single();
+          .maybeSingle();
 
         const { data: delegation } = await serviceClient
           .from("delegations")
           .select("id, institution_id")
           .eq("id", participant.delegation_id)
-          .single();
+          .maybeSingle();
 
         let institutionName: string | null = null;
         if (delegation) {
@@ -272,14 +276,14 @@ Deno.serve(async (req: Request) => {
             .from("institutions")
             .select("name")
             .eq("id", delegation.institution_id)
-            .single();
+            .maybeSingle();
           institutionName = inst?.name ?? null;
         }
 
         participantInfo = {
           participant_id: participant.id,
           participant_type: participant.participant_type,
-          full_name: person?.full_name,
+          full_name: person?.full_name ?? "Nome não encontrado",
           birth_date: person?.birth_date,
           gender: person?.gender,
           photo_url: person?.photo_url,
@@ -289,28 +293,37 @@ Deno.serve(async (req: Request) => {
         };
       }
 
-      // Update last_validated_at apenas se for credencial real (não virtual)
-      if (!credential.__virtual_external) {
+      // Update last_validated_at apenas se for credencial real (não virtual) e válida
+      if (scanResult === "valid" && !credential.__virtual_external) {
         await serviceClient
           .from("participant_credentials")
           .update({ last_validated_at: new Date().toISOString() })
           .eq("id", credential.id);
       }
-    } else {
-      scanResult = "unknown_status";
-      scanNotes = `Status desconhecido: ${credential.status}`;
     }
 
     // 2. Register scan in credential_scans (apenas se for credencial real do participant_credentials)
     if (credential && !credential.__virtual_external) {
-      await serviceClient.from("credential_scans").insert({
-        credential_id: credential.id,
-        event_id: event_id,
-        scanned_by: operatorId,
-        scan_point: scan_point || "general",
-        scan_result: scanResult,
-        notes: scanNotes,
-      });
+      // Check for duplicates (same credential, same scan_point, last 30 seconds)
+      const { data: recentScan } = await serviceClient
+        .from("credential_scans")
+        .select("id")
+        .eq("credential_id", credential.id)
+        .eq("scan_point", scan_point || "general")
+        .gt("scanned_at", new Date(Date.now() - 30 * 1000).toISOString())
+        .limit(1)
+        .maybeSingle();
+
+      if (!recentScan) {
+        await serviceClient.from("credential_scans").insert({
+          credential_id: credential.id,
+          event_id: event_id,
+          scanned_by: operatorId,
+          scan_point: scan_point || "general",
+          scan_result: scanResult,
+          notes: scanNotes,
+        });
+      }
     }
 
     return jsonResponse({

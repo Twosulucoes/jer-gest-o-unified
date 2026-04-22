@@ -122,6 +122,10 @@ export default function ValidacaoQRPage() {
     setQrInput("");
     setResult(null);
     setShowConfirm(false);
+    // Use a small timeout to ensure the dialog is closed before focusing
+    setTimeout(() => {
+      document.getElementById("qr-input-field")?.focus();
+    }, 100);
   };
 
   const handleCameraScan = useCallback((raw: string) => {
@@ -185,6 +189,7 @@ export default function ValidacaoQRPage() {
               <label className="text-sm font-medium text-foreground">Código QR</label>
               <div className="flex gap-2">
                 <Input
+                  id="qr-input-field"
                   placeholder="Escaneie ou cole o QR Code..."
                   value={qrInput}
                   onChange={(e) => setQrInput(e.target.value)}
@@ -304,7 +309,9 @@ export default function ValidacaoQRPage() {
             birth_date: result.participant.birth_date,
           } : null}
           onConfirm={handleNewScan}
-          confirmLabel="Confirmar e Próximo"
+          onCancel={handleNewScan}
+          confirmLabel={result.result === "valid" ? "Confirmar e Próximo" : "Entendido"}
+          cancelLabel="Nova leitura"
           statusLabel={resultConfig?.label}
           statusIcon={resultConfig?.icon}
           statusColor={resultConfig?.color.split(" ")[1] + " border-b " + (resultConfig?.color.split(" ")[2] || "")}
