@@ -170,23 +170,30 @@ export default function CoordenadorModalidadeDashboard() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <AppPageHeader
-        title="Painel do Coordenador"
-        description={`Bem-vindo, ${profile?.full_name || "Coordenador"}`}
-      >
-        <div className="flex flex-wrap gap-2">
-          {sports.map(s => (
-            <Badge key={s.id} variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-              {s.name}
-            </Badge>
-          ))}
-          {activeEvent && (
-            <Badge variant="outline" className="text-xs">
-              {activeEvent.name}
-            </Badge>
-          )}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <AppPageHeader
+          title="Painel do Coordenador"
+          description={`Bem-vindo, ${profile?.full_name || "Coordenador"}`}
+        />
+        <div className="flex flex-col items-end gap-1.5 pb-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">
+            Modalidade(s) sob sua responsabilidade:
+          </span>
+          <div className="flex flex-wrap justify-end gap-2">
+            {sports.map(s => (
+              <Badge key={s.id} variant="default" className="bg-primary text-primary-foreground shadow-sm px-3 py-1 text-sm font-semibold">
+                <Trophy className="h-3.5 w-3.5 mr-1.5" />
+                {s.name}
+              </Badge>
+            ))}
+            {activeEvent && (
+              <Badge variant="outline" className="text-xs font-normal border-primary/20 bg-primary/5">
+                {activeEvent.name}
+              </Badge>
+            )}
+          </div>
         </div>
-      </AppPageHeader>
+      </div>
 
       {/* Stage Selection - Mandatory Filter */}
       <Card className="border-primary/20 bg-primary/5">
