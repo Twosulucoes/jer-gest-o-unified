@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useCompetitionContext } from "@/contexts/CompetitionContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -170,11 +171,17 @@ export default function CompeticaoPainelPage() {
   const eventId = useActiveEventId();
   const navigate = useNavigate();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
+  const { selectedSportId, setSelectedSportId } = useCompetitionContext();
   const [search, setSearch] = useState("");
-  const [sportFilter, setSportFilter] = useState("all");
+  const [sportFilter, setSportFilter] = useState(selectedSportId || "all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [groupBySport, setGroupBySport] = useState(false);
+
+  // Sync with context
+  useEffect(() => {
+    setSelectedSportId(sportFilter === "all" ? null : sportFilter);
+  }, [sportFilter, setSelectedSportId]);
 
   // ── Query 1: Sport events + rules ────────────────────────
   const { data: provas = [], isLoading } = useQuery({

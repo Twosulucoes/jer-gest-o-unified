@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Trophy, Eye } from "lucide-react";
+import { Trophy, Eye, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,8 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 
 import { useNavigate } from "react-router-dom";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useCompetitionContext } from "@/contexts/CompetitionContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import { useStageScope } from "@/hooks/useStageScope";
 import ModuleHeader from "@/components/admin/ModuleHeader";
@@ -37,8 +38,21 @@ export default function CompeticaoResultadosPage() {
   const selectedEventId = useActiveEventId();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
   const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError, stageId, participantIds: stageParticipantIds } = useStageScope({ includeMatchIds: true });
+  const { selectedSportEventId, setSelectedSportEventId, setSelectedStageId } = useCompetitionContext();
+
   const [statusFilter, setStatusFilter] = useState<ResultStatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [localSportEventId, setLocalSportEventId] = useState<string>(selectedSportEventId || "__all__");
+
+  // Sincroniza etapa detectada com o contexto global
+  useEffect(() => {
+    if (stageId) setSelectedStageId(stageId);
+  }, [stageId, setSelectedStageId]);
+
+  // Sincroniza contexto com estado local
+  useEffect(() => {
+    setSelectedSportEventId(localSportEventId === "__all__" ? null : localSportEventId);
+  }, [localSportEventId, setSelectedSportEventId]);
   const PAGE_SIZE = 20;
 
   const { data: events = [] } = useQuery({
@@ -136,9 +150,11 @@ export default function CompeticaoResultadosPage() {
     ? (stageMatchIds ? matches.filter((m) => stageMatchIds.has(m.id)) : [])
     : matches;
 
-  const filtered = statusFilter === "all"
-    ? stageScopedMatches
-    : stageScopedMatches.filter((m) => matchResultStatus.get(m.id) === statusFilter);
+  const filtered = matches.filter((m) => {
+    if (statusFilter !== "all" && matchResultStatus.get(m.id) !== statusFilter) return false;
+    if (localSportEventId !== "__all__" && m.sport_event_id !== localSportEventId) return false;
+    return true;
+  });
 
   const formatDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR") : "—";
 
@@ -178,12 +194,22 @@ export default function CompeticaoResultadosPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
               <Select value={selectedEventId} onValueChange={(v) => { setStatusFilter("all"); setCurrentPage(1); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Modalidade/Prova</label>
+              <Select value={localSportEventId} onValueChange={(v) => { setLocalSportEventId(v); setCurrentPage(1); }}>
+                <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas</SelectItem>
+                  {sportEvents.map((se) => <SelectItem key={se.id} value={se.id}>{se.name}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">

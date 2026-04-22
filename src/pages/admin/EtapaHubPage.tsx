@@ -1,10 +1,12 @@
 import { Link, useParams, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
   ArrowLeft, Users, UsersRound, Trophy, Layers,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useCompetitionContext } from "@/contexts/CompetitionContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,6 +55,11 @@ const MODULES: ModuleCard[] = [
 export default function EtapaHubPage() {
   const { stageId } = useParams<{ stageId: string }>();
   const eventId = useActiveEventId();
+  const { setSelectedStageId } = useCompetitionContext();
+
+  useEffect(() => {
+    if (stageId) setSelectedStageId(stageId);
+  }, [stageId, setSelectedStageId]);
 
   const { data: stage, isLoading } = useQuery({
     queryKey: ["event_stage", stageId],

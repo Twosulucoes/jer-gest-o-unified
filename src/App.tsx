@@ -9,6 +9,7 @@ import { EventProvider } from "@/contexts/EventContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SuperAdminRoute from "@/components/SuperAdminRoute";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { CompetitionProvider } from "@/contexts/CompetitionContext";
 import AdminLayout from "@/components/AdminLayout";
 import RedirectToEtapas from "@/components/admin/RedirectToEtapas";
 import StageLayout from "@/components/StageLayout";
@@ -197,7 +198,8 @@ const App = () => (
         <ScrollToTop />
         <AuthProvider>
           <EventProvider>
-          <Routes>
+            <CompetitionProvider>
+              <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
@@ -480,7 +482,8 @@ const App = () => (
             <Route path="/a/:token" element={<AtletaPublicProfilePage />} />
             {/* Evento Rules Center routes removed — consolidated into /admin/regras-evento */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
+            </Routes>
+            </CompetitionProvider>
           </EventProvider>
         </AuthProvider>
       </BrowserRouter>

@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useCompetitionContext } from "@/contexts/CompetitionContext";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import SportEventPicker from "@/components/admin/competition/SportEventPicker";
 import CompetitionSummaryCards from "@/components/admin/competition/CompetitionSummaryCards";
@@ -21,8 +22,10 @@ import { useStageScope } from "@/hooks/useStageScope";
 export default function CompeticaoCentralPage() {
   const eventId = useActiveEventId();
   const [searchParams] = useSearchParams();
+  const { selectedSportEventId, setSelectedSportEventId, setSelectedStageId } = useCompetitionContext();
+
   const [sportEventId, setSportEventId] = useState<string | null>(
-    searchParams.get("sport_event_id")
+    searchParams.get("sport_event_id") || selectedSportEventId
   );
   const [currentStep, setCurrentStep] = useState(
     searchParams.get("step") ?? "participants"
@@ -30,6 +33,16 @@ export default function CompeticaoCentralPage() {
 
   // Escopo de etapa (se a página estiver dentro de /admin/etapa/:stageId/...)
   const { isStageScoped, stageId, participantIds: stageParticipantIds } = useStageScope();
+
+  // Sincroniza etapa detectada com o contexto global
+  useEffect(() => {
+    if (stageId) setSelectedStageId(stageId);
+  }, [stageId, setSelectedStageId]);
+
+  // Sincroniza sportEventId selecionado com o contexto global
+  useEffect(() => {
+    setSelectedSportEventId(sportEventId);
+  }, [sportEventId, setSelectedSportEventId]);
 
   const { data: summaryRaw, isLoading: summaryLoading } = useQuery({
     queryKey: ["competition-summary", eventId, sportEventId],

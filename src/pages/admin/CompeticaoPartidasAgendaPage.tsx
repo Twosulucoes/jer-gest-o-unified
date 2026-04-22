@@ -5,11 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useCompetitionContext } from "@/contexts/CompetitionContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import { useStageScope } from "@/hooks/useStageScope";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Pencil, Swords, CalendarDays, MapPin, Eye, Filter, List, Calendar, AlertTriangle, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Swords, MapPin, Eye, List, Calendar, AlertTriangle, AlertCircle } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,12 +34,12 @@ export default function CompeticaoPartidasAgendaPage() {
   const { hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
-  const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError } = useStageScope({ includeMatchIds: true });
+  const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError, stageId } = useStageScope({ includeMatchIds: true });
+  const { selectedSportEventId, setSelectedSportEventId, setSelectedStageId } = useCompetitionContext();
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem("partidas-view") as ViewMode) || "list");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [selectedSportEventId, setSelectedSportEventId] = useState("");
   const [selectedPhaseId, setSelectedPhaseId] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,6 +47,11 @@ export default function CompeticaoPartidasAgendaPage() {
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   useEffect(() => { localStorage.setItem("partidas-view", viewMode); }, [viewMode]);
+
+  // Sincroniza etapa detectada com o contexto global
+  useEffect(() => {
+    if (stageId) setSelectedStageId(stageId);
+  }, [stageId, setSelectedStageId]);
 
   const { data: sportEvents = [] } = useQuery({
     queryKey: ["sport_events", selectedEventId, mySportIds],
@@ -255,7 +261,7 @@ export default function CompeticaoPartidasAgendaPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Modalidade/Prova</label>
-              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => { setSelectedSportEventId(v === "__all__" ? "" : v); setSelectedPhaseId(""); setCurrentPage(1); }} disabled={!selectedEventId}>
+              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => { setSelectedSportEventId(v === "__all__" ? null : v); setSelectedPhaseId(""); setCurrentPage(1); }} disabled={!selectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todas</SelectItem>

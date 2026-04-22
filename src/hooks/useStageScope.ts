@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useCompetitionContext } from "@/contexts/CompetitionContext";
 
 interface UseStageScopeOptions {
   includeMatchIds?: boolean;
@@ -57,7 +58,8 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
   const eventId = useActiveEventId();
   const params = useParams<{ stageId?: string }>();
   const [searchParams] = useSearchParams();
-  const stageId = params.stageId ?? searchParams.get("stage") ?? null;
+  const { selectedStageId } = useCompetitionContext();
+  const stageId = params.stageId ?? searchParams.get("stage") ?? selectedStageId ?? null;
 
   const { data: stage } = useQuery({
     queryKey: ["event_stage_meta", stageId, eventId],
