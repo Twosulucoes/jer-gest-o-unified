@@ -6,9 +6,10 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
+import { useStageScope } from "@/hooks/useStageScope";
 import ModuleHeader from "@/components/admin/ModuleHeader";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, Pencil, Swords, CalendarDays, MapPin, Eye, Filter, List, Calendar, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Plus, Pencil, Swords, CalendarDays, MapPin, Eye, Filter, List, Calendar, AlertTriangle, AlertCircle } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ export default function CompeticaoPartidasAgendaPage() {
   const { hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
+  const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError } = useStageScope({ includeMatchIds: true });
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem("partidas-view") as ViewMode) || "list");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -94,17 +96,14 @@ export default function CompeticaoPartidasAgendaPage() {
   // Filter matches — if coordenador_modalidade, restrict to sport_events from linked sports
   const sportEventIds = sportEvents.map((se: any) => se.id);
 
-  const { data: matches = [], isLoading } = useQuery({
-    queryKey: ["competition_matches", selectedEventId, selectedSportEventId, mySportIds],
+  const { data: matchesRaw = [], isLoading: loadingMatches } = useQuery({
+    queryKey: ["competition_matches", selectedEventId, mySportIds],
     queryFn: async () => {
       if (!selectedEventId) return [];
+      if (mySportIds && mySportIds.length === 0) return [];
       let q = supabase.from("competition_matches").select("*").eq("event_id", selectedEventId).order("match_date").order("start_time");
-      if (selectedSportEventId) {
-        q = q.eq("sport_event_id", selectedSportEventId);
-      } else if (mySportIds && mySportIds.length > 0 && sportEventIds.length > 0) {
+      if (mySportIds && mySportIds.length > 0 && sportEventIds.length > 0) {
         q = q.in("sport_event_id", sportEventIds);
-      } else if (mySportIds && mySportIds.length === 0) {
-        return []; // coordenador without links
       }
       const { data, error } = await q;
       if (error) throw error;
@@ -113,18 +112,25 @@ export default function CompeticaoPartidasAgendaPage() {
     enabled: !!selectedEventId && (!isCoordModalidade || !loadingSportLinks),
   });
 
+  // Apply stage filter if present
+  const matches = isStageScoped && stageMatchIds
+    ? matchesRaw.filter((m) => stageMatchIds.has(m.id))
+    : matchesRaw;
+
   const phasesMap = new Map(phases.map((p) => [p.id, p]));
   const groupsMap = new Map(groups.map((g) => [g.id, g]));
   const venuesMap = new Map(venues.map((v) => [v.id, v]));
   const sportEventsMap = new Map(sportEvents.map((se) => [se.id, se]));
 
   const filtered = matches.filter((m) => {
+    if (selectedSportEventId && m.sport_event_id !== selectedSportEventId) return false;
     if (selectedPhaseId && m.phase_id !== selectedPhaseId) return false;
     if (selectedDate && m.match_date !== selectedDate) return false;
     return true;
   });
 
   const filteredPhases = selectedSportEventId ? phases.filter((p) => p.sport_event_id === selectedSportEventId) : phases;
+
 
   const createMut = useMutation({
     mutationFn: async (v: MatchFormValues) => {
@@ -220,6 +226,26 @@ export default function CompeticaoPartidasAgendaPage() {
         }
       />
 
+      {isStageScoped && stage && (
+        <Alert className="bg-blue-50/50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-900/20">
+          <AlertCircle className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800 dark:text-blue-300">Etapa: {stage.name}</AlertTitle>
+          <AlertDescription className="text-blue-700 dark:text-blue-400">
+            Exibindo apenas partidas com participantes vinculados a esta etapa.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {stageError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro ao carregar escopo da etapa</AlertTitle>
+          <AlertDescription>
+            Não foi possível filtrar as partidas pela etapa selecionada ({stageError.message}).
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
@@ -251,6 +277,7 @@ export default function CompeticaoPartidasAgendaPage() {
           </div>
         </CardContent>
       </Card>
+
 
       {/* Content */}
       {!selectedEventId || (!isLoading && !filtered.length) ? emptyState : isLoading ? (
