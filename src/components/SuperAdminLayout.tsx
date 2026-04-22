@@ -31,9 +31,9 @@ const navItems: NavItem[] = [
   { label: "Logs do Sistema", to: "/super/logs", icon: <ScrollText className="h-4 w-4" /> },
   { label: "Configurações", to: "/super/config", icon: <Settings className="h-4 w-4" /> },
   { label: "Permissões", to: "/super/permissoes", icon: <ShieldCheck className="h-4 w-4" /> },
-  { label: "Central de Dados", to: "/admin/dados", icon: <DatabaseIcon className="h-4 w-4" /> },
-  { label: "Diagnóstico Sistema", to: "/admin/sistema/diagnostico", icon: <Info className="h-4 w-4" /> },
-  { label: "Validador de Schema", to: "/admin/schema/validador", icon: <CheckCircle className="h-4 w-4" /> },
+  { label: "Central de Dados", to: "/super/dados", icon: <DatabaseIcon className="h-4 w-4" /> },
+  { label: "Diagnóstico Sistema", to: "/super/diagnostico", icon: <Info className="h-4 w-4" /> },
+  { label: "Validador de Schema", to: "/super/validador", icon: <CheckCircle className="h-4 w-4" /> },
 ];
 
 function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: boolean; onClick?: () => void }) {
