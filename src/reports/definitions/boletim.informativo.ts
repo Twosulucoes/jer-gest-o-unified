@@ -84,7 +84,7 @@ export const boletimInformativoReport: ReportDefinition = {
       } else {
         resultsData.push({ 
           section: 'Avisos Gerais', 
-          content: 'Nenhum comunicado oficial publicado para esta data.' 
+          content: 'Nenhum comunicado oficial publicado para esta data. Tente alterar o filtro de data.' 
         });
       }
 
