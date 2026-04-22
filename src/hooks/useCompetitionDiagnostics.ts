@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getAllCatalogTables, getAllCatalogRpcs, competitionFeatureCatalog } from "@/config/competitionFeatureCatalog";
+import { BULLETIN_STATUS } from "@/lib/resultStatus";
 
 export interface DiagnosticKpis {
   sport_events: number | null;
@@ -128,7 +129,7 @@ async function runDiagnostics(eventId: string | null): Promise<DiagnosticResult>
   // Bulletins published
   let bulletins_published: number | null = null;
   try {
-    let q = supabase.from("official_bulletins").select("id", { count: "exact", head: true }).eq("status", "publicado");
+    let q = supabase.from("official_bulletins").select("id", { count: "exact", head: true }).eq("status", BULLETIN_STATUS.PUBLICADO);
     if (eventId) q = q.eq("event_id", eventId);
     const { count } = await q;
     bulletins_published = count ?? 0;

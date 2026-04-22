@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Loader2, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { RESULT_STATUS } from "@/lib/resultStatus";
 
 interface PublishedRow {
   match_id: string;
@@ -45,7 +46,7 @@ export default function DebugPublicadosPage() {
             )
           )
         `)
-        .eq("result_status", "publicado")
+        .eq("result_status", RESULT_STATUS.PUBLISHED)
         .eq("competition_matches.event_id", eventId)
         .order("published_at", { ascending: false });
 
@@ -90,7 +91,7 @@ export default function DebugPublicadosPage() {
     mutationFn: async (resultIds: string[]) => {
       const { error } = await supabase
         .from("competition_match_results")
-        .update({ result_status: "resultado_validado", published_at: null, published_bulletin_id: null, published_by: null })
+        .update({ result_status: RESULT_STATUS.VALIDATED, published_at: null, published_bulletin_id: null, published_by: null })
         .in("id", resultIds);
       if (error) throw error;
     },

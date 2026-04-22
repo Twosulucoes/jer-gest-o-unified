@@ -230,7 +230,7 @@ export type Database = {
           recorded_at: string
           recorded_by: string
           restart_announced_at: string | null
-          result_status: string
+          result_status: Database["public"]["Enums"]["match_result_status"]
           result_text: string | null
           result_type: string | null
           score: string | null
@@ -266,7 +266,7 @@ export type Database = {
           recorded_at?: string
           recorded_by: string
           restart_announced_at?: string | null
-          result_status?: string
+          result_status?: Database["public"]["Enums"]["match_result_status"]
           result_text?: string | null
           result_type?: string | null
           score?: string | null
@@ -302,7 +302,7 @@ export type Database = {
           recorded_at?: string
           recorded_by?: string
           restart_announced_at?: string | null
-          result_status?: string
+          result_status?: Database["public"]["Enums"]["match_result_status"]
           result_text?: string | null
           result_type?: string | null
           score?: string | null
@@ -3435,7 +3435,7 @@ export type Database = {
           published_at: string | null
           published_by: string | null
           rectifies_bulletin_id: string | null
-          status: string
+          status: Database["public"]["Enums"]["bulletin_status"]
           title: string
           updated_at: string
           updated_by: string | null
@@ -3451,7 +3451,7 @@ export type Database = {
           published_at?: string | null
           published_by?: string | null
           rectifies_bulletin_id?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["bulletin_status"]
           title: string
           updated_at?: string
           updated_by?: string | null
@@ -3467,7 +3467,7 @@ export type Database = {
           published_at?: string | null
           published_by?: string | null
           rectifies_bulletin_id?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["bulletin_status"]
           title?: string
           updated_at?: string
           updated_by?: string | null
@@ -6519,7 +6519,9 @@ export type Database = {
           outcome: string | null
           points: number | null
           position: number | null
-          result_status: string | null
+          result_status:
+            | Database["public"]["Enums"]["match_result_status"]
+            | null
           score: string | null
           sport_event_id: string | null
           sport_event_name: string | null
@@ -7162,8 +7164,13 @@ export type Database = {
         | "coordenador_modalidade"
         | "mesario"
         | "super_admin"
+      bulletin_status: "rascunho" | "publicado" | "cancelado"
       incident_module: "transporte" | "alimentacao" | "alojamento" | "outro"
       incident_status: "pending" | "in_progress" | "resolved"
+      match_result_status:
+        | "resultado_lancado"
+        | "resultado_validado"
+        | "publicado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7305,8 +7312,14 @@ export const Constants = {
         "mesario",
         "super_admin",
       ],
+      bulletin_status: ["rascunho", "publicado", "cancelado"],
       incident_module: ["transporte", "alimentacao", "alojamento", "outro"],
       incident_status: ["pending", "in_progress", "resolved"],
+      match_result_status: [
+        "resultado_lancado",
+        "resultado_validado",
+        "publicado",
+      ],
     },
   },
 } as const

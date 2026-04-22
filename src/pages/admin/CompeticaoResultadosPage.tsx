@@ -17,18 +17,19 @@ import { useStageScope } from "@/hooks/useStageScope";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { RESULT_STATUS, RESULT_STATUS_LABEL, RESULT_STATUS_VARIANT } from "@/lib/resultStatus";
 
-type ResultStatusFilter = "all" | "sem_resultado" | "resultado_lancado" | "resultado_validado" | "publicado";
+type ResultStatusFilter = "all" | "sem_resultado" | typeof RESULT_STATUS.LAUNCHED | typeof RESULT_STATUS.VALIDATED | typeof RESULT_STATUS.PUBLISHED;
 
 const STATUS_LABELS: Record<string, string> = {
-  resultado_lancado: "Lançado",
-  resultado_validado: "Validado",
-  publicado: "Publicado",
+  [RESULT_STATUS.LAUNCHED]: RESULT_STATUS_LABEL[RESULT_STATUS.LAUNCHED],
+  [RESULT_STATUS.VALIDATED]: RESULT_STATUS_LABEL[RESULT_STATUS.VALIDATED],
+  [RESULT_STATUS.PUBLISHED]: RESULT_STATUS_LABEL[RESULT_STATUS.PUBLISHED],
 };
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  resultado_lancado: "outline",
-  resultado_validado: "default",
-  publicado: "secondary",
+  [RESULT_STATUS.LAUNCHED]: RESULT_STATUS_VARIANT[RESULT_STATUS.LAUNCHED],
+  [RESULT_STATUS.VALIDATED]: RESULT_STATUS_VARIANT[RESULT_STATUS.VALIDATED],
+  [RESULT_STATUS.PUBLISHED]: RESULT_STATUS_VARIANT[RESULT_STATUS.PUBLISHED],
 };
 
 export default function CompeticaoResultadosPage() {
@@ -122,12 +123,12 @@ export default function CompeticaoResultadosPage() {
     const rs = resultsByMatch.get(m.id);
     if (!rs || rs.length === 0) {
       matchResultStatus.set(m.id, "sem_resultado");
-    } else if (rs.every((r) => r.result_status === "publicado")) {
-      matchResultStatus.set(m.id, "publicado");
-    } else if (rs.every((r) => r.result_status === "resultado_validado" || r.result_status === "publicado")) {
-      matchResultStatus.set(m.id, "resultado_validado");
+    } else if (rs.every((r) => r.result_status === RESULT_STATUS.PUBLISHED)) {
+      matchResultStatus.set(m.id, RESULT_STATUS.PUBLISHED);
+    } else if (rs.every((r) => r.result_status === RESULT_STATUS.VALIDATED || r.result_status === RESULT_STATUS.PUBLISHED)) {
+      matchResultStatus.set(m.id, RESULT_STATUS.VALIDATED);
     } else {
-      matchResultStatus.set(m.id, "resultado_lancado");
+      matchResultStatus.set(m.id, RESULT_STATUS.LAUNCHED);
     }
   });
 
@@ -147,7 +148,7 @@ export default function CompeticaoResultadosPage() {
   };
 
   // Counts
-  const counts = { all: stageScopedMatches.length, sem_resultado: 0, resultado_lancado: 0, resultado_validado: 0, publicado: 0 };
+  const counts = { all: stageScopedMatches.length, sem_resultado: 0, [RESULT_STATUS.LAUNCHED]: 0, [RESULT_STATUS.VALIDATED]: 0, [RESULT_STATUS.PUBLISHED]: 0 };
   stageScopedMatches.forEach((m) => { const s = matchResultStatus.get(m.id) ?? "sem_resultado"; counts[s as keyof typeof counts]++; });
 
   return (
@@ -192,9 +193,9 @@ export default function CompeticaoResultadosPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos ({counts.all})</SelectItem>
                   <SelectItem value="sem_resultado">Sem resultado ({counts.sem_resultado})</SelectItem>
-                  <SelectItem value="resultado_lancado">Lançado ({counts.resultado_lancado})</SelectItem>
-                  <SelectItem value="resultado_validado">Validado ({counts.resultado_validado})</SelectItem>
-                  <SelectItem value="publicado">Publicado ({counts.publicado})</SelectItem>
+                  <SelectItem value={RESULT_STATUS.LAUNCHED}>Lançado ({counts[RESULT_STATUS.LAUNCHED]})</SelectItem>
+                  <SelectItem value={RESULT_STATUS.VALIDATED}>Validado ({counts[RESULT_STATUS.VALIDATED]})</SelectItem>
+                  <SelectItem value={RESULT_STATUS.PUBLISHED}>Publicado ({counts[RESULT_STATUS.PUBLISHED]})</SelectItem>
                 </SelectContent>
               </Select>
             </div>

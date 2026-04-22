@@ -18,6 +18,7 @@ import {
   AlertTriangle, CheckCircle2, Lock, Clock, Eye, Dumbbell,
   ToggleLeft, ToggleRight,
 } from "lucide-react";
+import { RESULT_STATUS } from "@/lib/resultStatus";
 
 // ── Types ──────────────────────────────────────────────────
 type ProvaStatus = "bloqueada" | "nao_iniciada" | "em_andamento" | "com_pendencia" | "concluida";
@@ -250,8 +251,8 @@ export default function CompeticaoPainelPage() {
       const matchesPublished = new Set<string>();
       for (const r of allResults ?? []) {
         matchesWithResult.add(r.match_id);
-        if (r.result_status === "validado" || r.result_status === "publicado") matchesValidated.add(r.match_id);
-        if (r.result_status === "publicado") matchesPublished.add(r.match_id);
+        if (r.result_status === RESULT_STATUS.VALIDATED || r.result_status === RESULT_STATUS.PUBLISHED) matchesValidated.add(r.match_id);
+        if (r.result_status === RESULT_STATUS.PUBLISHED) matchesPublished.add(r.match_id);
       }
 
       // Update matchBySe with result counts
