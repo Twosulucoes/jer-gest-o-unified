@@ -2,13 +2,11 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useCredentialLookup } from "@/hooks/useCredentialLookup";
 import { toast } from "sonner";
 import {
-  Building, Search, Loader2, UserPlus, LogIn, LogOut, QrCode, AlertTriangle,
+  Building, QrCode, LogIn, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,13 +19,8 @@ export default function AlojamentoOcupacaoPage() {
   const qc = useQueryClient();
   const { user, hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
-  const { isStageScoped, stageId, participantIds: stageParticipantIds } = useStageScope();
+  const { isStageScoped, stageId } = useStageScope();
   const [selectedUnitId, setSelectedUnitId] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [qrCode, setQrCode] = useState("");
-  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; gender: string } | null>(null);
-  const [qrError, setQrError] = useState<string | null>(null);
-  const { lookupByQrCode, loading: qrLoading } = useCredentialLookup();
   const canOperate = hasRole("admin") || hasRole("secretaria");
 
   const { data: events = [] } = useQuery({
@@ -117,72 +110,6 @@ export default function AlojamentoOcupacaoPage() {
   const selectedUnit = units.find((u) => u.id === selectedUnitId);
   const unitFull = selectedUnit ? activeOccupancies.length >= selectedUnit.capacity : false;
 
-  // Search participants — restrito à etapa quando aplicável
-  const { data: searchResults = [], isFetching: searching } = useQuery({
-    queryKey: ["search-participants-lodging", selectedEventId, searchTerm, stageId, stageParticipantIds?.size ?? -1],
-    queryFn: async () => {
-      if (!searchTerm || searchTerm.length < 2 || !selectedEventId) return [];
-      const { data: ppl, error: pplErr } = await supabase
-        .from("people")
-        .select("id, full_name, cpf, gender")
-        .or(`full_name.ilike.%${searchTerm}%,cpf.eq.${searchTerm}`)
-        .limit(20);
-      if (pplErr) throw pplErr;
-      if (!ppl.length) return [];
-
-      const personIds = ppl.map((p) => p.id);
-      let pq = supabase
-        .from("participants")
-        .select("id, person_id, status, participant_type")
-        .eq("event_id", selectedEventId)
-        .eq("is_active", true)
-        .in("person_id", personIds);
-      if (isStageScoped && stageParticipantIds) {
-        if (stageParticipantIds.size === 0) return [];
-        pq = pq.in("id", Array.from(stageParticipantIds));
-      }
-      const { data: parts, error: partsErr } = await pq;
-      if (partsErr) throw partsErr;
-
-      const mapped = parts.map((pt) => ({
-        ...pt,
-        person: ppl.find((p) => p.id === pt.person_id),
-      }));
-      if (isStageScoped && stageParticipantIds) {
-        return mapped.filter((pt) => stageParticipantIds.has(pt.id));
-      }
-      return mapped;
-    },
-    enabled: !!searchTerm && searchTerm.length >= 2 && !!selectedEventId && (!isStageScoped || !!stageParticipantIds),
-  });
-
-  // Allocate participant
-  const allocateMut = useMutation({
-    mutationFn: async (participantId: string) => {
-      const { error } = await supabase.from("lodging_occupancies").insert({
-        unit_id: selectedUnitId,
-        event_id: selectedEventId,
-        participant_id: participantId,
-        status: "allocated",
-        checked_in_by: user!.id,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["lodging_occupancies", selectedUnitId] });
-      toast.success("Participante alocado!");
-    },
-    onError: (e: Error) => {
-      if (e.message?.includes("uq_lodging_active_occupancy")) {
-        toast.error("Participante já possui alocação ativa neste evento.");
-      } else if (e.message?.includes("capacity")) {
-        toast.error("Capacidade da unidade atingida.");
-      } else {
-        toast.error("Erro: " + e.message);
-      }
-    },
-  });
-
   // Check-in
   const checkinMut = useMutation({
     mutationFn: async (occId: string) => {
@@ -216,7 +143,6 @@ export default function AlojamentoOcupacaoPage() {
     },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
-
   const statusLabel = (s: string) => s === "allocated" ? "Alocado" : s === "checked_in" ? "Check-in" : "Check-out";
   const statusVariant = (s: string): "default" | "secondary" | "outline" => s === "checked_in" ? "default" : s === "allocated" ? "outline" : "secondary";
 
@@ -282,107 +208,26 @@ export default function AlojamentoOcupacaoPage() {
         </div>
       )}
 
-      {/* Search to allocate */}
+      {/* Alocar participante - Substituído por botão para PWA */}
       {canOperate && selectedUnitId && !unitFull && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Alocar participante</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* QR Code lookup */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block flex items-center gap-1">
-                <QrCode className="h-3 w-3" /> Busca por QR Code
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Escanear ou colar código QR..."
-                  value={qrCode}
-                  onChange={(e) => { setQrCode(e.target.value); setQrResult(null); setQrError(null); }}
-                  onKeyDown={async (e) => {
-                    if (e.key === "Enter" && qrCode.trim() && selectedEventId) {
-                      const { data, error } = await lookupByQrCode(qrCode.trim(), selectedEventId);
-                      if (error) { setQrError(error.message); setQrResult(null); }
-                      else if (data) {
-                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, gender: data.gender ?? "male" });
-                        setQrError(null);
-                      }
-                    }
-                  }}
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!qrCode.trim() || qrLoading}
-                  onClick={async () => {
-                    if (qrCode.trim() && selectedEventId) {
-                      const { data, error } = await lookupByQrCode(qrCode.trim(), selectedEventId);
-                      if (error) { setQrError(error.message); setQrResult(null); }
-                      else if (data) {
-                        setQrResult({ name: data.person_name, participantId: data.participant_id, cpf: data.person_cpf, gender: data.gender ?? "male" });
-                        setQrError(null);
-                      }
-                    }
-                  }}
-                >
-                  {qrLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
-                </Button>
-              </div>
-              {qrError && (
-                <div className="mt-2 flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="h-4 w-4" /> {qrError}
-                </div>
-              )}
-              {qrResult && (
-                <div className="mt-2 flex items-center justify-between rounded-lg border px-4 py-2.5 bg-muted/30">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{qrResult.name}</p>
-                    <p className="text-xs text-muted-foreground">{qrResult.cpf ?? "Sem CPF"} • {qrResult.gender === "male" ? "M" : "F"}</p>
-                  </div>
-                  {activeParticipantIds.has(qrResult.participantId) ? (
-                    <Badge variant="secondary">Já alocado</Badge>
-                  ) : (
-                    <Button size="sm" onClick={() => { allocateMut.mutate(qrResult.participantId); setQrCode(""); setQrResult(null); }} disabled={allocateMut.isPending}>
-                      <UserPlus className="mr-1 h-3 w-3" /> Alocar
-                    </Button>
-                  )}
-                </div>
-              )}
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="pt-6 pb-6 flex flex-col items-center text-center space-y-4">
+            <div className="bg-primary/10 p-3 rounded-full">
+              <QrCode className="h-8 w-8 text-primary" />
             </div>
-
-            {/* Manual search */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block flex items-center gap-1">
-                <Search className="h-3 w-3" /> Busca manual por nome/CPF
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar por nome ou CPF..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
-              </div>
+            <div className="max-w-md">
+              <h3 className="text-lg font-bold text-foreground">Alocar Participante</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                A alocação de participantes e realização de check-in agora deve ser feita através do módulo PWA para melhor experiência e suporte a leitura de QR Code.
+              </p>
             </div>
-            {searching && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Buscando...</div>}
-            {searchResults.length > 0 && (
-              <div className="rounded-lg border divide-y max-h-60 overflow-y-auto">
-                {searchResults.map((sr) => {
-                  const alreadyHere = activeParticipantIds.has(sr.id);
-                  return (
-                    <div key={sr.id} className="flex items-center justify-between px-4 py-2.5">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{sr.person?.full_name ?? "—"}</p>
-                        <p className="text-xs text-muted-foreground">{sr.person?.cpf ?? "Sem CPF"} • {sr.person?.gender === "male" ? "M" : "F"}</p>
-                      </div>
-                      {alreadyHere ? (
-                        <Badge variant="secondary">Já alocado</Badge>
-                      ) : (
-                        <Button size="sm" onClick={() => allocateMut.mutate(sr.id)} disabled={allocateMut.isPending}>
-                          <UserPlus className="mr-1 h-3 w-3" /> Alocar
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <Button 
+              size="lg" 
+              className="w-full max-w-xs"
+              onClick={() => window.location.href = "/pwa/alojamento"}
+            >
+              Ir para Alocação (PWA)
+            </Button>
           </CardContent>
         </Card>
       )}
