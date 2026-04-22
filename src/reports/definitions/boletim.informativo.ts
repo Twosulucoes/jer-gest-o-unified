@@ -1,3 +1,4 @@
+import { parseISO, isValid, format, startOfDay, endOfDay } from 'date-fns';
 import type { ReportDefinition } from '../core/types';
 
 /**
@@ -26,12 +27,27 @@ export const boletimInformativoReport: ReportDefinition = {
     type: 'custom',
     customLoader: async (filters, _ctx, supabase) => {
       const eventId = filters?.event_id as string;
-      const date = filters?.date as string;
+      const dateRaw = filters?.date as string;
 
-      if (!eventId || !date) {
-        console.error('Boletim Informativo: Filtros obrigatórios ausentes', { eventId, date });
+      if (!eventId || !dateRaw) {
+        console.error('Boletim Informativo: Filtros obrigatórios ausentes', { eventId, dateRaw });
         return [];
       }
+
+      // 1. Validação e normalização (timezone/local vs UTC)
+      const parsedDate = parseISO(dateRaw);
+      if (!isValid(parsedDate)) {
+        console.error('Boletim Informativo: Data inválida', { dateRaw });
+        return [];
+      }
+
+      // Normalização: Data formatada para colunas DATE (YYYY-MM-DD)
+      const date = format(parsedDate, 'yyyy-MM-dd');
+      
+      // Início e fim do dia para colunas TIMESTAMPTZ (published_at)
+      // Usamos startOfDay/endOfDay para respeitar o contexto local do relatório
+      const dayStart = startOfDay(parsedDate).toISOString();
+      const dayEnd = endOfDay(parsedDate).toISOString();
 
       const includeSchedule = filters.include_schedule ?? true;
       const includeResults = filters.include_results ?? true;
@@ -48,8 +64,8 @@ export const boletimInformativoReport: ReportDefinition = {
         .select('title, content_md', { count: 'exact' })
         .eq('event_id', eventId)
         .eq('status', 'publicado')
-        .gte('published_at', `${date}T00:00:00Z`)
-        .lte('published_at', `${date}T23:59:59Z`)
+        .gte('published_at', dayStart)
+        .lte('published_at', dayEnd)
         .range(from, to);
 
       if (bulletins && bulletins.length > 0) {
