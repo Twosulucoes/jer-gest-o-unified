@@ -182,6 +182,9 @@ export default function AlimentacaoConsumoPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["meal_consumptions", selectedWindowId] });
       toast.success("Consumo registrado!");
+      setShowReview(false);
+      setQrCode("");
+      setQrResult(null);
     },
     onError: (e: any) => {
       const msg = e?.message ?? "";
