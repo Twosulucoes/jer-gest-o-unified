@@ -245,11 +245,37 @@ export default function QrCodeScanner({
     }
   }, [torchOn, containerId]);
 
-  const handleManualSubmit = () => {
-    const val = manualCode.trim();
-    if (!val) return;
-    handleDetectedRef.current(val);
-    setManualCode("");
+  const handleManualSubmit = useCallback(() => {
+    const val = manualCode.trim().toUpperCase();
+    if (!val) {
+      setManualError("CÓDIGO VAZIO");
+      return;
+    }
+    
+    setManualError("");
+    
+    if (!isValidPayload(val)) {
+      setManualError("PADRÃO INVÁLIDO");
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      return;
+    }
+
+    setIsValidating(true);
+    if (navigator.vibrate) navigator.vibrate(50);
+    
+    setTimeout(() => {
+      if (mountedRef.current) {
+        setIsValidating(false);
+        handleDetectedRef.current(val);
+        setManualCode("");
+      }
+    }, 600);
+  }, [manualCode, isValidPayload]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setManualCode(val.toUpperCase());
+    if (manualError) setManualError("");
   };
 
   const handleClose = useCallback(() => {
