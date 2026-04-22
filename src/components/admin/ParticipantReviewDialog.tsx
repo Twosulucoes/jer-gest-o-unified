@@ -26,7 +26,9 @@ interface ParticipantReviewDialogProps {
   onOpenChange: (open: boolean) => void;
   participant: ParticipantData | null;
   onConfirm: () => void;
+  onCancel?: () => void;
   confirmLabel?: string;
+  cancelLabel?: string;
   title?: string;
   statusColor?: string;
   statusLabel?: string;
