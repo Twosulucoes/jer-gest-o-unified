@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { getSelectedFacility } from "@/hooks/useAlojamento";
-import { ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 
 export default function AlojamentoNovoIncidentePage() {
   const navigate = useNavigate();
@@ -46,24 +47,21 @@ export default function AlojamentoNovoIncidentePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate(-1)} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <AlertTriangle className="h-5 w-5 text-amber-500" />
-        <span className="font-semibold text-foreground">Nova Ocorrência</span>
-      </header>
+      <AlojamentoNavHeader currentPathLabel="Nova Ocorrência" />
 
-      <main className="p-4 max-w-md mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Registrar ocorrência</CardTitle>
+      <main className="p-4 max-w-md mx-auto pb-20">
+        <Card className="rounded-2xl border-border/60 shadow-md">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              Registrar ocorrência
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             <div className="space-y-2">
-              <Label>Severidade</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Severidade</Label>
               <Select value={severity} onValueChange={setSeverity}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="baixa">Baixa</SelectItem>
                   <SelectItem value="media">Média</SelectItem>
@@ -73,9 +71,9 @@ export default function AlojamentoNovoIncidentePage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Categoria</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Categoria</Label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="geral">Geral</SelectItem>
                   <SelectItem value="disciplina">Disciplina</SelectItem>
@@ -87,16 +85,21 @@ export default function AlojamentoNovoIncidentePage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Descrição</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição</Label>
               <Textarea
                 placeholder="Descreva a ocorrência..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
+                className="rounded-xl bg-muted/20 border-border/60"
               />
             </div>
 
-            <Button className="w-full h-12" onClick={handleSave} disabled={saving || !description.trim()}>
+            <Button 
+              className="w-full h-12 rounded-xl font-bold text-lg" 
+              onClick={handleSave} 
+              disabled={saving || !description.trim()}
+            >
               {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Registrar"}
             </Button>
           </CardContent>

@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSelectedFacility } from "@/hooks/useAlojamento";
-import { ArrowLeft, AlertTriangle, Plus } from "lucide-react";
+import { AlertTriangle, Plus } from "lucide-react";
+import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 
 interface Incident {
   id: string;
@@ -52,45 +53,49 @@ export default function AlojamentoIncidentesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b bg-card px-4 h-14">
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate("/pwa/alojamento")} className="text-muted-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <AlertTriangle className="h-5 w-5 text-[hsl(var(--module-accent))]" />
-          <span className="font-semibold text-foreground">Ocorrências</span>
-        </div>
-        <Button size="sm" variant="module" onClick={() => navigate("/pwa/alojamento/incidentes/nova")}>
-          <Plus className="h-4 w-4 mr-1" /> Nova
-        </Button>
-      </header>
+      <AlojamentoNavHeader currentPathLabel="Ocorrências" />
 
-      <main className="p-4 max-w-md mx-auto space-y-4">
-        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="aberta">Abertas</TabsTrigger>
-            <TabsTrigger value="em_atendimento">Atendimento</TabsTrigger>
-            <TabsTrigger value="resolvida">Resolvidas</TabsTrigger>
-          </TabsList>
-        </Tabs>
+      <main className="p-4 max-w-md mx-auto space-y-4 pb-20">
+        <div className="flex items-center justify-between">
+          <Tabs value={statusFilter} onValueChange={setStatusFilter} className="flex-1 mr-2">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="aberta">Abertas</TabsTrigger>
+              <TabsTrigger value="em_atendimento">Atendimento</TabsTrigger>
+              <TabsTrigger value="resolvida">Resolvidas</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button size="icon" variant="module" className="h-9 w-9 rounded-xl" onClick={() => navigate("/pwa/alojamento/incidentes/nova")}>
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
 
         {loading ? (
-          <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
+          <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}</div>
         ) : incidents.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">Nenhuma ocorrência</div>
+          <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-2xl border-dashed">
+             <AlertTriangle className="h-10 w-10 mx-auto mb-2 opacity-30" />
+             <p className="text-sm">Nenhuma ocorrência encontrada</p>
+          </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {incidents.map((inc) => (
-              <Card key={inc.id}>
-                <CardContent className="p-3 space-y-1">
+              <Card key={inc.id} className="overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+                <CardContent className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <Badge className={severityColors[inc.severity]}>{inc.severity}</Badge>
-                    <Badge variant="outline">{inc.category}</Badge>
+                    <Badge variant="outline" className={`${severityColors[inc.severity]} border-0 text-[10px] font-bold uppercase`}>
+                      {inc.severity}
+                    </Badge>
+                    <Badge variant="secondary" className="text-[10px] font-bold uppercase">{inc.category}</Badge>
                   </div>
-                  <p className="text-sm line-clamp-2">{inc.description}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(inc.created_at).toLocaleString("pt-BR")} · {statusLabels[inc.status]}
-                  </p>
+                  <p className="text-sm font-medium text-foreground/90 line-clamp-2">{inc.description}</p>
+                  <div className="flex items-center justify-between pt-1 border-t border-border/40">
+                    <p className="text-[10px] text-muted-foreground font-medium">
+                      {new Date(inc.created_at).toLocaleString("pt-BR", { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    <Badge variant="outline" className="text-[10px] border-border/60">
+                      {statusLabels[inc.status]}
+                    </Badge>
+                  </div>
                 </CardContent>
               </Card>
             ))}

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  Users, Building, Search, Phone, Clock, Download, X, DoorOpen, User, PhoneCall, AlertTriangle, Filter,
+  Users, Building, Search, Phone, Clock, Download, X, DoorOpen, User, PhoneCall, AlertTriangle, Filter, LayoutDashboard,
 } from "lucide-react";
 
 interface Guest {
@@ -125,7 +126,11 @@ export default function AlojamentoListaCompletaPage() {
     return guests.filter(g => {
       if (search) {
         const q = search.toLowerCase();
-        if (!g.full_name.toLowerCase().includes(q) && !(g.cpf || "").includes(q)) return false;
+        const matchesName = g.full_name.toLowerCase().includes(q);
+        const matchesCpf = (g.cpf || "").includes(q);
+        const matchesDelegation = (g.delegation_name || "").toLowerCase().includes(q);
+        const matchesUnit = (g.unit_name || "").toLowerCase().includes(q);
+        if (!matchesName && !matchesCpf && !matchesDelegation && !matchesUnit) return false;
       }
       if (unitFilter !== "all" && g.unit_id !== unitFilter) return false;
       if (delegationFilter !== "all" && g.delegation_id !== delegationFilter) return false;
