@@ -112,10 +112,16 @@ interface CommitResult {
 
 export default function ImportacaoPage() {
   const { hasRole } = useAuth();
+  const { stageId } = useParams<{ stageId: string }>();
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
   const selectedEventId = useActiveEventId();
   const [selectedStageId, setSelectedStageId] = useState<string>("");
+
+  // Sync with URL stageId if present
+  useEffect(() => {
+    if (stageId) setSelectedStageId(stageId);
+  }, [stageId]);
   const [file, setFile] = useState<File | null>(null);
   const [validating, setValidating] = useState(false);
   const [committing, setCommitting] = useState(false);
