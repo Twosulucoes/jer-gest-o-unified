@@ -1,9 +1,10 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import {
-  ArrowLeft, Users, XCircle, QrCode,
+  ArrowLeft, Users, XCircle, QrCode, LogOut as AlightIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -106,6 +107,23 @@ export default function TransporteEmbarquePage() {
     const part = participantMap.get(participantId);
     return part ? peopleMap.get(part.person_id) : null;
   };
+
+  // Alight mutation
+  const alightMut = useMutation({
+    mutationFn: async (passengerId: string) => {
+      const { error } = await supabase.from("transport_passengers").update({
+        status: "alighted",
+        alighted_at: new Date().toISOString(),
+        alighted_by: user?.id,
+      }).eq("id", passengerId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transport_passengers", tripId] });
+      toast.success("Desembarque registrado!");
+    },
+    onError: (e: Error) => toast.error("Erro: " + e.message),
+  });
 
   // Already boarded IDs (active)
   const boardedIds = new Set(
@@ -267,23 +285,6 @@ export default function TransporteEmbarquePage() {
           )}
         </CardContent>
       </Card>
-      <ParticipantReviewDialog
-        open={showReview}
-        onOpenChange={setShowReview}
-        participant={qrResult}
-        onConfirm={() => {
-          if (qrResult) {
-            boardMut.mutate(qrResult.participantId);
-          }
-        }}
-        confirmLabel={boardedIds.has(qrResult?.participantId ?? "") ? "Já Embarcado" : "Registrar Embarque"}
-        loading={boardMut.isPending}
-        title="Validar Embarque"
-        statusLabel={boardedIds.has(qrResult?.participantId ?? "") ? "JÁ EMBARCADO" : "PRONTO PARA EMBARCAR"}
-        statusColor={boardedIds.has(qrResult?.participantId ?? "") ? "bg-muted border-border" : "bg-blue-50 border-blue-200 text-blue-700"}
-        statusIcon={boardedIds.has(qrResult?.participantId ?? "") ? <AlertTriangle className="h-8 w-8 text-muted-foreground" /> : <CheckCircle2 className="h-8 w-8 text-blue-600" />}
-        message={boardedIds.has(qrResult?.participantId ?? "") ? "Este participante já está registrado nesta viagem." : "Confirme os dados para registrar o embarque."}
-      />
     </div>
   );
 }
