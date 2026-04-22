@@ -49,7 +49,6 @@ export const boletimInformativoReport: ReportDefinition = {
       const dayStart = startOfDay(parsedDate).toISOString();
       const dayEnd = endOfDay(parsedDate).toISOString();
 
-
       const includeSchedule = filters.include_schedule ?? true;
       const includeResults = filters.include_results ?? true;
       const pageSize = Number(filters.page_size || 50);
