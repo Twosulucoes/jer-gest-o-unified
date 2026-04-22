@@ -123,7 +123,7 @@ export default function AlojamentoRelatoriosPage() {
           <p className="text-sm text-muted-foreground mt-1">Ocupação atual e histórico por local e delegação</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => window.history.back()}>
+          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
           </Button>
           {canExport && (
