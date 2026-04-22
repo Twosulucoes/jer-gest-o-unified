@@ -309,6 +309,7 @@ export default function ValidacaoQRPage() {
             birth_date: result.participant.birth_date,
           } : null}
           onConfirm={handleNewScan}
+          onCancel={handleNewScan}
           confirmLabel="Confirmar e Próximo"
           statusLabel={resultConfig?.label}
           statusIcon={resultConfig?.icon}
