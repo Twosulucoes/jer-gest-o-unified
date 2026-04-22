@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
@@ -20,10 +20,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export default function CoordenadorModalidadeDashboard() {
   const { profile } = useAuth();
+  const { stageId } = useParams<{ stageId: string }>();
   const eventId = useActiveEventId();
   const { activeEvent } = useEventContext();
   const { sportIds, isLoading: loadingLinks } = useUserSportLinks();
   const [selectedStageId, setSelectedStageId] = useState<string>("");
+
+  // Sync with URL stageId if present
+  useEffect(() => {
+    if (stageId) setSelectedStageId(stageId);
+  }, [stageId]);
 
   // Fetch event stages
   const { data: stages = [], isLoading: loadingStages } = useQuery({
@@ -195,36 +201,37 @@ export default function CoordenadorModalidadeDashboard() {
         </div>
       </div>
 
-      {/* Stage Selection - Mandatory Filter */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="pt-6 pb-6">
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
-            <div className="flex items-center gap-2 text-primary font-semibold shrink-0">
-              <Filter className="h-4 w-4" />
-              <span className="text-sm">Etapa do Evento:</span>
+      {!stageId && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-6 pb-6">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <div className="flex items-center gap-2 text-primary font-semibold shrink-0">
+                <Filter className="h-4 w-4" />
+                <span className="text-sm">Etapa do Evento:</span>
+              </div>
+              <div className="flex-1 max-w-md">
+                <Select value={selectedStageId} onValueChange={setSelectedStageId}>
+                  <SelectTrigger className="bg-background border-primary/20">
+                    <SelectValue placeholder="Selecione a etapa obrigatória..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stages.map((stage) => (
+                      <SelectItem key={stage.id} value={stage.id}>
+                        {stage.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {!selectedStageId && !loadingStages && (
+                <Badge variant="destructive" className="animate-pulse">
+                  Seleção Obrigatória
+                </Badge>
+              )}
             </div>
-            <div className="flex-1 max-w-md">
-              <Select value={selectedStageId} onValueChange={setSelectedStageId}>
-                <SelectTrigger className="bg-background border-primary/20">
-                  <SelectValue placeholder="Selecione a etapa obrigatória..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {stages.map((stage) => (
-                    <SelectItem key={stage.id} value={stage.id}>
-                      {stage.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {!selectedStageId && !loadingStages && (
-              <Badge variant="destructive" className="animate-pulse">
-                Seleção Obrigatória
-              </Badge>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {!selectedStageId ? (
         <Alert className="border-amber-200 bg-amber-50">

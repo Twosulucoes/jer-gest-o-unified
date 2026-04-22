@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { Plus, Pencil, Users, Eye, Search, Layers, ArrowUp, ArrowDown, ArrowUpDown, FolderOpen } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useParams } from "react-router-dom";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -36,6 +36,7 @@ const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondar
 export default function DelegacoesPage() {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
+  const { stageId: urlStageId } = useParams<{ stageId: string }>();
   const selectedEventId = useActiveEventId();
   const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -613,22 +614,24 @@ export default function DelegacoesPage() {
               {cityOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select
-            value={stageId ?? "all"}
-            onValueChange={setStageFilter}
-            disabled={!selectedEventId || eventStages.length === 0}
-          >
-            <SelectTrigger className="w-full sm:w-[220px]">
-              <Layers className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
-              <SelectValue placeholder="Todas as etapas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as etapas</SelectItem>
-              {eventStages.map((s) => (
-                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!urlStageId && (
+            <Select
+              value={stageId ?? "all"}
+              onValueChange={setStageFilter}
+              disabled={!selectedEventId || eventStages.length === 0}
+            >
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <Layers className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
+                <SelectValue placeholder="Todas as etapas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as etapas</SelectItem>
+                {eventStages.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-muted-foreground inline-flex items-center gap-1">

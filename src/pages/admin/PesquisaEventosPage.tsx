@@ -378,31 +378,33 @@ export default function PesquisaEventosPage() {
             </div>
 
             {/* Vinculação de etapa */}
-            <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5">
-                <Layers className="h-3.5 w-3.5 text-primary" />
-                Etapa da competição
-              </Label>
-              <Select
-                value={form.event_stage_id || 'none'}
-                onValueChange={v => setForm(f => ({ ...f, event_stage_id: v === 'none' ? '' : v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma etapa" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— Sem etapa vinculada —</SelectItem>
-                  {stageOptions.map(s => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.event_name} · {s.name} ({KIND_LABELS[s.kind] ?? s.kind})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Necessário para rastrear respostas por fase e gerar relatórios de prestação de contas.
-              </p>
-            </div>
+            {!stageId && (
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  <Layers className="h-3.5 w-3.5 text-primary" />
+                  Etapa da competição
+                </Label>
+                <Select
+                  value={form.event_stage_id || 'none'}
+                  onValueChange={v => setForm(f => ({ ...f, event_stage_id: v === 'none' ? '' : v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma etapa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Sem etapa vinculada —</SelectItem>
+                    {stageOptions.map(s => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.event_name} · {s.name} ({KIND_LABELS[s.kind] ?? s.kind})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Necessário para rastrear respostas por fase e gerar relatórios de prestação de contas.
+                </p>
+              </div>
+            )}
 
             {/* Local + Data */}
             <div className="grid grid-cols-2 gap-3">
