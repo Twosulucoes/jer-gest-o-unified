@@ -27,7 +27,14 @@ export type PwaMessageCode =
   | "SAVING"
   | "REGISTER_BOARDING"
   | "CANCEL"
-  | "SEARCH_MANUALLY";
+  | "SEARCH_MANUALLY"
+  | "CHECKIN_SUCCESS"
+  | "CHECKOUT_SUCCESS"
+  | "ERR_INVALID_QR"
+  | "ERR_SELECT_FACILITY"
+  | "ERR_UNDER_12"
+  | "ERR_ALREADY_STAYING"
+  | "ERR_NOT_STAYING";
 
 export type PwaLang = "pt" | "es";
 
@@ -143,6 +150,34 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
   SEARCH_MANUALLY: {
     pt: "ou buscar manualmente",
     es: "o buscar manualmente",
+  },
+  CHECKIN_SUCCESS: {
+    pt: "Check-in realizado!",
+    es: "¡Check-in realizado!",
+  },
+  CHECKOUT_SUCCESS: {
+    pt: "Check-out realizado!",
+    es: "¡Check-out realizado!",
+  },
+  ERR_INVALID_QR: {
+    pt: "Código QR inválido",
+    es: "Código QR inválido",
+  },
+  ERR_SELECT_FACILITY: {
+    pt: "Selecione um local primeiro",
+    es: "Seleccione un local primero",
+  },
+  ERR_UNDER_12: {
+    pt: "Pessoa com idade inferior a 12 anos",
+    es: "Persona menor de 12 años",
+  },
+  ERR_ALREADY_STAYING: {
+    pt: "Pessoa já está hospedada neste local",
+    es: "Persona ya está alojada en este lugar",
+  },
+  ERR_NOT_STAYING: {
+    pt: "Pessoa não está hospedada neste local",
+    es: "Persona no está alojada en este lugar",
   },
 };
 
