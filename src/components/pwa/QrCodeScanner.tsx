@@ -1,6 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { isNativeApp } from "@/lib/runtime";
 import {
@@ -11,6 +9,8 @@ import {
   Loader2,
   SwitchCamera,
   AlertTriangle,
+  Search,
+  ArrowLeft,
 } from "lucide-react";
 
 interface QrCodeScannerProps {
@@ -30,7 +30,7 @@ export default function QrCodeScanner({
   onClose,
   isOpen,
   allowedPrefixes,
-  title = "Scanner QR",
+  title = "Escanear QR",
   continuous = false,
 }: QrCodeScannerProps) {
   const [state, setState] = useState<ScanState>("idle");
@@ -48,7 +48,6 @@ export default function QrCodeScanner({
   const hintTimer = useRef<ReturnType<typeof setTimeout>>();
   const mountedRef = useRef(true);
 
-  // Keep callbacks in refs to avoid stale closures inside html5-qrcode
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
   const continuousRef = useRef(continuous);
@@ -73,14 +72,11 @@ export default function QrCodeScanner({
     } catch { /* ignore */ }
   }, []);
 
-  const isValidPayload = useCallback(
-    (raw: string) => {
-      const prefs = allowedPrefixesRef.current;
-      if (!prefs?.length) return true;
-      return prefs.some((p) => raw.toUpperCase().startsWith(p.toUpperCase()));
-    },
-    [],
-  );
+  const isValidPayload = useCallback((raw: string) => {
+    const prefs = allowedPrefixesRef.current;
+    if (!prefs?.length) return true;
+    return prefs.some((p) => raw.toUpperCase().startsWith(p.toUpperCase()));
+  }, []);
 
   const handleDetected = useCallback(
     (raw: string) => {
@@ -89,7 +85,6 @@ export default function QrCodeScanner({
         toast.error("Código inválido — QR não reconhecido pelo sistema");
         return;
       }
-      // Prevent duplicate fire for same code
       if (raw === lastScannedRef.current) return;
 
       debounceRef.current = true;
@@ -110,7 +105,6 @@ export default function QrCodeScanner({
     [isValidPayload, stopScanner],
   );
 
-  // Keep handleDetected in a ref for the html5-qrcode callback
   const handleDetectedRef = useRef(handleDetected);
   handleDetectedRef.current = handleDetected;
 
@@ -128,7 +122,6 @@ export default function QrCodeScanner({
       await stopScanner();
 
       try {
-        // Wait for DOM renders
         await new Promise<void>((r) => requestAnimationFrame(() => r()));
         await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
@@ -206,7 +199,6 @@ export default function QrCodeScanner({
     }
   }, []);
 
-  // Auto-start on open
   useEffect(() => {
     if (!isOpen) {
       void stopScanner();
@@ -221,7 +213,6 @@ export default function QrCodeScanner({
     if (isNativeApp()) {
       void startNativeScan();
     } else {
-      // Auto-start camera when scanner opens (web)
       void startScanner(false);
     }
 
@@ -263,129 +254,282 @@ export default function QrCodeScanner({
 
   if (!isOpen) return null;
 
+  const accent = "hsl(var(--tac-accent))";
+  const muted = "hsl(var(--tac-muted))";
+
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
-      <header className="flex items-center justify-between px-4 h-14 border-b bg-card shrink-0">
-        <div className="flex items-center gap-2">
-          <Camera className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-foreground">{title}</span>
+    <div
+      className="tactical-cockpit fixed inset-0 z-50 flex flex-col text-white"
+      style={{ background: "hsl(var(--tac-bg))" }}
+    >
+      {/* Header */}
+      <header
+        className="flex items-center justify-between px-5 border-b shrink-0"
+        style={{
+          background: "hsl(var(--tac-surface))",
+          borderColor: "hsl(var(--tac-border))",
+          height: "calc(56px + env(safe-area-inset-top, 0px))",
+          paddingTop: "env(safe-area-inset-top, 0px)",
+        }}
+      >
+        <button
+          onClick={handleClose}
+          className="flex items-center gap-2 -ml-2 px-3 h-11 rounded-lg transition-colors hover:bg-white/5 active:scale-95"
+          style={{ color: muted }}
+          aria-label="Voltar"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-xs font-medium uppercase tracking-widest">Voltar</span>
+        </button>
+        <div className="flex flex-col items-end">
+          <span className="font-semibold text-sm tracking-wide leading-none">{title}</span>
+          <span className="text-[10px] mt-1 font-mono uppercase tracking-[0.18em]" style={{ color: muted }}>
+            Credencial / Voucher
+          </span>
         </div>
-        <Button variant="ghost" size="icon" onClick={handleClose} className="min-w-[44px] min-h-[44px]">
-          <X className="h-5 w-5" />
-        </Button>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 overflow-auto">
+      {/* Main */}
+      <main className="flex-1 flex flex-col overflow-auto" style={{ background: "hsl(var(--tac-bg))" }}>
         {!manualMode && (
           <>
-            {state === "requesting" && (
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Abrindo câmera…</p>
-              </div>
-            )}
-
-            {state === "error" && (
-              <div className="flex flex-col items-center gap-4 max-w-sm text-center">
-                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
-                  <AlertTriangle className="h-8 w-8 text-destructive" />
+            {/* Viewfinder area */}
+            <div className="flex-1 relative flex flex-col items-center justify-center px-6 py-8 min-h-0">
+              {state === "requesting" && (
+                <div className="flex flex-col items-center gap-3 absolute inset-0 justify-center z-20 pointer-events-none">
+                  <Loader2 className="h-10 w-10 animate-spin" style={{ color: accent }} />
+                  <p className="text-xs font-mono uppercase tracking-widest" style={{ color: muted }}>
+                    Iniciando câmera…
+                  </p>
                 </div>
-                <p className="text-sm text-foreground whitespace-pre-line">{errorMsg}</p>
-                <div className="flex gap-3">
-                  <Button onClick={() => void startScanner(useFront)} className="min-h-[44px]">
-                    Tentar Novamente
-                  </Button>
-                  <Button variant="outline" onClick={() => setManualMode(true)} className="min-h-[44px]">
-                    <Keyboard className="h-4 w-4 mr-2" />
-                    Digitar Código
-                  </Button>
+              )}
+
+              {state === "error" && (
+                <div className="flex flex-col items-center gap-5 max-w-sm text-center tac-rise">
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center border"
+                    style={{
+                      background: "hsl(var(--tac-danger) / 0.1)",
+                      borderColor: "hsl(var(--tac-danger) / 0.4)",
+                    }}
+                  >
+                    <AlertTriangle className="h-8 w-8" style={{ color: "hsl(var(--tac-danger))" }} />
+                  </div>
+                  <p className="text-sm whitespace-pre-line leading-relaxed" style={{ color: "hsl(0 0% 88%)" }}>
+                    {errorMsg}
+                  </p>
+                  <div className="flex gap-3 w-full">
+                    <button
+                      onClick={() => void startScanner(useFront)}
+                      className="flex-1 h-12 rounded-lg font-bold text-sm uppercase tracking-tight active:scale-[0.98] transition-transform"
+                      style={{ background: accent, color: "hsl(var(--tac-bg))" }}
+                    >
+                      Tentar de novo
+                    </button>
+                    <button
+                      onClick={() => setManualMode(true)}
+                      className="flex-1 h-12 rounded-lg font-bold text-sm uppercase tracking-tight border flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                      style={{ borderColor: "hsl(var(--tac-border))", color: "white" }}
+                    >
+                      <Keyboard className="h-4 w-4" />
+                      Digitar
+                    </button>
+                  </div>
                 </div>
+              )}
+
+              {/* Viewfinder bracket frame (always present so html5-qrcode finds the container) */}
+              <div className="relative w-full max-w-xs aspect-square">
+                {/* Camera surface */}
+                <div
+                  id={containerId}
+                  className={
+                    state === "active" || state === "requesting"
+                      ? "absolute inset-0 rounded-2xl overflow-hidden bg-black"
+                      : "absolute -z-10 opacity-0 w-px h-px overflow-hidden"
+                  }
+                />
+
+                {(state === "active" || state === "requesting") && (
+                  <>
+                    {/* Corner brackets */}
+                    {[
+                      "top-0 left-0 border-t-2 border-l-2 rounded-tl-lg",
+                      "top-0 right-0 border-t-2 border-r-2 rounded-tr-lg",
+                      "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-lg",
+                      "bottom-0 right-0 border-b-2 border-r-2 rounded-br-lg",
+                    ].map((cls, i) => (
+                      <div
+                        key={i}
+                        className={`absolute w-7 h-7 ${cls}`}
+                        style={{ borderColor: accent }}
+                      />
+                    ))}
+                    {/* Animated scan line */}
+                    {state === "active" && (
+                      <div className="absolute inset-3 overflow-hidden rounded-lg pointer-events-none">
+                        <div className="tac-scan-line" />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {state === "idle" && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed" style={{ borderColor: "hsl(var(--tac-border))" }}>
+                    <div
+                      className="w-20 h-20 rounded-2xl flex items-center justify-center"
+                      style={{ background: "hsl(var(--tac-accent) / 0.08)", border: `1px solid hsl(var(--tac-accent) / 0.25)` }}
+                    >
+                      <Camera className="h-9 w-9" style={{ color: accent }} />
+                    </div>
+                    <button
+                      onClick={() => void startScanner(useFront)}
+                      className="h-11 px-6 rounded-lg font-bold text-sm uppercase tracking-tight active:scale-[0.98] transition-transform"
+                      style={{ background: accent, color: "hsl(var(--tac-bg))" }}
+                    >
+                      Iniciar câmera
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
 
-            {/* Container always in DOM for html5-qrcode to find it */}
-            <div
-              id={containerId}
-              className={
-                state === "active" || state === "requesting"
-                  ? "w-full max-w-md aspect-square rounded-lg overflow-hidden bg-black relative"
-                  : "w-0 h-0 overflow-hidden"
-              }
-            />
-
-            {hintVisible && state === "active" && (
-              <p className="text-xs text-warning mt-2 text-center animate-pulse">
-                Aponte para o QR code da credencial
-              </p>
-            )}
-
-            {state === "active" && (
-              <div className="flex items-center justify-center gap-4 mt-4">
-                <Button variant="outline" size="icon" onClick={() => void flipCamera()} className="min-w-[44px] min-h-[44px]" title="Alternar câmera">
-                  <SwitchCamera className="h-5 w-5" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={() => void toggleTorch()} className="min-w-[44px] min-h-[44px]" title="Lanterna">
-                  <Flashlight className={`h-5 w-5 ${torchOn ? "text-primary" : ""}`} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    void stopScanner();
-                    setManualMode(true);
-                    setState("idle");
+              {/* Status badge */}
+              {state === "active" && (
+                <div
+                  className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border"
+                  style={{
+                    background: "hsl(var(--tac-accent) / 0.1)",
+                    borderColor: "hsl(var(--tac-accent) / 0.35)",
                   }}
-                  className="min-w-[44px] min-h-[44px]"
-                  title="Digitar código"
                 >
-                  <Keyboard className="h-5 w-5" />
-                </Button>
-              </div>
-            )}
-
-            {state === "idle" && (
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
-                  <Camera className="h-10 w-10 text-primary" />
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: accent }} />
+                  <span className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: accent }}>
+                    Câmera ativa
+                  </span>
                 </div>
-                <Button onClick={() => void startScanner(useFront)} className="h-12 px-8 min-h-[44px]">
-                  <Camera className="h-5 w-5 mr-2" />
-                  Iniciar câmera
-                </Button>
-              </div>
-            )}
+              )}
+
+              {hintVisible && state === "active" && (
+                <p className="text-xs mt-3 text-center animate-pulse font-medium" style={{ color: muted }}>
+                  Aponte para o QR code da credencial
+                </p>
+              )}
+
+              {state === "active" && (
+                <div className="flex items-center justify-center gap-3 mt-5">
+                  <button
+                    onClick={() => void flipCamera()}
+                    className="w-11 h-11 rounded-lg border flex items-center justify-center active:scale-95 transition-transform"
+                    style={{ borderColor: "hsl(var(--tac-border))", background: "hsl(var(--tac-surface))", color: muted }}
+                    title="Alternar câmera"
+                  >
+                    <SwitchCamera className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => void toggleTorch()}
+                    className="w-11 h-11 rounded-lg border flex items-center justify-center active:scale-95 transition-transform"
+                    style={{
+                      borderColor: torchOn ? "hsl(var(--tac-accent) / 0.6)" : "hsl(var(--tac-border))",
+                      background: torchOn ? "hsl(var(--tac-accent) / 0.12)" : "hsl(var(--tac-surface))",
+                      color: torchOn ? accent : muted,
+                    }}
+                    title="Lanterna"
+                  >
+                    <Flashlight className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      void stopScanner();
+                      setManualMode(true);
+                      setState("idle");
+                    }}
+                    className="h-11 px-4 rounded-lg border flex items-center gap-2 active:scale-95 transition-transform"
+                    style={{ borderColor: "hsl(var(--tac-border))", background: "hsl(var(--tac-surface))", color: "white" }}
+                    title="Buscar manualmente"
+                  >
+                    <Keyboard className="h-4 w-4" />
+                    <span className="text-xs font-semibold uppercase tracking-tight">Manual</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Manual fallback footer */}
+            <div
+              className="px-4 pt-3 pb-4 border-t shrink-0"
+              style={{
+                background: "hsl(var(--tac-surface))",
+                borderColor: "hsl(var(--tac-border))",
+                paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+              }}
+            >
+              <p className="text-[10px] font-mono uppercase tracking-[0.2em] mb-2 px-1" style={{ color: muted }}>
+                ou buscar manualmente
+              </p>
+              <button
+                onClick={() => {
+                  void stopScanner();
+                  setManualMode(true);
+                  setState("idle");
+                }}
+                className="w-full h-12 rounded-lg border flex items-center gap-3 px-4 transition-colors hover:bg-white/[0.03]"
+                style={{ borderColor: "hsl(var(--tac-border))", background: "hsl(var(--tac-bg))" }}
+              >
+                <Search className="h-4 w-4 shrink-0" style={{ color: muted }} />
+                <span className="text-sm font-mono" style={{ color: muted }}>
+                  Buscar por nome ou CPF…
+                </span>
+              </button>
+            </div>
           </>
         )}
 
         {manualMode && (
-          <div className="w-full max-w-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium flex items-center gap-2">
-                <Keyboard className="h-4 w-4" />
-                Digitar código
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
+          <div className="flex-1 flex flex-col px-6 py-8 tac-rise">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Keyboard className="h-4 w-4" style={{ color: accent }} />
+                <span className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: accent }}>
+                  Entrada manual
+                </span>
+              </div>
+              <button
                 onClick={() => {
                   setManualMode(false);
                   void startScanner(useFront);
                 }}
+                className="text-xs font-semibold uppercase tracking-tight px-3 h-9 rounded-lg border active:scale-95 transition-transform"
+                style={{ borderColor: "hsl(var(--tac-border))", color: "white" }}
               >
                 Usar câmera
-              </Button>
+              </button>
             </div>
-            <Input
-              placeholder="Digite ou cole o código da credencial"
+
+            <label className="text-[10px] font-mono uppercase tracking-[0.2em] mb-2 px-1" style={{ color: muted }}>
+              Código da credencial / voucher
+            </label>
+            <input
+              autoFocus
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleManualSubmit()}
-              autoFocus
-              className="h-12 text-base"
+              placeholder="Cole ou digite o código…"
+              className="w-full h-14 px-4 rounded-lg border outline-none text-base font-mono transition-colors focus:border-[hsl(var(--tac-accent))]"
+              style={{
+                background: "hsl(var(--tac-surface))",
+                borderColor: "hsl(var(--tac-border))",
+                color: "white",
+              }}
             />
-            <Button className="w-full h-12 min-h-[44px]" disabled={!manualCode.trim()} onClick={handleManualSubmit}>
-              Processar
-            </Button>
+
+            <button
+              disabled={!manualCode.trim()}
+              onClick={handleManualSubmit}
+              className="mt-6 h-14 rounded-lg font-bold uppercase tracking-tight text-base active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: accent, color: "hsl(var(--tac-bg))" }}
+            >
+              Validar código
+            </button>
           </div>
         )}
       </main>
