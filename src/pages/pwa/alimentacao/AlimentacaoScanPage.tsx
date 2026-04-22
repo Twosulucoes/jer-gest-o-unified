@@ -347,7 +347,7 @@ export default function AlimentacaoScanPage() {
                 {manualSearching && (
                   <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm">Buscando…</span>
+                    <span className="text-sm">{getPwaMessage("BUSCANDO", lang)}</span>
                   </div>
                 )}
                 {!manualSearching && manualHits.length === 0 && (
@@ -378,7 +378,7 @@ export default function AlimentacaoScanPage() {
 
         <Button variant="module" className="h-12 w-full rounded-xl font-semibold shadow-app-md" onClick={() => setScannerOpen(true)} disabled={!windowId}>
           <ScanLine className="mr-2 h-5 w-5" />
-          Escanear QR Code
+          {getPwaMessage("SCAN_QR", lang)}
         </Button>
       </main>
 
@@ -386,7 +386,7 @@ export default function AlimentacaoScanPage() {
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleScan}
-        title="Escanear QR"
+        title={getPwaMessage("SCAN_QR", lang)}
       />
     </div>
   );
