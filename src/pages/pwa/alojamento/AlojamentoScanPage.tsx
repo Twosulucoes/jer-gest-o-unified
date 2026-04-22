@@ -131,10 +131,10 @@ export default function AlojamentoScanPage() {
       setResult(res);
 
       if (res.ok) {
-        toast.success(
-          mode === "validate" ? getPwaMessage("QR_VALID", lang) :
-          mode === "checkin" ? getPwaMessage("CHECKIN_SUCCESS", lang) : getPwaMessage("CHECKOUT_SUCCESS", lang)
-        );
+        const msg = mode === "validate" ? getPwaMessage("QR_VALID", lang) :
+                    mode === "checkin" ? getPwaMessage("CHECKIN_SUCCESS", lang) : 
+                    getPwaMessage("CHECKOUT_SUCCESS", lang);
+        toast.success(msg);
         recordOutcome("ok");
         if (navigator.vibrate) navigator.vibrate(200);
         reopenIfContinuous();
