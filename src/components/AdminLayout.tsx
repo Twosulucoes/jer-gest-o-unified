@@ -45,10 +45,17 @@ interface NavGroup {
 const ADMIN_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"];
 
 const dashboardItem: NavItem = {
-  label: "Dashboard Geral",
+  label: "Painel de Gestão",
   to: "/admin",
   icon: <Home className="h-4 w-4" />,
   roles: "all",
+};
+
+const coordDashboardItem: NavItem = {
+  label: "Painel Coordenador",
+  to: "/admin/coordenador-modalidade",
+  icon: <Home className="h-4 w-4" />,
+  roles: ["coordenador_modalidade"],
 };
 
 /**
@@ -268,12 +275,15 @@ export default function AdminLayout() {
 
           {/* Navigation */}
           <nav className={`flex-1 overflow-y-auto py-3 space-y-1 ${collapsed ? "px-2" : "px-3"}`}>
-            {isItemVisible(dashboardItem) && (
+            {isItemVisible(dashboardItem) && !hasRole("coordenador_modalidade") && (
               <NavItemLink item={dashboardItem} collapsed={collapsed} onClick={closeSidebar} />
+            )}
+            {isItemVisible(coordDashboardItem) && (
+              <NavItemLink item={coordDashboardItem} collapsed={collapsed} onClick={closeSidebar} />
             )}
 
             {/* CTA único: Entrar na Etapa */}
-            {(hasRole("admin" as AppRole) || hasRole("secretaria" as AppRole) || hasRole("coordenacao_tecnica" as AppRole) || hasRole("transporte" as AppRole) || hasRole("alimentacao" as AppRole)) && (
+            {(hasRole("admin" as AppRole) || hasRole("secretaria" as AppRole) || hasRole("coordenacao_tecnica" as AppRole) || hasRole("transporte" as AppRole) || hasRole("alimentacao" as AppRole) || hasRole("coordenador_modalidade" as AppRole)) && (
               collapsed ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
