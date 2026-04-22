@@ -130,7 +130,7 @@ export default function AlimentacaoScanPage() {
     foodRestrictions?: string | null,
   ) {
     if (!windowId) {
-      toast.error("Selecione uma janela de refeição primeiro");
+      toast.error(getPwaMessage("ERR_WINDOW_REQUIRED", lang));
       return;
     }
 
@@ -141,7 +141,7 @@ export default function AlimentacaoScanPage() {
       .eq("meal_window_id", windowId);
 
     if ((count || 0) > 0) {
-      setResult({ ok: false, message: "Refeição já registrada nesta janela", source: resultSource });
+      setResult({ ok: false, message: getPwaMessage("ERR_ALREADY_REGISTERED", lang), source: resultSource });
       recordOutcome("error");
       reopenIfContinuous();
       return;
@@ -152,7 +152,7 @@ export default function AlimentacaoScanPage() {
     } = await supabase.auth.getSession();
 
     if (!session?.user.id) {
-      setResult({ ok: false, message: "Sessão expirada. Faça login novamente." });
+      setResult({ ok: false, message: getPwaMessage("ERR_SESSION_EXPIRED", lang) });
       recordOutcome("error");
       return;
     }
@@ -166,11 +166,11 @@ export default function AlimentacaoScanPage() {
 
     if (error) throw error;
 
-    const prefix = method === "voucher" ? "Voucher · " : method === "manual" ? "Manual · " : "";
+    const prefix = method === "voucher" ? "Voucher · " : method === "manual" ? `${getPwaMessage("MANUAL_SEARCH", lang)} · ` : "";
     setResult({
       ok: true,
       source: resultSource,
-      message: `${prefix}Consumo registrado: ${participantName || ""}`,
+      message: `${prefix}${getPwaMessage("SUCCESS_REGISTERED", lang)}: ${participantName || ""}`,
       restrictions: foodRestrictions || undefined,
     });
     recordOutcome("ok");
@@ -183,7 +183,7 @@ export default function AlimentacaoScanPage() {
     if (!rawValue.trim()) return;
 
     if (!windowId) {
-      toast.error("Selecione uma janela de refeição primeiro");
+      toast.error(getPwaMessage("ERR_WINDOW_REQUIRED", lang));
       return;
     }
 
@@ -196,7 +196,7 @@ export default function AlimentacaoScanPage() {
       if (isVoucherQr(rawValue)) {
         const voucher = await tryRedeemVoucher(rawValue, "meals", windowId);
         if (!voucher || !voucher.ok) {
-          setResult({ ok: false, message: voucherReasonLabel(voucher?.reason), source: "qr" });
+          setResult({ ok: false, message: getVoucherMessage(voucher?.reason, lang), source: "qr" });
           recordOutcome("error");
           reopenIfContinuous();
           return;
@@ -207,7 +207,7 @@ export default function AlimentacaoScanPage() {
       } else {
         const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
         if (!resolved) {
-          setResult({ ok: false, message: "Credencial não encontrada ou inativa", source: "qr" });
+          setResult({ ok: false, message: getPwaMessage("ERR_NOT_FOUND", lang), source: "qr" });
           recordOutcome("error");
           return;
         }
@@ -217,14 +217,14 @@ export default function AlimentacaoScanPage() {
       }
 
       if (!participantId) {
-        setResult({ ok: false, message: "Não foi possível identificar a pessoa", source: "qr" });
+        setResult({ ok: false, message: getPwaMessage("ERR_UNKNOWN", lang), source: "qr" });
         recordOutcome("error");
         return;
       }
 
       await registerMealConsumption(participantId, participantName, method, "qr", foodRestrictions);
     } catch (err: unknown) {
-      setResult({ ok: false, message: `Erro ao registrar consumo: ${getErrorMessage(err)}` });
+      setResult({ ok: false, message: `${getPwaMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}` });
       recordOutcome("error");
     }
   };
@@ -235,7 +235,7 @@ export default function AlimentacaoScanPage() {
     try {
       await registerMealConsumption(row.participant_id, row.full_name, "manual", "manual", null);
     } catch (err: unknown) {
-      setResult({ ok: false, message: `Erro ao registrar consumo: ${getErrorMessage(err)}` });
+      setResult({ ok: false, message: `${getPwaMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}` });
       recordOutcome("error");
     }
   };
