@@ -38,8 +38,21 @@ export default function CompeticaoResultadosPage() {
   const selectedEventId = useActiveEventId();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
   const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError, stageId, participantIds: stageParticipantIds } = useStageScope({ includeMatchIds: true });
+  const { selectedSportEventId, setSelectedSportEventId, setSelectedStageId } = useCompetitionContext();
+
   const [statusFilter, setStatusFilter] = useState<ResultStatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [localSportEventId, setLocalSportEventId] = useState<string>(selectedSportEventId || "__all__");
+
+  // Sincroniza etapa detectada com o contexto global
+  useEffect(() => {
+    if (stageId) setSelectedStageId(stageId);
+  }, [stageId, setSelectedStageId]);
+
+  // Sincroniza contexto com estado local
+  useEffect(() => {
+    setSelectedSportEventId(localSportEventId === "__all__" ? null : localSportEventId);
+  }, [localSportEventId, setSelectedSportEventId]);
   const PAGE_SIZE = 20;
 
   const { data: events = [] } = useQuery({
