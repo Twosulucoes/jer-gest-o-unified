@@ -48,6 +48,12 @@ export interface RawResult {
 export interface RawPhase { id: string; name: string; phase_type: string; sort_order: number; status: string; bracket_config: any; }
 export interface RawGroup { id: string; phase_id: string; name: string; sort_order: number; }
 
+export interface ValidationAlert {
+  type: "warning" | "error";
+  message: string;
+  details?: string;
+}
+
 export interface BulletinDataset {
   family: BulletinFamily;
   rules: any | null;
@@ -60,6 +66,7 @@ export interface BulletinDataset {
   sportName: string | null;
   categoryName: string | null;
   genderScope: string | null;
+  validationAlerts: ValidationAlert[];
 }
 
 export function useBulletinData(filters: BulletinFilters) {
