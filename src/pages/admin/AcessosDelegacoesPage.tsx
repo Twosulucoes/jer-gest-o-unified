@@ -170,22 +170,24 @@ export default function AcessosDelegacoesPage() {
   }, [sportLinks]);
 
   // ---- Filter (search) ----
-  const filteredLinks = useMemo(() => {
-    if (!search.trim()) return linksThisEvent;
+  const filteredDelegationUsers = useMemo(() => {
+    if (!search.trim()) return delegationUsers;
     const q = search.toLowerCase();
-    return linksThisEvent.filter((l) => {
-      const u = usersMap.get(l.user_id) as any;
-      const d = delegations.find((x) => x.id === l.delegation_id);
-      const inst = d ? institutionsMap.get(d.institution_id) || "" : "";
-      const name = u?.full_name || "";
-      const email = u?.email || "";
+    return delegationUsers.filter((u: any) => {
+      const name = u.full_name || "";
+      const email = u.email || "";
+      // Procura também na delegação vinculada
+      const link = linksThisEvent.find((l) => l.user_id === u.user_id);
+      const delegation = link ? delegations.find((d) => d.id === link.delegation_id) : null;
+      const inst = delegation ? institutionsMap.get(delegation.institution_id) || "" : "";
+
       return (
         name.toLowerCase().includes(q) ||
         email.toLowerCase().includes(q) ||
         inst.toLowerCase().includes(q)
       );
     });
-  }, [linksThisEvent, search, usersMap, delegations, institutionsMap]);
+  }, [delegationUsers, search, linksThisEvent, delegations, institutionsMap]);
 
   // ---- Mutations ----
   const createMutation = useMutation({
