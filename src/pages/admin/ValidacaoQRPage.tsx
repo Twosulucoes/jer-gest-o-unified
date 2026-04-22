@@ -122,6 +122,10 @@ export default function ValidacaoQRPage() {
     setQrInput("");
     setResult(null);
     setShowConfirm(false);
+    // Use a small timeout to ensure the dialog is closed before focusing
+    setTimeout(() => {
+      document.getElementById("qr-input-field")?.focus();
+    }, 100);
   };
 
   const handleCameraScan = useCallback((raw: string) => {
