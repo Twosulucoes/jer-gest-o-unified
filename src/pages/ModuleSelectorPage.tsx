@@ -31,7 +31,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
     label: "Coord. Modalidade",
     description: "Gestão da modalidade",
     icon: Trophy,
-    path: "/admin",
+    path: "/admin/coordenador-modalidade",
     gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]",
   },
   {
