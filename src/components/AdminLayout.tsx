@@ -11,7 +11,7 @@ import {
   Shield, Settings, AlertTriangle, FileBarChart,
   Info, ExternalLink, ChevronsLeft,
   ChevronsRight, User, FolderOpen,
-  Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList,
+  Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList, Radio, Database as DatabaseIcon, Activity, CheckCircle,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import StageFilterBanner from "@/components/admin/StageFilterBanner";
@@ -72,36 +72,53 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    id: "relatorios", label: "Relatórios", description: "Documentos oficiais e painéis consolidados.",
+    id: "relatorios", label: "Relatórios e Logística", description: "Documentos oficiais e painéis consolidados.",
     icon: <FileBarChart className="h-4 w-4" />,
     items: [
       { label: "Central de Relatórios", to: "/admin/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Boletins por Modalidade", to: "/admin/relatorios/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Logística Consolidada", to: "/admin/logistica/consolidada", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Dashboard Operacional", to: "/admin/relatorios/dashboard", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Quadro de Medalhas", to: "/admin/relatorios/quadro-medalhas", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Prestação de Contas (OSC)", to: "/admin/relatorios/osc", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+    ],
+  },
+  {
+    id: "comunicacao", label: "Comunicação e Visual", description: "Identidade, links e pesquisa.",
+    icon: <Radio className="h-4 w-4" />,
+    items: [
+      { label: "Páginas e Links", to: "/admin/links", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Identidade Visual", to: "/admin/configuracoes/identidade-visual", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
       { label: "Pesquisa de Satisfação", to: "/admin/pesquisa", icon: <ClipboardList className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
   {
-    id: "acessos", label: "Acessos", description: "Usuários, vínculos e links institucionais.",
+    id: "acessos", label: "Acessos", description: "Usuários e permissões.",
     icon: <Users className="h-4 w-4" />,
     items: [
       { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Acessos e Vínculos", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/etapa/redirect/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde", "super_admin"] as AppRole[] },
-      { label: "Links Externos", to: "/admin/links", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
     ],
   },
   {
-    id: "configuracoes", label: "Configurações", description: "Regras, locais, modalidades e categorias.",
+    id: "configuracoes", label: "Configurações", description: "Regras e cadastros técnicos.",
     icon: <Settings className="h-4 w-4" />,
     items: [
       { label: "Regras do Evento", to: "/admin/regras", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Modalidades", to: "/admin/modalidades", icon: <Dumbbell className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Categorias", to: "/admin/categorias", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Identidade Visual", to: "/admin/configuracoes/identidade-visual", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
+    ],
+  },
+  {
+    id: "diagnostico", label: "Diagnóstico e Dados", description: "Ferramentas para Super Admin.",
+    icon: <Activity className="h-4 w-4" />,
+    items: [
+      { label: "Painel Super Admin", to: "/super", icon: <Shield className="h-4 w-4" />, roles: ["super_admin"] },
+      { label: "Central de Dados", to: "/admin/dados", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["super_admin"] },
+      { label: "Diagnóstico Sistema", to: "/admin/sistema/diagnostico", icon: <Info className="h-4 w-4" />, roles: ["super_admin"] },
+      { label: "Validador de Schema", to: "/admin/schema/validador", icon: <CheckCircle className="h-4 w-4" />, roles: ["super_admin"] },
     ],
   },
   {

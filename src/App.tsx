@@ -261,6 +261,7 @@ const App = () => (
               <Route path="transporte/rotas" element={<RedirectToEtapas />} />
               <Route path="transporte/viagens" element={<RedirectToEtapas />} />
               <Route path="transporte/embarque/:tripId" element={<RedirectToEtapas />} />
+              <Route path="logistica/consolidada" element={<RedirectToEtapas />} />
               <Route path="transporte/relatorios" element={<RedirectToEtapas />} />
               {/* Alimentação — operacional, redireciona para Etapa */}
               <Route path="alimentacao" element={<RedirectToEtapas />} />
@@ -304,19 +305,19 @@ const App = () => (
               <Route path="irregularidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><IrregularidadesPage /></ProtectedRoute>} />
               <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />
               {/* Schema Validator */}
-              <Route path="schema/validador" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><SchemaValidadorPage /></ProtectedRoute>} />
+              <Route path="schema/validador" element={<ProtectedRoute allowedRoles={["super_admin"]}><SchemaValidadorPage /></ProtectedRoute>} />
               <Route path="mapa" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
               <Route path="diagnostico-competicao" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
-              <Route path="sistema/diagnostico" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
-              <Route path="dados" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CentralDadosPage /></ProtectedRoute>} />
+              <Route path="sistema/diagnostico" element={<ProtectedRoute allowedRoles={["super_admin"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
+              <Route path="dados" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralDadosPage /></ProtectedRoute>} />
               <Route path="boletins" element={<Navigate to="/admin/relatorios/boletins" replace />} />
               <Route path="relatorios/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />
               <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
               <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
               <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
-              <Route path="seed-logistica" element={<ProtectedRoute allowedRoles={["admin"]}><SeedLogisticaEtapaPage /></ProtectedRoute>} />
-              <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DebugPublicadosPage /></ProtectedRoute>} />
-              <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EmailTemplatesPage /></ProtectedRoute>} />
+              <Route path="seed-logistica" element={<ProtectedRoute allowedRoles={["super_admin"]}><SeedLogisticaEtapaPage /></ProtectedRoute>} />
+              <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["super_admin"]}><DebugPublicadosPage /></ProtectedRoute>} />
+              <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["super_admin"]}><EmailTemplatesPage /></ProtectedRoute>} />
               {/* Pesquisa de Satisfação — operacional, redireciona para Etapa */}
               <Route path="pesquisa" element={<RedirectToEtapas />} />
               <Route path="pesquisa/eventos" element={<RedirectToEtapas />} />
