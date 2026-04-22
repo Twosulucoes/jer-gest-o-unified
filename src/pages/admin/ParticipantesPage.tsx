@@ -689,7 +689,7 @@ export default function ParticipantesPage() {
               </SelectContent>
             </Select>
 
-            {!stageFilterId && (
+            {!urlStageId && (
               <>
                 <span className="text-xs text-muted-foreground sm:ml-2 inline-flex items-center gap-1">
                   <Layers className="h-3.5 w-3.5" /> Etapa:
