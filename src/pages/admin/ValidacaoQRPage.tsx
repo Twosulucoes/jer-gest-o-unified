@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -8,12 +8,14 @@ import {
   XCircle,
   AlertTriangle,
   Loader2,
+  User,
   Camera,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -146,7 +148,6 @@ export default function ValidacaoQRPage() {
         </p>
       </div>
 
-      {/* Controls */}
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -216,7 +217,6 @@ export default function ValidacaoQRPage() {
         </CardContent>
       </Card>
 
-      {/* Result */}
       {result && resultConfig && (
         <Card className={`border-2 ${resultConfig.color}`}>
           <CardContent className="pt-6">
@@ -270,7 +270,6 @@ export default function ValidacaoQRPage() {
         </Card>
       )}
 
-      {/* Empty state */}
       {!result && selectedEventId && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <ScanLine className="h-10 w-10 text-muted-foreground mb-3" />
@@ -291,75 +290,27 @@ export default function ValidacaoQRPage() {
         title="Validar Credencial"
       />
 
-      {/* Confirmation Dialog */}
-      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none gap-0">
-          {result && resultConfig && (
-            <div className="flex flex-col">
-              <div className={`p-6 text-center space-y-2 ${resultConfig.color.split(" ")[1]} border-b ${resultConfig.color.split(" ")[2]}`}>
-                <div className="flex justify-center mb-2">
-                  {resultConfig.icon}
-                </div>
-                <h2 className="text-2xl font-black tracking-tight">{resultConfig.label}</h2>
-                {result.message && <p className="text-sm font-medium opacity-90">{result.message}</p>}
-              </div>
-
-              <div className="p-6 space-y-6">
-                {result.participant ? (
-                  <div className="flex flex-col items-center text-center space-y-4">
-                    <Avatar className="h-28 w-28 border-4 border-background shadow-xl">
-                      <AvatarImage src={result.participant.photo_url ?? undefined} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-3xl font-bold">
-                        {result.participant.full_name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    <div className="space-y-1">
-                      <h3 className="text-xl font-bold text-foreground leading-tight">
-                        {result.participant.full_name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
-                        {result.participant.institution ?? "Sem instituição"}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 w-full pt-2">
-                      <div className="bg-muted/40 p-3 rounded-xl border border-border/50">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Categoria</p>
-                        <Badge variant="outline" className="font-bold border-primary/20 bg-primary/5">
-                          {result.participant.participant_type === "athlete" ? "Atleta" : result.participant.participant_type}
-                        </Badge>
-                      </div>
-                      <div className="bg-muted/40 p-3 rounded-xl border border-border/50">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Nascimento</p>
-                        <p className="font-mono text-sm font-bold">
-                          {new Date(result.participant.birth_date + "T00:00:00").toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
-                    <XCircle className="h-12 w-12 mb-4 opacity-20" />
-                    <p className="font-medium text-center">Nenhum dado de participante disponível para este código.</p>
-                  </div>
-                )}
-              </div>
-
-              <DialogFooter className="p-6 bg-muted/20 border-t flex-col sm:flex-row gap-3">
-                <Button 
-                  className="w-full h-14 text-lg font-bold uppercase tracking-widest shadow-lg" 
-                  onClick={handleNewScan}
-                  autoFocus
-                >
-                  <Check className="mr-2 h-6 w-6" />
-                  Confirmar e Próximo
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {result && (
+        <ParticipantReviewDialog
+          open={showConfirm}
+          onOpenChange={setShowConfirm}
+          participant={result.participant ? {
+            name: result.participant.full_name,
+            participantId: result.participant.participant_id,
+            cpf: null,
+            type: result.participant.participant_type,
+            institution: result.participant.institution,
+            photo_url: result.participant.photo_url,
+            birth_date: result.participant.birth_date,
+          } : null}
+          onConfirm={handleNewScan}
+          confirmLabel="Confirmar e Próximo"
+          statusLabel={resultConfig?.label}
+          statusIcon={resultConfig?.icon}
+          statusColor={resultConfig?.color.split(" ")[1] + " border-b " + (resultConfig?.color.split(" ")[2] || "")}
+          message={result.message}
+        />
+      )}
     </div>
   );
 }
