@@ -30,8 +30,9 @@ export default function TransporteEmbarquePage() {
   const { user, hasRole } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [qrCode, setQrCode] = useState("");
-  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; type: string } | null>(null);
+  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; type: string; photo_url?: string | null; institution?: string | null; birth_date?: string | null } | null>(null);
   const [qrError, setQrError] = useState<string | null>(null);
+  const [showReview, setShowReview] = useState(false);
   const { lookupByQrCode, loading: qrLoading } = useCredentialLookup();
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("transporte");
 
