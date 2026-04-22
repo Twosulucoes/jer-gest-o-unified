@@ -1,20 +1,15 @@
-import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useCredentialLookup } from "@/hooks/useCredentialLookup";
-import { toast } from "sonner";
 import {
-  ArrowLeft, Search, UserPlus, LogOut as AlightIcon, Users, Loader2, XCircle, QrCode, AlertTriangle, CheckCircle2,
+  ArrowLeft, Users, XCircle, QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 
 const PASSENGER_STATUS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   boarded: { label: "Embarcado", variant: "default" },
@@ -28,12 +23,6 @@ export default function TransporteEmbarquePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user, hasRole } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [qrCode, setQrCode] = useState("");
-  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; type: string; photo_url?: string | null; institution?: string | null; birth_date?: string | null } | null>(null);
-  const [qrError, setQrError] = useState<string | null>(null);
-  const [showReview, setShowReview] = useState(false);
-  const { lookupByQrCode, loading: qrLoading } = useCredentialLookup();
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("transporte");
 
   // Load trip
@@ -118,87 +107,10 @@ export default function TransporteEmbarquePage() {
     return part ? peopleMap.get(part.person_id) : null;
   };
 
-  // Stage participant IDs for the trip's stage (for search scoping)
-  const { data: tripStageParticipantIds } = useQuery({
-    queryKey: ["stage_participant_ids", trip?.event_stage_id],
-    enabled: !!(trip as any)?.event_stage_id,
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
-        .select("participant_id")
-        .eq("event_stage_id", (trip as any).event_stage_id);
-      if (error) throw error;
-      return new Set<string>((data ?? []).map((r: any) => r.participant_id as string));
-    },
-  });
-
-  // Search participants to add — limited to trip's stage when available
-  const { data: searchResults = [], isFetching: searching } = useQuery({
-    queryKey: ["search-participants-transport", trip?.event_id, (trip as any)?.event_stage_id, searchTerm],
-    queryFn: async () => {
-      if (!searchTerm || searchTerm.length < 2 || !trip?.event_id) return [];
-
-      // Search people first
-      const { data: ppl, error: pplErr } = await supabase
-        .from("people")
-        .select("id, full_name, cpf")
-        .or(`full_name.ilike.%${searchTerm}%,cpf.eq.${searchTerm}`)
-        .limit(20);
-      if (pplErr) throw pplErr;
-      if (!ppl.length) return [];
-
-      const personIds = ppl.map((p) => p.id);
-      const { data: parts, error: partsErr } = await supabase
-        .from("participants")
-        .select("id, person_id, status, participant_type")
-        .eq("event_id", trip.event_id)
-        .eq("is_active", true)
-        .in("person_id", personIds);
-      if (partsErr) throw partsErr;
-
-      const mapped = parts.map((pt) => ({
-        ...pt,
-        person: ppl.find((p) => p.id === pt.person_id),
-      }));
-      if ((trip as any).event_stage_id && tripStageParticipantIds) {
-        return mapped.filter((pt) => tripStageParticipantIds.has(pt.id));
-      }
-      return mapped;
-    },
-    enabled: !!searchTerm && searchTerm.length >= 2 && !!trip?.event_id,
-  });
-
   // Already boarded IDs (active)
   const boardedIds = new Set(
     passengers.filter((p) => p.status === "boarded").map((p) => p.participant_id)
   );
-
-  // Board mutation
-  const boardMut = useMutation({
-    mutationFn: async (participantId: string) => {
-      const { error } = await supabase.from("transport_passengers").insert({
-        trip_id: tripId!,
-        participant_id: participantId,
-        status: "boarded",
-        boarded_at: new Date().toISOString(),
-        boarded_by: user?.id,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["transport_passengers", tripId] });
-      toast.success("Participante embarcado!");
-      setShowReview(false);
-      setQrCode("");
-      setQrResult(null);
-    },
-    onError: (e: Error) => {
-      if (e.message?.includes("uq_transport_passenger_active")) {
-        toast.error("Participante já está embarcado nesta viagem.");
-      } else {
-        toast.error("Erro: " + e.message);
-      }
-    },
-  });
 
   // Alight mutation
   const alightMut = useMutation({

@@ -1,14 +1,11 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useCredentialLookup } from "@/hooks/useCredentialLookup";
 import { toast } from "sonner";
 import {
-  UtensilsCrossed, Search, Loader2, CheckCircle2, AlertTriangle, QrCode, User,
+  UtensilsCrossed, QrCode, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,20 +13,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
-import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 
 export default function AlimentacaoConsumoPage() {
   const qc = useQueryClient();
-  const { user, hasRole } = useAuth();
+  const { hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
-  const { isStageScoped, stageId, participantIds: stageParticipantIds } = useStageScope();
+  const { isStageScoped, stageId } = useStageScope();
   const [selectedWindowId, setSelectedWindowId] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [qrCode, setQrCode] = useState("");
-  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; type: string; foodRestrictions: string | null; photo_url?: string | null; institution?: string | null; birth_date?: string | null } | null>(null);
-  const [qrError, setQrError] = useState<string | null>(null);
-  const [showReview, setShowReview] = useState(false);
-  const { lookupByQrCode, loading: qrLoading } = useCredentialLookup();
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
 
   const { data: events = [] } = useQuery({
@@ -128,74 +118,7 @@ export default function AlimentacaoConsumoPage() {
 
   const consumedParticipantIds = new Set(consumptions.map((c) => c.participant_id));
 
-  // Search participants — restrito à etapa quando aplicável
-  const { data: searchResults = [], isFetching: searching } = useQuery({
-    queryKey: ["search-participants-food", selectedEventId, searchTerm, stageId, stageParticipantIds?.size ?? -1],
-    queryFn: async () => {
-      if (!searchTerm || searchTerm.length < 2 || !selectedEventId) return [];
-      const { data: ppl, error: pplErr } = await supabase
-        .from("people")
-        .select("id, full_name, cpf, food_restrictions")
-        .or(`full_name.ilike.%${searchTerm}%,cpf.eq.${searchTerm}`)
-        .limit(20);
-      if (pplErr) throw pplErr;
-      if (!ppl.length) return [];
-
-      const personIds = ppl.map((p) => p.id);
-      let pq = supabase
-        .from("participants")
-        .select("id, person_id, status, participant_type")
-        .eq("event_id", selectedEventId)
-        .eq("is_active", true)
-        .in("person_id", personIds);
-      if (isStageScoped && stageParticipantIds) {
-        if (stageParticipantIds.size === 0) return [];
-        pq = pq.in("id", Array.from(stageParticipantIds));
-      }
-      const { data: parts, error: partsErr } = await pq;
-      if (partsErr) throw partsErr;
-
-      const mapped = parts.map((pt) => ({
-        ...pt,
-        person: ppl.find((p) => p.id === pt.person_id),
-      }));
-      if (isStageScoped && stageParticipantIds) {
-        return mapped.filter((pt) => stageParticipantIds.has(pt.id));
-      }
-      return mapped;
-    },
-    enabled: !!searchTerm && searchTerm.length >= 2 && !!selectedEventId && (!isStageScoped || !!stageParticipantIds),
-  });
-
-  // Register consumption
-  const consumeMut = useMutation({
-    mutationFn: async (participantId: string) => {
-      const { error } = await supabase.from("meal_consumptions").insert({
-        meal_window_id: selectedWindowId,
-        participant_id: participantId,
-        consumed_at: new Date().toISOString(),
-        registered_by: user!.id,
-        method: "manual",
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["meal_consumptions", selectedWindowId] });
-      toast.success("Consumo registrado!");
-      setShowReview(false);
-      setQrCode("");
-      setQrResult(null);
-    },
-    onError: (e: any) => {
-      const msg = e?.message ?? "";
-      const code = e?.code ?? "";
-      if (code === "23505" || msg.includes("uq_meal_consumption_participant_window") || msg.includes("duplicate key") || msg.includes("unique constraint")) {
-        toast.error("Consumo já registrado para este participante nesta janela.");
-      } else {
-        toast.error("Falha ao registrar consumo. Tente novamente.");
-      }
-    },
-  });
+  const consumedParticipantIds = new Set(consumptions.map((c) => c.participant_id));
 
   const selectedWindow = windows.find((w) => w.id === selectedWindowId);
   const selectedMealType = selectedWindow ? mealTypesMap.get(selectedWindow.meal_type_id) : null;

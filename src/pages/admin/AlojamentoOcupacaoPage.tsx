@@ -1,14 +1,11 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useCredentialLookup } from "@/hooks/useCredentialLookup";
-import { toast } from "sonner";
 import {
-  Building, Search, Loader2, UserPlus, LogIn, LogOut, QrCode, AlertTriangle,
+  Building, QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,13 +18,8 @@ export default function AlojamentoOcupacaoPage() {
   const qc = useQueryClient();
   const { user, hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
-  const { isStageScoped, stageId, participantIds: stageParticipantIds } = useStageScope();
+  const { isStageScoped, stageId } = useStageScope();
   const [selectedUnitId, setSelectedUnitId] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [qrCode, setQrCode] = useState("");
-  const [qrResult, setQrResult] = useState<{ name: string; participantId: string; cpf: string | null; gender: string } | null>(null);
-  const [qrError, setQrError] = useState<string | null>(null);
-  const { lookupByQrCode, loading: qrLoading } = useCredentialLookup();
   const canOperate = hasRole("admin") || hasRole("secretaria");
 
   const { data: events = [] } = useQuery({
@@ -117,88 +109,9 @@ export default function AlojamentoOcupacaoPage() {
   const selectedUnit = units.find((u) => u.id === selectedUnitId);
   const unitFull = selectedUnit ? activeOccupancies.length >= selectedUnit.capacity : false;
 
-  // Search participants — restrito à etapa quando aplicável
-  const { data: searchResults = [], isFetching: searching } = useQuery({
-    queryKey: ["search-participants-lodging", selectedEventId, searchTerm, stageId, stageParticipantIds?.size ?? -1],
-    queryFn: async () => {
-      if (!searchTerm || searchTerm.length < 2 || !selectedEventId) return [];
-      const { data: ppl, error: pplErr } = await supabase
-        .from("people")
-        .select("id, full_name, cpf, gender")
-        .or(`full_name.ilike.%${searchTerm}%,cpf.eq.${searchTerm}`)
-        .limit(20);
-      if (pplErr) throw pplErr;
-      if (!ppl.length) return [];
-
-      const personIds = ppl.map((p) => p.id);
-      let pq = supabase
-        .from("participants")
-        .select("id, person_id, status, participant_type")
-        .eq("event_id", selectedEventId)
-        .eq("is_active", true)
-        .in("person_id", personIds);
-      if (isStageScoped && stageParticipantIds) {
-        if (stageParticipantIds.size === 0) return [];
-        pq = pq.in("id", Array.from(stageParticipantIds));
-      }
-      const { data: parts, error: partsErr } = await pq;
-      if (partsErr) throw partsErr;
-
-      const mapped = parts.map((pt) => ({
-        ...pt,
-        person: ppl.find((p) => p.id === pt.person_id),
-      }));
-      if (isStageScoped && stageParticipantIds) {
-        return mapped.filter((pt) => stageParticipantIds.has(pt.id));
-      }
-      return mapped;
-    },
-    enabled: !!searchTerm && searchTerm.length >= 2 && !!selectedEventId && (!isStageScoped || !!stageParticipantIds),
-  });
-
-  // Allocate participant
-  const allocateMut = useMutation({
-    mutationFn: async (participantId: string) => {
-      const { error } = await supabase.from("lodging_occupancies").insert({
-        unit_id: selectedUnitId,
-        event_id: selectedEventId,
-        participant_id: participantId,
-        status: "allocated",
-        checked_in_by: user!.id,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["lodging_occupancies", selectedUnitId] });
-      toast.success("Participante alocado!");
-    },
-    onError: (e: Error) => {
-      if (e.message?.includes("uq_lodging_active_occupancy")) {
-        toast.error("Participante já possui alocação ativa neste evento.");
-      } else if (e.message?.includes("capacity")) {
-        toast.error("Capacidade da unidade atingida.");
-      } else {
-        toast.error("Erro: " + e.message);
-      }
-    },
-  });
-
-  // Check-in
-  const checkinMut = useMutation({
-    mutationFn: async (occId: string) => {
-      const { error } = await supabase.from("lodging_occupancies").update({
-        status: "checked_in",
-        checked_in_at: new Date().toISOString(),
-        checked_in_by: user!.id,
-      }).eq("id", occId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["lodging_occupancies", selectedUnitId] });
-      toast.success("Check-in realizado!");
-    },
-    onError: (e: Error) => toast.error("Erro: " + e.message),
-  });
+  const activeParticipantIds = new Set(activeOccupancies.map((o) => o.participant_id));
+  const selectedUnit = units.find((u) => u.id === selectedUnitId);
+  const unitFull = selectedUnit ? activeOccupancies.length >= selectedUnit.capacity : false;
 
   // Check-out
   const checkoutMut = useMutation({
