@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import {
   Loader2,
   User,
   Camera,
+  Check,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,11 +24,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useActiveEventId } from "@/contexts/EventContext";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 
 interface ValidationResult {
-  result: string;
+  result: "valid" | "not_found" | "revoked" | "suspended" | "not_activated" | "wrong_event" | string;
   message: string | null;
   participant: {
     participant_id: string;
