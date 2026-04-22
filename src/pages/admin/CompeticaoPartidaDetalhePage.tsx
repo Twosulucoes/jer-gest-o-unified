@@ -469,7 +469,7 @@ export default function CompeticaoPartidaDetalhePage() {
       const ids = results.filter((r) => r.result_status === "resultado_lancado").map((r) => r.id);
       if (!ids.length) throw new Error("Nenhum resultado pendente de validação");
       const { error } = await supabase.from("competition_match_results").update({
-        result_status: "resultado_validado",
+        result_status: RESULT_STATUS.VALIDATED,
         validated_by: user.id,
         validated_at: new Date().toISOString(),
       }).in("id", ids);
@@ -483,10 +483,10 @@ export default function CompeticaoPartidaDetalhePage() {
     mutationFn: async () => {
       if (!user) throw new Error("Usuário não autenticado");
       if (!publishBulletinId) throw new Error("Selecione um boletim oficial para publicar");
-      const ids = results.filter((r) => r.result_status === "resultado_validado").map((r) => r.id);
+      const ids = results.filter((r) => r.result_status === RESULT_STATUS.VALIDATED).map((r) => r.id);
       if (!ids.length) throw new Error("Nenhum resultado validado para publicar");
       const { error } = await supabase.from("competition_match_results").update({
-        result_status: "publicado",
+        result_status: RESULT_STATUS.PUBLISHED,
         published_by: user.id,
         published_at: new Date().toISOString(),
         published_bulletin_id: publishBulletinId,
@@ -503,7 +503,7 @@ export default function CompeticaoPartidaDetalhePage() {
       const ids = results.filter((r) => r.result_status === "publicado").map((r) => r.id);
       if (!ids.length) throw new Error("Nenhum resultado publicado");
       const { error } = await supabase.from("competition_match_results").update({
-        result_status: "resultado_validado",
+        result_status: RESULT_STATUS.VALIDATED,
         published_by: null,
         published_at: null,
       }).in("id", ids);
@@ -618,11 +618,11 @@ export default function CompeticaoPartidaDetalhePage() {
 
   const formatDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" }) : "—";
   const hasResults = results.length > 0;
-  const hasPendingValidation = results.some((r) => r.result_status === "resultado_lancado");
-  const hasValidatedReady = results.some((r) => r.result_status === "resultado_validado");
-  const hasPublished = results.some((r) => r.result_status === "publicado");
-  const allValidated = hasResults && results.every((r) => r.result_status === "resultado_validado" || r.result_status === "publicado");
-  const allPublished = hasResults && results.every((r) => r.result_status === "publicado");
+  const hasPendingValidation = results.some((r) => r.result_status === RESULT_STATUS.LAUNCHED);
+  const hasValidatedReady = results.some((r) => r.result_status === RESULT_STATUS.VALIDATED);
+  const hasPublished = results.some((r) => r.result_status === RESULT_STATUS.PUBLISHED);
+  const allValidated = hasResults && results.every((r) => r.result_status === RESULT_STATUS.VALIDATED || r.result_status === RESULT_STATUS.PUBLISHED);
+  const allPublished = hasResults && results.every((r) => r.result_status === RESULT_STATUS.PUBLISHED);
 
   return (
     <div className="animate-fade-in space-y-6">
