@@ -259,7 +259,7 @@ export default function LoginPage() {
             <p className="mx-auto max-w-[320px] text-[13px] leading-relaxed text-muted-foreground/85 font-medium">
               Acesso restrito a usuários autorizados pela secretaria ou coordenação do evento.
             </p>
-            <p className="text-[10px] text-muted-foreground/55">
+            <p className="text-xs text-muted-foreground/60 font-medium pb-2">
               Desenvolvido por{" "}
               <a
                 href={brand.developer.website}
