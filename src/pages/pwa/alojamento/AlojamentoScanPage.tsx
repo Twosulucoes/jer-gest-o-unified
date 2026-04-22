@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { rpcResolveQr, rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
 import { extractQrToken } from "@/lib/resolveQrCredential";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
@@ -23,7 +24,7 @@ import {
   type ScanTelemetry,
 } from "@/lib/pwaScan";
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
-import { ArrowLeft, ScanLine, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { ScanLine, CheckCircle2, XCircle } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 
 type ScanMode = "validate" | "checkin" | "checkout";
@@ -32,6 +33,7 @@ const MODULE = "alojamento" as const;
 
 export default function AlojamentoScanPage() {
   const navigate = useNavigate();
+  const { activeEvent } = useEventContext();
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const lang = getPwaLang();
@@ -66,7 +68,7 @@ export default function AlojamentoScanPage() {
   const handleScan = useCallback(async (rawValue: string) => {
     setScannerOpen(false);
 
-    // Auto-detecção de voucher: substitui credencial para validar/check-in operacional
+    // Auto-detecção de voucher
     if (isVoucherQr(rawValue)) {
       if (!facilityId) {
         toast.error(getPwaMessage("ERR_SELECT_FACILITY", lang));
@@ -111,7 +113,6 @@ export default function AlojamentoScanPage() {
 
     try {
       if (!isOnline) {
-        // ... enfileiramento offline omitido para brevidade ou mantido se possível
         if (mode === "checkin") {
           enqueue("checkin", { token, facility_id: facilityId, mode: "person_qr" });
           toast.info("Check-in enfileirado (offline)");
@@ -148,7 +149,7 @@ export default function AlojamentoScanPage() {
                 message: "Participante não possui credencial ativa para esta etapa.",
                 full_name: resolved.full_name
               });
-              toast.error("Atenção: Participante sem credencial ativa para esta etapa!");
+              toast.error("Atenção: Participante sem credencial ativa!");
               if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
               recordOutcome("error");
               reopenIfContinuous();
@@ -195,24 +196,13 @@ export default function AlojamentoScanPage() {
       recordOutcome("error");
       reopenIfContinuous();
     }
-  }, [mode, facilityId, isOnline, enqueue, navigate, recordOutcome, reopenIfContinuous, lang]);
+  }, [mode, facilityId, isOnline, enqueue, navigate, recordOutcome, reopenIfContinuous, lang, activeEvent?.id]);
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b bg-card px-4 h-14">
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate("/pwa/alojamento")} className="text-muted-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <ScanLine className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-foreground">Scanner</span>
-        </div>
-        <Button size="sm" onClick={() => setScannerOpen(true)}>
-          <ScanLine className="h-4 w-4 mr-1" /> Scan
-        </Button>
-      </header>
+      <AlojamentoNavHeader currentPathLabel="Scanner" />
 
-      <main className="p-4 max-w-md mx-auto space-y-4">
+      <main className="p-4 max-w-md mx-auto space-y-4 pb-20">
         <ScanPreferencesPanel
           prefs={prefs}
           telemetry={telemetry}
@@ -223,51 +213,66 @@ export default function AlojamentoScanPage() {
         />
 
         <Tabs value={mode} onValueChange={(v) => setMode(v as ScanMode)}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="checkin">Check-in</TabsTrigger>
-            <TabsTrigger value="checkout">Check-out</TabsTrigger>
-            <TabsTrigger value="validate">Validar</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 h-11 bg-muted/40 p-1 rounded-xl">
+            <TabsTrigger value="checkin" className="rounded-lg font-bold text-xs uppercase">In</TabsTrigger>
+            <TabsTrigger value="checkout" className="rounded-lg font-bold text-xs uppercase">Out</TabsTrigger>
+            <TabsTrigger value="validate" className="rounded-lg font-bold text-xs uppercase">Validar</TabsTrigger>
           </TabsList>
         </Tabs>
 
         <Button
-          className="w-full min-h-[44px]"
+          className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/10"
           onClick={() => setScannerOpen(true)}
         >
-          <ScanLine className="h-5 w-5 mr-2" />
+          <ScanLine className="h-6 w-6 mr-3" />
           Escanear QR Code
         </Button>
 
         {result && (
-          <Card className={result.ok ? "border-green-500/50" : "border-destructive/50"}>
-            <CardContent className="p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                {result.ok ? (
-                  <CheckCircle2 className="h-6 w-6 text-green-500" />
-                ) : (
-                  <XCircle className="h-6 w-6 text-destructive" />
-                )}
-                <span className="font-semibold text-lg">
+          <Card className={`overflow-hidden border-2 animate-in zoom-in-95 duration-200 ${result.ok ? "border-green-500/30 bg-green-50/50 dark:bg-green-950/20" : "border-destructive/30 bg-destructive/5 dark:bg-destructive/10"}`}>
+            <CardContent className="p-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full ${result.ok ? "bg-green-100 text-green-600 dark:bg-green-900/40" : "bg-destructive/10 text-destructive"}`}>
+                  {result.ok ? (
+                    <CheckCircle2 className="h-6 w-6" />
+                  ) : (
+                    <XCircle className="h-6 w-6" />
+                  )}
+                </div>
+                <span className={`font-bold text-xl ${result.ok ? "text-green-700 dark:text-green-400" : "text-destructive"}`}>
                   {result.ok ? "Sucesso" : "Bloqueado"}
                 </span>
               </div>
-              {result.full_name && (
-                <p className="text-foreground font-medium">{result.full_name}</p>
+              
+              <div className="space-y-1">
+                {result.full_name && (
+                  <p className="text-foreground font-bold text-lg">{result.full_name}</p>
+                )}
+                {result.participant_type && (
+                  <Badge variant="secondary" className="font-bold uppercase tracking-wider text-[10px]">{result.participant_type}</Badge>
+                )}
+              </div>
+
+              {result.message && (
+                <p className={`text-sm font-medium ${result.ok ? "text-green-600/80 dark:text-green-400/80" : "text-destructive/80"}`}>
+                  {result.message}
+                </p>
               )}
-              {result.participant_type && (
-                <Badge variant="module">{result.participant_type}</Badge>
+              
+              {result.error && !result.message && (
+                <p className="text-sm font-medium text-destructive/80 uppercase tracking-tight">
+                  Erro: {result.error}
+                </p>
               )}
-              {result.error && (
-                <p className="text-sm text-destructive">{result.error}: {result.message || ""}</p>
-              )}
+
               {result.ok && result.person_id && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-2"
+                  className="w-full mt-2 rounded-xl font-bold border-green-500/20 hover:bg-green-500/10"
                   onClick={() => navigate(`/pwa/alojamento/pessoa/${result.person_id}`)}
                 >
-                  Ver perfil
+                  Ver Perfil Completo
                 </Button>
               )}
             </CardContent>
