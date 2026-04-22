@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
-import { ArrowLeft, User, LogIn, LogOut, Bed, ScanLine, AlertCircle } from "lucide-react";
+import { ArrowLeft, User, LogIn, LogOut, Bed, ScanLine, AlertCircle, Building, Loader2 } from "lucide-react";
 import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 import { useEventContext } from "@/contexts/EventContext";
 
