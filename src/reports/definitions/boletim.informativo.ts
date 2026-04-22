@@ -43,9 +43,9 @@ export const boletimInformativoReport: ReportDefinition = {
       const resultsData: { section: string; content: string }[] = [];
 
       // 1. Avisos (from official_bulletins)
-      const { data: bulletins } = await supabase
+      const { data: bulletins, count: bulletinsCount } = await supabase
         .from('official_bulletins')
-        .select('title, content_md')
+        .select('title, content_md', { count: 'exact' })
         .eq('event_id', eventId)
         .eq('status', 'publicado')
         .gte('published_at', `${date}T00:00:00Z`)
@@ -53,10 +53,14 @@ export const boletimInformativoReport: ReportDefinition = {
         .range(from, to);
 
       if (bulletins && bulletins.length > 0) {
-        const bulletinsText = bulletins.map(b => 
+        let bulletinsText = bulletins.map(b => 
           `**${b.title.toUpperCase()}**\n${b.content_md}`
         ).join('\n\n---\n\n');
         
+        if (bulletinsCount && bulletinsCount > to + 1) {
+          bulletinsText += `\n\n*(Exibindo ${bulletins.length} de ${bulletinsCount} avisos. Altere a página ou o limite para ver mais)*`;
+        }
+
         resultsData.push({
           section: 'Avisos Gerais',
           content: bulletinsText
@@ -64,32 +68,36 @@ export const boletimInformativoReport: ReportDefinition = {
       } else {
         resultsData.push({ 
           section: 'Avisos Gerais', 
-          content: 'Nenhum comunicado oficial publicado para esta data. Verifique se a data selecionada está correta ou consulte os comunicados de outros dias alterando o filtro de data.' 
+          content: 'Nenhum comunicado oficial publicado para esta data.' 
         });
       }
 
       // 2. Programação (from competition_matches)
       if (includeSchedule) {
-        const { data: matches } = await supabase
+        const { data: matches, count: matchesCount } = await supabase
           .from('competition_matches')
           .select(`
             start_time,
             sport_events(name),
             venues(name)
-          `)
+          `, { count: 'exact' })
           .eq('event_id', eventId)
           .eq('match_date', date)
           .order('start_time', { ascending: true })
           .range(from, to);
 
         if (matches && matches.length > 0) {
-          const scheduleText = matches.map(m => {
+          let scheduleText = matches.map(m => {
             const time = m.start_time ? m.start_time.substring(0, 5) : '--:--';
             const sportName = (m.sport_events as any)?.name || 'Modalidade';
             const venueName = (m.venues as any)?.name || 'Local a definir';
             return `• ${time} - ${sportName} (${venueName})`;
           }).join('\n');
           
+          if (matchesCount && matchesCount > to + 1) {
+            scheduleText += `\n\n*(Exibindo ${matches.length} de ${matchesCount} partidas. Altere a página ou o limite para ver mais)*`;
+          }
+
           resultsData.push({
             section: 'Programação do Dia',
             content: scheduleText
@@ -97,16 +105,14 @@ export const boletimInformativoReport: ReportDefinition = {
         } else {
           resultsData.push({ 
             section: 'Programação do Dia', 
-            content: 'Nenhuma atividade programada para esta data. Tente alterar o filtro de data para visualizar a programação de outros dias do evento.' 
+            content: 'Nenhuma atividade programada para esta data.' 
           });
         }
       }
 
       // 3. Resultados (from competition_match_results)
       if (includeResults) {
-        // Para resultados, como temos uma relação complexa, o range pode ser mais difícil se quisermos paginar partidas.
-        // Mas vamos aplicar o range na query base.
-        const { data: matchResults } = await supabase
+        const { data: matchResults, count: resultsCount } = await supabase
           .from('competition_match_results')
           .select(`
             match_id,
@@ -118,21 +124,19 @@ export const boletimInformativoReport: ReportDefinition = {
               start_time,
               sport_events(name)
             )
-          `)
+          `, { count: 'exact' })
           .eq('competition_matches.event_id', eventId)
           .eq('competition_matches.match_date', date)
           .eq('result_status', 'resultado_validado')
           .range(from, to);
 
         if (matchResults && matchResults.length > 0) {
-          // Sort matchResults by start_time in JS to be safe and consistent
           const sortedResults = [...matchResults].sort((a, b) => {
             const timeA = (a.competition_matches as any)?.start_time || '';
             const timeB = (b.competition_matches as any)?.start_time || '';
             return timeA.localeCompare(timeB);
           });
 
-          // Agrupar resultados por partida para mostrar de forma consolidada
           const grouped: Record<string, { title: string; time: string; results: string[] }> = {};
           
           sortedResults.forEach(r => {
@@ -149,18 +153,18 @@ export const boletimInformativoReport: ReportDefinition = {
               };
             }
             
-            if (r.score) {
-              grouped[key].results.push(r.score);
-            } else if (r.result_text) {
-              grouped[key].results.push(r.result_text);
-            } else if (r.outcome) {
-              grouped[key].results.push(r.outcome);
-            }
+            if (r.score) grouped[key].results.push(r.score);
+            else if (r.result_text) grouped[key].results.push(r.result_text);
+            else if (r.outcome) grouped[key].results.push(r.outcome);
           });
 
-          const resultsText = Object.values(grouped).map(g => 
+          let resultsText = Object.values(grouped).map(g => 
             `[${g.time}] ${g.title}: ${g.results.join(' x ')}`
           ).join('\n');
+
+          if (resultsCount && resultsCount > to + 1) {
+            resultsText += `\n\n*(Exibindo ${matchResults.length} de ${resultsCount} resultados. Altere a página ou o limite para ver mais)*`;
+          }
 
           resultsData.push({
             section: 'Resultados Oficiais',
@@ -169,7 +173,7 @@ export const boletimInformativoReport: ReportDefinition = {
         } else {
           resultsData.push({ 
             section: 'Resultados Oficiais', 
-            content: 'Nenhum resultado validado para esta data. Note que os resultados só aparecem após a validação oficial. Sugerimos consultar uma data diferente no filtro.' 
+            content: 'Nenhum resultado validado para esta data.' 
           });
         }
       }
