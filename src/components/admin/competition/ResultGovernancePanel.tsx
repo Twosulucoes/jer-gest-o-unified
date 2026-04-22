@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
-import { RESULT_STATUS } from "@/lib/resultStatus";
+import { RESULT_STATUS, BULLETIN_STATUS } from "@/lib/resultStatus";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -57,7 +57,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
     },
   });
 
-  const publishedBulletins = bulletins.filter((b: any) => b.status === "publicado");
+  const publishedBulletins = bulletins.filter((b: any) => b.status === BULLETIN_STATUS.PUBLICADO);
 
   // Published results with bulletin info (for "Publicados" list)
   const { data: publishedRows = [] } = useQuery({
@@ -135,7 +135,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
           event_id: eventId,
           number: nextNumber,
           title: newTitle.trim(),
-          status: "publicado",
+          status: BULLETIN_STATUS.PUBLICADO,
           published_at: new Date().toISOString(),
           published_by: user?.id ?? null,
           content_md: `# Boletim Oficial #${nextNumber}\n\n${newTitle.trim()}`,
