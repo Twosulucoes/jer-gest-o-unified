@@ -65,6 +65,8 @@ export default function PesquisaNovaPage() {
   const [step, setStep] = useState<Step>('profile');
   const [questionIdx, setQuestionIdx] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [identifying, setIdentifying] = useState(false);
   const [QUESTIONS, setQUESTIONS] = useState(DEFAULT_QUESTIONS);
 
   // Profile fields
