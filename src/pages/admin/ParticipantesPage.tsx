@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,18 +44,23 @@ export default function ParticipantesPage() {
   const selectedEventId = useActiveEventId();
   const { hasRole } = useAuth();
   const canManage = hasRole("admin") || hasRole("secretaria") || hasRole("super_admin");
-  const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearch = useDebounce(searchTerm, 350);
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"name" | "created" | "type" | "status" | "institution">("name");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(50);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Load state from URL search params
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+  const debouncedSearch = useDebounce(searchTerm, 350);
+  const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") || "all");
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all");
+  const [sortBy, setSortBy] = useState<"name" | "created" | "type" | "status" | "institution">(
+    (searchParams.get("sort") as any) || "name"
+  );
+  const [sortDir, setSortDir] = useState<"asc" | "desc">((searchParams.get("dir") as any) || "asc");
+  const [page, setPage] = useState(Number(searchParams.get("page")) || 0);
+  const [pageSize, setPageSize] = useState(50);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const stageFilterId = searchParams.get("stage");
+
 
   const { data: branding } = useEventBranding(selectedEventId);
 
@@ -145,10 +150,29 @@ export default function ParticipantesPage() {
     },
   });
 
+  // Persist filters to URL
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (debouncedSearch) next.set("search", debouncedSearch); else next.delete("search");
+    if (typeFilter !== "all") next.set("type", typeFilter); else next.delete("type");
+    if (statusFilter !== "all") next.set("status", statusFilter); else next.delete("status");
+    if (sortBy !== "name") next.set("sort", sortBy); else next.delete("sort");
+    if (sortDir !== "asc") next.set("dir", sortDir); else next.delete("dir");
+    if (page > 0) next.set("page", String(page)); else next.delete("page");
+    
+    // Only update if something changed
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [debouncedSearch, typeFilter, statusFilter, sortBy, sortDir, page, searchParams, setSearchParams]);
+
   // Reset page when filters change
-  useMemo(() => { setPage(0); }, [debouncedSearch, typeFilter, statusFilter, stageFilterId, selectedEventId]);
+  useEffect(() => { 
+    setPage(0); 
+  }, [debouncedSearch, typeFilter, statusFilter, stageFilterId, selectedEventId]);
 
   const isSearching = debouncedSearch.trim().length >= 2;
+
   const noSearchMatches = isSearching && matchingPersonIds && matchingPersonIds.length === 0;
 
   // Compute the constrained id set when stage and/or search filter

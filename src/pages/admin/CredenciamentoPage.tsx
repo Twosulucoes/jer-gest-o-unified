@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -135,11 +135,12 @@ export default function CredenciamentoPage() {
   const queryClient = useQueryClient();
   const { hasRole, user } = useAuth();
   const selectedEventId = useActiveEventId();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [filterState, setFilterState] = useState("all");
-  const [filterInstitution, setFilterInstitution] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+  const [filterType, setFilterType] = useState(searchParams.get("type") || "all");
+  const [filterState, setFilterState] = useState(searchParams.get("status") || "all");
+  const [filterInstitution, setFilterInstitution] = useState(searchParams.get("inst") || "all");
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
   const [previewParticipantId, setPreviewParticipantId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -148,13 +149,29 @@ export default function CredenciamentoPage() {
   const [batchLabelIds, setBatchLabelIds] = useState<string[]>([]);
   const [batchCredentialConfirmOpen, setBatchCredentialConfirmOpen] = useState(false);
   const [batchEmitConfirmOpen, setBatchEmitConfirmOpen] = useState(false);
+
   
   const [blockingDialogData, setBlockingDialogData] = useState<{ participantName: string; items: any[] } | null>(null);
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
+  // Persist filters to URL
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (searchTerm) next.set("search", searchTerm); else next.delete("search");
+    if (filterType !== "all") next.set("type", filterType); else next.delete("type");
+    if (filterState !== "all") next.set("status", filterState); else next.delete("status");
+    if (filterInstitution !== "all") next.set("inst", filterInstitution); else next.delete("inst");
+    if (currentPage > 1) next.set("page", String(currentPage)); else next.delete("page");
+    
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchTerm, filterType, filterState, filterInstitution, currentPage, searchParams, setSearchParams]);
+
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution]);
   useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }, [selectedEventId]);
+
 
   // --- Blocked participants ---
   const { data: blockedParticipantIds = new Set<string>() } = useQuery({
