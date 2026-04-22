@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { FileBarChart, FileDown, FileSpreadsheet, Loader2 } from "lucide-react";
 import { useBulletinData } from "@/components/relatorios/boletins/useBulletinData";
 import BulletinRouter from "@/components/relatorios/boletins/BulletinRouter";
+import BulletinValidationAlerts from "@/components/relatorios/boletins/BulletinValidationAlerts";
 import { ReportShell } from "@/components/relatorios/ReportShell";
 import { ReportPresetsButton } from "@/components/relatorios/ReportPresetsButton";
 import { exportBulletinPdf } from "@/components/relatorios/boletins/bulletinPdfExporter";
