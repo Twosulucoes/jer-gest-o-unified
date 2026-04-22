@@ -1,0 +1,126 @@
+
+export type PwaMessageCode =
+  | "ERR_NOT_FOUND"
+  | "ERR_ALREADY_REGISTERED"
+  | "ERR_SESSION_EXPIRED"
+  | "ERR_WINDOW_REQUIRED"
+  | "ERR_LIMIT_REACHED"
+  | "ERR_UNKNOWN"
+  | "SUCCESS_REGISTERED"
+  | "SEARCH_PLACEHOLDER"
+  | "NO_RESULTS"
+  | "MANUAL_SEARCH"
+  | "QR_VALID"
+  | "VOUCHER_NOT_FOUND"
+  | "VOUCHER_INACTIVE"
+  | "VOUCHER_EXPIRED"
+  | "VOUCHER_NOT_YET_VALID"
+  | "VOUCHER_SCOPE_DENIED"
+  | "VOUCHER_MAX_USES";
+
+export type PwaLang = "pt" | "es";
+
+const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
+  ERR_NOT_FOUND: {
+    pt: "Credencial não encontrada",
+    es: "Credencial no encontrada",
+  },
+  ERR_ALREADY_REGISTERED: {
+    pt: "Já registrado",
+    es: "Ya registrado",
+  },
+  ERR_SESSION_EXPIRED: {
+    pt: "Sessão expirada. Faça login novamente.",
+    es: "Sesión expirada. Inicie sesión de nuevo.",
+  },
+  ERR_WINDOW_REQUIRED: {
+    pt: "Selecione uma janela de refeição primeiro",
+    es: "Seleccione una ventana de comida primero",
+  },
+  ERR_LIMIT_REACHED: {
+    pt: "Limite diário de refeições atingido",
+    es: "Límite diario de comidas alcanzado",
+  },
+  ERR_UNKNOWN: {
+    pt: "Erro desconhecido",
+    es: "Error desconocido",
+  },
+  SUCCESS_REGISTERED: {
+    pt: "Registrado com sucesso",
+    es: "Registrado con éxito",
+  },
+  SEARCH_PLACEHOLDER: {
+    pt: "Buscar por nome ou CPF…",
+    es: "Buscar por nombre o CPF…",
+  },
+  NO_RESULTS: {
+    pt: "Nenhum participante encontrado",
+    es: "No se encontró ningún participante",
+  },
+  MANUAL_SEARCH: {
+    pt: "Busca manual",
+    es: "Búsqueda manual",
+  },
+  QR_VALID: {
+    pt: "QR válido",
+    es: "QR válido",
+  },
+  VOUCHER_NOT_FOUND: {
+    pt: "Voucher não encontrado",
+    es: "Voucher no encontrado",
+  },
+  VOUCHER_INACTIVE: {
+    pt: "Voucher revogado ou inativo",
+    es: "Voucher revocado o inactivo",
+  },
+  VOUCHER_EXPIRED: {
+    pt: "Voucher expirado",
+    es: "Voucher expirado",
+  },
+  VOUCHER_NOT_YET_VALID: {
+    pt: "Voucher ainda não está válido",
+    es: "Voucher aún no es válido",
+  },
+  VOUCHER_SCOPE_DENIED: {
+    pt: "Voucher não cobre este serviço",
+    es: "Voucher no cubre este servicio",
+  },
+  VOUCHER_MAX_USES: {
+    pt: "Limite de usos do voucher atingido",
+    es: "Límite de usos del voucher alcanzado",
+  },
+};
+
+export function getPwaLang(): PwaLang {
+  if (typeof window === "undefined") return "pt";
+  const stored = localStorage.getItem("pwa_lang");
+  if (stored === "es" || stored === "pt") return stored;
+  
+  // Try browser language
+  const browserLang = navigator.language.split("-")[0];
+  if (browserLang === "es") return "es";
+  
+  return "pt";
+}
+
+export function setPwaLang(lang: PwaLang) {
+  localStorage.setItem("pwa_lang", lang);
+}
+
+export function getPwaMessage(code: PwaMessageCode, lang?: PwaLang): string {
+  const l = lang || getPwaLang();
+  return MESSAGES[code][l] || MESSAGES[code]["pt"];
+}
+
+export function getVoucherMessage(reason: string | undefined, lang?: PwaLang): string {
+  const l = lang || getPwaLang();
+  switch (reason) {
+    case "not_found": return getPwaMessage("VOUCHER_NOT_FOUND", l);
+    case "inactive": return getPwaMessage("VOUCHER_INACTIVE", l);
+    case "expired": return getPwaMessage("VOUCHER_EXPIRED", l);
+    case "not_yet_valid": return getPwaMessage("VOUCHER_NOT_YET_VALID", l);
+    case "scope_denied": return getPwaMessage("VOUCHER_SCOPE_DENIED", l);
+    case "max_uses_reached": return getPwaMessage("VOUCHER_MAX_USES", l);
+    default: return reason || getPwaMessage("ERR_UNKNOWN", l);
+  }
+}
