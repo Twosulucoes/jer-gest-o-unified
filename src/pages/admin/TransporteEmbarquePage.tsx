@@ -187,6 +187,9 @@ export default function TransporteEmbarquePage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transport_passengers", tripId] });
       toast.success("Participante embarcado!");
+      setShowReview(false);
+      setQrCode("");
+      setQrResult(null);
     },
     onError: (e: Error) => {
       if (e.message?.includes("uq_transport_passenger_active")) {
