@@ -143,7 +143,7 @@ export default function LoginPage() {
           "linear-gradient(165deg, rgba(11,43,90,0.07) 0%, rgba(15,90,166,0.05) 40%, rgba(11,163,163,0.04) 72%, rgba(51,178,73,0.03) 100%), hsl(var(--background))",
       }}
     >
-      <div className="pointer-events-none absolute inset-0 bg-grid opacity-[0.22] dark:opacity-30" />
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-[0.05] dark:opacity-[0.08]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,hsla(222,72%,36%,0.14),transparent_50%)] dark:bg-[radial-gradient(ellipse_120%_80%_at_50%_-15%,hsla(41,100%,47%,0.12),transparent_52%)]" />
 
       <div className="relative z-10 flex min-h-[100dvh] flex-1 flex-col px-5 sm:px-6">
@@ -153,16 +153,16 @@ export default function LoginPage() {
           {/* Topo: só a marca — sem caixa nem repetir o nome */}
           <header className="shrink-0 pb-5 text-center sm:pb-6">
             <h1 className="sr-only">JER Gestão</h1>
-            <div className="mx-auto flex max-w-[220px] justify-center sm:max-w-[260px]">
+            <div className="mx-auto flex max-w-[280px] justify-center sm:max-w-[340px]">
               <img
                 src="/brand/logo.png"
                 alt="JER Gestão"
-                className="h-14 w-auto max-w-full object-contain object-center dark:hidden sm:h-16"
+                className="h-20 w-auto max-w-full object-contain object-center dark:hidden sm:h-24"
               />
               <img
                 src="/brand/logo-dark.png"
                 alt="JER Gestão"
-                className="hidden h-14 w-auto max-w-full object-contain object-center dark:block sm:h-16"
+                className="hidden h-20 w-auto max-w-full object-contain object-center dark:block sm:h-24"
               />
             </div>
             <p className="mx-auto mt-3 max-w-[280px] text-sm leading-snug text-muted-foreground">
