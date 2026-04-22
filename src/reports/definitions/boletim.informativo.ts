@@ -37,8 +37,6 @@ export const boletimInformativoReport: ReportDefinition = {
       const resultsData: { section: string; content: string }[] = [];
 
       // 1. Avisos (from official_bulletins)
-      // Buscamos boletins publicados no dia ou que foram publicados e referem-se ao período.
-      // Como não há 'bulletin_date', usamos a data de publicação ou criação.
       const { data: bulletins } = await supabase
         .from('official_bulletins')
         .select('title, content_md')
@@ -48,11 +46,13 @@ export const boletimInformativoReport: ReportDefinition = {
         .lte('published_at', `${date}T23:59:59Z`);
 
       if (bulletins && bulletins.length > 0) {
-        bulletins.forEach(b => {
-          resultsData.push({
-            section: 'Avisos Gerais',
-            content: `${b.title.toUpperCase()}\n${b.content_md}`
-          });
+        const bulletinsText = bulletins.map(b => 
+          `**${b.title.toUpperCase()}**\n${b.content_md}`
+        ).join('\n\n---\n\n');
+        
+        resultsData.push({
+          section: 'Avisos Gerais',
+          content: bulletinsText
         });
       } else {
         resultsData.push({ 
@@ -76,9 +76,10 @@ export const boletimInformativoReport: ReportDefinition = {
 
         if (matches && matches.length > 0) {
           const scheduleText = matches.map(m => {
+            const time = m.start_time ? m.start_time.substring(0, 5) : '--:--';
             const sportName = (m.sport_events as any)?.name || 'Modalidade';
             const venueName = (m.venues as any)?.name || 'Local a definir';
-            return `• ${m.start_time || '--:--'} - ${sportName} (${venueName})`;
+            return `• ${time} - ${sportName} (${venueName})`;
           }).join('\n');
           
           resultsData.push({
@@ -104,6 +105,7 @@ export const boletimInformativoReport: ReportDefinition = {
             result_text,
             competition_matches!inner(
               match_number,
+              start_time,
               sport_events(name)
             )
           `)
@@ -112,17 +114,26 @@ export const boletimInformativoReport: ReportDefinition = {
           .eq('result_status', 'resultado_validado');
 
         if (matchResults && matchResults.length > 0) {
+          // Sort matchResults by start_time in JS to be safe and consistent
+          const sortedResults = [...matchResults].sort((a, b) => {
+            const timeA = (a.competition_matches as any)?.start_time || '';
+            const timeB = (b.competition_matches as any)?.start_time || '';
+            return timeA.localeCompare(timeB);
+          });
+
           // Agrupar resultados por partida para mostrar de forma consolidada
-          const grouped: Record<string, { title: string; results: string[] }> = {};
+          const grouped: Record<string, { title: string; time: string; results: string[] }> = {};
           
-          matchResults.forEach(r => {
+          sortedResults.forEach(r => {
             const match = r.competition_matches as any;
             const sportName = match?.sport_events?.name || 'Modalidade';
+            const time = match?.start_time ? match.start_time.substring(0, 5) : '--:--';
             const key = r.match_id;
             
             if (!grouped[key]) {
               grouped[key] = {
                 title: `${sportName} - Partida #${match?.match_number || '?'}`,
+                time: time,
                 results: []
               };
             }
@@ -137,7 +148,7 @@ export const boletimInformativoReport: ReportDefinition = {
           });
 
           const resultsText = Object.values(grouped).map(g => 
-            `${g.title}: ${g.results.join(' x ')}`
+            `[${g.time}] ${g.title}: ${g.results.join(' x ')}`
           ).join('\n');
 
           resultsData.push({
