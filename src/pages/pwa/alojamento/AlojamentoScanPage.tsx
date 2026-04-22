@@ -11,6 +11,8 @@ import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { useAuth } from "@/hooks/useAuth";
+import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
+import { useEventContext } from "@/contexts/EventContext";
 import {
   loadScanPreferences,
   saveScanPreferences,
@@ -21,7 +23,7 @@ import {
   type ScanTelemetry,
 } from "@/lib/pwaScan";
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
-import { ArrowLeft, ScanLine, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, ScanLine, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 
 type ScanMode = "validate" | "checkin" | "checkout";
