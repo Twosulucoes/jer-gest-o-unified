@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getAllCatalogTables, getAllCatalogRpcs, competitionFeatureCatalog } from "@/config/competitionFeatureCatalog";
+import { BULLETIN_STATUS } from "@/lib/resultStatus";
 
 export interface DiagnosticKpis {
   sport_events: number | null;
