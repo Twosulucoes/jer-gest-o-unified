@@ -57,7 +57,7 @@ export const boletimInformativoReport: ReportDefinition = {
       } else {
         resultsData.push({ 
           section: 'Avisos Gerais', 
-          content: 'Nenhum comunicado oficial publicado para esta data.' 
+          content: 'Nenhum comunicado oficial publicado para esta data. Verifique se a data selecionada está correta ou consulte os comunicados de outros dias alterando o filtro de data.' 
         });
       }
 
@@ -89,7 +89,7 @@ export const boletimInformativoReport: ReportDefinition = {
         } else {
           resultsData.push({ 
             section: 'Programação do Dia', 
-            content: 'Nenhuma atividade programada para esta data.' 
+            content: 'Nenhuma atividade programada para esta data. Tente alterar o filtro de data para visualizar a programação de outros dias do evento.' 
           });
         }
       }
@@ -158,7 +158,7 @@ export const boletimInformativoReport: ReportDefinition = {
         } else {
           resultsData.push({ 
             section: 'Resultados Oficiais', 
-            content: 'Nenhum resultado publicado para esta data.' 
+            content: 'Nenhum resultado validado para esta data. Note que os resultados só aparecem após a validação oficial. Sugerimos consultar uma data diferente no filtro.' 
           });
         }
       }
