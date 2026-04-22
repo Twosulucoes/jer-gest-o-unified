@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getSession, clearSession, addToQueue, saveDraft, clearDraft, getDraft } from '@/lib/pesquisaSession';
 import { usePesquisaSync } from '@/hooks/usePesquisaSync';
@@ -60,6 +60,7 @@ const DEFAULT_QUESTIONS = [
 export default function PesquisaNovaPage() {
   const navigate = useNavigate();
   const { isOnline, pendingCount } = usePesquisaSync();
+  const [searchParams] = useSearchParams();
   const session = getSession();
 
   const [step, setStep] = useState<Step>('profile');
@@ -114,6 +115,12 @@ export default function PesquisaNovaPage() {
   useEffect(() => {
     if (!session) navigate('/pwa/pesquisa/login', { replace: true });
   }, [session, navigate]);
+
+  useEffect(() => {
+    if (searchParams.get('scan') === 'true') {
+      setScannerOpen(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!session?.researcher?.event_id) return;
