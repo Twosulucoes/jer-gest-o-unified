@@ -502,12 +502,16 @@ export default function AcessosDelegacoesPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Usuário (perfil delegação)</Label>
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+              <Select 
+                value={selectedUserId} 
+                onValueChange={setSelectedUserId}
+                disabled={!!selectedUserId && filteredDelegationUsers.some(u => u.user_id === selectedUserId)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um usuário" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableUsers.map((u: any) => (
+                  {delegationUsers.map((u: any) => (
                     <SelectItem key={u.user_id} value={u.user_id}>
                       {u.full_name || u.email || u.user_id.slice(0, 8) + "…"}
                       {u.email && <span className="text-muted-foreground ml-2 text-xs">({u.email})</span>}
@@ -515,14 +519,6 @@ export default function AcessosDelegacoesPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {availableUsers.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Sem usuários disponíveis. Crie um em{" "}
-                  <RouterLink to="/admin/acessos/usuarios" className="underline text-primary">
-                    Gerenciar usuários
-                  </RouterLink>.
-                </p>
-              )}
             </div>
             <div className="space-y-2">
               <Label>Delegação</Label>
