@@ -58,11 +58,6 @@ const coordDashboardItem: NavItem = {
   roles: ["coordenador_modalidade"],
 };
 
-/**
- * GLOBAL menu — only event preparation, global reports, access, config and system.
- * All operational items (credenciamento, competição, logística, ocorrências, pesquisa,
- * relatórios por área) live INSIDE a stage and are not shown here.
- */
 const navGroups: NavGroup[] = [
   {
     id: "preparacao", label: "Preparação do Evento", description: "Cadastros base do evento.",
@@ -72,7 +67,6 @@ const navGroups: NavGroup[] = [
       { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
@@ -236,6 +230,19 @@ export default function AdminLayout() {
   const primaryRole = roles[0];
   const closeSidebar = () => setSidebarOpen(false);
 
+  const isStageRoute = location.pathname.includes("/admin/etapa/");
+  
+  // If we are in a stage route, we render a simpler layout to avoid double headers/sidebars.
+  // The StageLayout itself provides its own header, sidebar and sub-navigation.
+  if (isStageRoute) {
+    return (
+      <RequireActiveEvent>
+        <NavigationHistoryTracker />
+        <Outlet />
+      </RequireActiveEvent>
+    );
+  }
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex min-h-screen bg-background">
@@ -283,7 +290,7 @@ export default function AdminLayout() {
             )}
 
             {/* CTA único: Entrar na Etapa */}
-            {(hasRole("admin" as AppRole) || hasRole("secretaria" as AppRole) || hasRole("coordenacao_tecnica" as AppRole) || hasRole("transporte" as AppRole) || hasRole("alimentacao" as AppRole) || hasRole("coordenador_modalidade" as AppRole)) && (
+            {(hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica") || hasRole("transporte") || hasRole("alimentacao") || hasRole("coordenador_modalidade")) && (
               collapsed ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
