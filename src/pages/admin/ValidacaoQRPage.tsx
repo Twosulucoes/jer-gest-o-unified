@@ -67,6 +67,7 @@ export default function ValidacaoQRPage() {
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
