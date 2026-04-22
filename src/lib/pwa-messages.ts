@@ -38,7 +38,17 @@ export type PwaMessageCode =
   | "SCAN_QR"
   | "SCAN_TITLE"
   | "SCAN"
-  | "BUSCANDO";
+  | "BUSCANDO"
+  | "EMBARQUE"
+  | "MANUAL"
+  | "FINALIZAR"
+  | "NENHUM_PASSAGEIRO"
+  | "EMBARCADO"
+  | "PENDENTE"
+  | "VOLTAR"
+  | "ACESSO_BLOQUEADO"
+  | "APENAS_MOTORISTA"
+  | "SCAN_EMBARQUE";
 
 export type PwaLang = "pt" | "es";
 
@@ -198,6 +208,46 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
   BUSCANDO: {
     pt: "Buscando…",
     es: "Buscando…",
+  },
+  EMBARQUE: {
+    pt: "Embarque",
+    es: "Embarque",
+  },
+  MANUAL: {
+    pt: "Manual",
+    es: "Manual",
+  },
+  FINALIZAR: {
+    pt: "Finalizar",
+    es: "Finalizar",
+  },
+  NENHUM_PASSAGEIRO: {
+    pt: "Nenhum passageiro nesta viagem",
+    es: "Ningún pasajero en este viaje",
+  },
+  EMBARCADO: {
+    pt: "Embarcado",
+    es: "Embarcado",
+  },
+  PENDENTE: {
+    pt: "Pendente",
+    es: "Pendiente",
+  },
+  VOLTAR: {
+    pt: "Voltar",
+    es: "Volver",
+  },
+  ACESSO_BLOQUEADO: {
+    pt: "Acesso Bloqueado",
+    es: "Acceso Bloqueado",
+  },
+  APENAS_MOTORISTA: {
+    pt: "Apenas o motorista responsável pode registrar embarques nesta viagem.",
+    es: "Solo el conductor responsable puede registrar embarques en este viaje.",
+  },
+  SCAN_EMBARQUE: {
+    pt: "Scan Embarque",
+    es: "Scan Embarque",
   },
 };
 
