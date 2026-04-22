@@ -37,6 +37,18 @@ export function PwaHeader({ title, icon: Icon, backTo, onSignOut, rightSlot }: P
         </div>
         <div className="flex items-center gap-2">
           {rightSlot}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const current = getPwaLang();
+              setPwaLang(current === "pt" ? "es" : "pt");
+              window.location.reload();
+            }}
+            className="text-xs font-bold uppercase text-muted-foreground hover:text-foreground"
+          >
+            {getPwaLang() === "pt" ? "PT" : "ES"}
+          </Button>
           {showSwitcher && (
             <Button variant="ghost" size="icon" onClick={() => navigate("/selecionar-modulo")} className="text-muted-foreground hover:text-foreground hover:bg-muted" title="Trocar módulo">
               <ArrowLeftRight className="h-5 w-5" />
