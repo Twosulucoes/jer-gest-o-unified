@@ -197,32 +197,34 @@ export default function AlimentacaoHubPage() {
         )}
       </div>
 
-      {/* Seletor de etapa */}
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
-        <Layers className="h-4 w-4 text-primary shrink-0" />
-        <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Etapa:</span>
-        {!selectedEventId ? (
-          <span className="text-sm text-muted-foreground">Selecione um evento no seletor global acima</span>
-        ) : loadingStages ? (
-          <Skeleton className="h-8 w-48" />
-        ) : stages.length === 0 ? (
-          <span className="text-sm text-amber-600 dark:text-amber-400">Nenhuma etapa cadastrada para este evento</span>
-        ) : (
-          <Select value={selectedStageId} onValueChange={setSelectedStageId}>
-            <SelectTrigger className="h-8 w-auto min-w-[220px] border-0 bg-transparent font-medium focus:ring-0">
-              <SelectValue placeholder="Selecione uma etapa..." />
-            </SelectTrigger>
-            <SelectContent>
-              {stages.map(s => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name}
-                  <span className="ml-1 text-muted-foreground text-xs">· {KIND_LABELS[s.kind] ?? s.kind}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
+      {/* Seletor de etapa - Oculto se já estivermos no contexto de uma etapa via URL */}
+      {!stageId && (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+          <Layers className="h-4 w-4 text-primary shrink-0" />
+          <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Etapa:</span>
+          {!selectedEventId ? (
+            <span className="text-sm text-muted-foreground">Selecione um evento no seletor global acima</span>
+          ) : loadingStages ? (
+            <Skeleton className="h-8 w-48" />
+          ) : stages.length === 0 ? (
+            <span className="text-sm text-amber-600 dark:text-amber-400">Nenhuma etapa cadastrada para este evento</span>
+          ) : (
+            <Select value={selectedStageId} onValueChange={setSelectedStageId}>
+              <SelectTrigger className="h-8 w-auto min-w-[220px] border-0 bg-transparent font-medium focus:ring-0">
+                <SelectValue placeholder="Selecione uma etapa..." />
+              </SelectTrigger>
+              <SelectContent>
+                {stages.map(s => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                    <span className="ml-1 text-muted-foreground text-xs">· {KIND_LABELS[s.kind] ?? s.kind}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
 
       {/* Atalhos operacionais */}
       <div className="grid grid-cols-2 gap-3">
