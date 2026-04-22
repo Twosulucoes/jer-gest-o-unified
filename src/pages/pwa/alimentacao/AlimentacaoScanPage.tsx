@@ -251,13 +251,13 @@ export default function AlimentacaoScanPage() {
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <ScanLine className="h-5 w-5 shrink-0 text-primary" />
-              <span className="truncate font-semibold text-foreground">Escanear QR</span>
+              <span className="truncate font-semibold text-foreground">{getPwaMessage("SCAN_QR", lang)}</span>
             </div>
-            <p className="truncate pl-7 text-[11px] text-muted-foreground">Credencial ou voucher</p>
+            <p className="truncate pl-7 text-[11px] text-muted-foreground">{getPwaMessage("SCAN_TITLE", lang)}</p>
           </div>
         </div>
         <Button size="sm" className="shrink-0 rounded-lg" onClick={() => setScannerOpen(true)} disabled={!windowId}>
-          <ScanLine className="mr-1 h-4 w-4" /> Scan
+          <ScanLine className="mr-1 h-4 w-4" /> {getPwaMessage("SCAN", lang)}
         </Button>
       </header>
 
