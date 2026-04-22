@@ -250,7 +250,7 @@ export default function CompeticaoPainelPage() {
       const matchesPublished = new Set<string>();
       for (const r of allResults ?? []) {
         matchesWithResult.add(r.match_id);
-        if (r.result_status === "validado" || r.result_status === "publicado") matchesValidated.add(r.match_id);
+        if (r.result_status === "resultado_validado" || r.result_status === "publicado") matchesValidated.add(r.match_id);
         if (r.result_status === "publicado") matchesPublished.add(r.match_id);
       }
 
