@@ -6649,6 +6649,10 @@ export type Database = {
         }
         Returns: Json
       }
+      check_modality_coordinator_access: {
+        Args: { p_sport_id: string }
+        Returns: boolean
+      }
       check_phase_transitions: {
         Args: { p_sport_event_id: string }
         Returns: Json
