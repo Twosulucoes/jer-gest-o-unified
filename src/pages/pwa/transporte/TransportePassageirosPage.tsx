@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { TripInfoCard } from "@/components/pwa/transporte/TripInfoCard";
 import { DelegationAlertBanner } from "@/components/pwa/transporte/DelegationAlertBanner";
-import { ArrowLeft, Download, Search, Phone, X, ShieldAlert, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Search, Phone, X, ShieldAlert, Loader2, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 
 interface PassengerRow {
@@ -262,8 +262,11 @@ export default function TransportePassageirosPage() {
             </span>
           </div>
         </div>
-        <div className="mt-2">
-          <Button size="sm" variant="module" className="h-8 text-xs" onClick={exportCsv}>
+        <div className="mt-2 flex gap-2">
+          <Button size="sm" variant="module" className="h-8 text-xs flex-1" onClick={() => navigate(`/pwa/transporte/scan?tripId=${tripId}`)}>
+            <ScanLine className="h-3.5 w-3.5 mr-1" /> Reabrir Scanner
+          </Button>
+          <Button size="sm" variant="outline" className="h-8 text-xs" onClick={exportCsv}>
             <Download className="h-3.5 w-3.5 mr-1" /> Exportar CSV
           </Button>
         </div>
