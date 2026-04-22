@@ -57,10 +57,10 @@ export default function AlojamentoIncidentesPage() {
           <button onClick={() => navigate("/pwa/alojamento")} className="text-muted-foreground">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <AlertTriangle className="h-5 w-5 text-amber-500" />
+          <AlertTriangle className="h-5 w-5 text-[hsl(var(--module-accent))]" />
           <span className="font-semibold text-foreground">Ocorrências</span>
         </div>
-        <Button size="sm" onClick={() => navigate("/pwa/alojamento/incidentes/nova")}>
+        <Button size="sm" variant="module" onClick={() => navigate("/pwa/alojamento/incidentes/nova")}>
           <Plus className="h-4 w-4 mr-1" /> Nova
         </Button>
       </header>

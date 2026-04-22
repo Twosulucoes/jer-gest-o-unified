@@ -4,10 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle, Search, Loader2, User } from "lucide-react";
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
+import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
+import { useEventContext } from "@/contexts/EventContext";
 import { isVoucherQr, tryRedeemVoucher, voucherReasonLabel } from "@/lib/voucherScan";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -34,13 +37,23 @@ const MODULE = "alimentacao" as const;
 export default function AlimentacaoScanPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { activeEventId } = useEventContext();
   const userId = user?.id ?? null;
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [prefs, setPrefs] = useState<ScanPreferences>(() => loadScanPreferences(MODULE, userId));
   const [telemetry, setTelemetry] = useState<ScanTelemetry>(() => loadScanTelemetry(MODULE, userId));
-  const [result, setResult] = useState<{ ok: boolean; message: string; restrictions?: string } | null>(null);
+  const [result, setResult] = useState<{
+    ok: boolean;
+    message: string;
+    restrictions?: string;
+    source?: "qr" | "manual";
+  } | null>(null);
+  const [manualQuery, setManualQuery] = useState("");
+  const [debouncedManual, setDebouncedManual] = useState("");
+  const [manualHits, setManualHits] = useState<ParticipantManualSearchRow[]>([]);
+  const [manualSearching, setManualSearching] = useState(false);
 
   useEffect(() => {
     setPrefs(loadScanPreferences(MODULE, userId));
@@ -69,16 +82,99 @@ export default function AlimentacaoScanPage() {
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase
+      let q = supabase
         .from("meal_windows")
         .select("id, meal_type:meal_types(name), service_date, start_time, end_time")
         .eq("service_date", today)
         .order("start_time");
+      if (activeEventId) q = q.eq("event_id", activeEventId);
+      const { data } = await q;
       const list = (data ?? []) as unknown as MealWindow[];
       setWindows(list);
       if (list.length === 1) setWindowId(list[0].id);
     })();
-  }, []);
+  }, [activeEventId]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
+    return () => clearTimeout(t);
+  }, [manualQuery]);
+
+  useEffect(() => {
+    if (!activeEventId || debouncedManual.length < 2) {
+      setManualHits([]);
+      setManualSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setManualSearching(true);
+    void searchParticipantsByNameOrCpf(debouncedManual, activeEventId)
+      .then((rows) => {
+        if (!cancelled) setManualHits(rows);
+      })
+      .finally(() => {
+        if (!cancelled) setManualSearching(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedManual, activeEventId]);
+
+  async function registerMealConsumption(
+    participantId: string,
+    participantName: string | null,
+    method: "qr_scan" | "voucher" | "manual",
+    resultSource: "qr" | "manual",
+    foodRestrictions?: string | null,
+  ) {
+    if (!windowId) {
+      toast.error("Selecione uma janela de refeição primeiro");
+      return;
+    }
+
+    const { count } = await supabase
+      .from("meal_consumptions")
+      .select("id", { count: "exact", head: true })
+      .eq("participant_id", participantId)
+      .eq("meal_window_id", windowId);
+
+    if ((count || 0) > 0) {
+      setResult({ ok: false, message: "Refeição já registrada nesta janela", source: resultSource });
+      recordOutcome("error");
+      reopenIfContinuous();
+      return;
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user.id) {
+      setResult({ ok: false, message: "Sessão expirada. Faça login novamente." });
+      recordOutcome("error");
+      return;
+    }
+
+    const { error } = await supabase.from("meal_consumptions").insert({
+      participant_id: participantId,
+      meal_window_id: windowId,
+      method,
+      registered_by: session.user.id,
+    });
+
+    if (error) throw error;
+
+    const prefix = method === "voucher" ? "Voucher · " : method === "manual" ? "Manual · " : "";
+    setResult({
+      ok: true,
+      source: resultSource,
+      message: `${prefix}Consumo registrado: ${participantName || ""}`,
+      restrictions: foodRestrictions || undefined,
+    });
+    recordOutcome("ok");
+    if (navigator.vibrate) navigator.vibrate(200);
+    reopenIfContinuous();
+  }
 
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
@@ -93,75 +189,49 @@ export default function AlimentacaoScanPage() {
       let participantId: string | null = null;
       let participantName: string | null = null;
       const foodRestrictions: string | null = null;
-      let viaVoucher = false;
+      let method: "qr_scan" | "voucher" = "qr_scan";
 
-      // Auto-detecção: voucher tem prefixo `voucher:`
       if (isVoucherQr(rawValue)) {
         const voucher = await tryRedeemVoucher(rawValue, "meals", windowId);
         if (!voucher || !voucher.ok) {
-          setResult({ ok: false, message: voucherReasonLabel(voucher?.reason) });
+          setResult({ ok: false, message: voucherReasonLabel(voucher?.reason), source: "qr" });
           recordOutcome("error");
           reopenIfContinuous();
           return;
         }
         participantId = voucher.participant_id ?? null;
         participantName = voucher.person_name ?? null;
-        viaVoucher = true;
+        method = "voucher";
       } else {
-        const resolved = await resolveQrCredential(rawValue);
+        const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
         if (!resolved) {
-          setResult({ ok: false, message: "Credencial não encontrada ou inativa" });
+          setResult({ ok: false, message: "Credencial não encontrada ou inativa", source: "qr" });
           recordOutcome("error");
           return;
         }
         participantId = resolved.participant_id;
         participantName = resolved.full_name;
+        method = "qr_scan";
       }
 
       if (!participantId) {
-        setResult({ ok: false, message: "Não foi possível identificar a pessoa" });
+        setResult({ ok: false, message: "Não foi possível identificar a pessoa", source: "qr" });
         recordOutcome("error");
         return;
       }
 
-      const { count } = await supabase
-        .from("meal_consumptions")
-        .select("id", { count: "exact", head: true })
-        .eq("participant_id", participantId)
-        .eq("meal_window_id", windowId);
+      await registerMealConsumption(participantId, participantName, method, "qr", foodRestrictions);
+    } catch (err: unknown) {
+      setResult({ ok: false, message: `Erro ao registrar consumo: ${getErrorMessage(err)}` });
+      recordOutcome("error");
+    }
+  };
 
-      if ((count || 0) > 0) {
-        setResult({ ok: false, message: "Refeição já registrada nesta janela" });
-        recordOutcome("error");
-        reopenIfContinuous();
-        return;
-      }
-
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.user.id) {
-        setResult({ ok: false, message: "Sessão expirada. Faça login novamente." });
-        recordOutcome("error");
-        return;
-      }
-
-      const { error } = await supabase.from("meal_consumptions").insert({
-        participant_id: participantId,
-        meal_window_id: windowId,
-        method: viaVoucher ? "voucher" : "qr_scan",
-        registered_by: session.user.id,
-      });
-
-      if (error) throw error;
-
-      setResult({
-        ok: true,
-        message: `${viaVoucher ? "🎫 Voucher · " : ""}Consumo registrado: ${participantName || ""}`,
-        restrictions: foodRestrictions || undefined,
-      });
-      recordOutcome("ok");
-      if (navigator.vibrate) navigator.vibrate(200);
-      reopenIfContinuous();
+  const handleManualPick = async (row: ParticipantManualSearchRow) => {
+    setManualQuery("");
+    setManualHits([]);
+    try {
+      await registerMealConsumption(row.participant_id, row.full_name, "manual", "manual", null);
     } catch (err: unknown) {
       setResult({ ok: false, message: `Erro ao registrar consumo: ${getErrorMessage(err)}` });
       recordOutcome("error");
@@ -169,21 +239,27 @@ export default function AlimentacaoScanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b bg-card px-4 h-14">
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate("/pwa/alimentacao")} className="text-muted-foreground">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
+      <header className="relative flex h-14 items-center justify-between border-b border-border/80 bg-card/95 px-4 shadow-app-sm backdrop-blur-sm">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <button type="button" onClick={() => navigate("/pwa/alimentacao")} className="shrink-0 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <ScanLine className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-foreground">Scan Refeição</span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <ScanLine className="h-5 w-5 shrink-0 text-primary" />
+              <span className="truncate font-semibold text-foreground">Escanear QR</span>
+            </div>
+            <p className="truncate pl-7 text-[11px] text-muted-foreground">Credencial ou voucher</p>
+          </div>
         </div>
-        <Button size="sm" onClick={() => setScannerOpen(true)} disabled={!windowId}>
-          <ScanLine className="h-4 w-4 mr-1" /> Scan
+        <Button size="sm" className="shrink-0 rounded-lg" onClick={() => setScannerOpen(true)} disabled={!windowId}>
+          <ScanLine className="mr-1 h-4 w-4" /> Scan
         </Button>
       </header>
 
-      <main className="p-4 max-w-md mx-auto space-y-4">
+      <main className="relative mx-auto max-w-md space-y-4 p-4">
         <ScanPreferencesPanel
           prefs={prefs}
           telemetry={telemetry}
@@ -216,15 +292,32 @@ export default function AlimentacaoScanPage() {
         )}
 
         {result && (
-          <Card className={result.ok ? "border-success/50" : "border-destructive/50"}>
-            <CardContent className="p-4 space-y-2">
-              <div className="flex items-center gap-3">
-                {result.ok ? <CheckCircle className="h-6 w-6 text-success shrink-0" /> : <XCircle className="h-6 w-6 text-destructive shrink-0" />}
-                <span className="text-sm font-medium">{result.message}</span>
+          <Card
+            className={
+              result.ok
+                ? "border-blue-500/50 bg-card/95 shadow-app-lg ring-1 ring-blue-500/20"
+                : "border-destructive/50 bg-card/95"
+            }
+          >
+            <CardContent className="space-y-2 p-4">
+              <div className="flex items-start gap-3">
+                {result.ok ? (
+                  <CheckCircle className="h-6 w-6 shrink-0 text-blue-500" />
+                ) : (
+                  <XCircle className="h-6 w-6 shrink-0 text-destructive" />
+                )}
+                <div className="min-w-0">
+                  {result.ok && (
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+                      {result.source === "manual" ? "Busca manual" : "QR válido"}
+                    </p>
+                  )}
+                  <span className="text-sm font-medium leading-snug">{result.message}</span>
+                </div>
               </div>
               {result.restrictions && (
-                <div className="flex items-center gap-2 p-2 rounded bg-warning/10">
-                  <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
+                <div className="flex items-center gap-2 rounded-lg bg-warning/10 p-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
                   <span className="text-xs text-warning-foreground">Restrição: {result.restrictions}</span>
                 </div>
               )}
@@ -232,13 +325,57 @@ export default function AlimentacaoScanPage() {
           </Card>
         )}
 
-        <Button
-          variant="outline"
-          className="w-full min-h-[44px]"
-          onClick={() => setScannerOpen(true)}
-          disabled={!windowId}
-        >
-          <ScanLine className="h-4 w-4 mr-2" />
+        <div className="space-y-2">
+          <p className="text-center text-xs text-muted-foreground">ou buscar manualmente</p>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome ou CPF…"
+              value={manualQuery}
+              onChange={(e) => setManualQuery(e.target.value)}
+              className="h-11 border-border/80 bg-card/90 pl-10"
+            />
+          </div>
+          {!activeEventId && (
+            <p className="text-center text-[11px] text-amber-600 dark:text-amber-400">Selecione o evento ativo para habilitar a busca.</p>
+          )}
+          {activeEventId && debouncedManual.length >= 2 && (
+            <Card className="max-h-52 overflow-y-auto border-border/80 bg-card/95 shadow-app-sm">
+              <CardContent className="p-0">
+                {manualSearching && (
+                  <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-sm">Buscando…</span>
+                  </div>
+                )}
+                {!manualSearching && manualHits.length === 0 && (
+                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhum participante encontrado neste evento.</p>
+                )}
+                {!manualSearching &&
+                  manualHits.map((h) => (
+                    <button
+                      key={h.participant_id}
+                      type="button"
+                      disabled={!windowId}
+                      onClick={() => void handleManualPick(h)}
+                      className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60 disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">{h.full_name}</p>
+                        <p className="truncate text-xs text-muted-foreground">{h.participant_type}</p>
+                      </div>
+                    </button>
+                  ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        <Button variant="module" className="h-12 w-full rounded-xl font-semibold shadow-app-md" onClick={() => setScannerOpen(true)} disabled={!windowId}>
+          <ScanLine className="mr-2 h-5 w-5" />
           Escanear QR Code
         </Button>
       </main>
@@ -247,7 +384,7 @@ export default function AlimentacaoScanPage() {
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleScan}
-        title="Scan Refeição"
+        title="Escanear QR"
       />
     </div>
   );

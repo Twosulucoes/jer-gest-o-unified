@@ -22,7 +22,7 @@ interface StageMiniDashProps {
 
 const TONE_TEXT: Record<NonNullable<KPI["tone"]>, string> = {
   default: "text-foreground",
-  primary: "text-primary",
+  primary: "text-[hsl(var(--module-accent))]",
   success: "text-emerald-600 dark:text-emerald-400",
   warning: "text-amber-600 dark:text-amber-400",
   danger: "text-destructive",
@@ -30,7 +30,7 @@ const TONE_TEXT: Record<NonNullable<KPI["tone"]>, string> = {
 
 const TONE_PILL: Record<NonNullable<KPI["tone"]>, string> = {
   default: "bg-muted text-muted-foreground ring-border",
-  primary: "bg-primary/10 text-primary ring-primary/20",
+  primary: "bg-[hsl(var(--module-accent)/0.15)] text-[hsl(var(--module-accent))] ring-[hsl(var(--module-accent)/0.35)]",
   success: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-emerald-500/20",
   warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-amber-500/20",
   danger: "bg-destructive/10 text-destructive ring-destructive/20",

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface MatchItem {
   id: string;
@@ -35,49 +36,65 @@ export default function CoordenacaoAgendaPage() {
     })();
   }, []);
 
-  const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
-    agendada: { label: "Agendada", variant: "outline" },
-    em_andamento: { label: "Em andamento", variant: "default" },
-    finalizada: { label: "Finalizada", variant: "secondary" },
-    cancelada: { label: "Cancelada", variant: "destructive" },
+  const statusStyle: Record<string, { label: string; className: string }> = {
+    agendada: { label: "Próximo", className: "bg-muted text-muted-foreground" },
+    scheduled: { label: "Próximo", className: "bg-muted text-muted-foreground" },
+    em_andamento: { label: "Em curso", className: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
+    in_progress: { label: "Em curso", className: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
+    finalizada: { label: "Concluído", className: "bg-green-500/15 text-green-700 dark:text-green-400" },
+    finished: { label: "Concluído", className: "bg-green-500/15 text-green-700 dark:text-green-400" },
+    cancelada: { label: "Cancelada", className: "bg-red-500/15 text-red-600 dark:text-red-400" },
+    cancelled: { label: "Cancelada", className: "bg-red-500/15 text-red-600 dark:text-red-400" },
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate("/pwa/coordenacao-tecnica")} className="text-muted-foreground">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
+      <header className="relative flex h-14 items-center gap-2 border-b border-border/80 bg-card/95 px-4 shadow-app-sm backdrop-blur-sm">
+        <button type="button" onClick={() => navigate("/pwa/coordenacao-tecnica")} className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <Calendar className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Agenda de Hoje</span>
+        <div className="flex flex-col">
+          <span className="font-semibold leading-tight text-foreground">Agenda de hoje</span>
+          <span className="text-[11px] text-muted-foreground">Painel técnico do evento</span>
+        </div>
       </header>
 
-      <main className="p-4 max-w-md mx-auto space-y-3">
-        {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full" />)}
+      <main className="relative mx-auto max-w-md space-y-3 p-4">
+        {loading && [1, 2, 3].map((i) => <Skeleton key={i} className="h-[88px] w-full rounded-2xl" />)}
 
         {!loading && matches.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">Nenhuma partida agendada para hoje</div>
+          <div className="py-12 text-center text-sm text-muted-foreground">Nenhuma partida agendada para hoje</div>
         )}
 
         {matches.map((m) => {
-          const s = statusMap[m.status] || { label: m.status, variant: "outline" as const };
+          const s = statusStyle[m.status] || { label: m.status, className: "bg-muted text-muted-foreground" };
           const sportName = (m.phase as any)?.sport_event?.sport?.name || "";
           const catName = (m.phase as any)?.sport_event?.category?.name || "";
+          const title = [sportName, catName].filter(Boolean).join(" — ") || m.phase?.name || "Partida";
+          const timeStr = m.start_time ? format(new Date(`${m.match_date}T${m.start_time}`), "HH:mm") : "—";
+
           return (
-            <Card key={m.id} className="cursor-pointer hover:bg-accent/50 active:scale-[0.98] transition-all"
-              onClick={() => navigate(`/pwa/coordenacao-tecnica/partida/${m.id}`)}>
-              <CardContent className="p-3 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">
-                    {m.start_time ? format(new Date(`${m.match_date}T${m.start_time}`), "HH:mm") : "—"}
-                    {m.match_number ? ` • Jogo ${m.match_number}` : ""}
-                  </span>
-                  <Badge variant={s.variant}>{s.label}</Badge>
+            <Card
+              key={m.id}
+              className="cursor-pointer border-border/80 bg-card/95 shadow-app-sm transition-all hover:shadow-app-md active:scale-[0.99]"
+              onClick={() => navigate(`/pwa/coordenacao-tecnica/partida/${m.id}`)}
+            >
+              <CardContent className="flex gap-3 p-4">
+                <div className="w-14 shrink-0 text-center">
+                  <p className="font-mono text-lg font-bold leading-none text-foreground">{timeStr}</p>
+                  {m.match_number != null && (
+                    <p className="mt-1 text-[10px] font-medium text-muted-foreground">#{m.match_number}</p>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {[sportName, catName].filter(Boolean).join(" • ") || m.phase?.name || "—"}
-                </p>
-                {m.venue?.name && <p className="text-xs text-muted-foreground">📍 {m.venue.name}</p>}
+                <div className="min-w-0 flex-1 border-l border-border/60 pl-3">
+                  <p className="text-sm font-semibold leading-snug text-foreground">{title}</p>
+                  {m.venue?.name && <p className="mt-1 text-xs text-muted-foreground">{m.venue.name}</p>}
+                </div>
+                <Badge className={cn("h-fit shrink-0 rounded-full border-0 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide", s.className)}>
+                  {s.label}
+                </Badge>
               </CardContent>
             </Card>
           );

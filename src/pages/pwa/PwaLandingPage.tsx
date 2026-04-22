@@ -114,15 +114,15 @@ export default function PwaLandingPage() {
       >
         <div className="flex items-center justify-between max-w-md mx-auto">
           <div className="flex items-center gap-3">
-            <img src="/brand/symbol.png" alt="" className="h-10 w-10 rounded-lg shadow-lg" />
+            <img src="/brand/monogram.png" alt="" className="h-10 w-10 rounded-lg object-cover shadow-lg" />
             <div>
-              <h1 className="text-lg font-heading font-bold text-primary-foreground">JER Gestão</h1>
-              <p className="text-sm text-primary-foreground/70">
+              <h1 className="text-lg font-heading font-bold text-primary-foreground">JER's Gestão</h1>
+              <p className="text-sm text-primary-foreground/85">
                 Olá, {profile.full_name || "Usuário"}
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
+          <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-primary-foreground/85 hover:text-primary-foreground hover:bg-primary-foreground/15">
             <LogOut className="h-5 w-5" />
           </Button>
         </div>

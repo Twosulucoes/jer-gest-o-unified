@@ -73,7 +73,8 @@ export default function AlojamentoHomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-30" />
       <PwaHeader
         title="Alojamento"
         icon={Building}
@@ -91,7 +92,7 @@ export default function AlojamentoHomePage() {
         }
       />
 
-      <main className="p-4 max-w-md mx-auto space-y-4">
+      <main className="relative p-4 max-w-md mx-auto space-y-4">
         {loading ? (
           <Skeleton className="h-10 w-full" />
         ) : (
@@ -118,9 +119,9 @@ export default function AlojamentoHomePage() {
 
         <div className="grid grid-cols-2 gap-3">
           {actions.map((action) => (
-            <Card key={action.label} className="cursor-pointer hover:shadow-app-md active:scale-[0.98] transition-all" onClick={() => navigate(action.to)}>
+            <Card key={action.label} className="cursor-pointer border-border/80 bg-card/95 hover:shadow-app-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all" onClick={() => navigate(action.to)}>
               <CardContent className="p-4 flex flex-col items-center gap-2">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[hsl(var(--module-accent)/0.14)] text-[hsl(var(--module-accent))] shadow-app-sm">
                   <action.icon className="h-6 w-6" />
                 </div>
                 <span className="text-sm font-medium">{action.label}</span>

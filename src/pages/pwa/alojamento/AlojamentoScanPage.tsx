@@ -214,7 +214,7 @@ export default function AlojamentoScanPage() {
                 <p className="text-foreground font-medium">{result.full_name}</p>
               )}
               {result.participant_type && (
-                <Badge variant="secondary">{result.participant_type}</Badge>
+                <Badge variant="module">{result.participant_type}</Badge>
               )}
               {result.error && (
                 <p className="text-sm text-destructive">{result.error}: {result.message || ""}</p>

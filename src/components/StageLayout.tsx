@@ -25,6 +25,7 @@ import { NavigationHistoryTracker } from "@/hooks/useNavigationHistory";
 import { useMobileBackGuard } from "@/hooks/useMobileBackGuard";
 import { EtapaSwitcher } from "@/components/navigation/EtapaSwitcher";
 import { BackButton } from "@/components/navigation/BackButton";
+import { LAST_ACTIVE_STAGE_STORAGE_KEY } from "@/lib/activeStageStorage";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -89,7 +90,7 @@ export default function StageLayout() {
   // and emit stage_enter/stage_exit audit events.
   useEffect(() => {
     if (!stage?.id || !eventId) return;
-    try { localStorage.setItem("jer_last_active_stage_id", stage.id); } catch {}
+    try { localStorage.setItem(LAST_ACTIVE_STAGE_STORAGE_KEY, stage.id); } catch {}
 
     void supabase.from("audit_events").insert({
       action: "stage_enter",

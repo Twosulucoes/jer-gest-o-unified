@@ -132,136 +132,170 @@ export default function LoginPage() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4"
+      className="relative flex min-h-[100dvh] flex-col overflow-hidden"
       style={{
         background:
-          "linear-gradient(135deg, rgba(11,43,90,0.06) 0%, rgba(15,90,166,0.06) 35%, rgba(11,163,163,0.04) 65%, rgba(51,178,73,0.04) 100%), hsl(var(--background))",
+          "linear-gradient(165deg, rgba(11,43,90,0.07) 0%, rgba(15,90,166,0.05) 40%, rgba(11,163,163,0.04) 72%, rgba(51,178,73,0.03) 100%), hsl(var(--background))",
       }}
     >
-      <div className="w-full max-w-sm animate-fade-in">
-        <div className="mb-8 text-center">
-          <img
-            src="/brand/logo.png"
-            alt="JER Gestão"
-            className="mx-auto mb-4 h-20 object-contain dark:hidden"
-          />
-          <img
-            src="/brand/logo-dark.png"
-            alt="JER Gestão"
-            className="mx-auto mb-4 h-20 object-contain hidden dark:block"
-          />
-          <p className="mt-1 text-sm text-muted-foreground">
-            Plataforma de Gestão do JERs
-          </p>
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-[0.22] dark:opacity-30" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,hsla(222,72%,36%,0.14),transparent_50%)] dark:bg-[radial-gradient(ellipse_120%_80%_at_50%_-15%,hsla(41,100%,47%,0.12),transparent_52%)]" />
+
+      <div className="relative z-10 flex min-h-[100dvh] flex-1 flex-col px-5 sm:px-6">
+        <div
+          className="mx-auto flex w-full max-w-[380px] flex-1 flex-col pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in"
+        >
+          {/* Topo: só a marca — sem caixa nem repetir o nome */}
+          <header className="shrink-0 pb-5 text-center sm:pb-6">
+            <h1 className="sr-only">JER Gestão</h1>
+            <div className="mx-auto flex max-w-[220px] justify-center sm:max-w-[260px]">
+              <img
+                src="/brand/logo.png"
+                alt="JER Gestão"
+                className="h-14 w-auto max-w-full object-contain object-center dark:hidden sm:h-16"
+              />
+              <img
+                src="/brand/logo-dark.png"
+                alt="JER Gestão"
+                className="hidden h-14 w-auto max-w-full object-contain object-center dark:block sm:h-16"
+              />
+            </div>
+            <p className="mx-auto mt-3 max-w-[280px] text-sm leading-snug text-muted-foreground">
+              Entre com o e-mail e a senha da sua instituição.
+            </p>
+          </header>
+
+          {/* Formulário: corpo principal */}
+          <main className="flex min-h-0 flex-1 flex-col justify-center py-2">
+            <Card className="border-0 bg-card/95 shadow-app-xl ring-1 ring-border/50 backdrop-blur-md dark:bg-card/90 dark:ring-border/40 sm:rounded-2xl sm:border sm:border-border/70">
+              <CardHeader className="px-5 pb-0 pt-5 sm:px-6 sm:pt-6">
+                <h2 className="font-heading text-lg font-semibold tracking-tight text-card-foreground">
+                  Entrar
+                </h2>
+              </CardHeader>
+              <CardContent className="px-5 pb-6 pt-5 sm:px-6 sm:pb-7 sm:pt-6">
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      E-mail
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      inputMode="email"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      placeholder="nome@instituicao.gov.br"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoComplete="email"
+                      className="h-12 rounded-xl border-border/80 bg-background/80 text-base shadow-none dark:bg-background/40 sm:h-11 sm:text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      Senha
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Sua senha"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        autoComplete="current-password"
+                        className="h-12 rounded-xl border-border/80 bg-background/80 pr-11 text-base shadow-none dark:bg-background/40 sm:h-11 sm:text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-0 top-0 flex h-12 w-11 items-center justify-center rounded-r-xl text-muted-foreground transition-colors hover:text-foreground active:bg-muted/50 sm:h-11"
+                        tabIndex={-1}
+                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {error ? (
+                    <div className="rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
+                      {error}
+                    </div>
+                  ) : null}
+
+                  <div className="space-y-3 pt-1">
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="h-12 w-full rounded-2xl text-base font-semibold shadow-app-md sm:h-11 sm:text-sm"
+                      disabled={loading}
+                    >
+                      {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                      Entrar
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => setRecoverOpen(true)}
+                      className="flex w-full min-h-[44px] items-center justify-center rounded-xl text-sm font-medium text-primary transition-colors hover:bg-primary/5 hover:text-primary/90 active:bg-primary/10"
+                    >
+                      Esqueci minha senha
+                    </button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </main>
+
+          {/* Rodapé: fixo no fim da viewport em telas curtas */}
+          <footer className="mt-auto shrink-0 space-y-4 border-t border-border/40 pt-6 text-center dark:border-border/30">
+            <p className="mx-auto max-w-[300px] text-[11px] leading-relaxed text-muted-foreground/85">
+              Acesso restrito a usuários autorizados pela secretaria ou coordenação do evento.
+            </p>
+            <p className="text-[10px] text-muted-foreground/55">
+              Desenvolvido por{" "}
+              <a
+                href={brand.developer.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline decoration-border/60 underline-offset-2 transition-colors hover:text-muted-foreground"
+              >
+                {brand.developer.name}
+              </a>
+            </p>
+          </footer>
         </div>
-
-        <Card className="shadow-app-lg">
-          <CardHeader className="pb-2">
-            <h2 className="font-heading text-base font-semibold text-card-foreground">
-              Acesse sua conta
-            </h2>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs font-medium">
-                  E-mail
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-xs font-medium">
-                  Senha
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
-
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Entrar
-              </Button>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setRecoverOpen(true)}
-                  className="text-sm text-primary underline underline-offset-2 hover:text-primary/80"
-                >
-                  Esqueci minha senha
-                </button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        <p className="mt-6 text-center text-xs text-muted-foreground/60">
-          Sistema restrito a usuários autorizados
-        </p>
       </div>
 
-      {/* Recovery Modal */}
-      <Dialog open={recoverOpen} onOpenChange={closeRecover}>
-        <DialogContent className="max-w-sm">
+      <Dialog open={recoverOpen} onOpenChange={(open) => { if (!open) closeRecover(); }}>
+        <DialogContent className="max-w-[calc(100vw-1.5rem)] rounded-2xl sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-base">Recuperar senha</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">Recuperar senha</DialogTitle>
           </DialogHeader>
 
           {recoverSent ? (
-            <div className="text-center space-y-3 py-4">
-              <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                <CheckCircle className="h-7 w-7 text-primary" />
+            <div className="space-y-4 py-2 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+                <CheckCircle className="h-8 w-8 text-primary" />
               </div>
-              <p className="text-sm text-muted-foreground">
-                Email enviado! Verifique sua caixa de entrada para redefinir sua senha.
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Enviamos as instruções para o seu e-mail. Verifique também o spam.
               </p>
-              <Button variant="outline" onClick={closeRecover}>
+              <Button variant="outline" className="h-11 w-full rounded-xl" onClick={closeRecover}>
                 Fechar
               </Button>
             </div>
           ) : (
             <form onSubmit={handleRecover} className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Você receberá um email com instruções para redefinir sua senha.
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Você receberá um link para criar uma nova senha.
               </p>
               <div className="space-y-2">
-                <Label htmlFor="recover-email">E-mail</Label>
+                <Label htmlFor="recover-email" className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  E-mail
+                </Label>
                 <Input
                   id="recover-email"
                   type="email"
@@ -269,34 +303,22 @@ export default function LoginPage() {
                   onChange={(e) => setRecoverEmail(e.target.value)}
                   required
                   placeholder="seu@email.com"
+                  className="h-12 rounded-xl"
                 />
               </div>
-              <DialogFooter>
-                <Button variant="outline" type="button" onClick={closeRecover}>
+              <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+                <Button variant="outline" type="button" className="h-11 w-full rounded-xl sm:w-auto" onClick={closeRecover}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={recoverLoading}>
-                  {recoverLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Enviar link de recuperação
+                <Button type="submit" className="h-11 w-full rounded-xl sm:w-auto" disabled={recoverLoading}>
+                  {recoverLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Enviar link
                 </Button>
               </DialogFooter>
             </form>
           )}
         </DialogContent>
       </Dialog>
-      <p className="mt-6 text-center text-[11px] text-muted-foreground/50">
-        Desenvolvido por{" "}
-        <a
-          href={brand.developer.website}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-muted-foreground transition-colors"
-        >
-          {brand.developer.name}
-        </a>
-      </p>
     </div>
   );
 }

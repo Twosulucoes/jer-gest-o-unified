@@ -38,24 +38,23 @@ export default function PwaModuleLayout({ children, moduleTitle, moduleIcon: Ico
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="relative overflow-hidden border-b bg-primary text-primary-foreground">
+      <header className="relative overflow-hidden border-b border-border/90 bg-card text-card-foreground shadow-app-sm">
         <div
-          className="absolute inset-0 opacity-20"
+          className="absolute inset-x-0 top-0 h-0.5"
           style={{
-            background:
-              "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(212 84% 36%) 35%, hsl(174 87% 34%) 65%, hsl(133 55% 45%) 100%)",
+            background: "hsl(var(--module-accent))",
           }}
         />
         <div className="relative flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-2">
-            {Icon && <Icon className="h-5 w-5" />}
+            {Icon && <Icon className="h-5 w-5" style={{ color: "hsl(var(--module-accent))" }} />}
             <span className="font-heading font-semibold tracking-tight">{moduleTitle}</span>
           </div>
           <div className="flex items-center gap-3">
             {profile?.full_name && (
-              <span className="text-xs text-primary-foreground/70 hidden sm:inline">{profile.full_name}</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">{profile.full_name}</span>
             )}
-            <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-muted-foreground hover:text-foreground hover:bg-muted">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>

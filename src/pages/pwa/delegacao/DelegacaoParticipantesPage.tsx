@@ -5,7 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { PwaSectionLabel } from "@/components/pwa/PwaDashboardPrimitives";
 import { ArrowLeft, ClipboardList, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Participant {
   id: string;
@@ -22,12 +24,12 @@ const TYPE_LABEL: Record<string, string> = {
   staff: "Staff",
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  confirmed: "Confirmado",
-  pending: "Pendente",
-  cancelled: "Cancelado",
-  rejected: "Rejeitado",
-};
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 export default function DelegacaoParticipantesPage() {
   const navigate = useNavigate();
@@ -68,50 +70,79 @@ export default function DelegacaoParticipantesPage() {
   }, [navigate]);
 
   const filtered = filter
-    ? participants.filter(p => p.full_name.toLowerCase().includes(filter.toLowerCase()))
+    ? participants.filter((p) => p.full_name.toLowerCase().includes(filter.toLowerCase()))
     : participants;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate("/pwa/delegacao")} className="text-muted-foreground">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
+      <header className="relative flex h-14 items-center gap-2 border-b border-border/80 bg-card/95 px-4 shadow-app-sm backdrop-blur-sm">
+        <button type="button" onClick={() => navigate("/pwa/delegacao")} className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <ClipboardList className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">Participantes</span>
       </header>
 
-      <main className="p-4 max-w-md mx-auto space-y-3">
+      <main className="relative max-w-md mx-auto space-y-4 p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar..." value={filter} onChange={(e) => setFilter(e.target.value)} className="pl-9" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome..."
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="h-11 border-border/80 bg-card/90 pl-10"
+          />
         </div>
 
-        {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full" />)}
+        <PwaSectionLabel>Atletas e comissão</PwaSectionLabel>
+
+        {loading && [1, 2, 3].map((i) => <Skeleton key={i} className="h-[72px] w-full rounded-2xl" />)}
 
         {!loading && participants.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            Nenhuma delegação vinculada ao seu perfil
-          </div>
+          <div className="py-10 text-center text-sm text-muted-foreground">Nenhuma delegação vinculada ao seu perfil</div>
         )}
 
         {!loading && participants.length > 0 && filtered.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">Nenhum participante encontrado</div>
+          <div className="py-10 text-center text-sm text-muted-foreground">Nenhum participante encontrado</div>
         )}
 
-        {filtered.map((p) => (
-          <Card key={p.id}>
-            <CardContent className="p-3 flex items-center justify-between">
-              <div>
-                <p className="font-medium text-sm">{p.full_name}</p>
-                <p className="text-xs text-muted-foreground">{TYPE_LABEL[p.participant_type] || p.participant_type}</p>
-              </div>
-              <Badge variant={p.status === "confirmed" ? "default" : "secondary"}>
-                {STATUS_LABEL[p.status] || p.status}
-              </Badge>
-            </CardContent>
-          </Card>
-        ))}
+        <div className="space-y-2">
+          {filtered.map((p) => {
+            const ok = p.status === "confirmed";
+            const pending = p.status === "pending";
+            return (
+              <Card key={p.id} className="border-border/80 bg-card/95 shadow-app-sm">
+                <CardContent className="flex items-center gap-3 p-3">
+                  <div
+                    className={cn(
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                      ok && "bg-green-500/20 text-green-700 dark:text-green-400",
+                      pending && "bg-amber-500/20 text-amber-800 dark:text-amber-400",
+                      !ok && !pending && "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {initials(p.full_name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold text-sm text-foreground">{p.full_name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{TYPE_LABEL[p.participant_type] || p.participant_type}</p>
+                  </div>
+                  <Badge
+                    className={cn(
+                      "shrink-0 rounded-full border-0 px-2.5 py-0.5 text-[11px] font-semibold",
+                      ok && "bg-green-500/15 text-green-700 dark:text-green-400",
+                      pending && "bg-red-500/15 text-red-600 dark:text-red-400",
+                      !ok && !pending && "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {ok ? "OK" : pending ? "Pendente" : p.status}
+                  </Badge>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </main>
     </div>
   );

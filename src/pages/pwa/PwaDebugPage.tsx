@@ -165,7 +165,7 @@ export default function PwaDebugPage() {
               </div>
               <div>
                 <span className="text-muted-foreground">profiles.role (legado):</span>{" "}
-                {legacyRole ? <Badge variant="secondary">{legacyRole}</Badge> : <span>—</span>}
+                {legacyRole ? <Badge variant="module">{legacyRole}</Badge> : <span>—</span>}
               </div>
               {userRoles.length === 0 && legacyRole && (
                 <Button size="sm" onClick={handleMigrate} disabled={migrating}>
@@ -206,7 +206,7 @@ export default function PwaDebugPage() {
                 queries[key].error ? (
                   <Badge variant="destructive" className="text-xs">❌ {queries[key].error}</Badge>
                 ) : (
-                  <Badge variant={queries[key].count! > 0 ? "default" : "secondary"} className="text-xs">
+                  <Badge variant={queries[key].count! > 0 ? "module" : "secondary"} className="text-xs">
                     {queries[key].count} registro(s)
                   </Badge>
                 )
@@ -234,7 +234,7 @@ export default function PwaDebugPage() {
                   {rc.error ? (
                     <Badge variant="destructive" className="text-xs">❌ {rc.error}</Badge>
                   ) : (
-                    <Badge variant={rc.result ? "default" : "secondary"} className="text-xs">
+                    <Badge variant={rc.result ? "module" : "secondary"} className="text-xs">
                       {rc.result ? "✅ true" : "❌ false"}
                     </Badge>
                   )}

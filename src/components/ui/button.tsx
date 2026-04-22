@@ -10,19 +10,21 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-app-sm hover:shadow-app-md hover:-translate-y-px hover:brightness-110",
+          "bg-primary text-primary-foreground shadow-app-sm hover:shadow-app-md hover:-translate-y-px",
         gradient:
           "btn-gradient btn-shine text-white shadow-app-sm hover:shadow-glow hover:-translate-y-px",
         sport:
           "btn-sport btn-shine shadow-app-sm hover:shadow-accent-glow hover:-translate-y-px font-bold",
+        module:
+          "bg-[hsl(var(--module-accent))] text-black shadow-app-sm hover:-translate-y-px",
         destructive:
           "bg-destructive text-destructive-foreground shadow-app-sm hover:bg-destructive/90 hover:-translate-y-px",
         outline:
-          "border border-input bg-background hover:bg-secondary hover:text-secondary-foreground hover:border-primary/30 shadow-app-sm",
+          "border border-input bg-background text-foreground hover:bg-muted hover:text-foreground hover:border-border shadow-app-sm",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/70 shadow-app-sm",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/85 shadow-app-sm",
         ghost:
-          "hover:bg-secondary hover:text-secondary-foreground",
+          "text-muted-foreground hover:bg-muted hover:text-foreground",
         link:
           "text-primary underline-offset-4 hover:underline",
       },

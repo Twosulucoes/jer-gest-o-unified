@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
   Bus, Clock, MapPin, Users, Play, ArrowRight,
-  Search, Unlock, AlertTriangle,
+  Search, Unlock, AlertTriangle, QrCode,
 } from "lucide-react";
 import { format } from "date-fns";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
@@ -135,7 +135,7 @@ export default function TransporteHomePage() {
 
   const TripCard = ({ trip, variant }: { trip: TripRow; variant: "mine" | "available" | "other" }) => (
     <Card className={`transition-all ${
-      variant === "mine" ? "border-primary bg-primary/5 shadow-md" :
+      variant === "mine" ? "border-[hsl(var(--module-accent)/0.45)] bg-[hsl(var(--module-accent)/0.09)] shadow-md" :
       variant === "other" ? "opacity-60" : ""
     }`}>
       <CardContent className="p-2.5 space-y-1.5">
@@ -143,7 +143,7 @@ export default function TransporteHomePage() {
           <span className="font-semibold text-sm">
             {trip.scheduled_at ? format(new Date(trip.scheduled_at), "HH:mm") : "—"}
           </span>
-          <Badge variant={variant === "mine" ? "default" : variant === "other" ? "secondary" : "outline"} className="text-[10px]">
+          <Badge variant={variant === "mine" ? "module" : variant === "other" ? "secondary" : "outline"} className="text-[10px] rounded-full">
             {variant === "mine" ? "Em andamento" : variant === "other" ? "Outro motorista" : "Disponível"}
           </Badge>
         </div>
@@ -158,7 +158,7 @@ export default function TransporteHomePage() {
 
         {variant === "mine" && (
           <div className="flex gap-2 pt-1">
-            <Button size="sm" className="flex-1 h-8 text-xs" onClick={() => navigate(`/pwa/transporte/embarque/${trip.id}`)}>
+            <Button size="sm" variant="module" className="flex-1 h-8 text-xs" onClick={() => navigate(`/pwa/transporte/embarque/${trip.id}`)}>
               <ArrowRight className="h-3.5 w-3.5 mr-1" /> Continuar
             </Button>
             <Button size="sm" variant="outline" className="h-8" onClick={() => handleRelease(trip.id)}>
@@ -168,7 +168,7 @@ export default function TransporteHomePage() {
         )}
 
         {variant === "available" && (
-          <Button size="sm" className="w-full h-8 text-xs" variant="outline" disabled={checkingIn === trip.id} onClick={() => handleCheckIn(trip.id)}>
+          <Button size="sm" className="w-full h-8 text-xs" variant="module" disabled={checkingIn === trip.id} onClick={() => handleCheckIn(trip.id)}>
             <Play className="h-3.5 w-3.5 mr-1" />
             {checkingIn === trip.id ? "Iniciando..." : "Iniciar Viagem"}
           </Button>
@@ -182,10 +182,10 @@ export default function TransporteHomePage() {
   }) => (
     sectionTrips.length > 0 ? (
       <div className="space-y-2">
-        <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+        <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-card/80 px-2.5 py-1.5 text-xs font-semibold text-foreground">
           <Icon className="h-3.5 w-3.5" />
           <span>{title}</span>
-          <Badge variant="secondary" className="ml-auto text-[10px]">{sectionTrips.length}</Badge>
+          <Badge variant={variant === "mine" ? "module" : "secondary"} className="ml-auto text-[10px]">{sectionTrips.length}</Badge>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {sectionTrips.map(t => <TripCard key={t.id} trip={t} variant={variant} />)}
@@ -195,13 +195,14 @@ export default function TransporteHomePage() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-30" />
       <PwaHeader title="Transporte" icon={Bus} backTo="/pwa" onSignOut={handleSignOut} />
 
-      <main className="p-3 max-w-5xl mx-auto space-y-3">
+      <main className="relative mx-auto max-w-5xl space-y-3 p-3 pb-24">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar rota ou veículo..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
+          <Input placeholder="Buscar rota ou veículo..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-10 text-sm border-border/80 bg-card/90" />
         </div>
 
         {loading && <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">{[1,2,3].map(i => <Skeleton key={i} className="h-28 w-full" />)}</div>}
@@ -221,6 +222,15 @@ export default function TransporteHomePage() {
           </>
         )}
       </main>
+
+      <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border/80 bg-background/95 p-3 backdrop-blur-md">
+        <div className="mx-auto max-w-5xl">
+          <Button variant="module" className="h-12 w-full rounded-xl text-base font-semibold shadow-app-md" onClick={() => navigate("/pwa/transporte/scan")}>
+            <QrCode className="mr-2 h-5 w-5" />
+            Escanear QR de Embarque
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

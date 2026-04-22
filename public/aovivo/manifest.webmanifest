@@ -1,14 +1,24 @@
 {
   "name": "JER Ao Vivo",
-  "short_name": "JER Ao Vivo",
-  "description": "Registro ao vivo de partidas — JER's 2026",
+  "short_name": "Ao Vivo",
+  "description": "Registro de partidas em tempo real — JER Gestão",
   "start_url": "/aovivo",
+  "scope": "/aovivo",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#020617",
   "theme_color": "#0f172a",
   "icons": [
-    { "src": "/aovivo/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/aovivo/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/aovivo/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable any" }
+    { "src": "/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/pwa/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/pwa/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable any" }
+  ],
+  "screenshots": [
+    {
+      "src": "/pwa/splash.png",
+      "sizes": "1024x1536",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "JER Ao Vivo"
+    }
   ]
 }

@@ -234,16 +234,16 @@ export default function TransportePassageirosPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b bg-primary text-primary-foreground px-3 py-2">
+      <header className="sticky top-0 z-30 border-b border-border bg-surface text-text px-3 py-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate(-1)} className="text-primary-foreground/70 hover:text-primary-foreground">
+            <button onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </button>
             <span className="font-heading font-semibold tracking-tight text-sm">Passageiros da Viagem</span>
           </div>
           <div className="flex items-center gap-2 text-xs">
-            <span className="bg-primary-foreground/10 rounded-full px-2 py-1">
+            <span className="bg-[hsl(var(--module-accent)/0.16)] rounded-full px-2 py-1">
               <span className="font-bold text-green-300">{boardedCount}</span>
               <span className="opacity-70"> emb</span>
               <span className="mx-1 opacity-40">|</span>
@@ -263,7 +263,7 @@ export default function TransportePassageirosPage() {
           </div>
         </div>
         <div className="mt-2">
-          <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={exportCsv}>
+          <Button size="sm" variant="module" className="h-8 text-xs" onClick={exportCsv}>
             <Download className="h-3.5 w-3.5 mr-1" /> Exportar CSV
           </Button>
         </div>
@@ -324,7 +324,7 @@ export default function TransportePassageirosPage() {
             const statusLabel = p.status === "boarded" ? `✓ Embarcado ${p.boarded_at ? format(new Date(p.boarded_at), "HH:mm") : ""}` : p.status === "no_show" ? "✗ Não Compareceu" : "⏳ Pendente";
 
             return (
-              <Card key={p.id} className={p.status === "boarded" ? "border-primary/30 bg-primary/5" : p.status === "no_show" ? "border-destructive/30 bg-destructive/5" : ""}>
+              <Card key={p.id} className={p.status === "boarded" ? "border-[hsl(var(--module-accent)/0.45)] bg-[hsl(var(--module-accent)/0.09)]" : p.status === "no_show" ? "border-destructive/30 bg-destructive/5" : ""}>
                 <CardContent className="p-3 space-y-2">
                   {/* Header */}
                   <div className="flex items-center gap-2">
@@ -342,7 +342,7 @@ export default function TransportePassageirosPage() {
                   {/* Badges */}
                   <div className="flex flex-wrap gap-1">
                     <Badge variant={statusColor} className="text-[10px]">{statusLabel}</Badge>
-                    {p.is_manual && <Badge variant="secondary" className="text-[10px]">Manual</Badge>}
+                    {p.is_manual && <Badge variant="module" className="text-[10px]">Manual</Badge>}
                   </div>
 
                   {/* Phones */}
