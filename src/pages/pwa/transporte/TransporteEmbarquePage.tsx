@@ -382,7 +382,7 @@ export default function TransporteEmbarquePage() {
         </div>
       </main>
 
-      <QrCodeScanner isOpen={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} title="Scan Embarque" />
+      <QrCodeScanner isOpen={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} title={getPwaMessage("SCAN_EMBARQUE", lang)} />
 
       {tripId && (
         <>
