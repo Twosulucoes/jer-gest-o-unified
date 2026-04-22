@@ -111,6 +111,7 @@ export default function ValidacaoQRPage() {
       if (!response.ok) throw new Error(json.error || "Erro desconhecido");
 
       setResult(json);
+      setShowConfirm(true);
     } catch (err) {
       toast.error(`Erro: ${(err as Error).message}`);
     } finally {
