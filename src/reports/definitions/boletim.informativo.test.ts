@@ -1,28 +1,49 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { boletimInformativoReport } from './boletim.informativo';
-import { parseISO } from 'date-fns';
 
 describe('Boletim Informativo Report', () => {
-  const mockSupabase = {
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    in: vi.fn().mockReturnThis(),
-    gte: vi.fn().mockReturnThis(),
-    lte: vi.fn().mockReturnThis(),
-    neq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    range: vi.fn().mockReturnThis(),
-  } as any;
+  const createMockQuery = () => {
+    const query: any = {
+      eq: vi.fn(),
+      in: vi.fn(),
+      gte: vi.fn(),
+      lte: vi.fn(),
+      neq: vi.fn(),
+      order: vi.fn(),
+      range: vi.fn(),
+      select: vi.fn(),
+      then: vi.fn((onFulfilled) => Promise.resolve({ data: [], count: 0 }).then(onFulfilled)),
+    };
+    
+    query.eq.mockReturnValue(query);
+    query.in.mockReturnValue(query);
+    query.gte.mockReturnValue(query);
+    query.lte.mockReturnValue(query);
+    query.neq.mockReturnValue(query);
+    query.order.mockReturnValue(query);
+    query.range.mockReturnValue(query);
+    query.select.mockReturnValue(query);
+    
+    return query;
+  };
+
+  let mockSupabase: any;
+  let queries: Map<string, any>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    queries = new Map();
+    mockSupabase = {
+      from: vi.fn((table) => {
+        if (!queries.has(table)) {
+          queries.set(table, createMockQuery());
+        }
+        return queries.get(table);
+      }),
+    };
   });
 
   it('should filter official_bulletins by status "publicado"', async () => {
-    mockSupabase.from.mockReturnValue(mockSupabase);
-    mockSupabase.select.mockResolvedValue({ data: [], count: 0 });
-
     const filters = {
       event_id: 'test-event-id',
       date: '2024-05-20',
@@ -34,15 +55,12 @@ describe('Boletim Informativo Report', () => {
       await (boletimInformativoReport.datasource as any).customLoader(filters, {}, mockSupabase);
     }
 
-    // Check if official_bulletins was filtered by status 'publicado'
+    const bulletinQuery = queries.get('official_bulletins');
     expect(mockSupabase.from).toHaveBeenCalledWith('official_bulletins');
-    expect(mockSupabase.eq).toHaveBeenCalledWith('status', 'publicado');
+    expect(bulletinQuery.eq).toHaveBeenCalledWith('status', 'publicado');
   });
 
   it('should filter competition_match_results by status "resultado_validado" or "publicado"', async () => {
-    mockSupabase.from.mockReturnValue(mockSupabase);
-    mockSupabase.select.mockResolvedValue({ data: [], count: 0 });
-
     const filters = {
       event_id: 'test-event-id',
       date: '2024-05-20',
@@ -54,8 +72,8 @@ describe('Boletim Informativo Report', () => {
       await (boletimInformativoReport.datasource as any).customLoader(filters, {}, mockSupabase);
     }
 
-    // Check if competition_match_results was filtered by the correct statuses
+    const resultsQuery = queries.get('competition_match_results');
     expect(mockSupabase.from).toHaveBeenCalledWith('competition_match_results');
-    expect(mockSupabase.in).toHaveBeenCalledWith('result_status', ['resultado_validado', 'publicado']);
+    expect(resultsQuery.in).toHaveBeenCalledWith('result_status', ['resultado_validado', 'publicado']);
   });
 });
