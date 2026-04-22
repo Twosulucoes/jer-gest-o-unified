@@ -1,5 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, AlertTriangle, Info } from "lucide-react";
+import { AlertCircle, AlertTriangle, Info, CheckSquare, ExternalLink } from "lucide-react";
 import { ValidationAlert } from "./useBulletinData";
 
 interface BulletinValidationAlertsProps {
