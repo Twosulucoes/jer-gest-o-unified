@@ -311,7 +311,7 @@ export default function AlimentacaoScanPage() {
                 <div className="min-w-0">
                   {result.ok && (
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                      {result.source === "manual" ? "Busca manual" : "QR válido"}
+                      {result.source === "manual" ? getPwaMessage("MANUAL_SEARCH", lang) : getPwaMessage("QR_VALID", lang)}
                     </p>
                   )}
                   <span className="text-sm font-medium leading-snug">{result.message}</span>
