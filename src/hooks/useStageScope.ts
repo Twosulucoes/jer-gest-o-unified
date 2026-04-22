@@ -58,7 +58,8 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
   const eventId = useActiveEventId();
   const params = useParams<{ stageId?: string }>();
   const [searchParams] = useSearchParams();
-  const stageId = params.stageId ?? searchParams.get("stage") ?? null;
+  const { selectedStageId } = useCompetitionContext();
+  const stageId = params.stageId ?? searchParams.get("stage") ?? selectedStageId ?? null;
 
   const { data: stage } = useQuery({
     queryKey: ["event_stage_meta", stageId, eventId],
