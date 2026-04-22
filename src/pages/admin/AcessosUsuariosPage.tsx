@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   Copy, Key, LogOut as LogOutIcon, UserPlus, Settings2, Search,
-  Mail, ShieldCheck, ShieldX, Clock, User as UserIcon, RefreshCw, Trophy,
+  Mail, ShieldCheck, ShieldX, Clock, User as UserIcon, RefreshCw, Trophy, AlertTriangle,
 } from "lucide-react";
 import SportLinksDialog from "@/components/admin/SportLinksDialog";
 
@@ -442,13 +442,20 @@ export default function AcessosUsuariosPage() {
                             </Tooltip>
                           </TooltipProvider>
                         )}
-                        {isCoord && userSports.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {userSports.map((s) => (
-                              <Badge key={s.sport_id} variant="secondary" className="text-[10px] px-1.5 py-0">
-                                {s.name}
+                        {isCoord && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {userSports.length > 0 ? (
+                              userSports.map((s) => (
+                                <Badge key={s.sport_id} variant="secondary" className="text-[10px] px-1.5 py-0">
+                                  {s.name}
+                                </Badge>
+                              ))
+                            ) : (
+                              <Badge variant="destructive" className="text-[10px] px-1.5 py-0 animate-pulse">
+                                <AlertTriangle className="h-2.5 w-2.5 mr-1" />
+                                Sem modalidade
                               </Badge>
-                            ))}
+                            )}
                           </div>
                         )}
                       </div>
@@ -656,7 +663,23 @@ export default function AcessosUsuariosPage() {
                         <Skeleton className="h-6 w-1/2" />
                       </div>
                     ) : drawerSportLinks.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">Nenhuma modalidade vinculada ainda.</p>
+                      <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 space-y-2">
+                        <p className="text-xs text-destructive font-medium flex items-center gap-1.5">
+                          <AlertTriangle className="h-3.5 w-3.5" />
+                          Nenhuma modalidade vinculada
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          Coordenadores de modalidade precisam de pelo menos uma modalidade vinculada para acessar o painel e gerenciar resultados.
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full h-8 text-[10px]"
+                          onClick={() => setSportLinksUser({ id: selectedUser.user_id, name: selectedUser.full_name || selectedUser.email })}
+                        >
+                          Vincular agora
+                        </Button>
+                      </div>
                     ) : (
                       <div className="flex flex-wrap gap-1.5">
                         {drawerSportLinks.map((l: any) => (
@@ -690,7 +713,7 @@ export default function AcessosUsuariosPage() {
                   />
                 </div>
 
-                {statusLabel(selectedUser).text === "Convite pendente" && (
+                {statusLabel(selectedUser).text === "Convite enviado" && (
                   <Button
                     variant="outline"
                     size="sm"
