@@ -32,7 +32,7 @@ const MODULES: ModuleCard[] = [
   { label: "Ocorrências", description: "Registro e acompanhamento de incidentes.", icon: <AlertTriangle className="h-5 w-5" />, to: "ocorrencias", color: "text-red-600", roles: ALL_OPS },
   { label: "Protestos (CDE)", description: "Fila de julgamento de protestos online.", icon: <Gavel className="h-5 w-5" />, to: "protestos", color: "text-rose-600", roles: [...ALL_OPS, "cde", "super_admin"] },
   { label: "Pesquisa de Satisfação", description: "Coleta de feedback dos participantes.", icon: <ClipboardList className="h-5 w-5" />, to: "pesquisa", color: "text-blue-600", roles: ALL_OPS },
-  { label: "Relatórios da Etapa", description: "Relatórios operacionais desta etapa.", icon: <FileBarChart className="h-5 w-5" />, to: "relatorios", color: "text-indigo-600", roles: ALL_OPS },
+  { label: "Relatórios da Etapa", description: "Relatórios operacionais desta etapa.", icon: <FileBarChart className="h-5 w-5" />, to: "relatorios", color: "text-indigo-600", roles: [...ALL_OPS, "coordenador_modalidade"] },
 ];
 
 export default function StageHomePage() {
