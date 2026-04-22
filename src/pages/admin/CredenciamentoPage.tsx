@@ -135,11 +135,12 @@ export default function CredenciamentoPage() {
   const queryClient = useQueryClient();
   const { hasRole, user } = useAuth();
   const selectedEventId = useActiveEventId();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [filterState, setFilterState] = useState("all");
-  const [filterInstitution, setFilterInstitution] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+  const [filterType, setFilterType] = useState(searchParams.get("type") || "all");
+  const [filterState, setFilterState] = useState(searchParams.get("status") || "all");
+  const [filterInstitution, setFilterInstitution] = useState(searchParams.get("inst") || "all");
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
   const [previewParticipantId, setPreviewParticipantId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -148,6 +149,7 @@ export default function CredenciamentoPage() {
   const [batchLabelIds, setBatchLabelIds] = useState<string[]>([]);
   const [batchCredentialConfirmOpen, setBatchCredentialConfirmOpen] = useState(false);
   const [batchEmitConfirmOpen, setBatchEmitConfirmOpen] = useState(false);
+
   
   const [blockingDialogData, setBlockingDialogData] = useState<{ participantName: string; items: any[] } | null>(null);
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
