@@ -104,7 +104,7 @@ export default function PwaLandingPage() {
   const visibleCards = MODULE_CARDS.filter((c) => profile.roles.includes(c.role));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="tactical-cockpit min-h-screen bg-background">
       <div
         className="px-5 pt-6 pb-5"
         style={{

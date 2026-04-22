@@ -105,7 +105,7 @@ export default function PwaModulePage() {
   const Icon = config.icon;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="tactical-cockpit min-h-screen bg-background">
       <PwaHeader title={config.label} icon={Icon} backTo="/pwa" onSignOut={handleSignOut} />
 
       <main className="p-4 max-w-md mx-auto space-y-6">
