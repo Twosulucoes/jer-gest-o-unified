@@ -167,12 +167,16 @@ export default function AlimentacaoScanPage() {
     if (error) throw error;
 
     const prefix = method === "voucher" ? "Voucher · " : method === "manual" ? `${getPwaMessage("MANUAL_SEARCH", lang)} · ` : "";
+    const successMsg = `${prefix}${getPwaMessage("SUCCESS_REGISTERED", lang)}: ${participantName || ""}`;
+    
     setResult({
       ok: true,
       source: resultSource,
-      message: `${prefix}${getPwaMessage("SUCCESS_REGISTERED", lang)}: ${participantName || ""}`,
+      message: successMsg,
       restrictions: foodRestrictions || undefined,
     });
+    
+    toast.success(successMsg);
     recordOutcome("ok");
     if (navigator.vibrate) navigator.vibrate(200);
     reopenIfContinuous();
