@@ -27,6 +27,7 @@ export function ManualBoardingDialog({
   tripId,
   onSuccess,
 }: ManualBoardingDialogProps) {
+  const lang = getPwaLang();
   const [name, setName] = useState("");
   const [cpf, setCpf] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
