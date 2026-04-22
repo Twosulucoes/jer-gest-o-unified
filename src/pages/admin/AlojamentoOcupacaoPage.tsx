@@ -294,6 +294,9 @@ export default function AlojamentoOcupacaoPage() {
                     return (
                       <TableRow key={o.id}>
                         <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {partMap.get(o.participant_id)?.delegations?.institutions?.name ?? "—"}
+                        </TableCell>
                         <TableCell className="text-muted-foreground font-mono text-xs">{person?.cpf ?? "—"}</TableCell>
                         <TableCell><Badge variant={statusVariant(o.status)}>{statusLabel(o.status)}</Badge></TableCell>
                         <TableCell className="text-xs text-muted-foreground">
