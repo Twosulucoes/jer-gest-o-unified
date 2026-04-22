@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   Trophy, CheckCircle2, TrendingUp, CalendarDays,
   ClipboardList, AlertTriangle, Swords, UserCheck, Users,
-  BarChart3, Loader2, Info
+  BarChart3, Loader2, Info, ShieldCheck, Lock, Eye
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AppKPI } from "@/components/app/AppKPI";
@@ -273,6 +273,67 @@ export default function CoordenadorModalidadeDashboard() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Access and Permissions Section */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            <CardTitle className="text-sm font-bold uppercase tracking-wider">
+              Suas Permissões e Acessos
+            </CardTitle>
+          </div>
+          <CardDescription>
+            Confira as telas e ações liberadas exclusivamente para sua modalidade
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold flex items-center gap-1.5 text-foreground/80">
+                <Eye className="h-3.5 w-3.5" /> Telas Acessíveis
+              </h3>
+              <ul className="text-xs space-y-2 text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <div className="h-1 w-1 rounded-full bg-primary" />
+                  <span><strong>Gestão de Competição:</strong> Agenda de jogos e lançamento de resultados.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-1 w-1 rounded-full bg-primary" />
+                  <span><strong>Participantes:</strong> Consulta de atletas e equipes vinculadas às suas modalidades.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-1 w-1 rounded-full bg-primary" />
+                  <span><strong>Relatórios:</strong> Acesso aos boletins e quadro de medalhas oficial.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-1 w-1 rounded-full bg-primary" />
+                  <span><strong>Suporte:</strong> Chat de ajuda e abertura de chamados técnicos.</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold flex items-center gap-1.5 text-foreground/80">
+                <Lock className="h-3.5 w-3.5" /> Restrição de Escopo
+              </h3>
+              <div className="rounded-lg border border-primary/10 bg-background/50 p-3 space-y-2">
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Seu acesso é <strong>estritamente restrito</strong> às modalidades listadas no topo desta página.
+                </p>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Você não possui permissão para visualizar dados de outras modalidades, gerenciar credenciamento global, alojamentos ou finanças do evento.
+                </p>
+                <div className="pt-1">
+                  <Badge variant="outline" className="text-[10px] py-0 h-5 border-primary/20 text-primary">
+                    Validação de Segurança Ativa
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
