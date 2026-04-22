@@ -506,15 +506,15 @@ export default function QrCodeScanner({
 
             {/* Manual fallback footer */}
             <div
-              className="px-4 pt-3 pb-4 border-t shrink-0"
+              className="px-6 pt-4 pb-6 border-t shrink-0"
               style={{
                 background: "hsl(var(--tac-surface))",
                 borderColor: "hsl(var(--tac-border))",
-                paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+                paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))",
               }}
             >
-              <p className="text-[10px] font-mono uppercase tracking-[0.2em] mb-2 px-1" style={{ color: muted }}>
-                ou buscar manualmente
+              <p className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] mb-3 px-1 opacity-60">
+                AÇÕES ALTERNATIVAS
               </p>
               <button
                 onClick={() => {
@@ -522,13 +522,18 @@ export default function QrCodeScanner({
                   setManualMode(true);
                   setState("idle");
                 }}
-                className="w-full h-12 rounded-lg border flex items-center gap-3 px-4 transition-colors hover:bg-white/[0.03]"
+                className="w-full h-14 rounded-xl border-2 flex items-center gap-4 px-5 transition-all hover:bg-white/[0.03] active:scale-[0.98]"
                 style={{ borderColor: "hsl(var(--tac-border))", background: "hsl(var(--tac-bg))" }}
               >
-                <Search className="h-4 w-4 shrink-0" style={{ color: muted }} />
-                <span className="text-sm font-mono" style={{ color: muted }}>
-                  Buscar por nome ou CPF…
-                </span>
+                <Search className="h-5 w-5 shrink-0" style={{ color: accent }} />
+                <div className="flex flex-col items-start">
+                  <span className="text-xs font-bold uppercase tracking-widest text-white">
+                    ENTRADA MANUAL
+                  </span>
+                  <span className="text-[9px] font-mono uppercase tracking-tighter opacity-40">
+                    NOME / CPF / VOUCHER CODE
+                  </span>
+                </div>
               </button>
             </div>
           </>
