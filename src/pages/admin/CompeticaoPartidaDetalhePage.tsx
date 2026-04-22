@@ -440,7 +440,7 @@ export default function CompeticaoPartidaDetalhePage() {
           distance_cm: form.distance_cm ? parseInt(form.distance_cm) : null,
           points: form.points ? parseFloat(form.points) : null,
           penalty_notes: form.penalty_notes || null,
-          result_status: "resultado_lancado",
+          result_status: RESULT_STATUS.LAUNCHED,
           recorded_by: existing?.recorded_by ?? user.id,
           recorded_at: existing?.recorded_at ?? new Date().toISOString(),
           notes: resultNotes || null,
@@ -466,7 +466,7 @@ export default function CompeticaoPartidaDetalhePage() {
   const validateResultsMut = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Usuário não autenticado");
-      const ids = results.filter((r) => r.result_status === "resultado_lancado").map((r) => r.id);
+      const ids = results.filter((r) => r.result_status === RESULT_STATUS.LAUNCHED).map((r) => r.id);
       if (!ids.length) throw new Error("Nenhum resultado pendente de validação");
       const { error } = await supabase.from("competition_match_results").update({
         result_status: RESULT_STATUS.VALIDATED,
@@ -526,7 +526,7 @@ export default function CompeticaoPartidaDetalhePage() {
           match_entry_id: entry.id,
           outcome: isWinner ? "win" : "loss",
           combat_detail: payload.combat_detail,
-          result_status: "resultado_lancado",
+          result_status: RESULT_STATUS.LAUNCHED,
           recorded_by: existing?.recorded_by ?? user.id,
           recorded_at: existing?.recorded_at ?? new Date().toISOString(),
         };
