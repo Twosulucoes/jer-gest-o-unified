@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppKPI } from "@/components/app/AppKPI";
-import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { getSelectedFacility, setSelectedFacility } from "@/hooks/useAlojamento";
 import { AlojamentoDuplicateAlert } from "@/components/pwa/alojamento/AlojamentoDuplicateAlert";
@@ -59,11 +59,6 @@ export default function AlojamentoHomePage() {
     })();
   }, [facilityId]);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/pwa/login", { replace: true });
-  };
-
   const actions = [
     { label: "Scan QR", icon: ScanLine, to: "/pwa/alojamento/scan" },
     { label: "Buscar", icon: Search, to: "/pwa/alojamento/buscar" },
@@ -75,16 +70,29 @@ export default function AlojamentoHomePage() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-30" />
+      
       <AlojamentoNavHeader showQuickNav={false} />
 
-      <main className="relative p-4 max-w-md mx-auto space-y-4">
+      <main className="relative p-4 max-w-md mx-auto space-y-4 pb-20">
+        <div className="flex items-center justify-between mb-2">
+           <div className="flex items-center gap-2">
+            {isOnline ? <Wifi className="h-4 w-4 text-green-500" /> : <WifiOff className="h-4 w-4 text-destructive" />}
+            <span className={`text-[10px] font-bold uppercase ${isOnline ? "text-green-600" : "text-destructive"}`}>
+              {isOnline ? "Conectado" : "Modo Offline"}
+            </span>
+          </div>
+          {pendingCount > 0 && (
+            <Badge variant="destructive" className="text-[10px] px-2 py-0">
+              {pendingCount} Pendente{pendingCount > 1 ? "s" : ""}
+            </Badge>
+          )}
+        </div>
 
-      <main className="relative p-4 max-w-md mx-auto space-y-4">
         {loading ? (
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-12 w-full rounded-xl" />
         ) : (
           <Select value={facilityId} onValueChange={(v) => setFacilityId(v)}>
-            <SelectTrigger>
+            <SelectTrigger className="h-12 rounded-xl shadow-sm border-border/80">
               <SelectValue placeholder="Selecione o local" />
             </SelectTrigger>
             <SelectContent>
@@ -106,12 +114,16 @@ export default function AlojamentoHomePage() {
 
         <div className="grid grid-cols-2 gap-3">
           {actions.map((action) => (
-            <Card key={action.label} className="cursor-pointer border-border/80 bg-card/95 hover:shadow-app-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all" onClick={() => navigate(action.to)}>
-              <CardContent className="p-4 flex flex-col items-center gap-2">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[hsl(var(--module-accent)/0.14)] text-[hsl(var(--module-accent))] shadow-app-sm">
+            <Card 
+              key={action.label} 
+              className="cursor-pointer border-border/60 bg-card/80 backdrop-blur-sm hover:shadow-app-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all rounded-2xl" 
+              onClick={() => navigate(action.to)}
+            >
+              <CardContent className="p-4 flex flex-col items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[hsl(var(--module-accent)/0.12)] text-[hsl(var(--module-accent))] shadow-inner">
                   <action.icon className="h-6 w-6" />
                 </div>
-                <span className="text-sm font-medium">{action.label}</span>
+                <span className="text-xs font-bold uppercase tracking-tight text-foreground/80">{action.label}</span>
               </CardContent>
             </Card>
           ))}
