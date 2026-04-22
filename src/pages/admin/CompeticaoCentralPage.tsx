@@ -22,8 +22,10 @@ import { useStageScope } from "@/hooks/useStageScope";
 export default function CompeticaoCentralPage() {
   const eventId = useActiveEventId();
   const [searchParams] = useSearchParams();
+  const { selectedSportEventId, setSelectedSportEventId, setSelectedStageId } = useCompetitionContext();
+
   const [sportEventId, setSportEventId] = useState<string | null>(
-    searchParams.get("sport_event_id")
+    searchParams.get("sport_event_id") || selectedSportEventId
   );
   const [currentStep, setCurrentStep] = useState(
     searchParams.get("step") ?? "participants"
