@@ -301,12 +301,12 @@ export default function TransporteEmbarquePage() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
         <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
-        <h2 className="text-lg font-bold text-foreground mb-2">Acesso Bloqueado</h2>
+        <h2 className="text-lg font-bold text-foreground mb-2">{getPwaMessage("ACESSO_BLOQUEADO", lang)}</h2>
         <p className="text-muted-foreground text-sm mb-6">
-          Apenas o motorista responsável pode registrar embarques nesta viagem.
+          {getPwaMessage("APENAS_MOTORISTA", lang)}
         </p>
         <Button variant="outline" onClick={() => navigate("/pwa/transporte", { replace: true })}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+          <ArrowLeft className="h-4 w-4 mr-2" /> {getPwaMessage("VOLTAR", lang)}
         </Button>
       </div>
     );
