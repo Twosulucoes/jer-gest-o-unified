@@ -93,36 +93,75 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Input validation: limit length and reject control/escape chars that
+    // could break PostgREST filter parsing.
+    const qrStr = String(qr_code_value);
+    if (qrStr.length > 500) {
+      return jsonResponse({ error: "qr_code_value too long" }, 400);
+    }
+    if (/[\\\x00-\x1F\x7F]/.test(qrStr)) {
+      return jsonResponse({ error: "qr_code_value contains invalid characters" }, 400);
+    }
+
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { values: candidates, cpfDigits } = extractCandidates(String(qr_code_value));
+    // Server-side role check: only operational roles may validate QR codes.
+    const { data: roleRows } = await serviceClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", operatorId);
+    const roles = (roleRows ?? []).map((r: any) => r.role);
+    const ALLOWED_ROLES = [
+      "admin",
+      "secretaria",
+      "coordenacao_tecnica",
+      "transporte",
+      "alimentacao",
+      "alojamento",
+      "super_admin",
+    ];
+    if (!roles.some((r: string) => ALLOWED_ROLES.includes(r))) {
+      return jsonResponse({ error: "Forbidden" }, 403);
+    }
+
+    const { values: candidates, cpfDigits } = extractCandidates(qrStr);
+
+    // Drop any candidate that still contains unsafe characters.
+    const safeCandidates = candidates.filter(
+      (v) => v.length > 0 && v.length <= 500 && !/[\\"\x00-\x1F\x7F]/.test(v)
+    );
 
     // ── 1. Busca em participant_credentials por qr_code_value OU credential_code ──
     let credential: any = null;
     let matchedSource: "qr_code_value" | "credential_code" | "external_credential" | "cpf" | null = null;
 
-    {
-      const { data, error } = await serviceClient
+    for (const candidate of safeCandidates) {
+      const { data: byQr } = await serviceClient
         .from("participant_credentials")
         .select("id, status, credential_code, qr_code_value, event_id, participant_id, activated_at, revoked_at")
         .eq("event_id", event_id)
-        .or(
-          [
-            `qr_code_value.in.(${candidates.map((v) => `"${v.replace(/"/g, '\\"')}"`).join(",")})`,
-            `credential_code.in.(${candidates.map((v) => `"${v.replace(/"/g, '\\"')}"`).join(",")})`,
-          ].join(",")
-        )
+        .eq("qr_code_value", candidate)
         .limit(1)
         .maybeSingle();
-      if (error) console.error("participant_credentials lookup error:", error);
-      if (data) {
-        credential = data;
-        matchedSource = candidates.includes(data.qr_code_value)
-          ? "qr_code_value"
-          : "credential_code";
+      if (byQr) {
+        credential = byQr;
+        matchedSource = "qr_code_value";
+        break;
+      }
+      const { data: byCode } = await serviceClient
+        .from("participant_credentials")
+        .select("id, status, credential_code, qr_code_value, event_id, participant_id, activated_at, revoked_at")
+        .eq("event_id", event_id)
+        .eq("credential_code", candidate)
+        .limit(1)
+        .maybeSingle();
+      if (byCode) {
+        credential = byCode;
+        matchedSource = "credential_code";
+        break;
       }
     }
 
@@ -132,7 +171,7 @@ Deno.serve(async (req: Request) => {
         .from("external_credentials")
         .select("id, credential_code, event_id, participant_id, status")
         .eq("event_id", event_id)
-        .in("credential_code", candidates)
+        .in("credential_code", safeCandidates)
         .eq("status", "active")
         .limit(1)
         .maybeSingle();
@@ -336,7 +375,7 @@ Deno.serve(async (req: Request) => {
   } catch (err) {
     console.error("validate-qr error:", err);
     return jsonResponse(
-      { error: "Erro interno", details: String(err) },
+      { error: "Erro interno" },
       500
     );
   }

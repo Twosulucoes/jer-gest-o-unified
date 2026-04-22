@@ -273,9 +273,42 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Auth check: require Bearer token. Accept either the SERVICE_ROLE key
+    // (used by internal callers like monitoring-collect) or an authenticated
+    // super_admin user JWT.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const token = authHeader.replace("Bearer ", "").trim();
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    if (token !== SERVICE_ROLE) {
+      const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+      if (userErr || !userData?.user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userData.user.id);
+      const isSuper = (roles ?? []).some((r) => r.role === "super_admin");
+      if (!isSuper) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
     const payload = await req.json().catch(() => ({}));
     const { title = "JER Monitor", body = "Teste de notificação", url, userIds } = payload;
-    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     let query = supabase
       .from("push_subscriptions")
