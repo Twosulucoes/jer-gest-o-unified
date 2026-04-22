@@ -16,7 +16,7 @@ const ROLE_REDIRECT_MAP: Record<string, string> = {
   super_admin: "/admin",
   secretaria: "/admin",
   coordenacao_tecnica: "/admin",
-  coordenador_modalidade: "/admin",
+  coordenador_modalidade: "/admin/coordenador-modalidade",
   cde: "/admin",
   transporte: "/pwa/transporte",
   alimentacao: "/pwa/alimentacao",
@@ -27,10 +27,15 @@ const ROLE_REDIRECT_MAP: Record<string, string> = {
   pesquisa: "/pwa/pesquisa/login",
 };
 
-const ADMIN_ROLES = ["admin", "super_admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", "cde"];
+const ADMIN_ROLES = ["admin", "super_admin", "secretaria", "coordenacao_tecnica", "cde"];
 
 function resolveRedirect(roles: string[]): string {
-  // If any admin role → /admin
+  // If only coordenador_modalidade, redirect to their dashboard
+  if (roles.includes("coordenador_modalidade") && roles.length === 1) {
+    return "/admin/coordenador-modalidade";
+  }
+
+  // If any other admin role → /admin
   if (roles.some(r => ADMIN_ROLES.includes(r))) return "/admin";
 
   // Single operational role → direct
