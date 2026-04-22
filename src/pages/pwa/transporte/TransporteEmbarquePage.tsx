@@ -42,6 +42,7 @@ export default function TransporteEmbarquePage() {
   const [searchParams] = useSearchParams();
   const params = useParams();
   const tripId = params.tripId || searchParams.get("tripId");
+  const lang = getPwaLang();
 
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [loading, setLoading] = useState(true);
