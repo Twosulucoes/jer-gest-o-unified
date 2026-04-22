@@ -303,14 +303,26 @@ Deno.serve(async (req: Request) => {
 
     // 2. Register scan in credential_scans (apenas se for credencial real do participant_credentials)
     if (credential && !credential.__virtual_external) {
-      await serviceClient.from("credential_scans").insert({
-        credential_id: credential.id,
-        event_id: event_id,
-        scanned_by: operatorId,
-        scan_point: scan_point || "general",
-        scan_result: scanResult,
-        notes: scanNotes,
-      });
+      // Check for duplicates (same credential, same scan_point, last 30 seconds)
+      const { data: recentScan } = await serviceClient
+        .from("credential_scans")
+        .select("id")
+        .eq("credential_id", credential.id)
+        .eq("scan_point", scan_point || "general")
+        .gt("scanned_at", new Date(Date.now() - 30 * 1000).toISOString())
+        .limit(1)
+        .maybeSingle();
+
+      if (!recentScan) {
+        await serviceClient.from("credential_scans").insert({
+          credential_id: credential.id,
+          event_id: event_id,
+          scanned_by: operatorId,
+          scan_point: scan_point || "general",
+          scan_result: scanResult,
+          notes: scanNotes,
+        });
+      }
     }
 
     return jsonResponse({
