@@ -193,7 +193,7 @@ export function useCredentialLookup() {
       // Carrega participante + pessoa
       const { data: participant, error: partErr } = await supabase
         .from("participants")
-        .select("id, person_id, participant_type, is_active, status")
+        .select("id, person_id, participant_type, is_active, status, institution:event_institutions(name)")
         .eq("id", credential.participant_id)
         .single();
 
