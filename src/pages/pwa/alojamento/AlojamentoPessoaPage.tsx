@@ -7,9 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
-import { ArrowLeft, User, LogIn, LogOut, Bed, ScanLine } from "lucide-react";
+import { ArrowLeft, User, LogIn, LogOut, Bed, ScanLine, AlertCircle } from "lucide-react";
+import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
+import { useEventContext } from "@/contexts/EventContext";
 
 interface PersonDetail {
+  id: string;
   full_name: string;
   birth_date: string | null;
   gender: string;
@@ -26,9 +29,11 @@ interface PersonDetail {
 export default function AlojamentoPessoaPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { activeEvent } = useEventContext();
   const [person, setPerson] = useState<PersonDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [credentialStatus, setCredentialStatus] = useState<string | null>(null);
   const facilityId = getSelectedFacility();
 
   const loadPerson = async () => {
@@ -55,6 +60,25 @@ export default function AlojamentoPessoaPage() {
       delegationName = (del as any)?.institution?.name || null;
     }
 
+    // Check credential status for active stage
+    const { data: activeStage } = await supabase
+      .from("event_stages")
+      .select("id")
+      .eq("event_id", activeEvent?.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (activeStage) {
+      const { data: pse } = await supabase
+        .from("participant_event_stages")
+        .select("status")
+        .eq("participant_id", id)
+        .eq("event_stage_id", activeStage.id)
+        .maybeSingle();
+      
+      setCredentialStatus(pse?.status || "missing");
+    }
+
     // Get stay + assignment info via public wrapper
     const { data: alj } = await supabase.rpc("get_alojamento_person_detail" as any, {
       p_participant_id: id,
@@ -63,6 +87,7 @@ export default function AlojamentoPessoaPage() {
     const aljData = (alj as any) || {};
 
     setPerson({
+      id: id,
       full_name: p.person?.full_name || "—",
       birth_date: p.person?.birth_date || null,
       gender: p.person?.gender || "—",
@@ -78,10 +103,18 @@ export default function AlojamentoPessoaPage() {
     setLoading(false);
   };
 
-  useEffect(() => { loadPerson(); }, [id, facilityId]);
+  useEffect(() => { loadPerson(); }, [id, facilityId, activeEvent?.id]);
 
   const handleCheckin = async () => {
     if (!id || !facilityId) return;
+    
+    // Validate credential before checkin
+    if (credentialStatus !== "active") {
+      toast.error("Este participante não possui credencial ativa para a etapa atual!");
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
+      return;
+    }
+
     setActionLoading(true);
     try {
       const res = await rpcCheckin(getDeviceId(), id, facilityId, "search");
@@ -101,8 +134,6 @@ export default function AlojamentoPessoaPage() {
     if (!id || !facilityId) return;
     setActionLoading(true);
     try {
-      // Need to get QR token for this person, or use direct ID approach
-      // For search-based checkout, we pass the participant UUID directly
       const res = await rpcCheckout(getDeviceId(), id, facilityId);
       if (res.ok) {
         toast.success("Check-out realizado!");
@@ -118,87 +149,125 @@ export default function AlojamentoPessoaPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b bg-card px-4 h-14">
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} className="text-muted-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <User className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-foreground">Perfil</span>
-        </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-primary"
-          onClick={() => navigate("/pwa/alojamento/scan")}
-        >
-          <ScanLine className="h-5 w-5" />
-        </Button>
-      </header>
+      <AlojamentoNavHeader currentPathLabel="Perfil" />
 
-      <main className="p-4 max-w-md mx-auto space-y-4">
+      <main className="p-4 max-w-md mx-auto space-y-4 pb-20">
         {loading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-16 w-full" />
+          <div className="space-y-4">
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-32 w-full rounded-2xl" />
+            <Skeleton className="h-12 w-full rounded-2xl" />
           </div>
         ) : !person ? (
-          <div className="text-center py-8 text-muted-foreground">Pessoa não encontrada</div>
+          <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-2xl border-dashed">
+            <User className="h-10 w-10 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">Pessoa não encontrada</p>
+          </div>
         ) : (
           <>
-            <Card>
+            <Card className="rounded-2xl border-border/60 shadow-md overflow-hidden">
+               <div className="h-2 bg-primary/20" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg">{person.full_name}</CardTitle>
+                <CardTitle className="text-lg font-bold">{person.full_name}</CardTitle>
+                <Badge variant="outline" className="w-fit text-[10px] font-bold uppercase border-primary/20 bg-primary/5 text-primary">
+                  {person.participant_type}
+                </Badge>
               </CardHeader>
-              <CardContent className="space-y-1 text-sm">
-                <p><span className="text-muted-foreground">Tipo:</span> {person.participant_type}</p>
-                <p><span className="text-muted-foreground">Gênero:</span> {person.gender}</p>
-                {person.birth_date && <p><span className="text-muted-foreground">Nascimento:</span> {person.birth_date}</p>}
-                {person.delegation_name && <p><span className="text-muted-foreground">Delegação:</span> {person.delegation_name}</p>}
+              <CardContent className="space-y-2 text-sm">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground">Gênero</p>
+                    <p className="font-medium">{person.gender}</p>
+                  </div>
+                  {person.birth_date && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground">Nascimento</p>
+                      <p className="font-medium">{new Date(person.birth_date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                    </div>
+                  )}
+                </div>
+                {person.delegation_name && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground">Delegação</p>
+                    <p className="font-medium">{person.delegation_name}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            <Card>
+            {/* Credential Status Warning */}
+            {credentialStatus !== "active" && !person.is_checked_in && (
+              <Card className="rounded-2xl border-destructive/30 bg-destructive/5">
+                <CardContent className="p-4 flex gap-3">
+                  <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-destructive">Credencial Irregular</p>
+                    <p className="text-xs text-destructive/80 font-medium">
+                      Este participante não possui uma credencial ativa para a etapa atual. O check-in está bloqueado.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="rounded-2xl border-border/60 shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Status de Hospedagem</CardTitle>
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <Building className="h-4 w-4 text-purple-500" />
+                  Hospedagem
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Badge variant={person.is_checked_in ? "default" : "secondary"} className="text-sm">
-                  {person.is_checked_in ? "Hospedado" : "Não hospedado"}
-                </Badge>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge variant={person.is_checked_in ? "default" : "secondary"} className={`text-xs font-bold ${person.is_checked_in ? "bg-green-600" : ""}`}>
+                    {person.is_checked_in ? "Hospedado" : "Não hospedado"}
+                  </Badge>
+                </div>
                 {person.is_checked_in && person.facility_name && (
-                  <p className="text-sm text-muted-foreground">
-                    em {person.facility_name} desde {person.stay_checkin_at ? new Date(person.stay_checkin_at).toLocaleString("pt-BR") : "—"}
-                  </p>
+                  <div className="p-3 rounded-xl bg-muted/30 border border-border/40 space-y-1">
+                    <p className="text-xs font-bold text-foreground">Local: {person.facility_name}</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">
+                      Check-in em {person.stay_checkin_at ? new Date(person.stay_checkin_at).toLocaleString("pt-BR") : "—"}
+                    </p>
+                  </div>
                 )}
                 {person.bed_code && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Bed className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-2 text-sm font-medium p-3 rounded-xl bg-primary/5 border border-primary/10">
+                    <Bed className="h-4 w-4 text-primary" />
                     <span>{person.block_name} / {person.room_code} / Leito {person.bed_code}</span>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            <div className="flex flex-col gap-2">
-              <div className="flex gap-2">
-                {!person.is_checked_in ? (
-                  <Button className="flex-1 h-12" onClick={handleCheckin} disabled={actionLoading}>
-                    <LogIn className="h-4 w-4 mr-2" /> Check-in
-                  </Button>
-                ) : (
-                  <Button variant="outline" className="flex-1 h-12" onClick={handleCheckout} disabled={actionLoading}>
-                    <LogOut className="h-4 w-4 mr-2" /> Check-out
-                  </Button>
-                )}
-              </div>
+            <div className="flex flex-col gap-3 pt-2">
+              {!person.is_checked_in ? (
+                <Button 
+                  className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/10" 
+                  onClick={handleCheckin} 
+                  disabled={actionLoading || credentialStatus !== "active"}
+                >
+                  {actionLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <LogIn className="h-5 w-5 mr-2" />}
+                  Realizar Check-in
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  className="w-full h-14 rounded-2xl text-lg font-bold border-destructive/20 text-destructive hover:bg-destructive/5" 
+                  onClick={handleCheckout} 
+                  disabled={actionLoading}
+                >
+                   {actionLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <LogOut className="h-5 w-5 mr-2" />}
+                  Realizar Check-out
+                </Button>
+              )}
               
               <Button 
-                variant="module" 
-                className="w-full h-12" 
+                variant="ghost" 
+                className="w-full h-12 rounded-xl font-bold text-muted-foreground hover:text-foreground" 
                 onClick={() => navigate("/pwa/alojamento/scan")}
               >
-                <ScanLine className="h-4 w-4 mr-2" /> Próximo Scan
+                <ScanLine className="h-4 w-4 mr-2" /> Próximo Escaneamento
               </Button>
             </div>
           </>
@@ -207,3 +276,6 @@ export default function AlojamentoPessoaPage() {
     </div>
   );
 }
+
+// Omitted icons not used
+import { Building, Loader2 } from "lucide-react";
