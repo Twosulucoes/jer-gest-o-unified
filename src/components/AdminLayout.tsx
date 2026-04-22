@@ -236,6 +236,16 @@ export default function AdminLayout() {
   const primaryRole = roles[0];
   const closeSidebar = () => setSidebarOpen(false);
 
+  const isStageRoute = location.pathname.includes("/admin/etapa/");
+  
+  if (isStageRoute) {
+    return (
+      <RequireActiveEvent>
+        <Outlet />
+      </RequireActiveEvent>
+    );
+  }
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex min-h-screen bg-background">
