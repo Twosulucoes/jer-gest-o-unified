@@ -48,6 +48,11 @@ export default function CompeticaoPartidasAgendaPage() {
 
   useEffect(() => { localStorage.setItem("partidas-view", viewMode); }, [viewMode]);
 
+  // Sincroniza etapa detectada com o contexto global
+  useEffect(() => {
+    if (stageId) setSelectedStageId(stageId);
+  }, [stageId, setSelectedStageId]);
+
   const { data: sportEvents = [] } = useQuery({
     queryKey: ["sport_events", selectedEventId, mySportIds],
     queryFn: async () => {
