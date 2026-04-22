@@ -40,6 +40,7 @@ export default function AlimentacaoScanPage() {
   const { user } = useAuth();
   const { activeEventId } = useEventContext();
   const userId = user?.id ?? null;
+  const lang = getPwaLang();
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
