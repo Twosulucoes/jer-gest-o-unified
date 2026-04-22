@@ -162,14 +162,43 @@ export function useBulletinData(filters: BulletinFilters) {
         results = ress as RawResult[];
       }
 
+      // Garantir ordenação por data, hora e número (mesmo que venha do banco)
+      const sortedMatches = [...(matchesRaw || [])].sort((a, b) => {
+        const dateA = a.match_date || "9999-12-31";
+        const dateB = b.match_date || "9999-12-31";
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        
+        const timeA = a.start_time || "99:99";
+        const timeB = b.start_time || "99:99";
+        if (timeA !== timeB) return timeA.localeCompare(timeB);
+        
+        return (a.match_number ?? 0) - (b.match_number ?? 0);
+      });
+
+      const matchIdToIndex = new Map<string, number>();
+      sortedMatches.forEach((m, idx) => matchIdToIndex.set(m.id, idx));
+
+      // Agrupar entries e results por partida seguindo a ordem da programação
+      const sortedEntries = [...entries].sort((a, b) => {
+        const idxA = matchIdToIndex.get(a.match_id) ?? Infinity;
+        const idxB = matchIdToIndex.get(b.match_id) ?? Infinity;
+        return idxA - idxB;
+      });
+
+      const sortedResults = [...results].sort((a, b) => {
+        const idxA = matchIdToIndex.get(a.match_id) ?? Infinity;
+        const idxB = matchIdToIndex.get(b.match_id) ?? Infinity;
+        return idxA - idxB;
+      });
+
       return {
         family,
         rules,
         phases: phases as RawPhase[],
         groups: groups as RawGroup[],
-        matches: matchesRaw as RawMatch[],
-        entries,
-        results,
+        matches: sortedMatches as RawMatch[],
+        entries: sortedEntries,
+        results: sortedResults,
         sportEventName: se?.name ?? null,
         sportName: (se as any)?.sports?.name ?? null,
         categoryName: (se as any)?.categories?.name ?? null,
