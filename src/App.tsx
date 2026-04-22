@@ -225,6 +225,8 @@ const App = () => (
                <Route path="validador" element={<SchemaValidadorPage />} />
                <Route path="inspector" element={<SuperInspectorPage />} />
                <Route path="permissoes" element={<SuperPermissionsPage />} />
+               <Route path="dados" element={<CentralDadosPage />} />
+               <Route path="diagnostico" element={<SistemaDiagnosticoPage />} />
             </Route>
             <Route
               path="/admin"
