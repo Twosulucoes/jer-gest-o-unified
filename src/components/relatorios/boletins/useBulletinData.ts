@@ -49,9 +49,10 @@ export interface RawPhase { id: string; name: string; phase_type: string; sort_o
 export interface RawGroup { id: string; phase_id: string; name: string; sort_order: number; }
 
 export interface ValidationAlert {
-  type: "warning" | "error";
+  type: "warning" | "error" | "info";
   message: string;
   details?: string;
+  links?: { label: string; url: string }[];
 }
 
 export interface BulletinDataset {
