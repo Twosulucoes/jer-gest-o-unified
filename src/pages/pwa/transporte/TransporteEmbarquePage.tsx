@@ -362,7 +362,7 @@ export default function TransporteEmbarquePage() {
         {loading && <div className="grid grid-cols-2 gap-2">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>}
 
         {!loading && passengers.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground text-sm">Nenhum passageiro nesta viagem</div>
+          <div className="text-center py-8 text-muted-foreground text-sm">{getPwaMessage("NENHUM_PASSAGEIRO", lang)}</div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -371,10 +371,10 @@ export default function TransporteEmbarquePage() {
               <CardContent className="p-2.5 flex items-center justify-between">
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate">{p.full_name}</span>
-                  {p.is_manual && <span className="text-[10px] text-muted-foreground">Embarque manual</span>}
+                  {p.is_manual && <span className="text-[10px] text-muted-foreground">{getPwaMessage("MANUAL_BOARDING", lang)}</span>}
                 </div>
                 <Badge variant={p.boarded ? "module" : "outline"} className="text-[10px] shrink-0">
-                  {p.boarded ? "Embarcado" : "Pendente"}
+                  {p.boarded ? getPwaMessage("EMBARCADO", lang) : getPwaMessage("PENDENTE", lang)}
                 </Badge>
               </CardContent>
             </Card>
