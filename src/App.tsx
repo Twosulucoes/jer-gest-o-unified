@@ -198,7 +198,8 @@ const App = () => (
         <ScrollToTop />
         <AuthProvider>
           <EventProvider>
-          <Routes>
+            <CompetitionProvider>
+              <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
