@@ -23,8 +23,17 @@ export const boletimInformativoReport: ReportDefinition = {
   datasource: {
     type: 'custom',
     customLoader: async (filters, _ctx, supabase) => {
-      const eventId = filters.event_id as string;
-      const date = filters.date as string;
+      const eventId = filters?.event_id as string;
+      const date = filters?.date as string;
+
+      if (!eventId || !date) {
+        console.error('Boletim Informativo: Filtros obrigatórios ausentes', { eventId, date });
+        return [];
+      }
+
+      const includeSchedule = filters.include_schedule ?? true;
+      const includeResults = filters.include_results ?? true;
+
       const resultsData: { section: string; content: string }[] = [];
 
       // 1. Avisos (from official_bulletins)
