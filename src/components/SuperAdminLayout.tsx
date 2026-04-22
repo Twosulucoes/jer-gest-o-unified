@@ -34,6 +34,7 @@ const navItems: NavItem[] = [
   { label: "Central de Dados", to: "/super/dados", icon: <DatabaseIcon className="h-4 w-4" /> },
   { label: "Diagnóstico Sistema", to: "/super/diagnostico", icon: <Info className="h-4 w-4" /> },
   { label: "Validador de Schema", to: "/super/validador", icon: <CheckCircle className="h-4 w-4" /> },
+  { label: "Vínculos de Importação", to: "/admin/importacao/aliases", icon: <Layers className="h-4 w-4" /> },
 ];
 
 function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: boolean; onClick?: () => void }) {

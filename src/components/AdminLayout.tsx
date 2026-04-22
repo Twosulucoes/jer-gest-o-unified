@@ -72,7 +72,6 @@ const navGroups: NavGroup[] = [
       { label: "Credencial (Modelos)", to: "/admin/credenciais/modelos", icon: <BadgeCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Vouchers (Validar)", to: "/admin/vouchers", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "alimentacao"] as AppRole[] },
       { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Vínculos de Importação", to: "/admin/importacao/aliases", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },

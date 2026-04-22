@@ -253,7 +253,7 @@ const App = () => (
               <Route path="importacao/modelo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoModeloPage /></ProtectedRoute>} />
               <Route path="importacao/pendencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPendenciasPage /></ProtectedRoute>} />
               <Route path="importacao/catalogo" element={<Navigate to="/admin/regras" replace />} />
-              <Route path="importacao/aliases" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ImportacaoAliasesPage /></ProtectedRoute>} />
+              <Route path="importacao/aliases" element={<ProtectedRoute allowedRoles={["super_admin"]}><ImportacaoAliasesPage /></ProtectedRoute>} />
               <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipantesPage /></ProtectedRoute>} />
                <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ParticipanteDetalhePage /></ProtectedRoute>} />
                <Route path="participantes/historico" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><HistoricoBuscaPage /></ProtectedRoute>} />
