@@ -35,12 +35,18 @@ export default function CompeticaoPartidasAgendaPage() {
   const selectedEventId = useActiveEventId();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
   const { isStageScoped, stage, matchIds: stageMatchIds, error: stageError, stageId } = useStageScope({ includeMatchIds: true });
-  const { selectedSportEventId, setSelectedSportEventId, setSelectedStageId } = useCompetitionContext();
+  const { 
+    selectedSportEventId, 
+    setSelectedSportEventId, 
+    selectedStageId, 
+    setSelectedStageId,
+    selectedPhaseId,
+    setSelectedPhaseId
+  } = useCompetitionContext();
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem("partidas-view") as ViewMode) || "list");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [selectedPhaseId, setSelectedPhaseId] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
@@ -261,7 +267,7 @@ export default function CompeticaoPartidasAgendaPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Modalidade/Prova</label>
-              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => { setSelectedSportEventId(v === "__all__" ? null : v); setSelectedPhaseId(""); setCurrentPage(1); }} disabled={!selectedEventId}>
+              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => { setSelectedSportEventId(v === "__all__" ? null : v); setSelectedPhaseId(null); setCurrentPage(1); }} disabled={!selectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todas</SelectItem>
@@ -271,7 +277,7 @@ export default function CompeticaoPartidasAgendaPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Fase</label>
-              <Select value={selectedPhaseId || "__all__"} onValueChange={(v) => setSelectedPhaseId(v === "__all__" ? "" : v)} disabled={!selectedEventId}>
+              <Select value={selectedPhaseId || "__all__"} onValueChange={(v) => setSelectedPhaseId(v === "__all__" ? null : v)} disabled={!selectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todas</SelectItem>

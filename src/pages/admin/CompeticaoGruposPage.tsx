@@ -15,6 +15,7 @@ import GroupStandingsTable from "@/components/admin/competition/GroupStandingsTa
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useCompetitionContext } from "@/contexts/CompetitionContext";
 
 export default function CompeticaoGruposPage() {
   const qc = useQueryClient();
@@ -22,8 +23,12 @@ export default function CompeticaoGruposPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const selectedEventId = useActiveEventId();
-  const [selectedSportEventId, setSelectedSportEventId] = useState("");
-  const [selectedPhaseId, setSelectedPhaseId] = useState("");
+  const { 
+    selectedSportEventId, 
+    setSelectedSportEventId, 
+    selectedPhaseId, 
+    setSelectedPhaseId 
+  } = useCompetitionContext();
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   const { data: events = [] } = useQuery({
@@ -149,14 +154,14 @@ export default function CompeticaoGruposPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setSelectedSportEventId(""); setSelectedPhaseId(""); }}>
+              <Select value={selectedEventId} onValueChange={(v) => { setSelectedSportEventId(null); setSelectedPhaseId(null); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
                 <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Prova / Modalidade</label>
-              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => { setSelectedSportEventId(v === "__all__" ? "" : v); setSelectedPhaseId(""); }} disabled={!selectedEventId}>
+              <Select value={selectedSportEventId || "__all__"} onValueChange={(v) => { setSelectedSportEventId(v === "__all__" ? null : v); setSelectedPhaseId(null); }} disabled={!selectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todas</SelectItem>
@@ -166,7 +171,7 @@ export default function CompeticaoGruposPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Fase</label>
-              <Select value={selectedPhaseId || "__all__"} onValueChange={(v) => setSelectedPhaseId(v === "__all__" ? "" : v)} disabled={!selectedEventId}>
+              <Select value={selectedPhaseId || "__all__"} onValueChange={(v) => setSelectedPhaseId(v === "__all__" ? null : v)} disabled={!selectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todas</SelectItem>

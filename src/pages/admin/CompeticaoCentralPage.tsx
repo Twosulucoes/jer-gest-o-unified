@@ -22,7 +22,14 @@ import { useStageScope } from "@/hooks/useStageScope";
 export default function CompeticaoCentralPage() {
   const eventId = useActiveEventId();
   const [searchParams] = useSearchParams();
-  const { selectedSportEventId, setSelectedSportEventId, setSelectedStageId } = useCompetitionContext();
+  const { 
+    selectedSportEventId, 
+    setSelectedSportEventId, 
+    selectedStageId, 
+    setSelectedStageId,
+    selectedPhaseId,
+    setSelectedPhaseId
+  } = useCompetitionContext();
 
   const [sportEventId, setSportEventId] = useState<string | null>(
     searchParams.get("sport_event_id") || selectedSportEventId
@@ -38,6 +45,12 @@ export default function CompeticaoCentralPage() {
   useEffect(() => {
     if (stageId) setSelectedStageId(stageId);
   }, [stageId, setSelectedStageId]);
+
+  // Sincroniza fase detectada se houver via param/contexto
+  useEffect(() => {
+    const phaseParam = searchParams.get("phase");
+    if (phaseParam) setSelectedPhaseId(phaseParam);
+  }, [searchParams, setSelectedPhaseId]);
 
   // Sincroniza sportEventId selecionado com o contexto global
   useEffect(() => {

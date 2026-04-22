@@ -7,6 +7,8 @@ interface CompetitionContextType {
   setSelectedSportEventId: (id: string | null) => void;
   selectedStageId: string | null;
   setSelectedStageId: (id: string | null) => void;
+  selectedPhaseId: string | null;
+  setSelectedPhaseId: (id: string | null) => void;
 }
 
 const CompetitionContext = createContext<CompetitionContextType | undefined>(undefined);
@@ -14,6 +16,7 @@ const CompetitionContext = createContext<CompetitionContextType | undefined>(und
 const SPORT_STORAGE_KEY = "competition_selected_sport";
 const SPORT_EVENT_STORAGE_KEY = "competition_selected_sport_event";
 const STAGE_STORAGE_KEY = "competition_selected_stage";
+const PHASE_STORAGE_KEY = "competition_selected_phase";
 
 export function CompetitionProvider({ children }: { children: ReactNode }) {
   const [selectedSportId, setSelectedSportIdState] = useState<string | null>(() => {
@@ -26,6 +29,10 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
   
   const [selectedStageId, setSelectedStageIdState] = useState<string | null>(() => {
     return localStorage.getItem(STAGE_STORAGE_KEY);
+  });
+  
+  const [selectedPhaseId, setSelectedPhaseIdState] = useState<string | null>(() => {
+    return localStorage.getItem(PHASE_STORAGE_KEY);
   });
 
   const setSelectedSportId = (id: string | null) => {
@@ -55,6 +62,15 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const setSelectedPhaseId = (id: string | null) => {
+    setSelectedPhaseIdState(id);
+    if (id) {
+      localStorage.setItem(PHASE_STORAGE_KEY, id);
+    } else {
+      localStorage.removeItem(PHASE_STORAGE_KEY);
+    }
+  };
+
   return (
     <CompetitionContext.Provider value={{
       selectedSportId,
@@ -62,7 +78,9 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
       selectedSportEventId,
       setSelectedSportEventId,
       selectedStageId,
-      setSelectedStageId
+      setSelectedStageId,
+      selectedPhaseId,
+      setSelectedPhaseId
     }}>
       {children}
     </CompetitionContext.Provider>
