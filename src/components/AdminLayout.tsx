@@ -5,8 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
-  Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree, Trophy,
-  Building2, Users, Upload, KeyRound, BadgeCheck, Gavel,
+  Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree, Trophy, Bus, UtensilsCrossed, Building2,
+  Building, Users, Upload, KeyRound, BadgeCheck, Gavel,
   UsersRound, ChevronDown,
   Shield, Settings, AlertTriangle, FileBarChart,
   Info, ExternalLink, ChevronsLeft,
@@ -92,6 +92,18 @@ const navGroups: NavGroup[] = [
       { label: "Identidade Visual", to: "/admin/configuracoes/identidade-visual", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
       { label: "Pesquisa de Satisfação", to: "/admin/pesquisa", icon: <ClipboardList className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
+    subGroups: [
+      {
+        label: "Links PWA (Mobile)",
+        items: [
+          { label: "Transporte", to: "/pwa/transporte", icon: <Bus className="h-4 w-4" />, roles: ADMIN_ROLES },
+          { label: "Alimentação", to: "/pwa/alimentacao", icon: <UtensilsCrossed className="h-4 w-4" />, roles: ADMIN_ROLES },
+          { label: "Alojamento", to: "/pwa/alojamento", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
+          { label: "Coord. Técnica", to: "/pwa/coordenacao-tecnica", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
+          { label: "Delegação", to: "/pwa/delegacao", icon: <Users className="h-4 w-4" />, roles: ADMIN_ROLES },
+        ]
+      }
+    ]
   },
   {
     id: "acessos", label: "Acessos", description: "Usuários e permissões.",
