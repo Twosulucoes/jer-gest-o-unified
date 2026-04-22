@@ -462,12 +462,6 @@ const App = () => (
             <Route path="/pwa/acesso-negado" element={<PwaAcessoNegadoPage />} />
             <Route path="/pwa/debug" element={<PwaDebugPage />} />
             <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
-            <Route path="/pwa/delegacao/agenda" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoAgendaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/logistica" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoLogisticaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/locais" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoLocaisPage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/protestos" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestosPage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/protestos/novo" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/protestos/:id" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
             {/* PWA Diagnóstico */}
             <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
             <Route path="/pwa/debug" element={<PwaDebugPage />} />
