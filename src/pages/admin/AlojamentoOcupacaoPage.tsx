@@ -127,39 +127,6 @@ export default function AlojamentoOcupacaoPage() {
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
-  // Check-out
-  const checkoutMut = useMutation({
-    mutationFn: async (occId: string) => {
-      const { error } = await supabase.from("lodging_occupancies").update({
-        status: "checked_out",
-        checked_out_at: new Date().toISOString(),
-        checked_out_by: user!.id,
-      }).eq("id", occId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["lodging_occupancies", selectedUnitId] });
-      toast.success("Check-out realizado!");
-    },
-    onError: (e: Error) => toast.error("Erro: " + e.message),
-  });
-
-  // Check-out
-  const checkoutMut = useMutation({
-    mutationFn: async (occId: string) => {
-      const { error } = await supabase.from("lodging_occupancies").update({
-        status: "checked_out",
-        checked_out_at: new Date().toISOString(),
-        checked_out_by: user!.id,
-      }).eq("id", occId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["lodging_occupancies", selectedUnitId] });
-      toast.success("Check-out realizado!");
-    },
-    onError: (e: Error) => toast.error("Erro: " + e.message),
-  });
 
   const statusLabel = (s: string) => s === "allocated" ? "Alocado" : s === "checked_in" ? "Check-in" : "Check-out";
   const statusVariant = (s: string): "default" | "secondary" | "outline" => s === "checked_in" ? "default" : s === "allocated" ? "outline" : "secondary";

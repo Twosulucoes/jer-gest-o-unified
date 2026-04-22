@@ -130,22 +130,6 @@ export default function TransporteEmbarquePage() {
     passengers.filter((p) => p.status === "boarded").map((p) => p.participant_id)
   );
 
-  // Alight mutation
-  const alightMut = useMutation({
-    mutationFn: async (passengerId: string) => {
-      const { error } = await supabase.from("transport_passengers").update({
-        status: "alighted",
-        alighted_at: new Date().toISOString(),
-        alighted_by: user?.id,
-      }).eq("id", passengerId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["transport_passengers", tripId] });
-      toast.success("Desembarque registrado!");
-    },
-    onError: (e: Error) => toast.error("Erro: " + e.message),
-  });
 
   const boardedCount = passengers.filter((p) => p.status === "boarded").length;
   const totalCount = passengers.filter((p) => !["cancelled", "no_show"].includes(p.status)).length;
