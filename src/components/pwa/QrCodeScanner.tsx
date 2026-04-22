@@ -11,6 +11,9 @@ import {
   AlertTriangle,
   Search,
   ArrowLeft,
+  Check,
+  CheckCircle2,
+  Trash2,
 } from "lucide-react";
 
 interface QrCodeScannerProps {
