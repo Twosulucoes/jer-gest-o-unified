@@ -405,15 +405,7 @@ const App = () => (
             <Route path="/pwa/set-password" element={<PwaSetPasswordPage />} />
             {/* PWA Landing (requires auth) */}
             <Route path="/pwa" element={<PwaLandingPage />} />
-            {/* PWA Module pages */}
-            <Route path="/pwa/:module" element={<PwaModulePage />} />
-            {/* PWA Pesquisa (PIN auth, no Supabase Auth) */}
-            <Route path="/pwa/pesquisa/login" element={<PesquisaLoginPage />} />
-            <Route path="/pwa/pesquisa/home" element={<PesquisaHomePage />} />
-            <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
-            <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
-            {/* PWA Acesso Negado */}
-            <Route path="/pwa/acesso-negado" element={<PwaAcessoNegadoPage />} />
+            
             {/* PWA Alojamento — perfil alojamento */}
             <Route path="/pwa/alojamento" element={<PwaRouteGuard allowedRoles={["alojamento"]}><AlojamentoHomePage /></PwaRouteGuard>} />
             <Route path="/pwa/alojamento/scan" element={<PwaRouteGuard allowedRoles={["alojamento"]}><AlojamentoScanPage /></PwaRouteGuard>} />
@@ -423,6 +415,7 @@ const App = () => (
             <Route path="/pwa/alojamento/incidentes" element={<PwaRouteGuard allowedRoles={["alojamento"]}><AlojamentoIncidentesPage /></PwaRouteGuard>} />
             <Route path="/pwa/alojamento/incidentes/nova" element={<PwaRouteGuard allowedRoles={["alojamento"]}><AlojamentoNovoIncidentePage /></PwaRouteGuard>} />
             <Route path="/pwa/alojamento/lista-completa" element={<PwaRouteGuard allowedRoles={["alojamento"]}><AlojamentoListaCompletaPage /></PwaRouteGuard>} />
+            
             {/* PWA Transporte — perfil transporte */}
             <Route path="/pwa/transporte" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteHomePage /></PwaRouteGuard>} />
             <Route path="/pwa/transporte/viagens" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteViagensPwaPage /></PwaRouteGuard>} />
@@ -431,6 +424,7 @@ const App = () => (
             <Route path="/pwa/transporte/embarque/:tripId" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteEmbarquePwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/transporte/rotas" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransporteRotasPwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/transporte/viagem/:tripId/passageiros" element={<PwaRouteGuard allowedRoles={["transporte"]}><TransportePassageirosPage /></PwaRouteGuard>} />
+            
             {/* PWA Alimentação — perfil alimentacao */}
             <Route path="/pwa/alimentacao" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoHomePage /></PwaRouteGuard>} />
             <Route path="/pwa/alimentacao/scan" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoScanPage /></PwaRouteGuard>} />
@@ -438,6 +432,7 @@ const App = () => (
             <Route path="/pwa/alimentacao/janelas" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoJanelasPwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/alimentacao/historico" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoHistoricoPage /></PwaRouteGuard>} />
             <Route path="/pwa/alimentacao/lista-consumos" element={<PwaRouteGuard allowedRoles={["alimentacao"]}><AlimentacaoListaConsumosPage /></PwaRouteGuard>} />
+            
             {/* PWA Coordenação Técnica — perfil coordenacao_tecnica */}
             <Route path="/pwa/coordenacao-tecnica" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/agenda" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoAgendaPage /></PwaRouteGuard>} />
@@ -445,6 +440,7 @@ const App = () => (
             <Route path="/pwa/coordenacao-tecnica/partida/:matchId" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoPartidaDetalhePage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/resultados" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoResultadosPwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/estatisticas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoEstatisticasPage /></PwaRouteGuard>} />
+            
             {/* PWA Delegação — perfil delegacao */}
             <Route path="/pwa/delegacao" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoHomePage /></PwaRouteGuard>} />
             <Route path="/pwa/delegacao/participantes" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoParticipantesPage /></PwaRouteGuard>} />
@@ -454,6 +450,18 @@ const App = () => (
             <Route path="/pwa/delegacao/protestos" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestosPage /></PwaRouteGuard>} />
             <Route path="/pwa/delegacao/protestos/novo" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
             <Route path="/pwa/delegacao/protestos/:id" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
+
+            {/* PWA Module pages (Catch-all for implemented modules but also placeholder for future ones) */}
+            <Route path="/pwa/:module" element={<PwaModulePage />} />
+            {/* PWA Pesquisa (PIN auth, no Supabase Auth) */}
+            <Route path="/pwa/pesquisa/login" element={<PesquisaLoginPage />} />
+            <Route path="/pwa/pesquisa/home" element={<PesquisaHomePage />} />
+            <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
+            <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
+            {/* PWA Acesso Negado */}
+            <Route path="/pwa/acesso-negado" element={<PwaAcessoNegadoPage />} />
+            <Route path="/pwa/debug" element={<PwaDebugPage />} />
+            <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
             {/* PWA Diagnóstico */}
             <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
             <Route path="/pwa/debug" element={<PwaDebugPage />} />

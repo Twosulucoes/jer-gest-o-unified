@@ -737,7 +737,7 @@ function QueryBuilderTab() {
   const runQuery = async () => {
     setIsLoading(true);
     try {
-      let query = supabase.from(entityConfig.table).select(entityConfig.select).eq("event_id", eventId);
+      let query: any = supabase.from(entityConfig.table as any).select(entityConfig.select).eq("event_id", eventId);
 
       filters.forEach((filter) => {
         const rawValue = filter.value.trim();
