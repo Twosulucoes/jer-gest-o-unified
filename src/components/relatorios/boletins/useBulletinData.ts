@@ -173,6 +173,9 @@ export function useBulletinData(filters: BulletinFilters) {
       // 7) Validação de dados (inconsistências)
       const validationAlerts: ValidationAlert[] = [];
       
+      const entriesByMatchId = new Set(entries.map(e => e.match_id));
+      const resultsByMatchId = new Set(results.map(r => r.match_id));
+
       // Checa start_time em partidas
       const matchesMissingStartTime = (matchesRaw || []).filter((m: any) => !m.start_time);
       if (matchesMissingStartTime.length > 0) {
@@ -187,8 +190,21 @@ export function useBulletinData(filters: BulletinFilters) {
         });
       }
 
+      // Checa partidas sem participantes (vincular resultados)
+      const matchesMissingEntries = (matchesRaw || []).filter(m => !entriesByMatchId.has(m.id));
+      if (matchesMissingEntries.length > 0) {
+        validationAlerts.push({
+          type: "error",
+          message: `${matchesMissingEntries.length} partida(s) sem participantes vinculados.`,
+          details: "Para lançar resultados, as partidas precisam ter participantes. Vincule equipes ou atletas.",
+          links: matchesMissingEntries.slice(0, 5).map(m => ({
+            label: `Gerenciar Participantes #${m.match_number || m.id.slice(0, 4)}`,
+            url: `/admin/competicao/partida/${m.id}`
+          }))
+        });
+      }
+
       // Checa partidas finalizadas sem resultados lançados
-      const resultsByMatchId = new Set(results.map(r => r.match_id));
       const finishedMissingResults = (matchesRaw || []).filter(m => m.status === 'finished' && !resultsByMatchId.has(m.id));
       if (finishedMissingResults.length > 0) {
         validationAlerts.push({
