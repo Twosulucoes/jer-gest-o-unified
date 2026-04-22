@@ -37,6 +37,8 @@ export default function QrCodeScanner({
   const [errorMsg, setErrorMsg] = useState("");
   const [manualMode, setManualMode] = useState(false);
   const [manualCode, setManualCode] = useState("");
+  const [manualError, setManualError] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const [useFront, setUseFront] = useState(false);
   const [hintVisible, setHintVisible] = useState(false);
