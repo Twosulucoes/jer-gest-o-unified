@@ -84,7 +84,7 @@ export const boletimInformativoReport: ReportDefinition = {
       } else {
         resultsData.push({ 
           section: 'Avisos Gerais', 
-          content: 'Nenhum comunicado oficial publicado para esta data.' 
+          content: 'Nenhum comunicado oficial publicado para esta data. Tente alterar o filtro de data.' 
         });
       }
 
@@ -121,7 +121,7 @@ export const boletimInformativoReport: ReportDefinition = {
         } else {
           resultsData.push({ 
             section: 'Programação do Dia', 
-            content: 'Nenhuma atividade programada para esta data.' 
+            content: 'Nenhuma atividade programada para esta data. Tente alterar o filtro de data.' 
           });
         }
       }
@@ -189,7 +189,7 @@ export const boletimInformativoReport: ReportDefinition = {
         } else {
           resultsData.push({ 
             section: 'Resultados Oficiais', 
-            content: 'Nenhum resultado validado para esta data.' 
+            content: 'Nenhum resultado validado para esta data. Tente alterar o filtro de data.' 
           });
         }
       }
