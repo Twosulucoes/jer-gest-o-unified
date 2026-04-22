@@ -104,13 +104,13 @@ export function ManualBoardingDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Embarque Manual</DialogTitle>
+          <DialogTitle>{getPwaMessage("MANUAL_BOARDING", lang)}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <Label className="text-sm">Nome completo *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do passageiro" />
+            <Label className="text-sm">{getPwaMessage("FULL_NAME", lang)} *</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={getPwaMessage("PASSENGER_NAME_PLACEHOLDER", lang)} />
           </div>
 
           <div className="space-y-1">
