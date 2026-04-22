@@ -103,6 +103,14 @@ export default function ValidacaoQRPage() {
       if (!response.ok) throw new Error(json.error || "Erro desconhecido");
 
       setResult(json);
+      
+      if (json.result === "valid") {
+        toast.success("QR Code validado com sucesso!");
+      } else {
+        const config = RESULT_CONFIG[json.result];
+        toast.error(config?.label || json.error || "QR Code inválido");
+      }
+      
       setShowConfirm(true);
     } catch (err) {
       toast.error(`Erro: ${(err as Error).message}`);
