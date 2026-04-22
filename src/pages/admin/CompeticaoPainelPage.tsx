@@ -171,11 +171,17 @@ export default function CompeticaoPainelPage() {
   const eventId = useActiveEventId();
   const navigate = useNavigate();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
+  const { selectedSportId, setSelectedSportId } = useCompetitionContext();
   const [search, setSearch] = useState("");
-  const [sportFilter, setSportFilter] = useState("all");
+  const [sportFilter, setSportFilter] = useState(selectedSportId || "all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [groupBySport, setGroupBySport] = useState(false);
+
+  // Sync with context
+  useEffect(() => {
+    setSelectedSportId(sportFilter === "all" ? null : sportFilter);
+  }, [sportFilter, setSelectedSportId]);
 
   // ── Query 1: Sport events + rules ────────────────────────
   const { data: provas = [], isLoading } = useQuery({
