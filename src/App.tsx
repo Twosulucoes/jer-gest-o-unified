@@ -159,6 +159,7 @@ import CoordenacaoPartidasPage from "./pages/pwa/coordenacao/CoordenacaoPartidas
 import CoordenacaoPartidaDetalhePage from "./pages/pwa/coordenacao/CoordenacaoPartidaDetalhePage";
 import CoordenacaoResultadosPwaPage from "./pages/pwa/coordenacao/CoordenacaoResultadosPage";
 import CoordenacaoEstatisticasPage from "./pages/pwa/coordenacao/CoordenacaoEstatisticasPage";
+import CoordenacaoConsultaPage from "./pages/pwa/coordenacao/CoordenacaoConsultaPage";
 // PWA Delegação pages
 import DelegacaoHomePage from "./pages/pwa/delegacao/DelegacaoHomePage";
 import DelegacaoParticipantesPage from "./pages/pwa/delegacao/DelegacaoParticipantesPage";
@@ -440,6 +441,7 @@ const App = () => (
             <Route path="/pwa/coordenacao-tecnica/partida/:matchId" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoPartidaDetalhePage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/resultados" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoResultadosPwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/estatisticas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoEstatisticasPage /></PwaRouteGuard>} />
+            <Route path="/pwa/coordenacao-tecnica/consulta" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoConsultaPage /></PwaRouteGuard>} />
             
             {/* PWA Delegação — perfil delegacao */}
             <Route path="/pwa/delegacao" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoHomePage /></PwaRouteGuard>} />
