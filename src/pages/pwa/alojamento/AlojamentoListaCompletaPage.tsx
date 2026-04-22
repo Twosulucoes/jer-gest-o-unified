@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  Users, Building, Search, Phone, Clock, Download, X, DoorOpen, User, PhoneCall, AlertTriangle, Filter,
+  Users, Building, Search, Phone, Clock, Download, X, DoorOpen, User, PhoneCall, AlertTriangle, Filter, LayoutDashboard,
 } from "lucide-react";
 
 interface Guest {
