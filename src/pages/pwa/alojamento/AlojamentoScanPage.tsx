@@ -7,7 +7,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { rpcResolveQr, rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
 import { extractQrToken } from "@/lib/resolveQrCredential";
-import { isVoucherQr, tryRedeemVoucher, voucherReasonLabel } from "@/lib/voucherScan";
+import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
+import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -31,6 +32,7 @@ export default function AlojamentoScanPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const userId = user?.id ?? null;
+  const lang = getPwaLang();
   const { enqueue, isOnline } = useAlojamentoOffline();
   const [mode, setMode] = useState<ScanMode>("checkin");
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -65,14 +67,14 @@ export default function AlojamentoScanPage() {
     // Auto-detecção de voucher: substitui credencial para validar/check-in operacional
     if (isVoucherQr(rawValue)) {
       if (!facilityId) {
-        toast.error("Selecione um local primeiro");
+        toast.error(getPwaMessage("ERR_SELECT_FACILITY", lang));
         navigate("/pwa/alojamento");
         return;
       }
       setResult(null);
       const voucher = await tryRedeemVoucher(rawValue, "lodging", facilityId);
       if (!voucher || !voucher.ok) {
-        toast.error(voucherReasonLabel(voucher?.reason));
+        toast.error(getVoucherMessage(voucher?.reason, lang));
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         return;
       }
@@ -92,12 +94,12 @@ export default function AlojamentoScanPage() {
 
     const token = extractQrToken(rawValue);
     if (!token) {
-      toast.error("Código QR inválido");
+      toast.error(getPwaMessage("ERR_INVALID_QR", lang));
       return;
     }
 
     if (!facilityId) {
-      toast.error("Selecione um local primeiro");
+      toast.error(getPwaMessage("ERR_SELECT_FACILITY", lang));
       navigate("/pwa/alojamento");
       return;
     }
@@ -130,31 +132,31 @@ export default function AlojamentoScanPage() {
 
       if (res.ok) {
         toast.success(
-          mode === "validate" ? "QR válido" :
-          mode === "checkin" ? "Check-in realizado!" : "Check-out realizado!"
+          mode === "validate" ? getPwaMessage("QR_VALID", lang) :
+          mode === "checkin" ? getPwaMessage("CHECKIN_SUCCESS", lang) : getPwaMessage("CHECKOUT_SUCCESS", lang)
         );
         recordOutcome("ok");
         if (navigator.vibrate) navigator.vibrate(200);
         reopenIfContinuous();
       } else {
         const errorMessages: Record<string, string> = {
-          INVALID_TOKEN: "Token inválido ou expirado",
-          NOT_A_PERSON: "Este QR não é de uma pessoa",
-          UNDER_12: "Pessoa com idade inferior a 12 anos — check-in bloqueado",
-          ALREADY_CHECKED_IN: "Pessoa já está hospedada neste local",
-          NOT_CHECKED_IN: "Pessoa não está hospedada neste local",
+          INVALID_TOKEN: getPwaMessage("ERR_INVALID_QR", lang),
+          NOT_A_PERSON: getPwaMessage("ERR_NOT_FOUND", lang),
+          UNDER_12: getPwaMessage("ERR_UNDER_12", lang),
+          ALREADY_CHECKED_IN: getPwaMessage("ERR_ALREADY_STAYING", lang),
+          NOT_CHECKED_IN: getPwaMessage("ERR_NOT_STAYING", lang),
         };
-        toast.error(errorMessages[res.error] || res.error || "Erro desconhecido");
+        toast.error(errorMessages[res.error] || res.error || getPwaMessage("ERR_UNKNOWN", lang));
         recordOutcome("error");
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         reopenIfContinuous();
       }
     } catch (err: any) {
-      toast.error("Erro ao processar: " + (err.message || "desconhecido"));
+      toast.error(`${getPwaMessage("ERR_UNKNOWN", lang)}: ` + (err.message || "desconhecido"));
       recordOutcome("error");
       reopenIfContinuous();
     }
-  }, [mode, facilityId, isOnline, enqueue, navigate, recordOutcome, reopenIfContinuous]);
+  }, [mode, facilityId, isOnline, enqueue, navigate, recordOutcome, reopenIfContinuous, lang]);
 
   return (
     <div className="min-h-screen bg-background">

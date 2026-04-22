@@ -11,7 +11,8 @@ import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useEventContext } from "@/contexts/EventContext";
-import { isVoucherQr, tryRedeemVoucher, voucherReasonLabel } from "@/lib/voucherScan";
+import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
+import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAuth } from "@/hooks/useAuth";
 import {
   loadScanPreferences,
@@ -39,6 +40,7 @@ export default function AlimentacaoScanPage() {
   const { user } = useAuth();
   const { activeEventId } = useEventContext();
   const userId = user?.id ?? null;
+  const lang = getPwaLang();
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -128,7 +130,7 @@ export default function AlimentacaoScanPage() {
     foodRestrictions?: string | null,
   ) {
     if (!windowId) {
-      toast.error("Selecione uma janela de refeição primeiro");
+      toast.error(getPwaMessage("ERR_WINDOW_REQUIRED", lang));
       return;
     }
 
@@ -139,7 +141,7 @@ export default function AlimentacaoScanPage() {
       .eq("meal_window_id", windowId);
 
     if ((count || 0) > 0) {
-      setResult({ ok: false, message: "Refeição já registrada nesta janela", source: resultSource });
+      setResult({ ok: false, message: getPwaMessage("ERR_ALREADY_REGISTERED", lang), source: resultSource });
       recordOutcome("error");
       reopenIfContinuous();
       return;
@@ -150,7 +152,7 @@ export default function AlimentacaoScanPage() {
     } = await supabase.auth.getSession();
 
     if (!session?.user.id) {
-      setResult({ ok: false, message: "Sessão expirada. Faça login novamente." });
+      setResult({ ok: false, message: getPwaMessage("ERR_SESSION_EXPIRED", lang) });
       recordOutcome("error");
       return;
     }
@@ -164,11 +166,11 @@ export default function AlimentacaoScanPage() {
 
     if (error) throw error;
 
-    const prefix = method === "voucher" ? "Voucher · " : method === "manual" ? "Manual · " : "";
+    const prefix = method === "voucher" ? "Voucher · " : method === "manual" ? `${getPwaMessage("MANUAL_SEARCH", lang)} · ` : "";
     setResult({
       ok: true,
       source: resultSource,
-      message: `${prefix}Consumo registrado: ${participantName || ""}`,
+      message: `${prefix}${getPwaMessage("SUCCESS_REGISTERED", lang)}: ${participantName || ""}`,
       restrictions: foodRestrictions || undefined,
     });
     recordOutcome("ok");
@@ -181,7 +183,7 @@ export default function AlimentacaoScanPage() {
     if (!rawValue.trim()) return;
 
     if (!windowId) {
-      toast.error("Selecione uma janela de refeição primeiro");
+      toast.error(getPwaMessage("ERR_WINDOW_REQUIRED", lang));
       return;
     }
 
@@ -194,7 +196,7 @@ export default function AlimentacaoScanPage() {
       if (isVoucherQr(rawValue)) {
         const voucher = await tryRedeemVoucher(rawValue, "meals", windowId);
         if (!voucher || !voucher.ok) {
-          setResult({ ok: false, message: voucherReasonLabel(voucher?.reason), source: "qr" });
+          setResult({ ok: false, message: getVoucherMessage(voucher?.reason, lang), source: "qr" });
           recordOutcome("error");
           reopenIfContinuous();
           return;
@@ -205,7 +207,7 @@ export default function AlimentacaoScanPage() {
       } else {
         const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
         if (!resolved) {
-          setResult({ ok: false, message: "Credencial não encontrada ou inativa", source: "qr" });
+          setResult({ ok: false, message: getPwaMessage("ERR_NOT_FOUND", lang), source: "qr" });
           recordOutcome("error");
           return;
         }
@@ -215,14 +217,14 @@ export default function AlimentacaoScanPage() {
       }
 
       if (!participantId) {
-        setResult({ ok: false, message: "Não foi possível identificar a pessoa", source: "qr" });
+        setResult({ ok: false, message: getPwaMessage("ERR_UNKNOWN", lang), source: "qr" });
         recordOutcome("error");
         return;
       }
 
       await registerMealConsumption(participantId, participantName, method, "qr", foodRestrictions);
     } catch (err: unknown) {
-      setResult({ ok: false, message: `Erro ao registrar consumo: ${getErrorMessage(err)}` });
+      setResult({ ok: false, message: `${getPwaMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}` });
       recordOutcome("error");
     }
   };
@@ -233,7 +235,7 @@ export default function AlimentacaoScanPage() {
     try {
       await registerMealConsumption(row.participant_id, row.full_name, "manual", "manual", null);
     } catch (err: unknown) {
-      setResult({ ok: false, message: `Erro ao registrar consumo: ${getErrorMessage(err)}` });
+      setResult({ ok: false, message: `${getPwaMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}` });
       recordOutcome("error");
     }
   };
@@ -249,13 +251,13 @@ export default function AlimentacaoScanPage() {
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <ScanLine className="h-5 w-5 shrink-0 text-primary" />
-              <span className="truncate font-semibold text-foreground">Escanear QR</span>
+              <span className="truncate font-semibold text-foreground">{getPwaMessage("SCAN_QR", lang)}</span>
             </div>
-            <p className="truncate pl-7 text-[11px] text-muted-foreground">Credencial ou voucher</p>
+            <p className="truncate pl-7 text-[11px] text-muted-foreground">{getPwaMessage("SCAN_TITLE", lang)}</p>
           </div>
         </div>
         <Button size="sm" className="shrink-0 rounded-lg" onClick={() => setScannerOpen(true)} disabled={!windowId}>
-          <ScanLine className="mr-1 h-4 w-4" /> Scan
+          <ScanLine className="mr-1 h-4 w-4" /> {getPwaMessage("SCAN", lang)}
         </Button>
       </header>
 
@@ -309,7 +311,7 @@ export default function AlimentacaoScanPage() {
                 <div className="min-w-0">
                   {result.ok && (
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                      {result.source === "manual" ? "Busca manual" : "QR válido"}
+                      {result.source === "manual" ? getPwaMessage("MANUAL_SEARCH", lang) : getPwaMessage("QR_VALID", lang)}
                     </p>
                   )}
                   <span className="text-sm font-medium leading-snug">{result.message}</span>
@@ -326,11 +328,11 @@ export default function AlimentacaoScanPage() {
         )}
 
         <div className="space-y-2">
-          <p className="text-center text-xs text-muted-foreground">ou buscar manualmente</p>
+          <p className="text-center text-xs text-muted-foreground">{getPwaMessage("SEARCH_MANUALLY", lang)}</p>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome ou CPF…"
+              placeholder={getPwaMessage("SEARCH_PLACEHOLDER", lang)}
               value={manualQuery}
               onChange={(e) => setManualQuery(e.target.value)}
               className="h-11 border-border/80 bg-card/90 pl-10"
@@ -345,11 +347,11 @@ export default function AlimentacaoScanPage() {
                 {manualSearching && (
                   <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm">Buscando…</span>
+                    <span className="text-sm">{getPwaMessage("BUSCANDO", lang)}</span>
                   </div>
                 )}
                 {!manualSearching && manualHits.length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhum participante encontrado neste evento.</p>
+                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">{getPwaMessage("NO_RESULTS", lang)}</p>
                 )}
                 {!manualSearching &&
                   manualHits.map((h) => (
@@ -376,7 +378,7 @@ export default function AlimentacaoScanPage() {
 
         <Button variant="module" className="h-12 w-full rounded-xl font-semibold shadow-app-md" onClick={() => setScannerOpen(true)} disabled={!windowId}>
           <ScanLine className="mr-2 h-5 w-5" />
-          Escanear QR Code
+          {getPwaMessage("SCAN_QR", lang)}
         </Button>
       </main>
 
@@ -384,7 +386,7 @@ export default function AlimentacaoScanPage() {
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleScan}
-        title="Escanear QR"
+        title={getPwaMessage("SCAN_QR", lang)}
       />
     </div>
   );

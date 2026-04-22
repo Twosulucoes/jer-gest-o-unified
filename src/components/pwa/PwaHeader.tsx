@@ -1,7 +1,8 @@
-import { ArrowLeft, LogOut, ArrowLeftRight } from "lucide-react";
+import { ArrowLeft, LogOut, ArrowLeftRight, Languages } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { getPwaLang, setPwaLang } from "@/lib/pwa-messages";
 
 interface PwaHeaderProps {
   title: string;
@@ -36,6 +37,18 @@ export function PwaHeader({ title, icon: Icon, backTo, onSignOut, rightSlot }: P
         </div>
         <div className="flex items-center gap-2">
           {rightSlot}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const current = getPwaLang();
+              setPwaLang(current === "pt" ? "es" : "pt");
+              window.location.reload();
+            }}
+            className="text-xs font-bold uppercase text-muted-foreground hover:text-foreground"
+          >
+            {getPwaLang() === "pt" ? "PT" : "ES"}
+          </Button>
           {showSwitcher && (
             <Button variant="ghost" size="icon" onClick={() => navigate("/selecionar-modulo")} className="text-muted-foreground hover:text-foreground hover:bg-muted" title="Trocar módulo">
               <ArrowLeftRight className="h-5 w-5" />
