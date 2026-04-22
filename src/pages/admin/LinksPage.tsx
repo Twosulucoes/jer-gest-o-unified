@@ -18,12 +18,12 @@ import {
 const BASE_URL = window.location.origin;
 
 const MODULE_OPTIONS = [
-  { value: "/pwa/transporte", label: "Transporte", icon: Bus },
-  { value: "/pwa/alimentacao", label: "Alimentação", icon: UtensilsCrossed },
-  { value: "/pwa/alojamento", label: "Alojamento", icon: Building },
-  { value: "/pwa/coordenacao-tecnica", label: "Coordenação Técnica", icon: Trophy },
-  { value: "/pwa/delegacao", label: "Delegação", icon: Users },
-  { value: "/aovivo", label: "Ao Vivo Público", icon: Radio },
+  { value: "/pwa/transporte", label: "Módulo Transporte", icon: Bus },
+  { value: "/pwa/alimentacao", label: "Módulo Alimentação", icon: UtensilsCrossed },
+  { value: "/pwa/alojamento", label: "Módulo Alojamento", icon: Building },
+  { value: "/pwa/coordenacao-tecnica", label: "Módulo Coordenação Técnica", icon: Trophy },
+  { value: "/pwa/delegacao", label: "Módulo Delegação", icon: Users },
+  { value: "/aovivo", label: "Página Ao Vivo", icon: Radio },
 ];
 
 function generateSlug(title: string): string {
