@@ -12,11 +12,15 @@ export default function BulletinValidationAlerts({ alerts }: BulletinValidationA
   return (
     <div className="space-y-3 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
       {alerts.map((alert, i) => (
-        <Alert key={i} variant={alert.type === "error" ? "destructive" : "default"} className={alert.type === "warning" ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10 text-yellow-800 dark:text-yellow-200" : ""}>
+        <Alert 
+          key={i} 
+          variant={alert.type === "error" ? "destructive" : "default"} 
+          className={alert.type === "warning" ? "border-amber-500/50 bg-amber-500/5 text-amber-900 dark:text-amber-200" : ""}
+        >
           {alert.type === "error" ? (
             <AlertCircle className="h-4 w-4" />
           ) : alert.type === "warning" ? (
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           ) : (
             <Info className="h-4 w-4" />
           )}
