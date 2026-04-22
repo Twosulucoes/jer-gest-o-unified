@@ -202,7 +202,9 @@ export default function AlimentacaoScanPage() {
       if (isVoucherQr(rawValue)) {
         const voucher = await tryRedeemVoucher(rawValue, "meals", windowId);
         if (!voucher || !voucher.ok) {
-          setResult({ ok: false, message: getVoucherMessage(voucher?.reason, lang), source: "qr" });
+          const errorMsg = getVoucherMessage(voucher?.reason, lang);
+          setResult({ ok: false, message: errorMsg, source: "qr" });
+          toast.error(errorMsg);
           recordOutcome("error");
           reopenIfContinuous();
           return;
