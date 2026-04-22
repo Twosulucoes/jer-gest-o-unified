@@ -65,10 +65,12 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Eventos", to: "/admin/eventos", icon: <Calendar className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Duplicidades de Pessoas", to: "/admin/participantes/duplicidades", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Histórico do Participante", to: "/admin/participantes/historico", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Instituições", to: "/admin/instituicoes", icon: <Building className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Credencial (Modelos)", to: "/admin/credenciais/modelos", icon: <BadgeCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Vouchers (Validar)", to: "/admin/vouchers", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "alimentacao"] as AppRole[] },
       { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Vínculos de Importação", to: "/admin/importacao/aliases", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
