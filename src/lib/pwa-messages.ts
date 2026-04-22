@@ -6,7 +6,10 @@ export type PwaMessageCode =
   | "ERR_WINDOW_REQUIRED"
   | "ERR_LIMIT_REACHED"
   | "ERR_UNKNOWN"
+  | "ERR_NAME_REQUIRED"
   | "SUCCESS_REGISTERED"
+  | "SUCCESS_BOARDING"
+  | "ALREADY_BOARDED"
   | "SEARCH_PLACEHOLDER"
   | "NO_RESULTS"
   | "MANUAL_SEARCH"
@@ -16,7 +19,15 @@ export type PwaMessageCode =
   | "VOUCHER_EXPIRED"
   | "VOUCHER_NOT_YET_VALID"
   | "VOUCHER_SCOPE_DENIED"
-  | "VOUCHER_MAX_USES";
+  | "VOUCHER_MAX_USES"
+  | "MANUAL_BOARDING"
+  | "FULL_NAME"
+  | "PASSENGER_NAME_PLACEHOLDER"
+  | "TAKE_PHOTO"
+  | "SAVING"
+  | "REGISTER_BOARDING"
+  | "CANCEL"
+  | "SEARCH_MANUALLY";
 
 export type PwaLang = "pt" | "es";
 
@@ -45,9 +56,21 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
     pt: "Erro desconhecido",
     es: "Error desconocido",
   },
+  ERR_NAME_REQUIRED: {
+    pt: "Nome é obrigatório",
+    es: "El nombre es obligatorio",
+  },
   SUCCESS_REGISTERED: {
     pt: "Registrado com sucesso",
     es: "Registrado con éxito",
+  },
+  SUCCESS_BOARDING: {
+    pt: "embarcado com sucesso",
+    es: "embarcado con éxito",
+  },
+  ALREADY_BOARDED: {
+    pt: "já embarcou",
+    es: "ya embarcó",
   },
   SEARCH_PLACEHOLDER: {
     pt: "Buscar por nome ou CPF…",
@@ -88,6 +111,38 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
   VOUCHER_MAX_USES: {
     pt: "Limite de usos do voucher atingido",
     es: "Límite de usos del voucher alcanzado",
+  },
+  MANUAL_BOARDING: {
+    pt: "Embarque Manual",
+    es: "Embarque Manual",
+  },
+  FULL_NAME: {
+    pt: "Nome completo",
+    es: "Nombre completo",
+  },
+  PASSENGER_NAME_PLACEHOLDER: {
+    pt: "Nome do passageiro",
+    es: "Nombre del pasajero",
+  },
+  TAKE_PHOTO: {
+    pt: "Tirar foto do documento",
+    es: "Tomar foto del documento",
+  },
+  SAVING: {
+    pt: "Salvando...",
+    es: "Guardando...",
+  },
+  REGISTER_BOARDING: {
+    pt: "Registrar Embarque",
+    es: "Registrar Embarque",
+  },
+  CANCEL: {
+    pt: "Cancelar",
+    es: "Cancelar",
+  },
+  SEARCH_MANUALLY: {
+    pt: "ou buscar manualmente",
+    es: "o buscar manualmente",
   },
 };
 
