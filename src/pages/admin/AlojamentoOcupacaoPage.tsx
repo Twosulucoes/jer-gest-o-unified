@@ -280,6 +280,7 @@ export default function AlojamentoOcupacaoPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
+                    <TableHead>Delegação</TableHead>
                     <TableHead>CPF</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Check-in</TableHead>
