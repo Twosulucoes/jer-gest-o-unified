@@ -128,7 +128,7 @@ async function runDiagnostics(eventId: string | null): Promise<DiagnosticResult>
   // Bulletins published
   let bulletins_published: number | null = null;
   try {
-    let q = supabase.from("official_bulletins").select("id", { count: "exact", head: true }).eq("status", "published");
+    let q = supabase.from("official_bulletins").select("id", { count: "exact", head: true }).eq("status", "publicado");
     if (eventId) q = q.eq("event_id", eventId);
     const { count } = await q;
     bulletins_published = count ?? 0;

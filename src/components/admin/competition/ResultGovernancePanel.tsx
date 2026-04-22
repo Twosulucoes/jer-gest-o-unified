@@ -57,7 +57,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
     },
   });
 
-  const publishedBulletins = bulletins.filter((b: any) => b.status === "published");
+  const publishedBulletins = bulletins.filter((b: any) => b.status === "publicado");
 
   // Published results with bulletin info (for "Publicados" list)
   const { data: publishedRows = [] } = useQuery({

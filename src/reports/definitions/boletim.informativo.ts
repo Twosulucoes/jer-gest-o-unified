@@ -41,7 +41,7 @@ export const boletimInformativoReport: ReportDefinition = {
         .from('official_bulletins')
         .select('title, content_md')
         .eq('event_id', eventId)
-        .eq('status', 'published')
+        .eq('status', 'publicado')
         .gte('published_at', `${date}T00:00:00Z`)
         .lte('published_at', `${date}T23:59:59Z`);
 
