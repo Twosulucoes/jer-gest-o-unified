@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
-import { Download, Building2, AlertCircle, Inbox } from "lucide-react";
+import { Download, Building2, AlertCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +17,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 export default function AlojamentoRelatoriosPage() {
   const eventId = useActiveEventId();
+  const navigate = useNavigate();
   const { hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("secretaria") || hasRole("alojamento");
   const [locationFilter, setLocationFilter] = useState("all");
@@ -115,16 +117,21 @@ export default function AlojamentoRelatoriosPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Relatório de Alojamento</h1>
           <p className="text-sm text-muted-foreground mt-1">Ocupação atual e histórico por local e delegação</p>
         </div>
-        {canExport && (
-          <Button onClick={exportCsv} disabled={!occupancies?.length}>
-            <Download className="mr-2 h-4 w-4" />Exportar CSV
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
           </Button>
-        )}
+          {canExport && (
+            <Button size="sm" onClick={exportCsv} disabled={!occupancies?.length}>
+              <Download className="mr-2 h-4 w-4" />Exportar CSV
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
-  Building, QrCode, LogIn, LogOut,
+  Building, QrCode, LogIn, LogOut, ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,11 +18,29 @@ import { useStageScope } from "@/hooks/useStageScope";
 
 export default function AlojamentoOcupacaoPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
-  const { isStageScoped, stageId } = useStageScope();
-  const [selectedUnitId, setSelectedUnitId] = useState("");
-  const canOperate = hasRole("admin") || hasRole("secretaria");
+  const { isStageScoped, stageId, stage } = useStageScope();
+  const [selectedUnitId, setSelectedUnitId] = useState(searchParams.get("unitId") || "");
+  const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alojamento");
+
+  // Sync unitId from search params
+  useEffect(() => {
+    const unitId = searchParams.get("unitId");
+    if (unitId && unitId !== selectedUnitId) {
+      setSelectedUnitId(unitId);
+    }
+  }, [searchParams]);
+
+  const handleUnitChange = (v: string) => {
+    setSelectedUnitId(v);
+    setSearchParams((prev) => {
+      prev.set("unitId", v);
+      return prev;
+    });
+  };
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
@@ -80,7 +99,7 @@ export default function AlojamentoOcupacaoPage() {
     queryKey: ["occ-participants", occParticipantIds],
     queryFn: async () => {
       if (!occParticipantIds.length) return [];
-      const { data, error } = await supabase.from("participants").select("id, person_id, delegation_id").in("id", occParticipantIds);
+      const { data, error } = await supabase.from("participants").select("id, person_id, delegation_id, delegations(institutions(name))").in("id", occParticipantIds);
       if (error) throw error;
       return data;
     },
@@ -148,26 +167,37 @@ export default function AlojamentoOcupacaoPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Ocupação / Check-in</h1>
-        <p className="text-sm text-muted-foreground mt-1">Gestão operacional de alojamento</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Ocupação / Check-in</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isStageScoped && stage ? `Etapa: ${stage.name}` : "Gestão operacional de alojamento"}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => navigate("../alojamento")}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Visão Geral
+        </Button>
       </div>
 
       {/* Controls */}
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setSelectedUnitId(""); }}>
-                <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
-                <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Unidade</label>
-              <Select value={selectedUnitId} onValueChange={setSelectedUnitId} disabled={!selectedEventId}>
-                <SelectTrigger><SelectValue placeholder="Selecione a unidade" /></SelectTrigger>
+            {!isStageScoped && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Evento</label>
+                <Select value={selectedEventId} onValueChange={() => handleUnitChange("")}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
+                  <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className={`space-y-2 ${isStageScoped ? "md:col-span-2" : ""}`}>
+              <label className="text-sm font-medium text-foreground">Unidade (Quarto)</label>
+              <Select value={selectedUnitId} onValueChange={handleUnitChange} disabled={!selectedEventId}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Selecione a unidade" />
+                </SelectTrigger>
                 <SelectContent>
                   {units.map((u) => {
                     const loc = locationsMap.get(u.location_id);
@@ -250,6 +280,7 @@ export default function AlojamentoOcupacaoPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
+                    <TableHead>Delegação</TableHead>
                     <TableHead>CPF</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Check-in</TableHead>
@@ -263,6 +294,9 @@ export default function AlojamentoOcupacaoPage() {
                     return (
                       <TableRow key={o.id}>
                         <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {partMap.get(o.participant_id)?.delegations?.institutions?.name ?? "—"}
+                        </TableCell>
                         <TableCell className="text-muted-foreground font-mono text-xs">{person?.cpf ?? "—"}</TableCell>
                         <TableCell><Badge variant={statusVariant(o.status)}>{statusLabel(o.status)}</Badge></TableCell>
                         <TableCell className="text-xs text-muted-foreground">

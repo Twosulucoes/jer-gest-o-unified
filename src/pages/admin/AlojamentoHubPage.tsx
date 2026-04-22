@@ -281,12 +281,22 @@ export default function AlojamentoHubPage() {
                         return (
                           <div
                             key={u.id}
-                            className={`rounded-md border p-2.5 flex flex-col gap-1 ${full ? "border-destructive/40 bg-destructive/5" : "bg-muted/30"}`}
+                            onClick={() => navigate(`ocupacao?unitId=${u.id}`)}
+                            className={`rounded-md border p-2.5 flex flex-col gap-1 cursor-pointer transition-all hover:ring-2 hover:ring-primary/20 ${full ? "border-destructive/40 bg-destructive/5" : "bg-muted/30 hover:bg-muted/50"}`}
                           >
                             <div className="flex items-center justify-between gap-1">
                               <span className="text-sm font-medium truncate">{u.name}</span>
                               {canWrite && (
-                                <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0" onClick={() => { setEditingUnit(u); setUnitDialog(true); }}>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-5 w-5 shrink-0" 
+                                  onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    setEditingUnit(u); 
+                                    setUnitDialog(true); 
+                                  }}
+                                >
                                   <Pencil className="h-3 w-3" />
                                 </Button>
                               )}
