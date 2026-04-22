@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScanLine, CheckCircle, XCircle, Search, Loader2, User } from "lucide-react";
+import { toast } from "sonner";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
@@ -130,7 +131,9 @@ export default function TransporteScanPage() {
       }
     }
 
-    setResult({ ok: true, source, message: `Embarque registrado: ${name}` });
+    const successMsg = `Embarque registrado: ${name}`;
+    setResult({ ok: true, source, message: successMsg });
+    toast.success(successMsg);
     recordOutcome("ok");
     if (navigator.vibrate) navigator.vibrate(200);
     reopenIfContinuous();
@@ -143,7 +146,9 @@ export default function TransporteScanPage() {
     try {
       const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
       if (!resolved) {
-        setResult({ ok: false, message: "Credencial não encontrada ou inativa" });
+        const errorMsg = "Credencial não encontrada ou inativa";
+        setResult({ ok: false, message: errorMsg });
+        toast.error(errorMsg);
         recordOutcome("error");
         return;
       }
