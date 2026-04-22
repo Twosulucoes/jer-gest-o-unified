@@ -62,7 +62,7 @@ export const boletimInformativoReport: ReportDefinition = {
       }
 
       // 2. Programação (from competition_matches)
-      if (filters.include_schedule !== false) {
+      if (includeSchedule) {
         const { data: matches } = await supabase
           .from('competition_matches')
           .select(`
