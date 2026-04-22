@@ -307,17 +307,22 @@ export default function AcessosDelegacoesPage() {
                 <Skeleton key={i} className="h-14 w-full rounded-md" />
               ))}
             </div>
-          ) : !filteredLinks.length ? (
+          ) : !filteredDelegationUsers.length ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
               <Link2 className="h-10 w-10 text-muted-foreground mb-3" />
               <p className="text-muted-foreground font-medium">
-                {linksThisEvent.length === 0 ? "Nenhum vínculo configurado" : "Nenhum resultado para sua busca"}
+                {delegationUsers.length === 0 ? "Nenhum usuário com perfil 'Delegação'" : "Nenhum resultado para sua busca"}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                {linksThisEvent.length === 0
-                  ? "Vincule usuários com perfil delegação à sua delegação para restringir o acesso."
+                {delegationUsers.length === 0
+                  ? "Crie usuários com este perfil para poder vinculá-los a delegações."
                   : "Ajuste o termo de busca ou limpe o filtro."}
               </p>
+              {delegationUsers.length === 0 && (
+                <Button asChild variant="link" size="sm" className="mt-2">
+                  <RouterLink to="/admin/acessos/usuarios">Criar usuário</RouterLink>
+                </Button>
+              )}
             </div>
           ) : (
             <div className="rounded-lg border bg-card">
@@ -326,49 +331,70 @@ export default function AcessosDelegacoesPage() {
                   <TableRow>
                     <TableHead>Usuário</TableHead>
                     <TableHead>E-mail</TableHead>
-                    <TableHead>Delegação (Instituição)</TableHead>
-                    <TableHead className="w-[60px]" />
+                    <TableHead>Delegação Vinculada (Evento Atual)</TableHead>
+                    <TableHead className="w-[120px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLinks.map((link) => {
-                    const u = usersMap.get(link.user_id) as any;
-                    const delegation = delegations.find((d) => d.id === link.delegation_id);
-                    const instName = delegation ? institutionsMap.get(delegation.institution_id) || "—" : "—";
-                    const dupCount = linksByDelegation.get(link.delegation_id) || 1;
+                  {filteredDelegationUsers.map((u: any) => {
+                    const linksForUser = linksThisEvent.filter((l) => l.user_id === u.user_id);
+                    const isLinked = linksForUser.length > 0;
+                    
                     return (
-                      <TableRow key={link.id}>
+                      <TableRow key={u.user_id}>
                         <TableCell className="font-medium">
-                          {u?.full_name || link.user_id.slice(0, 8) + "…"}
+                          {u.full_name || "—"}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {u?.email || "—"}
+                          {u.email || "—"}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span>{instName}</span>
-                            {dupCount > 1 && (
-                              <Badge variant="outline" className="gap-1 text-amber-600 border-amber-500/40">
-                                <AlertTriangle className="h-3 w-3" />
-                                {dupCount} usuários
-                              </Badge>
+                          <div className="flex flex-col gap-1">
+                            {linksForUser.length === 0 ? (
+                              <span className="text-sm text-muted-foreground italic">Não vinculado</span>
+                            ) : (
+                              linksForUser.map((link) => {
+                                const delegation = delegations.find((d) => d.id === link.delegation_id);
+                                const instName = delegation ? institutionsMap.get(delegation.institution_id) || "—" : "—";
+                                return (
+                                  <div key={link.id} className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="font-normal">
+                                      {instName}
+                                    </Badge>
+                                    {canManage && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() =>
+                                          setConfirmDelete({
+                                            id: link.id,
+                                            user: u.full_name || u.email,
+                                            institution: instName,
+                                          })
+                                        }
+                                      >
+                                        <Trash2 className="h-3 w-3 text-destructive" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                );
+                              })
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
                           {canManage && (
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                setConfirmDelete({
-                                  id: link.id,
-                                  user: u?.full_name || "este usuário",
-                                  institution: instName,
-                                })
-                              }
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUserId(u.user_id);
+                                setDialogOpen(true);
+                              }}
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Plus className="mr-2 h-3 w-3" />
+                              Vincular
                             </Button>
                           )}
                         </TableCell>
