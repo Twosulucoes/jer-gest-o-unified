@@ -129,6 +129,7 @@ export default function ValidacaoQRPage() {
   const handleNewScan = () => {
     setQrInput("");
     setResult(null);
+    setShowConfirm(false);
   };
 
   const handleCameraScan = useCallback((raw: string) => {
