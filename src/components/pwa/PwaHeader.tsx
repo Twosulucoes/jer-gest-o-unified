@@ -1,7 +1,8 @@
-import { ArrowLeft, LogOut, ArrowLeftRight } from "lucide-react";
+import { ArrowLeft, LogOut, ArrowLeftRight, Languages } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { getPwaLang, setPwaLang } from "@/lib/pwa-messages";
 
 interface PwaHeaderProps {
   title: string;
