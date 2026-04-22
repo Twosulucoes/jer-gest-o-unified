@@ -254,7 +254,7 @@ export default function CompeticaoPartidaDetalhePage() {
         .from("official_bulletins")
         .select("id, number, title, status")
         .eq("event_id", match!.event_id)
-        .eq("status", "published")
+        .eq("status", "publicado")
         .order("number", { ascending: false });
       if (error) throw error;
       return data;

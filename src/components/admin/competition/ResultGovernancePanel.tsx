@@ -57,7 +57,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
     },
   });
 
-  const publishedBulletins = bulletins.filter((b: any) => b.status === "published");
+  const publishedBulletins = bulletins.filter((b: any) => b.status === "publicado");
 
   // Published results with bulletin info (for "Publicados" list)
   const { data: publishedRows = [] } = useQuery({
@@ -135,7 +135,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
           event_id: eventId,
           number: nextNumber,
           title: newTitle.trim(),
-          status: "published",
+          status: "publicado",
           published_at: new Date().toISOString(),
           published_by: user?.id ?? null,
           content_md: `# Boletim Oficial #${nextNumber}\n\n${newTitle.trim()}`,
