@@ -201,6 +201,9 @@ export default function ParticipantesPage() {
         "person:people(id, full_name, cpf, gender), " +
         "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))";
 
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+
       // Constrói a query base
       let q: any;
       
