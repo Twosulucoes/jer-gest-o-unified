@@ -12,18 +12,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Plus, Copy, Download, Search, Loader2, Link2, ExternalLink, Trash2,
-  QrCode, Info, Pencil, Bus, UtensilsCrossed, Building, Trophy, Users, Radio,
+  QrCode, Info, Pencil, Bus, UtensilsCrossed, Building, Trophy, Users, Radio, Sparkles, Send, MessageSquare,
 } from "lucide-react";
 
 const BASE_URL = window.location.origin;
 
 const MODULE_OPTIONS = [
-  { value: "/pwa/transporte", label: "Módulo Transporte", icon: Bus },
-  { value: "/pwa/alimentacao", label: "Módulo Alimentação", icon: UtensilsCrossed },
-  { value: "/pwa/alojamento", label: "Módulo Alojamento", icon: Building },
-  { value: "/pwa/coordenacao-tecnica", label: "Módulo Coordenação Técnica", icon: Trophy },
-  { value: "/pwa/delegacao", label: "Módulo Delegação", icon: Users },
-  { value: "/aovivo", label: "Página Ao Vivo", icon: Radio },
+  { value: "/pwa/transporte", label: "Módulo Transporte", icon: Bus, slug: "transporte", title: "Transporte" },
+  { value: "/pwa/alimentacao", label: "Módulo Alimentação", icon: UtensilsCrossed, slug: "alimentacao", title: "Alimentação" },
+  { value: "/pwa/alojamento", label: "Módulo Alojamento", icon: Building, slug: "alojamento", title: "Alojamento" },
+  { value: "/pwa/coordenacao-tecnica", label: "Módulo Coordenação Técnica", icon: Trophy, slug: "coordenacao", title: "Coordenação Técnica" },
+  { value: "/pwa/delegacao", label: "Módulo Delegação", icon: Users, slug: "delegacao", title: "Delegação" },
+  { value: "/aovivo", label: "Página Ao Vivo", icon: Radio, slug: "aovivo", title: "Ao Vivo" },
 ];
 
 function generateSlug(title: string): string {
@@ -129,12 +129,54 @@ export default function LinksPage() {
     queryClient.invalidateQueries({ queryKey: ["public_content"] });
   };
 
+  const autoGenerateLinks = useMutation({
+    mutationFn: async () => {
+      const existingSlugs = new Set((items || []).map(i => i.slug));
+      const toCreate = MODULE_OPTIONS.filter(opt => !existingSlugs.has(opt.slug));
+      
+      if (toCreate.length === 0) {
+        toast.info("Todos os links padrão já existem");
+        return;
+      }
+
+      const { error } = await supabase.from("public_content").insert(
+        toCreate.map(opt => ({
+          title: opt.title,
+          slug: opt.slug,
+          kind: "redirect",
+          destination_url: `${BASE_URL}${opt.value}`,
+          active: true,
+          visibility: "public",
+          open_in_new_tab: false,
+        }))
+      );
+      if (error) throw error;
+      return toCreate.length;
+    },
+    onSuccess: (count) => {
+      if (count) {
+        queryClient.invalidateQueries({ queryKey: ["public_content"] });
+        toast.success(`${count} links gerados com sucesso!`);
+      }
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao gerar links: " + err.message);
+    }
+  });
+
   const resetWizard = () => {
     setWizModule("");
     setWizTitle("");
     setWizSlug("");
     setWizCreated(null);
     setShowCreate(false);
+  };
+
+  const copyInstructions = (title: string, slug: string) => {
+    const url = `${BASE_URL}/go/${slug}`;
+    const text = `*Instruções de Acesso - ${title}*\n\nOlá! Para acessar o sistema operacional, utilize o link abaixo:\n\n🔗 ${url}\n\nO acesso é automático após o login. Recomenda-se salvar este link nos seus favoritos.`;
+    navigator.clipboard.writeText(text);
+    toast.success("Instruções copiadas para a área de transferência!");
   };
 
   const filtered = (items || []).filter((item) => {
@@ -172,9 +214,20 @@ export default function LinksPage() {
             className="pl-9 w-64"
           />
         </div>
-        <Button onClick={() => setShowCreate(true)} className="gap-2">
-          <Plus className="h-4 w-4" /> Novo Link
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => autoGenerateLinks.mutate()} 
+            disabled={autoGenerateLinks.isPending}
+            className="gap-2 border-primary/30 text-primary hover:bg-primary/10"
+          >
+            {autoGenerateLinks.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            Gerar Links Padrão
+          </Button>
+          <Button onClick={() => setShowCreate(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> Novo Link
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -206,10 +259,13 @@ export default function LinksPage() {
 
               <div className="flex items-center gap-1 pt-1 border-t">
                 <Button variant="ghost" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => copyLink(item.slug)}>
-                  <Copy className="h-3.5 w-3.5" /> Copiar
+                  <Link2 className="h-3.5 w-3.5" /> Link
                 </Button>
-                <Button variant="ghost" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => navigate(`/admin/links/${item.id}`)}>
-                  <Pencil className="h-3.5 w-3.5" /> Editar
+                <Button variant="ghost" size="sm" className="gap-1.5 text-xs flex-1 text-primary hover:text-primary hover:bg-primary/10" onClick={() => copyInstructions(item.title, item.slug)}>
+                  <Send className="h-3.5 w-3.5" /> Instruções
+                </Button>
+                <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => navigate(`/admin/links/${item.id}`)}>
+                  <Pencil className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
