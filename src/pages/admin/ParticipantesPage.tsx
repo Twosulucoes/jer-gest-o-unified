@@ -196,28 +196,27 @@ export default function ParticipantesPage() {
     queryFn: async () => {
       if (noSearchMatches) return { rows: [] as any[], total: 0 };
 
-      const baseSelect =
+      const baseFields =
         "id, status, participant_type, person_id, delegation_id, created_at, " +
         "person:people(id, full_name, cpf, gender), " +
         "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))";
 
-      // Quando há filtro por etapa, o conjunto de IDs pode ser grande (2k+).
-      // PostgREST não aceita .in() com URL gigante, então paginamos por
-      // chunks de IDs no cliente. Sem isso, etapas grandes (Boa Vista) viam
-      // tabela vazia mesmo com vínculos existentes.
-      const from = page * pageSize;
-      const to = from + pageSize - 1;
-
-      let q = supabase
-        .from("participants")
-        .select(baseSelect, { count: "exact" })
-        .eq("event_id", selectedEventId!);
-
+      // Constrói a query base
+      let q: any;
+      
       if (stageFilterId) {
-        // Usa join inner para filtrar por etapa de forma eficiente
-        q = q.select(`${baseSelect}, participant_event_stages!inner(event_stage_id)`)
-             .eq("participant_event_stages.event_stage_id", stageFilterId);
+        // Se houver filtro por etapa, precisamos do join !inner
+        q = supabase
+          .from("participants")
+          .select(`${baseFields}, participant_event_stages!inner(event_stage_id)`, { count: "exact" })
+          .eq("participant_event_stages.event_stage_id", stageFilterId);
+      } else {
+        q = supabase
+          .from("participants")
+          .select(baseFields, { count: "exact" });
       }
+
+      q = q.eq("event_id", selectedEventId!);
 
       if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
