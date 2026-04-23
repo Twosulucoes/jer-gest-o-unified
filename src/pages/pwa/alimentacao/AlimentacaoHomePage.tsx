@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
-import { AppKPI } from "@/components/app/AppKPI";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { PwaContainer } from "@/components/pwa/PwaScreen";
 import { PwaSectionLabel, PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
+import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
+import { PwaActionGrid } from "@/components/pwa/PwaActionGrid";
 import { Progress } from "@/components/ui/progress";
 import { useEventContext } from "@/contexts/EventContext";
 import {
   UtensilsCrossed, ScanLine, Search,
-  Clock, CheckCircle, BarChart3, AlertTriangle, Plus,
+  Clock, BarChart3, AlertTriangle, Plus, ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { FoodIncidentDialog } from "@/components/pwa/alimentacao/FoodIncidentDialog";
 import { AlimentacaoDuplicateAlert } from "@/components/pwa/alimentacao/AlimentacaoDuplicateAlert";
 import { format } from "date-fns";
@@ -100,107 +100,80 @@ export default function AlimentacaoHomePage() {
 
   const eventSubtitle = activeEvent?.name
     ? `${activeEvent.name}${activeEvent.year ? ` — ${activeEvent.year}` : ""}`
-    : null;
-
-  const actions = [
-    { label: "Scan QR", icon: ScanLine, to: "/pwa/alimentacao/scan" },
-    { label: "Buscar", icon: Search, to: "/pwa/alimentacao/buscar" },
-    { label: "Janelas", icon: Clock, to: "/pwa/alimentacao/janelas" },
-    { label: "Histórico", icon: BarChart3, to: "/pwa/alimentacao/historico" },
-    { label: "Lista de Consumos", icon: UtensilsCrossed, to: "/pwa/alimentacao/lista-consumos" },
-  ];
+    : undefined;
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-grid opacity-30" />
+    <div className="op-screen">
       <PwaHeader
         title="Alimentação"
+        subtitle={eventSubtitle}
         icon={UtensilsCrossed}
         backTo="/pwa"
         onSignOut={handleSignOut}
         rightSlot={
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => setIncidentOpen(true)}>
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-muted/40 hover:text-foreground" onClick={() => setIncidentOpen(true)}>
             <AlertTriangle className="h-5 w-5" />
           </Button>
         }
       />
 
-      <main className="relative max-w-md mx-auto space-y-4 p-4">
-        {eventSubtitle && <p className="text-center text-xs text-muted-foreground">{eventSubtitle}</p>}
+      <PwaContainer>
         <AlimentacaoDuplicateAlert />
 
         <PwaStatTriplet
           loading={loading}
           items={[
-            { label: "Refeições hoje", value: kpis.consumosHoje, tone: "green" },
+            { label: "Refeições hoje", value: kpis.consumosHoje, tone: "module" },
             { label: "Janelas ativas", value: kpis.janelasAbertas, tone: "amber" },
             { label: "Janelas hoje", value: kpis.totalJanelas, tone: "blue" },
           ]}
         />
 
         {openWindow && (
-          <Card className="border-border/80 bg-card/95 shadow-app-md">
-            <CardContent className="space-y-3 p-4">
-              <div className="flex items-center justify-between gap-2">
-                <PwaSectionLabel>Janela atual</PwaSectionLabel>
-                <Badge className="rounded-full border-0 bg-green-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-green-700 dark:text-green-400">
-                  Aberta
-                </Badge>
+          <div className="op-card-elevated p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <PwaSectionLabel>Janela atual</PwaSectionLabel>
+              <PwaStatusBadge tone="ok" pulse>Aberta</PwaStatusBadge>
+            </div>
+            <div>
+              <h3 className="text-xl font-extrabold text-foreground">{openWindow.mealName}</h3>
+              {openWindow.label && <p className="text-xs text-muted-foreground">{openWindow.label}</p>}
+              <p className="mt-1 text-sm font-medium text-foreground/80">
+                {format(new Date(openWindow.windowStart), "HH:mm")} – {format(new Date(openWindow.windowEnd), "HH:mm")}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[11px] text-muted-foreground">
+                <span><span className="font-bold text-module">{openWindow.served}</span> servidas nesta janela</span>
+                <span><span className="font-bold text-foreground">{kpis.consumosHoje}</span> no dia</span>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">{openWindow.mealName}</h3>
-                {openWindow.label && <p className="text-xs text-muted-foreground">{openWindow.label}</p>}
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {format(new Date(openWindow.windowStart), "HH:mm")} – {format(new Date(openWindow.windowEnd), "HH:mm")}
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-[11px] text-muted-foreground">
-                  <span>
-                    <span className="font-semibold text-foreground">{openWindow.served}</span> nesta janela
-                  </span>
-                  <span>
-                    <span className="font-semibold text-foreground">{kpis.consumosHoje}</span> no dia
-                  </span>
-                </div>
-                <Progress
-                  value={
-                    kpis.consumosHoje > 0
-                      ? Math.min(100, Math.round((openWindow.served / kpis.consumosHoje) * 100))
-                      : openWindow.served > 0
-                        ? 100
-                        : 0
-                  }
-                  className="h-2.5 bg-muted"
-                  indicatorClassName="bg-green-500"
-                />
-              </div>
-              <Button className="h-12 w-full rounded-xl font-semibold" variant="module" onClick={() => navigate("/pwa/alimentacao/scan")}>
-                <Plus className="mr-2 h-5 w-5" />
-                Registrar consumo
-              </Button>
-            </CardContent>
-          </Card>
+              <Progress
+                value={
+                  kpis.consumosHoje > 0
+                    ? Math.min(100, Math.round((openWindow.served / kpis.consumosHoje) * 100))
+                    : openWindow.served > 0 ? 100 : 0
+                }
+                className="h-2.5 bg-muted/40"
+                indicatorClassName="bg-module"
+              />
+            </div>
+            <Button className="op-btn-primary" onClick={() => navigate("/pwa/alimentacao/scan")}>
+              <Plus className="h-5 w-5" />
+              Registrar consumo
+            </Button>
+          </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <AppKPI label="Tipos refeição" value={kpis.tiposRefeicao} icon={UtensilsCrossed} loading={loading} />
-          <AppKPI label="Detalhe janelas" value={kpis.totalJanelas} icon={BarChart3} loading={loading} sub="Cadastradas hoje" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          {actions.map((action) => (
-            <Card key={action.label} className="cursor-pointer border-border/80 bg-card/95 hover:shadow-app-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all" onClick={() => navigate(action.to)}>
-              <CardContent className="p-4 flex flex-col items-center gap-2">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[hsl(var(--module-accent)/0.14)] text-[hsl(var(--module-accent))] shadow-app-sm">
-                  <action.icon className="h-6 w-6" />
-                </div>
-                <span className="text-sm font-medium">{action.label}</span>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </main>
+        <PwaActionGrid
+          actions={[
+            { label: "Scan QR", icon: ScanLine, to: "/pwa/alimentacao/scan" },
+            { label: "Buscar", icon: Search, to: "/pwa/alimentacao/buscar" },
+            { label: "Janelas", icon: Clock, to: "/pwa/alimentacao/janelas" },
+            { label: "Histórico", icon: BarChart3, to: "/pwa/alimentacao/historico" },
+            { label: "Lista de Consumos", icon: ListChecks, to: "/pwa/alimentacao/lista-consumos" },
+          ]}
+        />
+      </PwaContainer>
 
       <FoodIncidentDialog open={incidentOpen} onOpenChange={setIncidentOpen} />
     </div>

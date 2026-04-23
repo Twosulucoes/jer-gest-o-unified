@@ -3,11 +3,10 @@ import App from "./App.tsx";
 import "./index.css";
 import { installGlobalRefreshListener } from "@/lib/systemRefresh";
 
-// Initialize theme from localStorage before render to avoid flash
-const storedTheme = localStorage.getItem("jer-theme");
-if (storedTheme === "dark" || (!storedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-  document.documentElement.classList.add("dark");
-}
+// JER Gestão é dark-only (forçado globalmente).
+document.documentElement.classList.add("dark");
+document.documentElement.style.colorScheme = "dark";
+try { localStorage.setItem("jer-theme", "dark"); } catch {}
 
 // Guard: prevent service worker in iframes/preview
 const isInIframe = (() => {
