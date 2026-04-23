@@ -245,11 +245,8 @@ export default function AcessosDelegacoesPage() {
     <div className="animate-fade-in space-y-6">
       <AppPageHeader
         title="Acessos e Vínculos"
-        description={
-          activeEvent
-            ? `Gerencie vínculos de delegação e modalidade — Evento ativo: ${activeEvent.name}`
-            : "Selecione um evento ativo para gerenciar vínculos."
-        }
+        description="Gerencie os vínculos de acesso entre usuários e as delegações ou modalidades."
+
       >
         {canManage && (
           <Button asChild variant="outline" size="sm">
