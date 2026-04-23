@@ -80,7 +80,7 @@ export default function DiagnosticoCompeticaoPage() {
         <CardContent className="pt-4 pb-4 flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[200px]">
             <p className="text-sm text-muted-foreground">
-              Evento: <strong>{activeEvent?.name ?? "Nenhum selecionado (modo global)"}</strong>
+              {/* Event name removed */}
             </p>
           </div>
           <Button onClick={handleGenerate} disabled={isLoading}>

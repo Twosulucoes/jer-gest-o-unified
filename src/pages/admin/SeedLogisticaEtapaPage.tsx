@@ -149,7 +149,7 @@ export default function SeedLogisticaEtapaPage() {
             <SelectTrigger><SelectValue placeholder="Selecionar evento…" /></SelectTrigger>
             <SelectContent>
               {events.map((e) => (
-                <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>
+                <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
