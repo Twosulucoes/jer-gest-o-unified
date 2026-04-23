@@ -102,6 +102,7 @@ import SuperManualPage from "./pages/super/SuperManualPage";
 import SuperChamadosPage from "./pages/super/SuperChamadosPage";
 import AjudaChamadosPage from "./pages/admin/AjudaChamadosPage";
 import SeedLogisticaEtapaPage from "./pages/admin/SeedLogisticaEtapaPage";
+import ClonarLogisticaPage from "./pages/admin/ClonarLogisticaPage";
 import DebugPublicadosPage from "./pages/admin/DebugPublicadosPage";
 import SuperDashboardPage from "./pages/super/SuperDashboardPage";
 import SuperEventosPage from "./pages/super/SuperEventosPage";
@@ -324,6 +325,7 @@ const App = () => (
               <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
               <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
               <Route path="seed-logistica" element={<ProtectedRoute allowedRoles={["super_admin"]}><SeedLogisticaEtapaPage /></ProtectedRoute>} />
+              <Route path="clonar-logistica" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ClonarLogisticaPage /></ProtectedRoute>} />
               <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["super_admin"]}><DebugPublicadosPage /></ProtectedRoute>} />
               <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["super_admin"]}><EmailTemplatesPage /></ProtectedRoute>} />
               {/* Protestos / Ocorrências — operacionais, redirecionam para Etapa */}

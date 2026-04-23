@@ -6936,6 +6936,16 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      clone_logistics_between_stages: {
+        Args: {
+          p_include_lodging?: boolean
+          p_include_meals?: boolean
+          p_include_transport?: boolean
+          p_source_stage_id: string
+          p_target_stage_id: string
+        }
+        Returns: Json
+      }
       create_alojamento_incident: {
         Args: {
           p_category: string
