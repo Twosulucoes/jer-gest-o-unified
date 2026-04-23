@@ -127,18 +127,7 @@ export function StagePageScaffold({
 
   return (
     <div className="space-y-4">
-      {stageId && activeStage && (
-        <div className="flex items-center gap-2 rounded-lg border border-[hsl(var(--module-accent)/0.35)] bg-[hsl(var(--module-accent)/0.08)] px-3 py-2 text-xs">
-          <Filter className="h-3.5 w-3.5 text-[hsl(var(--module-accent))]" />
-          <span className="text-muted-foreground">Filtrando dados por etapa:</span>
-          <Badge
-            variant="outline"
-            className="border-[hsl(var(--module-accent)/0.5)] bg-background text-[hsl(var(--module-accent))] font-semibold"
-          >
-            {activeStage.name}
-          </Badge>
-        </div>
-      )}
+      {/* Redundant stage filter banner removed as context is already set by StageLayout */}
       <StageMiniDash moduleKpis={moduleKpis} hideGlobal={hideGlobalKpis} />
       {!hideTabs && moduleCfg && <StageModuleTabs items={moduleCfg.tabs} />}
       <div className="pt-1">{children}</div>
