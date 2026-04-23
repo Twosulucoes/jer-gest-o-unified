@@ -462,14 +462,14 @@ function BatchScheduleDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="space-y-2">
-            <Label>Data *</Label>
+            <Label className="text-xs uppercase font-bold text-muted-foreground">Data das Partidas</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+                  className={cn("w-full justify-start text-left font-normal h-10", !date && "text-muted-foreground")}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
@@ -480,66 +480,66 @@ function BatchScheduleDialog({
                   mode="single"
                   selected={date}
                   onSelect={setDate}
-                  disabled={(d) => isBefore(d, startOfDay(new Date()))}
-                  className={cn("p-3 pointer-events-auto")}
+                  className="p-3"
                 />
               </PopoverContent>
             </Popover>
           </div>
 
           <div className="space-y-2">
-            <Label>Local *</Label>
+            <Label className="text-xs uppercase font-bold text-muted-foreground">Local Único</Label>
             <Select value={venueId} onValueChange={setVenueId}>
-              <SelectTrigger>
+              <SelectTrigger className="h-10">
                 <SelectValue placeholder="Selecione o local" />
               </SelectTrigger>
               <SelectContent>
                 {venues.map((v) => (
-                  <SelectItem key={v.id} value={v.id}>
-                    {v.name}{v.address ? ` — ${v.address}` : ""}
-                  </SelectItem>
+                  <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Hora da primeira partida *</Label>
-              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Intervalo (min)</Label>
-              <Input
-                type="number"
-                min={10}
-                max={240}
-                value={interval}
-                onChange={(e) => setInterval(Math.max(10, parseInt(e.target.value) || 60))}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label className="text-xs uppercase font-bold text-muted-foreground">Início (1ª Partida)</Label>
+            <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="h-10" />
           </div>
 
-          {preview.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Preview</Label>
-              <div className="rounded-md border divide-y max-h-[200px] overflow-y-auto">
-                {preview.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between px-3 py-1.5 text-sm">
-                    <span>Partida #{p.match_number} — {p.side_a} vs {p.side_b}</span>
-                    <Badge variant="outline">{p.scheduledTime}</Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label className="text-xs uppercase font-bold text-muted-foreground">Intervalo (minutos)</Label>
+            <Input type="number" value={interval} onChange={(e) => setInterval(Number(e.target.value))} className="h-10" />
+          </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => saveMut.mutate()} disabled={!canSave || saveMut.isPending}>
-            {saveMut.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-            Confirmar agendamento em lote
+        <div className="flex-1 overflow-y-auto min-h-[200px] border rounded-md p-2 bg-muted/20">
+          <p className="text-xs font-bold uppercase text-muted-foreground mb-3 px-1">Prévia da Sequência</p>
+          <div className="space-y-2">
+            {preview.map((p, i) => (
+              <div key={p.id} className="flex items-center justify-between p-2 rounded-md bg-card border text-sm">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                    #{p.match_number || (i+1)}
+                  </span>
+                  <span className="font-medium truncate max-w-[180px]">{p.side_a} vs {p.side_b}</span>
+                </div>
+                <div className="flex items-center gap-2 font-mono text-primary font-bold">
+                  <Clock className="h-3 w-3" />
+                  {p.scheduledTime}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <DialogFooter className="mt-6">
+          <Button variant="outline" onClick={onClose} className="h-10">Cancelar</Button>
+          <Button 
+            onClick={() => saveMut.mutate()} 
+            disabled={!canSave || saveMut.isPending}
+            className="h-10 px-8"
+          >
+            {saveMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CalendarPlus className="h-4 w-4 mr-2" />}
+            Confirmar Agendamento de {preview.length} Partidas
           </Button>
         </DialogFooter>
       </DialogContent>
