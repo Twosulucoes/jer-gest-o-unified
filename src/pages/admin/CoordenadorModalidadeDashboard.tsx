@@ -192,11 +192,7 @@ export default function CoordenadorModalidadeDashboard() {
                 {s.name}
               </Badge>
             ))}
-            {activeEvent && (
-              <Badge variant="outline" className="text-xs font-normal border-primary/20 bg-primary/5">
-                {activeEvent.name}
-              </Badge>
-            )}
+            {/* Event badge removed as redundant */}
           </div>
         </div>
       </div>
