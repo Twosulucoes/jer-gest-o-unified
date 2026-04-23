@@ -164,15 +164,7 @@ export default function PwaLoginPage() {
           </div>
         </form>
 
-        {activeEvent?.name && (
-          <div className="op-card border-module px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-module">Etapa ativa</p>
-            <p className="mt-0.5 text-sm font-semibold text-foreground">{activeEvent.name}</p>
-            {activeEvent.year && (
-              <p className="text-[11px] text-muted-foreground">{activeEvent.year}</p>
-            )}
-          </div>
-        )}
+        {/* Active event info removed from login to maintain focus on session */}
       </div>
     </div>
   );
