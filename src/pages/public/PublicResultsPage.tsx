@@ -1,30 +1,35 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Trophy, ChevronRight, ArrowLeft } from "lucide-react";
+import { Loader2, Trophy, ChevronRight, ArrowLeft, Calendar, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RESULT_STATUS_LABEL } from "@/lib/resultStatus";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format, parse } from "date-fns";
 
 export default function PublicResultsPage() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedSportEventId, setSelectedSportEventId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("results");
 
-  // Fetch events that have published results
+  // Fetch public events
   const { data: events = [], isLoading: loadingEvents } = useQuery({
     queryKey: ["public-events"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("id, name, year, status")
+        .select("id, name, year, status, is_public, public_agenda_published")
+        .eq("is_public", true)
         .order("year", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
-  // Fetch sport_events for selected event with published results
+  const selectedEvent = events.find(e => e.id === selectedEventId);
+
+  // Fetch sport_events for selected event
   const { data: sportEvents = [], isLoading: loadingSportEvents } = useQuery({
     queryKey: ["public-sport-events", selectedEventId],
     enabled: !!selectedEventId,
@@ -33,10 +38,12 @@ export default function PublicResultsPage() {
         .from("sport_events")
         .select(`
           id, gender, 
-          sports(name),
+          sports(name, is_collective),
           categories(name)
         `)
-        .eq("event_id", selectedEventId!);
+        .eq("event_id", selectedEventId!)
+        .eq("is_active", true)
+        .order("name");
       if (error) throw error;
       return data;
     },
@@ -45,7 +52,7 @@ export default function PublicResultsPage() {
   // Fetch published results for selected sport_event
   const { data: results = [], isLoading: loadingResults } = useQuery({
     queryKey: ["public-results-detail", selectedSportEventId],
-    enabled: !!selectedSportEventId,
+    enabled: !!selectedSportEventId && activeTab === "results",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("competition_match_results")
@@ -54,7 +61,7 @@ export default function PublicResultsPage() {
           competition_match_entries(
             side,
             teams(name),
-            participant_sport_events(participants(person_id, people(full_name)))
+            participant_sport_events(participants(people(full_name)))
           ),
           competition_matches(
             match_number, match_date, status,
@@ -69,6 +76,33 @@ export default function PublicResultsPage() {
     },
   });
 
+  // Fetch agenda (matches) for selected sport_event
+  const { data: matches = [], isLoading: loadingMatches } = useQuery({
+    queryKey: ["public-agenda-detail", selectedSportEventId],
+    enabled: !!selectedSportEventId && activeTab === "agenda" && !!selectedEvent?.public_agenda_published,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_matches")
+        .select(`
+          id, match_number, match_date, start_time, status,
+          competition_phases(name),
+          competition_groups(name),
+          venues(name),
+          competition_match_entries(
+            side,
+            teams(name),
+            participant_sport_events(participants(people(full_name)))
+          )
+        `)
+        .eq("sport_event_id", selectedSportEventId!)
+        .not("match_date", "is", null)
+        .order("match_date")
+        .order("start_time");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handleBack = () => {
     if (selectedSportEventId) {
       setSelectedSportEventId(null);
@@ -78,17 +112,17 @@ export default function PublicResultsPage() {
   };
 
   const currentTitle = selectedSportEventId
-    ? "Resultados Publicados"
+    ? "Detalhes da Prova"
     : selectedEventId
     ? "Provas do Evento"
-    : "Resultados Oficiais";
+    : "Portal Público";
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card px-4 py-4">
+      <header className="border-b bg-card px-4 py-4 sticky top-0 z-10 shadow-sm">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           {(selectedEventId || selectedSportEventId) && (
-            <Button variant="ghost" size="icon" onClick={handleBack}>
+            <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
@@ -102,7 +136,7 @@ export default function PublicResultsPage() {
       <main className="mx-auto max-w-4xl p-4 space-y-4">
         {/* Event listing */}
         {!selectedEventId && (
-          <>
+          <div className="grid gap-4">
             {loadingEvents ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -110,32 +144,37 @@ export default function PublicResultsPage() {
             ) : events.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
-                  Nenhum evento disponível.
+                  Nenhum evento em fase de divulgação no momento.
                 </CardContent>
               </Card>
             ) : (
               events.map((ev) => (
                 <Card
                   key={ev.id}
-                  className="cursor-pointer transition-colors hover:bg-accent/50"
+                  className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group"
                   onClick={() => setSelectedEventId(ev.id)}
                 >
-                  <CardContent className="flex items-center justify-between py-4">
-                    <div>
-                      <p className="font-semibold">{ev.name}</p>
-                      <p className="text-sm text-muted-foreground">{ev.year}</p>
+                  <CardContent className="flex items-center justify-between py-6">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-primary/10 p-3 rounded-xl group-hover:bg-primary/20 transition-colors">
+                        <Trophy className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-lg">{ev.name}</p>
+                        <p className="text-sm text-muted-foreground">{ev.year}</p>
+                      </div>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                   </CardContent>
                 </Card>
               ))
             )}
-          </>
+          </div>
         )}
 
         {/* Sport events listing */}
         {selectedEventId && !selectedSportEventId && (
-          <>
+          <div className="grid gap-3">
             {loadingSportEvents ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -150,87 +189,164 @@ export default function PublicResultsPage() {
               sportEvents.map((se: any) => (
                 <Card
                   key={se.id}
-                  className="cursor-pointer transition-colors hover:bg-accent/50"
+                  className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group"
                   onClick={() => setSelectedSportEventId(se.id)}
                 >
                   <CardContent className="flex items-center justify-between py-4">
                     <div>
-                      <p className="font-semibold">
+                      <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
                         {se.sports?.name} — {se.categories?.name}
                       </p>
-                      <Badge variant="outline">{se.gender === "M" ? "Masculino" : se.gender === "F" ? "Feminino" : "Misto"}</Badge>
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant="outline" className="text-[10px]">
+                          {se.gender === "M" ? "Masculino" : se.gender === "F" ? "Feminino" : "Misto"}
+                        </Badge>
+                        {se.sports?.is_collective && <Badge variant="secondary" className="text-[10px]">Coletiva</Badge>}
+                      </div>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                   </CardContent>
                 </Card>
               ))
             )}
-          </>
+          </div>
         )}
 
-        {/* Results detail */}
+        {/* Prova Detail with Tabs */}
         {selectedSportEventId && (
-          <>
-            {loadingResults ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : results.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  Nenhum resultado publicado para esta prova.
-                </CardContent>
-              </Card>
-            ) : (
-              results.map((r: any) => {
-                const entry = r.competition_match_entries;
-                const match = r.competition_matches;
-                const name =
-                  entry?.teams?.name ??
-                  entry?.participant_sport_events?.participants?.people?.full_name ??
-                  "—";
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="flex items-center justify-between mb-4">
+              <TabsList className="grid grid-cols-2 w-[300px]">
+                <TabsTrigger value="results" className="gap-2">
+                  <Trophy className="h-4 w-4" /> Resultados
+                </TabsTrigger>
+                <TabsTrigger value="agenda" className="gap-2" disabled={!selectedEvent?.public_agenda_published}>
+                  <Calendar className="h-4 w-4" /> Agenda
+                </TabsTrigger>
+              </TabsList>
+              {!selectedEvent?.public_agenda_published && activeTab === "agenda" && (
+                <p className="text-[10px] text-destructive font-medium italic">Agenda ainda não divulgada</p>
+              )}
+            </div>
 
-                return (
-                  <Card key={r.id}>
-                    <CardContent className="py-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Partida #{match?.match_number ?? "—"} · {match?.competition_phases?.name ?? ""}
-                            {match?.competition_groups?.name ? ` · ${match.competition_groups.name}` : ""}
-                          </p>
+            <TabsContent value="results" className="space-y-3 mt-0">
+              {loadingResults ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : results.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    Nenhum resultado publicado para esta prova.
+                  </CardContent>
+                </Card>
+              ) : (
+                results.map((r: any) => {
+                  const entry = r.competition_match_entries;
+                  const match = r.competition_matches;
+                  const name =
+                    entry?.teams?.name ??
+                    entry?.participant_sport_events?.participants?.people?.full_name ??
+                    "—";
+
+                  return (
+                    <Card key={r.id}>
+                      <CardContent className="py-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-bold text-foreground">{name}</p>
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              Partida #{match?.match_number ?? "—"} · {match?.competition_phases?.name ?? ""}
+                              {match?.competition_groups?.name ? ` · ${match.competition_groups.name}` : ""}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            {r.score && <p className="text-xl font-black text-primary">{r.score}</p>}
+                            {r.position && (
+                              <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 font-bold">
+                                {r.position}º lugar
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          {r.score && <p className="text-lg font-bold">{r.score}</p>}
-                          {r.position && (
-                            <Badge variant="default">{r.position}º lugar</Badge>
-                          )}
-                          {r.outcome && (
-                            <Badge variant="outline" className="ml-1">
-                              {r.outcome}
-                            </Badge>
-                          )}
-                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </TabsContent>
+
+            <TabsContent value="agenda" className="space-y-3 mt-0">
+              {!selectedEvent?.public_agenda_published ? (
+                <Card className="border-dashed border-destructive/50 bg-destructive/5">
+                  <CardContent className="py-12 text-center">
+                    <Calendar className="h-10 w-10 text-destructive/40 mx-auto mb-3" />
+                    <p className="text-destructive font-medium">A agenda oficial desta prova ainda não foi liberada para divulgação.</p>
+                  </CardContent>
+                </Card>
+              ) : loadingMatches ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : matches.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    Nenhuma partida agendada no momento.
+                  </CardContent>
+                </Card>
+              ) : (
+                matches.map((m: any) => {
+                  const entries = m.competition_match_entries || [];
+                  const sideA = entries.find((e: any) => e.side === "A");
+                  const sideB = entries.find((e: any) => e.side === "B");
+                  const nameA = sideA?.teams?.name || sideA?.participant_sport_events?.participants?.people?.full_name || "A definir";
+                  const nameB = sideB?.teams?.name || sideB?.participant_sport_events?.participants?.people?.full_name || "A definir";
+
+                  return (
+                    <Card key={m.id} className="overflow-hidden">
+                      <div className="bg-muted/50 px-4 py-2 border-b flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                          {m.competition_phases?.name} {m.competition_groups?.name ? `· ${m.competition_groups.name}` : ""}
+                        </span>
+                        <Badge variant="outline" className="text-[10px] bg-background">
+                          #{m.match_number}
+                        </Badge>
                       </div>
-                      {(r.time_ms || r.distance_cm || r.points) && (
-                        <div className="mt-2 flex gap-4 text-sm text-muted-foreground">
-                          {r.time_ms != null && <span>Tempo: {(r.time_ms / 1000).toFixed(2)}s</span>}
-                          {r.distance_cm != null && <span>Distância: {(r.distance_cm / 100).toFixed(2)}m</span>}
-                          {r.points != null && <span>Pontos: {r.points}</span>}
+                      <CardContent className="py-4">
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 text-center font-bold text-sm sm:text-base">{nameA}</div>
+                            <div className="px-4 text-[10px] font-black text-muted-foreground/30">VS</div>
+                            <div className="flex-1 text-center font-bold text-sm sm:text-base">{nameB}</div>
+                          </div>
+                          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t pt-3">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Calendar className="h-3.5 w-3.5 text-primary" />
+                              {m.match_date ? format(parse(m.match_date, "yyyy-MM-dd", new Date()), "dd/MM/yyyy") : "—"}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Loader2 className="h-3.5 w-3.5 text-primary" />
+                              {m.start_time?.slice(0, 5) || "—"}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Swords className="h-3.5 w-3.5 text-primary" />
+                              {m.venues?.name || "Local a definir"}
+                            </div>
+                          </div>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </TabsContent>
+          </Tabs>
         )}
       </main>
 
-      <footer className="border-t py-4 text-center text-sm text-muted-foreground">
-        JER Gestão — Plataforma de Gestão do JERs
+      <footer className="border-t py-8 text-center text-sm text-muted-foreground bg-muted/20 mt-12">
+        <p className="font-bold">JER Gestão</p>
+        <p className="text-xs">Plataforma de Gestão dos Jogos Escolares de Roraima</p>
       </footer>
     </div>
   );
