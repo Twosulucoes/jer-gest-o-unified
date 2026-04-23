@@ -192,7 +192,6 @@ function ScheduleMatchDialog({
       await supabase.from("audit_events").insert({
         table_name: "competition_matches",
         record_id: match.id,
-        user_id: (await supabase.auth.getUser()).data.user?.id,
         action: "schedule_edit",
         payload: { match_date: matchDate, start_time: startTime, venue_id: venueId },
       });
