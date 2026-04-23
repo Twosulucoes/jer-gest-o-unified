@@ -102,6 +102,7 @@ import SuperManualPage from "./pages/super/SuperManualPage";
 import SuperChamadosPage from "./pages/super/SuperChamadosPage";
 import AjudaChamadosPage from "./pages/admin/AjudaChamadosPage";
 import SeedLogisticaEtapaPage from "./pages/admin/SeedLogisticaEtapaPage";
+import ClonarLogisticaPage from "./pages/admin/ClonarLogisticaPage";
 import DebugPublicadosPage from "./pages/admin/DebugPublicadosPage";
 import SuperDashboardPage from "./pages/super/SuperDashboardPage";
 import SuperEventosPage from "./pages/super/SuperEventosPage";
