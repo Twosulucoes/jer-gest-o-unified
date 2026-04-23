@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useStageScopedSportEventIds } from "@/hooks/useStageScopedSportEvents";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

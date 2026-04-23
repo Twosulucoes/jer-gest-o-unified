@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScopedSportEventIds } from "@/hooks/useStageScopedSportEvents";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import SportEventPicker from "@/components/admin/competition/SportEventPicker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,13 +28,14 @@ interface SkippedItem {
 
 export default function SincronizarEquipesPage() {
   const eventId = useActiveEventId();
+  const { isStageScoped, sportEventIds: stageSportEventIds } = useStageScopedSportEventIds();
   const qc = useQueryClient();
   const [sportEventId, setSportEventId] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
 
   // Only show collective sport_events in the picker
   const { data: collectiveSportEvents = [] } = useQuery({
-    queryKey: ["collective-sport-events", eventId],
+    queryKey: ["collective-sport-events", eventId, isStageScoped, stageSportEventIds ? Array.from(stageSportEventIds).sort().join(",") : null],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sport_events")
@@ -41,8 +43,13 @@ export default function SincronizarEquipesPage() {
         .eq("event_id", eventId)
         .order("name");
       if (error) throw error;
-      return (data ?? []).filter((se: any) => se.sports?.is_collective === true);
+      const collectives = (data ?? []).filter((se: any) => se.sports?.is_collective === true);
+      if (isStageScoped && stageSportEventIds) {
+        return collectives.filter((se: any) => stageSportEventIds.has(se.id));
+      }
+      return collectives;
     },
+    enabled: !!eventId && (!isStageScoped || stageSportEventIds !== null),
   });
 
   const syncMut = useMutation({
