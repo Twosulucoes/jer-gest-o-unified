@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CompetitionPhaseFormDialog, { type PhaseFormValues } from "@/components/admin/CompetitionPhaseFormDialog";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScopedSportEventIds } from "@/hooks/useStageScopedSportEvents";
 
 export default function CompeticaoFasesPage() {
   const qc = useQueryClient();
@@ -19,6 +20,7 @@ export default function CompeticaoFasesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const selectedEventId = useActiveEventId();
+  const { isStageScoped, sportEventIds: stageSportEventIds } = useStageScopedSportEventIds();
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   const { data: events = [] } = useQuery({
@@ -31,14 +33,17 @@ export default function CompeticaoFasesPage() {
   });
 
   const { data: sportEvents = [] } = useQuery({
-    queryKey: ["sport_events", selectedEventId],
+    queryKey: ["sport_events", selectedEventId, isStageScoped, stageSportEventIds ? Array.from(stageSportEventIds).sort().join(",") : null],
     queryFn: async () => {
       if (!selectedEventId) return [];
       const { data, error } = await supabase.from("sport_events").select("*").eq("event_id", selectedEventId).eq("is_active", true).order("name");
       if (error) throw error;
+      if (isStageScoped && stageSportEventIds) {
+        return (data ?? []).filter((se: any) => stageSportEventIds.has(se.id));
+      }
       return data;
     },
-    enabled: !!selectedEventId,
+    enabled: !!selectedEventId && (!isStageScoped || stageSportEventIds !== null),
   });
 
   const { data: phases, isLoading } = useQuery({

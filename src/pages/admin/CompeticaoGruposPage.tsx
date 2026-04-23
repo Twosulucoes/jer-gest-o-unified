@@ -16,6 +16,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useCompetitionContext } from "@/contexts/CompetitionContext";
+import { useStageScopedSportEventIds } from "@/hooks/useStageScopedSportEvents";
 
 export default function CompeticaoGruposPage() {
   const qc = useQueryClient();
@@ -23,6 +24,7 @@ export default function CompeticaoGruposPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const selectedEventId = useActiveEventId();
+  const { isStageScoped, sportEventIds: stageSportEventIds } = useStageScopedSportEventIds();
   const { 
     selectedSportEventId, 
     setSelectedSportEventId, 
@@ -41,14 +43,17 @@ export default function CompeticaoGruposPage() {
   });
 
   const { data: sportEvents = [] } = useQuery({
-    queryKey: ["sport_events", selectedEventId],
+    queryKey: ["sport_events", selectedEventId, isStageScoped, stageSportEventIds ? Array.from(stageSportEventIds).sort().join(",") : null],
     queryFn: async () => {
       if (!selectedEventId) return [];
       const { data, error } = await supabase.from("sport_events").select("*").eq("event_id", selectedEventId).eq("is_active", true).order("name");
       if (error) throw error;
+      if (isStageScoped && stageSportEventIds) {
+        return (data ?? []).filter((se: any) => stageSportEventIds.has(se.id));
+      }
       return data;
     },
-    enabled: !!selectedEventId,
+    enabled: !!selectedEventId && (!isStageScoped || stageSportEventIds !== null),
   });
 
   const { data: phases = [] } = useQuery({

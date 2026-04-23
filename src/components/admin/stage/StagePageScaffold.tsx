@@ -3,10 +3,12 @@ import {
   BadgeCheck, Trophy, Building, UtensilsCrossed, Bus,
   AlertTriangle, ClipboardList, FileBarChart,
   LayoutDashboard, ListChecks, GitBranch, Users, CalendarClock, Layers,
-  ScanLine, KeyRound, ChartBar, Navigation, Route, Settings,
+  ScanLine, KeyRound, ChartBar, Navigation, Route, Settings, Filter,
 } from "lucide-react";
 import { StageMiniDash, type StageMiniDashKpi } from "./StageMiniDash";
 import { StageModuleTabs, type StageTabItem } from "./StageModuleTabs";
+import { useStageContext } from "@/contexts/StageContext";
+import { Badge } from "@/components/ui/badge";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -112,6 +114,7 @@ export function StagePageScaffold({
 }: StagePageScaffoldProps) {
   const location = useLocation();
   const { stageId } = useParams<{ stageId: string }>();
+  const { activeStage } = useStageContext();
 
   // Identifica módulo pela rota: /admin/etapa/:stageId/<prefix>[/...]
   const base = `/admin/etapa/${stageId}/`;
@@ -124,6 +127,18 @@ export function StagePageScaffold({
 
   return (
     <div className="space-y-4">
+      {stageId && activeStage && (
+        <div className="flex items-center gap-2 rounded-lg border border-[hsl(var(--module-accent)/0.35)] bg-[hsl(var(--module-accent)/0.08)] px-3 py-2 text-xs">
+          <Filter className="h-3.5 w-3.5 text-[hsl(var(--module-accent))]" />
+          <span className="text-muted-foreground">Filtrando dados por etapa:</span>
+          <Badge
+            variant="outline"
+            className="border-[hsl(var(--module-accent)/0.5)] bg-background text-[hsl(var(--module-accent))] font-semibold"
+          >
+            {activeStage.name}
+          </Badge>
+        </div>
+      )}
       <StageMiniDash moduleKpis={moduleKpis} hideGlobal={hideGlobalKpis} />
       {!hideTabs && moduleCfg && <StageModuleTabs items={moduleCfg.tabs} />}
       <div className="pt-1">{children}</div>

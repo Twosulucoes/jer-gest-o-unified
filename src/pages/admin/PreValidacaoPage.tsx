@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useStageScopedSportEventIds } from "@/hooks/useStageScopedSportEvents";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -170,6 +171,7 @@ export default function PreValidacaoPage() {
   const eventId = useActiveEventId();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { isStageScoped, sportEventIds: stageSportEventIds } = useStageScopedSportEventIds();
   const [search, setSearch] = useState("");
   const [sportFilter, setSportFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -200,17 +202,22 @@ export default function PreValidacaoPage() {
 
   // Step 2: Fetch all sport_events with counts (carrega imediatamente, sem bloquear no sync)
   const { data: rows = [], isLoading: loadingData, refetch } = useQuery({
-    queryKey: ["pre-validacao", eventId],
-    enabled: !!eventId,
+    queryKey: ["pre-validacao", eventId, isStageScoped, stageSportEventIds ? Array.from(stageSportEventIds).sort().join(",") : null],
+    enabled: !!eventId && (!isStageScoped || stageSportEventIds !== null),
     queryFn: async () => {
       // Fetch sport_events
-      const { data: sportEvents, error: seErr } = await supabase
+      const { data: sportEventsRaw, error: seErr } = await supabase
         .from("sport_events")
         .select("id, name, slug, sport_id, category_id, sports(name, is_collective), categories(name, gender_scope)")
         .eq("event_id", eventId!)
         .eq("is_active", true)
         .order("name");
       if (seErr) throw seErr;
+
+      // Filtra para mostrar apenas provas com inscritos na etapa atual
+      const sportEvents = isStageScoped && stageSportEventIds
+        ? (sportEventsRaw ?? []).filter((se: any) => stageSportEventIds.has(se.id))
+        : sportEventsRaw;
 
       // Fetch rules
       const { data: rules, error: rulesErr } = await supabase

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useSportEventRules } from "@/hooks/useSportEventRules";
+import { useStageScopedSportEventIds } from "@/hooks/useStageScopedSportEvents";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import SportEventPicker from "@/components/admin/competition/SportEventPicker";
 import RulesPresetPicker from "@/components/admin/competition/RulesPresetPicker";
@@ -27,6 +28,7 @@ const DEFAULT_RULES: SportEventRulesV1 = {
 
 export default function RegrasProvaPage() {
   const eventId = useActiveEventId();
+  const { stageId } = useStageScopedSportEventIds();
   const [sportEventId, setSportEventId] = useState<string | null>(null);
   const { rules, source, isLoading, error, upsertRules, isSaving } = useSportEventRules(eventId, sportEventId);
 
@@ -74,6 +76,7 @@ export default function RegrasProvaPage() {
       <SportEventPicker
         eventId={eventId}
         value={sportEventId}
+        stageId={stageId}
         onChange={(id) => {
           setSportEventId(id);
           setInitialized(false);
