@@ -193,7 +193,7 @@ export default function TransporteHomePage() {
     ) : null
   );
 
-  const eventSubtitle = activeEvent?.name ? `${activeEvent.name}${activeEvent.year ? ` — ${activeEvent.year}` : ""}` : undefined;
+  const eventSubtitle = undefined;
 
   return (
     <div className="op-screen">

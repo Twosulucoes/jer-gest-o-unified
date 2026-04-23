@@ -547,7 +547,7 @@ export default function DelegacoesPage() {
         <div className="min-w-0">
           <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">Delegações</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-            Gestão das delegações de instituições nos eventos
+            Escolas e delegações inscritas nas etapas.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">

@@ -97,7 +97,7 @@ export default function PrestacaoContasOscPage() {
           </div>
           <div>
             <h1 className="font-heading text-2xl font-bold">Prestação de Contas (OSC)</h1>
-            <p className="text-sm text-muted-foreground">{activeEvent?.name} · Período: {periodLabel}</p>
+            <p className="text-sm text-muted-foreground">Período: {periodLabel}</p>
           </div>
         </div>
         <div className="flex gap-2">

@@ -324,7 +324,7 @@ export default function AcessosUsuariosPage() {
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Gestão de Usuários</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {users.length} usuário{users.length !== 1 ? "s" : ""} cadastrado{users.length !== 1 ? "s" : ""}
+            Controle de acessos e permissões do sistema
           </p>
         </div>
         <Button onClick={() => setInviteOpen(true)}>
