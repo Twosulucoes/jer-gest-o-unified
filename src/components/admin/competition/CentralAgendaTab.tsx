@@ -189,6 +189,7 @@ function ScheduleMatchDialog({
       if (error) throw error;
 
       // Audit
+      // @ts-ignore
       await supabase.from("audit_events").insert({
         table_name: "competition_matches",
         record_id: match.id,
