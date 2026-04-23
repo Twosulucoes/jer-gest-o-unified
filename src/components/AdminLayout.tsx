@@ -114,7 +114,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Acessos e Vínculos", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Protestos (Fila CDE)", to: "/admin/etapa/redirect/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde", "super_admin"] as AppRole[] },
+      { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde", "super_admin"] as AppRole[] },
     ],
   },
   {

@@ -326,6 +326,9 @@ const App = () => (
               <Route path="seed-logistica" element={<ProtectedRoute allowedRoles={["super_admin"]}><SeedLogisticaEtapaPage /></ProtectedRoute>} />
               <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["super_admin"]}><DebugPublicadosPage /></ProtectedRoute>} />
               <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["super_admin"]}><EmailTemplatesPage /></ProtectedRoute>} />
+              {/* Protestos / Ocorrências — operacionais, redirecionam para Etapa */}
+              <Route path="protestos" element={<RedirectToEtapas />} />
+              <Route path="ocorrencias" element={<RedirectToEtapas />} />
               {/* Pesquisa de Satisfação — operacional, redireciona para Etapa */}
               <Route path="pesquisa" element={<RedirectToEtapas />} />
               <Route path="pesquisa/eventos" element={<RedirectToEtapas />} />
