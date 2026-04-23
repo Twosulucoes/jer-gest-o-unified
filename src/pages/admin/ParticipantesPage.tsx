@@ -89,30 +89,18 @@ export default function ParticipantesPage() {
     setSearchParams(next, { replace: true });
   };
 
+  // Este query não é mais estritamente necessário para a listagem principal, pois usaremos joins.
+  // Mas mantemos para compatibilidade ou se for usado em outros lugares do componente.
   const { data: stageParticipantIds } = useQuery({
     queryKey: ["participantes-stage-participants", stageFilterId],
     enabled: !!stageFilterId,
     queryFn: async () => {
-      // Paginar para evitar o cap silencioso de 1000 linhas do PostgREST.
-      // Sem isso, etapas grandes (ex.: Boa Vista, com 2700+ vínculos) viam só
-      // os 1000 primeiros IDs e a tela aparecia vazia ou com KPIs travados em 1000.
-      const PAGE = 1000;
-      const acc = new Set<string>();
-      let from = 0;
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const { data, error } = await (supabase.from("participant_event_stages" as never) as any)
-          .select("participant_id")
-          .eq("event_stage_id", stageFilterId)
-          .order("participant_id", { ascending: true })
-          .range(from, from + PAGE - 1);
-        if (error) throw error;
-        const rows = (data ?? []) as Array<{ participant_id: string }>;
-        rows.forEach((r) => r?.participant_id && acc.add(r.participant_id));
-        if (rows.length < PAGE) break;
-        from += PAGE;
-      }
-      return Array.from(acc);
+      const { data, error } = await supabase
+        .from("participant_event_stages")
+        .select("participant_id")
+        .eq("event_stage_id", stageFilterId!);
+      if (error) throw error;
+      return (data ?? []).map(r => r.participant_id);
     },
   });
 
@@ -208,47 +196,30 @@ export default function ParticipantesPage() {
     queryFn: async () => {
       if (noSearchMatches) return { rows: [] as any[], total: 0 };
 
-      const baseSelect =
+      const baseFields =
         "id, status, participant_type, person_id, delegation_id, created_at, " +
         "person:people(id, full_name, cpf, gender), " +
         "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))";
 
-      // Quando há filtro por etapa, o conjunto de IDs pode ser grande (2k+).
-      // PostgREST não aceita .in() com URL gigante, então paginamos por
-      // chunks de IDs no cliente. Sem isso, etapas grandes (Boa Vista) viam
-      // tabela vazia mesmo com vínculos existentes.
-      if (stageFilterId) {
-        const ids = stageParticipantIds ?? [];
-        if (ids.length === 0) return { rows: [], total: 0 };
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
 
-        const CHUNK = 300;
-        const allRows: any[] = [];
-        for (let i = 0; i < ids.length; i += CHUNK) {
-          const chunk = ids.slice(i, i + CHUNK);
-          let q = supabase
-            .from("participants")
-            .select(baseSelect)
-            .eq("event_id", selectedEventId!)
-            .in("id", chunk);
-          if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
-          if (statusFilter !== "all") q = q.eq("status", statusFilter);
-          if (isSearching && matchingPersonIds && matchingPersonIds.length > 0) {
-            q = q.in("person_id", matchingPersonIds);
-          }
-          const { data, error } = await q;
-          if (error) throw error;
-          allRows.push(...(data ?? []));
-        }
-        allRows.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
-        const from = page * pageSize;
-        const slice = allRows.slice(from, from + pageSize);
-        return { rows: slice, total: allRows.length };
+      // Constrói a query base
+      let q: any;
+      
+      if (stageFilterId) {
+        // Se houver filtro por etapa, precisamos do join !inner
+        q = supabase
+          .from("participants")
+          .select(`${baseFields}, participant_event_stages!inner(event_stage_id)`, { count: "exact" })
+          .eq("participant_event_stages.event_stage_id", stageFilterId);
+      } else {
+        q = supabase
+          .from("participants")
+          .select(baseFields, { count: "exact" });
       }
 
-      let q = supabase
-        .from("participants")
-        .select(baseSelect, { count: "exact" })
-        .eq("event_id", selectedEventId!);
+      q = q.eq("event_id", selectedEventId!);
 
       if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
@@ -256,11 +227,10 @@ export default function ParticipantesPage() {
         q = q.in("person_id", matchingPersonIds);
       }
 
-      const from = page * pageSize;
-      const to = from + pageSize - 1;
       const { data, error, count } = await q
         .order("created_at", { ascending: false })
         .range(from, to);
+
       if (error) throw error;
       return { rows: data ?? [], total: count ?? 0 };
     },
@@ -374,26 +344,26 @@ export default function ParticipantesPage() {
     enabled: !!selectedEventId && (!stageFilterId || !!stageParticipantIds),
     queryFn: async () => {
       if (stageFilterId) {
-        const ids = stageParticipantIds ?? [];
-        if (ids.length === 0) return { total: 0, athletes: 0, staff: 0 };
-        // Busca os tipos em chunks para evitar URL gigante
-        const CHUNK = 500;
-        let total = 0;
-        let athletes = 0;
-        for (let i = 0; i < ids.length; i += CHUNK) {
-          const chunk = ids.slice(i, i + CHUNK);
-          const { data, error } = await supabase
-            .from("participants")
-            .select("participant_type")
-            .eq("event_id", selectedEventId!)
-            .in("id", chunk);
-          if (error) throw error;
-          for (const row of data ?? []) {
-            total += 1;
-            if ((row as any).participant_type === "athlete") athletes += 1;
-          }
-        }
-        return { total, athletes, staff: total - athletes };
+        const { count: total, error: e1 } = await supabase
+          .from("participants")
+          .select("id, participant_event_stages!inner(event_stage_id)", { count: "exact", head: true })
+          .eq("event_id", selectedEventId!)
+          .eq("participant_event_stages.event_stage_id", stageFilterId);
+        
+        const { count: athletes, error: e2 } = await supabase
+          .from("participants")
+          .select("id, participant_event_stages!inner(event_stage_id)", { count: "exact", head: true })
+          .eq("event_id", selectedEventId!)
+          .eq("participant_type", "athlete")
+          .eq("participant_event_stages.event_stage_id", stageFilterId);
+
+        if (e1 || e2) throw (e1 || e2);
+        
+        return { 
+          total: total ?? 0, 
+          athletes: athletes ?? 0, 
+          staff: (total ?? 0) - (athletes ?? 0) 
+        };
       }
       const [totalRes, athleteRes] = await Promise.all([
         supabase.from("participants").select("id", { count: "exact", head: true }).eq("event_id", selectedEventId!),
