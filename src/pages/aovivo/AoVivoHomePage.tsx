@@ -5,16 +5,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
-import { LogOut, RefreshCw, Radio, Eye, Info, X } from "lucide-react";
+import { LogOut, RefreshCw, Radio, Eye, Info, X, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isFuture, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PwaStatusBadge, type PwaStatusTone } from "@/components/pwa/PwaStatusBadge";
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  scheduled: { label: "Agendada", color: "bg-blue-600" },
-  in_progress: { label: "Em andamento", color: "bg-emerald-600" },
-  finished: { label: "Finalizada", color: "bg-slate-600" },
-  cancelled: { label: "Cancelada", color: "bg-red-600" },
+const STATUS_MAP: Record<string, { label: string; tone: PwaStatusTone }> = {
+  scheduled: { label: "Agendada", tone: "scheduled" },
+  in_progress: { label: "AO VIVO", tone: "live" },
+  finished: { label: "Finalizada", tone: "ok" },
+  cancelled: { label: "Cancelada", tone: "danger" },
 };
 
 export default function AoVivoHomePage() {
@@ -24,18 +25,14 @@ export default function AoVivoHomePage() {
   const isAdmin = hasRole("admin") || hasRole("coordenacao_tecnica");
   useAoVivoManifest();
 
-  const [showInstall, setShowInstall] = useState(() => {
-    return !localStorage.getItem("aovivo_install_dismissed");
-  });
+  const [showInstall, setShowInstall] = useState(() => !localStorage.getItem("aovivo_install_dismissed"));
   const dismissInstall = () => {
     localStorage.setItem("aovivo_install_dismissed", "1");
     setShowInstall(false);
   };
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/aovivo/login");
-    }
+    if (!authLoading && !user) navigate("/aovivo/login");
   }, [authLoading, user, navigate]);
 
   const { data: matches = [], isLoading, refetch, isRefetching } = useQuery({
@@ -74,10 +71,7 @@ export default function AoVivoHomePage() {
         .order("match_date", { ascending: true, nullsFirst: false })
         .order("start_time", { ascending: true, nullsFirst: false });
       if (mErr) throw mErr;
-      return (matchData ?? []).map((m: any) => ({
-        ...m,
-        role_label: roleMap.get(m.id) ?? "Mesário",
-      }));
+      return (matchData ?? []).map((m: any) => ({ ...m, role_label: roleMap.get(m.id) ?? "Mesário" }));
     },
     enabled: !!user?.id && !!activeEvent?.id,
     refetchInterval: 60000,
@@ -156,8 +150,8 @@ export default function AoVivoHomePage() {
 
   if (authLoading) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-slate-950">
-        <Loader2Icon />
+      <div className="op-screen flex min-h-[100dvh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-module" />
       </div>
     );
   }
@@ -165,84 +159,85 @@ export default function AoVivoHomePage() {
   if (!user) return null;
 
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-slate-950 text-white">
+    <div className="op-screen flex min-h-[100dvh] flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 h-14 border-b border-slate-800 shrink-0">
-        <div className="flex items-center gap-3">
-          <img src="/pwa/icon-192.png" alt="JER" className="h-8 w-8 rounded-lg" />
-          <div>
-            <h1 className="text-sm font-bold tracking-tight">JER Ao Vivo</h1>
-            <p className="text-[11px] text-slate-400 truncate max-w-[180px]">{profile?.full_name ?? user.email}</p>
+      <header className="sticky top-0 z-20 border-b border-border/70 bg-background/90 backdrop-blur-md">
+        <div className="absolute inset-x-0 top-0 h-[3px]" style={{ background: "linear-gradient(90deg, transparent, hsl(var(--module-accent) / 0.85), transparent)" }} />
+        <div className="relative flex h-14 items-center justify-between px-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-module-soft text-module">
+              <Radio className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-heading text-sm font-bold tracking-tight">JER Ao Vivo</p>
+              <p className="max-w-[180px] truncate text-[11px] text-muted-foreground">{profile?.full_name ?? user.email}</p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={handleRefresh} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
-            <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
-          </button>
-          <button onClick={signOut} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
-            <LogOut className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={handleRefresh} className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground">
+              <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
+            </button>
+            <button onClick={signOut} className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground">
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Install banner */}
       {showInstall && (
-        <div className="mx-4 mt-3 p-3 rounded-lg bg-slate-800 border border-slate-700 flex items-start gap-3">
-          <Info className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
-          <div className="flex-1 text-xs text-slate-300 space-y-1">
-            <p className="font-medium text-white">Instalar como app</p>
-            <p><strong>Android:</strong> Toque em ⋮ → Adicionar à tela inicial</p>
-            <p><strong>iPhone:</strong> Toque em □↑ → Adicionar à tela de início</p>
+        <div className="op-card mx-4 mt-3 flex items-start gap-3 p-3">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-module" />
+          <div className="flex-1 space-y-1 text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground">Instalar como app</p>
+            <p><strong className="text-foreground/90">Android:</strong> ⋮ → Adicionar à tela inicial</p>
+            <p><strong className="text-foreground/90">iPhone:</strong> □↑ → Adicionar à tela de início</p>
           </div>
-          <button onClick={dismissInstall} className="text-slate-500 hover:text-white">
+          <button onClick={dismissInstall} className="text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {isLoading ? (
           <>
-            <Skeleton className="h-24 w-full bg-slate-800 rounded-xl" />
-            <Skeleton className="h-24 w-full bg-slate-800 rounded-xl" />
-            <Skeleton className="h-24 w-full bg-slate-800 rounded-xl" />
+            <Skeleton className="h-24 w-full rounded-2xl bg-muted/30" />
+            <Skeleton className="h-24 w-full rounded-2xl bg-muted/30" />
+            <Skeleton className="h-24 w-full rounded-2xl bg-muted/30" />
           </>
         ) : sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Radio className="h-12 w-12 text-slate-600 mb-4" />
-            <p className="text-slate-400 text-sm">Nenhuma partida designada para você.</p>
-            <p className="text-slate-500 text-xs mt-1">Entre em contato com o coordenador.</p>
+          <div className="op-card flex flex-col items-center justify-center py-16 text-center">
+            <Radio className="mb-3 h-10 w-10 text-muted-foreground/50" />
+            <p className="text-sm font-semibold text-foreground">Nenhuma partida designada</p>
+            <p className="mt-1 text-xs text-muted-foreground">Entre em contato com o coordenador.</p>
           </div>
         ) : (
           sorted.map((m: any) => {
             const status = STATUS_MAP[m.status] ?? STATUS_MAP.scheduled;
             const venue = m.venue_id ? venuesMap.get(m.venue_id) : null;
-            const dateStr = m.match_date
-              ? format(parseISO(m.match_date), "dd/MM (EEE)", { locale: ptBR })
-              : "Sem data";
+            const dateStr = m.match_date ? format(parseISO(m.match_date), "dd/MM (EEE)", { locale: ptBR }) : "Sem data";
             const timeStr = m.start_time?.slice(0, 5) ?? "";
             const canEnter = m.status === "scheduled" || m.status === "in_progress";
 
             return (
-              <div key={m.id} className="rounded-2xl bg-slate-900/95 border border-slate-800 p-4 space-y-3 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.65)]">
-                <div className="flex items-start justify-between">
+              <div key={m.id} className="op-card space-y-3 p-4">
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm leading-tight">{getMatchLabel(m)}</p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-sm font-bold leading-tight text-foreground">{getMatchLabel(m)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {dateStr} {timeStr && `• ${timeStr}`} {venue && `• ${venue}`}
                     </p>
                   </div>
-                  <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full text-white ${status.color}`}>
+                  <PwaStatusBadge tone={status.tone} pulse={status.tone === "live"}>
                     {status.label}
-                  </span>
+                  </PwaStatusBadge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-slate-500">{m.role_label}</span>
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{m.role_label}</span>
                   {canEnter ? (
                     <button
                       onClick={() => navigate(`/aovivo/partida/${m.id}`)}
-                      className="h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-2 transition-colors"
+                      className="op-btn-primary !h-10 !w-auto !rounded-xl px-5 !text-sm"
                     >
                       <Radio className="h-4 w-4" />
                       Entrar ao vivo
@@ -250,7 +245,7 @@ export default function AoVivoHomePage() {
                   ) : (
                     <button
                       onClick={() => navigate(`/aovivo/partida/${m.id}`)}
-                      className="h-10 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium flex items-center gap-2 transition-colors"
+                      className="flex h-10 items-center gap-2 rounded-xl bg-muted/40 px-5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
                     >
                       <Eye className="h-4 w-4" />
                       Ver resumo
@@ -263,14 +258,5 @@ export default function AoVivoHomePage() {
         )}
       </div>
     </div>
-  );
-}
-
-function Loader2Icon() {
-  return (
-    <svg className="h-6 w-6 animate-spin text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-    </svg>
   );
 }
