@@ -10,6 +10,7 @@ import { Search, Calendar, Globe, CalendarRange } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEventContext } from "@/contexts/EventContext";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function SuperEventosPage() {
   const [search, setSearch] = useState("");
