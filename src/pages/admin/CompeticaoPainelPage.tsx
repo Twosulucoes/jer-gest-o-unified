@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -176,6 +176,28 @@ export default function CompeticaoPainelPage() {
   useEffect(() => {
     setSelectedSportId(sportFilter === "all" ? null : sportFilter);
   }, [sportFilter, setSelectedSportId]);
+
+  // ── Realtime Subscription ────────────────────────────────
+  useEffect(() => {
+    if (!eventId) return;
+    
+    // Subscribe to match changes to refresh the dashboard
+    const channel = supabase
+      .channel("painel-competicao-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "competition_matches", filter: `event_id=eq.${eventId}` },
+        () => {
+          // Refetch everything when a match changes
+          qc.invalidateQueries({ queryKey: ["painel-competicao", eventId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [eventId, qc]);
 
   // ── Query 1: Sport events + rules ────────────────────────
   const { data: provas = [], isLoading } = useQuery({
