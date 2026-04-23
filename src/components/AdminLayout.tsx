@@ -76,16 +76,21 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    id: "relatorios", label: "Relatórios e Logística", description: "Documentos oficiais e painéis consolidados.",
+    id: "relatorios", label: "Relatórios", description: "Documentos oficiais e boletins.",
     icon: <FileBarChart className="h-4 w-4" />,
     items: [
       { label: "Central de Relatórios", to: "/admin/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Boletins por Modalidade", to: "/admin/relatorios/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Logística Consolidada", to: "/admin/logistica/consolidada", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Clonar Logística entre Etapas", to: "/admin/clonar-logistica", icon: <Layers className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Dashboard Operacional", to: "/admin/relatorios/dashboard", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Quadro de Medalhas", to: "/admin/relatorios/quadro-medalhas", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Prestação de Contas (OSC)", to: "/admin/relatorios/osc", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+    ],
+  },
+  {
+    id: "logistica-global", label: "Logística Global", description: "Visão e ferramentas de logística entre etapas.",
+    icon: <Layers className="h-4 w-4" />,
+    items: [
+      { label: "Logística Consolidada", to: "/admin/etapas", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Clonar Logística entre Etapas", to: "/admin/clonar-logistica", icon: <Layers className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
     ],
   },
   {
