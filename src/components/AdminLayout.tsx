@@ -82,6 +82,7 @@ const navGroups: NavGroup[] = [
       { label: "Central de Relatórios", to: "/admin/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Boletins por Modalidade", to: "/admin/relatorios/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Logística Consolidada", to: "/admin/logistica/consolidada", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Clonar Logística entre Etapas", to: "/admin/clonar-logistica", icon: <Layers className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Dashboard Operacional", to: "/admin/relatorios/dashboard", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Quadro de Medalhas", to: "/admin/relatorios/quadro-medalhas", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Prestação de Contas (OSC)", to: "/admin/relatorios/osc", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
