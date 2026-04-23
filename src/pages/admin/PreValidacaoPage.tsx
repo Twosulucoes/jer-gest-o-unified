@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -177,30 +177,31 @@ export default function PreValidacaoPage() {
   const [championMark, setChampionMark] = useState("");
   const [championNotes, setChampionNotes] = useState("");
 
-  // Step 1: Auto-sync collective teams
+  // Sincronização manual de equipes coletivas (opcional, sob demanda)
+  // ⚠️ Não roda automaticamente: a RPC pode ser lenta em eventos grandes
+  // e estava travando a página com loading infinito quando excedia o timeout.
   const syncMut = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc("rpc_sync_collective_teams", { p_event_id: eventId });
       if (error) throw error;
       return data;
     },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Equipes sincronizadas",
+        description: `${data?.teams_created ?? 0} criada(s), ${data?.members_added ?? 0} membro(s) adicionado(s).`,
+      });
+      qc.invalidateQueries({ queryKey: ["pre-validacao"] });
+    },
     onError: (e: any) => {
       toast({ title: "Erro na sincronização", description: e.message, variant: "destructive" });
     },
   });
 
-  // Auto-trigger sync on mount
-  useEffect(() => {
-    if (eventId) {
-      syncMut.mutate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId]);
-
-  // Step 2: Fetch all sport_events with counts
+  // Step 2: Fetch all sport_events with counts (carrega imediatamente, sem bloquear no sync)
   const { data: rows = [], isLoading: loadingData, refetch } = useQuery({
     queryKey: ["pre-validacao", eventId],
-    enabled: !!eventId && !syncMut.isPending,
+    enabled: !!eventId,
     queryFn: async () => {
       // Fetch sport_events
       const { data: sportEvents, error: seErr } = await supabase
@@ -645,29 +646,8 @@ export default function PreValidacaoPage() {
     }
   };
 
-  // Loading state
-  if (syncMut.isPending) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-muted-foreground text-lg">Sincronizando inscrições...</p>
-      </div>
-    );
-  }
+  // (Removido o bloqueio full-screen no sync — antes travava em loading infinito quando a RPC demorava em eventos grandes.)
 
-  // Error state
-  if (syncMut.isError && !rows.length) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <XCircle className="h-10 w-10 text-destructive" />
-        <p className="text-destructive text-lg">Erro ao sincronizar equipes</p>
-        <p className="text-muted-foreground text-sm">{(syncMut.error as any)?.message}</p>
-        <Button onClick={() => syncMut.mutate()}>
-          <RefreshCw className="h-4 w-4 mr-1" /> Tentar novamente
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
