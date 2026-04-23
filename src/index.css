@@ -104,12 +104,12 @@
   /* Mantemos .dark replicando :root para compatibilidade com componentes
      que olham .dark (charts, etc.). Sistema é DARK FORÇADO. */
   .dark {
-    --bg: #0b1220;
-    --surface: #0f1729;
-    --surface2: #131c30;
-    --surface3: #1a2440;
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --surface3: #2d333b;
     --text: #e6edf3;
-    --muted-text: #94a3b8;
+    --muted-text: #8b949e;
   }
 }
 
