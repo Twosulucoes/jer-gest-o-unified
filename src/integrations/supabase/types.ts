@@ -1456,7 +1456,9 @@ export type Database = {
           created_at: string
           end_date: string | null
           id: string
+          is_public: boolean | null
           name: string
+          public_agenda_published: boolean | null
           slug: string
           start_date: string | null
           status: string
@@ -1467,7 +1469,9 @@ export type Database = {
           created_at?: string
           end_date?: string | null
           id?: string
+          is_public?: boolean | null
           name: string
+          public_agenda_published?: boolean | null
           slug: string
           start_date?: string | null
           status?: string
@@ -1478,7 +1482,9 @@ export type Database = {
           created_at?: string
           end_date?: string | null
           id?: string
+          is_public?: boolean | null
           name?: string
+          public_agenda_published?: boolean | null
           slug?: string
           start_date?: string | null
           status?: string
