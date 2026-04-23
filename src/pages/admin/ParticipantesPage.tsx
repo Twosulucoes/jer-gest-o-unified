@@ -614,7 +614,7 @@ export default function ParticipantesPage() {
 
       <Card>
         <CardContent className="pt-5 sm:pt-6 px-4 sm:px-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
             {/* Event selector removed as redundant */}
             <div className="space-y-2 md:col-span-1">
               <label className="text-sm font-medium text-foreground">Buscar (nome ou CPF)</label>
@@ -640,7 +640,36 @@ export default function ParticipantesPage() {
               </Select>
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mt-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {!urlStageId && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Etapa</label>
+                <Select value={stageFilterId ?? "all"} onValueChange={setStageFilter}>
+                  <SelectTrigger>
+                    <Layers className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
+                    <SelectValue placeholder="Todas as etapas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as etapas</SelectItem>
+                    {eventStages.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">Status:</span>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-8 w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
