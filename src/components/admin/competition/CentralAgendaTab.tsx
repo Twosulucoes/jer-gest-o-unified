@@ -898,7 +898,15 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">#</TableHead>
+                  <TableHead className="w-[45px] px-3 text-center">
+                    <input 
+                      type="checkbox" 
+                      checked={filteredMatches.length > 0 && selectedMatches.size === filteredMatches.length}
+                      onChange={selectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                    />
+                  </TableHead>
+                  <TableHead className="w-[50px] text-[11px] font-bold uppercase tracking-wider">#</TableHead>
                   <TableHead>Fase / Grupo</TableHead>
                   <TableHead>Confronto</TableHead>
                   <TableHead>Data</TableHead>
@@ -921,14 +929,33 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
                     const isInlineEdit = inlineEditId === m.id;
 
                     return (
-                      <TableRow key={m.id} className={cn(!isScheduled && "bg-destructive/5")}>
-                        <TableCell className="font-mono text-xs">{m.match_number ?? "—"}</TableCell>
-                        <TableCell className="text-sm">
-                          {m.phase_name}
-                          {m.group_name && <span className="text-muted-foreground"> · {m.group_name}</span>}
+                      <TableRow 
+                        key={m.id} 
+                        className={cn(
+                          "transition-colors group",
+                          !isScheduled && "bg-destructive/5",
+                          isSelected ? "bg-primary/5 hover:bg-primary/10 border-l-2 border-l-primary" : "hover:bg-muted/30"
+                        )}
+                      >
+                        <TableCell className="px-3 text-center">
+                          <input 
+                            type="checkbox" 
+                            checked={isSelected}
+                            onChange={() => toggleSelect(m.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                          />
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">{m.match_number ?? "—"}</TableCell>
+                        <TableCell className="text-[11px]">
+                          <p className="font-bold text-foreground">{m.phase_name}</p>
+                          {m.group_name && <p className="text-muted-foreground leading-tight">{m.group_name}</p>}
                         </TableCell>
                         <TableCell className="text-sm font-medium">
-                          {m.side_a} <span className="text-muted-foreground mx-1">vs</span> {m.side_b}
+                          <div className="flex items-center gap-2">
+                            <span className="truncate max-w-[140px]">{m.side_a}</span>
+                            <span className="text-[10px] text-muted-foreground font-black opacity-30">VS</span>
+                            <span className="truncate max-w-[140px]">{m.side_b}</span>
+                          </div>
                         </TableCell>
 
                         {isInlineEdit ? (
@@ -1070,10 +1097,13 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
       {/* Batch dialog */}
       {showBatch && (
         <BatchScheduleDialog
-          unscheduledMatches={unscheduled}
+          unscheduledMatches={selectedList}
           venues={venues}
           eventId={eventId}
-          onSaved={handleSaved}
+          onSaved={() => {
+            handleSaved();
+            setSelectedMatches(new Set());
+          }}
           onClose={() => setShowBatch(false)}
         />
       )}
