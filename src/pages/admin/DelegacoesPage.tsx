@@ -59,7 +59,7 @@ export default function DelegacoesPage() {
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("events").select("*").order("year", { ascending: false });
+      const { data, error } = await supabase.from("events").select("id, name").order("year", { ascending: false });
       if (error) throw error;
       return data;
     },
