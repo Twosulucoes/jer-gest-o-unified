@@ -69,7 +69,7 @@ export default function CoordenacaoHomePage() {
     navigate("/pwa/login", { replace: true });
   };
 
-  const eventSubtitle = activeEvent?.name ? `${activeEvent.name}${activeEvent.year ? ` — ${activeEvent.year}` : ""}` : "Painel técnico do evento";
+  const eventSubtitle = "Painel técnico operacional";
 
   const statusTone = (s: string) => {
     if (s === "em_andamento") return "live";

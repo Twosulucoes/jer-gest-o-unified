@@ -98,9 +98,7 @@ export default function AlimentacaoHomePage() {
     navigate("/pwa/login", { replace: true });
   };
 
-  const eventSubtitle = activeEvent?.name
-    ? `${activeEvent.name}${activeEvent.year ? ` — ${activeEvent.year}` : ""}`
-    : undefined;
+  const eventSubtitle = undefined;
 
   return (
     <div className="op-screen">

@@ -89,7 +89,7 @@ export default function DelegacaoHomePage() {
 
   const initials = (name: string | null) => (name || "?").split(" ").map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 
-  const eventSubtitle = activeEvent?.name ? `${activeEvent.name}${activeEvent.year ? ` — ${activeEvent.year}` : ""}` : delegationName;
+  const eventSubtitle = delegationName;
 
   return (
     <div className="op-screen">
