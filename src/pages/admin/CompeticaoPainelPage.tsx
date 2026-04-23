@@ -19,6 +19,7 @@ import {
   AlertTriangle, CheckCircle2, Lock, Clock, Eye, Dumbbell,
   ToggleLeft, ToggleRight, RefreshCw,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { RESULT_STATUS } from "@/lib/resultStatus";
 
 // ── Types ──────────────────────────────────────────────────
@@ -204,7 +205,7 @@ export default function CompeticaoPainelPage() {
   }, [eventId, qc]);
 
   // ── Query 1: Sport events + rules ────────────────────────
-  const { data: provas = [], isLoading } = useQuery({
+  const { data: provas = [], isLoading, isFetching } = useQuery({
     queryKey: ["painel-competicao", eventId, mySportIds],
     enabled: !!eventId && (!isCoordModalidade || !loadingSportLinks),
     staleTime: 30_000,
