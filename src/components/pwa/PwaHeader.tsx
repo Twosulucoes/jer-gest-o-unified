@@ -55,6 +55,7 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onSignOut, righ
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <ThemeToggle />
           {rightSlot}
           <Button
             variant="ghost"

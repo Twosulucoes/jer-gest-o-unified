@@ -296,9 +296,12 @@ export default function AdminLayout() {
                 <span className="font-heading text-base font-bold text-sidebar-foreground">JER Gestão</span>
               </div>
             )}
-            <button onClick={closeSidebar} className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground">
-              <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <button onClick={closeSidebar} className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {/* Event Switcher */}
