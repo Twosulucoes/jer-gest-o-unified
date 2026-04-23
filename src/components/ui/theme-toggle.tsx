@@ -10,7 +10,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      className="h-9 w-9 text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+      className="h-9 w-9 text-muted-foreground hover:text-foreground transition-colors"
       title={theme === "dark" ? "Alternar para modo claro" : "Alternar para modo escuro"}
     >
       <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
