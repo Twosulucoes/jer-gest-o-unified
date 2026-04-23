@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,12 +8,21 @@ import {
   Users, UserCheck, ShieldCheck, Bus, UtensilsCrossed, Building, Trophy,
   CheckCircle2, AlertTriangle, Clock, TrendingUp,
   Upload, UsersRound, ScanLine, Navigation, ClipboardList, CalendarDays, KeyRound,
+  RefreshCw, Bed, Truck, CalendarClock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppKPI } from "@/components/app/AppKPI";
 import { AppPageHeader } from "@/components/app/AppPageHeader";
 import { useActiveEventId, useEventContext } from "@/contexts/EventContext";
+import { useDashboardData } from "./relatorios/useDashboardData";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
+} from "recharts";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -48,13 +58,20 @@ const getRoleLabel = (role: string) => {
   return labels[role] || role;
 };
 
+const PALETTE = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--success, 142 71% 45%))", "hsl(var(--warning, 38 92% 50%))", "hsl(var(--destructive))", "hsl(var(--muted-foreground))"];
+
+function fmtDate(d: string) {
+  try { return new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }); }
+  catch { return d; }
+}
+
 export default function DashboardPage() {
   const { profile, roles, hasRole } = useAuth();
-  const selectedEventId = useActiveEventId();
+  const eventId = useActiveEventId();
   const { activeEvent } = useEventContext();
+  const [showAllDel, setShowAllDel] = useState(false);
 
   const visibleActions = quickActions.filter((a) => a.roles.some((r) => hasRole(r)));
-  const eventId = selectedEventId;
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
@@ -65,115 +82,40 @@ export default function DashboardPage() {
     },
   });
 
-  const { data: participantsCount = 0, isLoading: pLoading } = useQuery({
-    queryKey: ["dash-participants", eventId],
-    queryFn: async () => {
-      const { count, error } = await supabase.from("participants").select("id", { count: "exact", head: true }).eq("event_id", eventId);
-      if (error) throw error;
-      return count ?? 0;
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: credentialedCount = 0 } = useQuery({
-    queryKey: ["dash-credentialed", eventId],
-    queryFn: async () => {
-      const { count, error } = await supabase.from("participants").select("id", { count: "exact", head: true }).eq("event_id", eventId).not("credentialed_at", "is", null);
-      if (error) throw error;
-      return count ?? 0;
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: credentialsData = { active: 0, total: 0 } } = useQuery({
-    queryKey: ["dash-credentials", eventId],
-    queryFn: async () => {
-      const { count: total, error: e1 } = await supabase.from("participant_credentials").select("id", { count: "exact", head: true }).eq("event_id", eventId);
-      if (e1) throw e1;
-      const { count: active, error: e2 } = await supabase.from("participant_credentials").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("status", "active");
-      if (e2) throw e2;
-      return { active: active ?? 0, total: total ?? 0 };
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: transportData = { trips: 0, passengers: 0 } } = useQuery({
-    queryKey: ["dash-transport", eventId],
-    queryFn: async () => {
-      const { count: trips, error: e1 } = await supabase.from("transport_trips").select("id", { count: "exact", head: true }).eq("event_id", eventId);
-      if (e1) throw e1;
-      const { data: tripIds, error: e2 } = await supabase.from("transport_trips").select("id").eq("event_id", eventId);
-      if (e2) throw e2;
-      if (!tripIds?.length) return { trips: trips ?? 0, passengers: 0 };
-      const { count: passengers, error: e3 } = await supabase.from("transport_passengers").select("id", { count: "exact", head: true }).in("trip_id", tripIds.map(t => t.id)).eq("status", "boarded");
-      if (e3) throw e3;
-      return { trips: trips ?? 0, passengers: passengers ?? 0 };
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: mealsData = { windows: 0, consumptions: 0 } } = useQuery({
-    queryKey: ["dash-meals", eventId],
-    queryFn: async () => {
-      const { count: windows, error: e1 } = await supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("is_active", true);
-      if (e1) throw e1;
-      const { data: windowIds, error: e2 } = await supabase.from("meal_windows").select("id").eq("event_id", eventId);
-      if (e2) throw e2;
-      if (!windowIds?.length) return { windows: windows ?? 0, consumptions: 0 };
-      const { count: consumptions, error: e3 } = await supabase.from("meal_consumptions").select("id", { count: "exact", head: true }).in("meal_window_id", windowIds.map(w => w.id));
-      if (e3) throw e3;
-      return { windows: windows ?? 0, consumptions: consumptions ?? 0 };
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: lodgingData = { units: 0, capacity: 0, occupied: 0 } } = useQuery({
-    queryKey: ["dash-lodging", eventId],
-    queryFn: async () => {
-      const { data: units, error: e1 } = await supabase.from("lodging_units").select("id, capacity").eq("event_id", eventId).eq("is_active", true);
-      if (e1) throw e1;
-      const totalCap = (units ?? []).reduce((s, u) => s + u.capacity, 0);
-      const { count: occupied, error: e2 } = await supabase.from("lodging_occupancies").select("id", { count: "exact", head: true }).eq("event_id", eventId).in("status", ["allocated", "checked_in"]);
-      if (e2) throw e2;
-      return { units: units?.length ?? 0, capacity: totalCap, occupied: occupied ?? 0 };
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: compData = { matches: 0, results: 0, validated: 0, published: 0 } } = useQuery({
-    queryKey: ["dash-competition", eventId],
-    queryFn: async () => {
-      const { count: matches, error: e1 } = await supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", eventId);
-      if (e1) throw e1;
-      const { data: matchIds, error: e1b } = await supabase.from("competition_matches").select("id").eq("event_id", eventId);
-      if (e1b) throw e1b;
-      if (!matchIds?.length) return { matches: matches ?? 0, results: 0, validated: 0, published: 0 };
-      const ids = matchIds.map(m => m.id);
-      const { count: results, error: e2 } = await supabase.from("competition_match_results").select("id", { count: "exact", head: true }).in("match_id", ids);
-      if (e2) throw e2;
-      const { count: validated, error: e3 } = await supabase.from("competition_match_results").select("id", { count: "exact", head: true }).in("match_id", ids).not("validated_at", "is", null);
-      if (e3) throw e3;
-      const { count: published, error: e4 } = await supabase.from("competition_match_results").select("id", { count: "exact", head: true }).in("match_id", ids).eq("result_status", "publicado");
-      if (e4) throw e4;
-      return { matches: matches ?? 0, results: results ?? 0, validated: validated ?? 0, published: published ?? 0 };
-    },
-    enabled: !!eventId,
-  });
+  const { data, isLoading, refetchAll, lastUpdated } = useDashboardData(eventId);
 
   const selectedEvent = events.find(e => e.id === eventId);
-  const isLoading = pLoading;
+  const r = data.resumo;
+  const pct = (n: number, t: number) => (t > 0 ? Math.round((n / t) * 100) : 0);
+
+  const handleRefresh = async () => {
+    await refetchAll();
+    toast.success("Dados atualizados");
+  };
+
+  const delegationsToShow = showAllDel ? data.credenciamento.by_delegation : data.credenciamento.by_delegation.slice(0, 10);
 
   return (
     <div className="animate-fade-in space-y-6">
       <AppPageHeader
-        title="Painel Operacional"
+        title="Painel de Gestão"
         description={`Bem-vindo, ${profile?.full_name || "Usuário"} — ${roles.map(getRoleLabel).join(", ") || "Sem perfil"}`}
       >
-        {selectedEvent && (
-          <Badge variant={selectedEvent.status === "active" ? "success" : "outline"} className="text-xs">
-            {selectedEvent.status === "active" ? "Ativo" : selectedEvent.status === "draft" ? "Rascunho" : selectedEvent.status}
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {lastUpdated && (
+            <span className="text-[10px] text-muted-foreground hidden sm:inline-block">
+              Atualizado: {lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={isLoading}>
+            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+          </Button>
+          {selectedEvent && (
+            <Badge variant={selectedEvent.status === "active" ? "success" : "outline"} className="text-xs">
+              {selectedEvent.status === "active" ? "Ativo" : selectedEvent.status === "draft" ? "Rascunho" : selectedEvent.status}
+            </Badge>
+          )}
+        </div>
       </AppPageHeader>
 
       {/* Quick Actions */}
@@ -200,83 +142,161 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="space-y-6">
-        {/* Credenciamento */}
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-            <UserCheck className="h-3.5 w-3.5" /> Credenciamento
-          </h2>
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-            <AppKPI label="Participantes" value={participantsCount} icon={Users} loading={isLoading} />
-            <AppKPI
-              label="Credenciados" value={credentialedCount} icon={UserCheck} loading={isLoading}
-              sub={participantsCount > 0 ? `${Math.round((credentialedCount / participantsCount) * 100)}%` : undefined}
-            />
-            <AppKPI label="Credenciais emitidas" value={credentialsData.total} icon={ShieldCheck} loading={isLoading} />
-            <AppKPI
-              label="Credenciais ativas" value={credentialsData.active} icon={CheckCircle2} loading={isLoading}
-              alert={credentialsData.total > 0 && credentialsData.active < credentialsData.total * 0.5}
-              sub={credentialsData.total > 0 ? `${Math.round((credentialsData.active / credentialsData.total) * 100)}% do total` : undefined}
-            />
-          </div>
-        </section>
-
-        {/* Transporte */}
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-            <Bus className="h-3.5 w-3.5" /> Transporte
-          </h2>
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-            <AppKPI label="Viagens" value={transportData.trips} icon={Bus} loading={isLoading} />
-            <AppKPI label="Embarcados" value={transportData.passengers} icon={Users} loading={isLoading} />
-          </div>
-        </section>
-
-        {/* Alimentação */}
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-            <UtensilsCrossed className="h-3.5 w-3.5" /> Alimentação
-          </h2>
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-            <AppKPI label="Janelas ativas" value={mealsData.windows} icon={Clock} loading={isLoading} />
-            <AppKPI label="Consumos" value={mealsData.consumptions} icon={UtensilsCrossed} loading={isLoading} />
-          </div>
-        </section>
-
-        {/* Alojamento */}
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-            <Building className="h-3.5 w-3.5" /> Alojamento
-          </h2>
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-            <AppKPI label="Unidades ativas" value={lodgingData.units} icon={Building} loading={isLoading} />
-            <AppKPI label="Capacidade total" value={lodgingData.capacity} icon={Users} loading={isLoading} />
-            <AppKPI label="Ocupados" value={lodgingData.occupied} icon={CheckCircle2} loading={isLoading} />
-            <AppKPI
-              label="Vagas livres"
-              value={Math.max(0, lodgingData.capacity - lodgingData.occupied)}
-              icon={AlertTriangle}
+      {/* KPI Resumo Principal */}
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+        {isLoading ? (
+          Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-[100px]" />)
+        ) : (
+          <>
+            <AppKPI icon={Users} label="Participantes" value={r.participants_total}
+              sub={`${r.credentialed} credenciados (${pct(r.credentialed, r.participants_total)}%)`}
               loading={isLoading}
-              alert={lodgingData.capacity > 0 && lodgingData.occupied >= lodgingData.capacity * 0.9}
-              sub={lodgingData.capacity > 0 ? `${Math.round(((lodgingData.capacity - lodgingData.occupied) / lodgingData.capacity) * 100)}% disponível` : undefined}
+              className="bg-primary/5 border-primary/10"
             />
+            <AppKPI icon={ShieldCheck} label="Credenciais Ativas" value={r.credentials_active}
+              sub={`${r.credentials_today} hoje`}
+              loading={isLoading}
+            />
+            <AppKPI icon={Trophy} label="Partidas" value={r.matches_total}
+              sub={`${r.matches_done} concluídas`}
+              loading={isLoading}
+            />
+            <AppKPI icon={UtensilsCrossed} label="Refeições" value={r.meals_total}
+              sub={`${r.meals_today} hoje`}
+              loading={isLoading}
+            />
+            <AppKPI icon={Building} label="Alojamento" value={`${r.lodging_occupied}/${r.lodging_capacity}`}
+              sub={`${pct(r.lodging_occupied, r.lodging_capacity)}% ocupação`}
+              loading={isLoading}
+            />
+            <AppKPI icon={Bus} label="Transporte" value={r.transport_trips}
+              sub={`${r.transport_passengers} passageiros`}
+              loading={isLoading}
+            />
+          </>
+        )}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Credenciamento Charts */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <UserCheck className="h-3.5 w-3.5" /> Credenciamento
+            </h2>
+            {data.credenciamento.by_delegation.length > 10 && (
+              <Button variant="ghost" size="sm" className="h-7 text-[10px]" onClick={() => setShowAllDel((v) => !v)}>
+                {showAllDel ? "Ver menos" : "Ver todas delegações"}
+              </Button>
+            )}
+          </div>
+          
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Progresso por dia</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[200px] px-2 pb-2">
+                {isLoading ? <Skeleton className="w-full h-full" /> : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.credenciamento.daily.map((d) => ({ ...d, date: fmtDate(d.date) }))}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip 
+                        contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
+                        cursor={{ fill: 'hsl(var(--muted)/0.4)' }}
+                      />
+                      <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Top Delegações</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {isLoading ? <div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /></div> : (
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {delegationsToShow.map((d) => (
+                      <div key={d.delegation_id} className="space-y-1">
+                        <div className="flex justify-between text-[11px]">
+                          <span className="truncate font-medium">{d.name}</span>
+                          <span className="text-muted-foreground tabular-nums">{d.credentialed}/{d.total} ({d.pct}%)</span>
+                        </div>
+                        <Progress value={d.pct} className="h-1" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </section>
 
-        {/* Competição */}
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-            <Trophy className="h-3.5 w-3.5" /> Competição
-          </h2>
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-            <AppKPI label="Partidas" value={compData.matches} icon={Trophy} loading={isLoading} />
-            <AppKPI label="Resultados" value={compData.results} icon={CheckCircle2} loading={isLoading} />
-            <AppKPI label="Validados" value={compData.validated} icon={ShieldCheck} loading={isLoading} />
-            <AppKPI
-              label="Publicados" value={compData.published} icon={TrendingUp} loading={isLoading}
-              sub={compData.results > 0 ? `${Math.round((compData.published / compData.results) * 100)}% dos resultados` : undefined}
-            />
+        {/* Competição e Alimentação */}
+        <section className="space-y-6">
+          {/* Competição */}
+          <div className="space-y-3">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <Trophy className="h-3.5 w-3.5" /> Competição
+            </h2>
+            <Card>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Andamento por Modalidade</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {isLoading ? <div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /></div> : (
+                  <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                    {data.competicao.by_sport.slice(0, 8).map((row) => (
+                      <div key={row.sport_event_id} className="space-y-1">
+                        <div className="flex justify-between text-[11px] items-center">
+                          <span className="truncate font-medium flex-1">{row.name}</span>
+                          <div className="flex gap-3 text-muted-foreground tabular-nums">
+                            <span>{row.done}/{row.total}</span>
+                            <span className="w-8 text-right font-semibold text-foreground">{row.pct}%</span>
+                          </div>
+                        </div>
+                        <Progress value={row.pct} className="h-1" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Alimentação */}
+          <div className="space-y-3">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <UtensilsCrossed className="h-3.5 w-3.5" /> Alimentação
+            </h2>
+            <Card>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Consumo por dia (Empilhado)</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[180px] px-2 pb-2">
+                {isLoading ? <Skeleton className="w-full h-full" /> : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.alimentacao.daily.map((d) => ({ ...d, date: fmtDate(String(d.date)) }))}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip 
+                        contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
+                      />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 10 }} />
+                      {data.alimentacao.meal_types.map((t, i) => (
+                        <Bar key={t} dataKey={t} stackId="a" fill={PALETTE[i % PALETTE.length]} radius={i === data.alimentacao.meal_types.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]} />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </section>
       </div>
