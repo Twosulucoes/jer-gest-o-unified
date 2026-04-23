@@ -449,6 +449,13 @@ export type Database = {
             referencedColumns: ["sport_event_id"]
           },
           {
+            foreignKeyName: "competition_matches_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_stage_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
             foreignKeyName: "competition_matches_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
@@ -542,6 +549,13 @@ export type Database = {
             columns: ["sport_event_id"]
             isOneToOne: false
             referencedRelation: "vw_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "competition_phases_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_stage_sport_event_summary"
             referencedColumns: ["sport_event_id"]
           },
         ]
@@ -753,6 +767,13 @@ export type Database = {
             columns: ["target_sport_event_id"]
             isOneToOne: false
             referencedRelation: "vw_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "fk_delegation_requests_target_sport_event"
+            columns: ["target_sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_stage_sport_event_summary"
             referencedColumns: ["sport_event_id"]
           },
         ]
@@ -4005,6 +4026,13 @@ export type Database = {
             referencedRelation: "vw_sport_event_summary"
             referencedColumns: ["sport_event_id"]
           },
+          {
+            foreignKeyName: "fk_participant_national_eligibility_sport_event"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_stage_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
         ]
       }
       participant_sport_events: {
@@ -4109,6 +4137,13 @@ export type Database = {
             columns: ["sport_event_id"]
             isOneToOne: false
             referencedRelation: "vw_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "participant_sport_events_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_stage_sport_event_summary"
             referencedColumns: ["sport_event_id"]
           },
         ]
@@ -4720,6 +4755,13 @@ export type Database = {
             referencedRelation: "vw_sport_event_summary"
             referencedColumns: ["sport_event_id"]
           },
+          {
+            foreignKeyName: "fk_phase_qualification_rules_sport_event"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_stage_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
         ]
       }
       profiles: {
@@ -4962,6 +5004,13 @@ export type Database = {
             columns: ["sport_event_id"]
             isOneToOne: false
             referencedRelation: "vw_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "protests_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_stage_sport_event_summary"
             referencedColumns: ["sport_event_id"]
           },
         ]
@@ -5412,6 +5461,13 @@ export type Database = {
             referencedColumns: ["sport_event_id"]
           },
           {
+            foreignKeyName: "sport_event_prova_map_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: true
+            referencedRelation: "vw_stage_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
             foreignKeyName: "sport_event_prova_map_sport_id_fkey"
             columns: ["sport_id"]
             isOneToOne: false
@@ -5563,6 +5619,13 @@ export type Database = {
             columns: ["sport_event_id"]
             isOneToOne: true
             referencedRelation: "vw_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "sport_event_rules_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: true
+            referencedRelation: "vw_stage_sport_event_summary"
             referencedColumns: ["sport_event_id"]
           },
         ]
@@ -5757,6 +5820,13 @@ export type Database = {
             columns: ["sport_event_id"]
             isOneToOne: false
             referencedRelation: "vw_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "fk_state_selection_callups_sport_event"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_stage_sport_event_summary"
             referencedColumns: ["sport_event_id"]
           },
         ]
@@ -6038,6 +6108,13 @@ export type Database = {
             columns: ["sport_event_id"]
             isOneToOne: false
             referencedRelation: "vw_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "teams_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_stage_sport_event_summary"
             referencedColumns: ["sport_event_id"]
           },
         ]
@@ -6706,6 +6783,60 @@ export type Database = {
           category_name: string | null
           enrolled_count: number | null
           event_id: string | null
+          group_count: number | null
+          is_active: boolean | null
+          is_collective: boolean | null
+          match_count: number | null
+          matches_with_result: number | null
+          matches_with_schedule: number | null
+          name: string | null
+          phase_count: number | null
+          released_at: string | null
+          results_published: number | null
+          results_validated: number | null
+          sport_event_id: string | null
+          sport_id: string | null
+          sport_name: string | null
+          team_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sport_events_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_events_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_id"]
+          },
+          {
+            foreignKeyName: "sport_events_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_stage_sport_event_summary: {
+        Row: {
+          category_id: string | null
+          category_name: string | null
+          enrolled_count: number | null
+          event_id: string | null
+          event_stage_id: string | null
           group_count: number | null
           is_active: boolean | null
           is_collective: boolean | null

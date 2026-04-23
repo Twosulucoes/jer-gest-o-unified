@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useCompetitionContext } from "@/contexts/CompetitionContext";
@@ -20,7 +20,6 @@ import {
   ToggleLeft, ToggleRight, RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { RESULT_STATUS } from "@/lib/resultStatus";
 
 // ── Types ──────────────────────────────────────────────────
 type ProvaStatus = "bloqueada" | "nao_iniciada" | "em_andamento" | "com_pendencia" | "concluida";
@@ -39,7 +38,6 @@ interface ProvaRow {
   category_name: string;
   is_collective: boolean;
   released_at: string | null;
-  // counts
   enrolled_count: number;
   team_count: number;
   phase_count: number;
@@ -49,7 +47,6 @@ interface ProvaRow {
   matches_with_schedule: number;
   results_validated: number;
   results_published: number;
-  // computed
   status: ProvaStatus;
   steps: StepStatus[];
   progress: number;
@@ -61,15 +58,14 @@ function computeProvaData(row: any): ProvaRow {
   const isCollective = row.is_collective;
   const releasedAt = row.released_at;
 
-  const enrolled = row.enrolled_count;
-  const teams = row.team_count;
-  const phases = row.phase_count;
-  const groups = row.group_count;
-  const matchCount = row.match_count;
-  const withResult = row.matches_with_result;
-  const withSchedule = row.matches_with_schedule;
-  const validated = row.results_validated;
-  const published = row.results_published;
+  const enrolled = Number(row.enrolled_count || 0);
+  const teams = Number(row.team_count || 0);
+  const phases = Number(row.phase_count || 0);
+  const matchCount = Number(row.match_count || 0);
+  const withResult = Number(row.matches_with_result || 0);
+  const withSchedule = Number(row.matches_with_schedule || 0);
+  const validated = Number(row.results_validated || 0);
+  const published = Number(row.results_published || 0);
 
   // Steps
   const steps: StepStatus[] = isCollective
@@ -117,7 +113,7 @@ function computeProvaData(row: any): ProvaRow {
     enrolled_count: enrolled,
     team_count: teams,
     phase_count: phases,
-    group_count: groups,
+    group_count: Number(row.group_count || 0),
     match_count: matchCount,
     matches_with_result: withResult,
     matches_with_schedule: withSchedule,
@@ -163,6 +159,7 @@ const STEP_COLORS: Record<string, string> = {
 // ── Component ──────────────────────────────────────────────
 export default function CompeticaoPainelPage() {
   const qc = useQueryClient();
+  const { stageId } = useParams();
   const eventId = useActiveEventId();
   const navigate = useNavigate();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
@@ -181,19 +178,33 @@ export default function CompeticaoPainelPage() {
     setSelectedSportId(sportFilter === "all" ? null : sportFilter);
   }, [sportFilter, setSelectedSportId]);
 
+  // ── Fetch Stage Info ─────────────────────────────────────
+  const { data: stage } = useQuery({
+    queryKey: ["event_stage", stageId],
+    enabled: !!stageId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_stages")
+        .select("name")
+        .eq("id", stageId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // ── Realtime Subscription ────────────────────────────────
   useEffect(() => {
     if (!eventId) return;
     
     // Subscribe to match changes to refresh the dashboard
     const channel = supabase
-      .channel("painel-competicao-changes")
+      .channel(`painel-competicao-${stageId || 'global'}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "competition_matches", filter: `event_id=eq.${eventId}` },
         () => {
-          // Refetch everything when a match changes
-          qc.invalidateQueries({ queryKey: ["painel-competicao", eventId] });
+          qc.invalidateQueries({ queryKey: ["painel-competicao", eventId, stageId] });
           setLastUpdate(new Date());
         }
       )
@@ -202,18 +213,29 @@ export default function CompeticaoPainelPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [eventId, qc]);
+  }, [eventId, stageId, qc]);
 
-  // ── Query 1: Sport events + rules ────────────────────────
+  // ── Query 1: Sport events summary ────────────────────────
   const { data: provas = [], isLoading, isFetching } = useQuery({
-    queryKey: ["painel-competicao", eventId, mySportIds],
+    queryKey: ["painel-competicao", eventId, stageId, mySportIds],
     enabled: !!eventId && (!isCoordModalidade || !loadingSportLinks),
     staleTime: 30_000,
     queryFn: async () => {
-      let query = supabase
-        .from("vw_sport_event_summary")
-        .select("*")
-        .eq("event_id", eventId!)
+      let query;
+      
+      if (stageId) {
+        query = supabase
+          .from("vw_stage_sport_event_summary")
+          .select("*")
+          .eq("event_stage_id", stageId);
+      } else {
+        query = supabase
+          .from("vw_sport_event_summary")
+          .select("*")
+          .eq("event_id", eventId!);
+      }
+
+      query = query
         .eq("is_active", true)
         .order("sport_name")
         .order("name");
@@ -254,7 +276,7 @@ export default function CompeticaoPainelPage() {
       }
       return true;
     });
-  }, [provas, sportFilter, statusFilter, typeFilter, search]);
+  }, [provas, sportFilter, statusFilter, typeFilter, search, hideEmpty]);
 
   const totals = useMemo(() => ({
     total: provas.length,
@@ -265,7 +287,6 @@ export default function CompeticaoPainelPage() {
     concluida: provas.filter((p) => p.status === "concluida").length,
   }), [provas]);
 
-  // ── Group by sport ───────────────────────────────────────
   const grouped = useMemo(() => {
     if (!groupBySport) return null;
     const map = new Map<string, ProvaRow[]>();
@@ -279,11 +300,13 @@ export default function CompeticaoPainelPage() {
 
   // ── Actions ──────────────────────────────────────────────
   function handleAction(prova: ProvaRow) {
+    const base = stageId ? `/admin/etapa/${stageId}/competicao` : "/admin/competicao";
+    
     if (prova.status === "bloqueada") {
-      navigate("/admin/competicao/pre-validacao");
+      navigate(`${base}/pre-validacao`);
     } else {
       const step = mapStepToWizard(prova.firstIncompleteStep);
-      navigate(`/admin/competicao/central?sport_event_id=${prova.id}&step=${step}`);
+      navigate(`${base}/central?sport_event_id=${prova.id}&step=${step}`);
     }
   }
 
@@ -308,9 +331,10 @@ export default function CompeticaoPainelPage() {
   }
 
   if (isCoordModalidade && mySportIds && mySportIds.length === 0) {
+    const headerRoute = stageId ? `/admin/etapa/${stageId}/competicao/painel` : "/admin/competicao/painel";
     return (
       <div className="space-y-6">
-        <ModuleHeader route="/admin/competicao/painel" title="Minhas Modalidades" />
+        <ModuleHeader route={headerRoute} title="Minhas Modalidades" />
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>Você não tem modalidades atribuídas. Contate o administrador para vincular modalidades ao seu perfil.</AlertDescription>
@@ -320,11 +344,16 @@ export default function CompeticaoPainelPage() {
   }
 
   // ── Render ───────────────────────────────────────────────
+  const headerRoute = stageId ? `/admin/etapa/${stageId}/competicao/painel` : "/admin/competicao/painel";
+  const headerTitle = stageId 
+    ? `Painel da Competição — ${stage?.name || "Etapa"}`
+    : (isCoordModalidade ? "Minhas Modalidades" : "Painel de Controle da Competição");
+
   return (
     <div className="space-y-6">
       <ModuleHeader
-        route="/admin/competicao/painel"
-        title={isCoordModalidade ? "Minhas Modalidades" : "Painel de Controle da Competição"}
+        route={headerRoute}
+        title={headerTitle}
         actions={
           <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
             <RefreshCw className={cn("h-3 w-3", isFetching && "animate-spin")} />
@@ -351,34 +380,6 @@ export default function CompeticaoPainelPage() {
           </Card>
         ))}
       </div>
-
-      {/* Banners */}
-      {!isLoading && provas.length > 0 && totals.concluida === provas.length && (
-        <Alert className="border-success/30 bg-success/5">
-          <CheckCircle2 className="h-4 w-4 text-success" />
-          <AlertDescription className="text-success font-medium">
-            Todas as provas estão concluídas! 🎉
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {!isLoading && provas.length > 0 && totals.bloqueada === provas.length && (
-        <Alert className="border-warning/30 bg-warning/5">
-          <AlertTriangle className="h-4 w-4 text-warning" />
-          <AlertDescription>
-            Nenhuma prova foi liberada ainda.{" "}
-            <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => navigate("/admin/competicao/pre-validacao")}>
-              Acesse a Pré-validação para iniciar.
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {!isLoading && provas.length > 0 && totals.bloqueada > 0 && totals.bloqueada < provas.length && (
-        <p className="text-sm text-muted-foreground">
-          {provas.length - totals.bloqueada} de {provas.length} provas liberadas para competição
-        </p>
-      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -418,7 +419,7 @@ export default function CompeticaoPainelPage() {
           className="gap-1.5 whitespace-nowrap"
           onClick={() => setHideEmpty(!hideEmpty)}
         >
-          {hideEmpty ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+          {hideEmpty ? <ToggleRight className="h-4 w-4 text-primary" /> : <ToggleLeft className="h-4 w-4" />}
           Com inscritos
         </Button>
         <Button
@@ -427,7 +428,7 @@ export default function CompeticaoPainelPage() {
           className="gap-1.5 whitespace-nowrap"
           onClick={() => setGroupBySport(!groupBySport)}
         >
-          {groupBySport ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+          {groupBySport ? <ToggleRight className="h-4 w-4 text-primary" /> : <ToggleLeft className="h-4 w-4" />}
           Por modalidade
         </Button>
       </div>
@@ -446,7 +447,7 @@ export default function CompeticaoPainelPage() {
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
           <Trophy className="h-12 w-12 opacity-30" />
           <p className="text-lg font-medium">Nenhuma prova encontrada</p>
-          <p className="text-sm">Ajuste os filtros ou verifique a importação de dados.</p>
+          <p className="text-sm">Ajuste os filtros ou verifique a importação de dados para esta etapa.</p>
         </div>
       )}
 
