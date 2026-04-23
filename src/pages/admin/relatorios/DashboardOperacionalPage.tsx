@@ -104,7 +104,7 @@ export default function DashboardOperacionalPage() {
         <div>
           <h1 className="font-heading text-2xl font-bold">Dashboard Operacional</h1>
           <p className="text-sm text-muted-foreground">
-            {activeEvent?.name ?? "Evento"} • Última atualização:{" "}
+            Monitoramento geral das operações — Última atualização:{" "}
             {lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>

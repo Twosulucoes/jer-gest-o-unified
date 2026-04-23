@@ -70,7 +70,7 @@ export default function QuadroMedalhasPage() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-heading text-2xl font-bold">Quadro de Medalhas e Classificação Geral</h1>
-          <p className="text-sm text-muted-foreground">{activeEvent?.name}</p>
+          {/* Event name removed */}
         </div>
       </header>
 
