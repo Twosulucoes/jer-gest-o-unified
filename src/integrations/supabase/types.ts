@@ -6837,12 +6837,14 @@ export type Database = {
           enrolled_count: number | null
           event_id: string | null
           event_stage_id: string | null
+          group_count: number | null
           is_active: boolean | null
           is_collective: boolean | null
           match_count: number | null
           matches_with_result: number | null
           matches_with_schedule: number | null
           name: string | null
+          phase_count: number | null
           released_at: string | null
           results_published: number | null
           results_validated: number | null
