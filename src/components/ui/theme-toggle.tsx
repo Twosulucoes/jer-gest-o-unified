@@ -1,35 +1,27 @@
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "./theme-provider";
+import { cn } from "@/lib/utils";
 
-export function ThemeToggle({ className }: { className?: string }) {
-  const [dark, setDark] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const stored = localStorage.getItem("jer-theme");
-    if (stored) return stored === "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
+interface ThemeToggleProps {
+  className?: string;
+}
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (dark) {
-      root.classList.add("dark");
-      localStorage.setItem("jer-theme", "dark");
-    } else {
-      root.classList.remove("dark");
-      localStorage.setItem("jer-theme", "light");
-    }
-  }, [dark]);
+export function ThemeToggle({ className }: ThemeToggleProps) {
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => setDark(!dark)}
-      className={className}
-      aria-label={dark ? "Modo claro" : "Modo escuro"}
+      onClick={toggleTheme}
+      className={cn("h-9 w-9 text-muted-foreground hover:text-foreground transition-colors", className)}
+      title={theme === "dark" ? "Alternar para modo claro" : "Alternar para modo escuro"}
     >
-      {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <span className="sr-only">Alternar tema</span>
     </Button>
   );
 }
+

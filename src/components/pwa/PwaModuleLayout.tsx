@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import AuthLoadingScreen from "@/components/auth/AuthLoadingScreen";
 import type { AppRole } from "@/config/accessControl";
 
@@ -55,7 +56,8 @@ export default function PwaModuleLayout({ children, moduleTitle, moduleIcon: Ico
             )}
             <span className="font-heading font-bold tracking-tight text-foreground">{moduleTitle}</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             {profile?.full_name && (
               <span className="hidden text-xs text-muted-foreground sm:inline">{profile.full_name}</span>
             )}
