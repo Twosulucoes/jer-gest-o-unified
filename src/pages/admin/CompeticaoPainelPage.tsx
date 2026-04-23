@@ -161,6 +161,7 @@ const STEP_COLORS: Record<string, string> = {
 
 // ── Component ──────────────────────────────────────────────
 export default function CompeticaoPainelPage() {
+  const qc = useQueryClient();
   const eventId = useActiveEventId();
   const navigate = useNavigate();
   const { sportIds: mySportIds, isCoordModalidade, isLoading: loadingSportLinks } = useUserSportLinks();
