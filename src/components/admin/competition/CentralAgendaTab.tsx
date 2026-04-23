@@ -410,13 +410,13 @@ function BatchScheduleDialog({
 
   const preview = useMemo(() => {
     if (!startTime) return [];
-    return selectedMatches.map((m, i) => {
+    return unscheduledMatches.map((m, i) => {
       const totalMinutes = parseTimeToMinutes(startTime) + i * interval;
       const hh = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
       const mm = String(totalMinutes % 60).padStart(2, "0");
       return { ...m, scheduledTime: `${hh}:${mm}` };
     });
-  }, [selectedMatches, startTime, interval]);
+  }, [unscheduledMatches, startTime, interval]);
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -458,7 +458,7 @@ function BatchScheduleDialog({
         <DialogHeader>
           <DialogTitle>Agendar em lote</DialogTitle>
           <DialogDescription>
-            Definir data, local e horários sequenciais para {selectedMatches.length} partida(s).
+            Definir data, local e horários sequenciais para {unscheduledMatches.length} partida(s).
           </DialogDescription>
         </DialogHeader>
 
