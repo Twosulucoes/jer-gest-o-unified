@@ -786,10 +786,63 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <CalendarClock className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">Agenda da Modalidade</h3>
+  const [selectedMatches, setSelectedMatches] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedMatches);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedMatches(next);
+  };
+
+  const selectAll = () => {
+    if (selectedMatches.size === filteredMatches.length && filteredMatches.length > 0) setSelectedMatches(new Set());
+    else setSelectedMatches(new Set(filteredMatches.map(m => m.id)));
+  };
+
+  const selectedList = useMemo(() => 
+    matches.filter(m => selectedMatches.has(m.id)),
+  [matches, selectedMatches]);
+
+  const canBatch = selectedMatches.size > 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Smart Batch Actions Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/40 p-4 rounded-xl border-2 border-dashed border-primary/20">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 p-2 rounded-lg">
+            <CalendarClock className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground">Agendamento em Lote</p>
+            <p className="text-[11px] text-muted-foreground">Marque os confrontos na tabela e agende-os em sequência.</p>
+          </div>
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={selectAll}
+            className="flex-1 sm:flex-none text-xs hover:bg-muted"
+          >
+            {selectedMatches.size === filteredMatches.length && filteredMatches.length > 0 ? "Desmarcar todos" : "Selecionar todos"}
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm" 
+            disabled={!canBatch}
+            onClick={() => setShowBatch(true)}
+            className="flex-1 sm:flex-none text-xs bg-primary hover:bg-primary/90 shadow-sm px-4"
+          >
+            <CalendarPlus className="h-3.5 w-3.5 mr-2" />
+            Agendar ({selectedMatches.size})
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {allScheduled && <Badge variant="default" className="bg-green-600">Todas agendadas ✅</Badge>}
           {!allScheduled && matches.length > 0 && (
             <span className="text-sm text-muted-foreground">
@@ -798,19 +851,13 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
           )}
           {unscheduled.length > 0 && (
             <Badge variant="destructive" className="text-xs">
-              {unscheduled.length} sem agendamento
+              {unscheduled.length} pendentes
             </Badge>
           )}
           {totalConflicts > 0 && (
             <Badge variant="destructive">{totalConflicts} conflito(s)</Badge>
           )}
         </div>
-        {canEdit && unscheduled.length > 0 && (
-          <Button size="sm" variant="outline" onClick={() => setShowBatch(true)}>
-            <ListChecks className="h-4 w-4 mr-1" />
-            Agendar em lote ({unscheduled.length})
-          </Button>
-        )}
       </div>
 
       {/* Filters */}
