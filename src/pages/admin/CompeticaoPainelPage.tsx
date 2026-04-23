@@ -17,7 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Search, Trophy, Users, LayoutDashboard, Play, ArrowRight,
   AlertTriangle, CheckCircle2, Lock, Clock, Eye, Dumbbell,
-  ToggleLeft, ToggleRight,
+  ToggleLeft, ToggleRight, RefreshCw,
 } from "lucide-react";
 import { RESULT_STATUS } from "@/lib/resultStatus";
 
@@ -173,6 +173,8 @@ export default function CompeticaoPainelPage() {
   const [groupBySport, setGroupBySport] = useState(false);
   const [hideEmpty, setHideEmpty] = useState(true);
 
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+
   // Sync with context
   useEffect(() => {
     setSelectedSportId(sportFilter === "all" ? null : sportFilter);
@@ -191,6 +193,7 @@ export default function CompeticaoPainelPage() {
         () => {
           // Refetch everything when a match changes
           qc.invalidateQueries({ queryKey: ["painel-competicao", eventId] });
+          setLastUpdate(new Date());
         }
       )
       .subscribe();
@@ -321,6 +324,12 @@ export default function CompeticaoPainelPage() {
       <ModuleHeader
         route="/admin/competicao/painel"
         title={isCoordModalidade ? "Minhas Modalidades" : "Painel de Controle da Competição"}
+        actions={
+          <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
+            <RefreshCw className={cn("h-3 w-3", isFetching && "animate-spin")} />
+            Atualizado em: {lastUpdate.toLocaleTimeString()}
+          </div>
+        }
       />
 
       {/* KPI Cards */}
