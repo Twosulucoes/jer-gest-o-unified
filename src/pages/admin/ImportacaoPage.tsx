@@ -599,7 +599,6 @@ function ValidateResultCard({
       <CardContent className="space-y-5">
         {/* Evento + Etapa */}
         <div className="rounded-lg border bg-muted/30 p-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
-          <div><span className="text-muted-foreground">Evento:</span> <strong className="text-foreground">{selectedEvent?.name} ({selectedEvent?.year})</strong></div>
           <div><span className="text-muted-foreground">Etapa:</span> <strong className="text-foreground">{selectedStage?.name ?? "—"}</strong> {selectedStage && <Badge variant="outline" className="ml-1 text-xs">{selectedStage.kind}</Badge>}</div>
           {validateResult.file_name && <div><span className="text-muted-foreground">Arquivo:</span> <strong className="text-foreground">{validateResult.file_name}</strong></div>}
         </div>
@@ -842,7 +841,6 @@ function CommitResultCard({
       <CardContent className="space-y-4">
         {/* Evento + Etapa */}
         <div className="rounded-lg border bg-background/60 p-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
-          <div><span className="text-muted-foreground">Evento:</span> <strong className="text-foreground">{commitResult.event?.name ?? "—"} {commitResult.event?.year ? `(${commitResult.event.year})` : ""}</strong></div>
           <div><span className="text-muted-foreground">Etapa:</span> <strong className="text-foreground">{commitResult.event_stage?.name ?? selectedStage?.name ?? "—"}</strong> {(commitResult.event_stage || selectedStage) && <Badge variant="outline" className="ml-1 text-xs">{selectedStage?.kind ?? ""}</Badge>}</div>
           {commitResult.file_name && <div><span className="text-muted-foreground">Arquivo:</span> <strong className="text-foreground">{commitResult.file_name}</strong></div>}
         </div>
