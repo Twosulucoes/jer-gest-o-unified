@@ -398,10 +398,15 @@ function BatchScheduleDialog({
   onSaved: () => void;
   onClose: () => void;
 }) {
-  const [date, setDate] = useState<Date | undefined>();
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [startTime, setStartTime] = useState("08:00");
   const [interval, setInterval] = useState(60);
   const [venueId, setVenueId] = useState("");
+
+  const parseTimeToMinutes = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
 
   const preview = useMemo(() => {
     if (!startTime) return [];
@@ -457,14 +462,14 @@ function BatchScheduleDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="space-y-2">
-            <Label>Data *</Label>
+            <Label className="text-xs uppercase font-bold text-muted-foreground">Data das Partidas</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+                  className={cn("w-full justify-start text-left font-normal h-10", !date && "text-muted-foreground")}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
@@ -475,66 +480,66 @@ function BatchScheduleDialog({
                   mode="single"
                   selected={date}
                   onSelect={setDate}
-                  disabled={(d) => isBefore(d, startOfDay(new Date()))}
-                  className={cn("p-3 pointer-events-auto")}
+                  className="p-3"
                 />
               </PopoverContent>
             </Popover>
           </div>
 
           <div className="space-y-2">
-            <Label>Local *</Label>
+            <Label className="text-xs uppercase font-bold text-muted-foreground">Local Único</Label>
             <Select value={venueId} onValueChange={setVenueId}>
-              <SelectTrigger>
+              <SelectTrigger className="h-10">
                 <SelectValue placeholder="Selecione o local" />
               </SelectTrigger>
               <SelectContent>
                 {venues.map((v) => (
-                  <SelectItem key={v.id} value={v.id}>
-                    {v.name}{v.address ? ` — ${v.address}` : ""}
-                  </SelectItem>
+                  <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Hora da primeira partida *</Label>
-              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Intervalo (min)</Label>
-              <Input
-                type="number"
-                min={10}
-                max={240}
-                value={interval}
-                onChange={(e) => setInterval(Math.max(10, parseInt(e.target.value) || 60))}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label className="text-xs uppercase font-bold text-muted-foreground">Início (1ª Partida)</Label>
+            <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="h-10" />
           </div>
 
-          {preview.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Preview</Label>
-              <div className="rounded-md border divide-y max-h-[200px] overflow-y-auto">
-                {preview.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between px-3 py-1.5 text-sm">
-                    <span>Partida #{p.match_number} — {p.side_a} vs {p.side_b}</span>
-                    <Badge variant="outline">{p.scheduledTime}</Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label className="text-xs uppercase font-bold text-muted-foreground">Intervalo (minutos)</Label>
+            <Input type="number" value={interval} onChange={(e) => setInterval(Number(e.target.value))} className="h-10" />
+          </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => saveMut.mutate()} disabled={!canSave || saveMut.isPending}>
-            {saveMut.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-            Confirmar agendamento em lote
+        <div className="flex-1 overflow-y-auto min-h-[200px] border rounded-md p-2 bg-muted/20">
+          <p className="text-xs font-bold uppercase text-muted-foreground mb-3 px-1">Prévia da Sequência</p>
+          <div className="space-y-2">
+            {preview.map((p, i) => (
+              <div key={p.id} className="flex items-center justify-between p-2 rounded-md bg-card border text-sm">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                    #{p.match_number || (i+1)}
+                  </span>
+                  <span className="font-medium truncate max-w-[180px]">{p.side_a} vs {p.side_b}</span>
+                </div>
+                <div className="flex items-center gap-2 font-mono text-primary font-bold">
+                  <Clock className="h-3 w-3" />
+                  {p.scheduledTime}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <DialogFooter className="mt-6">
+          <Button variant="outline" onClick={onClose} className="h-10">Cancelar</Button>
+          <Button 
+            onClick={() => saveMut.mutate()} 
+            disabled={!canSave || saveMut.isPending}
+            className="h-10 px-8"
+          >
+            {saveMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CalendarPlus className="h-4 w-4 mr-2" />}
+            Confirmar Agendamento de {preview.length} Partidas
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -581,6 +586,7 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
   const [editMatch, setEditMatch] = useState<MatchRow | null>(null);
   const [showBatch, setShowBatch] = useState(false);
   const [inlineEditId, setInlineEditId] = useState<string | null>(null);
+  const [selectedMatches, setSelectedMatches] = useState<Set<string>>(new Set());
 
   // Filters
   const [filterPhase, setFilterPhase] = useState<string>("__all__");
@@ -778,13 +784,61 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
     );
   }
 
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedMatches);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedMatches(next);
+  };
+
+  const selectAll = () => {
+    if (selectedMatches.size === filteredMatches.length && filteredMatches.length > 0) setSelectedMatches(new Set());
+    else setSelectedMatches(new Set(filteredMatches.map(m => m.id)));
+  };
+
+  const selectedList = useMemo(() => 
+    matches.filter(m => selectedMatches.has(m.id)),
+  [matches, selectedMatches]);
+
+  const canBatch = selectedMatches.size > 0;
+
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <CalendarClock className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">Agenda da Modalidade</h3>
+      {/* Smart Batch Actions Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/40 p-4 rounded-xl border-2 border-dashed border-primary/20">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 p-2 rounded-lg">
+            <CalendarClock className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground">Agendamento em Lote</p>
+            <p className="text-[11px] text-muted-foreground">Marque os confrontos na tabela e agende-os em sequência.</p>
+          </div>
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={selectAll}
+            className="flex-1 sm:flex-none text-xs hover:bg-muted"
+          >
+            {selectedMatches.size === filteredMatches.length && filteredMatches.length > 0 ? "Desmarcar todos" : "Selecionar todos"}
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm" 
+            disabled={!canBatch}
+            onClick={() => setShowBatch(true)}
+            className="flex-1 sm:flex-none text-xs bg-primary hover:bg-primary/90 shadow-sm px-4"
+          >
+            <CalendarPlus className="h-3.5 w-3.5 mr-2" />
+            Agendar ({selectedMatches.size})
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {allScheduled && <Badge variant="default" className="bg-green-600">Todas agendadas ✅</Badge>}
           {!allScheduled && matches.length > 0 && (
             <span className="text-sm text-muted-foreground">
@@ -793,19 +847,13 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
           )}
           {unscheduled.length > 0 && (
             <Badge variant="destructive" className="text-xs">
-              {unscheduled.length} sem agendamento
+              {unscheduled.length} pendentes
             </Badge>
           )}
           {totalConflicts > 0 && (
             <Badge variant="destructive">{totalConflicts} conflito(s)</Badge>
           )}
         </div>
-        {canEdit && unscheduled.length > 0 && (
-          <Button size="sm" variant="outline" onClick={() => setShowBatch(true)}>
-            <ListChecks className="h-4 w-4 mr-1" />
-            Agendar em lote ({unscheduled.length})
-          </Button>
-        )}
       </div>
 
       {/* Filters */}
@@ -893,7 +941,15 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">#</TableHead>
+                  <TableHead className="w-[45px] px-3 text-center">
+                    <input 
+                      type="checkbox" 
+                      checked={filteredMatches.length > 0 && selectedMatches.size === filteredMatches.length}
+                      onChange={selectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                    />
+                  </TableHead>
+                  <TableHead className="w-[50px] text-[11px] font-bold uppercase tracking-wider">#</TableHead>
                   <TableHead>Fase / Grupo</TableHead>
                   <TableHead>Confronto</TableHead>
                   <TableHead>Data</TableHead>
@@ -914,16 +970,36 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
                   filteredMatches.map((m) => {
                     const isScheduled = !!(m.match_date && m.start_time && m.venue_id);
                     const isInlineEdit = inlineEditId === m.id;
+                    const isSelected = selectedMatches.has(m.id);
 
                     return (
-                      <TableRow key={m.id} className={cn(!isScheduled && "bg-destructive/5")}>
-                        <TableCell className="font-mono text-xs">{m.match_number ?? "—"}</TableCell>
-                        <TableCell className="text-sm">
-                          {m.phase_name}
-                          {m.group_name && <span className="text-muted-foreground"> · {m.group_name}</span>}
+                      <TableRow 
+                        key={m.id} 
+                        className={cn(
+                          "transition-colors group",
+                          !isScheduled && "bg-destructive/5",
+                          isSelected ? "bg-primary/5 hover:bg-primary/10 border-l-2 border-l-primary" : "hover:bg-muted/30"
+                        )}
+                      >
+                        <TableCell className="px-3 text-center">
+                          <input 
+                            type="checkbox" 
+                            checked={isSelected}
+                            onChange={() => toggleSelect(m.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                          />
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">{m.match_number ?? "—"}</TableCell>
+                        <TableCell className="text-[11px]">
+                          <p className="font-bold text-foreground">{m.phase_name}</p>
+                          {m.group_name && <p className="text-muted-foreground leading-tight">{m.group_name}</p>}
                         </TableCell>
                         <TableCell className="text-sm font-medium">
-                          {m.side_a} <span className="text-muted-foreground mx-1">vs</span> {m.side_b}
+                          <div className="flex items-center gap-2">
+                            <span className="truncate max-w-[140px]">{m.side_a}</span>
+                            <span className="text-[10px] text-muted-foreground font-black opacity-30">VS</span>
+                            <span className="truncate max-w-[140px]">{m.side_b}</span>
+                          </div>
                         </TableCell>
 
                         {isInlineEdit ? (
@@ -1065,10 +1141,13 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
       {/* Batch dialog */}
       {showBatch && (
         <BatchScheduleDialog
-          unscheduledMatches={unscheduled}
+          unscheduledMatches={selectedList}
           venues={venues}
           eventId={eventId}
-          onSaved={handleSaved}
+          onSaved={() => {
+            handleSaved();
+            setSelectedMatches(new Set());
+          }}
           onClose={() => setShowBatch(false)}
         />
       )}
