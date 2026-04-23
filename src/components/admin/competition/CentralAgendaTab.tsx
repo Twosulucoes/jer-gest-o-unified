@@ -398,10 +398,15 @@ function BatchScheduleDialog({
   onSaved: () => void;
   onClose: () => void;
 }) {
-  const [date, setDate] = useState<Date | undefined>();
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [startTime, setStartTime] = useState("08:00");
   const [interval, setInterval] = useState(60);
   const [venueId, setVenueId] = useState("");
+
+  const parseTimeToMinutes = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
 
   const preview = useMemo(() => {
     if (!startTime) return [];
