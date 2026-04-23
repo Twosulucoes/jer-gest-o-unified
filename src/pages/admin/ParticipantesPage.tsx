@@ -616,7 +616,7 @@ export default function ParticipantesPage() {
         <CardContent className="pt-5 sm:pt-6 px-4 sm:px-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {/* Event selector removed as redundant */}
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2 md:col-span-1">
               <label className="text-sm font-medium text-foreground">Buscar (nome ou CPF)</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
