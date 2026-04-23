@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,7 @@ import {
   Pencil, CalendarPlus, Trash2, ListChecks, XCircle, RefreshCw, ExternalLink,
   Filter, Check, X,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   eventId: string;
@@ -95,6 +96,7 @@ function InlineScheduleEditor({
       await supabase.from("audit_events").insert({
         table_name: "competition_matches",
         record_id: match.id,
+        user_id: (await supabase.auth.getUser()).data.user?.id,
         action: "schedule_inline_edit",
         payload: { match_date: date, start_time: startTime, venue_id: venueId },
       });
@@ -204,6 +206,17 @@ function ScheduleMatchDialog({
         .neq("id", match.id);
 
       if (conflicts && conflicts.length > 0) {
+        const parseTimeToMinutes = (t: string) => {
+          const [h, m] = t.split(":").map(Number);
+          return h * 60 + m;
+        };
+        const addMinutes = (time: string, mins: number): string => {
+          const total = parseTimeToMinutes(time) + mins;
+          const hh = String(Math.floor(total / 60)).padStart(2, "0");
+          const mm = String(total % 60).padStart(2, "0");
+          return `${hh}:${mm}`;
+        };
+
         const effectiveEnd = endTime || addMinutes(startTime, 60);
         const overlapping = conflicts.filter((c: any) => {
           const cStart = c.start_time?.slice(0, 5);
@@ -236,6 +249,7 @@ function ScheduleMatchDialog({
       await supabase.from("audit_events").insert({
         table_name: "competition_matches",
         record_id: match.id,
+        user_id: (await supabase.auth.getUser()).data.user?.id,
         action: "schedule_remove",
         payload: {},
       });
@@ -438,6 +452,7 @@ function BatchScheduleDialog({
       await supabase.from("audit_events").insert({
         table_name: "competition_matches",
         record_id: eventId,
+        user_id: (await supabase.auth.getUser()).data.user?.id,
         action: "schedule_batch",
         payload: { count: preview.length, match_date: matchDate, venue_id: venueId },
       });
@@ -458,7 +473,7 @@ function BatchScheduleDialog({
         <DialogHeader>
           <DialogTitle>Agendar em lote</DialogTitle>
           <DialogDescription>
-            Definir data, local e horários sequenciais para {unscheduledMatches.length} partida(s) não agendada(s).
+            Definir data, local e horários sequenciais para {unscheduledMatches.length} partida(s).
           </DialogDescription>
         </DialogHeader>
 
@@ -550,15 +565,11 @@ function BatchScheduleDialog({
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function addMinutes(time: string, mins: number): string {
-  const total = parseTimeToMinutes(time) + mins;
+  const [h, m] = time.split(":").map(Number);
+  const total = h * 60 + m + mins;
   const hh = String(Math.floor(total / 60)).padStart(2, "0");
   const mm = String(total % 60).padStart(2, "0");
   return `${hh}:${mm}`;
-}
-
-function parseTimeToMinutes(time: string): number {
-  const [h, m] = time.split(":").map(Number);
-  return (h || 0) * 60 + (m || 0);
 }
 
 function formatDateBR(dateStr: string | null): string {
@@ -649,16 +660,12 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
       }
 
       return (rawMatches ?? []).map((m: any): MatchRow => {
-        const matchEntries = entryMap.get(m.id) ?? [];
-        const sideA = matchEntries.find((e: any) => e.side === "home" || e.side === "participant");
-        const sideB = matchEntries.find((e: any) => e.side === "away" || (e.side !== "home" && e.side !== "participant" && e !== sideA));
+        const mEntries = entryMap.get(m.id) ?? [];
+        const sideA = mEntries.find(e => e.side === 'A');
+        const sideB = mEntries.find(e => e.side === 'B');
 
-        const getName = (entry: any): string => {
-          if (!entry) return "A definir";
-          if (entry.teams?.name) return entry.teams.name;
-          const pName = (entry.participant_sport_events as any)?.participants?.people?.full_name;
-          return pName ?? "A definir";
-        };
+        const labelA = sideA?.teams?.name || sideA?.participant_sport_events?.participants?.people?.full_name || "A definir";
+        const labelB = sideB?.teams?.name || sideB?.participant_sport_events?.participants?.people?.full_name || "A definir";
 
         return {
           id: m.id,
@@ -667,72 +674,66 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
           start_time: m.start_time,
           end_time: m.end_time,
           venue_id: m.venue_id,
-          venue_name: (m.venues as any)?.name ?? null,
-          venue_address: (m.venues as any)?.address ?? null,
+          venue_name: m.venues?.name ?? null,
+          venue_address: m.venues?.address ?? null,
           notes: m.notes,
-          phase_name: (m.competition_phases as any)?.name ?? "—",
           phase_id: m.phase_id,
-          group_name: (m.competition_groups as any)?.name ?? null,
+          phase_name: m.competition_phases?.name ?? "—",
           group_id: m.group_id,
+          group_name: m.competition_groups?.name ?? null,
           round_number: m.round_number,
-          side_a: getName(sideA),
-          side_b: getName(sideB),
+          side_a: labelA,
+          side_b: labelB,
           status: m.status,
         };
       });
     },
   });
 
-  // Conflict detection
-  const { data: conflicts } = useQuery({
-    queryKey: ["schedule-conflicts", eventId, sportEventId],
+  const { data: conflictsRaw } = useQuery({
+    queryKey: ["agenda-conflicts", eventId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("rpc_detect_schedule_conflicts", {
-        p_event_id: eventId,
-        p_sport_event_id: sportEventId,
-      });
+      const { data, error } = await supabase.rpc("rpc_detect_schedule_conflicts", { p_event_id: eventId });
       if (error) throw error;
       return data as any;
     },
-    enabled: matches.some((m) => m.match_date != null),
+    enabled: !!eventId,
   });
 
-  const totalConflicts = (conflicts?.venue_conflicts?.length ?? 0) +
-    (conflicts?.team_conflicts?.length ?? 0) +
-    (conflicts?.participant_conflicts?.length ?? 0);
+  const conflicts = conflictsRaw as any;
+  const totalConflicts = (conflicts?.venue_conflicts?.length || 0) + (conflicts?.team_conflicts?.length || 0) + (conflicts?.participant_conflicts?.length || 0);
 
-  // Derive unique phases and groups for filters
-  const phaseOptions = useMemo(() => {
-    const map = new Map<string, string>();
-    matches.forEach((m) => { if (m.phase_id) map.set(m.phase_id, m.phase_name); });
-    return Array.from(map, ([id, name]) => ({ id, name }));
-  }, [matches]);
-
-  const groupOptions = useMemo(() => {
-    const map = new Map<string, string>();
-    matches.forEach((m) => { if (m.group_id && m.group_name) map.set(m.group_id, m.group_name); });
-    return Array.from(map, ([id, name]) => ({ id, name }));
-  }, [matches]);
-
-  // Apply filters
   const filteredMatches = useMemo(() => {
     return matches.filter((m) => {
       if (filterPhase !== "__all__" && m.phase_id !== filterPhase) return false;
       if (filterGroup !== "__all__" && m.group_id !== filterGroup) return false;
-      if (filterSchedule === "scheduled" && !(m.match_date && m.start_time && m.venue_id)) return false;
-      if (filterSchedule === "unscheduled" && (m.match_date && m.start_time && m.venue_id)) return false;
+      if (filterSchedule === "scheduled" && !m.match_date) return false;
+      if (filterSchedule === "unscheduled" && m.match_date) return false;
       if (filterStatus !== "__all__" && m.status !== filterStatus) return false;
       return true;
     });
   }, [matches, filterPhase, filterGroup, filterSchedule, filterStatus]);
 
-  const scheduled = matches.filter((m) => m.match_date && m.start_time && m.venue_id);
-  const unscheduled = matches.filter((m) => !m.match_date || !m.start_time || !m.venue_id);
-  const allScheduled = matches.length > 0 && unscheduled.length === 0;
-  const noneScheduled = matches.length > 0 && scheduled.length === 0;
+  const scheduled = matches.filter(m => m.match_date);
+  const unscheduled = matches.filter(m => !m.match_date);
+  const allScheduled = unscheduled.length === 0;
+  const noneScheduled = scheduled.length === 0;
+
+  const phaseOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    matches.forEach(m => map.set(m.phase_id, m.phase_name));
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [matches]);
+
+  const groupOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    matches.forEach(m => {
+      if (m.group_id && m.group_name) map.set(m.group_id, m.group_name);
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [matches]);
 
   const hasActiveFilters = filterPhase !== "__all__" || filterGroup !== "__all__" || filterSchedule !== "__all__" || filterStatus !== "__all__";
-
   const clearFilters = () => {
     setFilterPhase("__all__");
     setFilterGroup("__all__");
@@ -740,49 +741,10 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
     setFilterStatus("__all__");
   };
 
-  const handleSaved = useCallback(() => {
-    setInlineEditId(null);
+  const handleSaved = () => {
     refetch();
-    qc.invalidateQueries({ queryKey: ["schedule-conflicts", eventId, sportEventId] });
-    onChanged?.();
-  }, [refetch, qc, eventId, sportEventId, onChanged]);
-
-  // Loading
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
-  }
-
-  // Error
-  if (isError) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-12">
-        <XCircle className="h-8 w-8 text-destructive" />
-        <p className="text-sm text-muted-foreground">Erro ao carregar partidas</p>
-        <Button size="sm" variant="outline" onClick={() => refetch()}>
-          <RefreshCw className="h-3.5 w-3.5 mr-1" /> Tentar novamente
-        </Button>
-      </div>
-    );
-  }
-
-  // No matches
-  if (matches.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-12 text-center">
-        <CalendarClock className="h-10 w-10 text-muted-foreground opacity-50" />
-        <p className="text-muted-foreground">
-          Nenhuma partida encontrada. Volte ao passo anterior e gere as partidas/baterias primeiro.
-        </p>
-      </div>
-    );
-  }
+    if (onChanged) onChanged();
+  };
 
   const toggleSelect = (id: string) => {
     const next = new Set(selectedMatches);
@@ -801,6 +763,41 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
   [matches, selectedMatches]);
 
   const canBatch = selectedMatches.size > 0;
+  const unscheduledVisible = useMemo(() => filteredMatches.filter(m => !m.match_date), [filteredMatches]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-12">
+        <XCircle className="h-8 w-8 text-destructive" />
+        <p className="text-sm text-muted-foreground">Erro ao carregar partidas</p>
+        <Button size="sm" variant="outline" onClick={() => refetch()}>
+          <RefreshCw className="h-3.5 w-3.5 mr-1" /> Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
+  if (matches.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-12 text-center">
+        <CalendarClock className="h-10 w-10 text-muted-foreground opacity-50" />
+        <p className="text-muted-foreground">
+          Nenhuma partida encontrada. Volte ao passo anterior e gere as partidas/baterias primeiro.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -811,11 +808,25 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
             <CalendarClock className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-bold text-foreground">Agendamento em Lote</p>
-            <p className="text-[11px] text-muted-foreground">Marque os confrontos na tabela e agende-os em sequência.</p>
+            <p className="text-sm font-bold text-foreground">Agendamento Inteligente</p>
+            <p className="text-[11px] text-muted-foreground">Agende rapidamente as partidas pendentes ou selecionadas.</p>
           </div>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
+          {unscheduledVisible.length > 0 && !canBatch && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setSelectedMatches(new Set(unscheduledVisible.map(m => m.id)));
+                setShowBatch(true);
+              }}
+              className="flex-1 sm:flex-none text-xs border-primary/30 text-primary hover:bg-primary/5"
+            >
+              <CalendarClock className="h-3.5 w-3.5 mr-2" />
+              Agendar Pendentes ({unscheduledVisible.length})
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -962,7 +973,7 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
               <TableBody>
                 {filteredMatches.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={canEdit ? 8 : 7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={canEdit ? 9 : 8} className="text-center text-muted-foreground py-8">
                       Nenhum resultado para os filtros aplicados.
                     </TableCell>
                   </TableRow>
