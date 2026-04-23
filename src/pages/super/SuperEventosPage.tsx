@@ -6,9 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Search, Calendar } from "lucide-react";
+import { Search, Calendar, Globe, CalendarRange } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEventContext } from "@/contexts/EventContext";
+import { toast } from "sonner";
 
 export default function SuperEventosPage() {
   const [search, setSearch] = useState("");
@@ -16,7 +17,7 @@ export default function SuperEventosPage() {
   const navigate = useNavigate();
   const { setActiveEventId } = useEventContext();
 
-  const { data: events, isLoading } = useQuery({
+  const { data: events, isLoading, refetch } = useQuery({
     queryKey: ["super-events"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -39,6 +40,30 @@ export default function SuperEventosPage() {
     navigate("/admin");
   };
 
+  const togglePublic = async (eventId: string, current: boolean) => {
+    const { error } = await supabase
+      .from("events")
+      .update({ is_public: !current })
+      .eq("id", eventId);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(current ? "Evento ocultado do portal público" : "Evento visível no portal público");
+      refetch();
+    }
+  };
+
+  const toggleAgenda = async (eventId: string, current: boolean) => {
+    const { error } = await supabase
+      .from("events")
+      .update({ public_agenda_published: !current })
+      .eq("id", eventId);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(current ? "Agenda removida do portal público" : "Agenda publicada no portal público");
+      refetch();
+    }
+  };
+
   const statusColors: Record<string, string> = {
     active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     draft: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
@@ -48,8 +73,8 @@ export default function SuperEventosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Eventos</h1>
-        <p className="text-sm text-zinc-400 mt-1">Todos os eventos de todos os clientes.</p>
+        <h1 className="text-2xl font-bold">Gestão de Eventos</h1>
+        <p className="text-sm text-zinc-400 mt-1">Gerencie a visibilidade pública e o status de todos os eventos.</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -75,14 +100,15 @@ export default function SuperEventosPage() {
         </Select>
       </div>
 
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900">
+      <div className="rounded-lg border border-zinc-800 bg-zinc-900 overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="border-zinc-800 hover:bg-zinc-800/50">
               <TableHead className="text-zinc-400">Nome</TableHead>
               <TableHead className="text-zinc-400">Ano</TableHead>
+              <TableHead className="text-zinc-400 text-center">Portal Público</TableHead>
+              <TableHead className="text-zinc-400 text-center">Agenda Pública</TableHead>
               <TableHead className="text-zinc-400">Status</TableHead>
-              <TableHead className="text-zinc-400">Criado em</TableHead>
               <TableHead className="text-zinc-400 text-right">Ação</TableHead>
             </TableRow>
           </TableHeader>
@@ -92,14 +118,15 @@ export default function SuperEventosPage() {
                 <TableRow key={i} className="border-zinc-800">
                   <TableCell><Skeleton className="h-4 w-40 bg-zinc-800" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-12 bg-zinc-800" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16 bg-zinc-800 mx-auto" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16 bg-zinc-800 mx-auto" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16 bg-zinc-800" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24 bg-zinc-800" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-20 bg-zinc-800" /></TableCell>
                 </TableRow>
               ))
             ) : filtered.length === 0 ? (
               <TableRow className="border-zinc-800">
-                <TableCell colSpan={5} className="text-center py-12 text-zinc-500">
+                <TableCell colSpan={6} className="text-center py-12 text-zinc-500">
                   <Calendar className="mx-auto h-10 w-10 mb-2 text-zinc-600" />
                   <p>Nenhum evento encontrado.</p>
                 </TableCell>
@@ -109,20 +136,41 @@ export default function SuperEventosPage() {
                 <TableRow key={event.id} className="border-zinc-800 hover:bg-zinc-800/50 text-zinc-200">
                   <TableCell className="font-medium">{event.name}</TableCell>
                   <TableCell>{event.year}</TableCell>
+                  <TableCell className="text-center">
+                    <button 
+                      onClick={() => togglePublic(event.id, event.is_public)}
+                      className={cn(
+                        "p-2 rounded-lg transition-colors",
+                        event.is_public ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30" : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700"
+                      )}
+                      title={event.is_public ? "Ocultar do Portal" : "Mostrar no Portal"}
+                    >
+                      <Globe className="h-4 w-4" />
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <button 
+                      onClick={() => toggleAgenda(event.id, event.public_agenda_published)}
+                      className={cn(
+                        "p-2 rounded-lg transition-colors",
+                        event.public_agenda_published ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30" : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700"
+                      )}
+                      title={event.public_agenda_published ? "Remover Agenda Pública" : "Publicar Agenda Pública"}
+                    >
+                      <CalendarRange className="h-4 w-4" />
+                    </button>
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={statusColors[event.status] || "text-zinc-400"}>
                       {event.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-zinc-400 text-sm">
-                    {new Date(event.created_at).toLocaleDateString("pt-BR")}
-                  </TableCell>
                   <TableCell className="text-right">
                     <button
                       onClick={() => handleEnterEvent(event.id)}
-                      className="text-xs text-amber-400 hover:text-amber-300 font-medium"
+                      className="text-xs text-amber-400 hover:text-amber-300 font-medium px-3 py-1.5 rounded border border-amber-400/20 hover:border-amber-400/50 transition-colors"
                     >
-                      Entrar como Admin →
+                      Entrar →
                     </button>
                   </TableCell>
                 </TableRow>
