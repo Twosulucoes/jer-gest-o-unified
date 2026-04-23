@@ -10,19 +10,19 @@
  *  - Coordenação          = âmbar  (#F59E0B) — alertas usam vermelho/amarelo
  */
 const MODULE_ACCENTS: Array<{ test: (path: string) => boolean; accent: string }> = [
-  { test: (p) => p.includes("/transporte"), accent: "217 91% 60%" },           // azul
-  { test: (p) => p.includes("/alimentacao"), accent: "142 71% 45%" },          // verde
-  { test: (p) => p.includes("/alojamento"), accent: "271 91% 65%" },           // roxo
-  { test: (p) => p.includes("/aovivo"), accent: "0 84% 60%" },                 // vermelho
-  { test: (p) => p.includes("/competicao"), accent: "0 84% 60%" },             // vermelho
-  { test: (p) => p.includes("/coordenacao"), accent: "38 92% 50%" },           // âmbar
-  { test: (p) => p.includes("/delegacao"), accent: "38 92% 50%" },             // âmbar
-  { test: (p) => p.includes("/super"), accent: "212 100% 60%" },               // azul institucional
-  { test: (p) => p.includes("/admin"), accent: "212 100% 60%" },               // azul institucional
+  { test: (p) => p.includes("/transporte"), accent: "212 100% 67%" },   // blue   #58a6ff
+  { test: (p) => p.includes("/alimentacao"), accent: "134 48% 49%" },   // green  #3fb950
+  { test: (p) => p.includes("/alojamento"), accent: "263 100% 78%" },   // purple #bc8cff
+  { test: (p) => p.includes("/aovivo"), accent: "4 92% 62%" },          // red    #f85149
+  { test: (p) => p.includes("/competicao"), accent: "4 92% 62%" },      // red
+  { test: (p) => p.includes("/coordenacao"), accent: "212 100% 67%" },  // blue
+  { test: (p) => p.includes("/delegacao"), accent: "39 100% 47%" },     // amber  #f0a500
+  { test: (p) => p.includes("/super"), accent: "39 100% 47%" },         // amber
+  { test: (p) => p.includes("/admin"), accent: "39 100% 47%" },         // amber
 ];
 
 export function getModuleAccentForPath(pathname: string): string {
   const normalized = pathname.toLowerCase();
   const found = MODULE_ACCENTS.find((entry) => entry.test(normalized));
-  return found?.accent ?? "38 92% 50%";
+  return found?.accent ?? "39 100% 47%";
 }
