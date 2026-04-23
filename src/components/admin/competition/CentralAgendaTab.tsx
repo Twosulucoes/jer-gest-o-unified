@@ -189,13 +189,12 @@ function ScheduleMatchDialog({
       if (error) throw error;
 
       // Audit
-      // @ts-ignore
       await supabase.from("audit_events").insert({
-        table_name: "competition_matches",
-        record_id: match.id,
         action: "schedule_edit",
+        record_id: match.id,
+        table_name: "competition_matches",
         payload: { match_date: matchDate, start_time: startTime, venue_id: venueId },
-      });
+      } as any);
 
       // Check for conflicts
       const { data: conflicts } = await supabase
