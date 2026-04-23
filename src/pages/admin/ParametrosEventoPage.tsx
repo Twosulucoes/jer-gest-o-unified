@@ -194,11 +194,7 @@ export default function ParametrosEventoPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Parâmetros do Evento</h1>
-        {activeEvent && (
-          <p className="text-sm text-muted-foreground mt-1">
-            Evento ativo: <strong>{activeEvent.name}</strong> ({activeEvent.year})
-          </p>
-        )}
+        {/* Event name removed as redundant */}
       </div>
 
       <Tabs defaultValue="participacao" className="w-full">

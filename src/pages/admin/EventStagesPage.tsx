@@ -165,8 +165,7 @@ export default function EventStagesPage() {
             <Layers className="h-6 w-6 text-primary" /> Etapas do evento
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Etapas administrativas internas (ex.: Caracaraí, Bonfim, Final). Vinculadas ao evento{" "}
-            <strong className="text-foreground">{activeEvent?.name} ({activeEvent?.year})</strong>.
+            Gerencie as etapas administrativas internas (ex.: Caracaraí, Bonfim, Final).
           </p>
         </div>
         {canWrite && (
