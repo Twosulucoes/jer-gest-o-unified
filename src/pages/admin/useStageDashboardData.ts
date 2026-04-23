@@ -53,7 +53,7 @@ export function useStageDashboardData(stageId?: string | null) {
         queryFn: () => safe(async () => {
           const { data } = await supabase.from("participant_event_stages" as never)
             .select("participant_id, participants(credentialed_at)")
-            .eq("event_stage_id", stageId!);
+            .eq("event_stage_id" as any, stageId!);
           return (data ?? []) as any[];
         }, []),
       },
@@ -65,7 +65,7 @@ export function useStageDashboardData(stageId?: string | null) {
         queryFn: () => safe(async () => {
           const { data } = await supabase.from("competition_matches")
             .select("id, status, sport_event_id, start_time, match_date, sport_events(name, sports(name))")
-            .eq("event_stage_id", stageId!);
+            .eq("event_stage_id" as any, stageId!);
           return (data ?? []) as any[];
         }, []),
       },
@@ -77,7 +77,7 @@ export function useStageDashboardData(stageId?: string | null) {
         queryFn: () => safe(async () => {
           const { data } = await supabase.from("lodging_units")
             .select("id, capacity")
-            .eq("event_stage_id", stageId!)
+            .eq("event_stage_id" as any, stageId!)
             .eq("is_active", true);
           return data ?? [];
         }, []),
@@ -90,7 +90,7 @@ export function useStageDashboardData(stageId?: string | null) {
         queryFn: () => safe(async () => {
           const { count } = await supabase.from("lodging_occupancies")
             .select("id", { count: "exact", head: true })
-            .eq("event_stage_id", stageId!)
+            .eq("event_stage_id" as any, stageId!)
             .in("status", ["allocated", "checked_in"]);
           return count ?? 0;
         }, 0),
@@ -103,7 +103,7 @@ export function useStageDashboardData(stageId?: string | null) {
         queryFn: () => safe(async () => {
           const { data } = await supabase.from("meal_windows")
             .select("id, service_date")
-            .eq("event_stage_id", stageId!);
+            .eq("event_stage_id" as any, stageId!);
           return data ?? [];
         }, []),
       },
@@ -144,7 +144,6 @@ export function useStageDashboardData(stageId?: string | null) {
   const LU = lodgingUnits ?? [];
   const LO = lodgingOccupied ?? 0;
   const C = consumptions ?? [];
-  const MW = mealWindows ?? [];
 
   const credentialed = P.filter(p => p.participants?.credentialed_at).length;
   const matchesDone = MA.filter(m => m.status === 'completed' || m.status === 'finished').length;
