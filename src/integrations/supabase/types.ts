@@ -6649,6 +6649,10 @@ export type Database = {
         }
         Returns: Json
       }
+      check_is_admin_or_secretaria: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       check_modality_coordinator_access: {
         Args: { p_sport_id: string }
         Returns: boolean
