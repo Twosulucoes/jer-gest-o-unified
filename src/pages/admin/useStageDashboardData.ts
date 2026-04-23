@@ -45,66 +45,61 @@ export function useStageDashboardData(stageId?: string | null) {
 
   const queries = useQueries({
     queries: [
-      // 0: participant_event_stages (link between participants and stage)
       {
         queryKey: ["stage_dash", "participants", stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("participant_event_stages" as never)
+          const { data } = await supabase.from("participant_event_stages" as any)
             .select("participant_id, participants(credentialed_at)")
-            .eq("event_stage_id" as any, stageId!);
+            .eq("event_stage_id", stageId!);
           return (data ?? []) as any[];
         }, []),
       },
-      // 1: competition_matches for this stage
       {
         queryKey: ["stage_dash", "matches", stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("competition_matches")
+          const { data } = await supabase.from("competition_matches" as any)
             .select("id, status, sport_event_id, start_time, match_date, sport_events(name, sports(name))")
-            .eq("event_stage_id" as any, stageId!);
+            .eq("event_stage_id", stageId!);
           return (data ?? []) as any[];
         }, []),
       },
-      // 2: lodging_units linked to this stage
       {
         queryKey: ["stage_dash", "lodging_units", stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("lodging_units")
+          const { data } = await supabase.from("lodging_units" as any)
             .select("id, capacity")
-            .eq("event_stage_id" as any, stageId!)
+            .eq("event_stage_id", stageId!)
             .eq("is_active", true);
-          return data ?? [];
+          return (data ?? []) as any[];
         }, []),
       },
-      // 3: lodging_occupancies for this stage
       {
         queryKey: ["stage_dash", "lodging_occupancies", stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { count } = await supabase.from("lodging_occupancies")
+          const { count } = await supabase.from("lodging_occupancies" as any)
             .select("id", { count: "exact", head: true })
-            .eq("event_stage_id" as any, stageId!)
+            .eq("event_stage_id", stageId!)
             .in("status", ["allocated", "checked_in"]);
           return count ?? 0;
         }, 0),
       },
-      // 4: meal_windows for this stage
       {
         queryKey: ["stage_dash", "meal_windows", stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("meal_windows")
+          const { data } = await supabase.from("meal_windows" as any)
             .select("id, service_date")
-            .eq("event_stage_id" as any, stageId!);
-          return data ?? [];
+            .eq("event_stage_id", stageId!);
+          return (data ?? []) as any[];
         }, []),
       },
     ],
@@ -125,10 +120,10 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled: enabled && windowIds.length > 0,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("meal_consumptions")
+          const { data } = await supabase.from("meal_consumptions" as any)
             .select("id, consumed_at, meal_window_id")
             .in("meal_window_id", windowIds);
-          return data ?? [];
+          return (data ?? []) as any[];
         }, []),
       }
     ]
@@ -137,7 +132,6 @@ export function useStageDashboardData(stageId?: string | null) {
   const consumptions = consumptionQuery[0].data ?? [];
   const isLoadingAll = isLoading || consumptionQuery[0].isLoading;
 
-  // Calculations
   const today = todayISO();
   const P = participants ?? [];
   const MA = matches ?? [];
