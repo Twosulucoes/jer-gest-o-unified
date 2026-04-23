@@ -177,30 +177,31 @@ export default function PreValidacaoPage() {
   const [championMark, setChampionMark] = useState("");
   const [championNotes, setChampionNotes] = useState("");
 
-  // Step 1: Auto-sync collective teams
+  // Sincronização manual de equipes coletivas (opcional, sob demanda)
+  // ⚠️ Não roda automaticamente: a RPC pode ser lenta em eventos grandes
+  // e estava travando a página com loading infinito quando excedia o timeout.
   const syncMut = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc("rpc_sync_collective_teams", { p_event_id: eventId });
       if (error) throw error;
       return data;
     },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Equipes sincronizadas",
+        description: `${data?.teams_created ?? 0} criada(s), ${data?.members_added ?? 0} membro(s) adicionado(s).`,
+      });
+      qc.invalidateQueries({ queryKey: ["pre-validacao"] });
+    },
     onError: (e: any) => {
       toast({ title: "Erro na sincronização", description: e.message, variant: "destructive" });
     },
   });
 
-  // Auto-trigger sync on mount
-  useEffect(() => {
-    if (eventId) {
-      syncMut.mutate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId]);
-
-  // Step 2: Fetch all sport_events with counts
+  // Step 2: Fetch all sport_events with counts (carrega imediatamente, sem bloquear no sync)
   const { data: rows = [], isLoading: loadingData, refetch } = useQuery({
     queryKey: ["pre-validacao", eventId],
-    enabled: !!eventId && !syncMut.isPending,
+    enabled: !!eventId,
     queryFn: async () => {
       // Fetch sport_events
       const { data: sportEvents, error: seErr } = await supabase
