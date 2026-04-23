@@ -693,7 +693,7 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
   const { data: conflictsRaw } = useQuery({
     queryKey: ["agenda-conflicts", eventId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("rpc_detect_schedule_conflicts", { p_event_id: eventId });
+      const { data, error } = await supabase.rpc("rpc_detect_schedule_conflicts", { p_event_id: eventId, p_sport_event_id: sportEventId });
       if (error) throw error;
       return data as any;
     },
