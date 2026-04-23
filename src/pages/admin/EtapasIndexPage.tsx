@@ -50,7 +50,6 @@ export default function EtapasIndexPage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Selecione uma etapa para acessar todos os módulos operacionais filtrados por ela.
-            Evento: <strong className="text-foreground">{activeEvent?.name} ({activeEvent?.year})</strong>
           </p>
         </div>
         <Button variant="outline" asChild>
