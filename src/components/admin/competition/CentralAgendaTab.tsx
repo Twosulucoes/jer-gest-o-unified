@@ -410,13 +410,13 @@ function BatchScheduleDialog({
 
   const preview = useMemo(() => {
     if (!startTime) return [];
-    return unscheduledMatches.map((m, i) => {
+    return selectedMatches.map((m, i) => {
       const totalMinutes = parseTimeToMinutes(startTime) + i * interval;
       const hh = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
       const mm = String(totalMinutes % 60).padStart(2, "0");
       return { ...m, scheduledTime: `${hh}:${mm}` };
     });
-  }, [unscheduledMatches, startTime, interval]);
+  }, [selectedMatches, startTime, interval]);
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -458,7 +458,7 @@ function BatchScheduleDialog({
         <DialogHeader>
           <DialogTitle>Agendar em lote</DialogTitle>
           <DialogDescription>
-            Definir data, local e horários sequenciais para {unscheduledMatches.length} partida(s) não agendada(s).
+            Definir data, local e horários sequenciais para {selectedMatches.length} partida(s).
           </DialogDescription>
         </DialogHeader>
 
@@ -802,6 +802,8 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
 
   const canBatch = selectedMatches.size > 0;
 
+  const unscheduledVisible = useMemo(() => filteredMatches.filter(m => !m.match_date), [filteredMatches]);
+
   return (
     <div className="space-y-4">
       {/* Smart Batch Actions Bar */}
@@ -811,11 +813,25 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
             <CalendarClock className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-bold text-foreground">Agendamento em Lote</p>
-            <p className="text-[11px] text-muted-foreground">Marque os confrontos na tabela e agende-os em sequência.</p>
+            <p className="text-sm font-bold text-foreground">Agendamento Inteligente</p>
+            <p className="text-[11px] text-muted-foreground">Agende rapidamente as partidas pendentes ou selecionadas.</p>
           </div>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
+          {unscheduledVisible.length > 0 && !canBatch && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setSelectedMatches(new Set(unscheduledVisible.map(m => m.id)));
+                setShowBatch(true);
+              }}
+              className="flex-1 sm:flex-none text-xs border-primary/30 text-primary hover:bg-primary/5"
+            >
+              <CalendarClock className="h-3.5 w-3.5 mr-2" />
+              Agendar Pendentes ({unscheduledVisible.length})
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -832,7 +848,7 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
             className="flex-1 sm:flex-none text-xs bg-primary hover:bg-primary/90 shadow-sm px-4"
           >
             <CalendarPlus className="h-3.5 w-3.5 mr-2" />
-            Agendar ({selectedMatches.size})
+            Agendar Selecionados ({selectedMatches.size})
           </Button>
         </div>
       </div>
