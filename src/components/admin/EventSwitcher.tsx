@@ -36,7 +36,7 @@ export default function EventSwitcher() {
         <SelectContent>
           {events.map((e) => (
             <SelectItem key={e.id} value={e.id} className="text-xs">
-              {e.name} ({e.year})
+              {e.name}
             </SelectItem>
           ))}
         </SelectContent>
