@@ -56,42 +56,35 @@ interface ProvaRow {
 }
 
 // ── Status computation ─────────────────────────────────────
-function computeProvaData(
-  se: any,
-  rulesMap: Map<string, any>,
-  phaseMap: Map<string, number>,
-  groupMap: Map<string, number>,
-  matchMap: Map<string, { total: number; withResult: number; withSchedule: number; validated: number; published: number }>,
-  teamMap: Map<string, number>,
-  enrolledMap: Map<string, number>,
-): ProvaRow {
-  const rule = rulesMap.get(se.id);
-  const sport = se.sports as any;
-  const cat = se.categories as any;
-  const isCollective = sport?.is_collective === true;
-  const releasedAt = rule?.released_at ?? null;
+function computeProvaData(row: any): ProvaRow {
+  const isCollective = row.is_collective;
+  const releasedAt = row.released_at;
 
-  const enrolled = enrolledMap.get(se.id) ?? 0;
-  const teams = teamMap.get(se.id) ?? 0;
-  const phases = phaseMap.get(se.id) ?? 0;
-  const groups = groupMap.get(se.id) ?? 0;
-  const m = matchMap.get(se.id) ?? { total: 0, withResult: 0, withSchedule: 0, validated: 0, published: 0 };
+  const enrolled = row.enrolled_count;
+  const teams = row.team_count;
+  const phases = row.phase_count;
+  const groups = row.group_count;
+  const matchCount = row.match_count;
+  const withResult = row.matches_with_result;
+  const withSchedule = row.matches_with_schedule;
+  const validated = row.results_validated;
+  const published = row.results_published;
 
   // Steps
   const steps: StepStatus[] = isCollective
     ? [
         { key: "teams", label: "Equipes", state: teams > 0 ? "done" : "pending" },
         { key: "structure", label: "Estrutura", state: phases > 0 ? "done" : "pending" },
-        { key: "matches", label: "Partidas", state: m.total > 0 ? "done" : "pending" },
-        { key: "agenda", label: "Agenda", state: m.total > 0 && m.withSchedule === m.total ? "done" : m.withSchedule > 0 ? "active" : "pending" },
-        { key: "results", label: "Resultados", state: m.total > 0 && m.withResult === m.total ? "done" : m.withResult > 0 ? "active" : "pending" },
-        { key: "published", label: "Publicado", state: m.total > 0 && m.published === m.total ? "done" : m.published > 0 ? "active" : "pending" },
+        { key: "matches", label: "Partidas", state: matchCount > 0 ? "done" : "pending" },
+        { key: "agenda", label: "Agenda", state: matchCount > 0 && withSchedule === matchCount ? "done" : withSchedule > 0 ? "active" : "pending" },
+        { key: "results", label: "Resultados", state: matchCount > 0 && withResult === matchCount ? "done" : withResult > 0 ? "active" : "pending" },
+        { key: "published", label: "Publicado", state: matchCount > 0 && published === matchCount ? "done" : published > 0 ? "active" : "pending" },
       ]
     : [
         { key: "athletes", label: "Atletas", state: enrolled > 0 ? "done" : "pending" },
         { key: "structure", label: "Estrutura", state: phases > 0 ? "done" : "pending" },
-        { key: "results", label: "Resultados", state: m.total > 0 && m.withResult === m.total ? "done" : m.withResult > 0 ? "active" : "pending" },
-        { key: "published", label: "Publicado", state: m.total > 0 && m.published === m.total ? "done" : m.published > 0 ? "active" : "pending" },
+        { key: "results", label: "Resultados", state: matchCount > 0 && withResult === matchCount ? "done" : withResult > 0 ? "active" : "pending" },
+        { key: "published", label: "Publicado", state: matchCount > 0 && published === matchCount ? "done" : published > 0 ? "active" : "pending" },
       ];
 
   const doneCount = steps.filter((s) => s.state === "done").length;
@@ -104,7 +97,7 @@ function computeProvaData(
     status = "bloqueada";
   } else if (doneCount === steps.length) {
     status = "concluida";
-  } else if (m.withResult > 0 && m.validated < m.withResult) {
+  } else if (withResult > 0 && validated < withResult) {
     status = "com_pendencia";
   } else if (doneCount === 0) {
     status = "nao_iniciada";
@@ -113,22 +106,22 @@ function computeProvaData(
   }
 
   return {
-    id: se.id,
-    name: se.name,
-    sport_name: sport?.name ?? "—",
-    sport_id: se.sport_id,
-    category_name: cat?.name ?? "—",
+    id: row.sport_event_id,
+    name: row.name,
+    sport_name: row.sport_name,
+    sport_id: row.sport_id,
+    category_name: row.category_name,
     is_collective: isCollective,
     released_at: releasedAt,
     enrolled_count: enrolled,
     team_count: teams,
     phase_count: phases,
     group_count: groups,
-    match_count: m.total,
-    matches_with_result: m.withResult,
-    matches_with_schedule: m.withSchedule,
-    results_validated: m.validated,
-    results_published: m.published,
+    match_count: matchCount,
+    matches_with_result: withResult,
+    matches_with_schedule: withSchedule,
+    results_validated: validated,
+    results_published: published,
     status,
     steps,
     progress,
@@ -190,104 +183,24 @@ export default function CompeticaoPainelPage() {
     enabled: !!eventId && (!isCoordModalidade || !loadingSportLinks),
     staleTime: 30_000,
     queryFn: async () => {
-      // Parallel fetches
-      let seQuery = supabase.from("sport_events").select("id, name, sport_id, category_id, sports(name, is_collective), categories(name, gender_scope)").eq("event_id", eventId!).eq("is_active", true).order("name");
-      if (mySportIds && mySportIds.length > 0) seQuery = seQuery.in("sport_id", mySportIds);
-      if (mySportIds && mySportIds.length === 0) return []; // coord without links
+      let query = supabase
+        .from("vw_sport_event_summary")
+        .select("*")
+        .eq("event_id", eventId!)
+        .eq("is_active", true)
+        .order("sport_name")
+        .order("name");
 
-      const [seRes, rulesRes, phasesRes, groupsRes, matchesRes, resultsRes, teamsRes, enrolledRes] = await Promise.all([
-        seQuery,
-        supabase.from("sport_event_rules").select("sport_event_id, released_at").eq("event_id", eventId!),
-        supabase.from("competition_phases").select("id, sport_event_id").eq("event_id", eventId!),
-        supabase.from("competition_groups").select("id, phase_id").eq("event_id", eventId!),
-        supabase.from("competition_matches").select("id, sport_event_id, match_date, start_time, venue_id, status").eq("event_id", eventId!),
-        supabase.from("competition_match_results").select("id, match_id, result_status, match_entry_id").eq("result_status", "resultado_lancado").limit(5000),
-        supabase.from("teams").select("id, sport_event_id").eq("event_id", eventId!).eq("status", "active"),
-        supabase.from("participant_sport_events").select("id, sport_event_id").in("status", ["confirmed", "approved", "valid", "active"]),
-      ]);
-
-      if (seRes.error) throw seRes.error;
-
-      // Build maps
-      const rulesMap = new Map((rulesRes.data ?? []).map((r: any) => [r.sport_event_id, r]));
-
-      // Phase count per sport_event — need to map phases to sport_events
-      // We need sport_event_id on phases
-      const phasesBySe = new Map<string, number>();
-      // Re-fetch with sport_event_id
-      const { data: phasesData } = await supabase.from("competition_phases").select("id, sport_event_id").eq("event_id", eventId!);
-      for (const p of phasesData ?? []) {
-        phasesBySe.set(p.sport_event_id, (phasesBySe.get(p.sport_event_id) ?? 0) + 1);
+      if (mySportIds && mySportIds.length > 0) {
+        query = query.in("sport_id", mySportIds);
+      } else if (isCoordModalidade && mySportIds && mySportIds.length === 0) {
+        return [];
       }
 
-      const groupsBySe = new Map<string, number>();
-      // Groups don't have sport_event_id directly, need to join via phases
-      const phaseIdToSe = new Map<string, string>();
-      for (const p of phasesData ?? []) phaseIdToSe.set(p.id, p.sport_event_id);
-      // Re-use groupsRes which has phase_id
-      for (const g of groupsRes.data ?? []) {
-        const seId = phaseIdToSe.get(g.phase_id);
-        if (seId) groupsBySe.set(seId, (groupsBySe.get(seId) ?? 0) + 1);
-      }
+      const { data, error } = await query;
+      if (error) throw error;
 
-      // Matches per sport_event
-      const matchBySe = new Map<string, { total: number; withResult: number; withSchedule: number; validated: number; published: number }>();
-      const matchIds = new Set<string>();
-      for (const m of matchesRes.data ?? []) {
-        if (!m.sport_event_id) continue;
-        const entry = matchBySe.get(m.sport_event_id) ?? { total: 0, withResult: 0, withSchedule: 0, validated: 0, published: 0 };
-        entry.total++;
-        if (m.match_date && m.start_time) entry.withSchedule++;
-        matchBySe.set(m.sport_event_id, entry);
-        matchIds.add(m.id);
-      }
-
-      // Results — we need ALL results not just lancado, let me refetch properly
-      const { data: allResults } = await supabase
-        .from("competition_match_results")
-        .select("id, match_id, result_status")
-        .limit(5000);
-
-      // Map match_id to sport_event_id via matchesRes
-      const matchToSe = new Map<string, string>();
-      for (const m of matchesRes.data ?? []) {
-        if (m.sport_event_id) matchToSe.set(m.id, m.sport_event_id);
-      }
-
-      const matchesWithResult = new Set<string>();
-      const matchesValidated = new Set<string>();
-      const matchesPublished = new Set<string>();
-      for (const r of allResults ?? []) {
-        matchesWithResult.add(r.match_id);
-        if (r.result_status === RESULT_STATUS.VALIDATED || r.result_status === RESULT_STATUS.PUBLISHED) matchesValidated.add(r.match_id);
-        if (r.result_status === RESULT_STATUS.PUBLISHED) matchesPublished.add(r.match_id);
-      }
-
-      // Update matchBySe with result counts
-      for (const [matchId, seId] of matchToSe) {
-        const entry = matchBySe.get(seId);
-        if (!entry) continue;
-        if (matchesWithResult.has(matchId)) entry.withResult++;
-        if (matchesValidated.has(matchId)) entry.validated++;
-        if (matchesPublished.has(matchId)) entry.published++;
-      }
-
-      // Teams per sport_event
-      const teamBySe = new Map<string, number>();
-      for (const t of teamsRes.data ?? []) {
-        teamBySe.set(t.sport_event_id, (teamBySe.get(t.sport_event_id) ?? 0) + 1);
-      }
-
-      // Enrolled per sport_event
-      const enrolledBySe = new Map<string, number>();
-      for (const e of enrolledRes.data ?? []) {
-        enrolledBySe.set(e.sport_event_id, (enrolledBySe.get(e.sport_event_id) ?? 0) + 1);
-      }
-
-      // Build rows
-      return (seRes.data ?? []).map((se: any) =>
-        computeProvaData(se, rulesMap, phasesBySe, groupsBySe, matchBySe, teamBySe, enrolledBySe)
-      );
+      return (data ?? []).map((row: any) => computeProvaData(row));
     },
   });
 
