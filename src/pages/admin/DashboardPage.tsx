@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,12 +8,21 @@ import {
   Users, UserCheck, ShieldCheck, Bus, UtensilsCrossed, Building, Trophy,
   CheckCircle2, AlertTriangle, Clock, TrendingUp,
   Upload, UsersRound, ScanLine, Navigation, ClipboardList, CalendarDays, KeyRound,
+  RefreshCw, Bed, Truck, CalendarClock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppKPI } from "@/components/app/AppKPI";
 import { AppPageHeader } from "@/components/app/AppPageHeader";
 import { useActiveEventId, useEventContext } from "@/contexts/EventContext";
+import { useDashboardData } from "./relatorios/useDashboardData";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
+} from "recharts";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -48,13 +58,20 @@ const getRoleLabel = (role: string) => {
   return labels[role] || role;
 };
 
+const PALETTE = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--success, 142 71% 45%))", "hsl(var(--warning, 38 92% 50%))", "hsl(var(--destructive))", "hsl(var(--muted-foreground))"];
+
+function fmtDate(d: string) {
+  try { return new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }); }
+  catch { return d; }
+}
+
 export default function DashboardPage() {
   const { profile, roles, hasRole } = useAuth();
-  const selectedEventId = useActiveEventId();
+  const eventId = useActiveEventId();
   const { activeEvent } = useEventContext();
+  const [showAllDel, setShowAllDel] = useState(false);
 
   const visibleActions = quickActions.filter((a) => a.roles.some((r) => hasRole(r)));
-  const eventId = selectedEventId;
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
@@ -65,103 +82,18 @@ export default function DashboardPage() {
     },
   });
 
-  const { data: participantsCount = 0, isLoading: pLoading } = useQuery({
-    queryKey: ["dash-participants", eventId],
-    queryFn: async () => {
-      const { count, error } = await supabase.from("participants").select("id", { count: "exact", head: true }).eq("event_id", eventId);
-      if (error) throw error;
-      return count ?? 0;
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: credentialedCount = 0 } = useQuery({
-    queryKey: ["dash-credentialed", eventId],
-    queryFn: async () => {
-      const { count, error } = await supabase.from("participants").select("id", { count: "exact", head: true }).eq("event_id", eventId).not("credentialed_at", "is", null);
-      if (error) throw error;
-      return count ?? 0;
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: credentialsData = { active: 0, total: 0 } } = useQuery({
-    queryKey: ["dash-credentials", eventId],
-    queryFn: async () => {
-      const { count: total, error: e1 } = await supabase.from("participant_credentials").select("id", { count: "exact", head: true }).eq("event_id", eventId);
-      if (e1) throw e1;
-      const { count: active, error: e2 } = await supabase.from("participant_credentials").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("status", "active");
-      if (e2) throw e2;
-      return { active: active ?? 0, total: total ?? 0 };
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: transportData = { trips: 0, passengers: 0 } } = useQuery({
-    queryKey: ["dash-transport", eventId],
-    queryFn: async () => {
-      const { count: trips, error: e1 } = await supabase.from("transport_trips").select("id", { count: "exact", head: true }).eq("event_id", eventId);
-      if (e1) throw e1;
-      const { data: tripIds, error: e2 } = await supabase.from("transport_trips").select("id").eq("event_id", eventId);
-      if (e2) throw e2;
-      if (!tripIds?.length) return { trips: trips ?? 0, passengers: 0 };
-      const { count: passengers, error: e3 } = await supabase.from("transport_passengers").select("id", { count: "exact", head: true }).in("trip_id", tripIds.map(t => t.id)).eq("status", "boarded");
-      if (e3) throw e3;
-      return { trips: trips ?? 0, passengers: passengers ?? 0 };
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: mealsData = { windows: 0, consumptions: 0 } } = useQuery({
-    queryKey: ["dash-meals", eventId],
-    queryFn: async () => {
-      const { count: windows, error: e1 } = await supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("is_active", true);
-      if (e1) throw e1;
-      const { data: windowIds, error: e2 } = await supabase.from("meal_windows").select("id").eq("event_id", eventId);
-      if (e2) throw e2;
-      if (!windowIds?.length) return { windows: windows ?? 0, consumptions: 0 };
-      const { count: consumptions, error: e3 } = await supabase.from("meal_consumptions").select("id", { count: "exact", head: true }).in("meal_window_id", windowIds.map(w => w.id));
-      if (e3) throw e3;
-      return { windows: windows ?? 0, consumptions: consumptions ?? 0 };
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: lodgingData = { units: 0, capacity: 0, occupied: 0 } } = useQuery({
-    queryKey: ["dash-lodging", eventId],
-    queryFn: async () => {
-      const { data: units, error: e1 } = await supabase.from("lodging_units").select("id, capacity").eq("event_id", eventId).eq("is_active", true);
-      if (e1) throw e1;
-      const totalCap = (units ?? []).reduce((s, u) => s + u.capacity, 0);
-      const { count: occupied, error: e2 } = await supabase.from("lodging_occupancies").select("id", { count: "exact", head: true }).eq("event_id", eventId).in("status", ["allocated", "checked_in"]);
-      if (e2) throw e2;
-      return { units: units?.length ?? 0, capacity: totalCap, occupied: occupied ?? 0 };
-    },
-    enabled: !!eventId,
-  });
-
-  const { data: compData = { matches: 0, results: 0, validated: 0, published: 0 } } = useQuery({
-    queryKey: ["dash-competition", eventId],
-    queryFn: async () => {
-      const { count: matches, error: e1 } = await supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", eventId);
-      if (e1) throw e1;
-      const { data: matchIds, error: e1b } = await supabase.from("competition_matches").select("id").eq("event_id", eventId);
-      if (e1b) throw e1b;
-      if (!matchIds?.length) return { matches: matches ?? 0, results: 0, validated: 0, published: 0 };
-      const ids = matchIds.map(m => m.id);
-      const { count: results, error: e2 } = await supabase.from("competition_match_results").select("id", { count: "exact", head: true }).in("match_id", ids);
-      if (e2) throw e2;
-      const { count: validated, error: e3 } = await supabase.from("competition_match_results").select("id", { count: "exact", head: true }).in("match_id", ids).not("validated_at", "is", null);
-      if (e3) throw e3;
-      const { count: published, error: e4 } = await supabase.from("competition_match_results").select("id", { count: "exact", head: true }).in("match_id", ids).eq("result_status", "publicado");
-      if (e4) throw e4;
-      return { matches: matches ?? 0, results: results ?? 0, validated: validated ?? 0, published: published ?? 0 };
-    },
-    enabled: !!eventId,
-  });
+  const { data, isLoading, refetchAll, lastUpdated } = useDashboardData(eventId);
 
   const selectedEvent = events.find(e => e.id === eventId);
-  const isLoading = pLoading;
+  const r = data.resumo;
+  const pct = (n: number, t: number) => (t > 0 ? Math.round((n / t) * 100) : 0);
+
+  const handleRefresh = async () => {
+    await refetchAll();
+    toast.success("Dados atualizados");
+  };
+
+  const delegationsToShow = showAllDel ? data.credenciamento.by_delegation : data.credenciamento.by_delegation.slice(0, 10);
 
   return (
     <div className="animate-fade-in space-y-6">
