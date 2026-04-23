@@ -586,6 +586,7 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
   const [editMatch, setEditMatch] = useState<MatchRow | null>(null);
   const [showBatch, setShowBatch] = useState(false);
   const [inlineEditId, setInlineEditId] = useState<string | null>(null);
+  const [selectedMatches, setSelectedMatches] = useState<Set<string>>(new Set());
 
   // Filters
   const [filterPhase, setFilterPhase] = useState<string>("__all__");
@@ -782,11 +783,6 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
       </div>
     );
   }
-
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-  const [selectedMatches, setSelectedMatches] = useState<Set<string>>(new Set());
 
   const toggleSelect = (id: string) => {
     const next = new Set(selectedMatches);
