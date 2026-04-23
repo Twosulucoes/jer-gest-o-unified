@@ -34,7 +34,7 @@ export default function RequireActiveEvent({ children }: Props) {
             <SelectContent>
               {events.map((e) => (
                 <SelectItem key={e.id} value={e.id}>
-                  {e.name} ({e.year})
+                  {e.name}
                 </SelectItem>
               ))}
             </SelectContent>
