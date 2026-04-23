@@ -12,77 +12,80 @@
 
 @layer base {
   :root {
-    /* === Aliases técnicos (compatibilidade) === */
-    --bg: #0b1220;
-    --surface: #0f1729;
-    --surface2: #131c30;
-    --surface3: #1a2440;
+    /* === JER Design System — GitHub-dark tokens ===
+       bg:#0d1117 surface:#161b22 surface2:#21262d surface3:#2d333b
+       border:#30363d text:#e6edf3 muted:#8b949e
+       amber:#f0a500 green:#3fb950 blue:#58a6ff red:#f85149 purple:#bc8cff */
+
+    /* Aliases técnicos (compatibilidade) */
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --surface3: #2d333b;
     --text: #e6edf3;
-    --muted-text: #94a3b8;
+    --muted-text: #8b949e;
 
-    /* === Cores semânticas de status (dark) === */
-    --amber: 41 100% 56%;
-    --blue: 212 100% 67%;
-    --green: 142 71% 45%;
-    --red: 0 84% 60%;
-    --purple: 271 91% 65%;
+    /* === Cores semânticas de status (DS oficial) === */
+    --amber: 39 100% 47%;     /* #f0a500 */
+    --blue: 212 100% 67%;     /* #58a6ff */
+    --green: 134 48% 49%;     /* #3fb950 */
+    --red: 4 92% 62%;         /* #f85149 */
+    --purple: 263 100% 78%;   /* #bc8cff */
 
-    /* Accent dinâmico por módulo (default = amber) */
-    --module-accent: 41 100% 56%;
-    --module-accent-soft: 41 100% 56%;
+    /* Accent dinâmico por módulo (default = amber — Delegação/Login) */
+    --module-accent: 39 100% 47%;
+    --module-accent-soft: 39 100% 47%;
 
-    /* === Paleta core (dark JER) === */
-    /* Background: azul-marinho/grafite bem escuro */
-    --background: 222 47% 6%;       /* #0a1020 */
-    --foreground: 213 31% 92%;      /* #e6edf3 */
+    /* === Paleta core === */
+    --background: 213 26% 7%;        /* #0d1117 */
+    --foreground: 213 27% 92%;       /* #e6edf3 */
 
-    /* Cards: levemente acima do background, com tinta azulada */
-    --card: 222 38% 10%;            /* #101a2e */
-    --card-foreground: 213 31% 92%;
+    --card: 215 21% 11%;             /* #161b22 — surface */
+    --card-foreground: 213 27% 92%;
 
-    --popover: 222 40% 12%;
-    --popover-foreground: 213 31% 92%;
+    --popover: 215 14% 15%;          /* #21262d — surface2 */
+    --popover-foreground: 213 27% 92%;
 
-    /* Primary = azul institucional JER */
-    --primary: 212 100% 60%;
-    --primary-foreground: 222 47% 6%;
+    /* Primary = âmbar (cor principal do DS) */
+    --primary: 39 100% 47%;
+    --primary-foreground: 213 26% 7%;
 
-    --secondary: 222 30% 16%;
-    --secondary-foreground: 213 31% 92%;
+    --secondary: 215 14% 15%;        /* #21262d */
+    --secondary-foreground: 213 27% 92%;
 
-    --muted: 222 22% 18%;
-    --muted-foreground: 215 18% 62%;
+    --muted: 213 14% 19%;            /* #2d333b — surface3 */
+    --muted-foreground: 213 10% 58%; /* #8b949e */
 
-    --accent: 212 100% 60%;
-    --accent-foreground: 222 47% 6%;
+    --accent: 39 100% 47%;
+    --accent-foreground: 213 26% 7%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 4 92% 62%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Bordas discretas */
-    --border: 222 25% 18%;
-    --input: 222 28% 16%;
-    --ring: 212 100% 60%;
+    /* Bordas — #30363d */
+    --border: 213 12% 21%;
+    --input: 215 14% 15%;
+    --ring: 39 100% 47%;
 
     --radius: 0.875rem;
 
     /* === Sidebar === */
-    --sidebar-background: 222 45% 8%;
-    --sidebar-foreground: 213 31% 92%;
-    --sidebar-primary: 212 100% 60%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 222 30% 14%;
-    --sidebar-accent-foreground: 213 31% 92%;
-    --sidebar-border: 222 25% 18%;
-    --sidebar-ring: 212 100% 60%;
+    --sidebar-background: 213 26% 7%;
+    --sidebar-foreground: 213 27% 92%;
+    --sidebar-primary: 39 100% 47%;
+    --sidebar-primary-foreground: 213 26% 7%;
+    --sidebar-accent: 215 14% 15%;
+    --sidebar-accent-foreground: 213 27% 92%;
+    --sidebar-border: 213 12% 21%;
+    --sidebar-ring: 39 100% 47%;
 
     /* === Status === */
-    --success: 142 71% 45%;
+    --success: 134 48% 49%;
     --success-foreground: 0 0% 100%;
-    --warning: 41 100% 56%;
-    --warning-foreground: 222 47% 6%;
-    --info: 212 100% 60%;
-    --info-foreground: 222 47% 6%;
+    --warning: 39 100% 47%;
+    --warning-foreground: 213 26% 7%;
+    --info: 212 100% 67%;
+    --info-foreground: 213 26% 7%;
 
     /* === Tipografia === */
     --font-sans: 'Inter', sans-serif;
@@ -101,12 +104,12 @@
   /* Mantemos .dark replicando :root para compatibilidade com componentes
      que olham .dark (charts, etc.). Sistema é DARK FORÇADO. */
   .dark {
-    --bg: #0b1220;
-    --surface: #0f1729;
-    --surface2: #131c30;
-    --surface3: #1a2440;
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --surface3: #2d333b;
     --text: #e6edf3;
-    --muted-text: #94a3b8;
+    --muted-text: #8b949e;
   }
 }
 
