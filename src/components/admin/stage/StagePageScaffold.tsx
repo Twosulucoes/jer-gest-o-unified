@@ -3,10 +3,12 @@ import {
   BadgeCheck, Trophy, Building, UtensilsCrossed, Bus,
   AlertTriangle, ClipboardList, FileBarChart,
   LayoutDashboard, ListChecks, GitBranch, Users, CalendarClock, Layers,
-  ScanLine, KeyRound, ChartBar, Navigation, Route, Settings,
+  ScanLine, KeyRound, ChartBar, Navigation, Route, Settings, Filter,
 } from "lucide-react";
 import { StageMiniDash, type StageMiniDashKpi } from "./StageMiniDash";
 import { StageModuleTabs, type StageTabItem } from "./StageModuleTabs";
+import { useStageContext } from "@/contexts/StageContext";
+import { Badge } from "@/components/ui/badge";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
