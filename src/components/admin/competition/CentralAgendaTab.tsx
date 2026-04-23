@@ -970,6 +970,7 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
                   filteredMatches.map((m) => {
                     const isScheduled = !!(m.match_date && m.start_time && m.venue_id);
                     const isInlineEdit = inlineEditId === m.id;
+                    const isSelected = selectedMatches.has(m.id);
 
                     return (
                       <TableRow 
