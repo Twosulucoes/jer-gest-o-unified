@@ -646,29 +646,8 @@ export default function PreValidacaoPage() {
     }
   };
 
-  // Loading state
-  if (syncMut.isPending) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-muted-foreground text-lg">Sincronizando inscrições...</p>
-      </div>
-    );
-  }
+  // (Removido o bloqueio full-screen no sync — antes travava em loading infinito quando a RPC demorava em eventos grandes.)
 
-  // Error state
-  if (syncMut.isError && !rows.length) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <XCircle className="h-10 w-10 text-destructive" />
-        <p className="text-destructive text-lg">Erro ao sincronizar equipes</p>
-        <p className="text-muted-foreground text-sm">{(syncMut.error as any)?.message}</p>
-        <Button onClick={() => syncMut.mutate()}>
-          <RefreshCw className="h-4 w-4 mr-1" /> Tentar novamente
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
