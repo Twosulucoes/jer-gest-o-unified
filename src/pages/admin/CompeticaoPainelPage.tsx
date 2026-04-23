@@ -177,6 +177,7 @@ export default function CompeticaoPainelPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [groupBySport, setGroupBySport] = useState(false);
+  const [hideEmpty, setHideEmpty] = useState(true);
 
   // Sync with context
   useEffect(() => {
@@ -303,6 +304,10 @@ export default function CompeticaoPainelPage() {
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
       if (typeFilter === "coletiva" && !p.is_collective) return false;
       if (typeFilter === "individual" && p.is_collective) return false;
+      if (hideEmpty) {
+        const hasParticipants = p.is_collective ? p.team_count > 0 : p.enrolled_count > 0;
+        if (!hasParticipants) return false;
+      }
       if (search) {
         const q = search.toLowerCase();
         if (!p.name.toLowerCase().includes(q) && !p.sport_name.toLowerCase().includes(q) && !p.category_name.toLowerCase().includes(q)) return false;
@@ -461,6 +466,15 @@ export default function CompeticaoPainelPage() {
             <SelectItem value="individual">Individual</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 whitespace-nowrap"
+          onClick={() => setHideEmpty(!hideEmpty)}
+        >
+          {hideEmpty ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+          Com inscritos
+        </Button>
         <Button
           variant="outline"
           size="sm"
