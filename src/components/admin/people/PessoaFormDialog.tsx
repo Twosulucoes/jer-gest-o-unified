@@ -26,6 +26,7 @@ interface Props {
   /** When provided, edits this participant. Otherwise creates a new person + participant. */
   participantId?: string | null;
   onSuccess?: (id: string) => void;
+  defaultStageId?: string | null;
 }
 
 const personSchema = z.object({
