@@ -206,6 +206,8 @@ export default function SuperAdminLayout() {
 
             <div className="flex-1" />
 
+            <GlobalRefreshButton className="mr-2" />
+
             <ThemeToggle className="text-muted-foreground" />
 
             <DropdownMenu>
