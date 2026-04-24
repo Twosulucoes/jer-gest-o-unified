@@ -89,7 +89,7 @@ export default function AlimentacaoRelatoriosPage() {
     for (const c of consumptions) {
       rows.push([
         `"${c.participants?.person?.full_name || ""}"`,
-        `"${c.participants?.delegations?.institutions?.name || ""}"`,
+        `"${c.participants?.delegations?.school_name || ""}"`,
         `"${c.meal_windows?.label || ""}"`,
         c.consumed_at ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm") : "",
         c.method || "scan",
