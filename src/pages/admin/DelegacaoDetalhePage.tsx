@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowLeft, Users, Trophy, IdCard, Bus, LayoutDashboard, ExternalLink } from "lucide-react";
+import { Loader2, ArrowLeft, Users, Trophy, IdCard, Bus, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
