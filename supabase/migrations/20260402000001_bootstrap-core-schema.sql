@@ -33,9 +33,9 @@ CREATE TABLE IF NOT EXISTS public.events (
   updated_at   timestamptz NOT NULL DEFAULT now()
 );
 
--- profiles table (mirrors auth.users)
+-- profiles table (no FK to auth.users: preview branch has no auth users seeded)
 CREATE TABLE IF NOT EXISTS public.profiles (
-  id         uuid        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  id         uuid        PRIMARY KEY,
   full_name  text,
   avatar_url text,
   created_at timestamptz NOT NULL DEFAULT now(),
