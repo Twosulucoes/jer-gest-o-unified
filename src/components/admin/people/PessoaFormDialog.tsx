@@ -57,6 +57,9 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
   const [needsLodging, setNeedsLodging] = useState(false);
   const [logisticsRestrictions, setLogisticsRestrictions] = useState("");
   const [logisticsNotes, setLogisticsNotes] = useState("");
+  const [foodRestrictions, setFoodRestrictions] = useState("");
+  const [disabilityType, setDisabilityType] = useState("");
+  const [medicalNotes, setMedicalNotes] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -91,7 +94,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
     queryFn: async () => {
       const { data: p, error } = await supabase
         .from("participants")
-        .select("id, person_id, participant_type, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, person:people(full_name, cpf, email, phone, birth_date, gender)")
+        .select("id, person_id, participant_type, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, person:people(full_name, cpf, email, phone, birth_date, gender, food_restrictions, disability_type, medical_notes)")
         .eq("id", participantId!).single();
       if (error) throw error;
       const { data: roles } = await (supabase.from("participant_event_roles" as never) as any)
@@ -116,13 +119,18 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
       setNeedsLodging(!!p.needs_lodging);
       setLogisticsRestrictions(p.logistics_restrictions ?? "");
       setLogisticsNotes(p.logistics_notes ?? "");
+      setFoodRestrictions(p.person?.food_restrictions ?? "");
+      setDisabilityType(p.person?.disability_type ?? "");
+      setMedicalNotes(p.person?.medical_notes ?? "");
       setSelectedRoles(existing.roles);
     } else if (open && !isEdit) {
       // Reset
       setFullName(""); setCpf(""); setEmail(""); setPhone(""); setBirthDate("");
       setGender(""); setParticipantType("colaborador"); setDelegationId("");
       setNeedsTransport(false); setNeedsMeals(false); setNeedsLodging(false);
-      setLogisticsRestrictions(""); setLogisticsNotes(""); setSelectedRoles([]);
+      setLogisticsRestrictions(""); setLogisticsNotes("");
+      setFoodRestrictions(""); setDisabilityType(""); setMedicalNotes("");
+      setSelectedRoles([]);
       setErrors({});
     }
   }, [existing, isEdit, open]);
@@ -162,6 +170,9 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
           phone: phone || null,
           birth_date: birthDate || null,
           gender: gender || null,
+          food_restrictions: foodRestrictions || null,
+          disability_type: disabilityType || null,
+          medical_notes: medicalNotes || null,
         }).eq("id", personId);
         if (errPerson) throw errPerson;
         // Update participant
@@ -194,6 +205,9 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
             phone: phone || null,
             birth_date: birthDate || null,
             gender: gender || null,
+            food_restrictions: foodRestrictions || null,
+            disability_type: disabilityType || null,
+            medical_notes: medicalNotes || null,
           }).select("id").single();
           if (errCreate) throw errCreate;
           personId = newPerson.id;
@@ -385,6 +399,37 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
                       </Badge>
                     );
                   })}
+                </div>
+              </div>
+            </section>
+
+            {/* Saúde e Restrições */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Saúde e Restrições</h3>
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <Label>Restrições alimentares</Label>
+                  <Input 
+                    value={foodRestrictions} 
+                    onChange={e => setFoodRestrictions(e.target.value)} 
+                    placeholder="Ex: Alérgico a amendoim, Vegano, Sem glúten..."
+                  />
+                </div>
+                <div>
+                  <Label>Tipo de deficiência (se houver)</Label>
+                  <Input 
+                    value={disabilityType} 
+                    onChange={e => setDisabilityType(e.target.value)} 
+                    placeholder="Ex: Visual, Auditiva, PCD..."
+                  />
+                </div>
+                <div>
+                  <Label>Observações médicas / Notas gerais</Label>
+                  <Textarea 
+                    value={medicalNotes} 
+                    onChange={e => setMedicalNotes(e.target.value)} 
+                    placeholder="Informações relevantes para a organização..."
+                  />
                 </div>
               </div>
             </section>
