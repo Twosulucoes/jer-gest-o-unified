@@ -322,8 +322,7 @@ export default function ValidacaoQRPage() {
             message={result.message}
           />
         )}
-      </div>
-    </StagePageScaffold>
+    </div>
   );
 }
 
