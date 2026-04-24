@@ -14,7 +14,10 @@ import {
   Check,
   CheckCircle2,
   Trash2,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 
 interface QrCodeScannerProps {
   onScan: (payload: string) => void;
@@ -22,7 +25,6 @@ interface QrCodeScannerProps {
   isOpen: boolean;
   allowedPrefixes?: string[];
   title?: string;
-  /** When true, scanner keeps camera active after each scan for continuous operation */
   continuous?: boolean;
 }
 
@@ -46,12 +48,12 @@ export default function QrCodeScanner({
   const [torchOn, setTorchOn] = useState(false);
   const [useFront, setUseFront] = useState(false);
   const [hintVisible, setHintVisible] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
 
-  const scannerRef = useRef<any>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   const debounceRef = useRef(false);
   const lastScannedRef = useRef("");
   const containerId = useRef(`qr-scanner-${Math.random().toString(36).slice(2, 8)}`).current;
-  const hintTimer = useRef<ReturnType<typeof setTimeout>>();
   const mountedRef = useRef(true);
 
   const onScanRef = useRef(onScan);
@@ -67,15 +69,17 @@ export default function QrCodeScanner({
   }, []);
 
   const stopScanner = useCallback(async () => {
-    clearTimeout(hintTimer.current);
     try {
       if (scannerRef.current) {
         const scanner = scannerRef.current;
         scannerRef.current = null;
-        try { await scanner.stop(); } catch { /* ignore */ }
-        try { await scanner.clear(); } catch { /* ignore */ }
+        if (scanner.isScanning) {
+          await scanner.stop();
+        }
       }
-    } catch { /* ignore */ }
+    } catch (e) {
+      console.error("Error stopping scanner:", e);
+    }
   }, []);
 
   const isValidPayload = useCallback((raw: string) => {
@@ -88,7 +92,7 @@ export default function QrCodeScanner({
     (raw: string) => {
       if (debounceRef.current) return;
       if (!isValidPayload(raw)) {
-        toast.error("CÓDIGO INVÁLIDO — PADRÃO NÃO RECONHECIDO");
+        toast.error("CÓDIGO INVÁLIDO");
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         return;
       }
@@ -97,17 +101,16 @@ export default function QrCodeScanner({
       debounceRef.current = true;
       lastScannedRef.current = raw;
       
-      if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+      if (navigator.vibrate) navigator.vibrate(40);
       setShowSuccess(true);
       setTimeout(() => {
         if (mountedRef.current) setShowSuccess(false);
-      }, 1500);
+      }, 1200);
 
       if (!continuousRef.current) {
-        // brief delay to show success overlay before closing
         setTimeout(() => {
           if (mountedRef.current) void stopScanner();
-        }, 500);
+        }, 300);
       }
 
       onScanRef.current(raw);
@@ -115,111 +118,79 @@ export default function QrCodeScanner({
       setTimeout(() => {
         debounceRef.current = false;
         lastScannedRef.current = "";
-      }, 2500);
+      }, 2000);
     },
     [isValidPayload, stopScanner],
   );
-
-  const handleDetectedRef = useRef(handleDetected);
-  handleDetectedRef.current = handleDetected;
 
   const startScanner = useCallback(
     async (front: boolean) => {
       if (!navigator.mediaDevices?.getUserMedia) {
         setState("error");
-        setErrorMsg("Este dispositivo não oferece suporte ao acesso à câmera.");
+        setErrorMsg("Câmera não suportada.");
         return;
       }
 
       setState("requesting");
       setErrorMsg("");
-      setHintVisible(false);
       await stopScanner();
 
       try {
-        await new Promise<void>((r) => requestAnimationFrame(() => r()));
-        await new Promise<void>((r) => requestAnimationFrame(() => r()));
-
         if (!mountedRef.current) return;
 
-        let container = document.getElementById(containerId);
-        if (!container) {
-          await new Promise<void>((r) => setTimeout(r, 250));
-          container = document.getElementById(containerId);
-          if (!container) {
-            throw new Error("Contêiner de vídeo não encontrado. Tente novamente.");
-          }
-        }
-
-        const { Html5Qrcode } = await import("html5-qrcode");
-        const scanner = new Html5Qrcode(containerId, { verbose: false });
+        const scanner = new Html5Qrcode(containerId);
         scannerRef.current = scanner;
+
+        // Configuração otimizada para "Melhor Leitor Possível"
+        const config = {
+          fps: 20, // Aumentado para resposta mais rápida
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const size = Math.floor(minEdge * 0.7);
+            return { width: size, height: size };
+          },
+          aspectRatio: 1.0,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true, // Usa API nativa se disponível (mais rápido)
+          },
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+          ],
+        };
 
         await scanner.start(
           { facingMode: front ? "user" : "environment" },
-          { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1, disableFlip: false },
-          (decodedText) => handleDetectedRef.current(decodedText),
-          () => { /* continuous scan */ },
+          config,
+          (decodedText) => handleDetected(decodedText),
+          () => {} 
         );
 
         if (mountedRef.current) {
           setState("active");
-          hintTimer.current = setTimeout(() => {
+          // Re-ativa o hint timer se necessário
+          setTimeout(() => {
             if (mountedRef.current) setHintVisible(true);
-          }, 120_000);
+          }, 5000);
         }
       } catch (err: any) {
+        console.error("Scanner error:", err);
         await stopScanner();
         if (!mountedRef.current) return;
         setState("error");
-
-        // Detecta iframe sem permissão de câmera (ambiente de preview do Lovable)
-        const inIframe = (() => {
-          try { return window.self !== window.top; } catch { return true; }
-        })();
-        const isInsecure =
-          typeof window !== "undefined" &&
-          !window.isSecureContext &&
-          window.location.hostname !== "localhost";
-
-        if (isInsecure) {
-          setErrorMsg(
-            "A câmera só funciona em conexões seguras (HTTPS).\n" +
-            "Abra o sistema pela URL publicada (https://) ou em localhost.",
-          );
-        } else if (
-          err?.name === "NotAllowedError" ||
-          err?.message?.includes("Permission") ||
-          err?.message?.includes("NotAllowed") ||
-          err?.message?.includes("disallowed by permissions policy")
-        ) {
-          if (inIframe) {
-            setErrorMsg(
-              "O preview do Lovable não permite acesso à câmera dentro do iframe.\n\n" +
-              "👉 Abra o app em uma nova aba (botão de abrir/expandir do preview) ou acesse a URL publicada do projeto. " +
-              "No celular/produção a câmera funciona normalmente.\n\n" +
-              "Enquanto isso, use o campo 'Entrada Manual' para colar/digitar o código.",
-            );
-          } else {
-            setErrorMsg(
-              "Acesso à câmera negado. Habilite nas configurações do navegador:\n\n" +
-              "Android Chrome: Configurações → Privacidade → Câmera\n" +
-              "iOS Safari: Ajustes → Safari → Câmera",
-            );
-          }
-        } else if (err?.name === "NotFoundError" || err?.message?.includes("NotFound")) {
-          setErrorMsg("Câmera não encontrada neste dispositivo.");
-        } else if (err?.name === "NotReadableError") {
-          setErrorMsg("A câmera está sendo usada por outro aplicativo. Feche e tente novamente.");
+        
+        if (err?.message?.includes("Permission") || err?.name === "NotAllowedError") {
+          setErrorMsg("Permissão de câmera negada.");
+        } else if (err?.name === "NotFoundError") {
+          setErrorMsg("Câmera não encontrada.");
         } else {
-          setErrorMsg(
-            (err?.message || "Erro ao acessar câmera") +
-            (inIframe ? "\n\n(Dica: tente abrir o preview em uma nova aba.)" : ""),
-          );
+          setErrorMsg("Erro ao iniciar câmera. Verifique as permissões.");
         }
       }
     },
-    [containerId, stopScanner],
+    [containerId, stopScanner, handleDetected],
   );
 
   const startNativeScan = useCallback(async () => {
@@ -235,7 +206,7 @@ export default function QrCodeScanner({
       setState("active");
       const result = await BarcodeScanner.scan();
       if (result.barcodes.length > 0) {
-        handleDetectedRef.current(result.barcodes[0].rawValue);
+        handleDetected(result.barcodes[0].rawValue);
       }
       setState("idle");
     } catch (err: any) {
@@ -246,7 +217,7 @@ export default function QrCodeScanner({
       setState("error");
       setErrorMsg(err?.message || "Erro no scanner nativo");
     }
-  }, []);
+  }, [handleDetected]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -310,7 +281,7 @@ export default function QrCodeScanner({
     setTimeout(() => {
       if (mountedRef.current) {
         setIsValidating(false);
-        handleDetectedRef.current(val);
+        handleDetected(val);
         setManualCode("");
       }
     }, 600);
