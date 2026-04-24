@@ -23,6 +23,7 @@ import {
   Users, ShieldCheck, Clock, ArrowLeft, Link2, Check, IdCard,
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { generateQrCodeValue } from "@/lib/credentialUtils";
 import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
@@ -89,6 +90,7 @@ export default function CredenciamentoExternoPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
   const [selectedParticipant, setSelectedParticipant] = useState<ParticipantRow | null>(null);
+  const [isInternalMode, setIsInternalMode] = useState(false); // Novo estado para escolher o tipo
   const [scannerOpen, setScannerOpen] = useState(false);
   const [replaceDialogOpen, setReplaceDialogOpen] = useState(false);
   const [pendingCode, setPendingCode] = useState<string | null>(null);
@@ -266,9 +268,20 @@ export default function CredenciamentoExternoPage() {
         event_id: eventId,
         participant_id: selectedParticipant.id,
         credential_code: code,
+        status: "active",
         linked_by_user_id: user.id,
+        notes: isInternalMode ? "internal_code" : "external_tag",
       });
       if (error) throw error;
+
+      // Se for modo interno, o sistema também marca o status do participante como credentialed 
+      // para facilitar a visualização global, já que ele está usando uma credencial do próprio sistema.
+      if (isInternalMode) {
+        await supabase
+          .from("participants")
+          .update({ status: "credentialed" })
+          .eq("id", selectedParticipant.id);
+      }
 
       const { data: activeCred } = await supabase
         .from("participant_credentials")
@@ -407,21 +420,53 @@ export default function CredenciamentoExternoPage() {
         ]}
       />
       <div className="space-y-4">
-      {/* Header */}
+      {/* Header com troca de modo */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <IdCard className="h-5 w-5 text-primary" />
-            Credenciamento Externo
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Vincule a credencial física uma única vez. O mesmo código será reutilizado nos demais módulos externos.
-          </p>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <IdCard className="h-5 w-5 text-primary" />
+              Credenciamento Externo
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Vincule uma credencial física ao participante. O código será replicado para todos os módulos.
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tipo de Credencial</span>
+            <div className="flex items-center gap-1 rounded-lg border bg-muted/50 p-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("h-7 px-2 text-xs gap-1.5", !isInternalMode && "bg-background shadow-sm text-primary")}
+                onClick={() => setIsInternalMode(false)}
+              >
+                <Link2 className="h-3.5 w-3.5" />
+                Externa
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("h-7 px-2 text-xs gap-1.5", isInternalMode && "bg-background shadow-sm text-primary")}
+                onClick={() => setIsInternalMode(true)}
+              >
+                <IdCard className="h-3.5 w-3.5" />
+                Interna
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="inline-flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
-            <Link2 className="h-3.5 w-3.5" />
-            Vinculação única por participante
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              {isInternalMode ? "Modo Interno: Vinculação de credenciais pré-impressas" : "Modo Externo: Vinculação de pulseiras ou tags externas"}
+            </div>
+            {isInternalMode && (
+              <Badge variant="outline" className="text-[10px] uppercase border-amber-500/50 text-amber-600 bg-amber-500/5 animate-pulse">
+                Atenção: Use apenas para códigos do sistema
+              </Badge>
+            )}
           </div>
         </CardContent>
       </Card>
