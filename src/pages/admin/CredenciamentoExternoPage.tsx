@@ -394,32 +394,19 @@ export default function CredenciamentoExternoPage() {
     return Array.from(types).sort();
   }, [allParticipants]);
 
+  // Registra KPIs do módulo no scaffold pai (única régua exibida no topo).
+  // Usa rótulos consistentes com a régua global: Total / Credenciados / Pendentes.
+  useStageModuleKpis(
+    [
+      { label: "Total", value: totalCount, icon: <Users className="h-3.5 w-3.5" />, tone: "default" },
+      { label: "Credenciados", value: linkedCount, icon: <ShieldCheck className="h-3.5 w-3.5" />, tone: "success" },
+      { label: "Falta credenciar", value: pendingCount, icon: <Clock className="h-3.5 w-3.5" />, tone: pendingCount > 0 ? "warning" : "default" },
+    ],
+    true, // esconde a régua global para não duplicar
+  );
+
   return (
     <div className="space-y-4">
-      <StageMiniDash
-        hideGlobal
-        moduleKpis={[
-          {
-            label: "Participantes",
-            value: totalCount,
-            icon: <Users className="h-3.5 w-3.5" />,
-            tone: "default",
-          },
-          {
-            label: "Vinculadas",
-            value: linkedCount,
-            icon: <ShieldCheck className="h-3.5 w-3.5" />,
-            tone: "success",
-          },
-          {
-            label: "Pendentes",
-            value: pendingCount,
-            icon: <Clock className="h-3.5 w-3.5" />,
-            tone: pendingCount > 0 ? "warning" : "default",
-          },
-        ]}
-      />
-      <div className="space-y-4">
       {/* Header com troca de modo */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background">
         <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
