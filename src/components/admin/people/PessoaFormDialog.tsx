@@ -463,6 +463,39 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
               )}
             </section>
 
+            {/* Contatos de Emergência / Responsáveis - Visível para atletas */}
+            {participantType === "athlete" && (
+              <section className="space-y-3">
+                <h3 className="text-sm font-semibold text-foreground">Responsável / Contato de Emergência</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Nome do Responsável</Label>
+                    <Input 
+                      value={guardianName} 
+                      onChange={e => setGuardianName(e.target.value)} 
+                      placeholder="Ex: Nome do Pai ou Mãe"
+                    />
+                  </div>
+                  <div>
+                    <Label>Telefone do Responsável</Label>
+                    <Input 
+                      value={guardianPhone} 
+                      onChange={e => setGuardianPhone(e.target.value)} 
+                      placeholder="(00) 00000-0000"
+                    />
+                  </div>
+                  <div>
+                    <Label>Vínculo / Parentesco</Label>
+                    <Input 
+                      value={coachName} 
+                      onChange={e => setCoachName(e.target.value)} 
+                      placeholder="Ex: Pai, Mãe, Tutor"
+                    />
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* Saúde e Restrições - Visível apenas para perfis sensíveis ou tipo atleta */}
             {(canEditSensitive || participantType === "athlete") && (
               <section className="space-y-3">
