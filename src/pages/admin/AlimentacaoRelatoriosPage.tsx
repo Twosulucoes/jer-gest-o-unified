@@ -52,7 +52,7 @@ export default function AlimentacaoRelatoriosPage() {
     queryFn: async () => {
       let q = supabase
         .from("meal_consumptions")
-        .select("*, meal_windows(label, service_date, meal_type_id, meal_types(name)), participants(person:people(full_name), delegation_id, delegations(institutions(name)))")
+        .select("*, meal_windows(label, service_date, meal_type_id, meal_types(name)), participants(person:people(full_name), delegation_id, delegations(school_name))")
         .order("consumed_at", { ascending: false });
 
       // Filter by event through meal_windows
