@@ -28,6 +28,7 @@ import {
   Link2,
   Check,
   Edit,
+  UserPlus,
 } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { cn } from "@/lib/utils";
@@ -834,6 +835,17 @@ export default function CredenciamentoPage() {
                 disabled={!selectedEventId}
               />
             </div>
+            {canCredential && (
+              <Button
+                variant="outline"
+                className="h-11 gap-2 whitespace-nowrap"
+                onClick={() => { setEditingParticipantId(null); setEditDialogOpen(true); }}
+                disabled={!selectedEventId}
+              >
+                <UserPlus className="h-4 w-4" />
+                Novo Atleta
+              </Button>
+            )}
             <div className="flex flex-wrap items-center gap-2">
               <Select value={filterType} onValueChange={setFilterType}>
                 <SelectTrigger className="w-[140px] h-11 bg-background">
