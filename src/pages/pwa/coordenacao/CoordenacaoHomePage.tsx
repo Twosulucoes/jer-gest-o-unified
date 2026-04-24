@@ -69,6 +69,18 @@ export default function CoordenacaoHomePage() {
     await supabase.auth.signOut();
     navigate("/pwa/login", { replace: true });
   };
+  const statusTone = (s: string) => {
+    if (s === "em_andamento") return "live";
+    if (s === "finalizada") return "ok";
+    if (s === "scheduled") return "scheduled";
+    return "neutral";
+  };
+  const statusLabel = (s: string) => {
+    if (s === "em_andamento") return "Em curso";
+    if (s === "finalizada") return "Concluído";
+    if (s === "scheduled") return "Próximo";
+    return s;
+  };
 
   return (
     <div className="op-screen">
