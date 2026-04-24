@@ -301,7 +301,7 @@ export default function CredenciamentoPage() {
 
   const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone,
     person:people!participants_person_id_fkey(full_name, cpf, photo_url),
-    delegation:delegations!participants_delegation_id_fkey(institution:institutions(id, name))`;
+    delegation:delegations!participants_delegation_id_fkey(id, school_name, institution_id)`;
 
   const {
     data: progressiveParts,
