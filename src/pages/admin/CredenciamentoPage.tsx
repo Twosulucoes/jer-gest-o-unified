@@ -131,6 +131,10 @@ interface CredentialParticipantRow {
   credentialed_by: string | null;
   person_id: string;
   delegation_id: string;
+  guardian_name: string | null;
+  guardian_phone: string | null;
+  coach_name: string | null;
+  coach_phone: string | null;
   person: {
     full_name: string | null;
     cpf: string | null;
@@ -168,6 +172,8 @@ export default function CredenciamentoPage() {
   
   // States for unified credentialing flow
   const [selectedForCred, setSelectedForCred] = useState<CredentialParticipantRow | null>(null);
+  const [guardianConfirmOpen, setGuardianConfirmOpen] = useState(false);
+  const [tempGuardianData, setTempGuardianData] = useState({ name: "", phone: "", coachName: "", coachPhone: "" });
   const [isLinkingExternal, setIsLinkingExternal] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -294,7 +300,7 @@ export default function CredenciamentoPage() {
   // Nesse caso, ignoramos o filtro de etapa (melhor mostrar todos do evento que mostrar vazio falso).
   const effectiveStageFilter = stageId && stageIdsArray ? stageIdsArray : null;
 
-  const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id,
+  const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone,
     person:people!participants_person_id_fkey(full_name, cpf, photo_url),
     delegation:delegations!participants_delegation_id_fkey(institution:institutions(id, name))`;
 
@@ -732,9 +738,48 @@ export default function CredenciamentoPage() {
 
   const handleStartCredenciamento = (p: CredentialParticipantRow) => {
     setSelectedForCred(p);
+    setTempGuardianData({
+      name: p.guardian_name || "",
+      phone: p.guardian_phone || "",
+      coachName: p.coach_name || "",
+      coachPhone: p.coach_phone || "",
+    });
+    setGuardianConfirmOpen(true);
     setIsLinkingExternal(false);
     setManualCode("");
     setScannerOpen(false);
+  };
+
+  const handleConfirmGuardian = async () => {
+    if (!selectedForCred) return;
+    
+    // Opcional: Atualizar dados do responsável no banco se houver mudanças
+    if (
+      tempGuardianData.name !== (selectedForCred.guardian_name || "") || 
+      tempGuardianData.phone !== (selectedForCred.guardian_phone || "") ||
+      tempGuardianData.coachName !== (selectedForCred.coach_name || "") ||
+      tempGuardianData.coachPhone !== (selectedForCred.coach_phone || "")
+    ) {
+      const { error } = await supabase
+        .from("participants")
+        .update({
+          guardian_name: tempGuardianData.name,
+          guardian_phone: tempGuardianData.phone,
+          coach_name: tempGuardianData.coachName,
+          coach_phone: tempGuardianData.coachPhone,
+        })
+        .eq("id", selectedForCred.id);
+      
+      if (error) {
+        toast.error("Erro ao atualizar dados do responsável: " + error.message);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      }
+    }
+
+    setGuardianConfirmOpen(false);
+    // Após confirmar os dados, o usuário pode seguir com o fluxo de credenciamento
+    // que já existe na tela (o modal do responsável é apenas um check prévio)
   };
 
   const handleLinkExternal = (code: string) => {
@@ -1508,6 +1553,79 @@ export default function CredenciamentoPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Guardian Confirmation Dialog */}
+      <Dialog open={guardianConfirmOpen} onOpenChange={setGuardianConfirmOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-amber-500" />
+              Confirmação de Responsável
+            </DialogTitle>
+            <DialogDescription>
+              Verifique os dados de contato de emergência para <strong>{selectedForCred?.person?.full_name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Responsável / Tutor</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <Input 
+                    placeholder="Nome do Responsável"
+                    value={tempGuardianData.name}
+                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                  <Input 
+                    placeholder="Telefone (WhatsApp)"
+                    value={tempGuardianData.phone}
+                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Técnico / Responsável Técnico</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <Input 
+                    placeholder="Nome do Técnico"
+                    value={tempGuardianData.coachName}
+                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, coachName: e.target.value }))}
+                  />
+                  <Input 
+                    placeholder="Telefone do Técnico"
+                    value={tempGuardianData.coachPhone}
+                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, coachPhone: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-700 flex gap-2 items-start">
+              <Info className="h-4 w-4 shrink-0" />
+              <p>Estes dados são vitais para casos de emergência médica ou logística durante o evento.</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGuardianConfirmOpen(false)}>Cancelar</Button>
+            <Button onClick={handleConfirmGuardian}>Confirmar e Prosseguir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <PessoaFormDialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) setEditingParticipantId(null);
+        }}
+        participantId={editingParticipantId}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+        }}
+      />
       </div>
     </div>
   );
