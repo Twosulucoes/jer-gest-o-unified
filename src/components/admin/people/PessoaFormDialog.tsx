@@ -27,6 +27,7 @@ interface Props {
   participantId?: string | null;
   onSuccess?: (id: string) => void;
   defaultStageId?: string | null;
+  initialCategory?: "delegation" | "organization";
 }
 
 const personSchema = z.object({
