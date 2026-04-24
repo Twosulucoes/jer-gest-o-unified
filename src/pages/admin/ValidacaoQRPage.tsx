@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -12,6 +12,8 @@ import {
   Camera,
   BadgeCheck,
   ScanLine as ScanIcon,
+  Maximize2,
+  Settings2,
 } from "lucide-react";
 import { StageMiniDash } from "@/components/admin/stage/StageMiniDash";
 
@@ -29,6 +31,7 @@ import {
 import { useActiveEventId } from "@/contexts/EventContext";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
+import { cn } from "@/lib/utils";
 
 interface ValidationResult {
   result: "valid" | "not_found" | "revoked" | "suspended" | "not_activated" | "wrong_event" | string;
@@ -63,6 +66,7 @@ export default function ValidacaoQRPage() {
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [sessionCount, setSessionCount] = useState(0);
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
@@ -73,8 +77,10 @@ export default function ValidacaoQRPage() {
     },
   });
 
-  const handleValidate = async () => {
-    if (!qrInput.trim() || !selectedEventId) return;
+  const handleValidate = async (value?: string) => {
+    const codeToValidate = value || qrInput.trim();
+    if (!codeToValidate || !selectedEventId) return;
+    
     setValidating(true);
     setResult(null);
 
@@ -96,7 +102,7 @@ export default function ValidacaoQRPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          qr_code_value: qrInput.trim(),
+          qr_code_value: codeToValidate,
           event_id: selectedEventId,
           scan_point: scanPoint,
         }),
@@ -109,6 +115,7 @@ export default function ValidacaoQRPage() {
       
       if (json.result === "valid") {
         toast.success("QR Code validado com sucesso!");
+        setSessionCount(prev => prev + 1);
       } else {
         const config = RESULT_CONFIG[json.result];
         toast.error(config?.label || json.error || "QR Code inválido");
@@ -133,20 +140,13 @@ export default function ValidacaoQRPage() {
     setQrInput("");
     setResult(null);
     setShowConfirm(false);
-    // Use a small timeout to ensure the dialog is closed before focusing
-    setTimeout(() => {
-      document.getElementById("qr-input-field")?.focus();
-    }, 100);
   };
 
   const handleCameraScan = useCallback((raw: string) => {
     setScannerOpen(false);
     setQrInput(raw.trim());
-    // Auto-validate after camera scan
-    setTimeout(() => {
-      document.getElementById("btn-validate-qr")?.click();
-    }, 100);
-  }, []);
+    handleValidate(raw.trim());
+  }, [selectedEventId, scanPoint]);
 
   const resultConfig = result ? RESULT_CONFIG[result.result] ?? {
     label: result.result.toUpperCase(),
@@ -160,161 +160,138 @@ export default function ValidacaoQRPage() {
         hideGlobal
         moduleKpis={[
           {
-            label: "Scanner Ativo",
-            value: "PRONTO",
-            icon: <ScanIcon className="h-3.5 w-3.5" />,
+            label: "Sessão",
+            value: sessionCount,
+            icon: <BadgeCheck className="h-3.5 w-3.5" />,
             tone: "primary",
           },
           {
-            label: "Último Status",
-            value: result ? RESULT_CONFIG[result.result]?.label || "N/A" : "AGUARDANDO",
-            icon: <BadgeCheck className="h-3.5 w-3.5" />,
-            tone: result?.result === "valid" ? "success" : result ? "danger" : "default",
+            label: "Scanner",
+            value: "PRONTO",
+            icon: <ScanIcon className="h-3.5 w-3.5" />,
+            tone: "success",
           },
         ]}
       />
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Validação QR Code</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Escaneie ou insira o código QR para validar credenciais
-        </p>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Validação QR</h1>
+          <p className="text-sm text-muted-foreground">Efetue a leitura das credenciais dos participantes</p>
+        </div>
+        <div className="flex gap-2">
+          <Select value={scanPoint} onValueChange={setScanPoint}>
+            <SelectTrigger className="w-[140px] h-9 text-xs">
+              <Settings2 className="w-3 h-3 mr-2" />
+              <SelectValue placeholder="Ponto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="general">Ponto: Geral</SelectItem>
+              <SelectItem value="entrada">Ponto: Entrada</SelectItem>
+              <SelectItem value="alimentacao">Ponto: Alimentação</SelectItem>
+              <SelectItem value="transporte">Ponto: Transporte</SelectItem>
+              <SelectItem value="alojamento">Ponto: Alojamento</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={() => {}}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {events.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>
-                      {e.name} ({e.year})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Ponto</label>
-              <Select value={scanPoint} onValueChange={setScanPoint}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">Geral</SelectItem>
-                  <SelectItem value="entrada">Entrada</SelectItem>
-                  <SelectItem value="alimentacao">Alimentação</SelectItem>
-                  <SelectItem value="transporte">Transporte</SelectItem>
-                  <SelectItem value="alojamento">Alojamento</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-foreground">Código QR</label>
-              <div className="flex gap-2">
-                <Input
-                  id="qr-input-field"
-                  placeholder="Escaneie ou cole o QR Code..."
-                  value={qrInput}
-                  onChange={(e) => setQrInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  disabled={!selectedEventId || validating}
-                  autoFocus
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => setScannerOpen(true)}
-                  disabled={!selectedEventId || validating}
-                  title="Abrir câmera"
-                >
-                  <Camera className="h-4 w-4" />
-                </Button>
-                <Button
-                  id="btn-validate-qr"
-                  onClick={handleValidate}
-                  disabled={!qrInput.trim() || !selectedEventId || validating}
-                >
-                  {validating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <ScanLine className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {result && resultConfig && (
-        <Card className={`border-2 ${resultConfig.color}`}>
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center text-center space-y-4">
-              {resultConfig.icon}
-              <h2 className="text-2xl font-bold">{resultConfig.label}</h2>
-              {result.message && (
-                <p className="text-sm opacity-80">{result.message}</p>
-              )}
-
-              {result.participant && (
-                <div className="w-full max-w-md mt-4 rounded-lg border bg-card p-4 text-left space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                      <User className="h-6 w-6 text-primary" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Lado Esquerdo: Scanner Principal */}
+        <Card className={cn(
+          "md:col-span-2 relative overflow-hidden transition-all",
+          validating && "opacity-80"
+        )}>
+          <CardContent className="p-0">
+            <div 
+              className="relative aspect-[4/3] bg-black flex flex-col items-center justify-center cursor-pointer group"
+              onClick={() => setScannerOpen(true)}
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-64 h-64 border-2 border-primary/50 rounded-2xl flex items-center justify-center relative">
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
+                  
+                  <div className="flex flex-col items-center gap-4 text-white">
+                    <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center border border-primary/40 group-hover:bg-primary/40 transition-colors">
+                      <Camera className="h-8 w-8" />
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{result.participant.full_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {result.participant.institution ?? "Sem instituição"}
-                      </p>
-                    </div>
+                    <span className="font-medium text-sm tracking-wide bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+                      CLIQUE PARA ESCANEAR
+                    </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Tipo:</span>{" "}
-                      <Badge variant="outline">{result.participant.participant_type === "athlete" ? "Atleta" : result.participant.participant_type}</Badge>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Sexo:</span>{" "}
-                      {result.participant.gender === "male" ? "Masculino" : "Feminino"}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Nascimento:</span>{" "}
-                      {new Date(result.participant.birth_date + "T00:00:00").toLocaleDateString("pt-BR")}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Código:</span>{" "}
-                      <span className="font-mono text-xs">{result.participant.credential_code}</span>
-                    </div>
+                </div>
+              </div>
+              
+              {validating && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px] z-10">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                    <span className="text-primary font-bold animate-pulse text-xs tracking-widest uppercase">Validando...</span>
                   </div>
                 </div>
               )}
-
-              <Button onClick={handleNewScan} variant="outline" className="mt-4">
-                <ScanLine className="mr-2 h-4 w-4" />
-                Nova leitura
-              </Button>
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {!result && selectedEventId && (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-          <ScanLine className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Pronto para validar</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Clique na câmera para escanear ou cole o valor no campo acima.
-          </p>
-          <Button className="mt-4" onClick={() => setScannerOpen(true)} disabled={!selectedEventId}>
-            <Camera className="mr-2 h-4 w-4" /> Abrir câmera
+        {/* Lado Direito: Entrada Manual e Contexto */}
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">Entrada Manual</label>
+                <div className="flex gap-2">
+                  <Input
+                    id="qr-input-field"
+                    placeholder="Cole ou digite o código..."
+                    value={qrInput}
+                    onChange={(e) => setQrInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    disabled={!selectedEventId || validating}
+                    className="h-10 text-sm"
+                  />
+                  <Button
+                    id="btn-validate-qr"
+                    size="icon"
+                    onClick={() => handleValidate()}
+                    disabled={!qrInput.trim() || !selectedEventId || validating}
+                  >
+                    {validating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanLine className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-dashed">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-medium text-muted-foreground">Configurações</span>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">Evento Ativo</label>
+                  <div className="p-3 rounded-lg border bg-muted/20 text-xs flex items-center justify-between">
+                    <span className="font-medium truncate mr-2">
+                      {events.find(e => e.id === selectedEventId)?.name || "Nenhum evento selecionado"}
+                    </span>
+                    <Badge variant="outline" className="text-[9px] h-4">Contexto Global</Badge>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Atalho para tela cheia ou scanner fixo se necessário */}
+          <Button 
+            variant="outline" 
+            className="w-full h-12 border-dashed flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary hover:border-primary transition-colors"
+            onClick={() => setScannerOpen(true)}
+          >
+            <Maximize2 className="w-4 h-4" />
+            MODO TELA CHEIA
           </Button>
         </div>
-      )}
+      </div>
 
       <QrCodeScanner
         isOpen={scannerOpen}
@@ -349,3 +326,4 @@ export default function ValidacaoQRPage() {
     </div>
   );
 }
+
