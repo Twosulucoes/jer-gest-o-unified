@@ -76,19 +76,17 @@ export default function AlimentacaoConsumoPage() {
 
   // Load consumptions for all windows of the event/stage to allow "All Windows" filter
   const { data: consumptions = [], isLoading: consumptionsLoading } = useQuery({
-    queryKey: ["meal_consumptions", selectedEventId, stageId],
+    queryKey: ["meal_consumptions", selectedEventId, stageId, windows.length],
     queryFn: async () => {
-      if (!selectedEventId) return [];
-      let query = supabase.from("meal_consumptions").select("*").eq("event_id", selectedEventId);
+      if (!selectedEventId || windows.length === 0) return [];
       
       const windowIds = windows.map(w => w.id);
-      if (windowIds.length > 0) {
-        query = query.in("meal_window_id", windowIds);
-      } else {
-        return [];
-      }
+      const { data, error } = await supabase
+        .from("meal_consumptions")
+        .select("*")
+        .in("meal_window_id", windowIds)
+        .order("consumed_at", { ascending: false });
 
-      const { data, error } = await query.order("consumed_at", { ascending: false });
       if (error) throw error;
       return data;
     },
