@@ -27,6 +27,7 @@ import {
   IdCard,
   Link2,
   Check,
+  Edit,
 } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import PessoaFormDialog from "@/components/admin/people/PessoaFormDialog";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -159,6 +161,8 @@ export default function CredenciamentoPage() {
   const [batchCredentialConfirmOpen, setBatchCredentialConfirmOpen] = useState(false);
   const [batchEmitConfirmOpen, setBatchEmitConfirmOpen] = useState(false);
   const [showGlobalKpis, setShowGlobalKpis] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
   
   // States for unified credentialing flow
   const [selectedForCred, setSelectedForCred] = useState<CredentialParticipantRow | null>(null);
@@ -1086,7 +1090,7 @@ export default function CredenciamentoPage() {
                       </TableCell>
                       {canCredential && (
                         <TableCell className="py-3 text-right">
-                          <div className="flex justify-end gap-1.5 flex-wrap">
+                          <div className="flex justify-end gap-1.5 flex-wrap items-center">
                             {state === "awaiting" && (
                               <Button
                                 size="sm"
@@ -1162,16 +1166,35 @@ export default function CredenciamentoPage() {
                                 </AlertDialog>
                               </div>
                             )}
+                            
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/5"
+                              onClick={() => {
+                                setEditingParticipantId(p.id);
+                                setEditDialogOpen(true);
+                              }}
+                              title="Editar Dados"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       )}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
 
-          </div>
+            </div>
+
+            <PessoaFormDialog 
+              open={editDialogOpen} 
+              onOpenChange={setEditDialogOpen} 
+              participantId={editingParticipantId} 
+            />
 
           {/* Pagination */}
           {totalPages > 1 && (

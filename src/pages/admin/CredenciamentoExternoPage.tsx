@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   AlertTriangle, CheckCircle, ScanLine, Search, User, XCircle,
-  Users, ShieldCheck, Clock, ArrowLeft, Link2, Check, IdCard,
+  Users, ShieldCheck, Clock, ArrowLeft, Link2, Check, IdCard, Edit,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ import { generateQrCodeValue } from "@/lib/credentialUtils";
 import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
 import { BackgroundLoadingIndicator } from "@/components/credenciamento/BackgroundLoadingIndicator";
 import { useStageModuleKpis } from "@/contexts/StageModuleKpisContext";
+import PessoaFormDialog from "@/components/admin/people/PessoaFormDialog";
 
 interface ParticipantRow {
   id: string;
@@ -96,6 +97,7 @@ export default function CredenciamentoExternoPage() {
   const [page, setPage] = useState(0);
   const [manualCode, setManualCode] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const selectParticipant = (p: ParticipantRow) => {
     setSelectedParticipant(p);
@@ -603,10 +605,20 @@ export default function CredenciamentoExternoPage() {
                       <User className="h-7 w-7 text-muted-foreground" />
                     </div>
                   )}
-                  <div>
+                  <div className="flex-1">
                     <p className="font-semibold text-base leading-tight">{selectedParticipant.full_name}</p>
                     <p className="text-sm text-muted-foreground">{selectedParticipant.delegation_name || "Sem delegação"}</p>
-                    <p className="text-xs text-muted-foreground">{TYPE_LABELS[selectedParticipant.participant_type] ?? selectedParticipant.participant_type}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-muted-foreground">{TYPE_LABELS[selectedParticipant.participant_type] ?? selectedParticipant.participant_type}</p>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-1.5 text-[10px] gap-1 text-primary hover:text-primary hover:bg-primary/5"
+                        onClick={() => setEditDialogOpen(true)}
+                      >
+                        <Edit className="h-3 w-3" /> Editar
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </SheetHeader>
@@ -714,6 +726,12 @@ export default function CredenciamentoExternoPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PessoaFormDialog 
+        open={editDialogOpen} 
+        onOpenChange={setEditDialogOpen} 
+        participantId={selectedParticipant?.id} 
+      />
     </div>
   );
 }
