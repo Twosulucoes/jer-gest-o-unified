@@ -113,7 +113,28 @@ export function StageMiniDash({ moduleKpis = [], hideGlobal, className }: StageM
   if (all.length === 0) return null;
 
   return (
-
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-2 rounded-lg border border-border/60 bg-card/60 px-3 py-2 text-xs",
+        className,
+      )}
+    >
+      {all.map((kpi, idx) => (
+        <div
+          key={`${kpi.label}-${idx}`}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-md px-2 py-1 ring-1 ring-inset",
+            TONE_PILL[kpi.tone ?? "default"],
+          )}
+        >
+          {kpi.icon}
+          <span className="font-medium">{kpi.label}</span>
+          <span className={cn("font-semibold tabular-nums", TONE_TEXT[kpi.tone ?? "default"])}>
+            {kpi.value}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
 
