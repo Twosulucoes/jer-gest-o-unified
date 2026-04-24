@@ -738,9 +738,48 @@ export default function CredenciamentoPage() {
 
   const handleStartCredenciamento = (p: CredentialParticipantRow) => {
     setSelectedForCred(p);
+    setTempGuardianData({
+      name: p.guardian_name || "",
+      phone: p.guardian_phone || "",
+      coachName: p.coach_name || "",
+      coachPhone: p.coach_phone || "",
+    });
+    setGuardianConfirmOpen(true);
     setIsLinkingExternal(false);
     setManualCode("");
     setScannerOpen(false);
+  };
+
+  const handleConfirmGuardian = async () => {
+    if (!selectedForCred) return;
+    
+    // Opcional: Atualizar dados do responsável no banco se houver mudanças
+    if (
+      tempGuardianData.name !== (selectedForCred.guardian_name || "") || 
+      tempGuardianData.phone !== (selectedForCred.guardian_phone || "") ||
+      tempGuardianData.coachName !== (selectedForCred.coach_name || "") ||
+      tempGuardianData.coachPhone !== (selectedForCred.coach_phone || "")
+    ) {
+      const { error } = await supabase
+        .from("participants")
+        .update({
+          guardian_name: tempGuardianData.name,
+          guardian_phone: tempGuardianData.phone,
+          coach_name: tempGuardianData.coachName,
+          coach_phone: tempGuardianData.coachPhone,
+        })
+        .eq("id", selectedForCred.id);
+      
+      if (error) {
+        toast.error("Erro ao atualizar dados do responsável: " + error.message);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      }
+    }
+
+    setGuardianConfirmOpen(false);
+    // Após confirmar os dados, o usuário pode seguir com o fluxo de credenciamento
+    // que já existe na tela (o modal do responsável é apenas um check prévio)
   };
 
   const handleLinkExternal = (code: string) => {
