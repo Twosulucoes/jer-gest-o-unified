@@ -466,5 +466,23 @@ export function useDashboardData(eventId?: string | null) {
     competicao: { by_sport: bySport, today: todayMatches },
   };
 
+  if (!isLoadingAll && eventId) {
+    // eslint-disable-next-line no-console
+    console.log("[KPI dashboard]", {
+      eventId,
+      participants_total: P.length,
+      credentialed_kpi: credentialed,
+      cred_active_distinct_participants: credActiveDistinctParticipants,
+      cred_active_rows: credActive,
+      credentialed_from_participants_flag: credentialedFromParticipants,
+      credentials_today: credToday,
+      matches_total: MA.length,
+      meals_total: consumptions.length,
+      lodging_occupied: LO,
+      transport_trips: TR.length,
+      transport_passengers: passengers,
+    });
+  }
+
   return { data, isLoading: isLoadingAll, refetchAll, lastUpdated: new Date() };
 }
