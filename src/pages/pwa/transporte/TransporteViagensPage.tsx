@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useActiveEventId } from "@/contexts/EventContext";
+import { useActiveStageId } from "@/contexts/StageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,17 +19,25 @@ interface Trip {
 
 export default function TransporteViagensPage() {
   const navigate = useNavigate();
+  const eventId = useActiveEventId();
+  const stageId = useActiveStageId();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase
+      let query = supabase
         .from("transport_trips")
         .select("id, scheduled_at, status, transport_vehicles(plate, label), transport_routes(name)")
-        .gte("scheduled_at", today + "T00:00:00")
-        .order("scheduled_at");
+        .eq("event_id", eventId)
+        .gte("scheduled_at", today + "T00:00:00");
+
+      if (stageId) {
+        query = query.eq("event_stage_id", stageId);
+      }
+
+      const { data } = await query.order("scheduled_at");
 
       setTrips((data as any)?.map((t: any) => ({
         id: t.id,
@@ -38,7 +48,7 @@ export default function TransporteViagensPage() {
       })) || []);
       setLoading(false);
     })();
-  }, []);
+  }, [eventId, stageId]);
 
   const statusColor = (s: string) => {
     if (s === "em_transito") return "default";
