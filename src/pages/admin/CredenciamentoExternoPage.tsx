@@ -27,6 +27,7 @@ import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { generateQrCodeValue } from "@/lib/credentialUtils";
 import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
 import { BackgroundLoadingIndicator } from "@/components/credenciamento/BackgroundLoadingIndicator";
+import { StagePageScaffold } from "@/components/admin/stage/StagePageScaffold";
 
 interface ParticipantRow {
   id: string;
@@ -380,7 +381,30 @@ export default function CredenciamentoExternoPage() {
   }, [allParticipants]);
 
   return (
-    <div className="space-y-4">
+    <StagePageScaffold
+      hideGlobalKpis
+      moduleKpis={[
+        {
+          label: "Participantes",
+          value: totalCount,
+          icon: <Users className="h-3.5 w-3.5" />,
+          tone: "default",
+        },
+        {
+          label: "Vinculadas",
+          value: linkedCount,
+          icon: <ShieldCheck className="h-3.5 w-3.5" />,
+          tone: "success",
+        },
+        {
+          label: "Pendentes",
+          value: pendingCount,
+          icon: <Clock className="h-3.5 w-3.5" />,
+          tone: pendingCount > 0 ? "warning" : "default",
+        },
+      ]}
+    >
+      <div className="space-y-4">
       {/* Header */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background">
         <CardHeader className="pb-3">
@@ -400,38 +424,7 @@ export default function CredenciamentoExternoPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Card>
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Users className="h-4 w-4" />
-              Participantes
-            </div>
-            <p className="mt-1 text-2xl font-bold">{totalCount}</p>
-            <p className="text-xs text-muted-foreground">{isStageScoped ? "somente desta etapa" : "em todo evento"}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-emerald-200">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 text-xs text-emerald-700">
-              <ShieldCheck className="h-4 w-4" />
-              Vinculadas
-            </div>
-            <p className="mt-1 text-2xl font-bold text-emerald-700">{linkedCount}</p>
-            <p className="text-xs text-muted-foreground">aptas para módulos externos</p>
-          </CardContent>
-        </Card>
-        <Card className="border-amber-200">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 text-xs text-amber-700">
-              <Clock className="h-4 w-4" />
-              Pendentes
-            </div>
-            <p className="mt-1 text-2xl font-bold text-amber-700">{pendingCount}</p>
-            <p className="text-xs text-muted-foreground">aguardando vinculação</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Stats cards removed since they are now in the top mini-dash for consistency */}
 
       <Card>
         <CardContent className="space-y-3 p-3 sm:p-4">
@@ -688,6 +681,7 @@ export default function CredenciamentoExternoPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </StagePageScaffold>
   );
 }
