@@ -10,11 +10,14 @@ interface Props {
     chief_name: string | null;
     chief_email: string | null;
     chief_phone: string | null;
+    school_name: string;
+    school_city?: string | null;
+    school_state?: string | null;
     notes: string | null;
     status: string;
     created_at: string;
   };
-  institution: { id: string; name: string; city?: string | null; state?: string | null } | null | undefined;
+  institution?: { id: string; name: string; city?: string | null; state?: string | null } | null | undefined;
   event: { id: string; name: string; year: number } | null | undefined;
 }
 
@@ -151,8 +154,8 @@ export default function DelegationResumoTab({ delegation, institution, event }: 
             <CardTitle className="text-base">Dados da Delegação</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <Row label="Instituição" value={institution?.name} />
-            {institution?.city && <Row label="Cidade" value={`${institution.city}${institution.state ? `/${institution.state}` : ""}`} />}
+            <Row label="Instituição" value={delegation.school_name} />
+            {delegation.school_city && <Row label="Cidade" value={`${delegation.school_city}${delegation.school_state ? `/${delegation.school_state}` : ""}`} />}
             <Row label="Evento" value={event ? `${event.name} (${event.year})` : undefined} />
             <Row label="Cadastrada em" value={new Date(delegation.created_at).toLocaleDateString("pt-BR")} />
             {delegation.chief_name && <Row label="Chefe" value={delegation.chief_name} icon={<User className="h-3.5 w-3.5" />} />}

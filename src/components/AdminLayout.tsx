@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree, Trophy, Bus, UtensilsCrossed, Building2,
-  Building, Users, Upload, KeyRound, BadgeCheck, Gavel,
+  Users, Upload, KeyRound, BadgeCheck, Gavel,
   UsersRound, ChevronDown,
   Shield, Settings, AlertTriangle, FileBarChart,
   Info, ExternalLink, ChevronsLeft,
   ChevronsRight, User, FolderOpen,
-  Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList, Radio, Database as DatabaseIcon, Activity, CheckCircle, Layers,
+  Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList, Radio, Layers,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import StageFilterBanner from "@/components/admin/StageFilterBanner";
@@ -68,7 +68,6 @@ const navGroups: NavGroup[] = [
       { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Duplicidades de Pessoas", to: "/admin/participantes/duplicidades", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Histórico do Participante", to: "/admin/participantes/historico", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Instituições", to: "/admin/instituicoes", icon: <Building className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Credencial (Modelos)", to: "/admin/credenciais/modelos", icon: <BadgeCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Vouchers (Validar)", to: "/admin/vouchers", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "alimentacao"] as AppRole[] },

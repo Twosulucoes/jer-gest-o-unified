@@ -216,7 +216,7 @@ export default function ParticipantesPage() {
       const baseFields =
         "id, status, participant_type, category, person_id, delegation_id, created_at, " +
         "person:people(id, full_name, cpf, gender), " +
-        "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))";
+        "delegation:delegations(id, school_name, institution_id)";
 
       const from = page * pageSize;
       const to = from + pageSize - 1;
@@ -269,8 +269,8 @@ export default function ParticipantesPage() {
         case "status":
           va = a.status ?? ""; vb = b.status ?? ""; break;
         case "institution":
-          va = a.delegation?.institution?.name ?? a.delegation?.school_name ?? "";
-          vb = b.delegation?.institution?.name ?? b.delegation?.school_name ?? ""; break;
+          va = a.delegation?.school_name ?? "";
+          vb = b.delegation?.school_name ?? ""; break;
         case "created":
           va = a.created_at ?? ""; vb = b.created_at ?? ""; break;
       }

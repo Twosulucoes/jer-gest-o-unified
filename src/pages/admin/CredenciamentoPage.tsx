@@ -141,10 +141,8 @@ interface CredentialParticipantRow {
     photo_url: string | null;
   } | null;
   delegation: {
-    institution: {
-      id: string;
-      name: string | null;
-    } | null;
+    id: string;
+    school_name: string | null;
   } | null;
 }
 
@@ -303,7 +301,7 @@ export default function CredenciamentoPage() {
 
   const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone,
     person:people!participants_person_id_fkey(full_name, cpf, photo_url),
-    delegation:delegations!participants_delegation_id_fkey(institution:institutions(id, name))`;
+    delegation:delegations!participants_delegation_id_fkey(id, school_name, institution_id)`;
 
   const {
     data: progressiveParts,
@@ -370,8 +368,8 @@ export default function CredenciamentoPage() {
   const institutionOptions = useMemo(() => {
     const unique = new Map<string, string>();
     participants.forEach((participant) => {
-      const institution = participant.delegation?.institution;
-      if (institution?.id && institution.name) unique.set(institution.id, institution.name);
+      const schoolName = participant.delegation?.school_name;
+      if (schoolName) unique.set(schoolName, schoolName);
     });
     return Array.from(unique, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }, [participants]);
@@ -381,8 +379,8 @@ export default function CredenciamentoPage() {
     return [...types].sort();
   }, [participants]);
 
-  const getInstitutionId = useCallback((participant: CredentialParticipantRow) => participant.delegation?.institution?.id ?? "", []);
-  const getInstitutionName = useCallback((participant: CredentialParticipantRow) => participant.delegation?.institution?.name ?? "—", []);
+  const getInstitutionId = useCallback((participant: CredentialParticipantRow) => participant.delegation?.school_name ?? "", []);
+  const getInstitutionName = useCallback((participant: CredentialParticipantRow) => participant.delegation?.school_name ?? "—", []);
 
   // --- Determine participant state ---
   const getParticipantState = useCallback((p: { status: string; id: string }): ParticipantState => {

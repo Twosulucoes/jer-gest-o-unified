@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowLeft, Users, Trophy, IdCard, Bus, LayoutDashboard, ExternalLink } from "lucide-react";
+import { Loader2, ArrowLeft, Users, Trophy, IdCard, Bus, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,19 +48,7 @@ export default function DelegacaoDetalhePage() {
     enabled: !!delegationId,
   });
 
-  const { data: institution } = useQuery({
-    queryKey: ["institution_detail", delegation?.institution_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("institutions")
-        .select("id, name, city, state")
-        .eq("id", delegation!.institution_id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!delegation?.institution_id,
-  });
+  // Institution query removed since data is now embedded in delegation (school_name, etc.)
 
   const { data: event } = useQuery({
     queryKey: ["event_detail", delegation?.event_id],
@@ -126,7 +114,7 @@ export default function DelegacaoDetalhePage() {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem className="min-w-0">
-              <BreadcrumbPage className="truncate text-sm">{institution?.name ?? "Detalhe"}</BreadcrumbPage>
+              <BreadcrumbPage className="truncate text-sm">{delegation.school_name ?? "Detalhe"}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -140,7 +128,7 @@ export default function DelegacaoDetalhePage() {
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-base sm:text-xl font-bold text-foreground leading-tight line-clamp-2 break-words">
-              {institution?.name ?? "Delegação"}
+              {delegation.school_name ?? "Delegação"}
             </h1>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
               <Badge variant={statusInfo.variant} className="text-xs">{statusInfo.label}</Badge>
@@ -149,9 +137,9 @@ export default function DelegacaoDetalhePage() {
                   {participantCount} participante{participantCount !== 1 ? "s" : ""}
                 </span>
               )}
-              {institution?.city && (
+              {delegation.school_city && (
                 <span className="text-xs text-muted-foreground truncate">
-                  • {institution.city}{institution.state ? `/${institution.state}` : ""}
+                  • {delegation.school_city}{delegation.school_state ? `/${delegation.school_state}` : ""}
                 </span>
               )}
             </div>
@@ -173,14 +161,6 @@ export default function DelegacaoDetalhePage() {
             <Button size="sm" variant="outline" onClick={() => setActiveTab("credenciamento")} className="justify-center">
               <IdCard className="h-3.5 w-3.5" />
               <span className="truncate">Credenciar</span>
-            </Button>
-          )}
-          {institution && (
-            <Button size="sm" variant="ghost" asChild className="justify-center col-span-2 sm:col-span-1">
-              <Link to={`/admin/instituicoes`}>
-                <ExternalLink className="h-3.5 w-3.5" />
-                <span className="truncate">Instituição</span>
-              </Link>
             </Button>
           )}
         </div>
@@ -211,7 +191,7 @@ export default function DelegacaoDetalhePage() {
         </div>
 
         <TabsContent value="resumo">
-          <DelegationResumoTab delegation={delegation} institution={institution} event={event} />
+          <DelegationResumoTab delegation={delegation} event={event} />
         </TabsContent>
         <TabsContent value="participantes">
           <DelegationParticipantesTab delegationId={delegation.id} eventId={delegation.event_id} />
