@@ -97,7 +97,7 @@ export default function TransportePassageirosPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("transport_passengers")
-      .select("id, status, boarded_at, is_manual, manual_name, manual_cpf, no_show, participant_id, participant:participants(guardian_name, guardian_phone, coach_name, coach_phone, person:people(full_name, cpf, photo_url), delegation:delegations(institution:institutions(name)))")
+      .select("id, status, boarded_at, is_manual, manual_name, manual_cpf, no_show, participant_id, participant:participants(guardian_name, guardian_phone, coach_name, coach_phone, person:people(full_name, cpf, photo_url), delegation:delegations(school_name))")
       .eq("trip_id", tripId)
       .order("created_at");
 
