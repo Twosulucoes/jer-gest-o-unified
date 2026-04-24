@@ -52,7 +52,8 @@ const RESULT_CONFIG: Record<string, { label: string; icon: React.ReactNode; colo
   not_found: { label: "NÃO ENCONTRADO", icon: <XCircle className="h-8 w-8" />, color: "text-destructive bg-destructive/10 border-destructive/30" },
   revoked: { label: "REVOGADO", icon: <XCircle className="h-8 w-8" />, color: "text-destructive bg-destructive/10 border-destructive/30" },
   suspended: { label: "SUSPENSO", icon: <AlertTriangle className="h-8 w-8" />, color: "text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800" },
-  not_activated: { label: "NÃO ATIVADO", icon: <AlertTriangle className="h-8 w-8" />, color: "text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800" },
+  not_activated: { label: "CREDENCIAL PENDENTE", icon: <AlertTriangle className="h-8 w-8" />, color: "text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800" },
+  no_credential: { label: "SEM CREDENCIAL", icon: <AlertTriangle className="h-8 w-8" />, color: "text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800" },
   wrong_event: { label: "EVENTO INCORRETO", icon: <XCircle className="h-8 w-8" />, color: "text-destructive bg-destructive/10 border-destructive/30" },
 };
 

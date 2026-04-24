@@ -280,8 +280,8 @@ Deno.serve(async (req: Request) => {
         scanResult = "not_activated";
         scanNotes = "Credencial ainda não ativada";
       } else if (credential.status === "no_credential") {
-        scanResult = "not_activated";
-        scanNotes = "Participante encontrado por CPF, mas sem credencial emitida";
+        scanResult = "no_credential";
+        scanNotes = "Este participante ainda não foi credenciado";
       } else if (credential.status === "active") {
         scanResult = "valid";
       } else {
