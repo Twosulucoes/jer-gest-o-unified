@@ -22,6 +22,7 @@ import {
   ChevronRight,
   AlertCircle,
   ShieldAlert,
+  Users,
 } from "lucide-react";
 import {
   Dialog,
@@ -72,6 +73,7 @@ import ModuleHeader from "@/components/admin/ModuleHeader";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
 import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
 import { BackgroundLoadingIndicator } from "@/components/credenciamento/BackgroundLoadingIndicator";
+import { StageMiniDash } from "@/components/admin/stage/StageMiniDash";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -149,6 +151,8 @@ export default function CredenciamentoPage() {
   const [batchLabelIds, setBatchLabelIds] = useState<string[]>([]);
   const [batchCredentialConfirmOpen, setBatchCredentialConfirmOpen] = useState(false);
   const [batchEmitConfirmOpen, setBatchEmitConfirmOpen] = useState(false);
+  const [showGlobalKpis, setShowGlobalKpis] = useState(false);
+
 
   
   const [blockingDialogData, setBlockingDialogData] = useState<{ participantName: string; items: any[] } | null>(null);
