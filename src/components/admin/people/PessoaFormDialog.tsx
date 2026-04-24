@@ -25,6 +25,7 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   /** When provided, edits this participant. Otherwise creates a new person + participant. */
   participantId?: string | null;
+  onSuccess?: (id: string) => void;
 }
 
 const personSchema = z.object({
