@@ -11,6 +11,7 @@ import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useEventContext } from "@/contexts/EventContext";
+import { useActiveStageId } from "@/contexts/StageContext";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +40,7 @@ export default function AlimentacaoScanPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { activeEventId } = useEventContext();
+  const stageId = useActiveStageId();
   const userId = user?.id ?? null;
   const lang = getPwaLang();
   const [windows, setWindows] = useState<MealWindow[]>([]);
@@ -90,12 +92,13 @@ export default function AlimentacaoScanPage() {
         .eq("service_date", today)
         .order("start_time");
       if (activeEventId) q = q.eq("event_id", activeEventId);
+      if (stageId) q = q.eq("event_stage_id", stageId);
       const { data } = await q;
       const list = (data ?? []) as unknown as MealWindow[];
       setWindows(list);
       if (list.length === 1) setWindowId(list[0].id);
     })();
-  }, [activeEventId]);
+  }, [activeEventId, stageId]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
