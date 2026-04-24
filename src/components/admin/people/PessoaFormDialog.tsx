@@ -71,7 +71,12 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
   const [accessPermissions, setAccessPermissions] = useState("");
   const [observations, setObservations] = useState("");
   const [needsTransport, setNeedsTransport] = useState(false);
-...
+  const [needsMeals, setNeedsMeals] = useState(false);
+  const [needsLodging, setNeedsLodging] = useState(false);
+  const [logisticsRestrictions, setLogisticsRestrictions] = useState("");
+  const [logisticsNotes, setLogisticsNotes] = useState("");
+  const [foodRestrictions, setFoodRestrictions] = useState("");
+  const [disabilityType, setDisabilityType] = useState("");
   const [medicalNotes, setMedicalNotes] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [guardianName, setGuardianName] = useState("");
