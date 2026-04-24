@@ -8,7 +8,7 @@ import {
   Users, UserCheck, ShieldCheck, Bus, UtensilsCrossed, Building, Trophy,
   CheckCircle2, AlertTriangle, Clock, TrendingUp,
   Upload, UsersRound, ScanLine, Navigation, ClipboardList, CalendarDays, KeyRound,
-  RefreshCw, Bed, Truck, CalendarClock,
+  RefreshCw, Bed, Truck, CalendarClock, Calendar
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -83,6 +83,19 @@ export default function DashboardPage() {
   });
 
   const { data, isLoading, refetchAll, lastUpdated } = useDashboardData(eventId);
+  const eventsLoading = useEventContext().eventsLoading;
+
+  if (!eventId && !eventsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
+        <h2 className="text-xl font-bold text-foreground mb-2">Nenhum evento ativo selecionado</h2>
+        <p className="text-sm text-muted-foreground mb-6 max-w-md">
+          Selecione um evento no menu lateral para visualizar os dados consolidados do Painel de Gestão.
+        </p>
+      </div>
+    );
+  }
 
   const selectedEvent = events.find(e => e.id === eventId);
   const r = data.resumo;
