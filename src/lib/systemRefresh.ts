@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const REFRESH_EVENT = "refresh_all";
 const RELOAD_GUARD_KEY = "jer-global-refresh-at";
@@ -13,10 +14,15 @@ export async function dispatchGlobalRefresh() {
     },
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Error dispatching global refresh:", error);
+    throw error;
+  }
 }
 
 export function installGlobalRefreshListener() {
+  console.log("Installing global refresh listener...");
+  
   const channel = supabase
     .channel("system-commands-refresh")
     .on(
@@ -27,16 +33,32 @@ export function installGlobalRefreshListener() {
         table: "system_commands",
         filter: `command=eq.${REFRESH_EVENT}`,
       },
-      () => {
+      (payload) => {
+        console.log("Received global refresh command:", payload);
+        
         const lastAtRaw = sessionStorage.getItem(RELOAD_GUARD_KEY);
         const lastAt = lastAtRaw ? Number(lastAtRaw) : 0;
         const now = Date.now();
-        if (Number.isFinite(lastAt) && now - lastAt < RELOAD_GUARD_WINDOW_MS) return;
+        
+        if (Number.isFinite(lastAt) && now - lastAt < RELOAD_GUARD_WINDOW_MS) {
+          console.log("Refresh command throttled (within guard window)");
+          return;
+        }
+        
         sessionStorage.setItem(RELOAD_GUARD_KEY, String(now));
-        window.location.reload();
+        
+        toast.info("Comando de atualização global recebido. Recarregando em breve...", {
+          duration: 3000,
+        });
+        
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       },
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log("Global refresh subscription status:", status);
+    });
 
   return () => {
     supabase.removeChannel(channel);

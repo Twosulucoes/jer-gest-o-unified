@@ -238,8 +238,7 @@ export function useDashboardData(eventId?: string | null) {
   });
 
   const isLoading = queries.some((q) => q.isLoading);
-  const refetchAll = async () => { await Promise.all(queries.map((q) => q.refetch())); };
-
+  
   const [participants, credentials, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, trips, vehicles, sportEvents, matches] =
     queries.map((q) => q.data) as [
       { id: string; credentialed_at: string | null; delegation_id: string | null }[],
@@ -483,6 +482,13 @@ export function useDashboardData(eventId?: string | null) {
       transport_passengers: passengers,
     });
   }
+
+  const refetchAll = async () => {
+    await Promise.all([
+      ...queries.map((q) => q.refetch()),
+      ...dependent.map((q) => q.refetch())
+    ]);
+  };
 
   return { data, isLoading: isLoadingAll, refetchAll, lastUpdated: new Date() };
 }
