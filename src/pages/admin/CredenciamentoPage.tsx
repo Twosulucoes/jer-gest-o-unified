@@ -1107,8 +1107,8 @@ export default function CredenciamentoPage() {
                                 size="sm"
                                 variant="outline"
                                 className="h-8 px-3 text-[11px] font-bold border-blue-600 text-blue-600 hover:bg-blue-50"
-                                onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "emit")}
-                                disabled={emitCredentialMutation.isPending || isBlocked}
+                                onClick={() => handleStartCredenciamento(p)}
+                                disabled={credentialMutation.isPending || isBlocked}
                               >
                                 <CreditCard className="h-3.5 w-3.5 mr-1.5" /> Emitir Credencial
                               </Button>
