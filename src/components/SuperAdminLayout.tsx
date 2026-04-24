@@ -14,6 +14,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { GlobalRefreshButton } from "@/components/admin/GlobalRefreshButton";
 
 interface NavItem {
   label: string;
@@ -204,6 +205,8 @@ export default function SuperAdminLayout() {
             </div>
 
             <div className="flex-1" />
+
+            <GlobalRefreshButton className="mr-2" />
 
             <ThemeToggle className="text-muted-foreground" />
 

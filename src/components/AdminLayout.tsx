@@ -23,6 +23,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { NavigationHistoryTracker } from "@/hooks/useNavigationHistory";
 import { useMobileBackGuard } from "@/hooks/useMobileBackGuard";
 import { brand } from "@/theme/brand";
+import { GlobalRefreshButton } from "@/components/admin/GlobalRefreshButton";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -453,6 +454,8 @@ export default function AdminLayout() {
             </h2>
 
             <div className="flex-1" />
+
+            <GlobalRefreshButton className="mr-2" />
 
             <ThemeToggle className="text-muted-foreground" />
 
