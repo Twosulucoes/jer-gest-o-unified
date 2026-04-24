@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useActiveEventId } from "@/contexts/EventContext";
+import { useActiveStageId } from "@/contexts/StageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,21 +19,29 @@ interface WindowItem {
 
 export default function AlimentacaoJanelasPage() {
   const navigate = useNavigate();
+  const eventId = useActiveEventId();
+  const stageId = useActiveStageId();
   const [windows, setWindows] = useState<WindowItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase
+      let query = supabase
         .from("meal_windows")
         .select("id, window_start, window_end, meal_type:meal_types(name)")
-        .gte("window_start", today + "T00:00:00")
-        .order("window_start");
+        .eq("event_id", eventId)
+        .gte("window_start", today + "T00:00:00");
+
+      if (stageId) {
+        query = query.eq("event_stage_id", stageId);
+      }
+
+      const { data } = await query.order("window_start");
       setWindows((data as any) || []);
       setLoading(false);
     })();
-  }, []);
+  }, [eventId, stageId]);
 
   const getStatus = (w: WindowItem) => {
     const now = new Date();
