@@ -246,6 +246,10 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
           needs_lodging: needsLodging,
           logistics_restrictions: logisticsRestrictions || null,
           logistics_notes: logisticsNotes || null,
+          guardian_name: guardianName || null,
+          guardian_phone: guardianPhone || null,
+          coach_name: coachName || null,
+          coach_phone: coachPhone || null,
         } as any).select("id").single();
         if (errPart) throw errPart;
         pId = newPart.id;
