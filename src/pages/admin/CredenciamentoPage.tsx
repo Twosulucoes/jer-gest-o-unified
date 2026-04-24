@@ -1230,6 +1230,7 @@ export default function CredenciamentoPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
