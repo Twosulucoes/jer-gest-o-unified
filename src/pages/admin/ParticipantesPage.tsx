@@ -191,6 +191,7 @@ export default function ParticipantesPage() {
       selectedEventId,
       page,
       pageSize,
+      categoryFilter,
       typeFilter,
       statusFilter,
       isSearching ? (matchingPersonIds ?? []).join(",") : "",
