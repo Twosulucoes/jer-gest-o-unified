@@ -26,6 +26,7 @@ interface Props {
   /** When provided, edits this participant. Otherwise creates a new person + participant. */
   participantId?: string | null;
   onSuccess?: (id: string) => void;
+  defaultStageId?: string | null;
 }
 
 const personSchema = z.object({
@@ -37,7 +38,7 @@ const personSchema = z.object({
   gender: z.enum(["male", "female"]).optional(),
 });
 
-export default function PessoaFormDialog({ open, onOpenChange, participantId, onSuccess }: Props) {
+export default function PessoaFormDialog({ open, onOpenChange, participantId, onSuccess, defaultStageId }: Props) {
   const { user, hasRole } = useAuth();
   const eventId = useActiveEventId();
   const qc = useQueryClient();
@@ -75,6 +76,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
   const [guardianPhone, setGuardianPhone] = useState("");
   const [coachName, setCoachName] = useState("");
   const [coachPhone, setCoachPhone] = useState("");
+  const [selectedStageId, setSelectedStageId] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Catalog of roles
@@ -98,6 +100,20 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
         .eq("event_id", eventId!).order("school_name");
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: eventStages = [] } = useQuery({
+    queryKey: ["event_stages_for_form", eventId],
+    enabled: !!eventId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("event_stages" as never) as any)
+        .select("id, name")
+        .eq("event_id", eventId!)
+        .eq("status", "active")
+        .order("sort_order");
+      if (error) throw error;
+      return data as { id: string; name: string }[];
     },
   });
 
@@ -150,6 +166,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
       setFoodRestrictions(""); setDisabilityType(""); setMedicalNotes("");
       setGuardianName(""); setGuardianPhone(""); setCoachName(""); setCoachPhone("");
       setSelectedRoles([]);
+      setSelectedStageId(defaultStageId || "");
       setErrors({});
     }
   }, [existing, isEdit, open]);
@@ -269,6 +286,15 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
         }));
         const { error: errRoles } = await (supabase.from("participant_event_roles" as never) as any).insert(rows);
         if (errRoles) throw errRoles;
+      }
+
+      // Sync stage
+      if (!isEdit && selectedStageId && selectedStageId !== "none") {
+        const { error: errStage } = await (supabase.from("participant_event_stages" as never) as any).insert({
+          participant_id: pId,
+          event_stage_id: selectedStageId,
+        });
+        if (errStage) throw errStage;
       }
 
       return pId;
@@ -392,6 +418,25 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
                     </SelectContent>
                   </Select>
                 </div>
+                {!isEdit && (
+                  <div>
+                    <Label>Atribuir a Etapa (opcional)</Label>
+                    <Select 
+                      value={selectedStageId} 
+                      onValueChange={setSelectedStageId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Nenhuma / Global" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhuma / Global</SelectItem>
+                        {eventStages.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div>
                   <Label>Delegação (opcional)</Label>
                   <Popover open={delegationOpen} onOpenChange={setDelegationOpen}>
