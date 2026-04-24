@@ -47,6 +47,7 @@ export default function QrCodeScanner({
   const [showSuccess, setShowSuccess] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const [useFront, setUseFront] = useState(false);
+  const [hintVisible, setHintVisible] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
