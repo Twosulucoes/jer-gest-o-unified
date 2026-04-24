@@ -153,6 +153,17 @@ export default function ValidacaoQRPage() {
     color: "text-muted-foreground bg-muted border-border",
   } : null;
 
+  const FRIENDLY_MESSAGES: Record<string, string> = {
+    valid: "Credencial válida. Acesso liberado.",
+    no_credential: "Este participante ainda não foi credenciado.",
+    not_activated: "A credencial existe, mas ainda não foi ativada.",
+    revoked: "Credencial revogada. Acesso negado.",
+    suspended: "Credencial suspensa. Acesso bloqueado.",
+    wrong_event: "Esta credencial pertence a outro evento.",
+    not_found: "QR Code não encontrado no sistema.",
+  };
+  const friendlyMessage = result ? (FRIENDLY_MESSAGES[result.result] ?? result.message ?? null) : null;
+
   // Registra KPIs do módulo no scaffold pai (sem renderizar outro scaffold)
   useStageModuleKpis(
     [
