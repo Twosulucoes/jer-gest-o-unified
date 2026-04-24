@@ -25,6 +25,7 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   /** When provided, edits this participant. Otherwise creates a new person + participant. */
   participantId?: string | null;
+  onSuccess?: (id: string) => void;
 }
 
 const personSchema = z.object({
@@ -36,7 +37,7 @@ const personSchema = z.object({
   gender: z.enum(["male", "female"]).optional(),
 });
 
-export default function PessoaFormDialog({ open, onOpenChange, participantId }: Props) {
+export default function PessoaFormDialog({ open, onOpenChange, participantId, onSuccess }: Props) {
   const { user, hasRole } = useAuth();
   const eventId = useActiveEventId();
   const qc = useQueryClient();
@@ -70,6 +71,10 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
   const [disabilityType, setDisabilityType] = useState("");
   const [medicalNotes, setMedicalNotes] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [guardianName, setGuardianName] = useState("");
+  const [guardianPhone, setGuardianPhone] = useState("");
+  const [coachName, setCoachName] = useState("");
+  const [coachPhone, setCoachPhone] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Catalog of roles
@@ -103,7 +108,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
     queryFn: async () => {
       const { data: p, error } = await supabase
         .from("participants")
-        .select("id, person_id, participant_type, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, person:people(full_name, cpf, email, phone, birth_date, gender, food_restrictions, disability_type, medical_notes)")
+        .select("id, person_id, participant_type, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, guardian_name, guardian_phone, coach_name, coach_phone, person:people(full_name, cpf, email, phone, birth_date, gender, food_restrictions, disability_type, medical_notes)")
         .eq("id", participantId!).single();
       if (error) throw error;
       const { data: roles } = await (supabase.from("participant_event_roles" as never) as any)
@@ -131,6 +136,10 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
       setFoodRestrictions(p.person?.food_restrictions ?? "");
       setDisabilityType(p.person?.disability_type ?? "");
       setMedicalNotes(p.person?.medical_notes ?? "");
+      setGuardianName(p.guardian_name ?? "");
+      setGuardianPhone(p.guardian_phone ?? "");
+      setCoachName(p.coach_name ?? "");
+      setCoachPhone(p.coach_phone ?? "");
       setSelectedRoles(existing.roles);
     } else if (open && !isEdit) {
       // Reset
@@ -139,6 +148,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
       setNeedsTransport(false); setNeedsMeals(false); setNeedsLodging(false);
       setLogisticsRestrictions(""); setLogisticsNotes("");
       setFoodRestrictions(""); setDisabilityType(""); setMedicalNotes("");
+      setGuardianName(""); setGuardianPhone(""); setCoachName(""); setCoachPhone("");
       setSelectedRoles([]);
       setErrors({});
     }
@@ -193,6 +203,10 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
           needs_lodging: needsLodging,
           logistics_restrictions: logisticsRestrictions || null,
           logistics_notes: logisticsNotes || null,
+          guardian_name: guardianName || null,
+          guardian_phone: guardianPhone || null,
+          coach_name: coachName || null,
+          coach_phone: coachPhone || null,
         } as any).eq("id", pId);
         if (errPart) throw errPart;
       } else {
@@ -233,6 +247,10 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
           needs_lodging: needsLodging,
           logistics_restrictions: logisticsRestrictions || null,
           logistics_notes: logisticsNotes || null,
+          guardian_name: guardianName || null,
+          guardian_phone: guardianPhone || null,
+          coach_name: coachName || null,
+          coach_phone: coachPhone || null,
         } as any).select("id").single();
         if (errPart) throw errPart;
         pId = newPart.id;
@@ -255,11 +273,12 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
 
       return pId;
     },
-    onSuccess: () => {
+    onSuccess: (pId) => {
       toast({ title: isEdit ? "Pessoa atualizada" : "Pessoa cadastrada" });
       qc.invalidateQueries({ queryKey: ["all-participants"] });
       qc.invalidateQueries({ queryKey: ["participant_full"] });
       qc.invalidateQueries({ queryKey: ["pessoa_form_data"] });
+      if (onSuccess) onSuccess(pId);
       onOpenChange(false);
     },
     onError: (err: any) => {
@@ -445,6 +464,39 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
                 </div>
               )}
             </section>
+
+            {/* Contatos de Emergência / Responsáveis - Visível para atletas */}
+            {participantType === "athlete" && (
+              <section className="space-y-3">
+                <h3 className="text-sm font-semibold text-foreground">Responsável / Contato de Emergência</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Nome do Responsável</Label>
+                    <Input 
+                      value={guardianName} 
+                      onChange={e => setGuardianName(e.target.value)} 
+                      placeholder="Ex: Nome do Pai ou Mãe"
+                    />
+                  </div>
+                  <div>
+                    <Label>Telefone do Responsável</Label>
+                    <Input 
+                      value={guardianPhone} 
+                      onChange={e => setGuardianPhone(e.target.value)} 
+                      placeholder="(00) 00000-0000"
+                    />
+                  </div>
+                  <div>
+                    <Label>Vínculo / Parentesco</Label>
+                    <Input 
+                      value={coachName} 
+                      onChange={e => setCoachName(e.target.value)} 
+                      placeholder="Ex: Pai, Mãe, Tutor"
+                    />
+                  </div>
+                </div>
+              </section>
+            )}
 
             {/* Saúde e Restrições - Visível apenas para perfis sensíveis ou tipo atleta */}
             {(canEditSensitive || participantType === "athlete") && (

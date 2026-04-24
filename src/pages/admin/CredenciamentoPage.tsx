@@ -172,6 +172,7 @@ export default function CredenciamentoPage() {
   
   // States for unified credentialing flow
   const [selectedForCred, setSelectedForCred] = useState<CredentialParticipantRow | null>(null);
+  const [isWorkflowActive, setIsWorkflowActive] = useState(false);
   const [guardianConfirmOpen, setGuardianConfirmOpen] = useState(false);
   const [tempGuardianData, setTempGuardianData] = useState({ name: "", phone: "", relationship: "" });
   const [isLinkingExternal, setIsLinkingExternal] = useState(false);
@@ -490,6 +491,7 @@ export default function CredenciamentoPage() {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
       toast.success("Credenciamento realizado com sucesso!");
       setSelectedForCred(null);
+      setIsWorkflowActive(false);
       setIsLinkingExternal(false);
       setManualCode("");
     },
@@ -738,12 +740,17 @@ export default function CredenciamentoPage() {
 
   const handleStartCredenciamento = (p: CredentialParticipantRow) => {
     setSelectedForCred(p);
+    setIsWorkflowActive(true);
+    setEditingParticipantId(p.id);
+    setEditDialogOpen(true);
+    
+    // We prepare the guardian data for the next step
     setTempGuardianData({
       name: p.guardian_name || "",
       phone: p.guardian_phone || "",
       relationship: p.coach_name || "",
     });
-    setGuardianConfirmOpen(true);
+    
     setIsLinkingExternal(false);
     setManualCode("");
     setScannerOpen(false);
@@ -1310,11 +1317,6 @@ export default function CredenciamentoPage() {
 
             </div>
 
-            <PessoaFormDialog 
-              open={editDialogOpen} 
-              onOpenChange={setEditDialogOpen} 
-              participantId={editingParticipantId} 
-            />
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -1437,10 +1439,11 @@ export default function CredenciamentoPage() {
       </Dialog>
       {/* Diálogo unificado de credenciamento */}
       <Dialog 
-        open={!!selectedForCred} 
+        open={!!selectedForCred && !editDialogOpen && !guardianConfirmOpen} 
         onOpenChange={(open) => { 
           if (!open && !credentialMutation.isPending) {
             setSelectedForCred(null); 
+            setIsWorkflowActive(false);
             setIsLinkingExternal(false);
           }
         }}
@@ -1553,7 +1556,13 @@ export default function CredenciamentoPage() {
       </Dialog>
 
       {/* Guardian Confirmation Dialog */}
-      <Dialog open={guardianConfirmOpen} onOpenChange={setGuardianConfirmOpen}>
+      <Dialog open={guardianConfirmOpen} onOpenChange={(open) => {
+        setGuardianConfirmOpen(open);
+        if (!open && isWorkflowActive) {
+          setIsWorkflowActive(false);
+          setSelectedForCred(null);
+        }
+      }}>
         <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1609,6 +1618,36 @@ export default function CredenciamentoPage() {
           if (!open) {
             setEditingParticipantId(null);
             queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+            
+            // If we are in the workflow and it was CLOSED (cancelled), stop workflow
+            if (isWorkflowActive && !guardianConfirmOpen) {
+              // Wait a bit to see if onSuccess was called
+              setTimeout(() => {
+                if (!guardianConfirmOpen) {
+                  setIsWorkflowActive(false);
+                  setSelectedForCred(null);
+                }
+              }, 100);
+            }
+          }
+        }}
+        onSuccess={async (pId) => {
+          if (isWorkflowActive && selectedForCred) {
+            // Fetch the updated data to ensure the confirmation modal has latest info
+            const { data } = await supabase
+              .from("participants")
+              .select("guardian_name, guardian_phone, coach_name")
+              .eq("id", pId)
+              .single();
+            
+            if (data) {
+              setTempGuardianData({
+                name: data.guardian_name || "",
+                phone: data.guardian_phone || "",
+                relationship: data.coach_name || "",
+              });
+            }
+            setGuardianConfirmOpen(true);
           }
         }}
         participantId={editingParticipantId}
