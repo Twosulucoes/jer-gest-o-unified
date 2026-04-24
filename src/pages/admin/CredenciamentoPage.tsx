@@ -1452,60 +1452,50 @@ export default function CredenciamentoPage() {
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Vincular Externa</span>
               </div>
 
-              {scannerOpen ? (
-                <div className="relative aspect-square overflow-hidden rounded-lg border bg-black">
-                  <QrCodeScanner
-                    onScan={handleScan}
-                    onClose={() => setScannerOpen(false)}
-                    isOpen={scannerOpen}
+              <div className="space-y-4">
+                <Button 
+                  variant="outline" 
+                  className="w-full h-16 gap-2 border-dashed border-2 hover:border-primary hover:text-primary transition-all"
+                  onClick={() => setScannerOpen(true)}
+                >
+                  <ScanLine className="h-5 w-5" />
+                  Ler QR Code / Código de Barras
+                </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">ou digite manualmente</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Código da credencial..."
+                    value={manualCode}
+                    onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => e.key === "Enter" && handleLinkExternal(manualCode)}
+                    className="h-11 font-mono uppercase"
                   />
-                  <Button
-                    size="icon"
-                    variant="destructive"
-                    className="absolute top-2 right-2 h-8 w-8 rounded-full"
-                    onClick={() => setScannerOpen(false)}
-                  >
-                    <XCircle className="h-5 w-5" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
                   <Button 
-                    variant="outline" 
-                    className="w-full h-16 gap-2 border-dashed border-2 hover:border-primary hover:text-primary transition-all"
-                    onClick={() => setScannerOpen(true)}
+                    className="h-11 px-4"
+                    onClick={() => handleLinkExternal(manualCode)}
+                    disabled={!manualCode.trim() || credentialMutation.isPending}
                   >
-                    <ScanLine className="h-5 w-5" />
-                    Ler QR Code / Código de Barras
+                    <Check className="h-4 w-4" />
                   </Button>
-
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">ou digite manualmente</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Código da credencial..."
-                      value={manualCode}
-                      onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === "Enter" && handleLinkExternal(manualCode)}
-                      className="h-11 font-mono uppercase"
-                    />
-                    <Button 
-                      className="h-11 px-4"
-                      onClick={() => handleLinkExternal(manualCode)}
-                      disabled={!manualCode.trim() || credentialMutation.isPending}
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
-              )}
+              </div>
+            </div>
+          )}
+
+          <QrCodeScanner
+            onScan={handleScan}
+            onClose={() => setScannerOpen(false)}
+            isOpen={scannerOpen}
+          />
             </div>
           )}
 
