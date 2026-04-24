@@ -25,7 +25,6 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
-import { generateQrCodeValue } from "@/lib/credentialUtils";
 import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
 import { BackgroundLoadingIndicator } from "@/components/credenciamento/BackgroundLoadingIndicator";
 import { useStageModuleKpis } from "@/contexts/StageModuleKpisContext";
@@ -235,94 +234,20 @@ export default function CredenciamentoExternoPage() {
     : null;
   const hasActiveCred = existingCred?.id != null;
 
-  // Link credential mutation
+  // Link credential mutation — all writes happen inside a single DB transaction via RPC
   const linkMutation = useMutation({
     mutationFn: async ({ code, replaceId }: { code: string; replaceId?: string }) => {
       if (!eventId || !selectedParticipant || !user) throw new Error("Dados insuficientes");
-      const nowIso = new Date().toISOString();
 
-      const { data: existing } = await supabase
-        .from("external_credentials")
-        .select("id, participant_id")
-        .eq("event_id", eventId)
-        .eq("credential_code", code)
-        .eq("status", "active")
-        .maybeSingle();
-
-      if (existing) {
-        const other = allParticipants.find(p => p.id === (existing as any).participant_id);
-        throw new Error(`Credencial já vinculada a ${other?.full_name || "outro participante"}`);
-      }
-
-      if (replaceId) {
-        await supabase.from("external_credentials").update({ status: "replaced" }).eq("id", replaceId);
-        await supabase
-          .from("participant_credentials")
-          .update({ status: "reissued", is_active: false, revoked_at: nowIso })
-          .eq("participant_id", selectedParticipant.id)
-          .eq("event_id", eventId)
-          .eq("binding_source", "external")
-          .eq("status", "active");
-      }
-
-      const { error } = await supabase.from("external_credentials").insert({
-        event_id: eventId,
-        participant_id: selectedParticipant.id,
-        credential_code: code,
-        status: "active",
-        linked_by_user_id: user.id,
-        notes: isInternalMode ? "internal_code" : "external_tag",
+      const { error } = await supabase.rpc("link_external_credential", {
+        p_event_id: eventId,
+        p_participant_id: selectedParticipant.id,
+        p_credential_code: code,
+        p_user_id: user.id,
+        p_replace_id: replaceId ?? null,
+        p_is_internal_mode: isInternalMode,
       });
       if (error) throw error;
-
-      // Se for modo interno, o sistema também marca o status do participante como credentialed 
-      // para facilitar a visualização global, já que ele está usando uma credencial do próprio sistema.
-      if (isInternalMode) {
-        await supabase
-          .from("participants")
-          .update({ status: "credentialed" })
-          .eq("id", selectedParticipant.id);
-      }
-
-      const { data: activeCred } = await supabase
-        .from("participant_credentials")
-        .select("id, credential_code, binding_source")
-        .eq("participant_id", selectedParticipant.id)
-        .eq("event_id", eventId)
-        .eq("status", "active")
-        .maybeSingle();
-
-      // Keep participant_credentials synced with external credential code so
-      // other external modules consume the same credential value.
-      if (!activeCred || activeCred.credential_code !== code || activeCred.binding_source !== "external") {
-        if (activeCred?.id) {
-          await supabase
-            .from("participant_credentials")
-            .update({ status: "reissued", is_active: false, revoked_at: nowIso })
-            .eq("id", activeCred.id);
-        }
-
-        const qrCodeValue = generateQrCodeValue(eventId, selectedParticipant.id, code);
-        const { error: credErr } = await supabase.from("participant_credentials").insert({
-          participant_id: selectedParticipant.id,
-          event_id: eventId,
-          credential_code: code,
-          qr_code_value: qrCodeValue,
-          status: "active",
-          is_active: true,
-          binding_source: "external",
-          issued_at: nowIso,
-          activated_at: nowIso,
-          issued_by: user.id,
-          activated_by: user.id,
-        });
-        if (credErr) throw credErr;
-      }
-
-      const { data: part } = await supabase.from("participants").select("status").eq("id", selectedParticipant.id).maybeSingle();
-      if (part && part.status !== "credentialed") {
-        await supabase.from("participants").update({ status: "credentialed", credentialed_at: nowIso, credentialed_by: user.id }).eq("id", selectedParticipant.id);
-      }
     },
     onSuccess: () => {
       toast.success("Credencial vinculada! Participante credenciado e apto a competir.");
@@ -333,32 +258,17 @@ export default function CredenciamentoExternoPage() {
     onError: (err: any) => toast.error(err.message || "Erro ao vincular credencial"),
   });
 
-  // Cancel credential mutation
+  // Cancel credential mutation — all writes happen inside a single DB transaction via RPC
   const cancelMutation = useMutation({
     mutationFn: async (credId: string) => {
-      if (!selectedParticipant) throw new Error("Participante não selecionado");
-      const nowIso = new Date().toISOString();
+      if (!eventId || !selectedParticipant) throw new Error("Participante não selecionado");
 
-      const { error } = await supabase.from("external_credentials").update({ status: "cancelled" }).eq("id", credId);
+      const { error } = await supabase.rpc("cancel_external_credential", {
+        p_event_id: eventId,
+        p_participant_id: selectedParticipant.id,
+        p_cred_id: credId,
+      });
       if (error) throw error;
-
-      await supabase
-        .from("participant_credentials")
-        .update({ status: "revoked", is_active: false, revoked_at: nowIso })
-        .eq("participant_id", selectedParticipant.id)
-        .eq("event_id", eventId)
-        .eq("status", "active");
-
-      const { count } = await supabase
-        .from("participant_credentials")
-        .select("id", { count: "exact", head: true })
-        .eq("participant_id", selectedParticipant.id)
-        .eq("event_id", eventId)
-        .eq("status", "active");
-
-      if ((count ?? 0) === 0) {
-        await supabase.from("participants").update({ status: "confirmed" }).eq("id", selectedParticipant.id);
-      }
     },
     onSuccess: () => {
       toast.success("Credencial cancelada");

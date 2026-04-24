@@ -445,43 +445,15 @@ export default function CredenciamentoPage() {
       const isExternal = !!externalCode;
       const credentialCode = externalCode || generateCredentialCode();
       const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
-      const nowIso = new Date().toISOString();
 
-      if (isExternal) {
-        const { data: existing } = await supabase
-          .from("participant_credentials")
-          .select("id")
-          .eq("event_id", selectedEventId)
-          .eq("credential_code", externalCode)
-          .eq("status", "active")
-          .maybeSingle();
-        
-        if (existing) throw new Error("Este código de credencial já está em uso por outro participante.");
-      }
-
-      const { error: credErr } = await supabase.from("participant_credentials").insert({
-        participant_id: participantId,
-        event_id: selectedEventId,
-        credential_code: credentialCode,
-        qr_code_value: qrCodeValue,
-        status: "active",
-        is_active: true,
-        binding_source: isExternal ? "external" : "manual",
-        issued_at: nowIso,
-        activated_at: nowIso,
-        issued_by: user?.id,
-        activated_by: user?.id,
+      const { error } = await supabase.rpc("issue_participant_credential", {
+        p_event_id: selectedEventId,
+        p_participant_id: participantId,
+        p_credential_code: credentialCode,
+        p_qr_code_value: qrCodeValue,
+        p_user_id: user?.id,
+        p_binding_source: isExternal ? "external" : "manual",
       });
-      if (credErr) throw credErr;
-
-      const { error } = await supabase
-        .from("participants")
-        .update({
-          status: "credentialed",
-          credentialed_at: nowIso,
-          credentialed_by: user?.id,
-        })
-        .eq("id", participantId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -508,18 +480,14 @@ export default function CredenciamentoPage() {
     mutationFn: async (participantId: string) => {
       const credentialCode = generateCredentialCode();
       const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
-      const { error } = await supabase.from("participant_credentials").insert({
-        participant_id: participantId,
-        event_id: selectedEventId,
-        credential_code: credentialCode,
-        qr_code_value: qrCodeValue,
-        status: "active",
-        is_active: true,
-        binding_source: "manual",
-        issued_at: new Date().toISOString(),
-        activated_at: new Date().toISOString(),
-        issued_by: user?.id,
-        activated_by: user?.id,
+
+      const { error } = await supabase.rpc("issue_participant_credential", {
+        p_event_id: selectedEventId,
+        p_participant_id: participantId,
+        p_credential_code: credentialCode,
+        p_qr_code_value: qrCodeValue,
+        p_user_id: user?.id,
+        p_binding_source: "manual",
       });
       if (error) throw error;
     },
@@ -541,27 +509,17 @@ export default function CredenciamentoPage() {
   const reissueMutation = useMutation({
     mutationFn: async (participantId: string) => {
       const existing = activeCredMap.get(participantId);
-      if (existing) {
-        const { error: revokeErr } = await supabase
-          .from("participant_credentials")
-          .update({ status: "reissued", is_active: false, revoked_at: new Date().toISOString() })
-          .eq("id", existing.id);
-        if (revokeErr) throw revokeErr;
-      }
       const credentialCode = generateCredentialCode();
       const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
-      const { error } = await supabase.from("participant_credentials").insert({
-        participant_id: participantId,
-        event_id: selectedEventId,
-        credential_code: credentialCode,
-        qr_code_value: qrCodeValue,
-        status: "active",
-        is_active: true,
-        binding_source: "manual",
-        issued_at: new Date().toISOString(),
-        activated_at: new Date().toISOString(),
-        issued_by: user?.id,
-        activated_by: user?.id,
+
+      const { error } = await supabase.rpc("issue_participant_credential", {
+        p_event_id: selectedEventId,
+        p_participant_id: participantId,
+        p_credential_code: credentialCode,
+        p_qr_code_value: qrCodeValue,
+        p_user_id: user?.id,
+        p_binding_source: "manual",
+        p_revoke_id: existing?.id ?? null,
       });
       if (error) throw error;
     },
@@ -694,18 +652,14 @@ export default function CredenciamentoPage() {
     for (const id of selectedAwaiting) {
       const credentialCode = generateCredentialCode();
       const qrCodeValue = generateQrCodeValue(selectedEventId, id, credentialCode);
-      const nowIso = new Date().toISOString();
-      const { error: credErr } = await supabase.from("participant_credentials").insert({
-        participant_id: id, event_id: selectedEventId, credential_code: credentialCode, qr_code_value: qrCodeValue,
-        status: "active", is_active: true, binding_source: "manual",
-        issued_at: nowIso, activated_at: nowIso,
-        issued_by: user?.id, activated_by: user?.id,
+      const { error } = await supabase.rpc("issue_participant_credential", {
+        p_event_id: selectedEventId,
+        p_participant_id: id,
+        p_credential_code: credentialCode,
+        p_qr_code_value: qrCodeValue,
+        p_user_id: user?.id,
+        p_binding_source: "manual",
       });
-      if (credErr) { errors++; continue; }
-      const { error } = await supabase
-        .from("participants")
-        .update({ status: "credentialed", credentialed_at: nowIso, credentialed_by: user?.id })
-        .eq("id", id);
       if (error) errors++; else success++;
     }
     setBatchProcessing(false);
@@ -722,11 +676,13 @@ export default function CredenciamentoPage() {
     for (const id of selectedReadyToEmit) {
       const credentialCode = generateCredentialCode();
       const qrCodeValue = generateQrCodeValue(selectedEventId, id, credentialCode);
-      const { error } = await supabase.from("participant_credentials").insert({
-        participant_id: id, event_id: selectedEventId, credential_code: credentialCode, qr_code_value: qrCodeValue,
-        status: "active", is_active: true, binding_source: "manual",
-        issued_at: new Date().toISOString(), activated_at: new Date().toISOString(),
-        issued_by: user?.id, activated_by: user?.id,
+      const { error } = await supabase.rpc("issue_participant_credential", {
+        p_event_id: selectedEventId,
+        p_participant_id: id,
+        p_credential_code: credentialCode,
+        p_qr_code_value: qrCodeValue,
+        p_user_id: user?.id,
+        p_binding_source: "manual",
       });
       if (error) errors++; else success++;
     }
