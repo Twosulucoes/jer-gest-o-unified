@@ -1,9 +1,10 @@
-import { ArrowLeft, LogOut, ArrowLeftRight } from "lucide-react";
+import { ArrowLeft, LogOut, ArrowLeftRight, Layers } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getPwaLang, setPwaLang } from "@/lib/pwa-messages";
+import { useStageContext } from "@/contexts/StageContext";
 
 interface PwaHeaderProps {
   title: string;
@@ -17,6 +18,7 @@ interface PwaHeaderProps {
 export function PwaHeader({ title, subtitle, icon: Icon, backTo, onSignOut, rightSlot }: PwaHeaderProps) {
   const navigate = useNavigate();
   const { roles } = useAuth();
+  const { activeStage } = useStageContext();
   const showSwitcher = roles.length >= 2;
 
   return (
@@ -48,8 +50,15 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onSignOut, righ
             <p className="truncate font-heading text-base font-bold tracking-tight text-foreground">
               {title}
             </p>
-            {subtitle && (
-              <p className="truncate text-[11px] uppercase tracking-wider text-muted-foreground">
+            {(subtitle || activeStage) && (
+              <p className="truncate text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                {activeStage && (
+                  <>
+                    <Layers className="h-2.5 w-2.5 inline shrink-0" />
+                    <span>{activeStage.name}</span>
+                    {subtitle && <span className="mx-1 opacity-40">•</span>}
+                  </>
+                )}
                 {subtitle}
               </p>
             )}

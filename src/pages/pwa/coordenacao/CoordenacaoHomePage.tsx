@@ -69,9 +69,6 @@ export default function CoordenacaoHomePage() {
     await supabase.auth.signOut();
     navigate("/pwa/login", { replace: true });
   };
-
-  const eventSubtitle = "Painel técnico operacional";
-
   const statusTone = (s: string) => {
     if (s === "em_andamento") return "live";
     if (s === "finalizada") return "ok";
@@ -87,7 +84,7 @@ export default function CoordenacaoHomePage() {
 
   return (
     <div className="op-screen">
-      <PwaHeader title="Coordenação" subtitle={eventSubtitle} icon={Trophy} backTo="/pwa" onSignOut={handleSignOut} />
+      <PwaHeader title="Coordenação" icon={Trophy} backTo="/pwa" onSignOut={handleSignOut} />
 
       <PwaContainer>
         <PwaStatTriplet
