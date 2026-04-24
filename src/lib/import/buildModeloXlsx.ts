@@ -157,7 +157,7 @@ function buildInscricoesSheet(sources: ModeloDataSources): XLSX.WorkSheet {
       "RG": "9876543",
       "EMAIL": "marcos.tecnico@escola.rr.gov.br",
       "TELEFONE": "(95) 98888-1234",
-      "ESCOLA": "E.E. Monteiro Lobato",
+      "ESCOLA": "Ex: Escola Estadual Exemplo",
       "DELEGAÇÃO": "",
       "ESFERA": "Estadual",
       "TIPO USUARIO": "Técnico",
