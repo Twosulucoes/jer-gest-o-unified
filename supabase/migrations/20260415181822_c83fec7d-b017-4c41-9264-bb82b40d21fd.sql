@@ -5,10 +5,28 @@ SET sections = '{"edition":{"year":2026,"event_type":"JER","edition_name":"53º 
 updated_at = now()
 WHERE id = '3a135ee0-d9cd-49d1-b35a-20c9d7db78b0';
 
--- 2. INSERIR event_participation_rules
-INSERT INTO public.event_participation_rules (event_id, max_individual_sports_per_athlete, max_collective_teams_per_athlete, max_events_per_individual_sport)
-VALUES ('ee66d634-8d2e-489c-9f8c-b07297dcd710', 2, 1, 10)
-ON CONFLICT (event_id) DO UPDATE SET max_individual_sports_per_athlete = 2, max_collective_teams_per_athlete = 1, max_events_per_individual_sport = 10, updated_at = now();
+-- 2. INSERIR event_participation_rules somente se o evento existir
+INSERT INTO public.event_participation_rules (
+  event_id,
+  max_individual_sports_per_athlete,
+  max_collective_teams_per_athlete,
+  max_events_per_individual_sport
+)
+SELECT
+  'ee66d634-8d2e-489c-9f8c-b07297dcd710',
+  2,
+  1,
+  10
+WHERE EXISTS (
+  SELECT 1
+  FROM public.events
+  WHERE id = 'ee66d634-8d2e-489c-9f8c-b07297dcd710'
+)
+ON CONFLICT (event_id) DO UPDATE SET
+  max_individual_sports_per_athlete = 2,
+  max_collective_teams_per_athlete = 1,
+  max_events_per_individual_sport = 10,
+  updated_at = now();
 
 -- 3. INSERIR system_config
 INSERT INTO public.system_config (key, value) VALUES
@@ -34,3 +52,4 @@ INSERT INTO public.system_config (key, value) VALUES
 ('documentos_obrigatorios', '{"inscricao":["Termo Responsabilidade/Cessão/LGPD"],"credenciamento":["Laudo médico aptidão","Autorização hospedagem"],"jerpa":["Laudo oftalmológico","CID F70-79","CID Q90","Laudo deficiência física","Classificação funcional","Ficha Individual+Laudo"]}'),
 ('convocacao_nacional', '{"coletivas_12_14":"Técnicos campeãs convocados; substituto pelo IDJUV","individuais":"Técnicos indicados pelo IDJUV por formação"}')
 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
+

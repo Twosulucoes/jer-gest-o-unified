@@ -2,7 +2,7 @@
 -- FASE 1+2: Pessoa unificada + Vouchers QR
 -- =============================================================
 
--- 1) PARTICIPANTS: delegation opcional + ampliar tipos + elegibilidade logística
+-- 1) PARTICIPANTS: delegation opcional + ampliar tipos + elegibilidade logÃƒÂ­stica
 ALTER TABLE public.participants
   ALTER COLUMN delegation_id DROP NOT NULL;
 
@@ -25,12 +25,12 @@ ALTER TABLE public.participants
   ADD COLUMN IF NOT EXISTS logistics_restrictions text,
   ADD COLUMN IF NOT EXISTS logistics_notes text;
 
--- Atletas por padrão precisam de tudo (legacy data) — só uma vez
+-- Atletas por padrÃƒÂ£o precisam de tudo (legacy data) Ã¢â‚¬â€ sÃƒÂ³ uma vez
 UPDATE public.participants
 SET needs_transport = true, needs_meals = true, needs_lodging = true
 WHERE participant_type = 'athlete' AND created_at < now();
 
--- 2) CATÁLOGO DE FUNÇÕES (editável pelo admin)
+-- 2) CATÃƒÂLOGO DE FUNÃƒâ€¡Ãƒâ€¢ES (editÃƒÂ¡vel pelo admin)
 CREATE TABLE IF NOT EXISTS public.event_role_catalog (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   code text NOT NULL UNIQUE,
@@ -54,20 +54,20 @@ CREATE POLICY "role_catalog_write_admin"
   WITH CHECK (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'secretaria') OR public.has_role(auth.uid(),'super_admin'));
 
 INSERT INTO public.event_role_catalog (code, name, description, sort_order) VALUES
-  ('motorista','Motorista','Condutor de veículo oficial',10),
-  ('agente_operacao','Agente de Operação','Apoio operacional geral',20),
-  ('logistica','Logística','Equipe de logística do evento',30),
+  ('motorista','Motorista','Condutor de veÃƒÂ­culo oficial',10),
+  ('agente_operacao','Agente de OperaÃƒÂ§ÃƒÂ£o','Apoio operacional geral',20),
+  ('logistica','LogÃƒÂ­stica','Equipe de logÃƒÂ­stica do evento',30),
   ('cozinheira','Cozinheira(o)','Equipe de cozinha',40),
-  ('guia','Guia','Acompanhante de delegação',50),
+  ('guia','Guia','Acompanhante de delegaÃƒÂ§ÃƒÂ£o',50),
   ('secretaria','Secretaria','Equipe administrativa',60),
-  ('mesario','Mesário','Operador de mesa em partidas',70),
-  ('arbitro','Árbitro','Comissão de arbitragem',80),
-  ('delegado','Delegado','Representante de delegação',90),
-  ('fiscal','Fiscal','Fiscalização do evento',100),
-  ('operador_pesquisa','Operador de Pesquisa','Equipe de pesquisa de satisfação',110),
-  ('tecnico_ti','Técnico de TI','Suporte técnico de TI',120),
-  ('colaborador','Colaborador','Colaborador da organização',130),
-  ('terceiro','Terceiro','Prestador de serviço externo',140)
+  ('mesario','MesÃƒÂ¡rio','Operador de mesa em partidas',70),
+  ('arbitro','ÃƒÂrbitro','ComissÃƒÂ£o de arbitragem',80),
+  ('delegado','Delegado','Representante de delegaÃƒÂ§ÃƒÂ£o',90),
+  ('fiscal','Fiscal','FiscalizaÃƒÂ§ÃƒÂ£o do evento',100),
+  ('operador_pesquisa','Operador de Pesquisa','Equipe de pesquisa de satisfaÃƒÂ§ÃƒÂ£o',110),
+  ('tecnico_ti','TÃƒÂ©cnico de TI','Suporte tÃƒÂ©cnico de TI',120),
+  ('colaborador','Colaborador','Colaborador da organizaÃƒÂ§ÃƒÂ£o',130),
+  ('terceiro','Terceiro','Prestador de serviÃƒÂ§o externo',140)
 ON CONFLICT (code) DO NOTHING;
 
 CREATE TRIGGER trg_role_catalog_touch
@@ -124,7 +124,7 @@ CREATE TRIGGER trg_service_vouchers_touch
   BEFORE UPDATE ON public.service_vouchers
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
--- 4) HISTÓRICO DE USOS DO VOUCHER
+-- 4) HISTÃƒâ€œRICO DE USOS DO VOUCHER
 CREATE TABLE IF NOT EXISTS public.service_voucher_uses (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   voucher_id uuid NOT NULL REFERENCES public.service_vouchers(id) ON DELETE CASCADE,
@@ -152,9 +152,9 @@ CREATE POLICY "voucher_uses_read"
     OR public.has_role(auth.uid(),'alojamento')
   );
 
--- Inserts só via RPC redeem_voucher (security definer)
+-- Inserts sÃƒÂ³ via RPC redeem_voucher (security definer)
 
--- 5) RPC ATÔMICA DE RESGATE
+-- 5) RPC ATÃƒâ€MICA DE RESGATE
 CREATE OR REPLACE FUNCTION public.redeem_voucher(
   p_qr_value text,
   p_service_kind text,
@@ -172,17 +172,17 @@ DECLARE
   v_person_name text;
 BEGIN
   IF p_service_kind NOT IN ('transport','meals','lodging') THEN
-    RAISE EXCEPTION 'service_kind inválido' USING ERRCODE = '22023';
+    RAISE EXCEPTION 'service_kind invÃƒÂ¡lido' USING ERRCODE = '22023';
   END IF;
 
-  -- Valida perfil do chamador conforme o serviço
+  -- Valida perfil do chamador conforme o serviÃƒÂ§o
   v_allowed := CASE p_service_kind
     WHEN 'transport' THEN public.has_role(v_caller,'transporte') OR public.has_role(v_caller,'admin') OR public.has_role(v_caller,'secretaria')
     WHEN 'meals'     THEN public.has_role(v_caller,'alimentacao') OR public.has_role(v_caller,'admin') OR public.has_role(v_caller,'secretaria')
     WHEN 'lodging'   THEN public.has_role(v_caller,'alojamento') OR public.has_role(v_caller,'admin') OR public.has_role(v_caller,'secretaria')
   END;
   IF NOT v_allowed THEN
-    RAISE EXCEPTION 'Sem permissão para validar este serviço' USING ERRCODE = '42501';
+    RAISE EXCEPTION 'Sem permissÃƒÂ£o para validar este serviÃƒÂ§o' USING ERRCODE = '42501';
   END IF;
 
   -- Lock pessimista do voucher
@@ -279,7 +279,12 @@ CREATE TRIGGER trg_audit_vouchers
   AFTER INSERT OR UPDATE OR DELETE ON public.service_vouchers
   FOR EACH ROW EXECUTE FUNCTION public.audit_people_voucher_changes();
 
-DROP TRIGGER IF EXISTS trg_audit_event_roles ON public.participant_event_roles;
-CREATE TRIGGER trg_audit_event_roles
-  AFTER INSERT OR UPDATE OR DELETE ON public.participant_event_roles
-  FOR EACH ROW EXECUTE FUNCTION public.audit_people_voucher_changes();
+DO $$
+BEGIN
+  IF to_regclass('public.participant_event_roles') IS NOT NULL THEN
+    EXECUTE 'DROP TRIGGER IF EXISTS trg_audit_event_roles ON public.participant_event_roles';
+    EXECUTE 'CREATE TRIGGER trg_audit_event_roles AFTER INSERT OR UPDATE OR DELETE ON public.participant_event_roles FOR EACH ROW EXECUTE FUNCTION public.audit_people_voucher_changes()';
+  ELSE
+    RAISE NOTICE 'Skipping trg_audit_event_roles: table public.participant_event_roles not found';
+  END IF;
+END $$;

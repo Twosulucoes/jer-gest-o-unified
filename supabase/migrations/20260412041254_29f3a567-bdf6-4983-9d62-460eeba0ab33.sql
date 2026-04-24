@@ -133,12 +133,12 @@ CREATE TRIGGER trg_pesquisa_researchers_updated BEFORE UPDATE ON public.pesquisa
 ------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.pesquisa_hash_pin(pin text)
 RETURNS text LANGUAGE sql IMMUTABLE AS $$
-  SELECT crypt(pin, gen_salt('bf'))
+  SELECT extensions.crypt(pin, extensions.gen_salt('bf'))
 $$;
 
 CREATE OR REPLACE FUNCTION public.pesquisa_verify_pin(pin text, pin_hash text)
 RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
-  SELECT crypt(pin, pin_hash) = pin_hash
+  SELECT extensions.crypt(pin, pin_hash) = pin_hash
 $$;
 
 ------------------------------------------------------------
@@ -360,6 +360,7 @@ BEGIN
   RETURNING id INTO v_event_id;
 
   INSERT INTO public.pesquisa_researchers (name, event_id, pin_hash, active)
-  VALUES ('Pesquisador Demo', v_event_id, crypt('1234', gen_salt('bf')), true);
+  VALUES ('Pesquisador Demo', v_event_id, extensions.crypt('1234', extensions.gen_salt('bf')), true);
 END;
 $$;
+

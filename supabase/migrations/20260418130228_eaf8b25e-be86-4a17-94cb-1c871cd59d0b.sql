@@ -1,6 +1,6 @@
 -- ============================================================================
--- Cadastro de 3 modalidades PARALÍMPICAS (JERPA 2026)
--- 1) Natação Paralímpica  2) Parabadminton  3) Tênis de Mesa Paralímpico
+-- Cadastro de 3 modalidades PARALÃMPICAS (JERPA 2026)
+-- 1) NataÃ§Ã£o ParalÃ­mpica  2) Parabadminton  3) TÃªnis de Mesa ParalÃ­mpico
 -- ============================================================================
 
 DO $$
@@ -9,18 +9,26 @@ DECLARE
   v_natacao_id uuid;
   v_parabadminton_id uuid;
   v_tmesa_id uuid;
-  -- Categorias paralímpicas (faixas etárias específicas)
+  -- Categorias paralÃ­mpicas (faixas etÃ¡rias especÃ­ficas)
   v_cat_a_11_13_m uuid; v_cat_a_11_13_f uuid; -- Parabadminton
   v_cat_b_14_17_m uuid; v_cat_b_14_17_f uuid;
-  v_cat_a_11_14_m uuid; v_cat_a_11_14_f uuid; -- Natação / TM
+  v_cat_a_11_14_m uuid; v_cat_a_11_14_f uuid; -- NataÃ§Ã£o / TM
   v_cat_b_15_17_m uuid; v_cat_b_15_17_f uuid;
   v_cat_a_12_14_m uuid; v_cat_a_12_14_f uuid; -- TM (12-14)
 BEGIN
-  -- ── 1. SPORTS ──
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.events
+    WHERE id = v_event_id
+  ) THEN
+    RAISE NOTICE 'Skipping seed because event % not found', v_event_id;
+    RETURN;
+  END IF;
+-- â”€â”€ 1. SPORTS â”€â”€
   SELECT id INTO v_natacao_id FROM sports WHERE event_id=v_event_id AND slug='natacao-paralimpica';
   IF v_natacao_id IS NULL THEN
     INSERT INTO sports (event_id, name, slug, is_collective, is_paralympic)
-    VALUES (v_event_id, 'Natação Paralímpica', 'natacao-paralimpica', false, true)
+    VALUES (v_event_id, 'NataÃ§Ã£o ParalÃ­mpica', 'natacao-paralimpica', false, true)
     RETURNING id INTO v_natacao_id;
   END IF;
 
@@ -34,22 +42,22 @@ BEGIN
   SELECT id INTO v_tmesa_id FROM sports WHERE event_id=v_event_id AND slug='tenis-de-mesa-paralimpico';
   IF v_tmesa_id IS NULL THEN
     INSERT INTO sports (event_id, name, slug, is_collective, is_paralympic)
-    VALUES (v_event_id, 'Tênis de Mesa Paralímpico', 'tenis-de-mesa-paralimpico', false, true)
+    VALUES (v_event_id, 'TÃªnis de Mesa ParalÃ­mpico', 'tenis-de-mesa-paralimpico', false, true)
     RETURNING id INTO v_tmesa_id;
   END IF;
 
-  -- ── 2. CATEGORIAS (cria se não existir) ──
+  -- â”€â”€ 2. CATEGORIAS (cria se nÃ£o existir) â”€â”€
   -- 11-13 (Parabadminton: nascidos 2013-2015) - usando max=2015,min=2013
   SELECT id INTO v_cat_a_11_13_m FROM categories WHERE event_id=v_event_id AND slug='paralimpico-11-13-masc';
   IF v_cat_a_11_13_m IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '11 a 13 anos Masculino (Paralímpico)', 'paralimpico-11-13-masc', 'male', 2013, 2015)
+    VALUES (v_event_id, '11 a 13 anos Masculino (ParalÃ­mpico)', 'paralimpico-11-13-masc', 'male', 2013, 2015)
     RETURNING id INTO v_cat_a_11_13_m;
   END IF;
   SELECT id INTO v_cat_a_11_13_f FROM categories WHERE event_id=v_event_id AND slug='paralimpico-11-13-fem';
   IF v_cat_a_11_13_f IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '11 a 13 anos Feminino (Paralímpico)', 'paralimpico-11-13-fem', 'female', 2013, 2015)
+    VALUES (v_event_id, '11 a 13 anos Feminino (ParalÃ­mpico)', 'paralimpico-11-13-fem', 'female', 2013, 2015)
     RETURNING id INTO v_cat_a_11_13_f;
   END IF;
 
@@ -57,41 +65,41 @@ BEGIN
   SELECT id INTO v_cat_b_14_17_m FROM categories WHERE event_id=v_event_id AND slug='paralimpico-14-17-masc';
   IF v_cat_b_14_17_m IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '14 a 17 anos Masculino (Paralímpico)', 'paralimpico-14-17-masc', 'male', 2009, 2012)
+    VALUES (v_event_id, '14 a 17 anos Masculino (ParalÃ­mpico)', 'paralimpico-14-17-masc', 'male', 2009, 2012)
     RETURNING id INTO v_cat_b_14_17_m;
   END IF;
   SELECT id INTO v_cat_b_14_17_f FROM categories WHERE event_id=v_event_id AND slug='paralimpico-14-17-fem';
   IF v_cat_b_14_17_f IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '14 a 17 anos Feminino (Paralímpico)', 'paralimpico-14-17-fem', 'female', 2009, 2012)
+    VALUES (v_event_id, '14 a 17 anos Feminino (ParalÃ­mpico)', 'paralimpico-14-17-fem', 'female', 2009, 2012)
     RETURNING id INTO v_cat_b_14_17_f;
   END IF;
 
-  -- 11-14 (Natação: cat A) e 12-14 (TM: cat A)
+  -- 11-14 (NataÃ§Ã£o: cat A) e 12-14 (TM: cat A)
   SELECT id INTO v_cat_a_11_14_m FROM categories WHERE event_id=v_event_id AND slug='paralimpico-11-14-masc';
   IF v_cat_a_11_14_m IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '11 a 14 anos Masculino (Paralímpico)', 'paralimpico-11-14-masc', 'male', 2012, 2015)
+    VALUES (v_event_id, '11 a 14 anos Masculino (ParalÃ­mpico)', 'paralimpico-11-14-masc', 'male', 2012, 2015)
     RETURNING id INTO v_cat_a_11_14_m;
   END IF;
   SELECT id INTO v_cat_a_11_14_f FROM categories WHERE event_id=v_event_id AND slug='paralimpico-11-14-fem';
   IF v_cat_a_11_14_f IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '11 a 14 anos Feminino (Paralímpico)', 'paralimpico-11-14-fem', 'female', 2012, 2015)
+    VALUES (v_event_id, '11 a 14 anos Feminino (ParalÃ­mpico)', 'paralimpico-11-14-fem', 'female', 2012, 2015)
     RETURNING id INTO v_cat_a_11_14_f;
   END IF;
 
-  -- 15-17 (Natação cat B + TM cat B)
+  -- 15-17 (NataÃ§Ã£o cat B + TM cat B)
   SELECT id INTO v_cat_b_15_17_m FROM categories WHERE event_id=v_event_id AND slug='paralimpico-15-17-masc';
   IF v_cat_b_15_17_m IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '15 a 17 anos Masculino (Paralímpico)', 'paralimpico-15-17-masc', 'male', 2009, 2011)
+    VALUES (v_event_id, '15 a 17 anos Masculino (ParalÃ­mpico)', 'paralimpico-15-17-masc', 'male', 2009, 2011)
     RETURNING id INTO v_cat_b_15_17_m;
   END IF;
   SELECT id INTO v_cat_b_15_17_f FROM categories WHERE event_id=v_event_id AND slug='paralimpico-15-17-fem';
   IF v_cat_b_15_17_f IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '15 a 17 anos Feminino (Paralímpico)', 'paralimpico-15-17-fem', 'female', 2009, 2011)
+    VALUES (v_event_id, '15 a 17 anos Feminino (ParalÃ­mpico)', 'paralimpico-15-17-fem', 'female', 2009, 2011)
     RETURNING id INTO v_cat_b_15_17_f;
   END IF;
 
@@ -103,7 +111,7 @@ BEGIN
   -- 3. SPORT_EVENTS (provas)
   -- ============================================================
 
-  -- ── NATAÇÃO PARALÍMPICA ── 8 provas x 4 categorias = 32 provas (M+F, A+B)
+  -- â”€â”€ NATAÃ‡ÃƒO PARALÃMPICA â”€â”€ 8 provas x 4 categorias = 32 provas (M+F, A+B)
   INSERT INTO sport_events (event_id, sport_id, category_id, name, slug, is_active)
   SELECT v_event_id, v_natacao_id, cat.id, prova.name, prova.slug || '-' || cat.suffix, true
   FROM (VALUES
@@ -124,7 +132,7 @@ BEGIN
   ) AS cat(id, suffix)
   ON CONFLICT DO NOTHING;
 
-  -- ── PARABADMINTON ── 1 prova (Simples) x 4 categorias
+  -- â”€â”€ PARABADMINTON â”€â”€ 1 prova (Simples) x 4 categorias
   INSERT INTO sport_events (event_id, sport_id, category_id, name, slug, is_active)
   VALUES
     (v_event_id, v_parabadminton_id, v_cat_a_11_13_m, 'Simples Masculino', 'simples-masc-11-13', true),
@@ -133,7 +141,7 @@ BEGIN
     (v_event_id, v_parabadminton_id, v_cat_b_14_17_f, 'Simples Feminino',  'simples-fem-14-17',  true)
   ON CONFLICT DO NOTHING;
 
-  -- ── TÊNIS DE MESA PARALÍMPICO ── 1 prova (Individual) x 4 categorias
+  -- â”€â”€ TÃŠNIS DE MESA PARALÃMPICO â”€â”€ 1 prova (Individual) x 4 categorias
   INSERT INTO sport_events (event_id, sport_id, category_id, name, slug, is_active)
   VALUES
     (v_event_id, v_tmesa_id, v_cat_a_11_14_m, 'Individual Masculino', 'individual-masc-11-14', true),
@@ -146,7 +154,7 @@ BEGIN
   -- 4. SPORT_EVENT_RULES
   -- ============================================================
 
-  -- NATAÇÃO PARALÍMPICA: family=time, format=heats (timed finals)
+  -- NATAÃ‡ÃƒO PARALÃMPICA: family=time, format=heats (timed finals)
   INSERT INTO sport_event_rules (event_id, sport_event_id, is_active, rules_version, rules)
   SELECT
     v_event_id,
@@ -175,7 +183,7 @@ BEGIN
         'cid_required_for_S14', 'F70-F79'
       ),
       'pool', jsonb_build_object('length_options_m', jsonb_build_array(25, 50)),
-      'notes', 'World Para Swimming/CPB. Sem índice. 4 provas individuais máx. Revezamento não conta no limite. Adaptações: largada adaptada, tapper para DV.'
+      'notes', 'World Para Swimming/CPB. Sem Ã­ndice. 4 provas individuais mÃ¡x. Revezamento nÃ£o conta no limite. AdaptaÃ§Ãµes: largada adaptada, tapper para DV.'
     )
   FROM sport_events se
   WHERE se.sport_id = v_natacao_id AND se.event_id = v_event_id
@@ -222,14 +230,14 @@ BEGIN
         'max_per_group', 4,
         'followed_by_knockout', true
       ),
-      'notes', 'BWF/CBBd. Apenas Simples (sem duplas). Petecas nylon BWF. Combinação de classes permitida exceto SH.'
+      'notes', 'BWF/CBBd. Apenas Simples (sem duplas). Petecas nylon BWF. CombinaÃ§Ã£o de classes permitida exceto SH.'
     )
   FROM sport_events se
   WHERE se.sport_id = v_parabadminton_id AND se.event_id = v_event_id
   ON CONFLICT (sport_event_id) WHERE is_active DO UPDATE
     SET rules = EXCLUDED.rules, rules_version = sport_event_rules.rules_version + 1, updated_at = now();
 
-  -- TÊNIS DE MESA PARALÍMPICO: family=sets, group_stage + knockout (3 sets / 5 sets)
+  -- TÃŠNIS DE MESA PARALÃMPICO: family=sets, group_stage + knockout (3 sets / 5 sets)
   INSERT INTO sport_event_rules (event_id, sport_event_id, is_active, rules_version, rules)
   SELECT
     v_event_id,
@@ -261,7 +269,7 @@ BEGIN
         'functional_classes_wheelchair', jsonb_build_array('1','2','3','4','5'),
         'functional_classes_walking', jsonb_build_array('6','7','8','9','10'),
         'functional_classes_intellectual', jsonb_build_array('11'),
-        'eligible_disabilities', jsonb_build_array('física','intelectual'),
+        'eligible_disabilities', jsonb_build_array('fÃ­sica','intelectual'),
         'cid_required_for_intellectual', 'F70-F79'
       ),
       'equipment', jsonb_build_object(
@@ -269,7 +277,7 @@ BEGIN
         'racket_rubber_red_black_required', true,
         'uniform_white_forbidden', true
       ),
-      'notes', 'ITTF/CBTM/IPC. Fase classificatória bo3, eliminatória bo5. Sets até 11 pts (dif. 2). Bola 40mm 3*. Uniforme branco proibido.'
+      'notes', 'ITTF/CBTM/IPC. Fase classificatÃ³ria bo3, eliminatÃ³ria bo5. Sets atÃ© 11 pts (dif. 2). Bola 40mm 3*. Uniforme branco proibido.'
     )
   FROM sport_events se
   WHERE se.sport_id = v_tmesa_id AND se.event_id = v_event_id

@@ -7,7 +7,15 @@ DECLARE
   v_qr_code_value text;
   v_count int := 0;
 BEGIN
-  FOR v_participant IN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.events
+    WHERE id = v_event_id
+  ) THEN
+    RAISE NOTICE 'Skipping seed because event % not found', v_event_id;
+    RETURN;
+  END IF;
+FOR v_participant IN
     SELECT p.id as participant_id
     FROM participants p
     LEFT JOIN participant_credentials pc 
@@ -39,3 +47,4 @@ BEGIN
   RAISE NOTICE 'Credenciais emitidas: %', v_count;
 END;
 $$;
+

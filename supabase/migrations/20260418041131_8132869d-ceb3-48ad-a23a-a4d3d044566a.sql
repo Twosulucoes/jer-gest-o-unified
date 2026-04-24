@@ -47,6 +47,14 @@ SELECT
     'classification', '[]'::jsonb
   ),
   'Rascunho inicial criado automaticamente a partir de event_participation_rules'
-WHERE NOT EXISTS (
-  SELECT 1 FROM public.event_edition_rules WHERE event_id = 'de0cd62b-05b9-4147-9257-9543d61d5739'::uuid
+WHERE EXISTS (
+  SELECT 1
+  FROM public.events
+  WHERE id = 'de0cd62b-05b9-4147-9257-9543d61d5739'::uuid
+)
+AND NOT EXISTS (
+  SELECT 1
+  FROM public.event_edition_rules
+  WHERE event_id = 'de0cd62b-05b9-4147-9257-9543d61d5739'::uuid
 );
+

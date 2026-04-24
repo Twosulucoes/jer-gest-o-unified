@@ -67,6 +67,15 @@ DECLARE
   v_pesos jsonb;
   v_age_min int;
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.events
+    WHERE id = v_event_id
+  ) THEN
+    RAISE NOTICE 'Skipping individual sports seed: event % not found', v_event_id;
+    RETURN;
+  END IF;
+
   ----------------------------------------------------------------
   -- 1) CICLISMO
   ----------------------------------------------------------------

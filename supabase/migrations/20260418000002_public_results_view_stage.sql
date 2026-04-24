@@ -1,5 +1,6 @@
 -- Add event_stage_id to public_results_view so results can be filtered per stage
-CREATE OR REPLACE VIEW public.public_results_view AS
+DROP VIEW IF EXISTS public.public_results_view;
+CREATE VIEW public.public_results_view AS
 SELECT cm.event_id,
     e.name AS event_name,
     e.year AS event_year,
@@ -46,3 +47,4 @@ FROM competition_match_results cmr
     LEFT JOIN institutions inst ON inst.id = d.institution_id
     LEFT JOIN official_bulletins b ON b.id = cmr.published_bulletin_id
 WHERE cmr.result_status = 'publicado'::text;
+

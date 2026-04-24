@@ -10,47 +10,55 @@ DECLARE
   v_bo_a_m uuid; v_bo_a_f uuid;
   v_bo_b_m uuid; v_bo_b_f uuid;
 BEGIN
-  -- ── 1. SPORTS ──
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.events
+    WHERE id = v_event_id
+  ) THEN
+    RAISE NOTICE 'Skipping seed because event % not found', v_event_id;
+    RETURN;
+  END IF;
+-- â”€â”€ 1. SPORTS â”€â”€
   SELECT id INTO v_atletismo_id FROM sports WHERE event_id=v_event_id AND slug='atletismo-paralimpico';
   IF v_atletismo_id IS NULL THEN
     INSERT INTO sports (event_id, name, slug, is_collective, is_paralympic)
-    VALUES (v_event_id, 'Atletismo Paralímpico', 'atletismo-paralimpico', false, true)
+    VALUES (v_event_id, 'Atletismo ParalÃ­mpico', 'atletismo-paralimpico', false, true)
     RETURNING id INTO v_atletismo_id;
   END IF;
 
   SELECT id INTO v_bocha_id FROM sports WHERE event_id=v_event_id AND slug='bocha-paralimpica';
   IF v_bocha_id IS NULL THEN
     INSERT INTO sports (event_id, name, slug, is_collective, is_paralympic)
-    VALUES (v_event_id, 'Bocha Paralímpica', 'bocha-paralimpica', false, true)
+    VALUES (v_event_id, 'Bocha ParalÃ­mpica', 'bocha-paralimpica', false, true)
     RETURNING id INTO v_bocha_id;
   END IF;
 
-  -- ── 2. CATEGORIAS PARALÍMPICAS ──
+  -- â”€â”€ 2. CATEGORIAS PARALÃMPICAS â”€â”€
   -- Atletismo Infantil 12-14 (nascidos 2012-2014)
   SELECT id INTO v_at_inf_m FROM categories WHERE event_id=v_event_id AND slug='paralimpico-12-14-masc';
   IF v_at_inf_m IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '12 a 14 anos Masculino (Paralímpico)', 'paralimpico-12-14-masc', 'male', 2012, 2014)
+    VALUES (v_event_id, '12 a 14 anos Masculino (ParalÃ­mpico)', 'paralimpico-12-14-masc', 'male', 2012, 2014)
     RETURNING id INTO v_at_inf_m;
   END IF;
   SELECT id INTO v_at_inf_f FROM categories WHERE event_id=v_event_id AND slug='paralimpico-12-14-fem';
   IF v_at_inf_f IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '12 a 14 anos Feminino (Paralímpico)', 'paralimpico-12-14-fem', 'female', 2012, 2014)
+    VALUES (v_event_id, '12 a 14 anos Feminino (ParalÃ­mpico)', 'paralimpico-12-14-fem', 'female', 2012, 2014)
     RETURNING id INTO v_at_inf_f;
   END IF;
 
-  -- Atletismo Juvenil 15-17 (reaproveita categorias 15-17 já criadas no lote anterior)
+  -- Atletismo Juvenil 15-17 (reaproveita categorias 15-17 jÃ¡ criadas no lote anterior)
   SELECT id INTO v_at_juv_m FROM categories WHERE event_id=v_event_id AND slug='paralimpico-15-17-masc';
   IF v_at_juv_m IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '15 a 17 anos Masculino (Paralímpico)', 'paralimpico-15-17-masc', 'male', 2009, 2011)
+    VALUES (v_event_id, '15 a 17 anos Masculino (ParalÃ­mpico)', 'paralimpico-15-17-masc', 'male', 2009, 2011)
     RETURNING id INTO v_at_juv_m;
   END IF;
   SELECT id INTO v_at_juv_f FROM categories WHERE event_id=v_event_id AND slug='paralimpico-15-17-fem';
   IF v_at_juv_f IS NULL THEN
     INSERT INTO categories (event_id, name, slug, gender_scope, min_birth_year, max_birth_year)
-    VALUES (v_event_id, '15 a 17 anos Feminino (Paralímpico)', 'paralimpico-15-17-fem', 'female', 2009, 2011)
+    VALUES (v_event_id, '15 a 17 anos Feminino (ParalÃ­mpico)', 'paralimpico-15-17-fem', 'female', 2009, 2011)
     RETURNING id INTO v_at_juv_f;
   END IF;
 
@@ -83,10 +91,10 @@ BEGIN
   END IF;
 
   -- ============================================================
-  -- 3. SPORT_EVENTS — ATLETISMO PARALÍMPICO
+  -- 3. SPORT_EVENTS â€” ATLETISMO PARALÃMPICO
   -- ============================================================
 
-  -- Categoria INFANTIL (12-14) — pista: 75m, 150m, 800m, 2000m + salto em distância
+  -- Categoria INFANTIL (12-14) â€” pista: 75m, 150m, 800m, 2000m + salto em distÃ¢ncia
   INSERT INTO sport_events (event_id, sport_id, category_id, name, slug, is_active)
   SELECT v_event_id, v_atletismo_id, cat.id, prova.name, prova.slug || '-' || cat.suffix, true
   FROM (VALUES
@@ -94,11 +102,11 @@ BEGIN
     ('150m rasos',       '150m'),
     ('800m rasos',       '800m'),
     ('2000m rasos',      '2000m'),
-    ('Salto em Distância','salto-distancia'),
+    ('Salto em DistÃ¢ncia','salto-distancia'),
     ('Arremesso de Peso','arremesso-peso'),
-    ('Lançamento de Dardo','lancamento-dardo'),
-    ('Lançamento de Disco','lancamento-disco'),
-    ('Lançamento de Club','lancamento-club')
+    ('LanÃ§amento de Dardo','lancamento-dardo'),
+    ('LanÃ§amento de Disco','lancamento-disco'),
+    ('LanÃ§amento de Club','lancamento-club')
   ) AS prova(name, slug)
   CROSS JOIN (VALUES
     (v_at_inf_m, '12-14-m'),
@@ -106,7 +114,7 @@ BEGIN
   ) AS cat(id, suffix)
   ON CONFLICT DO NOTHING;
 
-  -- Categoria JUVENIL (15-17) — pista: 100m, 200m, 400m, 800m, 3000m + salto + campo
+  -- Categoria JUVENIL (15-17) â€” pista: 100m, 200m, 400m, 800m, 3000m + salto + campo
   INSERT INTO sport_events (event_id, sport_id, category_id, name, slug, is_active)
   SELECT v_event_id, v_atletismo_id, cat.id, prova.name, prova.slug || '-' || cat.suffix, true
   FROM (VALUES
@@ -115,11 +123,11 @@ BEGIN
     ('400m rasos',       '400m'),
     ('800m rasos',       '800m'),
     ('3000m rasos',      '3000m'),
-    ('Salto em Distância','salto-distancia'),
+    ('Salto em DistÃ¢ncia','salto-distancia'),
     ('Arremesso de Peso','arremesso-peso'),
-    ('Lançamento de Dardo','lancamento-dardo'),
-    ('Lançamento de Disco','lancamento-disco'),
-    ('Lançamento de Club','lancamento-club')
+    ('LanÃ§amento de Dardo','lancamento-dardo'),
+    ('LanÃ§amento de Disco','lancamento-disco'),
+    ('LanÃ§amento de Club','lancamento-club')
   ) AS prova(name, slug)
   CROSS JOIN (VALUES
     (v_at_juv_m, '15-17-m'),
@@ -127,7 +135,7 @@ BEGIN
   ) AS cat(id, suffix)
   ON CONFLICT DO NOTHING;
 
-  -- ── BOCHA PARALÍMPICA ── 1 prova (Individual) x 4 categorias
+  -- â”€â”€ BOCHA PARALÃMPICA â”€â”€ 1 prova (Individual) x 4 categorias
   INSERT INTO sport_events (event_id, sport_id, category_id, name, slug, is_active)
   VALUES
     (v_event_id, v_bocha_id, v_bo_a_m, 'Individual Masculino', 'individual-masc-cat-a', true),
@@ -140,7 +148,7 @@ BEGIN
   -- 4. SPORT_EVENT_RULES
   -- ============================================================
 
-  -- ── ATLETISMO: provas de PISTA (corridas) → family=time, format=heats
+  -- â”€â”€ ATLETISMO: provas de PISTA (corridas) â†’ family=time, format=heats
   INSERT INTO sport_event_rules (event_id, sport_event_id, is_active, rules_version, rules)
   SELECT
     v_event_id, se.id, true, 1,
@@ -154,7 +162,7 @@ BEGIN
       'enrollment_limits', jsonb_build_object(),
       'minimo_participantes', 1,
       'preset_key', 'time',
-      'venue', 'Pista de Atletismo do Parque Anauá',
+      'venue', 'Pista de Atletismo do Parque AnauÃ¡',
       'paralympic', jsonb_build_object(
         'classification_required', true,
         'track_classes_visual', jsonb_build_array('T11','T12','T13'),
@@ -168,7 +176,7 @@ BEGIN
         'track_classes_amputee_prosthesis', jsonb_build_array('T61','T62','T63','T64'),
         'track_classes_severe_motor', jsonb_build_array('RR1','RR2','RR3')
       ),
-      'notes', 'World Para Athletics/CPB. Pista no Parque Anauá. Séries classificatórias e/ou finais por tempo conforme inscrição.'
+      'notes', 'World Para Athletics/CPB. Pista no Parque AnauÃ¡. SÃ©ries classificatÃ³rias e/ou finais por tempo conforme inscriÃ§Ã£o.'
     )
   FROM sport_events se
   WHERE se.sport_id = v_atletismo_id AND se.event_id = v_event_id
@@ -178,7 +186,7 @@ BEGIN
   ON CONFLICT (sport_event_id) WHERE is_active DO UPDATE
     SET rules = EXCLUDED.rules, rules_version = sport_event_rules.rules_version + 1, updated_at = now();
 
-  -- ── ATLETISMO: SALTO EM DISTÂNCIA → family=mark (cm)
+  -- â”€â”€ ATLETISMO: SALTO EM DISTÃ‚NCIA â†’ family=mark (cm)
   INSERT INTO sport_event_rules (event_id, sport_event_id, is_active, rules_version, rules)
   SELECT
     v_event_id, se.id, true, 1,
@@ -193,7 +201,7 @@ BEGIN
       'minimo_participantes', 1,
       'preset_key', 'mark',
       'paralympic', jsonb_build_object('classification_required', true),
-      'notes', 'Salto em distância paralímpico — final por marca. World Para Athletics/CPB.'
+      'notes', 'Salto em distÃ¢ncia paralÃ­mpico â€” final por marca. World Para Athletics/CPB.'
     )
   FROM sport_events se
   WHERE se.sport_id = v_atletismo_id AND se.event_id = v_event_id
@@ -201,7 +209,7 @@ BEGIN
   ON CONFLICT (sport_event_id) WHERE is_active DO UPDATE
     SET rules = EXCLUDED.rules, rules_version = sport_event_rules.rules_version + 1, updated_at = now();
 
-  -- ── ATLETISMO: ARREMESSO/LANÇAMENTOS → family=mark
+  -- â”€â”€ ATLETISMO: ARREMESSO/LANÃ‡AMENTOS â†’ family=mark
   INSERT INTO sport_event_rules (event_id, sport_event_id, is_active, rules_version, rules)
   SELECT
     v_event_id, se.id, true, 1,
@@ -232,7 +240,7 @@ BEGIN
           'juvenil_male', 5.0, 'juvenil_female', 3.0,
           'F11_F13_F20_male', 7.26, 'F11_F13_F20_female', 4.00,
           'F32_F34_male', 4.00, 'F32_F34_female', 3.00,
-          'note', 'Pesos variam conforme classe funcional, gênero e tipo de deficiência (CPB/WPA)'
+          'note', 'Pesos variam conforme classe funcional, gÃªnero e tipo de deficiÃªncia (CPB/WPA)'
         ),
         'discus_kg', jsonb_build_object(
           'infantil_male', 1.0, 'infantil_female', 0.75,
@@ -248,7 +256,7 @@ BEGIN
           'note', 'Club usado por atletas com comprometimento motor severo (cadeirantes)'
         )
       ),
-      'notes', 'Arremessos/lançamentos paralímpicos — final por marca. Implementos ajustados por classe funcional, gênero e categoria conforme CPB/WPA.'
+      'notes', 'Arremessos/lanÃ§amentos paralÃ­mpicos â€” final por marca. Implementos ajustados por classe funcional, gÃªnero e categoria conforme CPB/WPA.'
     )
   FROM sport_events se
   WHERE se.sport_id = v_atletismo_id AND se.event_id = v_event_id
@@ -257,7 +265,7 @@ BEGIN
   ON CONFLICT (sport_event_id) WHERE is_active DO UPDATE
     SET rules = EXCLUDED.rules, rules_version = sport_event_rules.rules_version + 1, updated_at = now();
 
-  -- ── BOCHA PARALÍMPICA → family=score (combat-like individual), format=knockout
+  -- â”€â”€ BOCHA PARALÃMPICA â†’ family=score (combat-like individual), format=knockout
   INSERT INTO sport_event_rules (event_id, sport_event_id, is_active, rules_version, rules)
   SELECT
     v_event_id, se.id, true, 1,
@@ -277,7 +285,7 @@ BEGIN
         'classification_required', true,
         'eligible_classes_bisfed', jsonb_build_array('BC1','BC2','BC3','BC4'),
         'governing_body', 'BISFed (Boccia International Sports Federation)',
-        'reference_rules', 'BISFed Boccia Rules vigentes (versão em inglês)'
+        'reference_rules', 'BISFed Boccia Rules vigentes (versÃ£o em inglÃªs)'
       ),
       'equipment', jsonb_build_object(
         'wheelchair_max_height_cm', 66,
@@ -299,7 +307,7 @@ BEGIN
         'draw_at_technical_meeting', true,
         'absence_at_meeting_eliminates_school', true
       ),
-      'notes', 'BISFed (Boccia Rules). Individual com chaves por sorteio na reunião técnica. Cadeira ≤66cm (exceto BC3). Box 2,5x1m. Proibido buzinas/sinalizadores.'
+      'notes', 'BISFed (Boccia Rules). Individual com chaves por sorteio na reuniÃ£o tÃ©cnica. Cadeira â‰¤66cm (exceto BC3). Box 2,5x1m. Proibido buzinas/sinalizadores.'
     )
   FROM sport_events se
   WHERE se.sport_id = v_bocha_id AND se.event_id = v_event_id

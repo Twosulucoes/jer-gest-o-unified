@@ -1,5 +1,5 @@
--- Wrestling (Luta Olímpica) — JER's 2026
--- Regulamento FWER: combat_bracket adaptativo, com regras específicas por categoria/estilo/peso
+-- Wrestling (Luta OlÃ­mpica) â€” JER's 2026
+-- Regulamento FWER: combat_bracket adaptativo, com regras especÃ­ficas por categoria/estilo/peso
 DO $$
 DECLARE
   v_event_id uuid := 'de0cd62b-05b9-4147-9257-9543d61d5739';
@@ -10,11 +10,19 @@ DECLARE
   v_rules jsonb;
   v_combinacoes record;
 BEGIN
-  -- 1) Sport: Wrestling (Luta Olímpica)
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.events
+    WHERE id = v_event_id
+  ) THEN
+    RAISE NOTICE 'Skipping seed because event % not found', v_event_id;
+    RETURN;
+  END IF;
+-- 1) Sport: Wrestling (Luta OlÃ­mpica)
   SELECT id INTO v_sport_id FROM public.sports WHERE event_id = v_event_id AND slug = 'wrestling';
   IF v_sport_id IS NULL THEN
     INSERT INTO public.sports (event_id, slug, name, is_collective, is_paralympic)
-    VALUES (v_event_id, 'wrestling', 'Wrestling (Luta Olímpica)', false, false)
+    VALUES (v_event_id, 'wrestling', 'Wrestling (Luta OlÃ­mpica)', false, false)
     RETURNING id INTO v_sport_id;
   END IF;
 
@@ -33,12 +41,12 @@ BEGIN
     RETURNING id INTO v_cat_sub16;
   END IF;
 
-  -- 3) Sport Events + Rules — loop pelas combinações
+  -- 3) Sport Events + Rules â€” loop pelas combinaÃ§Ãµes
   FOR v_combinacoes IN
     SELECT * FROM (VALUES
       -- ===== SUB-14 INFANTIL (CBDE) =====
       -- Estilo Livre Masculino
-      ('sub-14','wrestling-sub14-livre-masc-52',     'Wrestling Sub-14 Livre Masc até 52kg',      'M', 'livre',        44.001, 52.000, 120),
+      ('sub-14','wrestling-sub14-livre-masc-52',     'Wrestling Sub-14 Livre Masc atÃ© 52kg',      'M', 'livre',        44.001, 52.000, 120),
       ('sub-14','wrestling-sub14-livre-masc-68',     'Wrestling Sub-14 Livre Masc 62-68kg',       'M', 'livre',        62.001, 68.000, 120),
       ('sub-14','wrestling-sub14-livre-masc-75',     'Wrestling Sub-14 Livre Masc 68-75kg',       'M', 'livre',        68.001, 75.000, 120),
       -- Estilo Greco-Romano Masculino
@@ -54,24 +62,24 @@ BEGIN
       ('sub-14','wrestling-sub14-livre-fem-66',      'Wrestling Sub-14 Livre Fem 62-66kg',        'F', 'livre',        62.001, 66.000, 120),
       -- ===== SUB-16 JUVENIL (COB) =====
       -- Estilo Livre Masculino
-      ('sub-16','wrestling-sub16-livre-masc-51',     'Wrestling Sub-16 Livre Masc até 51kg',      'M', 'livre',        0.000,  51.000, 180),
-      ('sub-16','wrestling-sub16-livre-masc-60',     'Wrestling Sub-16 Livre Masc até 60kg',      'M', 'livre',        51.001, 60.000, 180),
-      ('sub-16','wrestling-sub16-livre-masc-71',     'Wrestling Sub-16 Livre Masc até 71kg',      'M', 'livre',        60.001, 71.000, 180),
-      ('sub-16','wrestling-sub16-livre-masc-92',     'Wrestling Sub-16 Livre Masc até 92kg',      'M', 'livre',        71.001, 92.000, 180),
+      ('sub-16','wrestling-sub16-livre-masc-51',     'Wrestling Sub-16 Livre Masc atÃ© 51kg',      'M', 'livre',        0.000,  51.000, 180),
+      ('sub-16','wrestling-sub16-livre-masc-60',     'Wrestling Sub-16 Livre Masc atÃ© 60kg',      'M', 'livre',        51.001, 60.000, 180),
+      ('sub-16','wrestling-sub16-livre-masc-71',     'Wrestling Sub-16 Livre Masc atÃ© 71kg',      'M', 'livre',        60.001, 71.000, 180),
+      ('sub-16','wrestling-sub16-livre-masc-92',     'Wrestling Sub-16 Livre Masc atÃ© 92kg',      'M', 'livre',        71.001, 92.000, 180),
       -- Estilo Greco-Romano Masculino
-      ('sub-16','wrestling-sub16-greco-masc-55',     'Wrestling Sub-16 Greco Masc até 55kg',      'M', 'greco-romano', 0.000,  55.000, 180),
-      ('sub-16','wrestling-sub16-greco-masc-65',     'Wrestling Sub-16 Greco Masc até 65kg',      'M', 'greco-romano', 55.001, 65.000, 180),
-      ('sub-16','wrestling-sub16-greco-masc-80',     'Wrestling Sub-16 Greco Masc até 80kg',      'M', 'greco-romano', 65.001, 80.000, 180),
-      ('sub-16','wrestling-sub16-greco-masc-110',    'Wrestling Sub-16 Greco Masc até 110kg',     'M', 'greco-romano', 80.001, 110.000, 180),
+      ('sub-16','wrestling-sub16-greco-masc-55',     'Wrestling Sub-16 Greco Masc atÃ© 55kg',      'M', 'greco-romano', 0.000,  55.000, 180),
+      ('sub-16','wrestling-sub16-greco-masc-65',     'Wrestling Sub-16 Greco Masc atÃ© 65kg',      'M', 'greco-romano', 55.001, 65.000, 180),
+      ('sub-16','wrestling-sub16-greco-masc-80',     'Wrestling Sub-16 Greco Masc atÃ© 80kg',      'M', 'greco-romano', 65.001, 80.000, 180),
+      ('sub-16','wrestling-sub16-greco-masc-110',    'Wrestling Sub-16 Greco Masc atÃ© 110kg',     'M', 'greco-romano', 80.001, 110.000, 180),
       -- Estilo Livre Feminino
-      ('sub-16','wrestling-sub16-livre-fem-43',      'Wrestling Sub-16 Livre Fem até 43kg',       'F', 'livre',        0.000,  43.000, 180),
-      ('sub-16','wrestling-sub16-livre-fem-49',      'Wrestling Sub-16 Livre Fem até 49kg',       'F', 'livre',        43.001, 49.000, 180),
-      ('sub-16','wrestling-sub16-livre-fem-57',      'Wrestling Sub-16 Livre Fem até 57kg',       'F', 'livre',        49.001, 57.000, 180),
-      ('sub-16','wrestling-sub16-livre-fem-65',      'Wrestling Sub-16 Livre Fem até 65kg',       'F', 'livre',        57.001, 65.000, 180),
-      ('sub-16','wrestling-sub16-livre-fem-73',      'Wrestling Sub-16 Livre Fem até 73kg',       'F', 'livre',        65.001, 73.000, 180)
+      ('sub-16','wrestling-sub16-livre-fem-43',      'Wrestling Sub-16 Livre Fem atÃ© 43kg',       'F', 'livre',        0.000,  43.000, 180),
+      ('sub-16','wrestling-sub16-livre-fem-49',      'Wrestling Sub-16 Livre Fem atÃ© 49kg',       'F', 'livre',        43.001, 49.000, 180),
+      ('sub-16','wrestling-sub16-livre-fem-57',      'Wrestling Sub-16 Livre Fem atÃ© 57kg',       'F', 'livre',        49.001, 57.000, 180),
+      ('sub-16','wrestling-sub16-livre-fem-65',      'Wrestling Sub-16 Livre Fem atÃ© 65kg',       'F', 'livre',        57.001, 65.000, 180),
+      ('sub-16','wrestling-sub16-livre-fem-73',      'Wrestling Sub-16 Livre Fem atÃ© 73kg',       'F', 'livre',        65.001, 73.000, 180)
     ) AS t(cat_slug, se_slug, se_name, gender, estilo, peso_min, peso_max, periodo_seg)
   LOOP
-    -- Cria sport_event se não existir
+    -- Cria sport_event se nÃ£o existir
     SELECT id INTO v_se_id 
       FROM public.sport_events 
      WHERE event_id = v_event_id AND slug = v_combinacoes.se_slug;
@@ -86,7 +94,7 @@ BEGIN
       RETURNING id INTO v_se_id;
     END IF;
 
-    -- Monta JSON de regras (família combat, formato adaptativo via min participantes)
+    -- Monta JSON de regras (famÃ­lia combat, formato adaptativo via min participantes)
     v_rules := jsonb_build_object(
       'family', 'combat',
       'format', 'combat_bracket',
@@ -100,7 +108,7 @@ BEGIN
       'enrollment_limits', jsonb_build_object('weight_kg_min', v_combinacoes.peso_min, 'weight_kg_max', v_combinacoes.peso_max, 'tolerance_kg', 0.5),
       'minimo_participantes', 2,
       'preset_key', 'combat',
-      'notes', 'Wrestling FWER 2026: 2 períodos de ' || (v_combinacoes.periodo_seg/60) || ' min (intervalo 30s). Vitória por encostamento, superioridade técnica (10pt livre / 8pt greco) ou pontos. Pesagem única 2 dias antes (tolerância 500g). Sistema adaptativo: 2=melhor de 3; 3-5=todos contra todos; 6-7=2 grupos+SF/F; 8+=eliminatória direta com repescagem simples (UWW).',
+      'notes', 'Wrestling FWER 2026: 2 perÃ­odos de ' || (v_combinacoes.periodo_seg/60) || ' min (intervalo 30s). VitÃ³ria por encostamento, superioridade tÃ©cnica (10pt livre / 8pt greco) ou pontos. Pesagem Ãºnica 2 dias antes (tolerÃ¢ncia 500g). Sistema adaptativo: 2=melhor de 3; 3-5=todos contra todos; 6-7=2 grupos+SF/F; 8+=eliminatÃ³ria direta com repescagem simples (UWW).',
       'wrestling', jsonb_build_object(
         'style', v_combinacoes.estilo,
         'gender', v_combinacoes.gender,

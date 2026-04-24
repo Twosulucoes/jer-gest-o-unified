@@ -1,3 +1,7 @@
+-- Garantir coluna is_active antes dos backfills
+ALTER TABLE public.participant_credentials
+  ADD COLUMN IF NOT EXISTS is_active boolean;
+
 -- 1. Backfill: credenciais 'active' sem is_active definido → marcar como ativas
 UPDATE public.participant_credentials
 SET is_active = true

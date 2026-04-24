@@ -9,6 +9,15 @@ DECLARE
   v_rules jsonb;
   v_disc_gender text;
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.events
+    WHERE id = v_event_id
+  ) THEN
+    RAISE NOTICE 'Skipping collective sports seed: event % not found', v_event_id;
+    RETURN;
+  END IF;
+
   FOR sport_rec IN SELECT * FROM (VALUES
     ('Basquetebol', 'basquetebol'),
     ('Futebol de Campo', 'futebol-de-campo'),

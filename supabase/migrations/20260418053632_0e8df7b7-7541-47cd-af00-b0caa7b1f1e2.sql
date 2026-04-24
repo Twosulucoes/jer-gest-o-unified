@@ -35,7 +35,14 @@ DECLARE
   v_se_name text;
   v_rules jsonb;
 BEGIN
-
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.events
+    WHERE id = v_event_id
+  ) THEN
+    RAISE NOTICE 'Skipping extra sports seed: event % not found', v_event_id;
+    RETURN;
+  END IF;
 -- 1) SPORTS (event-scoped)
 SELECT id INTO v_sport_id FROM sports WHERE event_id=v_event_id AND slug='volei-de-praia';
 IF v_sport_id IS NULL THEN
