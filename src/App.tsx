@@ -111,6 +111,7 @@ import SuperLogsPage from "./pages/super/SuperLogsPage";
 import SuperConfigPage from "./pages/super/SuperConfigPage";
 import SuperMonitorPage from "./pages/super/SuperMonitorPage";
 import SuperInspectorPage from "./pages/super/SuperInspectorPage";
+import SistemaDiagnosticoKpiPage from "./pages/admin/SistemaDiagnosticoKpiPage";
 import EmailTemplatesPage from "./pages/admin/EmailTemplatesPage";
 import LinksPage from "./pages/admin/LinksPage";
 import LinkFormPage from "./pages/admin/LinkFormPage";
@@ -320,6 +321,7 @@ const App = () => (
               <Route path="mapa" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
               <Route path="diagnostico-competicao" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
               <Route path="sistema/diagnostico" element={<ProtectedRoute allowedRoles={["super_admin"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
+              <Route path="sistema/diagnostico/kpi" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><SistemaDiagnosticoKpiPage /></ProtectedRoute>} />
               <Route path="dados" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralDadosPage /></ProtectedRoute>} />
               <Route path="boletins" element={<Navigate to="/admin/relatorios/boletins" replace />} />
               <Route path="relatorios/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />
