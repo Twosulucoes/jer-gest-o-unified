@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate, useSearchParams, Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, XCircle, User, Layers, X, Plus, Edit, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, Users, XCircle, User, Layers, X, Plus, Edit, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -26,10 +32,17 @@ import { useEventBranding } from "@/hooks/useEventBranding";
 import { exportListPdf, downloadBlob, type PdfListColumn, type PdfListGroup } from "@/lib/listReportPdf";
 
 const TYPE_LABELS: Record<string, string> = {
-  athlete: "Atleta",
-  coach: "Técnico",
-  head_of_delegation: "Chefe Delegação",
-  staff: "Staff",
+  athlete: "Atleta", coach: "Técnico", head_of_delegation: "Chefe Delegação", staff: "Staff",
+  motorista: "Motorista", agente_operacao: "Agente Op.", logistica: "Logística",
+  cozinheira: "Cozinheira(o)", guia: "Guia", secretaria: "Secretaria",
+  mesario: "Mesário", arbitro: "Árbitro", delegado: "Delegado",
+  fiscal: "Fiscal", operador_pesquisa: "Pesquisador", tecnico_ti: "Técnico TI",
+  terceiro: "Terceiro", colaborador: "Colaborador"
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  delegation: "Delegação",
+  organization: "Organização",
 };
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -50,6 +63,7 @@ export default function ParticipantesPage() {
   // Load state from URL search params
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const debouncedSearch = useDebounce(searchTerm, 350);
+  const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get("category") || "all");
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") || "all");
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all");
   const [sortBy, setSortBy] = useState<"name" | "created" | "type" | "status" | "institution">(
@@ -60,6 +74,7 @@ export default function ParticipantesPage() {
   const [pageSize, setPageSize] = useState(50);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [initialFormCategory, setInitialFormCategory] = useState<"delegation" | "organization" | undefined>();
   const stageFilterId = urlStageId || searchParams.get("stage");
 
 
@@ -143,6 +158,7 @@ export default function ParticipantesPage() {
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
     if (debouncedSearch) next.set("search", debouncedSearch); else next.delete("search");
+    if (categoryFilter !== "all") next.set("category", categoryFilter); else next.delete("category");
     if (typeFilter !== "all") next.set("type", typeFilter); else next.delete("type");
     if (statusFilter !== "all") next.set("status", statusFilter); else next.delete("status");
     if (sortBy !== "name") next.set("sort", sortBy); else next.delete("sort");
@@ -182,6 +198,7 @@ export default function ParticipantesPage() {
       selectedEventId,
       page,
       pageSize,
+      categoryFilter,
       typeFilter,
       statusFilter,
       isSearching ? (matchingPersonIds ?? []).join(",") : "",
@@ -197,7 +214,7 @@ export default function ParticipantesPage() {
       if (noSearchMatches) return { rows: [] as any[], total: 0 };
 
       const baseFields =
-        "id, status, participant_type, person_id, delegation_id, created_at, " +
+        "id, status, participant_type, category, person_id, delegation_id, created_at, " +
         "person:people(id, full_name, cpf, gender), " +
         "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))";
 
@@ -221,6 +238,7 @@ export default function ParticipantesPage() {
 
       q = q.eq("event_id", selectedEventId!);
 
+      if (categoryFilter !== "all") q = q.eq("category", categoryFilter);
       if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
       if (isSearching && matchingPersonIds && matchingPersonIds.length > 0) {
@@ -582,9 +600,29 @@ export default function ParticipantesPage() {
             disabled={!selectedEventId}
           />
           {canManage && selectedEventId && (
-            <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-1" />Cadastrar pessoa
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-1" />Novo Participante <ChevronDown className="h-4 w-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => { 
+                  setEditingId(null); 
+                  setInitialFormCategory("delegation");
+                  setFormOpen(true); 
+                }}>
+                  Participante de Delegação (Atleta/Staff)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { 
+                  setEditingId(null); 
+                  setInitialFormCategory("organization");
+                  setFormOpen(true); 
+                }}>
+                  Participante da Organização (Coordenação/Apoio)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>
@@ -628,6 +666,16 @@ export default function ParticipantesPage() {
                   disabled={!selectedEventId}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Categoria</label>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  {Object.entries(CATEGORY_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Tipo</label>
@@ -847,7 +895,10 @@ export default function ParticipantesPage() {
                       <TableCell className="text-muted-foreground font-mono text-xs">{person?.cpf ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{institutionName}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="outline" className="w-fit">{CATEGORY_LABELS[p.category] ?? p.category}</Badge>
+                          <Badge variant="secondary" className="w-fit text-[10px]">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
@@ -885,8 +936,9 @@ export default function ParticipantesPage() {
 
       <PessoaFormDialog
         open={formOpen}
-        onOpenChange={(v) => { setFormOpen(v); if (!v) setEditingId(null); }}
+        onOpenChange={(v) => { setFormOpen(v); if (!v) { setEditingId(null); setInitialFormCategory(undefined); } }}
         participantId={editingId}
+        initialCategory={initialFormCategory}
         defaultStageId={stageFilterId}
       />
     </div>

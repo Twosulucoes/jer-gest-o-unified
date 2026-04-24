@@ -9,7 +9,9 @@
 | **Evento / Edição** | Uma realização do JER (ex: JER 2025, JER 2026) |
 | **Instituição** | Escola ou entidade participante |
 | **Delegação** | Representação de uma instituição em um evento específico |
-| **Participante** | Pessoa inscrita em um evento (atleta, técnico, dirigente, comissão) |
+| **Participante** | Registro de uma Pessoa em um Evento específico, podendo ser de Delegação ou Organização |
+| **Participante Delegação** | Atletas e Staff vinculados a uma Instituição de ensino |
+| **Participante Organização** | Pessoas da equipe de coordenação e apoio (Saúde, TI, Arbitragem, etc) |
 | **Pessoa (People)** | Cadastro base de pessoa física (pode participar de múltiplos eventos) |
 | **Modalidade (Sport)** | Esporte praticado (futsal, atletismo, natação...) |
 | **Categoria** | Divisão por idade/gênero (sub-14 masculino, livre feminino...) |

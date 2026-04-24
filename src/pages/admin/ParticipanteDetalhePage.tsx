@@ -53,13 +53,13 @@ export default function ParticipanteDetalhePage() {
   const { data: participant, isLoading: loadingParticipant } = useQuery({
     queryKey: ["participant_full", participantId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("participants")
-        .select("id, participant_type, person_id, delegation_id, event_id, status, is_active, notes, created_at")
+      const { data, error } = await (supabase
+        .from("participants") as any)
+        .select("id, participant_type, category, person_id, delegation_id, event_id, status, is_active, notes, created_at, organization_subtype, role_function, sector_area, responsibilities, access_permissions, observations")
         .eq("id", participantId!)
         .single();
       if (error) throw error;
-      return data;
+      return data as any;
     },
     enabled: !!participantId,
   });

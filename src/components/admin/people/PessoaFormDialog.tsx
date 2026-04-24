@@ -27,6 +27,7 @@ interface Props {
   participantId?: string | null;
   onSuccess?: (id: string) => void;
   defaultStageId?: string | null;
+  initialCategory?: "delegation" | "organization";
 }
 
 const personSchema = z.object({
@@ -38,7 +39,7 @@ const personSchema = z.object({
   gender: z.enum(["male", "female"]).optional(),
 });
 
-export default function PessoaFormDialog({ open, onOpenChange, participantId, onSuccess, defaultStageId }: Props) {
+export default function PessoaFormDialog({ open, onOpenChange, participantId, onSuccess, defaultStageId, initialCategory }: Props) {
   const { user, hasRole } = useAuth();
   const eventId = useActiveEventId();
   const qc = useQueryClient();
@@ -60,9 +61,16 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
   const [phone, setPhone] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "">("");
+  const [participantCategory, setParticipantCategory] = useState<"delegation" | "organization">("delegation");
   const [participantType, setParticipantType] = useState("colaborador");
   const [delegationId, setDelegationId] = useState<string>("");
   const [delegationOpen, setDelegationOpen] = useState(false);
+  const [organizationSubtype, setOrganizationSubtype] = useState("");
+  const [roleFunction, setRoleFunction] = useState("");
+  const [sectorArea, setSectorArea] = useState("");
+  const [responsibilities, setResponsibilities] = useState("");
+  const [accessPermissions, setAccessPermissions] = useState("");
+  const [observations, setObservations] = useState("");
   const [needsTransport, setNeedsTransport] = useState(false);
   const [needsMeals, setNeedsMeals] = useState(false);
   const [needsLodging, setNeedsLodging] = useState(false);
@@ -124,7 +132,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
     queryFn: async () => {
       const { data: p, error } = await supabase
         .from("participants")
-        .select("id, person_id, participant_type, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, guardian_name, guardian_phone, coach_name, coach_phone, person:people(full_name, cpf, email, phone, birth_date, gender, food_restrictions, disability_type, medical_notes)")
+        .select("id, person_id, participant_type, category, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, guardian_name, guardian_phone, coach_name, coach_phone, organization_subtype, role_function, sector_area, responsibilities, access_permissions, observations, person:people(full_name, cpf, email, phone, birth_date, gender, food_restrictions, disability_type, medical_notes)")
         .eq("id", participantId!).single();
       if (error) throw error;
       const { data: roles } = await (supabase.from("participant_event_roles" as never) as any)
@@ -143,7 +151,14 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
       setBirthDate(p.person?.birth_date ?? "");
       setGender(p.person?.gender ?? "");
       setParticipantType(p.participant_type);
+      setParticipantCategory(p.category || "delegation");
       setDelegationId(p.delegation_id ?? "");
+      setOrganizationSubtype(p.organization_subtype ?? "");
+      setRoleFunction(p.role_function ?? "");
+      setSectorArea(p.sector_area ?? "");
+      setResponsibilities(p.responsibilities ?? "");
+      setAccessPermissions(p.access_permissions ?? "");
+      setObservations(p.observations ?? "");
       setNeedsTransport(!!p.needs_transport);
       setNeedsMeals(!!p.needs_meals);
       setNeedsLodging(!!p.needs_lodging);
@@ -160,7 +175,8 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
     } else if (open && !isEdit) {
       // Reset
       setFullName(""); setCpf(""); setEmail(""); setPhone(""); setBirthDate("");
-      setGender(""); setParticipantType("colaborador"); setDelegationId("");
+      setGender(""); setParticipantType("colaborador"); setParticipantCategory(initialCategory || "delegation"); setDelegationId("");
+      setOrganizationSubtype(""); setRoleFunction(""); setSectorArea(""); setResponsibilities(""); setAccessPermissions(""); setObservations("");
       setNeedsTransport(false); setNeedsMeals(false); setNeedsLodging(false);
       setLogisticsRestrictions(""); setLogisticsNotes("");
       setFoodRestrictions(""); setDisabilityType(""); setMedicalNotes("");
@@ -214,16 +230,23 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
         // Update participant
         const { error: errPart } = await supabase.from("participants").update({
           participant_type: participantType,
-          delegation_id: delegationId || null,
+          category: participantCategory,
+          delegation_id: participantCategory === "delegation" ? (delegationId || null) : null,
+          organization_subtype: participantCategory === "organization" ? organizationSubtype : null,
+          role_function: participantCategory === "organization" ? roleFunction : null,
+          sector_area: participantCategory === "organization" ? sectorArea : null,
+          responsibilities: participantCategory === "organization" ? responsibilities : null,
+          access_permissions: participantCategory === "organization" ? accessPermissions : null,
+          observations: participantCategory === "organization" ? observations : null,
           needs_transport: needsTransport,
           needs_meals: needsMeals,
           needs_lodging: needsLodging,
           logistics_restrictions: logisticsRestrictions || null,
           logistics_notes: logisticsNotes || null,
-          guardian_name: guardianName || null,
-          guardian_phone: guardianPhone || null,
-          coach_name: coachName || null,
-          coach_phone: coachPhone || null,
+          guardian_name: participantCategory === "delegation" ? (guardianName || null) : null,
+          guardian_phone: participantCategory === "delegation" ? (guardianPhone || null) : null,
+          coach_name: participantCategory === "delegation" ? (coachName || null) : null,
+          coach_phone: participantCategory === "delegation" ? (coachPhone || null) : null,
         } as any).eq("id", pId);
         if (errPart) throw errPart;
       } else {
@@ -231,6 +254,19 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
         const { data: foundPerson } = await supabase.from("people").select("id").eq("cpf", cpfClean).maybeSingle();
         if (foundPerson) {
           personId = foundPerson.id;
+          
+          // Check if this person already has a participant record in ANY event with a different category
+          const { data: otherCategoryPart } = await (supabase.from("participants") as any)
+            .select("category, event_id")
+            .eq("person_id", personId)
+            .neq("category", participantCategory)
+            .limit(1)
+            .maybeSingle();
+            
+          if (otherCategoryPart) {
+            throw new Error(`Este CPF já está cadastrado como ${otherCategoryPart.category === 'delegation' ? 'Delegação' : 'Organização'}. O CPF é exclusivo e deve permanecer apenas em um dos tipos.`);
+          }
+
           // Already linked to this event?
           const { data: existingPart } = await supabase.from("participants").select("id")
             .eq("person_id", personId).eq("event_id", eventId).maybeSingle();
@@ -252,11 +288,12 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           if (errCreate) throw errCreate;
           personId = newPerson.id;
         }
-        const { data: newPart, error: errPart } = await supabase.from("participants").insert({
+        const { data: newPart, error: errPart } = await (supabase.from("participants") as any).insert({
           person_id: personId,
           event_id: eventId,
-          delegation_id: delegationId || null,
+          delegation_id: participantCategory === "delegation" ? (delegationId || null) : null,
           participant_type: participantType,
+          category: participantCategory,
           status: "confirmed",
           is_active: true,
           needs_transport: needsTransport,
@@ -264,11 +301,17 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           needs_lodging: needsLodging,
           logistics_restrictions: logisticsRestrictions || null,
           logistics_notes: logisticsNotes || null,
-          guardian_name: guardianName || null,
-          guardian_phone: guardianPhone || null,
-          coach_name: coachName || null,
-          coach_phone: coachPhone || null,
-        } as any).select("id").single();
+          guardian_name: participantCategory === "delegation" ? (guardianName || null) : null,
+          guardian_phone: participantCategory === "delegation" ? (guardianPhone || null) : null,
+          coach_name: participantCategory === "delegation" ? (coachName || null) : null,
+          coach_phone: participantCategory === "delegation" ? (coachPhone || null) : null,
+          organization_subtype: participantCategory === "organization" ? organizationSubtype : null,
+          role_function: participantCategory === "organization" ? roleFunction : null,
+          sector_area: participantCategory === "organization" ? sectorArea : null,
+          responsibilities: participantCategory === "organization" ? responsibilities : null,
+          access_permissions: participantCategory === "organization" ? accessPermissions : null,
+          observations: participantCategory === "organization" ? observations : null,
+        }).select("id").single();
         if (errPart) throw errPart;
         pId = newPart.id;
       }
@@ -394,121 +437,189 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
             </section>
 
             {/* Vínculo */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Vínculo no evento</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <Label>Tipo principal *</Label>
-                  <Select 
-                    value={participantType} 
-                    onValueChange={setParticipantType}
-                    disabled={!canEditSensitive && isEdit}
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">Vínculo no evento</h3>
+                <div className="flex bg-muted p-1 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setParticipantCategory("delegation")}
+                    className={cn(
+                      "px-3 py-1 text-xs font-medium rounded-md transition-all",
+                      participantCategory === "delegation" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                    )}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="athlete">Atleta</SelectItem>
-                      <SelectItem value="coach">Técnico</SelectItem>
-                      <SelectItem value="head_of_delegation">Chefe de Delegação</SelectItem>
-                      <SelectItem value="official">Oficial</SelectItem>
-                      <SelectItem value="staff">Staff</SelectItem>
-                      <SelectItem value="colaborador">Colaborador da organização</SelectItem>
-                      <SelectItem value="terceiro">Terceiro / prestador</SelectItem>
-                      <SelectItem value="arbitro">Árbitro</SelectItem>
-                      <SelectItem value="mesario">Mesário</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {!isEdit && (
-                  <div>
-                    <Label>Atribuir a Etapa (opcional)</Label>
-                    <Select 
-                      value={selectedStageId} 
-                      onValueChange={setSelectedStageId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Nenhuma / Global" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Nenhuma / Global</SelectItem>
-                        {eventStages.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                <div>
-                  <Label>Delegação (opcional)</Label>
-                  <Popover open={delegationOpen} onOpenChange={setDelegationOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={delegationOpen}
-                        className="w-full justify-between font-normal"
-                        disabled={!canEditSensitive && isEdit}
-                      >
-                        <span className="truncate">
-                          {delegationId
-                            ? delegations.find((d: any) => d.id === delegationId)?.school_name
-                            : "Sem delegação"}
-                        </span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Buscar delegação..." />
-                        <CommandList>
-                          <CommandEmpty>Nenhuma delegação encontrada.</CommandEmpty>
-                          <CommandGroup>
-                            <CommandItem
-                              value="__none"
-                              onSelect={() => { setDelegationId(""); setDelegationOpen(false); }}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", !delegationId ? "opacity-100" : "opacity-0")} />
-                              Sem delegação
-                            </CommandItem>
-                            {delegations.map((d: any) => (
-                              <CommandItem
-                                key={d.id}
-                                value={d.school_name}
-                                onSelect={() => { setDelegationId(d.id); setDelegationOpen(false); }}
-                              >
-                                <Check className={cn("mr-2 h-4 w-4", delegationId === d.id ? "opacity-100" : "opacity-0")} />
-                                {d.school_name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                    Delegação
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setParticipantCategory("organization")}
+                    className={cn(
+                      "px-3 py-1 text-xs font-medium rounded-md transition-all",
+                      participantCategory === "organization" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                    )}
+                  >
+                    Organização
+                  </button>
                 </div>
               </div>
 
-              {canEditRoles && (
-                <div className="pt-2">
-                  <Label>Funções operacionais (selecione todas que se aplicam)</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {roleCatalog.map((r) => {
-                      const active = selectedRoles.includes(r.code);
-                      return (
-                        <Badge
-                          key={r.code}
-                          variant={active ? "default" : "outline"}
-                          className="cursor-pointer hover:bg-primary/80"
-                          onClick={() => toggleRole(r.code)}
+              {participantCategory === "delegation" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Tipo principal *</Label>
+                    <Select 
+                      value={participantType} 
+                      onValueChange={setParticipantType}
+                      disabled={!canEditSensitive && isEdit}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="athlete">Atleta</SelectItem>
+                        <SelectItem value="coach">Técnico</SelectItem>
+                        <SelectItem value="head_of_delegation">Chefe de Delegação</SelectItem>
+                        <SelectItem value="official">Oficial</SelectItem>
+                        <SelectItem value="staff">Staff</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {!isEdit && (
+                    <div>
+                      <Label>Atribuir a Etapa (opcional)</Label>
+                      <Select 
+                        value={selectedStageId} 
+                        onValueChange={setSelectedStageId}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Nenhuma / Global" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nenhuma / Global</SelectItem>
+                          {eventStages.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div className={cn(!isEdit ? "md:col-span-2" : "")}>
+                    <Label>Delegação (opcional)</Label>
+                    <Popover open={delegationOpen} onOpenChange={setDelegationOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={delegationOpen}
+                          className="w-full justify-between font-normal"
+                          disabled={!canEditSensitive && isEdit}
                         >
-                          {active ? <X className="h-3 w-3 mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
-                          {r.name}
-                        </Badge>
-                      );
-                    })}
+                          <span className="truncate">
+                            {delegationId
+                              ? delegations.find((d: any) => d.id === delegationId)?.school_name
+                              : "Sem delegação"}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Buscar delegação..." />
+                          <CommandList>
+                            <CommandEmpty>Nenhuma delegação encontrada.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem
+                                value="__none"
+                                onSelect={() => { setDelegationId(""); setDelegationOpen(false); }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", !delegationId ? "opacity-100" : "opacity-0")} />
+                                Sem delegação
+                              </CommandItem>
+                              {delegations.map((d: any) => (
+                                <CommandItem
+                                  key={d.id}
+                                  value={d.school_name}
+                                  onSelect={() => { setDelegationId(d.id); setDelegationOpen(false); }}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", delegationId === d.id ? "opacity-100" : "opacity-0")} />
+                                  {d.school_name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label>Subtipo de Organização *</Label>
+                      <Select value={organizationSubtype} onValueChange={setOrganizationSubtype}>
+                        <SelectTrigger><SelectValue placeholder="Selecione o subtipo" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Coordenação Técnica">Coordenação Técnica</SelectItem>
+                          <SelectItem value="Arbitragem">Arbitragem</SelectItem>
+                          <SelectItem value="Transporte">Transporte</SelectItem>
+                          <SelectItem value="Alimentação">Alimentação</SelectItem>
+                          <SelectItem value="Alojamento">Alojamento</SelectItem>
+                          <SelectItem value="Secretaria">Secretaria</SelectItem>
+                          <SelectItem value="Comunicação">Comunicação</SelectItem>
+                          <SelectItem value="TI">TI</SelectItem>
+                          <SelectItem value="Saúde">Saúde</SelectItem>
+                          <SelectItem value="Cerimonial">Cerimonial</SelectItem>
+                          <SelectItem value="Segurança">Segurança</SelectItem>
+                          <SelectItem value="Apoio Operacional">Apoio Operacional</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Função / Cargo *</Label>
+                      <Input value={roleFunction} onChange={e => setRoleFunction(e.target.value)} placeholder="Ex: Coordenador de Logística" />
+                    </div>
+                    <div>
+                      <Label>Setor / Área de atuação</Label>
+                      <Input value={sectorArea} onChange={e => setSectorArea(e.target.value)} placeholder="Ex: Logística" />
+                    </div>
+                    <div>
+                      <Label>Responsável pelo quê?</Label>
+                      <Input value={responsibilities} onChange={e => setResponsibilities(e.target.value)} placeholder="Ex: Gestão de frotas" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Acessos e permissões (associadas ao trabalho)</Label>
+                      <Input value={accessPermissions} onChange={e => setAccessPermissions(e.target.value)} placeholder="Ex: Acesso total ao transporte, Relatórios de consumo" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Observações administrativas</Label>
+                      <Textarea value={observations} onChange={e => setObservations(e.target.value)} placeholder="Notas internas da organização..." />
+                    </div>
                   </div>
                 </div>
               )}
             </section>
+            {/* Operational Roles Catalog - Only if needed */}
+            {canEditRoles && participantCategory === "organization" && (
+              <div className="pt-2">
+                <Label>Outras funções operacionais vinculadas</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {roleCatalog.map((r) => {
+                    const active = selectedRoles.includes(r.code);
+                    return (
+                      <Badge
+                        key={r.code}
+                        variant={active ? "default" : "outline"}
+                        className="cursor-pointer hover:bg-primary/80"
+                        onClick={() => toggleRole(r.code)}
+                      >
+                        {active ? <X className="h-3 w-3 mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
+                        {r.name}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Contatos de Emergência / Responsáveis - Visível para atletas */}
             {participantType === "athlete" && (
