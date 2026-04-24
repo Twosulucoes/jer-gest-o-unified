@@ -172,6 +172,8 @@ export default function CredenciamentoPage() {
   
   // States for unified credentialing flow
   const [selectedForCred, setSelectedForCred] = useState<CredentialParticipantRow | null>(null);
+  const [guardianConfirmOpen, setGuardianConfirmOpen] = useState(false);
+  const [tempGuardianData, setTempGuardianData] = useState({ name: "", phone: "", coachName: "", coachPhone: "" });
   const [isLinkingExternal, setIsLinkingExternal] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
