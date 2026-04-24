@@ -764,6 +764,7 @@ export default function CredenciamentoPage() {
           guardian_name: tempGuardianData.name,
           guardian_phone: tempGuardianData.phone,
           coach_name: tempGuardianData.relationship,
+          coach_phone: null,
         })
         .eq("id", selectedForCred.id);
       
