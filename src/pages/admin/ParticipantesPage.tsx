@@ -269,8 +269,8 @@ export default function ParticipantesPage() {
         case "status":
           va = a.status ?? ""; vb = b.status ?? ""; break;
         case "institution":
-          va = a.delegation?.institution?.name ?? a.delegation?.school_name ?? "";
-          vb = b.delegation?.institution?.name ?? b.delegation?.school_name ?? ""; break;
+          va = a.delegation?.school_name ?? "";
+          vb = b.delegation?.school_name ?? ""; break;
         case "created":
           va = a.created_at ?? ""; vb = b.created_at ?? ""; break;
       }
