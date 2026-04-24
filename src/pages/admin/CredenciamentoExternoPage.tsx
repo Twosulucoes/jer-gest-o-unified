@@ -731,6 +731,7 @@ export default function CredenciamentoExternoPage() {
         open={editDialogOpen} 
         onOpenChange={setEditDialogOpen} 
         participantId={selectedParticipant?.id} 
+        defaultStageId={stageId}
       />
     </div>
   );
