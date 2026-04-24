@@ -28,7 +28,7 @@ interface OpenWindowState {
 
 export default function AlimentacaoHomePage() {
   const navigate = useNavigate();
-  const { activeEvent } = useEventContext();
+  const { activeEventId } = useEventContext();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ consumosHoje: 0, janelasAbertas: 0, tiposRefeicao: 0, totalJanelas: 0 });
   const [openWindow, setOpenWindow] = useState<OpenWindowState | null>(null);
@@ -46,13 +46,14 @@ export default function AlimentacaoHomePage() {
       const now = new Date().toISOString();
 
       const [consumoRes, janelasAbertasRes, tiposRes, totalJanelasRes, windowsRes] = await Promise.all([
-        supabase.from("meal_consumptions").select("id", { count: "exact", head: true }).gte("consumed_at", today + "T00:00:00"),
-        supabase.from("meal_windows").select("id", { count: "exact", head: true }).lte("window_start", now).gte("window_end", now),
-        supabase.from("meal_types").select("id", { count: "exact", head: true }),
-        supabase.from("meal_windows").select("id", { count: "exact", head: true }).gte("window_start", today + "T00:00:00"),
+        supabase.from("meal_consumptions").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).gte("consumed_at", today + "T00:00:00"),
+        supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).lte("window_start", now).gte("window_end", now),
+        supabase.from("meal_types").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
+        supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).gte("window_start", today + "T00:00:00"),
         supabase
           .from("meal_windows")
           .select("id, window_start, window_end, label, meal_type:meal_types(name)")
+          .eq("event_id", activeEventId)
           .gte("window_start", today + "T00:00:00")
           .order("window_start"),
       ]);
@@ -70,6 +71,7 @@ export default function AlimentacaoHomePage() {
         const { count } = await supabase
           .from("meal_consumptions")
           .select("id", { count: "exact", head: true })
+          .eq("event_id", activeEventId)
           .eq("meal_window_id", active.id)
           .gte("consumed_at", today + "T00:00:00");
         open = {

@@ -44,7 +44,7 @@ interface PersonResult {
 
 export default function AlojamentoOcupacaoPage() {
   const navigate = useNavigate();
-  const { activeEvent } = useEventContext();
+  const { activeEventId } = useEventContext();
   const [blocks, setBlocks] = useState<BlockInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -84,7 +84,8 @@ export default function AlojamentoOcupacaoPage() {
         const { data } = await supabase.rpc("pwa_search_person" as any, {
           p_query: search.trim(),
           p_facility_id: facilityId,
-          p_limit: 10
+          p_limit: 10,
+          p_event_id: activeEventId
         });
         setSearchResults((data as any)?.results || []);
       } catch (err) {
