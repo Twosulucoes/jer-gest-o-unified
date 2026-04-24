@@ -90,12 +90,13 @@ export function useDashboardData(eventId?: string | null) {
       {
         queryKey: ["dash3", "participants", eventId],
         enabled,
-        staleTime: STALE,
+        staleTime: 0, // Disable cache for auditing or quick updates
         queryFn: () => safe(async () => {
           const query = supabase.from("participants")
             .select("id, credentialed_at, delegation_id");
           if (eventId) query.eq("event_id", eventId);
-          const { data } = await query;
+          const { data, error } = await query;
+          if (error) console.error("Error fetching participants:", error);
           return data ?? [];
         }, [] as { id: string; credentialed_at: string | null; delegation_id: string | null }[]),
       },
@@ -103,12 +104,13 @@ export function useDashboardData(eventId?: string | null) {
       {
         queryKey: ["dash3", "credentials", eventId],
         enabled,
-        staleTime: STALE,
+        staleTime: 0,
         queryFn: () => safe(async () => {
           const query = supabase.from("participant_credentials")
             .select("id, status, issued_at, created_at");
           if (eventId) query.eq("event_id", eventId);
-          const { data } = await query;
+          const { data, error } = await query;
+          if (error) console.error("Error fetching credentials:", error);
           return data ?? [];
         }, [] as { id: string; status: string; issued_at: string | null; created_at: string }[]),
       },
@@ -222,12 +224,13 @@ export function useDashboardData(eventId?: string | null) {
       {
         queryKey: ["dash3", "matches", eventId],
         enabled,
-        staleTime: STALE,
+        staleTime: 0,
         queryFn: () => safe(async () => {
           const query = supabase.from("competition_matches")
             .select("id, status, sport_event_id, match_date, start_time");
           if (eventId) query.eq("event_id", eventId);
-          const { data } = await query;
+          const { data, error } = await query;
+          if (error) console.error("Error fetching matches:", error);
           return data ?? [];
         }, [] as { id: string; status: string; sport_event_id: string | null; match_date: string | null; start_time: string | null }[]),
       },
