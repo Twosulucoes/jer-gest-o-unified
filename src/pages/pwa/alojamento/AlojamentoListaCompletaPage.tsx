@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { useActiveEventId } from "@/contexts/EventContext";
 import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ interface Guest {
 }
 
 export default function AlojamentoListaCompletaPage() {
+  const eventId = useActiveEventId();
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -56,8 +58,8 @@ export default function AlojamentoListaCompletaPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadGuests();
-  }, []);
+    if (eventId) loadGuests();
+  }, [eventId]);
 
   async function loadGuests() {
     setLoading(true);
@@ -76,7 +78,8 @@ export default function AlojamentoListaCompletaPage() {
           person_id, people!inner(full_name, cpf, birth_date, photo_url, gender),
           delegations!inner(institution_id, institutions!inner(name))
         )
-      `) as any;
+      `)
+      .eq("lodging_units.lodging_locations.event_id", eventId) as any;
 
     if (error) {
       console.error(error);
