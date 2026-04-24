@@ -593,9 +593,19 @@ export default function ParticipantesPage() {
             disabled={!selectedEventId}
           />
           {canManage && selectedEventId && (
-            <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-1" />Cadastrar pessoa
-            </Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Select onValueChange={(val) => {
+                setEditingId(null);
+                // We'll pass the category to the form via state or a new prop
+                // For now, let's just open the form and let the user choose inside,
+                // OR we can improve the PessoaFormDialog to accept a default category.
+                setFormOpen(true);
+              }}>
+                <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-1" />Novo Participante
+                </Button>
+              </Select>
+            </div>
           )}
         </div>
       </div>
