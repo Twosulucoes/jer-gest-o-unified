@@ -324,9 +324,18 @@ export function useDashboardData(eventId?: string | null) {
   // ----- Cálculos -----
   const today = todayISO();
 
-  // Credenciamento
-  const credentialed = P.filter((p) => p.credentialed_at).length;
-  const credActive = C.filter((c) => c.status === "active").length;
+  // Credenciamento — fonte de verdade: distinct participant_id em participant_credentials.status='active'
+  const activeCreds = C.filter((c) => c.status === "active");
+  const credActiveDistinctParticipants = new Set(
+    activeCreds.map((c) => c.participant_id).filter((x): x is string => !!x)
+  ).size;
+  const credentialedFromParticipants = P.filter((p) => p.credentialed_at).length;
+  // KPI "Credenciados" = participantes únicos com credencial ativa (preferencial),
+  // com fallback para flag credentialed_at se não houver credenciais ativas registradas.
+  const credentialed = credActiveDistinctParticipants > 0
+    ? credActiveDistinctParticipants
+    : credentialedFromParticipants;
+  const credActive = activeCreds.length; // total de credenciais ativas (pode incluir reemissões)
   const credToday = C.filter((c) => (c.issued_at ?? c.created_at)?.slice(0, 10) === today).length;
 
   // daily credenciamento (por credentialed_at)
