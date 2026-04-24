@@ -210,7 +210,7 @@ export default function AlimentacaoRelatoriosPage() {
               {consumptions.slice(0, 200).map((c: any) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.participants?.person?.full_name || "—"}</TableCell>
-                  <TableCell>{c.participants?.delegations?.institutions?.name || "—"}</TableCell>
+                  <TableCell>{c.participants?.delegations?.school_name || "—"}</TableCell>
                   <TableCell>{c.meal_windows?.label || "—"}</TableCell>
                   <TableCell>{c.consumed_at ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm") : "—"}</TableCell>
                   <TableCell>{c.method || "scan"}</TableCell>
