@@ -20,14 +20,17 @@ const FOOD_ROLES: AppRole[] = [...ALL_OPS, "alimentacao"];
 const TRANSPORT_ROLES: AppRole[] = [...ALL_OPS, "transporte"];
 
 interface ModuleConfig {
-  /** Prefixo da rota relativa (ex.: "competicao"). */
+  /** Prefixo da rota relativa principal (ex.: "competicao"). */
   prefix: string;
+  /** Prefixos alternativos que também pertencem a este módulo. */
+  aliases?: string[];
   tabs: StageTabItem[];
 }
 
 const MODULES: ModuleConfig[] = [
   {
     prefix: "credenciamento",
+    aliases: ["credenciamento-externo", "validacao-qr"],
     tabs: [
       { label: "Credenciamento", to: "credenciamento", icon: <BadgeCheck className="h-3.5 w-3.5" />, end: true, roles: ALL_OPS },
       { label: "Externos", to: "credenciamento-externo", icon: <KeyRound className="h-3.5 w-3.5" />, roles: ALL_OPS },
@@ -123,7 +126,9 @@ export function StagePageScaffold({
     : "";
   const firstSegment = sub.split("/")[0] ?? "";
 
-  const moduleCfg = MODULES.find((m) => m.prefix === firstSegment);
+  const moduleCfg = MODULES.find(
+    (m) => m.prefix === firstSegment || m.aliases?.includes(firstSegment)
+  );
 
   return (
     <div className="space-y-4">
