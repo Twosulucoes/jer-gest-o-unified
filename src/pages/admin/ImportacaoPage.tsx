@@ -321,7 +321,9 @@ export default function ImportacaoPage() {
         toast.success(`Validação: ${result.summary.ok_para_importar} linha(s) prontas para importar.`);
       }
     } catch (err) {
-      toast.error(`Erro na validação: ${(err as Error).message}`);
+      // eslint-disable-next-line no-console
+      console.error("[IMPORT validate] ✖ erro", err);
+      toast.error(`Erro na validação: ${(err as Error).message}`, { duration: 12000, description: "Abra o console (F12) para ver detalhes técnicos." });
     } finally {
       setValidating(false);
     }
