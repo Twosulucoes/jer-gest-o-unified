@@ -1651,6 +1651,7 @@ export default function CredenciamentoPage() {
           }
         }}
         participantId={editingParticipantId}
+        defaultStageId={stageId}
       />
       </div>
     </div>
