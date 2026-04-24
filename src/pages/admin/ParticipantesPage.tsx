@@ -57,6 +57,7 @@ export default function ParticipantesPage() {
   // Load state from URL search params
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const debouncedSearch = useDebounce(searchTerm, 350);
+  const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get("category") || "all");
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") || "all");
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all");
   const [sortBy, setSortBy] = useState<"name" | "created" | "type" | "status" | "institution">(
