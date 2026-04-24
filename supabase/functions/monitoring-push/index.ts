@@ -108,13 +108,13 @@ async function hkdf(
 ): Promise<Uint8Array> {
   const key = await crypto.subtle.importKey(
     "raw",
-    ikm,
+    ikm as BufferSource,
     { name: "HKDF" },
     false,
     ["deriveBits"],
   );
   const bits = await crypto.subtle.deriveBits(
-    { name: "HKDF", hash: "SHA-256", salt, info },
+    { name: "HKDF", hash: "SHA-256", salt: salt as BufferSource, info: info as BufferSource },
     key,
     length * 8,
   );
@@ -140,7 +140,7 @@ async function encryptPayload(
   // 2. Importa chave pública do UA
   const uaPubKey = await crypto.subtle.importKey(
     "raw",
-    uaPubBytes,
+    uaPubBytes as BufferSource,
     { name: "ECDH", namedCurve: "P-256" },
     true,
     [],
@@ -186,14 +186,14 @@ async function encryptPayload(
   // 8. AES-128-GCM
   const aesKey = await crypto.subtle.importKey(
     "raw",
-    cek,
+    cek as BufferSource,
     { name: "AES-GCM" },
     false,
     ["encrypt"],
   );
   const ciphertext = new Uint8Array(
     await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv: nonce },
+      { name: "AES-GCM", iv: nonce as BufferSource },
       aesKey,
       padded,
     ),

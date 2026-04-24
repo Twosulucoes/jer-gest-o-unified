@@ -1619,12 +1619,12 @@ export default function CredenciamentoPage() {
         open={editDialogOpen}
         onOpenChange={(open) => {
           setEditDialogOpen(open);
-          if (!open) setEditingParticipantId(null);
+          if (!open) {
+            setEditingParticipantId(null);
+            queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+          }
         }}
         participantId={editingParticipantId}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
-        }}
       />
       </div>
     </div>
