@@ -26,10 +26,17 @@ import { useEventBranding } from "@/hooks/useEventBranding";
 import { exportListPdf, downloadBlob, type PdfListColumn, type PdfListGroup } from "@/lib/listReportPdf";
 
 const TYPE_LABELS: Record<string, string> = {
-  athlete: "Atleta",
-  coach: "Técnico",
-  head_of_delegation: "Chefe Delegação",
-  staff: "Staff",
+  athlete: "Atleta", coach: "Técnico", head_of_delegation: "Chefe Delegação", staff: "Staff",
+  motorista: "Motorista", agente_operacao: "Agente Op.", logistica: "Logística",
+  cozinheira: "Cozinheira(o)", guia: "Guia", secretaria: "Secretaria",
+  mesario: "Mesário", arbitro: "Árbitro", delegado: "Delegado",
+  fiscal: "Fiscal", operador_pesquisa: "Pesquisador", tecnico_ti: "Técnico TI",
+  terceiro: "Terceiro", colaborador: "Colaborador"
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  delegation: "Delegação",
+  organization: "Organização",
 };
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
