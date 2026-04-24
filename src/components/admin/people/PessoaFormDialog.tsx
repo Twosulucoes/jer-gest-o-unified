@@ -229,16 +229,23 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
         // Update participant
         const { error: errPart } = await supabase.from("participants").update({
           participant_type: participantType,
-          delegation_id: delegationId || null,
+          category: participantCategory,
+          delegation_id: participantCategory === "delegation" ? (delegationId || null) : null,
+          organization_subtype: participantCategory === "organization" ? organizationSubtype : null,
+          role_function: participantCategory === "organization" ? roleFunction : null,
+          sector_area: participantCategory === "organization" ? sectorArea : null,
+          responsibilities: participantCategory === "organization" ? responsibilities : null,
+          access_permissions: participantCategory === "organization" ? accessPermissions : null,
+          observations: participantCategory === "organization" ? observations : null,
           needs_transport: needsTransport,
           needs_meals: needsMeals,
           needs_lodging: needsLodging,
           logistics_restrictions: logisticsRestrictions || null,
           logistics_notes: logisticsNotes || null,
-          guardian_name: guardianName || null,
-          guardian_phone: guardianPhone || null,
-          coach_name: coachName || null,
-          coach_phone: coachPhone || null,
+          guardian_name: participantCategory === "delegation" ? (guardianName || null) : null,
+          guardian_phone: participantCategory === "delegation" ? (guardianPhone || null) : null,
+          coach_name: participantCategory === "delegation" ? (coachName || null) : null,
+          coach_phone: participantCategory === "delegation" ? (coachPhone || null) : null,
         } as any).eq("id", pId);
         if (errPart) throw errPart;
       } else {
