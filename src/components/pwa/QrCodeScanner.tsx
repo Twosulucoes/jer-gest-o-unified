@@ -165,11 +165,15 @@ export default function QrCodeScanner({
           { facingMode: front ? "user" : "environment" },
           config,
           (decodedText) => handleDetected(decodedText),
-          () => {} // Erros de frames individuais ignorados para performance
+          () => {} 
         );
 
         if (mountedRef.current) {
           setState("active");
+          // Re-ativa o hint timer se necessário
+          setTimeout(() => {
+            if (mountedRef.current) setHintVisible(true);
+          }, 5000);
         }
       } catch (err: any) {
         console.error("Scanner error:", err);
@@ -213,7 +217,7 @@ export default function QrCodeScanner({
       setState("error");
       setErrorMsg(err?.message || "Erro no scanner nativo");
     }
-  }, []);
+  }, [handleDetected]);
 
   useEffect(() => {
     if (!isOpen) {
