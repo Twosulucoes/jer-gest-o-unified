@@ -675,6 +675,14 @@ export default function CredenciamentoPage() {
 
   const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "";
 
+  const stats = {
+    total: participants.length,
+    ready: filtered.filter(p => getParticipantState(p) === "ready_to_emit").length,
+    awaiting: filtered.filter(p => getParticipantState(p) === "awaiting").length,
+    emitted: credentialsEmittedCount,
+    pendingEmission: Math.max(0, confirmedCount - credentialsEmittedCount)
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
