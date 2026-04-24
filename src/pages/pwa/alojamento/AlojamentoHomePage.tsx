@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useActiveEventId } from "@/contexts/EventContext";
+import { useActiveStageId } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
@@ -26,6 +28,8 @@ interface Facility {
 
 export default function AlojamentoHomePage() {
   const navigate = useNavigate();
+  const eventId = useActiveEventId();
+  const stageId = useActiveStageId();
   const { pendingCount, isOnline } = useAlojamentoOffline();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [facilityId, setFacilityId] = useState<string>(getSelectedFacility() || "");
@@ -34,9 +38,22 @@ export default function AlojamentoHomePage() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.rpc("list_alojamento_facilities" as any);
+      if (!eventId) return;
+      
+      let query = supabase
+        .from("lodging_locations")
+        .select("id, name, is_active")
+        .eq("event_id", eventId)
+        .eq("is_active", true);
+
+      if (stageId) {
+        query = query.eq("event_stage_id", stageId);
+      }
+
+      const { data, error } = await query.order("name");
+      
       if (!error) {
-        const list = (Array.isArray(data) ? data : []) as Facility[];
+        const list = (data || []) as Facility[];
         setFacilities(list);
         if (!facilityId && list.length > 0) {
           setFacilityId(list[0].id);
@@ -45,13 +62,13 @@ export default function AlojamentoHomePage() {
       }
       setLoading(false);
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [eventId, stageId]);
 
   useEffect(() => {
     if (!facilityId) return;
     setSelectedFacility(facilityId);
     (async () => {
+      // For now, continue using the KPI RPC, but it might need to be replaced if it doesn't support the new schema
       const { data } = await supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId });
       if (data) {
         const kpi = data as any;
