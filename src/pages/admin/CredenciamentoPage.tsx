@@ -491,6 +491,7 @@ export default function CredenciamentoPage() {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
       toast.success("Credenciamento realizado com sucesso!");
       setSelectedForCred(null);
+      setIsWorkflowActive(false);
       setIsLinkingExternal(false);
       setManualCode("");
     },
