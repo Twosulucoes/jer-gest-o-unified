@@ -191,7 +191,7 @@ export default function DelegacaoDetalhePage() {
         </div>
 
         <TabsContent value="resumo">
-          <DelegationResumoTab delegation={delegation} institution={institution} event={event} />
+          <DelegationResumoTab delegation={delegation} event={event} />
         </TabsContent>
         <TabsContent value="participantes">
           <DelegationParticipantesTab delegationId={delegation.id} eventId={delegation.event_id} />
