@@ -68,7 +68,7 @@ export interface DashboardData {
 }
 
 export function useDashboardData(eventId?: string | null) {
-  const enabled = !!eventId;
+  const enabled = true; // Sempre habilitado para permitir visão global
 
   // Initial dummy state when no eventId is provided to avoid crashes
   const dummyData: DashboardData = {
@@ -92,9 +92,10 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("participants")
-            .select("id, credentialed_at, delegation_id")
-            .eq("event_id", eventId!);
+          const query = supabase.from("participants")
+            .select("id, credentialed_at, delegation_id");
+          if (eventId) query.eq("event_id", eventId);
+          const { data } = await query;
           return data ?? [];
         }, [] as { id: string; credentialed_at: string | null; delegation_id: string | null }[]),
       },
@@ -104,9 +105,10 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("participant_credentials")
-            .select("id, status, issued_at, created_at")
-            .eq("event_id", eventId!);
+          const query = supabase.from("participant_credentials")
+            .select("id, status, issued_at, created_at");
+          if (eventId) query.eq("event_id", eventId);
+          const { data } = await query;
           return data ?? [];
         }, [] as { id: string; status: string; issued_at: string | null; created_at: string }[]),
       },
@@ -116,9 +118,10 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("delegations")
-            .select("id, school_name")
-            .eq("event_id", eventId!);
+          const query = supabase.from("delegations")
+            .select("id, school_name");
+          if (eventId) query.eq("event_id", eventId);
+          const { data } = await query;
           return data ?? [];
         }, [] as { id: string; school_name: string }[]),
       },
@@ -128,9 +131,10 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("meal_windows")
-            .select("id, service_date, meal_type_id, label")
-            .eq("event_id", eventId!);
+          const query = supabase.from("meal_windows")
+            .select("id, service_date, meal_type_id, label");
+          if (eventId) query.eq("event_id", eventId);
+          const { data } = await query;
           return data ?? [];
         }, [] as { id: string; service_date: string; meal_type_id: string; label: string | null }[]),
       },
@@ -140,9 +144,10 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("meal_types")
-            .select("id, name")
-            .eq("event_id", eventId!);
+          const query = supabase.from("meal_types")
+            .select("id, name");
+          if (eventId) query.eq("event_id", eventId);
+          const { data } = await query;
           return data ?? [];
         }, [] as { id: string; name: string }[]),
       },
@@ -152,10 +157,11 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("lodging_units")
+          const query = supabase.from("lodging_units")
             .select("id, capacity, is_active")
-            .eq("event_id", eventId!)
             .eq("is_active", true);
+          if (eventId) query.eq("event_id", eventId);
+          const { data } = await query;
           return data ?? [];
         }, [] as { id: string; capacity: number; is_active: boolean }[]),
       },
@@ -165,10 +171,11 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { count } = await supabase.from("lodging_occupancies")
+          const query = supabase.from("lodging_occupancies")
             .select("id", { count: "exact", head: true })
-            .eq("event_id", eventId!)
             .in("status", ["allocated", "checked_in"]);
+          if (eventId) query.eq("event_id", eventId);
+          const { count } = await query;
           return count ?? 0;
         }, 0),
       },
@@ -178,9 +185,10 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("transport_trips")
-            .select("id")
-            .eq("event_id", eventId!);
+          const query = supabase.from("transport_trips")
+            .select("id");
+          if (eventId) query.eq("event_id", eventId);
+          const { data } = await query;
           return data ?? [];
         }, [] as { id: string }[]),
       },
@@ -190,9 +198,10 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { count } = await supabase.from("transport_vehicles")
-            .select("id", { count: "exact", head: true })
-            .eq("event_id", eventId!);
+          const query = supabase.from("transport_vehicles")
+            .select("id", { count: "exact", head: true });
+          if (eventId) query.eq("event_id", eventId);
+          const { count } = await query;
           return count ?? 0;
         }, 0),
       },
@@ -202,9 +211,10 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("sport_events")
-            .select("id, name, sports(name)")
-            .eq("event_id", eventId!);
+          const query = supabase.from("sport_events")
+            .select("id, name, sports(name)");
+          if (eventId) query.eq("event_id", eventId);
+          const { data } = await query;
           return (data ?? []) as Array<{ id: string; name: string | null; sports: { name: string } | null }>;
         }, []),
       },
@@ -214,9 +224,10 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("competition_matches")
-            .select("id, status, sport_event_id, match_date, start_time")
-            .eq("event_id", eventId!);
+          const query = supabase.from("competition_matches")
+            .select("id, status, sport_event_id, match_date, start_time");
+          if (eventId) query.eq("event_id", eventId);
+          const { data } = await query;
           return data ?? [];
         }, [] as { id: string; status: string; sport_event_id: string | null; match_date: string | null; start_time: string | null }[]),
       },
@@ -442,10 +453,6 @@ export function useDashboardData(eventId?: string | null) {
     alimentacao: { daily: mealsDaily, meal_types: mealTypesList, by_delegation: mealsByDelegation },
     competicao: { by_sport: bySport, today: todayMatches },
   };
-
-  if (!eventId) {
-    return { data: dummyData, isLoading: false, refetchAll: async () => {}, lastUpdated: null };
-  }
 
   return { data, isLoading: isLoadingAll, refetchAll, lastUpdated: new Date() };
 }
