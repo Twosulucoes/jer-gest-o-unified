@@ -25,13 +25,16 @@ export function AlojamentoNavHeader({ currentPathLabel, showQuickNav = true }: A
         {/* Fixed Summary */}
         <div className="flex items-center justify-between gap-2 overflow-hidden bg-muted/30 p-2.5 rounded-xl border border-border/40">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 truncate">
-              {activeEvent?.name || "Evento"}
-            </p>
-            <h2 className="text-[13px] font-bold text-foreground truncate">
+            <h2 className="text-[14px] font-bold text-foreground truncate">
               {activeStage?.name || "Sem Etapa Ativa"}
             </h2>
           </div>
+          {activeStage && (
+            <Badge variant="outline" className="shrink-0 bg-green-500/10 text-green-600 border-green-500/20 text-[10px] px-1.5 py-0 font-bold uppercase">
+              Etapa Ativa
+            </Badge>
+          )}
+        </div>
           {activeStage && (
             <Badge variant="outline" className="shrink-0 bg-green-500/10 text-green-600 border-green-500/20 text-[10px] px-1.5 py-0 font-bold uppercase">
               Ativa
