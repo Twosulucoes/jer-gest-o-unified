@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useActiveStageId } from "@/contexts/StageContext";
 import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ interface Guest {
 
 export default function AlojamentoListaCompletaPage() {
   const eventId = useActiveEventId();
+  const stageId = useActiveStageId();
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -59,11 +61,11 @@ export default function AlojamentoListaCompletaPage() {
 
   useEffect(() => {
     if (eventId) loadGuests();
-  }, [eventId]);
+  }, [eventId, stageId]);
 
   async function loadGuests() {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("lodging_occupancies")
       .select(`
         id,
@@ -72,14 +74,20 @@ export default function AlojamentoListaCompletaPage() {
         checked_in_at,
         checked_out_at,
         unit_id,
-        lodging_units!inner(name, location_id, lodging_locations!inner(name, event_id)),
+        lodging_units!inner(name, location_id, lodging_locations!inner(name, event_id, event_stage_id)),
         participants!inner(
           id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone,
           person_id, people!inner(full_name, cpf, birth_date, photo_url, gender),
           delegations!inner(institution_id, institutions!inner(name))
         )
       `)
-      .eq("lodging_units.lodging_locations.event_id", eventId) as any;
+      .eq("lodging_units.lodging_locations.event_id", eventId);
+
+    if (stageId) {
+      query = query.eq("lodging_units.lodging_locations.event_stage_id", stageId);
+    }
+
+    const { data, error } = await query as any;
 
     if (error) {
       console.error(error);
