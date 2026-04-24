@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,12 +11,9 @@ import {
   User,
   Camera,
   BadgeCheck,
-  ScanLine as ScanIcon,
   Maximize2,
   Settings2,
 } from "lucide-react";
-import { StageMiniDash } from "@/components/admin/stage/StageMiniDash";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,6 +29,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 import { cn } from "@/lib/utils";
+import { StagePageScaffold } from "@/components/admin/stage/StagePageScaffold";
 
 interface ValidationResult {
   result: "valid" | "not_found" | "revoked" | "suspended" | "not_activated" | "wrong_event" | string;
@@ -155,175 +153,175 @@ export default function ValidacaoQRPage() {
   } : null;
 
   return (
-    <div className="animate-fade-in space-y-4">
-      <StageMiniDash
-        hideGlobal
-        moduleKpis={[
-          {
-            label: "Sessão",
-            value: sessionCount,
-            icon: <BadgeCheck className="h-3.5 w-3.5" />,
-            tone: "primary",
-          },
-          {
-            label: "Scanner",
-            value: "PRONTO",
-            icon: <ScanIcon className="h-3.5 w-3.5" />,
-            tone: "success",
-          },
-        ]}
-      />
-
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Validação QR</h1>
-          <p className="text-sm text-muted-foreground">Efetue a leitura das credenciais dos participantes</p>
+    <StagePageScaffold
+      moduleKpis={[
+        {
+          label: "Sessão",
+          value: sessionCount,
+          icon: <BadgeCheck className="h-3.5 w-3.5" />,
+          tone: "primary",
+        },
+        {
+          label: "Scanner",
+          value: "PRONTO",
+          icon: <ScanLine className="h-3.5 w-3.5" />,
+          tone: "success",
+        },
+      ]}
+    >
+      <div className="animate-fade-in space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-heading text-2xl font-bold text-foreground">Validação QR</h1>
+            <p className="text-sm text-muted-foreground">Efetue a leitura das credenciais dos participantes</p>
+          </div>
+          <div className="flex gap-2">
+            <Select value={scanPoint} onValueChange={setScanPoint}>
+              <SelectTrigger className="w-[140px] h-9 text-xs">
+                <Settings2 className="w-3 h-3 mr-2" />
+                <SelectValue placeholder="Ponto" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">Ponto: Geral</SelectItem>
+                <SelectItem value="entrada">Ponto: Entrada</SelectItem>
+                <SelectItem value="alimentacao">Ponto: Alimentação</SelectItem>
+                <SelectItem value="transporte">Ponto: Transporte</SelectItem>
+                <SelectItem value="alojamento">Ponto: Alojamento</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Select value={scanPoint} onValueChange={setScanPoint}>
-            <SelectTrigger className="w-[140px] h-9 text-xs">
-              <Settings2 className="w-3 h-3 mr-2" />
-              <SelectValue placeholder="Ponto" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="general">Ponto: Geral</SelectItem>
-              <SelectItem value="entrada">Ponto: Entrada</SelectItem>
-              <SelectItem value="alimentacao">Ponto: Alimentação</SelectItem>
-              <SelectItem value="transporte">Ponto: Transporte</SelectItem>
-              <SelectItem value="alojamento">Ponto: Alojamento</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Lado Esquerdo: Scanner Principal */}
-        <Card className={cn(
-          "md:col-span-2 relative overflow-hidden transition-all",
-          validating && "opacity-80"
-        )}>
-          <CardContent className="p-0">
-            <div 
-              className="relative aspect-[4/3] bg-black flex flex-col items-center justify-center cursor-pointer group"
-              onClick={() => setScannerOpen(true)}
-            >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-64 h-64 border-2 border-primary/50 rounded-2xl flex items-center justify-center relative">
-                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
-                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
-                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
-                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
-                  
-                  <div className="flex flex-col items-center gap-4 text-white">
-                    <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center border border-primary/40 group-hover:bg-primary/40 transition-colors">
-                      <Camera className="h-8 w-8" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Lado Esquerdo: Scanner Principal */}
+          <Card className={cn(
+            "md:col-span-2 relative overflow-hidden transition-all",
+            validating && "opacity-80"
+          )}>
+            <CardContent className="p-0">
+              <div 
+                className="relative aspect-[4/3] bg-black flex flex-col items-center justify-center cursor-pointer group"
+                onClick={() => setScannerOpen(true)}
+              >
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-64 h-64 border-2 border-primary/50 rounded-2xl flex items-center justify-center relative">
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
+                    
+                    <div className="flex flex-col items-center gap-4 text-white">
+                      <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center border border-primary/40 group-hover:bg-primary/40 transition-colors">
+                        <Camera className="h-8 w-8" />
+                      </div>
+                      <span className="font-medium text-sm tracking-wide bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+                        CLIQUE PARA ESCANEAR
+                      </span>
                     </div>
-                    <span className="font-medium text-sm tracking-wide bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
-                      CLIQUE PARA ESCANEAR
-                    </span>
                   </div>
                 </div>
-              </div>
-              
-              {validating && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px] z-10">
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                    <span className="text-primary font-bold animate-pulse text-xs tracking-widest uppercase">Validando...</span>
+                
+                {validating && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px] z-10">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                      <span className="text-primary font-bold animate-pulse text-xs tracking-widest uppercase">Validando...</span>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Lado Direito: Entrada Manual e Contexto */}
-        <div className="space-y-4">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">Entrada Manual</label>
-                <div className="flex gap-2">
-                  <Input
-                    id="qr-input-field"
-                    placeholder="Cole ou digite o código..."
-                    value={qrInput}
-                    onChange={(e) => setQrInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={!selectedEventId || validating}
-                    className="h-10 text-sm"
-                  />
-                  <Button
-                    id="btn-validate-qr"
-                    size="icon"
-                    onClick={() => handleValidate()}
-                    disabled={!qrInput.trim() || !selectedEventId || validating}
-                  >
-                    {validating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanLine className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-dashed">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-medium text-muted-foreground">Configurações</span>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">Evento Ativo</label>
-                  <div className="p-3 rounded-lg border bg-muted/20 text-xs flex items-center justify-between">
-                    <span className="font-medium truncate mr-2">
-                      {events.find(e => e.id === selectedEventId)?.name || "Nenhum evento selecionado"}
-                    </span>
-                    <Badge variant="outline" className="text-[9px] h-4">Contexto Global</Badge>
-                  </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Atalho para tela cheia ou scanner fixo se necessário */}
-          <Button 
-            variant="outline" 
-            className="w-full h-12 border-dashed flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary hover:border-primary transition-colors"
-            onClick={() => setScannerOpen(true)}
-          >
-            <Maximize2 className="w-4 h-4" />
-            MODO TELA CHEIA
-          </Button>
+          {/* Lado Direito: Entrada Manual e Contexto */}
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">Entrada Manual</label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="qr-input-field"
+                      placeholder="Cole ou digite o código..."
+                      value={qrInput}
+                      onChange={(e) => setQrInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      disabled={!selectedEventId || validating}
+                      className="h-10 text-sm"
+                    />
+                    <Button
+                      id="btn-validate-qr"
+                      size="icon"
+                      onClick={() => handleValidate()}
+                      disabled={!qrInput.trim() || !selectedEventId || validating}
+                    >
+                      {validating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanLine className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-dashed">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-medium text-muted-foreground">Configurações</span>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">Evento Ativo</label>
+                    <div className="p-3 rounded-lg border bg-muted/20 text-xs flex items-center justify-between">
+                      <span className="font-medium truncate mr-2">
+                        {events.find(e => e.id === selectedEventId)?.name || "Nenhum evento selecionado"}
+                      </span>
+                      <Badge variant="outline" className="text-[9px] h-4">Contexto Global</Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Atalho para tela cheia ou scanner fixo se necessário */}
+            <Button 
+              variant="outline" 
+              className="w-full h-12 border-dashed flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary hover:border-primary transition-colors"
+              onClick={() => setScannerOpen(true)}
+            >
+              <Maximize2 className="w-4 h-4" />
+              MODO TELA CHEIA
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <QrCodeScanner
-        isOpen={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        onScan={handleCameraScan}
-        title="Validar Credencial"
-      />
-
-      {result && (
-        <ParticipantReviewDialog
-          open={showConfirm}
-          onOpenChange={setShowConfirm}
-          participant={result.participant ? {
-            name: result.participant.full_name,
-            participantId: result.participant.participant_id,
-            cpf: null,
-            type: result.participant.participant_type,
-            institution: result.participant.institution,
-            photo_url: result.participant.photo_url,
-            birth_date: result.participant.birth_date,
-          } : null}
-          onConfirm={handleNewScan}
-          onCancel={handleNewScan}
-          confirmLabel={result.result === "valid" ? "Confirmar e Próximo" : "Entendido"}
-          cancelLabel="Nova leitura"
-          statusLabel={resultConfig?.label}
-          statusIcon={resultConfig?.icon}
-          statusColor={resultConfig?.color.split(" ")[1] + " border-b " + (resultConfig?.color.split(" ")[2] || "")}
-          message={result.message}
+        <QrCodeScanner
+          isOpen={scannerOpen}
+          onClose={() => setScannerOpen(false)}
+          onScan={handleCameraScan}
+          title="Validar Credencial"
         />
-      )}
-    </div>
+
+        {result && (
+          <ParticipantReviewDialog
+            open={showConfirm}
+            onOpenChange={setShowConfirm}
+            participant={result.participant ? {
+              name: result.participant.full_name,
+              participantId: result.participant.participant_id,
+              cpf: null,
+              type: result.participant.participant_type,
+              institution: result.participant.institution,
+              photo_url: result.participant.photo_url,
+              birth_date: result.participant.birth_date,
+            } : null}
+            onConfirm={handleNewScan}
+            onCancel={handleNewScan}
+            confirmLabel={result.result === "valid" ? "Confirmar e Próximo" : "Entendido"}
+            cancelLabel="Nova leitura"
+            statusLabel={resultConfig?.label}
+            statusIcon={resultConfig?.icon}
+            statusColor={resultConfig?.color.split(" ")[1] + " border-b " + (resultConfig?.color.split(" ")[2] || "")}
+            message={result.message}
+          />
+        )}
+      </div>
+    </StagePageScaffold>
   );
 }
+
 
