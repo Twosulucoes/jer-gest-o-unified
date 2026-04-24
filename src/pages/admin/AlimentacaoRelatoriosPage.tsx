@@ -144,7 +144,7 @@ export default function AlimentacaoRelatoriosPage() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
-                {delegations.map((d: any) => <SelectItem key={d.id} value={d.id}>{d.institutions?.name || d.id}</SelectItem>)}
+                {delegations.map((d: any) => <SelectItem key={d.id} value={d.id}>{d.school_name || d.id}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
