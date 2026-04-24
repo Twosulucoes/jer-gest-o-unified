@@ -255,7 +255,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           personId = foundPerson.id;
           
           // Check if this person already has a participant record in ANY event with a different category
-          const { data: otherCategoryPart } = await supabase.from("participants")
+          const { data: otherCategoryPart } = await (supabase.from("participants") as any)
             .select("category, event_id")
             .eq("person_id", personId)
             .neq("category", participantCategory)
