@@ -29,7 +29,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 import { cn } from "@/lib/utils";
-import { StagePageScaffold } from "@/components/admin/stage/StagePageScaffold";
+import { useStageModuleKpis } from "@/contexts/StageModuleKpisContext";
 
 interface ValidationResult {
   result: "valid" | "not_found" | "revoked" | "suspended" | "not_activated" | "wrong_event" | string;
