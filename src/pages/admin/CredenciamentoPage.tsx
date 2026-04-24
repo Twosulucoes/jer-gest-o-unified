@@ -693,6 +693,8 @@ export default function CredenciamentoPage() {
   const handleStartCredenciamento = (p: CredentialParticipantRow) => {
     setSelectedForCred(p);
     setIsLinkingExternal(false);
+    setManualCode("");
+    setScannerOpen(false);
   };
 
   const handleLinkExternal = (code: string) => {
@@ -700,6 +702,14 @@ export default function CredenciamentoPage() {
     const normalized = code.trim().toUpperCase();
     if (!normalized) return;
     credentialMutation.mutate({ participantId: selectedForCred.id, externalCode: normalized });
+  };
+
+  const handleScan = (rawValue: string) => {
+    setScannerOpen(false);
+    const code = rawValue.trim().toUpperCase();
+    if (code) {
+      handleLinkExternal(code);
+    }
   };
 
   const getStateInfo = (state: string) => {
