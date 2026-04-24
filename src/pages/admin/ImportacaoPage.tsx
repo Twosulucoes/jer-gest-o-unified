@@ -466,7 +466,28 @@ export default function ImportacaoPage() {
       }
     } catch (err) {
       toast.dismiss("import-progress");
-      toast.error(`Erro na importação: ${(err as Error).message}`, { duration: 10000 });
+      const msg = (err as Error).message;
+      // eslint-disable-next-line no-console
+      console.error("[IMPORT commit] ✖ erro fatal", err);
+      // tenta buscar contexto extra do import_logs mais recente deste evento/etapa
+      try {
+        const { data: lastLog } = await supabase
+          .from("import_logs")
+          .select("id, status, error_message, result_summary, created_at, file_name")
+          .eq("event_id", selectedEventId!)
+          .eq("event_stage_id", selectedStageId!)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (lastLog) {
+          // eslint-disable-next-line no-console
+          console.error("[IMPORT commit] último import_log:", lastLog);
+        }
+      } catch (logErr) {
+        // eslint-disable-next-line no-console
+        console.warn("[IMPORT commit] não consegui ler import_logs:", logErr);
+      }
+      toast.error(`Erro na importação: ${msg}`, { duration: 15000, description: "Abra o console (F12) para ver detalhes técnicos." });
     } finally {
       setCommitting(false);
     }
