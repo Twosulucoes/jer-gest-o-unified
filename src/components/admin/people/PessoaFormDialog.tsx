@@ -135,6 +135,10 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
       setFoodRestrictions(p.person?.food_restrictions ?? "");
       setDisabilityType(p.person?.disability_type ?? "");
       setMedicalNotes(p.person?.medical_notes ?? "");
+      setGuardianName(p.guardian_name ?? "");
+      setGuardianPhone(p.guardian_phone ?? "");
+      setCoachName(p.coach_name ?? "");
+      setCoachPhone(p.coach_phone ?? "");
       setSelectedRoles(existing.roles);
     } else if (open && !isEdit) {
       // Reset
@@ -143,6 +147,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
       setNeedsTransport(false); setNeedsMeals(false); setNeedsLodging(false);
       setLogisticsRestrictions(""); setLogisticsNotes("");
       setFoodRestrictions(""); setDisabilityType(""); setMedicalNotes("");
+      setGuardianName(""); setGuardianPhone(""); setCoachName(""); setCoachPhone("");
       setSelectedRoles([]);
       setErrors({});
     }
