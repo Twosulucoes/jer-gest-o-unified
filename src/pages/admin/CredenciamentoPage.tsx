@@ -1619,10 +1619,35 @@ export default function CredenciamentoPage() {
             setEditingParticipantId(null);
             queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
             
-            // If we are in the workflow, move to the next step
-            if (isWorkflowActive && selectedForCred) {
-              setGuardianConfirmOpen(true);
+            // If we are in the workflow and it was CLOSED (cancelled), stop workflow
+            if (isWorkflowActive && !guardianConfirmOpen) {
+              // Wait a bit to see if onSuccess was called
+              setTimeout(() => {
+                if (!guardianConfirmOpen) {
+                  setIsWorkflowActive(false);
+                  setSelectedForCred(null);
+                }
+              }, 100);
             }
+          }
+        }}
+        onSuccess={async (pId) => {
+          if (isWorkflowActive && selectedForCred) {
+            // Fetch the updated data to ensure the confirmation modal has latest info
+            const { data } = await supabase
+              .from("participants")
+              .select("guardian_name, guardian_phone, coach_name")
+              .eq("id", pId)
+              .single();
+            
+            if (data) {
+              setTempGuardianData({
+                name: data.guardian_name || "",
+                phone: data.guardian_phone || "",
+                relationship: data.coach_name || "",
+              });
+            }
+            setGuardianConfirmOpen(true);
           }
         }}
         participantId={editingParticipantId}
