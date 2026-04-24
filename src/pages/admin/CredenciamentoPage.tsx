@@ -739,12 +739,17 @@ export default function CredenciamentoPage() {
 
   const handleStartCredenciamento = (p: CredentialParticipantRow) => {
     setSelectedForCred(p);
+    setIsWorkflowActive(true);
+    setEditingParticipantId(p.id);
+    setEditDialogOpen(true);
+    
+    // We prepare the guardian data for the next step
     setTempGuardianData({
       name: p.guardian_name || "",
       phone: p.guardian_phone || "",
       relationship: p.coach_name || "",
     });
-    setGuardianConfirmOpen(true);
+    
     setIsLinkingExternal(false);
     setManualCode("");
     setScannerOpen(false);
