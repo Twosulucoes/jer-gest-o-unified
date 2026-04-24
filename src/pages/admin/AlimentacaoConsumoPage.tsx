@@ -22,6 +22,8 @@ export default function AlimentacaoConsumoPage() {
   const [selectedWindowId, setSelectedWindowId] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
 
   const { data: events = [] } = useQuery({
@@ -127,7 +129,7 @@ export default function AlimentacaoConsumoPage() {
 
   const consumedParticipantIds = new Set(consumptions.map((c) => c.participant_id));
 
-  const filteredConsumptions = useMemo(() => {
+  const allFilteredConsumptions = useMemo(() => {
     return consumptions.filter((c) => {
       const matchesWindow = selectedWindowId === "all" || c.meal_window_id === selectedWindowId;
       const matchesStatus = statusFilter === "all" || c.method === statusFilter;
@@ -141,6 +143,12 @@ export default function AlimentacaoConsumoPage() {
       return matchesWindow && matchesStatus && matchesSearch;
     });
   }, [consumptions, selectedWindowId, statusFilter, searchTerm, pplMap, partMap]);
+
+  const totalPages = Math.ceil(allFilteredConsumptions.length / itemsPerPage);
+  const filteredConsumptions = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return allFilteredConsumptions.slice(start, start + itemsPerPage);
+  }, [allFilteredConsumptions, currentPage, itemsPerPage]);
 
   const selectedWindow = windows.find((w) => w.id === selectedWindowId);
   const selectedMealType = selectedWindow ? mealTypesMap.get(selectedWindow.meal_type_id) : null;
@@ -366,6 +374,56 @@ export default function AlimentacaoConsumoPage() {
               </Table>
             )}
           </CardContent>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/20">
+              <div className="text-xs text-muted-foreground">
+                Mostrando <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> a <span className="font-medium">{Math.min(currentPage * itemsPerPage, allFilteredConsumptions.length)}</span> de <span className="font-medium">{allFilteredConsumptions.length}</span> registros
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-8 px-2"
+                >
+                  Anterior
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                    // Logic to show pages around current page
+                    let pageNum = i + 1;
+                    if (totalPages > 5) {
+                      if (currentPage > 3) pageNum = currentPage - 3 + i;
+                      if (pageNum > totalPages) pageNum = totalPages - (4 - i);
+                    }
+                    if (pageNum <= 0) pageNum = i + 1;
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="h-8 w-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-8 px-2"
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       )}
 
