@@ -483,5 +483,12 @@ export function useDashboardData(eventId?: string | null) {
     });
   }
 
+  const refetchAll = async () => {
+    await Promise.all([
+      ...queries.map((q) => q.refetch()),
+      ...dependent.map((q) => q.refetch())
+    ]);
+  };
+
   return { data, isLoading: isLoadingAll, refetchAll, lastUpdated: new Date() };
 }
