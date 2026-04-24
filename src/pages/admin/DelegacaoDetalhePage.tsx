@@ -48,19 +48,7 @@ export default function DelegacaoDetalhePage() {
     enabled: !!delegationId,
   });
 
-  const { data: institution } = useQuery({
-    queryKey: ["institution_detail", delegation?.institution_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("institutions")
-        .select("id, name, city, state")
-        .eq("id", delegation!.institution_id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!delegation?.institution_id,
-  });
+  // Institution query removed since data is now embedded in delegation (school_name, etc.)
 
   const { data: event } = useQuery({
     queryKey: ["event_detail", delegation?.event_id],
