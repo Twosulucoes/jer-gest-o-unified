@@ -194,11 +194,9 @@ export default function TransporteHomePage() {
     ) : null
   );
 
-  const eventSubtitle = undefined;
-
   return (
     <div className="op-screen">
-      <PwaHeader title="Transporte" subtitle={eventSubtitle} icon={Bus} backTo="/pwa" onSignOut={handleSignOut} />
+      <PwaHeader title="Transporte" icon={Bus} backTo="/pwa" onSignOut={handleSignOut} />
 
       <PwaContainer size="lg">
         <PwaStatTriplet

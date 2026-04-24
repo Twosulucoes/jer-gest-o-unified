@@ -89,11 +89,9 @@ export default function DelegacaoHomePage() {
 
   const initials = (name: string | null) => (name || "?").split(" ").map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 
-  const eventSubtitle = delegationName;
-
   return (
     <div className="op-screen">
-      <PwaHeader title={delegationName || "Minha Delegação"} subtitle={eventSubtitle} icon={Users} backTo="/pwa" onSignOut={handleSignOut} />
+      <PwaHeader title={delegationName || "Minha Delegação"} icon={Users} backTo="/pwa" onSignOut={handleSignOut} />
 
       <PwaContainer>
         {!delegationId && !loading && (

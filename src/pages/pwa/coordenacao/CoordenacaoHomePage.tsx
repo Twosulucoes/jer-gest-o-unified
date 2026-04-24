@@ -70,24 +70,9 @@ export default function CoordenacaoHomePage() {
     navigate("/pwa/login", { replace: true });
   };
 
-  const eventSubtitle = "Painel técnico operacional";
-
-  const statusTone = (s: string) => {
-    if (s === "em_andamento") return "live";
-    if (s === "finalizada") return "ok";
-    if (s === "scheduled") return "scheduled";
-    return "neutral";
-  };
-  const statusLabel = (s: string) => {
-    if (s === "em_andamento") return "Em curso";
-    if (s === "finalizada") return "Concluído";
-    if (s === "scheduled") return "Próximo";
-    return s;
-  };
-
   return (
     <div className="op-screen">
-      <PwaHeader title="Coordenação" subtitle={eventSubtitle} icon={Trophy} backTo="/pwa" onSignOut={handleSignOut} />
+      <PwaHeader title="Coordenação" icon={Trophy} backTo="/pwa" onSignOut={handleSignOut} />
 
       <PwaContainer>
         <PwaStatTriplet
