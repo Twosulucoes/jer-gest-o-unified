@@ -816,8 +816,7 @@ export default function CredenciamentoPage() {
 
 
       {/* Stats */}
-      {selectedEventId && participants && (
-        {/* Stats cards removed as they are now in the top mini-dash for clarity and space optimization */}
+      {/* Stats cards removed as they are now in the top mini-dash for clarity and space optimization */}
 
 
       {/* Indicador discreto: dados ainda carregando em segundo plano */}
