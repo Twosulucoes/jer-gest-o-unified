@@ -1610,6 +1610,11 @@ export default function CredenciamentoPage() {
           if (!open) {
             setEditingParticipantId(null);
             queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+            
+            // If we are in the workflow, move to the next step
+            if (isWorkflowActive && selectedForCred) {
+              setGuardianConfirmOpen(true);
+            }
           }
         }}
         participantId={editingParticipantId}
