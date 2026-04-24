@@ -44,8 +44,8 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
 
   const isAdmin = hasRole("admin") || hasRole("super_admin");
   const isSecretaria = hasRole("secretaria");
-  const isCoordenador = hasRole("coordenador") || hasRole("coordenacao_tecnica");
-  const isLogistica = hasRole("logistica") || hasRole("alimentacao") || hasRole("transporte") || hasRole("alojamento");
+  const isCoordenador = hasRole("coordenacao_tecnica") || hasRole("coordenador_modalidade");
+  const isLogistica = hasRole("alimentacao") || hasRole("transporte") || hasRole("alojamento");
 
   const canEditSensitive = isAdmin || isSecretaria;
   const canEditLogistics = isAdmin || isSecretaria || isLogistica;
