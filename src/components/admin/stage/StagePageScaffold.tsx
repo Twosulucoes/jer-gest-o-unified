@@ -119,6 +119,7 @@ export function StagePageScaffold({
   const location = useLocation();
   const { stageId } = useParams<{ stageId: string }>();
   const { activeStage } = useStageContext();
+  const moduleCtx = useStageModuleKpisContext();
 
   // Identifica módulo pela rota: /admin/etapa/:stageId/<prefix>[/...]
   const base = `/admin/etapa/${stageId}/`;
@@ -131,10 +132,17 @@ export function StagePageScaffold({
     (m) => m.prefix === firstSegment || m.aliases?.includes(firstSegment)
   );
 
+  // Combina KPIs explícitos via prop com KPIs registrados pelas páginas filhas via contexto
+  const effectiveModuleKpis = (moduleKpis && moduleKpis.length)
+    ? moduleKpis
+    : (moduleCtx?.moduleKpis ?? []);
+  const effectiveHideGlobal = hideGlobalKpis
+    || (moduleCtx?.hideGlobal ?? false)
+    || !!(effectiveModuleKpis && effectiveModuleKpis.length);
+
   return (
     <div className="space-y-4">
-      {/* Redundant stage filter banner removed as context is already set by StageLayout */}
-      <StageMiniDash moduleKpis={moduleKpis} hideGlobal={hideGlobalKpis || !!(moduleKpis && moduleKpis.length)} />
+      <StageMiniDash moduleKpis={effectiveModuleKpis} hideGlobal={effectiveHideGlobal} />
       {!hideTabs && moduleCfg && <StageModuleTabs items={moduleCfg.tabs} />}
       <div className="pt-1">{children}</div>
     </div>
