@@ -133,7 +133,7 @@ export function StagePageScaffold({
   return (
     <div className="space-y-4">
       {/* Redundant stage filter banner removed as context is already set by StageLayout */}
-      <StageMiniDash moduleKpis={moduleKpis} hideGlobal={hideGlobalKpis} />
+      <StageMiniDash moduleKpis={moduleKpis} hideGlobal={hideGlobalKpis || !!(moduleKpis && moduleKpis.length)} />
       {!hideTabs && moduleCfg && <StageModuleTabs items={moduleCfg.tabs} />}
       <div className="pt-1">{children}</div>
     </div>

@@ -558,7 +558,7 @@ export default function CredenciamentoPage() {
   const confirmedCount = (participants ?? []).filter((p) => p.status === "confirmed").length;
   const credentialedCount = (participants ?? []).filter((p) => p.status === "credentialed").length;
   const credentialsEmittedCount = activeCredentials.length;
-  const pendingEmission = credentialedCount - credentialsEmittedCount;
+  const pendingEmission = confirmedCount - credentialsEmittedCount;
 
   const handleOpenPreview = (participantId: string) => {
     const tmpl = eventTemplate ?? createDefaultTemplateMutation.data;
@@ -675,6 +675,14 @@ export default function CredenciamentoPage() {
 
   const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "";
 
+  const stats = {
+    total: participants.length,
+    ready: filtered.filter(p => getParticipantState(p) === "ready_to_emit").length,
+    awaiting: filtered.filter(p => getParticipantState(p) === "awaiting").length,
+    emitted: credentialsEmittedCount,
+    pendingEmission: Math.max(0, confirmedCount - credentialsEmittedCount)
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -701,22 +709,28 @@ export default function CredenciamentoPage() {
         hideGlobal
         moduleKpis={[
           {
-            label: "Total participantes",
-            value: participants.length,
+            label: "Total",
+            value: stats.total,
             icon: <Users className="h-3.5 w-3.5" />,
             tone: "default",
           },
           {
-            label: "Aptos para emissão",
-            value: filtered.filter(p => getParticipantState(p) === "ready_to_emit").length,
-            icon: <ShieldCheck className="h-3.5 w-3.5" />,
-            tone: "success",
-          },
-          {
-            label: "Pendentes",
-            value: filtered.filter(p => getParticipantState(p) === "awaiting").length,
+            label: "Confirmados",
+            value: confirmedCount,
             icon: <Clock className="h-3.5 w-3.5" />,
             tone: "warning",
+          },
+          {
+            label: "Sem credencial",
+            value: stats.pendingEmission,
+            icon: <AlertCircle className="h-3.5 w-3.5" />,
+            tone: stats.pendingEmission > 0 ? "warning" : "default",
+          },
+          {
+            label: "Emitidas",
+            value: stats.emitted,
+            icon: <ShieldCheck className="h-3.5 w-3.5" />,
+            tone: "success",
           },
         ]}
       />
@@ -816,59 +830,8 @@ export default function CredenciamentoPage() {
 
 
       {/* Stats */}
-      {selectedEventId && participants && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-          <Card>
-            <CardContent className="pt-3 pb-3 px-4">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Total</p>
-              <p className="text-xl font-bold text-foreground">{participants.length}</p>
-            </CardContent>
-          </Card>
-          {pendingCount > 0 && (
-            <Card className="border-orange-200">
-              <CardContent className="pt-3 pb-3 px-4">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Pendentes</p>
-                <p className="text-xl font-bold text-orange-600">{pendingCount}</p>
-              </CardContent>
-            </Card>
-          )}
-          <Card className="border-yellow-200">
-            <CardContent className="pt-3 pb-3 px-4">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Confirmados</p>
-              <p className="text-xl font-bold text-yellow-600">{confirmedCount}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-blue-200">
-            <CardContent className="pt-3 pb-3 px-4">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Sem credencial</p>
-              <p className="text-xl font-bold text-blue-600">{pendingEmission > 0 ? pendingEmission : 0}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-green-200">
-            <CardContent className="pt-3 pb-3 px-4">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Emitidas</p>
-              <p className="text-xl font-bold text-green-600">{credentialsEmittedCount}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="pt-3 pb-3 px-4">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Progresso</p>
-              <div className="flex items-center gap-2">
-                <p className="text-xl font-bold text-primary">
-                  {participants.length > 0 ? `${Math.round((credentialsEmittedCount / participants.length) * 100)}%` : "0%"}
-                </p>
-                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[60px] hidden md:block">
-                  <div 
-                    className="h-full bg-primary" 
-                    style={{ width: `${participants.length > 0 ? Math.round((credentialsEmittedCount / participants.length) * 100) : 0}%` }} 
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Stats cards removed as they are now in the top mini-dash for clarity and space optimization */}
 
-        </div>
-      )}
 
       {/* Indicador discreto: dados ainda carregando em segundo plano */}
       <BackgroundLoadingIndicator
