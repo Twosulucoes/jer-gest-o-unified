@@ -289,7 +289,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
       }
 
       // Sync stage
-      if (!isEdit && selectedStageId) {
+      if (!isEdit && selectedStageId && selectedStageId !== "none") {
         const { error: errStage } = await (supabase.from("participant_event_stages" as never) as any).insert({
           participant_id: pId,
           event_stage_id: selectedStageId,
