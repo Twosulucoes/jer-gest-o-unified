@@ -85,15 +85,15 @@ export default function AlimentacaoHubPage() {
     : undefined;
 
   const { data: mealTypes = [], isLoading: loadingTypes } = useQuery({
-    queryKey: ["meal_types", selectedStageId],
+    queryKey: ["meal_types", selectedEventId],
     queryFn: async () => {
-      if (!selectedStageId) return [];
+      if (!selectedEventId) return [];
       const { data, error } = await (supabase.from("meal_types") as any).select("*")
-        .eq("event_stage_id", selectedStageId).order("sort_order");
+        .eq("event_id", selectedEventId).order("sort_order");
       if (error) throw error;
       return (data ?? []) as any[];
     },
-    enabled: !!selectedStageId,
+    enabled: !!selectedEventId,
   });
 
   const { data: windows = [], isLoading: loadingWindows } = useQuery({
