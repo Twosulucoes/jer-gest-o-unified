@@ -176,11 +176,11 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
 
     // Demo data
     const demoData: Record<string, string> = {
-      full_name: "PAULO SILVA DE SOUZA",
-      institution: "ESCOLA ESTADUAL EXEMPLO",
-      participant_type: "ATLETA",
-      sport_event: "VOLEIBOL — MASC. SUB-17",
-      credential_code: "JER-DEMO-0042",
+      full_name: "NOME DO PARTICIPANTE",
+      institution: "NOME DA INSTITUIÇÃO",
+      participant_type: "TIPO",
+      sport_event: "MODALIDADE / PROVA",
+      credential_code: "JER-000000-0000",
     };
 
     // Draw photo placeholder

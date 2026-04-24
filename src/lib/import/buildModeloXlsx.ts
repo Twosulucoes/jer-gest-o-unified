@@ -119,7 +119,7 @@ function buildInscricoesSheet(sources: ModeloDataSources): XLSX.WorkSheet {
       "RG": "1234567",
       "EMAIL": "",
       "TELEFONE": "(95) 99999-0000",
-      "ESCOLA": "E.E. Monteiro Lobato",
+      "ESCOLA": "Ex: Escola Estadual Exemplo",
       "DELEGAÇÃO": "",
       "ESFERA": "Estadual",
       "TIPO USUARIO": "Atleta",

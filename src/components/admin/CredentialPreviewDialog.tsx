@@ -258,11 +258,11 @@ export default function CredentialPreviewDialog({ open, onOpenChange, template, 
 
     const useDemo = !participant;
     const data: Record<string, string> = {
-      full_name: useDemo ? "PAULO SILVA DE SOUZA" : (person?.full_name ?? "—").toUpperCase(),
-      institution: useDemo ? "ESCOLA ESTADUAL MONTEIRO LOBATO" : (institution?.name ?? "—").toUpperCase(),
-      participant_type: useDemo ? "ATLETA" : TYPE_LABELS[participant?.participant_type ?? ""] ?? (participant?.participant_type ?? "—").toUpperCase(),
-      sport_event: useDemo ? "VOLEIBOL — MASCULINO SUB-17" : (sportEventNames || "—").toUpperCase(),
-      credential_code: useDemo ? "JER-DEMO-0042" : credential?.credential_code ?? "—",
+      full_name: useDemo ? "NOME DO PARTICIPANTE" : (person?.full_name ?? "—").toUpperCase(),
+      institution: useDemo ? "NOME DA INSTITUIÇÃO" : (institution?.name ?? "—").toUpperCase(),
+      participant_type: useDemo ? "TIPO" : TYPE_LABELS[participant?.participant_type ?? ""] ?? (participant?.participant_type ?? "—").toUpperCase(),
+      sport_event: useDemo ? "MODALIDADE / PROVA" : (sportEventNames || "—").toUpperCase(),
+      credential_code: useDemo ? "JER-000000-0000" : credential?.credential_code ?? "—",
     };
 
     const photoConfig = fieldConfig.photo;
