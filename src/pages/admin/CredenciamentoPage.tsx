@@ -368,8 +368,8 @@ export default function CredenciamentoPage() {
   const institutionOptions = useMemo(() => {
     const unique = new Map<string, string>();
     participants.forEach((participant) => {
-      const institution = participant.delegation?.institution;
-      if (institution?.id && institution.name) unique.set(institution.id, institution.name);
+      const schoolName = participant.delegation?.school_name;
+      if (schoolName) unique.set(schoolName, schoolName);
     });
     return Array.from(unique, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }, [participants]);
