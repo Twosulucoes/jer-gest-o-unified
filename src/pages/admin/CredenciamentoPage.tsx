@@ -1555,7 +1555,13 @@ export default function CredenciamentoPage() {
       </Dialog>
 
       {/* Guardian Confirmation Dialog */}
-      <Dialog open={guardianConfirmOpen} onOpenChange={setGuardianConfirmOpen}>
+      <Dialog open={guardianConfirmOpen} onOpenChange={(open) => {
+        setGuardianConfirmOpen(open);
+        if (!open && isWorkflowActive) {
+          setIsWorkflowActive(false);
+          setSelectedForCred(null);
+        }
+      }}>
         <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
