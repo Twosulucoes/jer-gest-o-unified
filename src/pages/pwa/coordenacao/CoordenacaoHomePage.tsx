@@ -25,7 +25,7 @@ interface MatchRow {
 
 export default function CoordenacaoHomePage() {
   const navigate = useNavigate();
-  const { activeEvent } = useEventContext();
+  const { activeEventId } = useEventContext();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ partidasHoje: 0, emAndamento: 0, finalizadas: 0, totalPartidas: 0 });
   const [agenda, setAgenda] = useState<MatchRow[]>([]);
@@ -41,13 +41,14 @@ export default function CoordenacaoHomePage() {
       const today = new Date().toISOString().slice(0, 10);
 
       const [todayRes, andamentoRes, pendentesRes, totalRes, agendaRes] = await Promise.all([
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("match_date", today),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "em_andamento"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "finalizada"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }),
+        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("match_date", today),
+        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "em_andamento"),
+        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "finalizada"),
+        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
         supabase
           .from("competition_matches")
           .select("id, match_date, start_time, status, sport_event_id, venue_id, venue:venues(name)")
+          .eq("event_id", activeEventId)
           .eq("match_date", today)
           .order("start_time", { ascending: true })
           .limit(8),

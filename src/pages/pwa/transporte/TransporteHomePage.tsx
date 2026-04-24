@@ -31,7 +31,7 @@ interface TripRow {
 
 export default function TransporteHomePage() {
   const navigate = useNavigate();
-  const { activeEvent } = useEventContext();
+  const { activeEventId } = useEventContext();
   const [loading, setLoading] = useState(true);
   const [trips, setTrips] = useState<TripRow[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
@@ -55,6 +55,7 @@ export default function TransporteHomePage() {
     const { data, error } = await supabase
       .from("transport_trips")
       .select("id, scheduled_at, trip_status, status, assigned_driver_id, driver_checked_in_at, driver_name, transport_routes(name, origin, destination), transport_vehicles(label, plate), transport_passengers(id, status)")
+      .eq("event_id", activeEventId)
       .in("trip_status", ["scheduled", "in_progress"])
       .order("scheduled_at", { ascending: true });
 
