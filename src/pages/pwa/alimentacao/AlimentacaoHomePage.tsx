@@ -46,7 +46,7 @@ export default function AlimentacaoHomePage() {
       const now = new Date().toISOString();
 
       const [consumoRes, janelasAbertasRes, tiposRes, totalJanelasRes, windowsRes] = await Promise.all([
-        supabase.from("meal_consumptions").select("id", { count: "exact", head: true }).innerJoin("meal_windows", "meal_window_id", "id").eq("meal_windows.event_id", activeEventId).gte("consumed_at", today + "T00:00:00"),
+        supabase.from("meal_consumptions").select("id, meal_window!inner(event_id)", { count: "exact", head: true }).eq("meal_window.event_id", activeEventId).gte("consumed_at", today + "T00:00:00"),
         supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).lte("window_start", now).gte("window_end", now),
         supabase.from("meal_types").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
         supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).gte("window_start", today + "T00:00:00"),
@@ -70,9 +70,8 @@ export default function AlimentacaoHomePage() {
       if (active) {
         const { count } = await supabase
           .from("meal_consumptions")
-          .select("id, { count: 'exact', head: true }")
-          .eq("meal_window_id", active.id)
-          .gte("consumed_at", today + "T00:00:00");
+          .select("id", { count: "exact", head: true })
+          .eq("meal_window_id", active.id);
         open = {
           id: active.id,
           mealName: active.meal_type?.name || "Refeição",
