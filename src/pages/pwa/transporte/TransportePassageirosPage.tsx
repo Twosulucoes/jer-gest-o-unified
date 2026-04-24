@@ -115,7 +115,7 @@ export default function TransportePassageirosPage() {
       full_name: p.is_manual ? (p.manual_name || "Manual") : (p.participant?.person?.full_name || "—"),
       cpf: p.is_manual ? p.manual_cpf : (p.participant?.person?.cpf || null),
       photo_url: p.participant?.person?.photo_url || null,
-      delegation_name: p.participant?.delegation?.institution?.name || null,
+      delegation_name: p.participant?.delegation?.school_name || null,
       guardian_name: p.participant?.guardian_name || null,
       guardian_phone: p.participant?.guardian_phone || null,
       coach_name: p.participant?.coach_name || null,
