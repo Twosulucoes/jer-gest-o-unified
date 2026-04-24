@@ -153,6 +153,7 @@ export default function ParticipantResumoTab({ participant, person, institution 
             <CardTitle className="text-base">Participação no Evento</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
+            <Row label="Categoria" value={participant.category === "organization" ? "Organização" : "Delegação"} />
             <Row label="Tipo" value={TYPE_LABELS[participant.participant_type] ?? participant.participant_type} />
             <Row label="Instituição" value={institution?.name} />
             <Row label="Ativo" value={participant.is_active ? "Sim" : "Não"} />
@@ -161,6 +162,34 @@ export default function ParticipantResumoTab({ participant, person, institution 
             {participant.notes && <Row label="Observações" value={participant.notes} />}
           </CardContent>
         </Card>
+
+        {/* Dados Administrativos (Organização) */}
+        {participant.category === "organization" && (
+          <Card className="md:col-span-2">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-base flex items-center gap-2">
+                <IdCard className="h-4 w-4 text-primary" />
+                Dados Administrativos / Organização
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+              <Row label="Subtipo" value={participant.organization_subtype} />
+              <Row label="Função / Cargo" value={participant.role_function} />
+              <Row label="Setor / Área" value={participant.sector_area} />
+              <Row label="Responsável por" value={participant.responsibilities} />
+              <div className="md:col-span-2 pt-2 border-t">
+                <p className="text-muted-foreground mb-1">Acessos e permissões associadas</p>
+                <p className="text-foreground bg-muted p-2 rounded-md">{participant.access_permissions || "—"}</p>
+              </div>
+              {participant.observations && (
+                <div className="md:col-span-2 pt-2">
+                  <p className="text-muted-foreground mb-1">Observações internas</p>
+                  <p className="text-foreground whitespace-pre-wrap">{participant.observations}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Saúde / restrições */}
         {(person?.food_restrictions || person?.disability_type || person?.medical_notes) && (
