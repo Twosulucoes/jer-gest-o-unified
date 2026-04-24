@@ -131,14 +131,7 @@ export default function AlimentacaoConsumoPage() {
       {/* Controls */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Evento</label>
-              <Select value={selectedEventId} onValueChange={(v) => { setSelectedWindowId(""); }}>
-                <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
-                <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">
                 Janela de Refeição
@@ -150,7 +143,7 @@ export default function AlimentacaoConsumoPage() {
                 )}
               </label>
               <Select value={selectedWindowId} onValueChange={setSelectedWindowId} disabled={!selectedEventId || windowsLoading}>
-                <SelectTrigger>
+                <SelectTrigger className="h-12">
                   <SelectValue placeholder={windowsLoading ? "Carregando…" : (windows.length === 0 ? "Nenhuma janela cadastrada" : "Selecione a janela")} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[360px]">
@@ -197,9 +190,19 @@ export default function AlimentacaoConsumoPage() {
                 </p>
               )}
               {!windowsLoading && windows.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Cadastre janelas em <span className="font-medium">Alimentação → Janelas</span>.
-                </p>
+                <div className="flex flex-col gap-2 pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Não há janelas configuradas para esta etapa.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-fit"
+                    onClick={() => window.location.href = `/admin/etapa/${stageId}/alimentacao/janelas`}
+                  >
+                    Configurar Janelas agora
+                  </Button>
+                </div>
               )}
             </div>
           </div>
