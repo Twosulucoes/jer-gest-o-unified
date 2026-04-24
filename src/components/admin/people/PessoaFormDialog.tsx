@@ -166,6 +166,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
       setFoodRestrictions(""); setDisabilityType(""); setMedicalNotes("");
       setGuardianName(""); setGuardianPhone(""); setCoachName(""); setCoachPhone("");
       setSelectedRoles([]);
+      setSelectedStageId(defaultStageId || "");
       setErrors({});
     }
   }, [existing, isEdit, open]);
