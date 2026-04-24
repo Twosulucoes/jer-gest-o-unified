@@ -28,7 +28,7 @@ export default function AlimentacaoRelatoriosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("delegations")
-        .select("id, institutions(name)")
+        .select("id, school_name")
         .eq("event_id", eventId!)
         .order("created_at");
       if (error) throw error;
