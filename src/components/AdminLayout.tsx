@@ -23,6 +23,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { NavigationHistoryTracker } from "@/hooks/useNavigationHistory";
 import { useMobileBackGuard } from "@/hooks/useMobileBackGuard";
 import { brand } from "@/theme/brand";
+import { GlobalRefreshButton } from "@/components/admin/GlobalRefreshButton";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
