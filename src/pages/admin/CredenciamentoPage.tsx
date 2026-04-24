@@ -1567,7 +1567,7 @@ export default function CredenciamentoPage() {
           <div className="grid gap-4 py-4">
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Responsável / Tutor</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Responsável</label>
                 <div className="grid grid-cols-1 gap-2">
                   <Input 
                     placeholder="Nome do Responsável"
@@ -1579,21 +1579,10 @@ export default function CredenciamentoPage() {
                     value={tempGuardianData.phone}
                     onChange={(e) => setTempGuardianData(prev => ({ ...prev, phone: e.target.value }))}
                   />
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2 border-t">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Técnico / Responsável Técnico</label>
-                <div className="grid grid-cols-1 gap-2">
                   <Input 
-                    placeholder="Nome do Técnico"
-                    value={tempGuardianData.coachName}
-                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, coachName: e.target.value }))}
-                  />
-                  <Input 
-                    placeholder="Telefone do Técnico"
-                    value={tempGuardianData.coachPhone}
-                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, coachPhone: e.target.value }))}
+                    placeholder="Vínculo (Ex: Pai, Mãe, Tutor)"
+                    value={tempGuardianData.relationship}
+                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, relationship: e.target.value }))}
                   />
                 </div>
               </div>
