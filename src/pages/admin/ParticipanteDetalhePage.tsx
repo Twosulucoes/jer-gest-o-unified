@@ -59,7 +59,7 @@ export default function ParticipanteDetalhePage() {
         .eq("id", participantId!)
         .single();
       if (error) throw error;
-      return data;
+      return data as any;
     },
     enabled: !!participantId,
   });
