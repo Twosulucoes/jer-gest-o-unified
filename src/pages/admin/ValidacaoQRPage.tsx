@@ -331,7 +331,7 @@ export default function ValidacaoQRPage() {
             statusLabel={resultConfig?.label}
             statusIcon={resultConfig?.icon}
             statusColor={resultConfig?.color.split(" ")[1] + " border-b " + (resultConfig?.color.split(" ")[2] || "")}
-            message={result.message}
+            message={friendlyMessage}
           />
         )}
     </div>
