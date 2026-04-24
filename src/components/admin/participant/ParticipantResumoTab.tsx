@@ -12,11 +12,18 @@ interface Props {
   participant: {
     id: string;
     participant_type: string;
+    category?: string;
     status: string;
     is_active: boolean;
     notes: string | null;
     created_at: string;
     event_id: string;
+    organization_subtype?: string | null;
+    role_function?: string | null;
+    sector_area?: string | null;
+    responsibilities?: string | null;
+    access_permissions?: string | null;
+    observations?: string | null;
   };
   person: {
     full_name: string;
