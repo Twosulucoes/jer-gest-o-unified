@@ -23,6 +23,7 @@ import {
   Users, ShieldCheck, Clock, ArrowLeft, Link2, Check, IdCard,
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { generateQrCodeValue } from "@/lib/credentialUtils";
 import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
@@ -268,13 +269,19 @@ export default function CredenciamentoExternoPage() {
         participant_id: selectedParticipant.id,
         credential_code: code,
         status: "active",
-        metadata: {
-          bind_mode: isInternalMode ? "internal_code" : "external_tag",
-          linked_by: user?.id,
-          linked_at: new Date().toISOString(),
-        },
+        linked_by_user_id: user.id,
+        notes: isInternalMode ? "internal_code" : "external_tag",
       });
       if (error) throw error;
+
+      // Se for modo interno, o sistema também marca o status do participante como credentialed 
+      // para facilitar a visualização global, já que ele está usando uma credencial do próprio sistema.
+      if (isInternalMode) {
+        await supabase
+          .from("participants")
+          .update({ status: "credentialed" })
+          .eq("id", selectedParticipant.id);
+      }
 
       const { data: activeCred } = await supabase
         .from("participant_credentials")
