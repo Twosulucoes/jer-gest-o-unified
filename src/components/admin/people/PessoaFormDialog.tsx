@@ -103,6 +103,20 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
     },
   });
 
+  const { data: eventStages = [] } = useQuery({
+    queryKey: ["event_stages_for_form", eventId],
+    enabled: !!eventId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("event_stages" as never) as any)
+        .select("id, name")
+        .eq("event_id", eventId!)
+        .eq("status", "active")
+        .order("sort_order");
+      if (error) throw error;
+      return data as { id: string; name: string }[];
+    },
+  });
+
   // Load existing data when editing
   const { data: existing, isLoading: loadingExisting } = useQuery({
     queryKey: ["pessoa_form_data", participantId],
