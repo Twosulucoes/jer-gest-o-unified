@@ -39,7 +39,7 @@ const personSchema = z.object({
   gender: z.enum(["male", "female"]).optional(),
 });
 
-export default function PessoaFormDialog({ open, onOpenChange, participantId, onSuccess, defaultStageId }: Props) {
+export default function PessoaFormDialog({ open, onOpenChange, participantId, onSuccess, defaultStageId, initialCategory }: Props) {
   const { user, hasRole } = useAuth();
   const eventId = useActiveEventId();
   const qc = useQueryClient();
