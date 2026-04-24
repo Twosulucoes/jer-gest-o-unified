@@ -1210,8 +1210,38 @@ export default function CredenciamentoPage() {
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
+                                  </AlertDialog>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/5"
+                                        title="Desfazer Credenciamento"
+                                      >
+                                        <RotateCcw className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Desfazer credenciamento?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Isso cancelará a credencial ativa e voltará o status do participante para 'Confirmado'.
+                                          O QR Code anterior deixará de funcionar.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => undoCredentialMutation.mutate(p.id)}
+                                          className="bg-destructive text-white hover:bg-destructive/90"
+                                        >
+                                          Confirmar e Desfazer
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
                             )}
                             
                             <Button
