@@ -936,8 +936,9 @@ export default function ParticipantesPage() {
 
       <PessoaFormDialog
         open={formOpen}
-        onOpenChange={(v) => { setFormOpen(v); if (!v) setEditingId(null); }}
+        onOpenChange={(v) => { setFormOpen(v); if (!v) { setEditingId(null); setInitialFormCategory(undefined); } }}
         participantId={editingId}
+        initialCategory={initialFormCategory}
         defaultStageId={stageFilterId}
       />
     </div>
