@@ -1496,8 +1496,6 @@ export default function CredenciamentoPage() {
             onClose={() => setScannerOpen(false)}
             isOpen={scannerOpen}
           />
-            </div>
-          )}
 
           <DialogFooter>
             <Button 
