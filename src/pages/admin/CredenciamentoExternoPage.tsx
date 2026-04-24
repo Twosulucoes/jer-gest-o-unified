@@ -681,6 +681,7 @@ export default function CredenciamentoExternoPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </StagePageScaffold>
   );
 }
