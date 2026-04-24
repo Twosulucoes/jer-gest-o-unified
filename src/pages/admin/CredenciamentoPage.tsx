@@ -153,6 +153,13 @@ export default function CredenciamentoPage() {
   const [batchCredentialConfirmOpen, setBatchCredentialConfirmOpen] = useState(false);
   const [batchEmitConfirmOpen, setBatchEmitConfirmOpen] = useState(false);
   const [showGlobalKpis, setShowGlobalKpis] = useState(false);
+  
+  // States for unified credentialing flow
+  const [selectedForCred, setSelectedForCred] = useState<CredentialParticipantRow | null>(null);
+  const [isLinkingExternal, setIsLinkingExternal] = useState(false);
+  const [manualCode, setManualCode] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
+
 
 
   
@@ -417,10 +424,24 @@ export default function CredenciamentoPage() {
   // --- Mutations ---
   // Fluxo unificado: registrar presença + emitir credencial em um único passo
   const credentialMutation = useMutation({
-    mutationFn: async (participantId: string) => {
-      const credentialCode = generateCredentialCode();
+    mutationFn: async ({ participantId, externalCode }: { participantId: string; externalCode?: string }) => {
+      const isExternal = !!externalCode;
+      const credentialCode = externalCode || generateCredentialCode();
       const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
       const nowIso = new Date().toISOString();
+
+      if (isExternal) {
+        const { data: existing } = await supabase
+          .from("participant_credentials")
+          .select("id")
+          .eq("event_id", selectedEventId)
+          .eq("credential_code", externalCode)
+          .eq("status", "active")
+          .maybeSingle();
+        
+        if (existing) throw new Error("Este código de credencial já está em uso por outro participante.");
+      }
+
       const { error: credErr } = await supabase.from("participant_credentials").insert({
         participant_id: participantId,
         event_id: selectedEventId,
@@ -428,13 +449,14 @@ export default function CredenciamentoPage() {
         qr_code_value: qrCodeValue,
         status: "active",
         is_active: true,
-        binding_source: "manual",
+        binding_source: isExternal ? "external" : "manual",
         issued_at: nowIso,
         activated_at: nowIso,
         issued_by: user?.id,
         activated_by: user?.id,
       });
       if (credErr) throw credErr;
+
       const { error } = await supabase
         .from("participants")
         .update({
@@ -448,7 +470,10 @@ export default function CredenciamentoPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
-      toast.success("Presença registrada e credencial emitida!");
+      toast.success("Credenciamento realizado com sucesso!");
+      setSelectedForCred(null);
+      setIsLinkingExternal(false);
+      setManualCode("");
     },
     onError: (err: Error) => {
       if (err.message?.includes("irregularidade") || err.message?.includes("Credenciamento bloqueado")) {
