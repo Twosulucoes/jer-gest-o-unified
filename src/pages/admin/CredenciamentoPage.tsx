@@ -574,10 +574,10 @@ export default function CredenciamentoPage() {
 
   const undoCredentialMutation = useMutation({
     mutationFn: async (participantId: string) => {
-      // 1. Inativar credenciais atuais
+      // 1. Inativar credenciais atuais (status 'revoked' é o padrão aceito pela constraint para cancelamento)
       const { error: credErr } = await supabase
         .from("participant_credentials")
-        .update({ status: "inactive", is_active: false })
+        .update({ status: "revoked", is_active: false })
         .eq("participant_id", participantId)
         .eq("event_id", selectedEventId)
         .eq("status", "active");
