@@ -709,22 +709,28 @@ export default function CredenciamentoPage() {
         hideGlobal
         moduleKpis={[
           {
-            label: "Total participantes",
-            value: participants.length,
+            label: "Total",
+            value: stats.total,
             icon: <Users className="h-3.5 w-3.5" />,
             tone: "default",
           },
           {
-            label: "Aptos para emissão",
-            value: filtered.filter(p => getParticipantState(p) === "ready_to_emit").length,
-            icon: <ShieldCheck className="h-3.5 w-3.5" />,
-            tone: "success",
-          },
-          {
-            label: "Pendentes",
-            value: filtered.filter(p => getParticipantState(p) === "awaiting").length,
+            label: "Confirmados",
+            value: confirmedCount,
             icon: <Clock className="h-3.5 w-3.5" />,
             tone: "warning",
+          },
+          {
+            label: "Sem credencial",
+            value: stats.pendingEmission,
+            icon: <AlertCircle className="h-3.5 w-3.5" />,
+            tone: stats.pendingEmission > 0 ? "warning" : "default",
+          },
+          {
+            label: "Emitidas",
+            value: stats.emitted,
+            icon: <ShieldCheck className="h-3.5 w-3.5" />,
+            tone: "success",
           },
         ]}
       />
