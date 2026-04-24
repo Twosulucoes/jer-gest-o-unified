@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,7 +19,9 @@ export default function AlimentacaoConsumoPage() {
   const { hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
   const { isStageScoped, stageId } = useStageScope();
-  const [selectedWindowId, setSelectedWindowId] = useState("");
+  const [selectedWindowId, setSelectedWindowId] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
 
   const { data: events = [] } = useQuery({
@@ -72,16 +74,25 @@ export default function AlimentacaoConsumoPage() {
 
   const mealTypesMap = new Map(mealTypes.map((m) => [m.id, m]));
 
-  // Load consumptions for selected window
+  // Load consumptions for all windows of the event/stage to allow "All Windows" filter
   const { data: consumptions = [], isLoading: consumptionsLoading } = useQuery({
-    queryKey: ["meal_consumptions", selectedWindowId],
+    queryKey: ["meal_consumptions", selectedEventId, stageId],
     queryFn: async () => {
-      if (!selectedWindowId) return [];
-      const { data, error } = await supabase.from("meal_consumptions").select("*").eq("meal_window_id", selectedWindowId).order("consumed_at", { ascending: false });
+      if (!selectedEventId) return [];
+      let query = supabase.from("meal_consumptions").select("*").eq("event_id", selectedEventId);
+      
+      const windowIds = windows.map(w => w.id);
+      if (windowIds.length > 0) {
+        query = query.in("meal_window_id", windowIds);
+      } else {
+        return [];
+      }
+
+      const { data, error } = await query.order("consumed_at", { ascending: false });
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedWindowId,
+    enabled: !!selectedEventId && windows.length > 0,
   });
 
   // Load participant details for consumptions
@@ -118,6 +129,21 @@ export default function AlimentacaoConsumoPage() {
 
   const consumedParticipantIds = new Set(consumptions.map((c) => c.participant_id));
 
+  const filteredConsumptions = useMemo(() => {
+    return consumptions.filter((c) => {
+      const matchesWindow = selectedWindowId === "all" || c.meal_window_id === selectedWindowId;
+      const matchesStatus = statusFilter === "all" || c.method === statusFilter;
+      
+      const person = getPersonForConsumption(c.participant_id);
+      const matchesSearch = !searchTerm || 
+        person?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        person?.cpf?.includes(searchTerm) ||
+        c.participant_id.toLowerCase().includes(searchTerm.toLowerCase());
+
+      return matchesWindow && matchesStatus && matchesSearch;
+    });
+  }, [consumptions, selectedWindowId, statusFilter, searchTerm, pplMap, partMap]);
+
   const selectedWindow = windows.find((w) => w.id === selectedWindowId);
   const selectedMealType = selectedWindow ? mealTypesMap.get(selectedWindow.meal_type_id) : null;
 
@@ -144,9 +170,10 @@ export default function AlimentacaoConsumoPage() {
               </label>
               <Select value={selectedWindowId} onValueChange={setSelectedWindowId} disabled={!selectedEventId || windowsLoading}>
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder={windowsLoading ? "Carregando…" : (windows.length === 0 ? "Nenhuma janela cadastrada" : "Selecione a janela")} />
+                  <SelectValue placeholder={windowsLoading ? "Carregando…" : (windows.length === 0 ? "Nenhuma janela cadastrada" : "Filtrar por janela")} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[360px]">
+                  <SelectItem value="all">Todas as janelas (evento/etapa)</SelectItem>
                   {(() => {
                     const byDate = new Map<string, any[]>();
                     windows.forEach((w: any) => {
@@ -295,10 +322,10 @@ export default function AlimentacaoConsumoPage() {
                             </Badge>
                           ) : "—"}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-[10px] text-muted-foreground">
                           {new Date(c.consumed_at).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                         </TableCell>
-                        <TableCell><Badge variant="outline">{c.method === "qr" ? "QR" : "Manual"}</Badge></TableCell>
+                        <TableCell><Badge variant="outline" className="text-[10px] h-5">{c.method === "qr" ? "QR" : "Manual"}</Badge></TableCell>
                       </TableRow>
                     );
                   })}
