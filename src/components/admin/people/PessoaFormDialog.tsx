@@ -76,6 +76,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
   const [guardianPhone, setGuardianPhone] = useState("");
   const [coachName, setCoachName] = useState("");
   const [coachPhone, setCoachPhone] = useState("");
+  const [selectedStageId, setSelectedStageId] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Catalog of roles
