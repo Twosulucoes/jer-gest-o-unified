@@ -887,6 +887,7 @@ export default function ParticipantesPage() {
         open={formOpen}
         onOpenChange={(v) => { setFormOpen(v); if (!v) setEditingId(null); }}
         participantId={editingId}
+        defaultStageId={stageFilterId}
       />
     </div>
   );
