@@ -124,6 +124,7 @@ interface CredentialParticipantRow {
   person: {
     full_name: string | null;
     cpf: string | null;
+    photo_url: string | null;
   } | null;
   delegation: {
     institution: {
@@ -275,7 +276,7 @@ export default function CredenciamentoPage() {
   const effectiveStageFilter = stageId && stageIdsArray ? stageIdsArray : null;
 
   const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id,
-    person:people!participants_person_id_fkey(full_name, cpf),
+    person:people!participants_person_id_fkey(full_name, cpf, photo_url),
     delegation:delegations!participants_delegation_id_fkey(institution:institutions(id, name))`;
 
   const {
@@ -1035,11 +1036,11 @@ export default function CredenciamentoPage() {
                             {state === "awaiting" && (
                               <Button
                                 size="sm"
-                                className="h-8 px-3 text-[11px] font-bold bg-orange-600 hover:bg-orange-700 shadow-sm"
-                                onClick={() => credentialMutation.mutate(p.id)}
+                                className="h-8 px-3 text-[11px] font-bold bg-primary hover:bg-primary/90 shadow-sm"
+                                onClick={() => handleStartCredenciamento(p)}
                                 disabled={credentialMutation.isPending || isBlocked}
                               >
-                                <UserCheck className="h-3.5 w-3.5 mr-1.5" /> Registrar Presença
+                                <UserCheck className="h-3.5 w-3.5 mr-1.5" /> Credenciar
                               </Button>
                             )}
 
