@@ -243,7 +243,7 @@ export function useDashboardData(eventId?: string | null) {
   const [participants, credentials, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, trips, vehicles, sportEvents, matches] =
     queries.map((q) => q.data) as [
       { id: string; credentialed_at: string | null; delegation_id: string | null }[],
-      { id: string; status: string; issued_at: string | null; created_at: string }[],
+      { id: string; status: string; issued_at: string | null; created_at: string; participant_id: string | null }[],
       { id: string; school_name: string }[],
       { id: string; service_date: string; meal_type_id: string; label: string | null }[],
       { id: string; name: string }[],
