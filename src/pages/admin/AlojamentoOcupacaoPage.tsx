@@ -183,15 +183,7 @@ export default function AlojamentoOcupacaoPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {!isStageScoped && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Evento</label>
-                <Select value={selectedEventId} onValueChange={() => handleUnitChange("")}>
-                  <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
-                  <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            )}
+            {/* Removed redundant Event selector when in stage context or globally set */}
             <div className={`space-y-2 ${isStageScoped ? "md:col-span-2" : ""}`}>
               <label className="text-sm font-medium text-foreground">Unidade (Quarto)</label>
               <Select value={selectedUnitId} onValueChange={handleUnitChange} disabled={!selectedEventId}>

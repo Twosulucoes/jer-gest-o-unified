@@ -703,21 +703,23 @@ export default function CredenciamentoPage() {
       <Card>
         <CardContent className="pt-5 pb-5">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Evento</label>
-              <Select value={selectedEventId} onValueChange={() => {}}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o evento..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {events.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>
-                      {e.name} ({e.year})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!stageId && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Evento</label>
+                <Select value={selectedEventId} onValueChange={() => {}}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o evento..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {events.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.name} ({e.year})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-1.5 md:col-span-3">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Busca por nome ou CPF</label>
               <div className="relative">
