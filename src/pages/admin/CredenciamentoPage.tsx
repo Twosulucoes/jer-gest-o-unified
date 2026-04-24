@@ -23,7 +23,13 @@ import {
   AlertCircle,
   ShieldAlert,
   Users,
+  ScanLine,
+  IdCard,
+  Link2,
+  Check,
 } from "lucide-react";
+import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
