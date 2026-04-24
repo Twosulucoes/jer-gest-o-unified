@@ -172,16 +172,50 @@ export default function QrCodeScanner({
         await stopScanner();
         if (!mountedRef.current) return;
         setState("error");
-        if (err?.name === "NotAllowedError" || err?.message?.includes("Permission") || err?.message?.includes("NotAllowed")) {
+
+        // Detecta iframe sem permissão de câmera (ambiente de preview do Lovable)
+        const inIframe = (() => {
+          try { return window.self !== window.top; } catch { return true; }
+        })();
+        const isInsecure =
+          typeof window !== "undefined" &&
+          !window.isSecureContext &&
+          window.location.hostname !== "localhost";
+
+        if (isInsecure) {
           setErrorMsg(
-            "Acesso à câmera negado. Habilite nas configurações do navegador:\n\n" +
-            "Android Chrome: Configurações → Privacidade → Câmera\n" +
-            "iOS Safari: Ajustes → Safari → Câmera",
+            "A câmera só funciona em conexões seguras (HTTPS).\n" +
+            "Abra o sistema pela URL publicada (https://) ou em localhost.",
           );
+        } else if (
+          err?.name === "NotAllowedError" ||
+          err?.message?.includes("Permission") ||
+          err?.message?.includes("NotAllowed") ||
+          err?.message?.includes("disallowed by permissions policy")
+        ) {
+          if (inIframe) {
+            setErrorMsg(
+              "O preview do Lovable não permite acesso à câmera dentro do iframe.\n\n" +
+              "👉 Abra o app em uma nova aba (botão de abrir/expandir do preview) ou acesse a URL publicada do projeto. " +
+              "No celular/produção a câmera funciona normalmente.\n\n" +
+              "Enquanto isso, use o campo 'Entrada Manual' para colar/digitar o código.",
+            );
+          } else {
+            setErrorMsg(
+              "Acesso à câmera negado. Habilite nas configurações do navegador:\n\n" +
+              "Android Chrome: Configurações → Privacidade → Câmera\n" +
+              "iOS Safari: Ajustes → Safari → Câmera",
+            );
+          }
         } else if (err?.name === "NotFoundError" || err?.message?.includes("NotFound")) {
           setErrorMsg("Câmera não encontrada neste dispositivo.");
+        } else if (err?.name === "NotReadableError") {
+          setErrorMsg("A câmera está sendo usada por outro aplicativo. Feche e tente novamente.");
         } else {
-          setErrorMsg(err?.message || "Erro ao acessar câmera");
+          setErrorMsg(
+            (err?.message || "Erro ao acessar câmera") +
+            (inIframe ? "\n\n(Dica: tente abrir o preview em uma nova aba.)" : ""),
+          );
         }
       }
     },
