@@ -1090,7 +1090,7 @@ export default function CredenciamentoPage() {
                       </TableCell>
                       {canCredential && (
                         <TableCell className="py-3 text-right">
-                          <div className="flex justify-end gap-1.5 flex-wrap">
+                          <div className="flex justify-end gap-1.5 flex-wrap items-center">
                             {state === "awaiting" && (
                               <Button
                                 size="sm"
@@ -1163,24 +1163,25 @@ export default function CredenciamentoPage() {
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
-                                  </AlertDialog>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/5"
-                                    onClick={() => {
-                                      setEditingParticipantId(p.id);
-                                      setEditDialogOpen(true);
-                                    }}
-                                    title="Editar Dados"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                        )}
+                                </AlertDialog>
+                              </div>
+                            )}
+                            
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/5"
+                              onClick={() => {
+                                setEditingParticipantId(p.id);
+                                setEditDialogOpen(true);
+                              }}
+                              title="Editar Dados"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                       </TableRow>
                     );
                   })}
