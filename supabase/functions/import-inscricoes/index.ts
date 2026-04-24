@@ -1807,7 +1807,7 @@ Deno.serve(async (req: Request) => {
         let pesCreated = 0, pesReused = 0;
         let rowsFailed = 0;
         let rowsSkippedDuplicate = 0;
-        const commitErrors: { row_number: number; error_code: string; error_message: string }[] = [];
+        const commitErrors: { row_number: number; error_code: string; error_message: string; payload?: Record<string, unknown> }[] = [];
         const processedPersonKeys = new Set<string>();
 
         const { data: existingParticipants } = await serviceClient
@@ -1928,7 +1928,7 @@ Deno.serve(async (req: Request) => {
                   if (pseErr.message?.includes("duplicate") || pseErr.message?.includes("unique")) {
                     pseReused++; rowsSkippedDuplicate++;
                   } else {
-                    commitErrors.push({ row_number: row.row_number, error_code: "PSE_FAILED", error_message: pseErr.message });
+                    commitErrors.push({ row_number: row.row_number, error_code: "PSE_FAILED", error_message: pseErr.message, payload: { full_name: row.full_name, institution_name: row.institution_name, sport_name: row.sport_name, prova_name: row.prova_name, category_name: row.category_name } });
                     rowsFailed++;
                   }
                 } else {
@@ -2013,6 +2013,7 @@ Deno.serve(async (req: Request) => {
             event_id: eventId, import_log_id: importLogId,
             row_number: e.row_number, error_code: e.error_code,
             error_message: e.error_message, entity: "commit",
+            payload: e.payload ?? null,
           }));
           for (let i = 0; i < errBatch.length; i += 200) {
             await serviceClient.from("import_row_errors").insert(errBatch.slice(i, i + 200));
