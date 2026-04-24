@@ -253,6 +253,19 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
         const { data: foundPerson } = await supabase.from("people").select("id").eq("cpf", cpfClean).maybeSingle();
         if (foundPerson) {
           personId = foundPerson.id;
+          
+          // Check if this person already has a participant record in ANY event with a different category
+          const { data: otherCategoryPart } = await supabase.from("participants")
+            .select("category, event_id")
+            .eq("person_id", personId)
+            .neq("category", participantCategory)
+            .limit(1)
+            .maybeSingle();
+            
+          if (otherCategoryPart) {
+            throw new Error(`Este CPF já está cadastrado como ${otherCategoryPart.category === 'delegation' ? 'Delegação' : 'Organização'}. O CPF é exclusivo e deve permanecer apenas em um dos tipos.`);
+          }
+
           // Already linked to this event?
           const { data: existingPart } = await supabase.from("participants").select("id")
             .eq("person_id", personId).eq("event_id", eventId).maybeSingle();
