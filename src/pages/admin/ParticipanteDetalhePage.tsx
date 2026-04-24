@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, User, IdCard, Bus, Trophy, CheckCircle, Tag, ArrowLeft, Eye, RefreshCw, Activity, QrCode } from "lucide-react";
+import { Loader2, User, IdCard, Bus, Trophy, CheckCircle, Tag, ArrowLeft, Eye, RefreshCw, Activity, QrCode, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,6 +26,7 @@ import ParticipantVoucherTab from "@/components/admin/participant/ParticipantVou
 import { SingleLabelDialog } from "@/components/admin/CredentialLabelPrint";
 import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
 import { BackButton } from "@/components/navigation/BackButton";
+import PessoaFormDialog from "@/components/admin/people/PessoaFormDialog";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta", coach: "Técnico", head_of_delegation: "Chefe Delegação", staff: "Staff",
@@ -47,6 +48,7 @@ export default function ParticipanteDetalhePage() {
   const [labelOpen, setLabelOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [reissueConfirmOpen, setReissueConfirmOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const { data: participant, isLoading: loadingParticipant } = useQuery({
     queryKey: ["participant_full", participantId],
@@ -261,6 +263,17 @@ export default function ParticipanteDetalhePage() {
               {person?.full_name ?? "Participante"}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 px-2 text-xs gap-1.5 text-primary hover:text-primary hover:bg-primary/5"
+                onClick={() => setEditDialogOpen(true)}
+              >
+                <Edit className="h-3.5 w-3.5" />
+                Editar Dados
+              </Button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
               <Badge variant="outline">{TYPE_LABELS[participant.participant_type] ?? participant.participant_type}</Badge>
               <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
               {!participant.is_active && <Badge variant="destructive">Inativo</Badge>}
@@ -410,6 +423,12 @@ export default function ParticipanteDetalhePage() {
           )}
         </>
       )}
+
+      <PessoaFormDialog 
+        open={editDialogOpen} 
+        onOpenChange={setEditDialogOpen} 
+        participantId={participantId} 
+      />
     </div>
   );
 }
