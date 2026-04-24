@@ -267,7 +267,12 @@ export default function CredenciamentoExternoPage() {
         event_id: eventId,
         participant_id: selectedParticipant.id,
         credential_code: code,
-        linked_by_user_id: user.id,
+        status: "active",
+        metadata: {
+          bind_mode: isInternalMode ? "internal_code" : "external_tag",
+          linked_by: user?.id,
+          linked_at: new Date().toISOString(),
+        },
       });
       if (error) throw error;
 
