@@ -277,7 +277,7 @@ export default function QrCodeScanner({
     setTimeout(() => {
       if (mountedRef.current) {
         setIsValidating(false);
-        handleDetectedRef.current(val);
+        handleDetected(val);
         setManualCode("");
       }
     }, 600);
