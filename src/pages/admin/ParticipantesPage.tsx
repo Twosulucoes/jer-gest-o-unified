@@ -74,6 +74,7 @@ export default function ParticipantesPage() {
   const [pageSize, setPageSize] = useState(50);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [initialFormCategory, setInitialFormCategory] = useState<"delegation" | "organization" | undefined>();
   const stageFilterId = urlStageId || searchParams.get("stage");
 
 
