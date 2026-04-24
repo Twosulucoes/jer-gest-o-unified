@@ -10,11 +10,14 @@ interface Props {
     chief_name: string | null;
     chief_email: string | null;
     chief_phone: string | null;
+    school_name: string;
+    school_city?: string | null;
+    school_state?: string | null;
     notes: string | null;
     status: string;
     created_at: string;
   };
-  institution: { id: string; name: string; city?: string | null; state?: string | null } | null | undefined;
+  institution?: { id: string; name: string; city?: string | null; state?: string | null } | null | undefined;
   event: { id: string; name: string; year: number } | null | undefined;
 }
 
