@@ -70,6 +70,10 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
   const [disabilityType, setDisabilityType] = useState("");
   const [medicalNotes, setMedicalNotes] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [guardianName, setGuardianName] = useState("");
+  const [guardianPhone, setGuardianPhone] = useState("");
+  const [coachName, setCoachName] = useState("");
+  const [coachPhone, setCoachPhone] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Catalog of roles
