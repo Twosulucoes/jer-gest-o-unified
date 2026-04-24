@@ -37,10 +37,19 @@ const personSchema = z.object({
 });
 
 export default function PessoaFormDialog({ open, onOpenChange, participantId }: Props) {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const eventId = useActiveEventId();
   const qc = useQueryClient();
   const isEdit = !!participantId;
+
+  const isAdmin = hasRole("admin") || hasRole("super_admin");
+  const isSecretaria = hasRole("secretaria");
+  const isCoordenador = hasRole("coordenador") || hasRole("coordenacao_tecnica");
+  const isLogistica = hasRole("logistica") || hasRole("alimentacao") || hasRole("transporte") || hasRole("alojamento");
+
+  const canEditSensitive = isAdmin || isSecretaria;
+  const canEditLogistics = isAdmin || isSecretaria || isLogistica;
+  const canEditRoles = isAdmin || isSecretaria || isCoordenador;
 
   // Form state
   const [fullName, setFullName] = useState("");
@@ -278,30 +287,57 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <Label>Nome completo *</Label>
-                  <Input value={fullName} onChange={e => setFullName(e.target.value)} />
+                  <Input 
+                    value={fullName} 
+                    onChange={e => setFullName(e.target.value)} 
+                    disabled={!canEditSensitive && isEdit}
+                  />
                   {errors.full_name && <p className="text-xs text-destructive mt-1">{errors.full_name}</p>}
                 </div>
                 <div>
                   <Label>CPF *</Label>
-                  <Input value={cpf} onChange={e => setCpf(e.target.value)} disabled={isEdit} placeholder="00000000000" />
+                  <Input 
+                    value={cpf} 
+                    onChange={e => setCpf(e.target.value)} 
+                    disabled={isEdit} 
+                    placeholder="00000000000" 
+                  />
                   {errors.cpf && <p className="text-xs text-destructive mt-1">{errors.cpf}</p>}
                 </div>
                 <div>
                   <Label>E-mail</Label>
-                  <Input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+                  <Input 
+                    type="email" 
+                    value={email} 
+                    onChange={e => setEmail(e.target.value)} 
+                    disabled={!canEditSensitive && isEdit}
+                  />
                   {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
                 </div>
                 <div>
                   <Label>Telefone</Label>
-                  <Input value={phone} onChange={e => setPhone(e.target.value)} />
+                  <Input 
+                    value={phone} 
+                    onChange={e => setPhone(e.target.value)} 
+                    disabled={!canEditSensitive && isEdit}
+                  />
                 </div>
                 <div>
                   <Label>Data de nascimento</Label>
-                  <Input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} />
+                  <Input 
+                    type="date" 
+                    value={birthDate} 
+                    onChange={e => setBirthDate(e.target.value)} 
+                    disabled={!canEditSensitive && isEdit}
+                  />
                 </div>
                 <div>
                   <Label>Gênero</Label>
-                  <Select value={gender} onValueChange={(v) => setGender(v as any)}>
+                  <Select 
+                    value={gender} 
+                    onValueChange={(v) => setGender(v as any)}
+                    disabled={!canEditSensitive && isEdit}
+                  >
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="male">Masculino</SelectItem>
@@ -318,7 +354,11 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <Label>Tipo principal *</Label>
-                  <Select value={participantType} onValueChange={setParticipantType}>
+                  <Select 
+                    value={participantType} 
+                    onValueChange={setParticipantType}
+                    disabled={!canEditSensitive && isEdit}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="athlete">Atleta</SelectItem>
@@ -342,6 +382,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
                         role="combobox"
                         aria-expanded={delegationOpen}
                         className="w-full justify-between font-normal"
+                        disabled={!canEditSensitive && isEdit}
                       >
                         <span className="truncate">
                           {delegationId
@@ -382,87 +423,113 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
                 </div>
               </div>
 
-              <div>
-                <Label>Funções operacionais (selecione todas que se aplicam)</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {roleCatalog.map((r) => {
-                    const active = selectedRoles.includes(r.code);
-                    return (
-                      <Badge
-                        key={r.code}
-                        variant={active ? "default" : "outline"}
-                        className="cursor-pointer hover:bg-primary/80"
-                        onClick={() => toggleRole(r.code)}
-                      >
-                        {active ? <X className="h-3 w-3 mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
-                        {r.name}
-                      </Badge>
-                    );
-                  })}
+              {canEditRoles && (
+                <div className="pt-2">
+                  <Label>Funções operacionais (selecione todas que se aplicam)</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {roleCatalog.map((r) => {
+                      const active = selectedRoles.includes(r.code);
+                      return (
+                        <Badge
+                          key={r.code}
+                          variant={active ? "default" : "outline"}
+                          className="cursor-pointer hover:bg-primary/80"
+                          onClick={() => toggleRole(r.code)}
+                        >
+                          {active ? <X className="h-3 w-3 mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
+                          {r.name}
+                        </Badge>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </section>
 
-            {/* Saúde e Restrições */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Saúde e Restrições</h3>
-              <div className="grid grid-cols-1 gap-3">
+            {/* Saúde e Restrições - Visível apenas para perfis sensíveis ou tipo atleta */}
+            {(canEditSensitive || participantType === "athlete") && (
+              <section className="space-y-3">
+                <h3 className="text-sm font-semibold text-foreground">Saúde e Restrições</h3>
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <Label>Restrições alimentares</Label>
+                    <Input 
+                      value={foodRestrictions} 
+                      onChange={e => setFoodRestrictions(e.target.value)} 
+                      placeholder="Ex: Alérgico a amendoim, Vegano, Sem glúten..."
+                      disabled={!canEditSensitive && isEdit}
+                    />
+                  </div>
+                  <div>
+                    <Label>Tipo de deficiência (se houver)</Label>
+                    <Input 
+                      value={disabilityType} 
+                      onChange={e => setDisabilityType(e.target.value)} 
+                      placeholder="Ex: Visual, Auditiva, PCD..."
+                      disabled={!canEditSensitive && isEdit}
+                    />
+                  </div>
+                  <div>
+                    <Label>Observações médicas / Notas gerais</Label>
+                    <Textarea 
+                      value={medicalNotes} 
+                      onChange={e => setMedicalNotes(e.target.value)} 
+                      placeholder="Informações relevantes para a organização..."
+                      disabled={!canEditSensitive && isEdit}
+                    />
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Logística - Visível para quem pode editar logística */}
+            {canEditLogistics && (
+              <section className="space-y-3">
+                <h3 className="text-sm font-semibold text-foreground">Elegibilidade logística</h3>
+                <p className="text-xs text-muted-foreground">
+                  Marque os serviços que esta pessoa pode consumir. Consumos são contabilizados por pessoa, não por função.
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  <label className="flex items-center gap-2 rounded-md border p-2 cursor-pointer hover:bg-muted/40">
+                    <Checkbox 
+                      checked={needsTransport} 
+                      onCheckedChange={(v) => setNeedsTransport(!!v)} 
+                    />
+                    <span className="text-sm">Transporte</span>
+                  </label>
+                  <label className="flex items-center gap-2 rounded-md border p-2 cursor-pointer hover:bg-muted/40">
+                    <Checkbox 
+                      checked={needsMeals} 
+                      onCheckedChange={(v) => setNeedsMeals(!!v)} 
+                    />
+                    <span className="text-sm">Alimentação</span>
+                  </label>
+                  <label className="flex items-center gap-2 rounded-md border p-2 cursor-pointer hover:bg-muted/40">
+                    <Checkbox 
+                      checked={needsLodging} 
+                      onCheckedChange={(v) => setNeedsLodging(!!v)} 
+                    />
+                    <span className="text-sm">Alojamento</span>
+                  </label>
+                </div>
                 <div>
-                  <Label>Restrições alimentares</Label>
+                  <Label>Restrições de Logística</Label>
                   <Input 
-                    value={foodRestrictions} 
-                    onChange={e => setFoodRestrictions(e.target.value)} 
-                    placeholder="Ex: Alérgico a amendoim, Vegano, Sem glúten..."
+                    value={logisticsRestrictions} 
+                    onChange={e => setLogisticsRestrictions(e.target.value)} 
+                    placeholder="Ex.: alergia a frutos do mar, mobilidade reduzida..." 
                   />
                 </div>
                 <div>
-                  <Label>Tipo de deficiência (se houver)</Label>
-                  <Input 
-                    value={disabilityType} 
-                    onChange={e => setDisabilityType(e.target.value)} 
-                    placeholder="Ex: Visual, Auditiva, PCD..."
-                  />
-                </div>
-                <div>
-                  <Label>Observações médicas / Notas gerais</Label>
+                  <Label>Observações de Logística</Label>
                   <Textarea 
-                    value={medicalNotes} 
-                    onChange={e => setMedicalNotes(e.target.value)} 
-                    placeholder="Informações relevantes para a organização..."
+                    value={logisticsNotes} 
+                    onChange={e => setLogisticsNotes(e.target.value)} 
+                    rows={2} 
                   />
                 </div>
-              </div>
-            </section>
-
-            {/* Logística */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Elegibilidade logística</h3>
-              <p className="text-xs text-muted-foreground">
-                Marque os serviços que esta pessoa pode consumir. Consumos são contabilizados por pessoa, não por função.
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                <label className="flex items-center gap-2 rounded-md border p-2 cursor-pointer hover:bg-muted/40">
-                  <Checkbox checked={needsTransport} onCheckedChange={(v) => setNeedsTransport(!!v)} />
-                  <span className="text-sm">Transporte</span>
-                </label>
-                <label className="flex items-center gap-2 rounded-md border p-2 cursor-pointer hover:bg-muted/40">
-                  <Checkbox checked={needsMeals} onCheckedChange={(v) => setNeedsMeals(!!v)} />
-                  <span className="text-sm">Alimentação</span>
-                </label>
-                <label className="flex items-center gap-2 rounded-md border p-2 cursor-pointer hover:bg-muted/40">
-                  <Checkbox checked={needsLodging} onCheckedChange={(v) => setNeedsLodging(!!v)} />
-                  <span className="text-sm">Alojamento</span>
-                </label>
-              </div>
-              <div>
-                <Label>Restrições</Label>
-                <Input value={logisticsRestrictions} onChange={e => setLogisticsRestrictions(e.target.value)} placeholder="Ex.: alergia a frutos do mar, mobilidade reduzida..." />
-              </div>
-              <div>
-                <Label>Observações</Label>
-                <Textarea value={logisticsNotes} onChange={e => setLogisticsNotes(e.target.value)} rows={2} />
-              </div>
-            </section>
+              </section>
+            )}
 
             {Object.keys(errors).length > 0 && (
               <div className="rounded-md bg-destructive/10 border border-destructive/30 p-3 text-sm text-destructive flex items-start gap-2">
