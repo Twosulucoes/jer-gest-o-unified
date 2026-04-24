@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,7 +19,9 @@ export default function AlimentacaoConsumoPage() {
   const { hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
   const { isStageScoped, stageId } = useStageScope();
-  const [selectedWindowId, setSelectedWindowId] = useState("");
+  const [selectedWindowId, setSelectedWindowId] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
 
   const { data: events = [] } = useQuery({
@@ -72,16 +74,23 @@ export default function AlimentacaoConsumoPage() {
 
   const mealTypesMap = new Map(mealTypes.map((m) => [m.id, m]));
 
-  // Load consumptions for selected window
+  // Load consumptions for all windows of the event/stage to allow "All Windows" filter
   const { data: consumptions = [], isLoading: consumptionsLoading } = useQuery({
-    queryKey: ["meal_consumptions", selectedWindowId],
+    queryKey: ["meal_consumptions", selectedEventId, stageId, windows.length],
     queryFn: async () => {
-      if (!selectedWindowId) return [];
-      const { data, error } = await supabase.from("meal_consumptions").select("*").eq("meal_window_id", selectedWindowId).order("consumed_at", { ascending: false });
+      if (!selectedEventId || windows.length === 0) return [];
+      
+      const windowIds = windows.map(w => w.id);
+      const { data, error } = await supabase
+        .from("meal_consumptions")
+        .select("*")
+        .in("meal_window_id", windowIds)
+        .order("consumed_at", { ascending: false });
+
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedWindowId,
+    enabled: !!selectedEventId && windows.length > 0,
   });
 
   // Load participant details for consumptions
@@ -118,6 +127,21 @@ export default function AlimentacaoConsumoPage() {
 
   const consumedParticipantIds = new Set(consumptions.map((c) => c.participant_id));
 
+  const filteredConsumptions = useMemo(() => {
+    return consumptions.filter((c) => {
+      const matchesWindow = selectedWindowId === "all" || c.meal_window_id === selectedWindowId;
+      const matchesStatus = statusFilter === "all" || c.method === statusFilter;
+      
+      const person = getPersonForConsumption(c.participant_id);
+      const matchesSearch = !searchTerm || 
+        person?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        person?.cpf?.includes(searchTerm) ||
+        c.participant_id.toLowerCase().includes(searchTerm.toLowerCase());
+
+      return matchesWindow && matchesStatus && matchesSearch;
+    });
+  }, [consumptions, selectedWindowId, statusFilter, searchTerm, pplMap, partMap]);
+
   const selectedWindow = windows.find((w) => w.id === selectedWindowId);
   const selectedMealType = selectedWindow ? mealTypesMap.get(selectedWindow.meal_type_id) : null;
 
@@ -144,9 +168,10 @@ export default function AlimentacaoConsumoPage() {
               </label>
               <Select value={selectedWindowId} onValueChange={setSelectedWindowId} disabled={!selectedEventId || windowsLoading}>
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder={windowsLoading ? "Carregando…" : (windows.length === 0 ? "Nenhuma janela cadastrada" : "Selecione a janela")} />
+                  <SelectValue placeholder={windowsLoading ? "Carregando…" : (windows.length === 0 ? "Nenhuma janela cadastrada" : "Filtrar por janela")} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[360px]">
+                  <SelectItem value="all">Todas as janelas (evento/etapa)</SelectItem>
                   {(() => {
                     const byDate = new Map<string, any[]>();
                     windows.forEach((w: any) => {
@@ -258,47 +283,82 @@ export default function AlimentacaoConsumoPage() {
       )}
 
       {/* Consumption history */}
-      {selectedWindowId && (
+      {(selectedWindowId !== "all" || consumptions.length > 0) && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <UtensilsCrossed className="h-4 w-4" /> Consumos registrados
-            </CardTitle>
+          <CardHeader className="pb-3 border-b">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <CardTitle className="text-base flex items-center gap-2">
+                <UtensilsCrossed className="h-4 w-4" /> Consumos registrados
+              </CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative w-full md:w-64">
+                  <input
+                    type="text"
+                    placeholder="Buscar por nome, CPF ou ID..."
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-9 w-[130px]">
+                    <SelectValue placeholder="Método" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos Métodos</SelectItem>
+                    <SelectItem value="qr">QR Code</SelectItem>
+                    <SelectItem value="manual">Manual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {consumptionsLoading ? (
               <div className="p-4 space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-md" />)}</div>
-            ) : !consumptions.length ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">Nenhum consumo registrado nesta janela.</div>
+            ) : !filteredConsumptions.length ? (
+              <div className="text-center py-12 text-muted-foreground text-sm">Nenhum consumo encontrado com os filtros aplicados.</div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>CPF</TableHead>
+                    <TableHead>Participante</TableHead>
+                    <TableHead>Janela</TableHead>
                     <TableHead>Restrições</TableHead>
                     <TableHead>Hora</TableHead>
                     <TableHead>Método</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {consumptions.map((c) => {
+                  {filteredConsumptions.map((c) => {
                     const person = getPersonForConsumption(c.participant_id);
+                    const win = windows.find(w => w.id === c.meal_window_id);
+                    const mt = win ? mealTypesMap.get(win.meal_type_id) : null;
                     return (
                       <TableRow key={c.id}>
-                        <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
-                        <TableCell className="text-muted-foreground font-mono text-xs">{person?.cpf ?? "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm">{person?.full_name ?? "—"}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono uppercase">{person?.cpf || c.participant_id.slice(0, 8)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-semibold">{win?.label || mt?.name || "Refeição"}</span>
+                            <span className="text-[10px] text-muted-foreground">{win?.service_date ? new Date(win.service_date + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "—"}</span>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           {person?.food_restrictions ? (
-                            <Badge variant="outline" className="text-yellow-700 border-yellow-300 dark:text-yellow-400 dark:border-yellow-700">
+                            <Badge variant="outline" className="text-yellow-700 border-yellow-300 dark:text-yellow-400 dark:border-yellow-700 text-[10px] h-5">
                               {person.food_restrictions}
                             </Badge>
-                          ) : "—"}
+                          ) : <span className="text-muted-foreground text-xs">—</span>}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-[10px] text-muted-foreground">
                           {new Date(c.consumed_at).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                         </TableCell>
-                        <TableCell><Badge variant="outline">{c.method === "qr" ? "QR" : "Manual"}</Badge></TableCell>
+                        <TableCell><Badge variant="outline" className="text-[10px] h-5">{c.method === "qr" ? "QR" : "Manual"}</Badge></TableCell>
                       </TableRow>
                     );
                   })}
