@@ -699,68 +699,44 @@ export default function CredenciamentoPage() {
         </div>
       </div>
 
-      {/* Event selection */}
-      <Card>
-        <CardContent className="pt-5 pb-5">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {!stageId && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Evento</label>
-                <Select value={selectedEventId} onValueChange={() => {}}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o evento..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {events.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.name} ({e.year})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="space-y-1.5 md:col-span-3">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Busca por nome ou CPF</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Digite o nome ou CPF..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                  disabled={!selectedEventId}
-                />
-              </div>
+      {/* Search and Filters */}
+      <Card className="border-none shadow-sm bg-muted/20">
+        <CardContent className="pt-6 pb-6 space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou CPF..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-11 bg-background"
+                disabled={!selectedEventId}
+              />
             </div>
-          </div>
-
-          {/* Additional filters */}
-          {selectedEventId && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-4 pt-4 border-t border-border">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-full min-w-0 text-sm">
+                <SelectTrigger className="w-[140px] h-11 bg-background">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value="all">Todos Tipos</SelectItem>
                   {participantTypeOptions.map((t) => (
                     <SelectItem key={t} value={t}>{TYPE_LABELS[t] ?? t}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select value={filterState} onValueChange={setFilterState}>
-                <SelectTrigger className="w-full min-w-0 text-sm">
+                <SelectTrigger className="w-[160px] h-11 bg-background">
                   <SelectValue placeholder="Situação" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as situações</SelectItem>
+                  <SelectItem value="all">Todas Situações</SelectItem>
                   <SelectItem value="pending_import">Pendente</SelectItem>
                   <SelectItem value="awaiting">Confirmado</SelectItem>
                   <SelectItem value="ready_to_emit">Pronto p/ emissão</SelectItem>
                   <SelectItem value="complete">Credencial ativa</SelectItem>
                   {blockedParticipantIds.size > 0 && (
-                    <SelectItem value="blocked">⚠ Irregulares ({blockedParticipantIds.size})</SelectItem>
+                    <SelectItem value="blocked">⚠ Irregulares</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -769,22 +745,27 @@ export default function CredenciamentoPage() {
                 onChange={setFilterInstitution}
                 options={institutionOptions.map((i) => ({ value: i.id, label: i.name }))}
                 placeholder="Instituição"
-                searchPlaceholder="Pesquisar escola..."
-                allLabel="Todas as instituições"
-                emptyText="Nenhuma escola encontrada."
+                searchPlaceholder="Pesquisar..."
+                allLabel="Todas Instituições"
+                emptyText="Nenhuma encontrada."
+                className="w-[200px] h-11 bg-background"
               />
-              {(filterType !== "all" || filterState !== "all" || filterInstitution !== "all") && (
-                <button
-                  onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }}
-                  className="h-11 px-3 text-sm text-muted-foreground hover:text-foreground border rounded-md hover:bg-muted transition-colors"
+              {hasActiveFilters && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSearchTerm(""); }}
+                  className="h-11 w-11 text-muted-foreground hover:text-foreground"
+                  title="Limpar filtros"
                 >
-                  Limpar filtros
-                </button>
+                  <XCircle className="h-5 w-5" />
+                </Button>
               )}
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
+
 
       {/* Stats */}
       {selectedEventId && participants && (
@@ -821,14 +802,23 @@ export default function CredenciamentoPage() {
               <p className="text-xl font-bold text-green-600">{credentialsEmittedCount}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-primary/20 bg-primary/5">
             <CardContent className="pt-3 pb-3 px-4">
               <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Progresso</p>
-              <p className="text-xl font-bold text-primary">
-                {participants.length > 0 ? `${Math.round((credentialsEmittedCount / participants.length) * 100)}%` : "—"}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xl font-bold text-primary">
+                  {participants.length > 0 ? `${Math.round((credentialsEmittedCount / participants.length) * 100)}%` : "0%"}
+                </p>
+                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[60px] hidden md:block">
+                  <div 
+                    className="h-full bg-primary" 
+                    style={{ width: `${participants.length > 0 ? Math.round((credentialsEmittedCount / participants.length) * 100) : 0}%` }} 
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
+
         </div>
       )}
 
@@ -951,7 +941,7 @@ export default function CredenciamentoPage() {
 
           <div className="rounded-lg border bg-card overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   {canCredential && (
                     <TableHead className="w-10">
@@ -961,12 +951,11 @@ export default function CredenciamentoPage() {
                       />
                     </TableHead>
                   )}
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">CPF</TableHead>
-                  <TableHead className="hidden lg:table-cell">Instituição</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Situação</TableHead>
-                  {canCredential && <TableHead className="text-right">Ações</TableHead>}
+                  <TableHead className="text-xs uppercase font-bold text-muted-foreground">Participante</TableHead>
+                  <TableHead className="hidden lg:table-cell text-xs uppercase font-bold text-muted-foreground">Instituição</TableHead>
+                  <TableHead className="text-xs uppercase font-bold text-muted-foreground">Tipo</TableHead>
+                  <TableHead className="text-xs uppercase font-bold text-muted-foreground">Situação</TableHead>
+                  {canCredential && <TableHead className="text-right text-xs uppercase font-bold text-muted-foreground">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -975,153 +964,137 @@ export default function CredenciamentoPage() {
                   const state = getParticipantState(p);
                   const stateInfo = getStateInfo(state);
                   const activeCred = activeCredMap.get(p.id);
+                  const isBlocked = blockedParticipantIds.has(p.id);
 
                   return (
-                    <TableRow key={p.id} data-state={selectedIds.has(p.id) ? "selected" : undefined}>
+                    <TableRow key={p.id} className="hover:bg-muted/30 transition-colors group" data-state={selectedIds.has(p.id) ? "selected" : undefined}>
                       {canCredential && (
                         <TableCell className="w-10">
                           <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelected(p.id)} />
                         </TableCell>
                       )}
-                      <TableCell>
-                        <div>
+                      <TableCell className="py-3">
+                        <div className="flex flex-col">
                           <Link
                             to={`/admin/participantes/${p.id}`}
-                            className="font-medium text-sm text-primary hover:underline"
+                            className="font-semibold text-sm text-foreground hover:text-primary transition-colors"
                           >
                             {person?.full_name ?? "—"}
                           </Link>
-                          {activeCred && (
-                            <span className="block text-[10px] font-mono text-muted-foreground mt-0.5">
-                              {activeCred.credential_code}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {person?.cpf || "—"}
                             </span>
-                          )}
+                            {activeCred && (
+                              <span className="text-[10px] font-mono text-primary font-bold">
+                                • {activeCred.credential_code}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground font-mono text-xs">
-                        {person?.cpf ?? "—"}
+                      <TableCell className="hidden lg:table-cell py-3">
+                        <span className="text-xs text-muted-foreground block max-w-[200px] truncate" title={getInstitutionName(p)}>
+                          {getInstitutionName(p)}
+                        </span>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
-                        {getInstitutionName(p)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-[10px]">
+                      <TableCell className="py-3">
+                        <Badge variant="secondary" className="text-[10px] uppercase font-bold tracking-wider px-2 h-5">
                           {TYPE_LABELS[p.participant_type] ?? p.participant_type}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5">
-                          <Badge variant={stateInfo.variant} className={`text-[10px] gap-1 ${stateInfo.className}`}>
-                            {stateInfo.icon}
-                            {stateInfo.label}
+                      <TableCell className="py-3">
+                        <div className="flex flex-col gap-1">
+                          <Badge variant={stateInfo.variant} className={`text-[10px] px-2 h-5 w-fit border-none ${stateInfo.className}`}>
+                            <span className="flex items-center gap-1">
+                              {stateInfo.icon}
+                              {stateInfo.label}
+                            </span>
                           </Badge>
-                          {blockedParticipantIds.has(p.id) && (
-                            <Badge variant="destructive" className="text-[10px] gap-1">
-                              <ShieldAlert className="h-3 w-3" />
-                              IRREGULAR
+                          {isBlocked && (
+                            <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700 text-[9px] h-4 w-fit px-1.5 font-bold animate-pulse">
+                              <ShieldAlert className="h-2.5 w-2.5 mr-1" /> IRREGULAR
                             </Badge>
                           )}
                         </div>
                       </TableCell>
                       {canCredential && (
-                        <TableCell>
-                          <div className="flex gap-1.5 justify-end flex-wrap">
-                            {state === "pending_import" && (
-                              <span className="text-[10px] text-orange-600 italic">Aguardando confirmação</span>
-                            )}
-
+                        <TableCell className="py-3 text-right">
+                          <div className="flex justify-end gap-1.5 flex-wrap">
                             {state === "awaiting" && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button size="sm" className="h-7 text-xs" disabled={credentialMutation.isPending}>
-                                    <UserCheck className="mr-1 h-3 w-3" />
-                                    Registrar presença
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Registrar presença</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Confirma que <strong>{person?.full_name}</strong> se apresentou presencialmente? Após confirmar, será possível emitir a credencial.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => credentialMutation.mutate(p.id)}>
-                                      Confirmar presença
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              <Button
+                                size="sm"
+                                className="h-8 px-3 text-[11px] font-bold bg-orange-600 hover:bg-orange-700 shadow-sm"
+                                onClick={() => credentialMutation.mutate(p.id)}
+                                disabled={credentialMutation.isPending || isBlocked}
+                              >
+                                <UserCheck className="h-3.5 w-3.5 mr-1.5" /> Registrar Presença
+                              </Button>
                             )}
 
                             {state === "ready_to_emit" && (
-                              blockedParticipantIds.has(p.id) ? (
-                                <Button size="sm" className="h-7 text-xs" variant="destructive" onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "emit")}>
-                                  <ShieldAlert className="mr-1 h-3 w-3" />
-                                  Bloqueado
-                                </Button>
-                              ) : (
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button size="sm" className="h-7 text-xs" disabled={emitCredentialMutation.isPending}>
-                                      {emitCredentialMutation.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CreditCard className="mr-1 h-3 w-3" />}
-                                      Emitir Credencial
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Emitir credencial</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Emitir credencial para <strong>{person?.full_name}</strong>? Será gerado um código único e QR Code.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "emit")}>
-                                        Emitir agora
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              )
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 text-[11px] font-bold border-blue-600 text-blue-600 hover:bg-blue-50"
+                                onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "emit")}
+                                disabled={emitCredentialMutation.isPending || isBlocked}
+                              >
+                                <CreditCard className="h-3.5 w-3.5 mr-1.5" /> Emitir Credencial
+                              </Button>
                             )}
 
                             {state === "complete" && (
-                              <>
-                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleOpenPreview(p.id)}>
-                                  <Eye className="mr-1 h-3 w-3" />
-                                  Ver
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                                  onClick={() => handleOpenPreview(p.id)}
+                                  title="Visualizar Credencial"
+                                >
+                                  <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setLabelParticipantId(p.id)}>
-                                  <Tag className="mr-1 h-3 w-3" />
-                                  Etiqueta
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                                  onClick={() => setLabelParticipantId(p.id)}
+                                  title="Imprimir Etiqueta"
+                                >
+                                  <Tag className="h-4 w-4" />
                                 </Button>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button size="sm" variant="ghost" className="h-7 text-xs" disabled={reissueMutation.isPending}>
-                                      <RefreshCw className="mr-1 h-3 w-3" />
-                                      2ª Via
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                      title="Reemitir (2ª Via)"
+                                    >
+                                      <RefreshCw className="h-4 w-4" />
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>Emitir segunda via</AlertDialogTitle>
+                                      <AlertDialogTitle>Reemitir credencial?</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Reemitir credencial de <strong>{person?.full_name}</strong>?
-                                        <br /><br />
-                                        A credencial atual (<code className="text-xs bg-muted px-1 rounded">{activeCred?.credential_code}</code>) será <strong>invalidada</strong> e uma nova será gerada.
+                                        Isso invalidará a credencial atual e gerará um novo código/QR Code.
+                                        Use apenas em caso de perda ou dano físico.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "reissue")}>
-                                        Confirmar segunda via
+                                      <AlertDialogAction
+                                        onClick={() => checkBlockingAndAct(p.id, person?.full_name ?? "", "reissue")}
+                                        className="bg-amber-600 text-white hover:bg-amber-700"
+                                      >
+                                        Confirmar reemissão
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
-                              </>
+                              </div>
                             )}
                           </div>
                         </TableCell>
@@ -1131,6 +1104,7 @@ export default function CredenciamentoPage() {
                 })}
               </TableBody>
             </Table>
+
           </div>
 
           {/* Pagination */}
