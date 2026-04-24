@@ -1316,11 +1316,6 @@ export default function CredenciamentoPage() {
 
             </div>
 
-            <PessoaFormDialog 
-              open={editDialogOpen} 
-              onOpenChange={setEditDialogOpen} 
-              participantId={editingParticipantId} 
-            />
 
           {/* Pagination */}
           {totalPages > 1 && (
