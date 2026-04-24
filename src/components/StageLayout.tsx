@@ -369,8 +369,10 @@ function StageWrappedOutlet() {
   }
 
   return (
-    <StagePageScaffold hideTabs={isDetail}>
-      <Outlet />
-    </StagePageScaffold>
+    <StageModuleKpisProvider>
+      <StagePageScaffold hideTabs={isDetail}>
+        <Outlet />
+      </StagePageScaffold>
+    </StageModuleKpisProvider>
   );
 }
