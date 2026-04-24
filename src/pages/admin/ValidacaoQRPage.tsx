@@ -90,25 +90,27 @@ export default function ValidacaoQRPage() {
         return;
       }
 
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const url = `https://${projectId}.supabase.co/functions/v1/validate-qr`;
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const { data: json, error: invokeError } = await supabase.functions.invoke("validate-qr", {
+        body: {
           qr_code_value: codeToValidate,
           event_id: selectedEventId,
           scan_point: scanPoint,
-        }),
+        },
       });
 
-      const json = await response.json();
-      if (!response.ok) throw new Error(json.error || "Erro desconhecido");
+      if (invokeError) {
+        // Tenta extrair mensagem de erro detalhada do contexto da function
+        let detail = invokeError.message;
+        try {
+          const ctx = (invokeError as any).context;
+          if (ctx && typeof ctx.json === "function") {
+            const body = await ctx.json();
+            if (body?.error) detail = body.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(detail || "Erro ao chamar validate-qr");
+      }
+      if (!json) throw new Error("Resposta vazia do servidor");
 
       setResult(json);
       
