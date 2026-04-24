@@ -173,7 +173,7 @@ export default function CredenciamentoPage() {
   // States for unified credentialing flow
   const [selectedForCred, setSelectedForCred] = useState<CredentialParticipantRow | null>(null);
   const [guardianConfirmOpen, setGuardianConfirmOpen] = useState(false);
-  const [tempGuardianData, setTempGuardianData] = useState({ name: "", phone: "", coachName: "", coachPhone: "" });
+  const [tempGuardianData, setTempGuardianData] = useState({ name: "", phone: "", relationship: "" });
   const [isLinkingExternal, setIsLinkingExternal] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -741,8 +741,7 @@ export default function CredenciamentoPage() {
     setTempGuardianData({
       name: p.guardian_name || "",
       phone: p.guardian_phone || "",
-      coachName: p.coach_name || "",
-      coachPhone: p.coach_phone || "",
+      relationship: p.coach_name || "",
     });
     setGuardianConfirmOpen(true);
     setIsLinkingExternal(false);
@@ -757,16 +756,15 @@ export default function CredenciamentoPage() {
     if (
       tempGuardianData.name !== (selectedForCred.guardian_name || "") || 
       tempGuardianData.phone !== (selectedForCred.guardian_phone || "") ||
-      tempGuardianData.coachName !== (selectedForCred.coach_name || "") ||
-      tempGuardianData.coachPhone !== (selectedForCred.coach_phone || "")
+      tempGuardianData.relationship !== (selectedForCred.coach_name || "")
     ) {
       const { error } = await supabase
         .from("participants")
         .update({
           guardian_name: tempGuardianData.name,
           guardian_phone: tempGuardianData.phone,
-          coach_name: tempGuardianData.coachName,
-          coach_phone: tempGuardianData.coachPhone,
+          coach_name: tempGuardianData.relationship,
+          coach_phone: null,
         })
         .eq("id", selectedForCred.id);
       
@@ -1570,7 +1568,7 @@ export default function CredenciamentoPage() {
           <div className="grid gap-4 py-4">
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Responsável / Tutor</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados do Responsável</label>
                 <div className="grid grid-cols-1 gap-2">
                   <Input 
                     placeholder="Nome do Responsável"
@@ -1582,21 +1580,10 @@ export default function CredenciamentoPage() {
                     value={tempGuardianData.phone}
                     onChange={(e) => setTempGuardianData(prev => ({ ...prev, phone: e.target.value }))}
                   />
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2 border-t">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Técnico / Responsável Técnico</label>
-                <div className="grid grid-cols-1 gap-2">
                   <Input 
-                    placeholder="Nome do Técnico"
-                    value={tempGuardianData.coachName}
-                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, coachName: e.target.value }))}
-                  />
-                  <Input 
-                    placeholder="Telefone do Técnico"
-                    value={tempGuardianData.coachPhone}
-                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, coachPhone: e.target.value }))}
+                    placeholder="Vínculo (Ex: Pai, Mãe, Tutor)"
+                    value={tempGuardianData.relationship}
+                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, relationship: e.target.value }))}
                   />
                 </div>
               </div>
