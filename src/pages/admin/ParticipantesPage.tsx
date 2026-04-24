@@ -207,7 +207,7 @@ export default function ParticipantesPage() {
       if (noSearchMatches) return { rows: [] as any[], total: 0 };
 
       const baseFields =
-        "id, status, participant_type, person_id, delegation_id, created_at, " +
+        "id, status, participant_type, category, person_id, delegation_id, created_at, " +
         "person:people(id, full_name, cpf, gender), " +
         "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))";
 
