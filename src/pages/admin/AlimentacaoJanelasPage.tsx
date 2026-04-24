@@ -1,15 +1,26 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, Pencil, Clock } from "lucide-react";
+import { Plus, Pencil, Clock, Search, Filter, Copy, Trash2, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import MealWindowFormDialog, { type MealWindowFormValues } from "@/components/admin/MealWindowFormDialog";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
@@ -19,18 +30,11 @@ export default function AlimentacaoJanelasPage() {
   const { hasRole } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const selectedEventId = useActiveEventId();
   const { stageId, isStageScoped } = useStageScope();
   const canWrite = hasRole("admin") || hasRole("secretaria");
-
-  const { data: events = [] } = useQuery({
-    queryKey: ["events"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("events").select("*").order("year", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const { data: mealTypes = [] } = useQuery({
     queryKey: ["meal_types", selectedEventId],
@@ -95,8 +99,43 @@ export default function AlimentacaoJanelasPage() {
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("meal_windows").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["meal_windows"] }); toast.success("Janela excluída"); },
+    onError: (e: Error) => toast.error("Erro ao excluir: " + e.message),
+  });
+
+  const toggleStatusMut = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("meal_windows").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["meal_windows"] }),
+    onError: (e: Error) => toast.error("Erro ao alterar status: " + e.message),
+  });
+
+  const filteredWindows = useMemo(() => {
+    if (!windows) return [];
+    return windows.filter((w: any) => {
+      const mt = mealTypesMap.get(w.meal_type_id);
+      const matchesSearch = !searchTerm || 
+        mt?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.label?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.location?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === "all" || 
+        (statusFilter === "active" && w.is_active) ||
+        (statusFilter === "inactive" && !w.is_active);
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [windows, searchTerm, statusFilter, mealTypesMap]);
+
   const handleSubmit = (v: MealWindowFormValues) => {
-    if (editing) updateMut.mutate({ id: editing.id, ...v });
+    if (editing && !editing.isCopy) updateMut.mutate({ id: editing.id, ...v });
     else createMut.mutate(v);
   };
 
@@ -116,17 +155,30 @@ export default function AlimentacaoJanelasPage() {
         )}
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-2 max-w-xs">
-            <label className="text-sm font-medium text-foreground">Evento</label>
-            <Select value={selectedEventId} onValueChange={() => {}}>
-              <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
-              <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border shadow-sm">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por tipo, rótulo ou local..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <Filter className="h-4 w-4 text-muted-foreground hidden md:block" />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full md:w-[150px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos Status</SelectItem>
+              <SelectItem value="active">Ativas</SelectItem>
+              <SelectItem value="inactive">Inativas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {!selectedEventId ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
@@ -135,42 +187,88 @@ export default function AlimentacaoJanelasPage() {
         </div>
       ) : isLoading ? (
         <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-md" />)}</div>
-      ) : !windows?.length ? (
+      ) : !filteredWindows?.length ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <Clock className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhuma janela cadastrada</p>
-          <p className="text-sm text-muted-foreground mt-1">Cadastre tipos de refeição antes de criar janelas.</p>
+          <p className="text-muted-foreground font-medium">Nenhuma janela encontrada</p>
+          <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou crie uma nova janela.</p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
+        <div className="rounded-lg border bg-card overflow-hidden">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Rótulo</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Horário</TableHead>
-                <TableHead>Local</TableHead>
-                <TableHead>Status</TableHead>
-                {canWrite && <TableHead className="w-[60px]" />}
+                <TableHead>Data / Horário</TableHead>
+                <TableHead className="hidden md:table-cell">Local</TableHead>
+                <TableHead className="w-[100px]">Status</TableHead>
+                {canWrite && <TableHead className="w-[120px] text-right">Ações</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {windows.map((w) => {
+              {filteredWindows.map((w) => {
                 const mt = mealTypesMap.get(w.meal_type_id);
                 return (
-                  <TableRow key={w.id}>
-                    <TableCell className="font-medium">{mt?.name ?? "—"}</TableCell>
-                    <TableCell>{w.label || "—"}</TableCell>
-                    <TableCell>{formatDate(w.service_date)}</TableCell>
-                    <TableCell className="font-mono text-xs">{w.start_time?.slice(0, 5)} – {w.end_time?.slice(0, 5)}</TableCell>
-                    <TableCell>{w.location || "—"}</TableCell>
-                    <TableCell><Badge variant={w.is_active ? "default" : "secondary"}>{w.is_active ? "Ativa" : "Inativa"}</Badge></TableCell>
-                    {canWrite && (
-                      <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => { setEditing(w); setDialogOpen(true); }}>
-                          <Pencil className="h-4 w-4" />
+                  <TableRow key={w.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-semibold text-primary">{mt?.name ?? "—"}</TableCell>
+                    <TableCell className="max-w-[150px] truncate">{w.label || "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{formatDate(w.service_date)}</span>
+                        <span className="text-[10px] font-mono text-muted-foreground uppercase">{w.start_time?.slice(0, 5)} – {w.end_time?.slice(0, 5)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{w.location || "—"}</TableCell>
+                    <TableCell>
+                      {canWrite ? (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 px-2 hover:bg-transparent group"
+                          onClick={() => toggleStatusMut.mutate({ id: w.id, is_active: !w.is_active })}
+                        >
+                          <Badge 
+                            variant={w.is_active ? "default" : "secondary"}
+                            className="flex items-center gap-1 cursor-pointer group-hover:ring-1 group-hover:ring-primary/30"
+                          >
+                            {w.is_active ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                            {w.is_active ? "Ativa" : "Inativa"}
+                          </Badge>
                         </Button>
+                      ) : (
+                        <Badge variant={w.is_active ? "default" : "secondary"}>{w.is_active ? "Ativa" : "Inativa"}</Badge>
+                      )}
+                    </TableCell>
+                    {canWrite && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => { setEditing(w); setDialogOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600" onClick={() => { setEditing({ ...w, id: undefined, isCopy: true }); setDialogOpen(true); }}>
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir Janela?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação não pode ser desfeita. Isso removerá permanentemente a janela de serviço.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteMut.mutate(w.id)} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Excluir</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>

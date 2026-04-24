@@ -34,15 +34,6 @@ export default function AlimentacaoTiposPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
-  const { data: events = [] } = useQuery({
-    queryKey: ["events"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("events").select("*").order("year", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const { data: mealTypes, isLoading } = useQuery({
     queryKey: ["meal_types", selectedEventId],
     queryFn: async () => {
@@ -63,8 +54,6 @@ export default function AlimentacaoTiposPage() {
       return matchesSearch && matchesStatus;
     });
   }, [mealTypes, searchTerm, statusFilter]);
-
-  const eventsMap = new Map(events.map((e) => [e.id, e]));
 
   const createMut = useMutation({
     mutationFn: async (v: MealTypeFormValues) => {
@@ -134,7 +123,7 @@ export default function AlimentacaoTiposPage() {
           <p className="text-sm text-muted-foreground mt-1">Cadastro de tipos de refeição do evento</p>
         </div>
         {canWrite && (
-          <Button onClick={() => { setEditing(null); setDialogOpen(true); }} disabled={!events.length}>
+          <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" />Novo tipo
           </Button>
         )}
@@ -254,7 +243,6 @@ export default function AlimentacaoTiposPage() {
         open={dialogOpen}
         onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditing(null); }}
         mealType={editing}
-        events={events}
         onSubmit={handleSubmit}
         isPending={createMut.isPending || updateMut.isPending}
       />
