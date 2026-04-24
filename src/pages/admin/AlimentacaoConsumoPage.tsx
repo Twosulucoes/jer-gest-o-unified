@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  UtensilsCrossed, QrCode, AlertTriangle,
+  UtensilsCrossed, QrCode, AlertTriangle, Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -150,14 +150,14 @@ export default function AlimentacaoConsumoPage() {
   return (
     <div className="animate-fade-in space-y-6">
       <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Registro de Consumo</h1>
-        <p className="text-sm text-muted-foreground mt-1">Operação de alimentação — registrar refeições</p>
+        <h1 className="font-heading text-2xl font-bold text-foreground">Controle de Refeições</h1>
+        <p className="text-sm text-muted-foreground mt-1">Operação de alimentação — registrar e acompanhar consumos</p>
       </div>
 
       {/* Controls */}
-      <Card>
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background">
         <CardContent className="pt-6">
-          <div className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-end gap-6">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">
                 Janela de Refeição
@@ -168,7 +168,8 @@ export default function AlimentacaoConsumoPage() {
                   </span>
                 )}
               </label>
-              <Select value={selectedWindowId} onValueChange={setSelectedWindowId} disabled={!selectedEventId || windowsLoading}>
+              <div className="flex gap-2">
+                <Select value={selectedWindowId} onValueChange={setSelectedWindowId} disabled={!selectedEventId || windowsLoading}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder={windowsLoading ? "Carregando…" : (windows.length === 0 ? "Nenhuma janela cadastrada" : "Filtrar por janela")} />
                 </SelectTrigger>
@@ -210,6 +211,17 @@ export default function AlimentacaoConsumoPage() {
                   })()}
                 </SelectContent>
               </Select>
+              {canOperate && (
+                <Button 
+                  className="h-12 px-6 gap-2 shrink-0 shadow-lg shadow-primary/20"
+                  onClick={() => window.location.href = "/pwa/alimentacao"}
+                >
+                  <QrCode className="h-5 w-5" />
+                  <span className="hidden sm:inline">Scanner (PWA)</span>
+                  <span className="sm:hidden">Scanner</span>
+                </Button>
+              )}
+              </div>
               {showingFallbackWindows && (
                 <p className="text-xs text-warning flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
@@ -222,12 +234,12 @@ export default function AlimentacaoConsumoPage() {
                     Não há janelas configuradas para esta etapa.
                   </p>
                   <Button 
-                    variant="outline" 
+                    variant="default" 
                     size="sm" 
-                    className="w-fit"
+                    className="w-fit gap-2"
                     onClick={() => window.location.href = `/admin/etapa/${stageId}/alimentacao/janelas`}
                   >
-                    Configurar Janelas agora
+                    <Plus className="h-4 w-4" /> Configurar Janelas agora
                   </Button>
                 </div>
               )}
@@ -260,29 +272,7 @@ export default function AlimentacaoConsumoPage() {
         </div>
       )}
 
-      {/* Registrar consumo - Substituído por botão para PWA */}
-      {canOperate && selectedWindowId && (
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="pt-6 pb-6 flex flex-col items-center text-center space-y-4">
-            <div className="bg-primary/10 p-3 rounded-full">
-              <QrCode className="h-8 w-8 text-primary" />
-            </div>
-            <div className="max-w-md">
-              <h3 className="text-lg font-bold text-foreground">Registrar Consumo</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                A operação de registro de consumo agora deve ser realizada através do módulo PWA para melhor experiência em dispositivos móveis e suporte a leitura de QR Code.
-              </p>
-            </div>
-            <Button 
-              size="lg" 
-              className="w-full max-w-xs"
-              onClick={() => window.location.href = "/pwa/alimentacao"}
-            >
-              Ir para Registro (PWA)
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {/* Registrar consumo - Removido card redundante pois já tem botão no topo */}
 
       {/* Consumption history */}
       {(selectedWindowId !== "all" || consumptions.length > 0) && (
