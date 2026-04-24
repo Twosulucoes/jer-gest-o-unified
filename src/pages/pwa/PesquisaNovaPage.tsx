@@ -329,7 +329,7 @@ export default function PesquisaNovaPage() {
             </div>
 
             <Button onClick={() => setStep('questionnaire')} disabled={!profileComplete} className="w-full h-14 text-lg">
-              Iniciar <ArrowRight className="ml-2 h-5 w-5" />
+              Próxima Etapa <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         )}
@@ -362,7 +362,7 @@ export default function PesquisaNovaPage() {
             </div>
 
             <Button onClick={() => setStep('open')} disabled={!allAnswered} className="w-full h-14 text-lg">
-              Continuar <ArrowRight className="ml-2 h-5 w-5" />
+              Próxima Etapa <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         )}
