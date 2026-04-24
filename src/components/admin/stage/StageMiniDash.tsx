@@ -60,22 +60,37 @@ export function StageMiniDash({ moduleKpis = [], hideGlobal, className }: StageM
       const ids = (links ?? []).map((l: any) => l.participant_id);
 
       let credentialed = 0;
-      let pending = 0;
       if (ids.length > 0) {
-        // Em lotes para evitar URL gigante
+        // Considera credenciado quem tem credencial ativa (interna OU externa).
+        // Vincular uma credencial externa = participante credenciado.
+        const credentialedSet = new Set<string>();
         const chunkSize = 200;
         for (let i = 0; i < ids.length; i += chunkSize) {
           const chunk = ids.slice(i, i + chunkSize);
-          const { data: parts } = await supabase
-            .from("participants")
-            .select("status")
-            .in("id", chunk);
+          const [{ data: internal }, { data: external }, { data: parts }] = await Promise.all([
+            supabase
+              .from("participant_credentials")
+              .select("participant_id")
+              .in("participant_id", chunk)
+              .eq("status", "active"),
+            (supabase.from("external_credentials" as never) as any)
+              .select("participant_id")
+              .in("participant_id", chunk)
+              .eq("status", "active"),
+            supabase
+              .from("participants")
+              .select("id, status")
+              .in("id", chunk),
+          ]);
+          for (const r of internal ?? []) credentialedSet.add((r as any).participant_id);
+          for (const r of external ?? []) credentialedSet.add((r as any).participant_id);
           for (const p of parts ?? []) {
-            if (p.status === "credentialed") credentialed++;
-            else if (p.status === "pending") pending++;
+            if ((p as any).status === "credentialed") credentialedSet.add((p as any).id);
           }
         }
+        credentialed = credentialedSet.size;
       }
+      const pending = Math.max(0, (participantsCount ?? 0) - credentialed);
 
       return {
         participants: participantsCount ?? 0,
