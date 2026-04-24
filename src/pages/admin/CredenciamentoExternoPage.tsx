@@ -28,8 +28,7 @@ import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { generateQrCodeValue } from "@/lib/credentialUtils";
 import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
 import { BackgroundLoadingIndicator } from "@/components/credenciamento/BackgroundLoadingIndicator";
-import { StagePageScaffold } from "@/components/admin/stage/StagePageScaffold";
-import { StageMiniDash } from "@/components/admin/stage/StageMiniDash";
+import { useStageModuleKpis } from "@/contexts/StageModuleKpisContext";
 
 interface ParticipantRow {
   id: string;
