@@ -70,6 +70,20 @@ export interface DashboardData {
 export function useDashboardData(eventId?: string | null) {
   const enabled = !!eventId;
 
+  // Initial dummy state when no eventId is provided to avoid crashes
+  const dummyData: DashboardData = {
+    resumo: {
+      participants_total: 0, credentialed: 0, credentials_active: 0, credentials_today: 0,
+      matches_total: 0, matches_done: 0, matches_published: 0,
+      meals_total: 0, meals_today: 0,
+      lodging_capacity: 0, lodging_occupied: 0,
+      transport_trips: 0, transport_passengers: 0, transport_vehicles: 0
+    },
+    credenciamento: { daily: [], by_delegation: [] },
+    alimentacao: { daily: [], meal_types: [], by_delegation: [] },
+    competicao: { by_sport: [], today: [] },
+  };
+
   const queries = useQueries({
     queries: [
       // 0: participants (id, credentialed_at, delegation_id)
@@ -428,6 +442,10 @@ export function useDashboardData(eventId?: string | null) {
     alimentacao: { daily: mealsDaily, meal_types: mealTypesList, by_delegation: mealsByDelegation },
     competicao: { by_sport: bySport, today: todayMatches },
   };
+
+  if (!eventId) {
+    return { data: dummyData, isLoading: false, refetchAll: async () => {}, lastUpdated: null };
+  }
 
   return { data, isLoading: isLoadingAll, refetchAll, lastUpdated: new Date() };
 }
