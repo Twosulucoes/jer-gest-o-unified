@@ -150,7 +150,14 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
       setBirthDate(p.person?.birth_date ?? "");
       setGender(p.person?.gender ?? "");
       setParticipantType(p.participant_type);
+      setParticipantCategory(p.category || "delegation");
       setDelegationId(p.delegation_id ?? "");
+      setOrganizationSubtype(p.organization_subtype ?? "");
+      setRoleFunction(p.role_function ?? "");
+      setSectorArea(p.sector_area ?? "");
+      setResponsibilities(p.responsibilities ?? "");
+      setAccessPermissions(p.access_permissions ?? "");
+      setObservations(p.observations ?? "");
       setNeedsTransport(!!p.needs_transport);
       setNeedsMeals(!!p.needs_meals);
       setNeedsLodging(!!p.needs_lodging);
