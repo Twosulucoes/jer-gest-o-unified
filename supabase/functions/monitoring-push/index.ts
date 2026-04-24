@@ -140,7 +140,7 @@ async function encryptPayload(
   // 2. Importa chave pública do UA
   const uaPubKey = await crypto.subtle.importKey(
     "raw",
-    uaPubBytes,
+    uaPubBytes as BufferSource,
     { name: "ECDH", namedCurve: "P-256" },
     true,
     [],
