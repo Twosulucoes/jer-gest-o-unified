@@ -684,7 +684,20 @@ export default function CredenciamentoPage() {
     toast.success(`${success} credencial(is) emitida(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
   };
 
+  const handleStartCredenciamento = (p: CredentialParticipantRow) => {
+    setSelectedForCred(p);
+    setIsLinkingExternal(false);
+  };
+
+  const handleLinkExternal = (code: string) => {
+    if (!selectedForCred) return;
+    const normalized = code.trim().toUpperCase();
+    if (!normalized) return;
+    credentialMutation.mutate({ participantId: selectedForCred.id, externalCode: normalized });
+  };
+
   const getStateInfo = (state: string) => {
+
     switch (state) {
       case "pending_import":
         return { label: "Pendente", icon: <AlertCircle className="h-3.5 w-3.5" />, variant: "outline" as const, className: "border-orange-300 bg-orange-50 text-orange-700" };
