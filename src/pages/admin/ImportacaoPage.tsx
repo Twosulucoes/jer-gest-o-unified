@@ -250,17 +250,61 @@ export default function ImportacaoPage() {
     if (typeof options?.chunkIndex === "number") payload.chunk_index = options.chunkIndex;
     if (typeof options?.chunkTotal === "number") payload.chunk_total = options.chunkTotal;
     if (typeof options?.rowOffset === "number") payload.row_offset = options.rowOffset;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+
+    const tag = `[IMPORT ${mode}${typeof options?.chunkIndex === "number" ? ` lote ${options.chunkIndex + 1}/${options.chunkTotal}` : ""}]`;
+    const t0 = performance.now();
+    // eslint-disable-next-line no-console
+    console.log(`${tag} → POST ${url}`, {
+      rows_count: rows.length,
+      event_id: selectedEventId,
+      event_stage_id: selectedStageId,
+      file_name: file.name,
+      import_log_id: options?.importLogId,
+      row_offset: options?.rowOffset,
     });
-    const json = await response.json();
-    if (!response.ok) throw new Error(json.error || json.message || "Erro desconhecido");
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (netErr) {
+      // eslint-disable-next-line no-console
+      console.error(`${tag} ✖ network error`, netErr);
+      throw new Error(`Falha de rede ao chamar a edge function: ${(netErr as Error).message}`);
+    }
+
+    const elapsedMs = Math.round(performance.now() - t0);
+    const requestId = response.headers.get("sb-request-id") ?? response.headers.get("x-request-id");
+    const rawText = await response.text();
+    let json: any = null;
+    try { json = rawText ? JSON.parse(rawText) : null; } catch { /* keep rawText */ }
+
+    if (!response.ok) {
+      // eslint-disable-next-line no-console
+      console.error(`${tag} ✖ HTTP ${response.status} em ${elapsedMs}ms`, {
+        request_id: requestId,
+        response: json ?? rawText?.slice(0, 2000),
+      });
+      const baseMsg = json?.error || json?.message || rawText?.slice(0, 300) || `HTTP ${response.status}`;
+      throw new Error(`${baseMsg}${requestId ? ` (request_id: ${requestId})` : ""}`);
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`${tag} ✓ HTTP ${response.status} em ${elapsedMs}ms`, {
+      request_id: requestId,
+      response_keys: json ? Object.keys(json) : [],
+      import_log_id: json?.import_log_id,
+      async: json?.async,
+      rows_failed: json?.result?.rows_failed,
+      summary: json?.result ?? json?.summary,
+    });
     return json;
   };
 
@@ -277,7 +321,9 @@ export default function ImportacaoPage() {
         toast.success(`Validação: ${result.summary.ok_para_importar} linha(s) prontas para importar.`);
       }
     } catch (err) {
-      toast.error(`Erro na validação: ${(err as Error).message}`);
+      // eslint-disable-next-line no-console
+      console.error("[IMPORT validate] ✖ erro", err);
+      toast.error(`Erro na validação: ${(err as Error).message}`, { duration: 12000, description: "Abra o console (F12) para ver detalhes técnicos." });
     } finally {
       setValidating(false);
     }
@@ -422,7 +468,28 @@ export default function ImportacaoPage() {
       }
     } catch (err) {
       toast.dismiss("import-progress");
-      toast.error(`Erro na importação: ${(err as Error).message}`, { duration: 10000 });
+      const msg = (err as Error).message;
+      // eslint-disable-next-line no-console
+      console.error("[IMPORT commit] ✖ erro fatal", err);
+      // tenta buscar contexto extra do import_logs mais recente deste evento/etapa
+      try {
+        const { data: lastLog } = await supabase
+          .from("import_logs")
+          .select("id, status, error_message, result_summary, created_at, file_name")
+          .eq("event_id", selectedEventId!)
+          .eq("event_stage_id", selectedStageId!)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (lastLog) {
+          // eslint-disable-next-line no-console
+          console.error("[IMPORT commit] último import_log:", lastLog);
+        }
+      } catch (logErr) {
+        // eslint-disable-next-line no-console
+        console.warn("[IMPORT commit] não consegui ler import_logs:", logErr);
+      }
+      toast.error(`Erro na importação: ${msg}`, { duration: 15000, description: "Abra o console (F12) para ver detalhes técnicos." });
     } finally {
       setCommitting(false);
     }
