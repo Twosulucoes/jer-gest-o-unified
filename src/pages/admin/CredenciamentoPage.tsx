@@ -699,68 +699,44 @@ export default function CredenciamentoPage() {
         </div>
       </div>
 
-      {/* Event selection */}
-      <Card>
-        <CardContent className="pt-5 pb-5">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {!stageId && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Evento</label>
-                <Select value={selectedEventId} onValueChange={() => {}}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o evento..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {events.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.name} ({e.year})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="space-y-1.5 md:col-span-3">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Busca por nome ou CPF</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Digite o nome ou CPF..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                  disabled={!selectedEventId}
-                />
-              </div>
+      {/* Search and Filters */}
+      <Card className="border-none shadow-sm bg-muted/20">
+        <CardContent className="pt-6 pb-6 space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou CPF..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-11 bg-background"
+                disabled={!selectedEventId}
+              />
             </div>
-          </div>
-
-          {/* Additional filters */}
-          {selectedEventId && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-4 pt-4 border-t border-border">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-full min-w-0 text-sm">
+                <SelectTrigger className="w-[140px] h-11 bg-background">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value="all">Todos Tipos</SelectItem>
                   {participantTypeOptions.map((t) => (
                     <SelectItem key={t} value={t}>{TYPE_LABELS[t] ?? t}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select value={filterState} onValueChange={setFilterState}>
-                <SelectTrigger className="w-full min-w-0 text-sm">
+                <SelectTrigger className="w-[160px] h-11 bg-background">
                   <SelectValue placeholder="Situação" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as situações</SelectItem>
+                  <SelectItem value="all">Todas Situações</SelectItem>
                   <SelectItem value="pending_import">Pendente</SelectItem>
                   <SelectItem value="awaiting">Confirmado</SelectItem>
                   <SelectItem value="ready_to_emit">Pronto p/ emissão</SelectItem>
                   <SelectItem value="complete">Credencial ativa</SelectItem>
                   {blockedParticipantIds.size > 0 && (
-                    <SelectItem value="blocked">⚠ Irregulares ({blockedParticipantIds.size})</SelectItem>
+                    <SelectItem value="blocked">⚠ Irregulares</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -769,22 +745,27 @@ export default function CredenciamentoPage() {
                 onChange={setFilterInstitution}
                 options={institutionOptions.map((i) => ({ value: i.id, label: i.name }))}
                 placeholder="Instituição"
-                searchPlaceholder="Pesquisar escola..."
-                allLabel="Todas as instituições"
-                emptyText="Nenhuma escola encontrada."
+                searchPlaceholder="Pesquisar..."
+                allLabel="Todas Instituições"
+                emptyText="Nenhuma encontrada."
+                className="w-[200px] h-11 bg-background"
               />
-              {(filterType !== "all" || filterState !== "all" || filterInstitution !== "all") && (
-                <button
-                  onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }}
-                  className="h-11 px-3 text-sm text-muted-foreground hover:text-foreground border rounded-md hover:bg-muted transition-colors"
+              {hasActiveFilters && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSearchTerm(""); }}
+                  className="h-11 w-11 text-muted-foreground hover:text-foreground"
+                  title="Limpar filtros"
                 >
-                  Limpar filtros
-                </button>
+                  <XCircle className="h-5 w-5" />
+                </Button>
               )}
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
+
 
       {/* Stats */}
       {selectedEventId && participants && (
