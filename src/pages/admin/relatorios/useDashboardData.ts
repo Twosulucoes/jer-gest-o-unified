@@ -107,12 +107,12 @@ export function useDashboardData(eventId?: string | null) {
         staleTime: 0,
         queryFn: () => safe(async () => {
           const query = supabase.from("participant_credentials")
-            .select("id, status, issued_at, created_at");
+            .select("id, status, issued_at, created_at, participant_id");
           if (eventId) query.eq("event_id", eventId);
           const { data, error } = await query;
           if (error) console.error("Error fetching credentials:", error);
           return data ?? [];
-        }, [] as { id: string; status: string; issued_at: string | null; created_at: string }[]),
+        }, [] as { id: string; status: string; issued_at: string | null; created_at: string; participant_id: string | null }[]),
       },
       // 2: delegations
       {
@@ -243,7 +243,7 @@ export function useDashboardData(eventId?: string | null) {
   const [participants, credentials, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, trips, vehicles, sportEvents, matches] =
     queries.map((q) => q.data) as [
       { id: string; credentialed_at: string | null; delegation_id: string | null }[],
-      { id: string; status: string; issued_at: string | null; created_at: string }[],
+      { id: string; status: string; issued_at: string | null; created_at: string; participant_id: string | null }[],
       { id: string; school_name: string }[],
       { id: string; service_date: string; meal_type_id: string; label: string | null }[],
       { id: string; name: string }[],
@@ -324,9 +324,18 @@ export function useDashboardData(eventId?: string | null) {
   // ----- Cálculos -----
   const today = todayISO();
 
-  // Credenciamento
-  const credentialed = P.filter((p) => p.credentialed_at).length;
-  const credActive = C.filter((c) => c.status === "active").length;
+  // Credenciamento — fonte de verdade: distinct participant_id em participant_credentials.status='active'
+  const activeCreds = C.filter((c) => c.status === "active");
+  const credActiveDistinctParticipants = new Set(
+    activeCreds.map((c) => c.participant_id).filter((x): x is string => !!x)
+  ).size;
+  const credentialedFromParticipants = P.filter((p) => p.credentialed_at).length;
+  // KPI "Credenciados" = participantes únicos com credencial ativa (preferencial),
+  // com fallback para flag credentialed_at se não houver credenciais ativas registradas.
+  const credentialed = credActiveDistinctParticipants > 0
+    ? credActiveDistinctParticipants
+    : credentialedFromParticipants;
+  const credActive = activeCreds.length; // total de credenciais ativas (pode incluir reemissões)
   const credToday = C.filter((c) => (c.issued_at ?? c.created_at)?.slice(0, 10) === today).length;
 
   // daily credenciamento (por credentialed_at)
@@ -456,6 +465,24 @@ export function useDashboardData(eventId?: string | null) {
     alimentacao: { daily: mealsDaily, meal_types: mealTypesList, by_delegation: mealsByDelegation },
     competicao: { by_sport: bySport, today: todayMatches },
   };
+
+  if (!isLoadingAll && eventId) {
+    // eslint-disable-next-line no-console
+    console.log("[KPI dashboard]", {
+      eventId,
+      participants_total: P.length,
+      credentialed_kpi: credentialed,
+      cred_active_distinct_participants: credActiveDistinctParticipants,
+      cred_active_rows: credActive,
+      credentialed_from_participants_flag: credentialedFromParticipants,
+      credentials_today: credToday,
+      matches_total: MA.length,
+      meals_total: consumptions.length,
+      lodging_occupied: LO,
+      transport_trips: TR.length,
+      transport_passengers: passengers,
+    });
+  }
 
   return { data, isLoading: isLoadingAll, refetchAll, lastUpdated: new Date() };
 }
