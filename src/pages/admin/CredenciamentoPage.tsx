@@ -1357,6 +1357,7 @@ export default function CredenciamentoPage() {
                   <QrCodeScanner
                     onScan={handleScan}
                     onClose={() => setScannerOpen(false)}
+                    isOpen={scannerOpen}
                   />
                   <Button
                     size="icon"
