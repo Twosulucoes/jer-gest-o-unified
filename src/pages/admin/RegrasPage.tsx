@@ -274,7 +274,7 @@ function VisaoTabs() {
           </div>
           <ul className="text-xs text-muted-foreground list-disc list-inside mt-3">
             <li>Classificação provisória (não válida para nível nacional CPB)</li>
-            <li>Atletas sem classificação funcional NÃO podem participar</li>
+            <li>Atletas sem classificação funcional PODEM participar</li>
             <li>Atletas já classificados: enviar cópia do documento</li>
           </ul>
         </RegraSection>

@@ -25,7 +25,7 @@ export const REGRAS_GERAIS_JER2026: RegrasGerais = {
   substituicoes: {
     custo_fora_prazo_kg_alimento: 3,
     max_substituicoes_coletivas_por_modalidade_por_genero: 3,
-    permitidas_apos_reuniao_tecnica: false,
+    permitidas_apos_reuniao_tecnica: true,
     atletismo_limite_percentual_por_sexo_categoria: 50,
   },
   wo: {

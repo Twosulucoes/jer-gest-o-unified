@@ -135,7 +135,7 @@ export const INSCRICOES = {
     { regra: "Custo fora do prazo", valor: "3 kg alimento não perecível (exceto sal)" },
     { regra: "Coletivas: máx. substituições", valor: "3 por modalidade por gênero" },
     { regra: "Individuais: prazo", valor: "Até a Reunião Técnica" },
-    { regra: "Após Reunião Técnica", valor: "PROIBIDAS (DNS)" },
+    { regra: "Após Reunião Técnica", valor: "PERMITIDAS" },
     { regra: "Atletismo: limite", valor: "50% dos atletas por sexo e categoria" },
     { regra: "Mudanças peso/prova", valor: "Até 48h antes da Reunião Técnica (judô, karatê, natação, TKD, wrestling)" },
   ],
