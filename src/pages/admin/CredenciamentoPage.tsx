@@ -741,8 +741,7 @@ export default function CredenciamentoPage() {
     setTempGuardianData({
       name: p.guardian_name || "",
       phone: p.guardian_phone || "",
-      coachName: p.coach_name || "",
-      coachPhone: p.coach_phone || "",
+      relationship: p.coach_name || "",
     });
     setGuardianConfirmOpen(true);
     setIsLinkingExternal(false);
