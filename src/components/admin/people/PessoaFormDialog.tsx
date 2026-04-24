@@ -273,11 +273,12 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId }: 
 
       return pId;
     },
-    onSuccess: () => {
+    onSuccess: (pId) => {
       toast({ title: isEdit ? "Pessoa atualizada" : "Pessoa cadastrada" });
       qc.invalidateQueries({ queryKey: ["all-participants"] });
       qc.invalidateQueries({ queryKey: ["participant_full"] });
       qc.invalidateQueries({ queryKey: ["pessoa_form_data"] });
+      if (onSuccess) onSuccess(pId);
       onOpenChange(false);
     },
     onError: (err: any) => {
