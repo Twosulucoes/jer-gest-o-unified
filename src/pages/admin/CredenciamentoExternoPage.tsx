@@ -28,6 +28,7 @@ import { generateQrCodeValue } from "@/lib/credentialUtils";
 import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
 import { BackgroundLoadingIndicator } from "@/components/credenciamento/BackgroundLoadingIndicator";
 import { StagePageScaffold } from "@/components/admin/stage/StagePageScaffold";
+import { StageMiniDash } from "@/components/admin/stage/StageMiniDash";
 
 interface ParticipantRow {
   id: string;
@@ -381,29 +382,30 @@ export default function CredenciamentoExternoPage() {
   }, [allParticipants]);
 
   return (
-    <StagePageScaffold
-      hideGlobalKpis
-      moduleKpis={[
-        {
-          label: "Participantes",
-          value: totalCount,
-          icon: <Users className="h-3.5 w-3.5" />,
-          tone: "default",
-        },
-        {
-          label: "Vinculadas",
-          value: linkedCount,
-          icon: <ShieldCheck className="h-3.5 w-3.5" />,
-          tone: "success",
-        },
-        {
-          label: "Pendentes",
-          value: pendingCount,
-          icon: <Clock className="h-3.5 w-3.5" />,
-          tone: pendingCount > 0 ? "warning" : "default",
-        },
-      ]}
-    >
+    <div className="space-y-4">
+      <StageMiniDash
+        hideGlobal
+        moduleKpis={[
+          {
+            label: "Participantes",
+            value: totalCount,
+            icon: <Users className="h-3.5 w-3.5" />,
+            tone: "default",
+          },
+          {
+            label: "Vinculadas",
+            value: linkedCount,
+            icon: <ShieldCheck className="h-3.5 w-3.5" />,
+            tone: "success",
+          },
+          {
+            label: "Pendentes",
+            value: pendingCount,
+            icon: <Clock className="h-3.5 w-3.5" />,
+            tone: pendingCount > 0 ? "warning" : "default",
+          },
+        ]}
+      />
       <div className="space-y-4">
       {/* Header */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background">
@@ -682,6 +684,6 @@ export default function CredenciamentoExternoPage() {
         </AlertDialogContent>
       </AlertDialog>
       </div>
-    </StagePageScaffold>
+    </div>
   );
 }

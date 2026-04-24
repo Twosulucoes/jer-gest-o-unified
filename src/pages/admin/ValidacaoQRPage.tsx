@@ -10,7 +10,10 @@ import {
   Loader2,
   User,
   Camera,
+  BadgeCheck,
+  ScanLine as ScanIcon,
 } from "lucide-react";
+import { StageMiniDash } from "@/components/admin/stage/StageMiniDash";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -152,7 +155,24 @@ export default function ValidacaoQRPage() {
   } : null;
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-4">
+      <StageMiniDash
+        hideGlobal
+        moduleKpis={[
+          {
+            label: "Scanner Ativo",
+            value: "PRONTO",
+            icon: <ScanIcon className="h-3.5 w-3.5" />,
+            tone: "primary",
+          },
+          {
+            label: "Último Status",
+            value: result ? RESULT_CONFIG[result.result]?.label || "N/A" : "AGUARDANDO",
+            icon: <BadgeCheck className="h-3.5 w-3.5" />,
+            tone: result?.result === "valid" ? "success" : result ? "danger" : "default",
+          },
+        ]}
+      />
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">Validação QR Code</h1>
         <p className="text-sm text-muted-foreground mt-1">

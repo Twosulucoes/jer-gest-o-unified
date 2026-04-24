@@ -22,6 +22,7 @@ import {
   ChevronRight,
   AlertCircle,
   ShieldAlert,
+  Users,
 } from "lucide-react";
 import {
   Dialog,
@@ -72,6 +73,7 @@ import ModuleHeader from "@/components/admin/ModuleHeader";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
 import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
 import { BackgroundLoadingIndicator } from "@/components/credenciamento/BackgroundLoadingIndicator";
+import { StageMiniDash } from "@/components/admin/stage/StageMiniDash";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -149,6 +151,8 @@ export default function CredenciamentoPage() {
   const [batchLabelIds, setBatchLabelIds] = useState<string[]>([]);
   const [batchCredentialConfirmOpen, setBatchCredentialConfirmOpen] = useState(false);
   const [batchEmitConfirmOpen, setBatchEmitConfirmOpen] = useState(false);
+  const [showGlobalKpis, setShowGlobalKpis] = useState(false);
+
 
   
   const [blockingDialogData, setBlockingDialogData] = useState<{ participantName: string; items: any[] } | null>(null);
@@ -672,8 +676,52 @@ export default function CredenciamentoPage() {
   const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "";
 
   return (
-    <div className="animate-fade-in space-y-5">
-      <ModuleHeader route="/admin/credenciamento" />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowGlobalKpis(!showGlobalKpis)}
+            className="text-[10px] h-7 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <Info className="h-3 w-3" />
+            {showGlobalKpis ? "Ocultar Visão Geral" : "Ver Visão Geral da Etapa"}
+          </Button>
+        </div>
+      </div>
+
+      {showGlobalKpis && (
+        <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+          <StageMiniDash className="bg-muted/30 border-dashed" />
+        </div>
+      )}
+
+      <StageMiniDash
+        hideGlobal
+        moduleKpis={[
+          {
+            label: "Total participantes",
+            value: participants.length,
+            icon: <Users className="h-3.5 w-3.5" />,
+            tone: "default",
+          },
+          {
+            label: "Aptos para emissão",
+            value: filtered.filter(p => getParticipantState(p) === "ready_to_emit").length,
+            icon: <ShieldCheck className="h-3.5 w-3.5" />,
+            tone: "success",
+          },
+          {
+            label: "Pendentes",
+            value: filtered.filter(p => getParticipantState(p) === "awaiting").length,
+            icon: <Clock className="h-3.5 w-3.5" />,
+            tone: "warning",
+          },
+        ]}
+      />
+      <div className="animate-fade-in space-y-5">
+        <ModuleHeader route="/admin/credenciamento" />
 
       {/* Flow guide */}
       <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5">
@@ -1226,6 +1274,7 @@ export default function CredenciamentoPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
