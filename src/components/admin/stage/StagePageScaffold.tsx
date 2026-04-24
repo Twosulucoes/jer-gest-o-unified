@@ -8,6 +8,7 @@ import {
 import { StageMiniDash, type StageMiniDashKpi } from "./StageMiniDash";
 import { StageModuleTabs, type StageTabItem } from "./StageModuleTabs";
 import { useStageContext } from "@/contexts/StageContext";
+import { useStageModuleKpisContext } from "@/contexts/StageModuleKpisContext";
 import { Badge } from "@/components/ui/badge";
 import type { Database } from "@/integrations/supabase/types";
 
