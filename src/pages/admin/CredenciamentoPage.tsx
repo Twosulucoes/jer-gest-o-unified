@@ -124,6 +124,7 @@ interface CredentialParticipantRow {
   person: {
     full_name: string | null;
     cpf: string | null;
+    photo_url: string | null;
   } | null;
   delegation: {
     institution: {
@@ -152,6 +153,13 @@ export default function CredenciamentoPage() {
   const [batchCredentialConfirmOpen, setBatchCredentialConfirmOpen] = useState(false);
   const [batchEmitConfirmOpen, setBatchEmitConfirmOpen] = useState(false);
   const [showGlobalKpis, setShowGlobalKpis] = useState(false);
+  
+  // States for unified credentialing flow
+  const [selectedForCred, setSelectedForCred] = useState<CredentialParticipantRow | null>(null);
+  const [isLinkingExternal, setIsLinkingExternal] = useState(false);
+  const [manualCode, setManualCode] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
+
 
 
   
@@ -275,7 +283,7 @@ export default function CredenciamentoPage() {
   const effectiveStageFilter = stageId && stageIdsArray ? stageIdsArray : null;
 
   const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id,
-    person:people!participants_person_id_fkey(full_name, cpf),
+    person:people!participants_person_id_fkey(full_name, cpf, photo_url),
     delegation:delegations!participants_delegation_id_fkey(institution:institutions(id, name))`;
 
   const {
@@ -416,10 +424,24 @@ export default function CredenciamentoPage() {
   // --- Mutations ---
   // Fluxo unificado: registrar presença + emitir credencial em um único passo
   const credentialMutation = useMutation({
-    mutationFn: async (participantId: string) => {
-      const credentialCode = generateCredentialCode();
+    mutationFn: async ({ participantId, externalCode }: { participantId: string; externalCode?: string }) => {
+      const isExternal = !!externalCode;
+      const credentialCode = externalCode || generateCredentialCode();
       const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
       const nowIso = new Date().toISOString();
+
+      if (isExternal) {
+        const { data: existing } = await supabase
+          .from("participant_credentials")
+          .select("id")
+          .eq("event_id", selectedEventId)
+          .eq("credential_code", externalCode)
+          .eq("status", "active")
+          .maybeSingle();
+        
+        if (existing) throw new Error("Este código de credencial já está em uso por outro participante.");
+      }
+
       const { error: credErr } = await supabase.from("participant_credentials").insert({
         participant_id: participantId,
         event_id: selectedEventId,
@@ -427,13 +449,14 @@ export default function CredenciamentoPage() {
         qr_code_value: qrCodeValue,
         status: "active",
         is_active: true,
-        binding_source: "manual",
+        binding_source: isExternal ? "external" : "manual",
         issued_at: nowIso,
         activated_at: nowIso,
         issued_by: user?.id,
         activated_by: user?.id,
       });
       if (credErr) throw credErr;
+
       const { error } = await supabase
         .from("participants")
         .update({
@@ -447,7 +470,10 @@ export default function CredenciamentoPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
-      toast.success("Presença registrada e credencial emitida!");
+      toast.success("Credenciamento realizado com sucesso!");
+      setSelectedForCred(null);
+      setIsLinkingExternal(false);
+      setManualCode("");
     },
     onError: (err: Error) => {
       if (err.message?.includes("irregularidade") || err.message?.includes("Credenciamento bloqueado")) {
@@ -658,7 +684,20 @@ export default function CredenciamentoPage() {
     toast.success(`${success} credencial(is) emitida(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
   };
 
+  const handleStartCredenciamento = (p: CredentialParticipantRow) => {
+    setSelectedForCred(p);
+    setIsLinkingExternal(false);
+  };
+
+  const handleLinkExternal = (code: string) => {
+    if (!selectedForCred) return;
+    const normalized = code.trim().toUpperCase();
+    if (!normalized) return;
+    credentialMutation.mutate({ participantId: selectedForCred.id, externalCode: normalized });
+  };
+
   const getStateInfo = (state: string) => {
+
     switch (state) {
       case "pending_import":
         return { label: "Pendente", icon: <AlertCircle className="h-3.5 w-3.5" />, variant: "outline" as const, className: "border-orange-300 bg-orange-50 text-orange-700" };
@@ -1035,11 +1074,11 @@ export default function CredenciamentoPage() {
                             {state === "awaiting" && (
                               <Button
                                 size="sm"
-                                className="h-8 px-3 text-[11px] font-bold bg-orange-600 hover:bg-orange-700 shadow-sm"
-                                onClick={() => credentialMutation.mutate(p.id)}
+                                className="h-8 px-3 text-[11px] font-bold bg-primary hover:bg-primary/90 shadow-sm"
+                                onClick={() => handleStartCredenciamento(p)}
                                 disabled={credentialMutation.isPending || isBlocked}
                               >
-                                <UserCheck className="h-3.5 w-3.5 mr-1.5" /> Registrar Presença
+                                <UserCheck className="h-3.5 w-3.5 mr-1.5" /> Credenciar
                               </Button>
                             )}
 
