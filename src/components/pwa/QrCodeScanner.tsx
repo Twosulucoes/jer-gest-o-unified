@@ -202,7 +202,7 @@ export default function QrCodeScanner({
       setState("active");
       const result = await BarcodeScanner.scan();
       if (result.barcodes.length > 0) {
-        handleDetectedRef.current(result.barcodes[0].rawValue);
+        handleDetected(result.barcodes[0].rawValue);
       }
       setState("idle");
     } catch (err: any) {
