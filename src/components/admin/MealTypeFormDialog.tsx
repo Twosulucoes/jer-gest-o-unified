@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
 import type { StageContext } from "@/components/admin/VehicleFormDialog";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 const mealTypeSchema = z.object({
   event_id: z.string().min(1, "Selecione um evento"),
@@ -31,7 +32,6 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mealType?: any | null;
-  events: Tables<"events">[];
   stageContext?: StageContext;
   onSubmit: (values: MealTypeFormValues) => void;
   isPending: boolean;
@@ -39,6 +39,7 @@ interface Props {
 
 export default function MealTypeFormDialog({ open, onOpenChange, mealType, stageContext, onSubmit, isPending }: Props) {
   const isEditing = !!mealType;
+  const activeEventId = useActiveEventId();
 
   const form = useForm<MealTypeFormValues>({
     resolver: zodResolver(mealTypeSchema),
@@ -46,7 +47,7 @@ export default function MealTypeFormDialog({ open, onOpenChange, mealType, stage
   });
 
   useEffect(() => {
-    const defaultEventId = stageContext?.event_id ?? (events.length === 1 ? events[0].id : "");
+    const defaultEventId = stageContext?.event_id ?? activeEventId ?? "";
     if (mealType) {
       form.reset({
         event_id: mealType.event_id,
@@ -61,7 +62,7 @@ export default function MealTypeFormDialog({ open, onOpenChange, mealType, stage
         name: "", slug: "", sort_order: 0, is_active: true,
       });
     }
-  }, [mealType, events, stageContext, form]);
+  }, [mealType, activeEventId, stageContext, form]);
 
   // Auto-generate slug from name
   const watchName = form.watch("name");
@@ -86,18 +87,7 @@ export default function MealTypeFormDialog({ open, onOpenChange, mealType, stage
                 <span className="text-muted-foreground">Etapa:</span>
                 <span className="font-medium">{stageContext.name}</span>
               </div>
-            ) : (
-              <FormField control={form.control} name="event_id" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Evento</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                    <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            )}
+            ) : null}
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>

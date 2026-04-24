@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,18 +25,16 @@ import MealWindowFormDialog, { type MealWindowFormValues } from "@/components/ad
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
 
-
 export default function AlimentacaoJanelasPage() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const selectedEventId = useActiveEventId();
   const { stageId, isStageScoped } = useStageScope();
   const canWrite = hasRole("admin") || hasRole("secretaria");
-
-  // Removido query local de events - o contexto global de evento já deve estar provido pelo layout ou EventContext
-
 
   const { data: mealTypes = [] } = useQuery({
     queryKey: ["meal_types", selectedEventId],
@@ -139,7 +139,6 @@ export default function AlimentacaoJanelasPage() {
     else createMut.mutate(v);
   };
 
-
   const formatDate = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR");
 
   return (
@@ -156,8 +155,30 @@ export default function AlimentacaoJanelasPage() {
         )}
       </div>
 
-      {/* Removido card redundante de seleção de evento, pois o evento ativo já é controlado globalmente */}
-
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border shadow-sm">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por tipo, rótulo ou local..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <Filter className="h-4 w-4 text-muted-foreground hidden md:block" />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full md:w-[150px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos Status</SelectItem>
+              <SelectItem value="active">Ativas</SelectItem>
+              <SelectItem value="inactive">Inativas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {!selectedEventId ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
@@ -166,42 +187,88 @@ export default function AlimentacaoJanelasPage() {
         </div>
       ) : isLoading ? (
         <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-md" />)}</div>
-      ) : !windows?.length ? (
+      ) : !filteredWindows?.length ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <Clock className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhuma janela cadastrada</p>
-          <p className="text-sm text-muted-foreground mt-1">Cadastre tipos de refeição antes de criar janelas.</p>
+          <p className="text-muted-foreground font-medium">Nenhuma janela encontrada</p>
+          <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou crie uma nova janela.</p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
+        <div className="rounded-lg border bg-card overflow-hidden">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Rótulo</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Horário</TableHead>
-                <TableHead>Local</TableHead>
-                <TableHead>Status</TableHead>
-                {canWrite && <TableHead className="w-[60px]" />}
+                <TableHead>Data / Horário</TableHead>
+                <TableHead className="hidden md:table-cell">Local</TableHead>
+                <TableHead className="w-[100px]">Status</TableHead>
+                {canWrite && <TableHead className="w-[120px] text-right">Ações</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {windows.map((w) => {
+              {filteredWindows.map((w) => {
                 const mt = mealTypesMap.get(w.meal_type_id);
                 return (
-                  <TableRow key={w.id}>
-                    <TableCell className="font-medium">{mt?.name ?? "—"}</TableCell>
-                    <TableCell>{w.label || "—"}</TableCell>
-                    <TableCell>{formatDate(w.service_date)}</TableCell>
-                    <TableCell className="font-mono text-xs">{w.start_time?.slice(0, 5)} – {w.end_time?.slice(0, 5)}</TableCell>
-                    <TableCell>{w.location || "—"}</TableCell>
-                    <TableCell><Badge variant={w.is_active ? "default" : "secondary"}>{w.is_active ? "Ativa" : "Inativa"}</Badge></TableCell>
-                    {canWrite && (
-                      <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => { setEditing(w); setDialogOpen(true); }}>
-                          <Pencil className="h-4 w-4" />
+                  <TableRow key={w.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-semibold text-primary">{mt?.name ?? "—"}</TableCell>
+                    <TableCell className="max-w-[150px] truncate">{w.label || "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{formatDate(w.service_date)}</span>
+                        <span className="text-[10px] font-mono text-muted-foreground uppercase">{w.start_time?.slice(0, 5)} – {w.end_time?.slice(0, 5)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{w.location || "—"}</TableCell>
+                    <TableCell>
+                      {canWrite ? (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 px-2 hover:bg-transparent group"
+                          onClick={() => toggleStatusMut.mutate({ id: w.id, is_active: !w.is_active })}
+                        >
+                          <Badge 
+                            variant={w.is_active ? "default" : "secondary"}
+                            className="flex items-center gap-1 cursor-pointer group-hover:ring-1 group-hover:ring-primary/30"
+                          >
+                            {w.is_active ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                            {w.is_active ? "Ativa" : "Inativa"}
+                          </Badge>
                         </Button>
+                      ) : (
+                        <Badge variant={w.is_active ? "default" : "secondary"}>{w.is_active ? "Ativa" : "Inativa"}</Badge>
+                      )}
+                    </TableCell>
+                    {canWrite && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => { setEditing(w); setDialogOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600" onClick={() => { setEditing({ ...w, id: undefined, isCopy: true }); setDialogOpen(true); }}>
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir Janela?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação não pode ser desfeita. Isso removerá permanentemente a janela de serviço.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteMut.mutate(w.id)} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Excluir</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
