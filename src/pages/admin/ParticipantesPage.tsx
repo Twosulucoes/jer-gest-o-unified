@@ -151,6 +151,7 @@ export default function ParticipantesPage() {
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
     if (debouncedSearch) next.set("search", debouncedSearch); else next.delete("search");
+    if (categoryFilter !== "all") next.set("category", categoryFilter); else next.delete("category");
     if (typeFilter !== "all") next.set("type", typeFilter); else next.delete("type");
     if (statusFilter !== "all") next.set("status", statusFilter); else next.delete("status");
     if (sortBy !== "name") next.set("sort", sortBy); else next.delete("sort");
