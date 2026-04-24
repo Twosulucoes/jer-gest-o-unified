@@ -60,16 +60,18 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
   const [phone, setPhone] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "">("");
+  const [participantCategory, setParticipantCategory] = useState<"delegation" | "organization">("delegation");
   const [participantType, setParticipantType] = useState("colaborador");
   const [delegationId, setDelegationId] = useState<string>("");
   const [delegationOpen, setDelegationOpen] = useState(false);
+  const [organizationSubtype, setOrganizationSubtype] = useState("");
+  const [roleFunction, setRoleFunction] = useState("");
+  const [sectorArea, setSectorArea] = useState("");
+  const [responsibilities, setResponsibilities] = useState("");
+  const [accessPermissions, setAccessPermissions] = useState("");
+  const [observations, setObservations] = useState("");
   const [needsTransport, setNeedsTransport] = useState(false);
-  const [needsMeals, setNeedsMeals] = useState(false);
-  const [needsLodging, setNeedsLodging] = useState(false);
-  const [logisticsRestrictions, setLogisticsRestrictions] = useState("");
-  const [logisticsNotes, setLogisticsNotes] = useState("");
-  const [foodRestrictions, setFoodRestrictions] = useState("");
-  const [disabilityType, setDisabilityType] = useState("");
+...
   const [medicalNotes, setMedicalNotes] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [guardianName, setGuardianName] = useState("");
