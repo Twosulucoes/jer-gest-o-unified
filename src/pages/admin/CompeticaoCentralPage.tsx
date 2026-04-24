@@ -266,7 +266,7 @@ export default function CompeticaoCentralPage() {
               onClick={goNext}
               disabled={currentIdx >= visibleSteps.length - 1}
             >
-              Próximo
+              PRÓXIMO
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
