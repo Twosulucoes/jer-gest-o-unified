@@ -436,30 +436,100 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
             </section>
 
             {/* Vínculo */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Vínculo no evento</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <Label>Tipo principal *</Label>
-                  <Select 
-                    value={participantType} 
-                    onValueChange={setParticipantType}
-                    disabled={!canEditSensitive && isEdit}
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">Vínculo no evento</h3>
+                <div className="flex bg-muted p-1 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setParticipantCategory("delegation")}
+                    className={cn(
+                      "px-3 py-1 text-xs font-medium rounded-md transition-all",
+                      participantCategory === "delegation" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                    )}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="athlete">Atleta</SelectItem>
-                      <SelectItem value="coach">Técnico</SelectItem>
-                      <SelectItem value="head_of_delegation">Chefe de Delegação</SelectItem>
-                      <SelectItem value="official">Oficial</SelectItem>
-                      <SelectItem value="staff">Staff</SelectItem>
-                      <SelectItem value="colaborador">Colaborador da organização</SelectItem>
-                      <SelectItem value="terceiro">Terceiro / prestador</SelectItem>
-                      <SelectItem value="arbitro">Árbitro</SelectItem>
-                      <SelectItem value="mesario">Mesário</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    Delegação
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setParticipantCategory("organization")}
+                    className={cn(
+                      "px-3 py-1 text-xs font-medium rounded-md transition-all",
+                      participantCategory === "organization" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                    )}
+                  >
+                    Organização
+                  </button>
                 </div>
+              </div>
+
+              {participantCategory === "delegation" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Tipo principal *</Label>
+                    <Select 
+                      value={participantType} 
+                      onValueChange={setParticipantType}
+                      disabled={!canEditSensitive && isEdit}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="athlete">Atleta</SelectItem>
+                        <SelectItem value="coach">Técnico</SelectItem>
+                        <SelectItem value="head_of_delegation">Chefe de Delegação</SelectItem>
+                        <SelectItem value="official">Oficial</SelectItem>
+                        <SelectItem value="staff">Staff</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+... keep existing stage selection and delegation selection logic ...
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label>Subtipo de Organização *</Label>
+                      <Select value={organizationSubtype} onValueChange={setOrganizationSubtype}>
+                        <SelectTrigger><SelectValue placeholder="Selecione o subtipo" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Coordenação Técnica">Coordenação Técnica</SelectItem>
+                          <SelectItem value="Arbitragem">Arbitragem</SelectItem>
+                          <SelectItem value="Transporte">Transporte</SelectItem>
+                          <SelectItem value="Alimentação">Alimentação</SelectItem>
+                          <SelectItem value="Alojamento">Alojamento</SelectItem>
+                          <SelectItem value="Secretaria">Secretaria</SelectItem>
+                          <SelectItem value="Comunicação">Comunicação</SelectItem>
+                          <SelectItem value="TI">TI</SelectItem>
+                          <SelectItem value="Saúde">Saúde</SelectItem>
+                          <SelectItem value="Cerimonial">Cerimonial</SelectItem>
+                          <SelectItem value="Segurança">Segurança</SelectItem>
+                          <SelectItem value="Apoio Operacional">Apoio Operacional</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Função / Cargo *</Label>
+                      <Input value={roleFunction} onChange={e => setRoleFunction(e.target.value)} placeholder="Ex: Coordenador de Logística" />
+                    </div>
+                    <div>
+                      <Label>Setor / Área de atuação</Label>
+                      <Input value={sectorArea} onChange={e => setSectorArea(e.target.value)} placeholder="Ex: Logística" />
+                    </div>
+                    <div>
+                      <Label>Responsável pelo quê?</Label>
+                      <Input value={responsibilities} onChange={e => setResponsibilities(e.target.value)} placeholder="Ex: Gestão de frotas" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Acessos e permissões (associadas ao trabalho)</Label>
+                      <Input value={accessPermissions} onChange={e => setAccessPermissions(e.target.value)} placeholder="Ex: Acesso total ao transporte, Relatórios de consumo" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Observações administrativas</Label>
+                      <Textarea value={observations} onChange={e => setObservations(e.target.value)} placeholder="Notas internas da organização..." />
+                    </div>
+                  </div>
+                </div>
+              )}
                 {!isEdit && (
                   <div>
                     <Label>Atribuir a Etapa (opcional)</Label>
