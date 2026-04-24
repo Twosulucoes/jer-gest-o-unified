@@ -597,97 +597,28 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
                 </div>
               )}
             </section>
-                {!isEdit && (
-                  <div>
-                    <Label>Atribuir a Etapa (opcional)</Label>
-                    <Select 
-                      value={selectedStageId} 
-                      onValueChange={setSelectedStageId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Nenhuma / Global" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Nenhuma / Global</SelectItem>
-                        {eventStages.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                <div>
-                  <Label>Delegação (opcional)</Label>
-                  <Popover open={delegationOpen} onOpenChange={setDelegationOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={delegationOpen}
-                        className="w-full justify-between font-normal"
-                        disabled={!canEditSensitive && isEdit}
+            {/* Operational Roles Catalog - Only if needed */}
+            {canEditRoles && participantCategory === "organization" && (
+              <div className="pt-2">
+                <Label>Outras funções operacionais vinculadas</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {roleCatalog.map((r) => {
+                    const active = selectedRoles.includes(r.code);
+                    return (
+                      <Badge
+                        key={r.code}
+                        variant={active ? "default" : "outline"}
+                        className="cursor-pointer hover:bg-primary/80"
+                        onClick={() => toggleRole(r.code)}
                       >
-                        <span className="truncate">
-                          {delegationId
-                            ? delegations.find((d: any) => d.id === delegationId)?.school_name
-                            : "Sem delegação"}
-                        </span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Buscar delegação..." />
-                        <CommandList>
-                          <CommandEmpty>Nenhuma delegação encontrada.</CommandEmpty>
-                          <CommandGroup>
-                            <CommandItem
-                              value="__none"
-                              onSelect={() => { setDelegationId(""); setDelegationOpen(false); }}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", !delegationId ? "opacity-100" : "opacity-0")} />
-                              Sem delegação
-                            </CommandItem>
-                            {delegations.map((d: any) => (
-                              <CommandItem
-                                key={d.id}
-                                value={d.school_name}
-                                onSelect={() => { setDelegationId(d.id); setDelegationOpen(false); }}
-                              >
-                                <Check className={cn("mr-2 h-4 w-4", delegationId === d.id ? "opacity-100" : "opacity-0")} />
-                                {d.school_name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                        {active ? <X className="h-3 w-3 mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
+                        {r.name}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
-
-              {canEditRoles && (
-                <div className="pt-2">
-                  <Label>Funções operacionais (selecione todas que se aplicam)</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {roleCatalog.map((r) => {
-                      const active = selectedRoles.includes(r.code);
-                      return (
-                        <Badge
-                          key={r.code}
-                          variant={active ? "default" : "outline"}
-                          className="cursor-pointer hover:bg-primary/80"
-                          onClick={() => toggleRole(r.code)}
-                        >
-                          {active ? <X className="h-3 w-3 mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
-                          {r.name}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </section>
+            )}
 
             {/* Contatos de Emergência / Responsáveis - Visível para atletas */}
             {participantType === "athlete" && (
