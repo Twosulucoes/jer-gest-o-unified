@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, UtensilsCrossed, Clock, ClipboardList, LayoutDashboard, AlertTriangle, ArrowRight, Layers,
+  Plus, Pencil, UtensilsCrossed, Clock, ClipboardList, LayoutDashboard, AlertTriangle, Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +38,6 @@ export default function AlimentacaoHubPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageParam = searchParams.get("stage") ?? "";
   
-  // Use stageId from URL if available, otherwise fallback to query param or state
   const [selectedStageId, setSelectedStageIdState] = useState(stageId || stageParam);
   
   const setSelectedStageId = (id: string) => {
@@ -55,9 +54,6 @@ export default function AlimentacaoHubPage() {
   const [windowDialog, setWindowDialog] = useState(false);
   const [editingWindow, setEditingWindow] = useState<any>(null);
 
-  // Removido query de events local para evitar redundância com o contexto global
-
-
   const { data: stages = [], isLoading: loadingStages } = useQuery({
     queryKey: ["event_stages", selectedEventId],
     queryFn: async () => {
@@ -72,7 +68,6 @@ export default function AlimentacaoHubPage() {
   });
 
   useEffect(() => {
-    // If we have a stageId in the URL, that's our source of truth
     if (stageId) {
       setSelectedStageIdState(stageId);
       return;
@@ -82,8 +77,7 @@ export default function AlimentacaoHubPage() {
       const fromUrl = stages.find(s => s.id === stageParam);
       setSelectedStageId(fromUrl ? fromUrl.id : stages[0].id);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages, stageParam, stageId]);
+  }, [stages, stageParam, stageId, selectedStageId]);
 
   const selectedStage = stages.find(s => s.id === selectedStageId);
   const stageContext: StageContext | undefined = selectedStage
@@ -191,7 +185,6 @@ export default function AlimentacaoHubPage() {
         )}
       </div>
 
-      {/* Seletor de etapa - Oculto se já estivermos no contexto de uma etapa via URL */}
       {!stageId && (
         <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
           <Layers className="h-4 w-4 text-primary shrink-0" />
@@ -220,7 +213,6 @@ export default function AlimentacaoHubPage() {
         </div>
       )}
 
-      {/* Atalhos operacionais */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/consumo")}>
           <CardContent className="flex items-center gap-3 p-4">
@@ -243,7 +235,10 @@ export default function AlimentacaoHubPage() {
       </div>
 
       {!selectedStageId ? (
-        <EmptyState icon={<UtensilsCrossed className="h-10 w-10" />} message="Selecione uma etapa para visualizar ou cadastrar dados" />
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
+          <UtensilsCrossed className="h-10 w-10 text-muted-foreground mb-3" />
+          <p className="text-muted-foreground font-medium">Selecione uma etapa para visualizar ou cadastrar dados</p>
+        </div>
       ) : (
         <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)}>
           <TabsList className="grid w-full grid-cols-2 max-w-xs">
@@ -258,18 +253,14 @@ export default function AlimentacaoHubPage() {
           </TabsList>
 
           <TabsContent value="janelas" className="mt-4">
-            {mealTypes.length === 0 ? (
-              <NeedsDependency
-                message="Cadastre ao menos um tipo de refeição (ex: Almoço) antes de criar janelas."
-                actionLabel="Cadastrar tipo agora"
-                onAction={() => { setEditingType(null); setTypeDialog(true); setTab("tipos"); }}
-              />
-            ) : loadingWindows ? <LoadingSkeleton /> : windows.length === 0 ? (
-              <EmptyState icon={<Clock className="h-10 w-10" />} message="Nenhuma janela para esta etapa">
+            {loadingWindows ? <Skeleton className="h-32 w-full" /> : windows.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
+                <Clock className="h-10 w-10 text-muted-foreground mb-3" />
+                <p className="text-muted-foreground font-medium">Nenhuma janela para esta etapa</p>
                 {canWrite && <Button size="sm" onClick={() => { setEditingWindow(null); setWindowDialog(true); }} className="mt-3"><Plus className="h-4 w-4 mr-1" />Nova janela</Button>}
-              </EmptyState>
+              </div>
             ) : (
-              <div className="rounded-lg border bg-card">
+              <div className="rounded-lg border bg-card overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -307,12 +298,14 @@ export default function AlimentacaoHubPage() {
           </TabsContent>
 
           <TabsContent value="tipos" className="mt-4">
-            {loadingTypes ? <LoadingSkeleton /> : mealTypes.length === 0 ? (
-              <EmptyState icon={<UtensilsCrossed className="h-10 w-10" />} message="Nenhum tipo para esta etapa">
+            {loadingTypes ? <Skeleton className="h-32 w-full" /> : mealTypes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
+                <UtensilsCrossed className="h-10 w-10 text-muted-foreground mb-3" />
+                <p className="text-muted-foreground font-medium">Nenhum tipo para esta etapa</p>
                 {canWrite && <Button size="sm" onClick={() => { setEditingType(null); setTypeDialog(true); }} className="mt-3"><Plus className="h-4 w-4 mr-1" />Novo tipo</Button>}
-              </EmptyState>
+              </div>
             ) : (
-              <div className="rounded-lg border bg-card">
+              <div className="rounded-lg border bg-card overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -352,7 +345,6 @@ export default function AlimentacaoHubPage() {
         onOpenChange={(o) => { setTypeDialog(o); if (!o) setEditingType(null); }}
         mealType={editingType}
         stageContext={stageContext}
-
         onSubmit={(v) => editingType ? updateType.mutate({ id: editingType.id, ...v }) : createType.mutate(v)}
         isPending={createType.isPending || updateType.isPending}
       />
@@ -364,38 +356,6 @@ export default function AlimentacaoHubPage() {
         onSubmit={(v) => editingWindow ? updateWindow.mutate({ id: editingWindow.id, ...v }) : createWindow.mutate(v)}
         isPending={createWindow.isPending || updateWindow.isPending}
       />
-    </div>
-  );
-}
-
-function NeedsDependency({ message, actionLabel, onAction }: { message: string; actionLabel: string; onAction: () => void }) {
-  return (
-    <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4 flex items-start gap-3">
-      <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-      <div className="space-y-1">
-        <p className="text-sm text-amber-800 dark:text-amber-300">{message}</p>
-        <Button size="sm" variant="outline" className="mt-2 gap-1 border-amber-300 text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:border-amber-700" onClick={onAction}>
-          {actionLabel} <ArrowRight className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ icon, message, children }: { icon: React.ReactNode; message: string; children?: React.ReactNode }) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-      <div className="text-muted-foreground mb-3">{icon}</div>
-      <p className="text-muted-foreground font-medium">{message}</p>
-      {children}
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-md" />)}
     </div>
   );
 }
