@@ -1438,10 +1438,11 @@ export default function CredenciamentoPage() {
       </Dialog>
       {/* Diálogo unificado de credenciamento */}
       <Dialog 
-        open={!!selectedForCred} 
+        open={!!selectedForCred && !editDialogOpen && !guardianConfirmOpen} 
         onOpenChange={(open) => { 
           if (!open && !credentialMutation.isPending) {
             setSelectedForCred(null); 
+            setIsWorkflowActive(false);
             setIsLinkingExternal(false);
           }
         }}
