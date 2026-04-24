@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield } from "lucide-react";
+import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers } from "lucide-react";
+import { useStageContext } from "@/contexts/StageContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PwaBrandLogo } from "@/components/pwa/PwaBrandLogo";
 
 interface UserProfile {
@@ -24,6 +26,7 @@ const MODULE_CARDS = [
 
 export default function PwaLandingPage() {
   const navigate = useNavigate();
+  const { stages, activeStageId, setActiveStageId, stagesLoading } = useStageContext();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -129,6 +132,35 @@ export default function PwaLandingPage() {
       </div>
 
       <div className="p-4 max-w-md mx-auto space-y-4 -mt-3">
+        {/* Seletor de Etapa */}
+        {stages.length > 1 && (
+          <div className="bg-card rounded-xl border shadow-app-md p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-primary" />
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Etapa de Trabalho
+              </h2>
+            </div>
+            <Select value={activeStageId || ""} onValueChange={setActiveStageId}>
+              <SelectTrigger className="h-12 rounded-xl">
+                <SelectValue placeholder="Selecione a etapa..." />
+              </SelectTrigger>
+              <SelectContent>
+                {stages.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!activeStageId && (
+              <p className="text-[11px] text-amber-600 font-medium">
+                ⚠️ Selecione uma etapa para filtrar os dados corretamente.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="bg-card rounded-xl border shadow-app-md p-4 space-y-3">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Seus módulos
