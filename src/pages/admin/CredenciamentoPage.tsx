@@ -1553,6 +1553,79 @@ export default function CredenciamentoPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Guardian Confirmation Dialog */}
+      <Dialog open={guardianConfirmOpen} onOpenChange={setGuardianConfirmOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-amber-500" />
+              Confirmação de Responsável
+            </DialogTitle>
+            <DialogDescription>
+              Verifique os dados de contato de emergência para <strong>{selectedForCred?.person?.full_name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Responsável / Tutor</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <Input 
+                    placeholder="Nome do Responsável"
+                    value={tempGuardianData.name}
+                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                  <Input 
+                    placeholder="Telefone (WhatsApp)"
+                    value={tempGuardianData.phone}
+                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Técnico / Responsável Técnico</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <Input 
+                    placeholder="Nome do Técnico"
+                    value={tempGuardianData.coachName}
+                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, coachName: e.target.value }))}
+                  />
+                  <Input 
+                    placeholder="Telefone do Técnico"
+                    value={tempGuardianData.coachPhone}
+                    onChange={(e) => setTempGuardianData(prev => ({ ...prev, coachPhone: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-700 flex gap-2 items-start">
+              <Info className="h-4 w-4 shrink-0" />
+              <p>Estes dados são vitais para casos de emergência médica ou logística durante o evento.</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGuardianConfirmOpen(false)}>Cancelar</Button>
+            <Button onClick={handleConfirmGuardian}>Confirmar e Prosseguir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <PessoaFormDialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) setEditingParticipantId(null);
+        }}
+        participantId={editingParticipantId}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+        }}
+      />
       </div>
     </div>
   );
