@@ -131,6 +131,10 @@ interface CredentialParticipantRow {
   credentialed_by: string | null;
   person_id: string;
   delegation_id: string;
+  guardian_name: string | null;
+  guardian_phone: string | null;
+  coach_name: string | null;
+  coach_phone: string | null;
   person: {
     full_name: string | null;
     cpf: string | null;
