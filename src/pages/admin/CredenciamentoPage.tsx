@@ -572,6 +572,40 @@ export default function CredenciamentoPage() {
     },
   });
 
+  const undoCredentialMutation = useMutation({
+    mutationFn: async (participantId: string) => {
+      // 1. Inativar credenciais atuais
+      const { error: credErr } = await supabase
+        .from("participant_credentials")
+        .update({ status: "inactive", is_active: false })
+        .eq("participant_id", participantId)
+        .eq("event_id", selectedEventId)
+        .eq("status", "active");
+      
+      if (credErr) throw credErr;
+
+      // 2. Voltar status do participante para 'confirmed'
+      const { error: partErr } = await supabase
+        .from("participants")
+        .update({
+          status: "confirmed",
+          credentialed_at: null,
+          credentialed_by: null,
+        })
+        .eq("id", participantId);
+      
+      if (partErr) throw partErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
+      toast.success("Credenciamento desfeito com sucesso!");
+    },
+    onError: (err: Error) => {
+      toast.error(`Erro ao desfazer credenciamento: ${err.message}`);
+    },
+  });
+
   // --- Blocking check before emit/reissue ---
   const checkBlockingAndAct = async (participantId: string, personName: string, action: "emit" | "reissue") => {
     const { data, error } = await supabase.rpc("get_blocking_irregularities", {
