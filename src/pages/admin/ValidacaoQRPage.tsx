@@ -328,7 +328,7 @@ export default function ValidacaoQRPage() {
             } : null}
             onConfirm={handleNewScan}
             onCancel={handleNewScan}
-            confirmLabel={result.result === "valid" ? "Confirmar e Próximo" : "Entendido"}
+            confirmLabel={result.result === "valid" ? "Próximo" : "Entendido"}
             cancelLabel="Nova leitura"
             statusLabel={resultConfig?.label}
             statusIcon={resultConfig?.icon}
