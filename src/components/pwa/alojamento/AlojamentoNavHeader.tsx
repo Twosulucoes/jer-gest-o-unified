@@ -34,6 +34,7 @@ export function AlojamentoNavHeader({ currentPathLabel, showQuickNav = true }: A
               Etapa Ativa
             </Badge>
           )}
+        </div>
 
         {/* Breadcrumbs */}
         <Breadcrumb>
