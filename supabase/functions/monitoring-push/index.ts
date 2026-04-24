@@ -186,14 +186,14 @@ async function encryptPayload(
   // 8. AES-128-GCM
   const aesKey = await crypto.subtle.importKey(
     "raw",
-    cek,
+    cek as BufferSource,
     { name: "AES-GCM" },
     false,
     ["encrypt"],
   );
   const ciphertext = new Uint8Array(
     await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv: nonce },
+      { name: "AES-GCM", iv: nonce as BufferSource },
       aesKey,
       padded,
     ),
