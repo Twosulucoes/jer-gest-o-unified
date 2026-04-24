@@ -29,7 +29,7 @@ export default function SistemaDiagnosticoKpiPage() {
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", eventId).in("status", ["completed", "finished"]),
         
         // Alimentação
-        supabase.rpc("get_event_meal_consumption_count", { p_event_id: eventId }),
+        supabase.from("meal_windows").select("id").eq("event_id", eventId),
         
         // Alojamento
         supabase.from("lodging_occupancies").select("id", { count: "exact", head: true }).eq("event_id", eventId).in("status", ["allocated", "checked_in"]),
