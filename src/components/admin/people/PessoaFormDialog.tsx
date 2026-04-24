@@ -175,7 +175,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
     } else if (open && !isEdit) {
       // Reset
       setFullName(""); setCpf(""); setEmail(""); setPhone(""); setBirthDate("");
-      setGender(""); setParticipantType("colaborador"); setParticipantCategory("delegation"); setDelegationId("");
+      setGender(""); setParticipantType("colaborador"); setParticipantCategory(initialCategory || "delegation"); setDelegationId("");
       setOrganizationSubtype(""); setRoleFunction(""); setSectorArea(""); setResponsibilities(""); setAccessPermissions(""); setObservations("");
       setNeedsTransport(false); setNeedsMeals(false); setNeedsLodging(false);
       setLogisticsRestrictions(""); setLogisticsNotes("");
