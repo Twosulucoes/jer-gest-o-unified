@@ -300,7 +300,7 @@ export default function CredenciamentoPage() {
   // Nesse caso, ignoramos o filtro de etapa (melhor mostrar todos do evento que mostrar vazio falso).
   const effectiveStageFilter = stageId && stageIdsArray ? stageIdsArray : null;
 
-  const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id,
+  const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone,
     person:people!participants_person_id_fkey(full_name, cpf, photo_url),
     delegation:delegations!participants_delegation_id_fkey(institution:institutions(id, name))`;
 
