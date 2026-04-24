@@ -34,13 +34,6 @@ export function AlojamentoNavHeader({ currentPathLabel, showQuickNav = true }: A
               Etapa Ativa
             </Badge>
           )}
-        </div>
-          {activeStage && (
-            <Badge variant="outline" className="shrink-0 bg-green-500/10 text-green-600 border-green-500/20 text-[10px] px-1.5 py-0 font-bold uppercase">
-              Ativa
-            </Badge>
-          )}
-        </div>
 
         {/* Breadcrumbs */}
         <Breadcrumb>
