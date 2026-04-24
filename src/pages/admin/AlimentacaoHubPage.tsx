@@ -113,7 +113,7 @@ export default function AlimentacaoHubPage() {
   const createType = useMutation({
     mutationFn: async (v: MealTypeFormValues) => {
       const { error } = await (supabase.from("meal_types") as any).insert({
-        event_id: selectedStage!.event_id, event_stage_id: selectedStageId,
+        event_id: selectedStage!.event_id,
         name: v.name, slug: v.slug, sort_order: v.sort_order, is_active: v.is_active,
       });
       if (error) throw error;
