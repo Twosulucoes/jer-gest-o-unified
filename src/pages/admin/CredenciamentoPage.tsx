@@ -379,8 +379,8 @@ export default function CredenciamentoPage() {
     return [...types].sort();
   }, [participants]);
 
-  const getInstitutionId = useCallback((participant: CredentialParticipantRow) => participant.delegation?.institution?.id ?? "", []);
-  const getInstitutionName = useCallback((participant: CredentialParticipantRow) => participant.delegation?.institution?.name ?? "—", []);
+  const getInstitutionId = useCallback((participant: CredentialParticipantRow) => participant.delegation?.school_name ?? "", []);
+  const getInstitutionName = useCallback((participant: CredentialParticipantRow) => participant.delegation?.school_name ?? "—", []);
 
   // --- Determine participant state ---
   const getParticipantState = useCallback((p: { status: string; id: string }): ParticipantState => {
