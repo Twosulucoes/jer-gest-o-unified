@@ -131,7 +131,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
     queryFn: async () => {
       const { data: p, error } = await supabase
         .from("participants")
-        .select("id, person_id, participant_type, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, guardian_name, guardian_phone, coach_name, coach_phone, person:people(full_name, cpf, email, phone, birth_date, gender, food_restrictions, disability_type, medical_notes)")
+        .select("id, person_id, participant_type, category, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, guardian_name, guardian_phone, coach_name, coach_phone, organization_subtype, role_function, sector_area, responsibilities, access_permissions, observations, person:people(full_name, cpf, email, phone, birth_date, gender, food_restrictions, disability_type, medical_notes)")
         .eq("id", participantId!).single();
       if (error) throw error;
       const { data: roles } = await (supabase.from("participant_event_roles" as never) as any)
