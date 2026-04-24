@@ -141,10 +141,8 @@ interface CredentialParticipantRow {
     photo_url: string | null;
   } | null;
   delegation: {
-    institution: {
-      id: string;
-      name: string | null;
-    } | null;
+    id: string;
+    school_name: string | null;
   } | null;
 }
 
