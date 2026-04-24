@@ -29,6 +29,7 @@ import {
   Check,
   Edit,
   UserPlus,
+  RotateCcw,
 } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { cn } from "@/lib/utils";
@@ -568,6 +569,40 @@ export default function CredenciamentoPage() {
       } else {
         toast.error(`Erro na reemissão: ${err.message}`);
       }
+    },
+  });
+
+  const undoCredentialMutation = useMutation({
+    mutationFn: async (participantId: string) => {
+      // 1. Inativar credenciais atuais
+      const { error: credErr } = await supabase
+        .from("participant_credentials")
+        .update({ status: "inactive", is_active: false })
+        .eq("participant_id", participantId)
+        .eq("event_id", selectedEventId)
+        .eq("status", "active");
+      
+      if (credErr) throw credErr;
+
+      // 2. Voltar status do participante para 'confirmed'
+      const { error: partErr } = await supabase
+        .from("participants")
+        .update({
+          status: "confirmed",
+          credentialed_at: null,
+          credentialed_by: null,
+        })
+        .eq("id", participantId);
+      
+      if (partErr) throw partErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
+      toast.success("Credenciamento desfeito com sucesso!");
+    },
+    onError: (err: Error) => {
+      toast.error(`Erro ao desfazer credenciamento: ${err.message}`);
     },
   });
 
@@ -1175,8 +1210,38 @@ export default function CredenciamentoPage() {
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
+                                  </AlertDialog>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/5"
+                                        title="Desfazer Credenciamento"
+                                      >
+                                        <RotateCcw className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Desfazer credenciamento?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Isso cancelará a credencial ativa e voltará o status do participante para 'Confirmado'.
+                                          O QR Code anterior deixará de funcionar.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => undoCredentialMutation.mutate(p.id)}
+                                          className="bg-destructive text-white hover:bg-destructive/90"
+                                        >
+                                          Confirmar e Desfazer
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
                             )}
                             
                             <Button
