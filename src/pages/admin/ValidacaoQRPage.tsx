@@ -29,7 +29,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 import { cn } from "@/lib/utils";
-import { StagePageScaffold } from "@/components/admin/stage/StagePageScaffold";
+import { useStageModuleKpis } from "@/contexts/StageModuleKpisContext";
 
 interface ValidationResult {
   result: "valid" | "not_found" | "revoked" | "suspended" | "not_activated" | "wrong_event" | string;
@@ -152,25 +152,28 @@ export default function ValidacaoQRPage() {
     color: "text-muted-foreground bg-muted border-border",
   } : null;
 
+  // Registra KPIs do módulo no scaffold pai (sem renderizar outro scaffold)
+  useStageModuleKpis(
+    [
+      {
+        label: "Sessão",
+        value: sessionCount,
+        icon: <BadgeCheck className="h-3.5 w-3.5" />,
+        tone: "primary",
+      },
+      {
+        label: "Scanner",
+        value: "PRONTO",
+        icon: <ScanLine className="h-3.5 w-3.5" />,
+        tone: "success",
+      },
+    ],
+    true,
+  );
+
   return (
-    <StagePageScaffold
-      moduleKpis={[
-        {
-          label: "Sessão",
-          value: sessionCount,
-          icon: <BadgeCheck className="h-3.5 w-3.5" />,
-          tone: "primary",
-        },
-        {
-          label: "Scanner",
-          value: "PRONTO",
-          icon: <ScanLine className="h-3.5 w-3.5" />,
-          tone: "success",
-        },
-      ]}
-    >
-      <div className="animate-fade-in space-y-4">
-        <div className="flex items-center justify-between">
+    <div className="animate-fade-in space-y-4">
+      <div className="flex items-center justify-between">
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground">Validação QR</h1>
             <p className="text-sm text-muted-foreground">Efetue a leitura das credenciais dos participantes</p>
@@ -319,8 +322,7 @@ export default function ValidacaoQRPage() {
             message={result.message}
           />
         )}
-      </div>
-    </StagePageScaffold>
+    </div>
   );
 }
 

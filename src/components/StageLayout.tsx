@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { StageProvider } from "@/contexts/StageContext";
 import type { EventStage } from "@/contexts/StageContext";
 import { StagePageScaffold } from "@/components/admin/stage/StagePageScaffold";
+import { StageModuleKpisProvider } from "@/contexts/StageModuleKpisContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -368,8 +369,10 @@ function StageWrappedOutlet() {
   }
 
   return (
-    <StagePageScaffold hideTabs={isDetail}>
-      <Outlet />
-    </StagePageScaffold>
+    <StageModuleKpisProvider>
+      <StagePageScaffold hideTabs={isDetail}>
+        <Outlet />
+      </StagePageScaffold>
+    </StageModuleKpisProvider>
   );
 }
