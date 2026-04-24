@@ -1,0 +1,2 @@
+DROP TRIGGER IF EXISTS trg_validate_participation_limit_pse ON public.participant_sport_events;
+DROP TRIGGER IF EXISTS trg_validate_participation_limit_team_member ON public.team_members;
