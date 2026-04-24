@@ -79,7 +79,7 @@ export default function AlimentacaoRelatoriosPage() {
   (consumptions || []).forEach((c: any) => {
     const typeName = c.meal_windows?.meal_types?.name || "Outro";
     totalByType.set(typeName, (totalByType.get(typeName) || 0) + 1);
-    const delName = c.participants?.delegations?.institutions?.name || "Sem delegação";
+    const delName = c.participants?.delegations?.school_name || "Sem delegação";
     totalByDelegation.set(delName, (totalByDelegation.get(delName) || 0) + 1);
   });
 
