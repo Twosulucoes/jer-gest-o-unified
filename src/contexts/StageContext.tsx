@@ -1,8 +1,10 @@
-import { createContext, useContext, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { createContext, useContext, useMemo, useState, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+
+const STORAGE_KEY = "jer_active_stage_id";
 
 export interface EventStage {
   id: string;
@@ -21,13 +23,23 @@ interface StageContextValue {
   stagesLoading: boolean;
   activeStageId: string | null;
   activeStage: EventStage | null;
+  setActiveStageId: (id: string | null) => void;
 }
 
 const StageContext = createContext<StageContextValue | undefined>(undefined);
 
 export function StageProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const eventId = useActiveEventId();
-  const { stageId } = useParams<{ stageId?: string }>();
+  const { stageId: routeStageId } = useParams<{ stageId?: string }>();
+  
+  const [persistedStageId, setPersistedStageId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  });
 
   const { data: stages = [], isLoading: stagesLoading } = useQuery({
     queryKey: ["event_stages", eventId],
@@ -43,15 +55,48 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
+  // activeStageId priority: 1. URL param, 2. Persisted state
+  const activeStageId = routeStageId || persistedStageId;
+
+  const setActiveStageId = useCallback((id: string | null) => {
+    setPersistedStageId(id);
+    if (id) {
+      localStorage.setItem(STORAGE_KEY, id);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+    // Invalidate stage-scoped queries
+    queryClient.invalidateQueries({ queryKey: ["event_stage_meta"] });
+    queryClient.invalidateQueries({ queryKey: ["stage_participant_ids"] });
+  }, [queryClient]);
+
+  // If we have an activeStageId but it's not in the list of stages for the current event, clear it
+  useEffect(() => {
+    if (activeStageId && stages.length > 0 && !routeStageId) {
+      const exists = stages.some((s) => s.id === activeStageId);
+      if (!exists) {
+        setActiveStageId(null);
+      }
+    }
+  }, [activeStageId, stages, routeStageId, setActiveStageId]);
+
+  // Default stage selection: if only one stage, auto-select it if none selected
+  useEffect(() => {
+    if (!activeStageId && stages.length === 1) {
+      setActiveStageId(stages[0].id);
+    }
+  }, [activeStageId, stages, setActiveStageId]);
+
   const value = useMemo<StageContextValue>(() => {
-    const activeStage = stageId ? stages.find((s) => s.id === stageId) ?? null : null;
+    const activeStage = activeStageId ? stages.find((s) => s.id === activeStageId) ?? null : null;
     return {
       stages,
       stagesLoading,
-      activeStageId: stageId ?? null,
+      activeStageId: activeStageId ?? null,
       activeStage,
+      setActiveStageId,
     };
-  }, [stages, stagesLoading, stageId]);
+  }, [stages, stagesLoading, activeStageId, setActiveStageId]);
 
   return <StageContext.Provider value={value}>{children}</StageContext.Provider>;
 }
@@ -60,4 +105,9 @@ export function useStageContext() {
   const ctx = useContext(StageContext);
   if (!ctx) throw new Error("useStageContext must be used within StageProvider");
   return ctx;
+}
+
+export function useActiveStageId(): string | null {
+  const { activeStageId } = useStageContext();
+  return activeStageId;
 }

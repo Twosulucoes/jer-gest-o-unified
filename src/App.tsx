@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { EventProvider } from "@/contexts/EventContext";
+import { StageProvider } from "@/contexts/StageContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SuperAdminRoute from "@/components/SuperAdminRoute";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -203,8 +204,9 @@ const App = () => (
         <ScrollToTop />
         <AuthProvider>
           <EventProvider>
-            <CompetitionProvider>
-              <Routes>
+            <StageProvider>
+              <CompetitionProvider>
+                <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
@@ -500,7 +502,8 @@ const App = () => (
             {/* Evento Rules Center routes removed — consolidated into /admin/regras-evento */}
             <Route path="*" element={<NotFound />} />
             </Routes>
-            </CompetitionProvider>
+              </CompetitionProvider>
+            </StageProvider>
           </EventProvider>
         </AuthProvider>
       </BrowserRouter>

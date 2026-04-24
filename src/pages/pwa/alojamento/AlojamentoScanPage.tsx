@@ -14,6 +14,7 @@ import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { useAuth } from "@/hooks/useAuth";
 import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
 import { useEventContext } from "@/contexts/EventContext";
+import { useActiveStageId } from "@/contexts/StageContext";
 import {
   loadScanPreferences,
   saveScanPreferences,
@@ -34,6 +35,7 @@ const MODULE = "alojamento" as const;
 export default function AlojamentoScanPage() {
   const navigate = useNavigate();
   const { activeEvent } = useEventContext();
+  const stageId = useActiveStageId();
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const lang = getPwaLang();
@@ -124,37 +126,28 @@ export default function AlojamentoScanPage() {
       }
 
       // Validação de Credencial Ativa na Etapa (Requirement)
-      if (mode === "checkin") {
-        const { data: stage } = await supabase
-          .from("event_stages")
-          .select("id")
-          .eq("event_id", activeEvent?.id)
-          .eq("status", "active")
-          .maybeSingle();
+      if (mode === "checkin" && stageId) {
+        const resolved = await rpcResolveQr(token);
+        if (resolved.ok && resolved.entity_id) {
+          const { data: pse, error: pseErr } = await supabase
+            .from("participant_event_stages")
+            .select("status")
+            .eq("participant_id", resolved.entity_id)
+            .eq("event_stage_id", stageId)
+            .maybeSingle();
 
-        if (stage) {
-          const resolved = await rpcResolveQr(token);
-          if (resolved.ok && resolved.entity_id) {
-            const { data: pse, error: pseErr } = await supabase
-              .from("participant_event_stages")
-              .select("status")
-              .eq("participant_id", resolved.entity_id)
-              .eq("event_stage_id", stage.id)
-              .maybeSingle();
-
-            if (pseErr || !pse || pse.status !== "active") {
-              setResult({
-                ok: false,
-                error: "CREDENTIAL_INACTIVE",
-                message: "Participante não possui credencial ativa para esta etapa.",
-                full_name: resolved.full_name
-              });
-              toast.error("Atenção: Participante sem credencial ativa!");
-              if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
-              recordOutcome("error");
-              reopenIfContinuous();
-              return;
-            }
+          if (pseErr || !pse || pse.status !== "active") {
+            setResult({
+              ok: false,
+              error: "CREDENTIAL_INACTIVE",
+              message: "Participante não possui credencial ativa para esta etapa.",
+              full_name: resolved.full_name
+            });
+            toast.error("Atenção: Participante sem credencial ativa!");
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
+            recordOutcome("error");
+            reopenIfContinuous();
+            return;
           }
         }
       }

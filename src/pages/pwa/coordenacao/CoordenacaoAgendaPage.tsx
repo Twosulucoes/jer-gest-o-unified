@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useActiveEventId } from "@/contexts/EventContext";
+import { useActiveStageId } from "@/contexts/StageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,21 +22,29 @@ interface MatchItem {
 
 export default function CoordenacaoAgendaPage() {
   const navigate = useNavigate();
+  const eventId = useActiveEventId();
+  const stageId = useActiveStageId();
   const [matches, setMatches] = useState<MatchItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase
+      let query = supabase
         .from("competition_matches")
-        .select("id, match_date, start_time, status, match_number, venue:venues(name), phase:competition_phases(name, sport_event:sport_events(sport:sports(name), category:categories(name)))")
+        .select("id, match_date, start_time, status, match_number, venue:venues!inner(name, event_id, event_stage_id), phase:competition_phases(name, sport_event:sport_events(sport:sports(name), category:categories(name)))")
         .eq("match_date", today)
-        .order("start_time");
+        .eq("venues.event_id", eventId);
+
+      if (stageId) {
+        query = query.eq("venues.event_stage_id", stageId);
+      }
+
+      const { data } = await query.order("start_time");
       setMatches((data as any) || []);
       setLoading(false);
     })();
-  }, []);
+  }, [eventId, stageId]);
 
   const statusStyle: Record<string, { label: string; className: string }> = {
     agendada: { label: "Próximo", className: "bg-muted text-muted-foreground" },

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEventContext } from "@/contexts/EventContext";
-import { useQuery } from "@tanstack/react-query";
+import { useStageContext } from "@/contexts/StageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator 
@@ -17,22 +17,7 @@ interface AlojamentoNavHeaderProps {
 export function AlojamentoNavHeader({ currentPathLabel, showQuickNav = true }: AlojamentoNavHeaderProps) {
   const navigate = useNavigate();
   const { activeEvent } = useEventContext();
-
-  const { data: activeStage } = useQuery({
-    queryKey: ["active-stage-lodging", activeEvent?.id],
-    queryFn: async () => {
-      if (!activeEvent?.id) return null;
-      const { data, error } = await supabase
-        .from("event_stages")
-        .select("id, name, status")
-        .eq("event_id", activeEvent.id)
-        .eq("status", "active")
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!activeEvent?.id,
-  });
+  const { activeStage } = useStageContext();
 
   return (
     <div className="bg-card border-b border-border/60 px-4 py-3 sticky top-0 z-20 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
