@@ -37,7 +37,7 @@ interface Props {
   isPending: boolean;
 }
 
-export default function MealTypeFormDialog({ open, onOpenChange, mealType, events, stageContext, onSubmit, isPending }: Props) {
+export default function MealTypeFormDialog({ open, onOpenChange, mealType, stageContext, onSubmit, isPending }: Props) {
   const isEditing = !!mealType;
 
   const form = useForm<MealTypeFormValues>({

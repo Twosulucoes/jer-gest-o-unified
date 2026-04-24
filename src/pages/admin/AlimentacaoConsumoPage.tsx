@@ -26,14 +26,8 @@ export default function AlimentacaoConsumoPage() {
   const itemsPerPage = 20;
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
 
-  const { data: events = [] } = useQuery({
-    queryKey: ["events"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("events").select("*").order("year", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Removido query redundante de events
+
 
   const { data: mealTypes = [] } = useQuery({
     queryKey: ["meal_types", selectedEventId],

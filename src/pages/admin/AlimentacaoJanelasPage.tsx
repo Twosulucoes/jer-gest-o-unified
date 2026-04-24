@@ -1,18 +1,28 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, Pencil, Clock } from "lucide-react";
+import { Plus, Pencil, Clock, Search, Filter, Copy, Trash2, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import MealWindowFormDialog, { type MealWindowFormValues } from "@/components/admin/MealWindowFormDialog";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
+
 
 export default function AlimentacaoJanelasPage() {
   const qc = useQueryClient();
@@ -23,14 +33,8 @@ export default function AlimentacaoJanelasPage() {
   const { stageId, isStageScoped } = useStageScope();
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
-  const { data: events = [] } = useQuery({
-    queryKey: ["events"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("events").select("*").order("year", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Removido query local de events - o contexto global de evento já deve estar provido pelo layout ou EventContext
+
 
   const { data: mealTypes = [] } = useQuery({
     queryKey: ["meal_types", selectedEventId],
@@ -95,10 +99,46 @@ export default function AlimentacaoJanelasPage() {
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("meal_windows").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["meal_windows"] }); toast.success("Janela excluída"); },
+    onError: (e: Error) => toast.error("Erro ao excluir: " + e.message),
+  });
+
+  const toggleStatusMut = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("meal_windows").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["meal_windows"] }),
+    onError: (e: Error) => toast.error("Erro ao alterar status: " + e.message),
+  });
+
+  const filteredWindows = useMemo(() => {
+    if (!windows) return [];
+    return windows.filter((w: any) => {
+      const mt = mealTypesMap.get(w.meal_type_id);
+      const matchesSearch = !searchTerm || 
+        mt?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.label?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.location?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === "all" || 
+        (statusFilter === "active" && w.is_active) ||
+        (statusFilter === "inactive" && !w.is_active);
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [windows, searchTerm, statusFilter, mealTypesMap]);
+
   const handleSubmit = (v: MealWindowFormValues) => {
-    if (editing) updateMut.mutate({ id: editing.id, ...v });
+    if (editing && !editing.isCopy) updateMut.mutate({ id: editing.id, ...v });
     else createMut.mutate(v);
   };
+
 
   const formatDate = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("pt-BR");
 
@@ -116,17 +156,8 @@ export default function AlimentacaoJanelasPage() {
         )}
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-2 max-w-xs">
-            <label className="text-sm font-medium text-foreground">Evento</label>
-            <Select value={selectedEventId} onValueChange={() => {}}>
-              <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
-              <SelectContent>{events.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} ({e.year})</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Removido card redundante de seleção de evento, pois o evento ativo já é controlado globalmente */}
+
 
       {!selectedEventId ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">

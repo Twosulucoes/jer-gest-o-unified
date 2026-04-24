@@ -55,14 +55,8 @@ export default function AlimentacaoHubPage() {
   const [windowDialog, setWindowDialog] = useState(false);
   const [editingWindow, setEditingWindow] = useState<any>(null);
 
-  const { data: events = [] } = useQuery({
-    queryKey: ["events"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("events").select("*").order("year", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Removido query de events local para evitar redundância com o contexto global
+
 
   const { data: stages = [], isLoading: loadingStages } = useQuery({
     queryKey: ["event_stages", selectedEventId],
@@ -357,8 +351,8 @@ export default function AlimentacaoHubPage() {
         open={typeDialog}
         onOpenChange={(o) => { setTypeDialog(o); if (!o) setEditingType(null); }}
         mealType={editingType}
-        events={events}
         stageContext={stageContext}
+
         onSubmit={(v) => editingType ? updateType.mutate({ id: editingType.id, ...v }) : createType.mutate(v)}
         isPending={createType.isPending || updateType.isPending}
       />
