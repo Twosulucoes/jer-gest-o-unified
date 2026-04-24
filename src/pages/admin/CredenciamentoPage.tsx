@@ -756,16 +756,14 @@ export default function CredenciamentoPage() {
     if (
       tempGuardianData.name !== (selectedForCred.guardian_name || "") || 
       tempGuardianData.phone !== (selectedForCred.guardian_phone || "") ||
-      tempGuardianData.coachName !== (selectedForCred.coach_name || "") ||
-      tempGuardianData.coachPhone !== (selectedForCred.coach_phone || "")
+      tempGuardianData.relationship !== (selectedForCred.coach_name || "")
     ) {
       const { error } = await supabase
         .from("participants")
         .update({
           guardian_name: tempGuardianData.name,
           guardian_phone: tempGuardianData.phone,
-          coach_name: tempGuardianData.coachName,
-          coach_phone: tempGuardianData.coachPhone,
+          coach_name: tempGuardianData.relationship,
         })
         .eq("id", selectedForCred.id);
       
