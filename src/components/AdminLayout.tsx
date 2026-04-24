@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree, Trophy, Bus, UtensilsCrossed, Building2,
-  Building, Users, Upload, KeyRound, BadgeCheck, Gavel,
+  Users, Upload, KeyRound, BadgeCheck, Gavel,
   UsersRound, ChevronDown,
   Shield, Settings, AlertTriangle, FileBarChart,
   Info, ExternalLink, ChevronsLeft,
   ChevronsRight, User, FolderOpen,
-  Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList, Radio, Database as DatabaseIcon, Activity, CheckCircle, Layers,
+  Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList, Radio, Layers,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import StageFilterBanner from "@/components/admin/StageFilterBanner";
