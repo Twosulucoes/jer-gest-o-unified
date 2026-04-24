@@ -216,7 +216,7 @@ export default function ParticipantesPage() {
       const baseFields =
         "id, status, participant_type, category, person_id, delegation_id, created_at, " +
         "person:people(id, full_name, cpf, gender), " +
-        "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))";
+        "delegation:delegations(id, school_name, institution_id)";
 
       const from = page * pageSize;
       const to = from + pageSize - 1;
