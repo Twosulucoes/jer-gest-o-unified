@@ -107,12 +107,12 @@ export function useDashboardData(eventId?: string | null) {
         staleTime: 0,
         queryFn: () => safe(async () => {
           const query = supabase.from("participant_credentials")
-            .select("id, status, issued_at, created_at");
+            .select("id, status, issued_at, created_at, participant_id");
           if (eventId) query.eq("event_id", eventId);
           const { data, error } = await query;
           if (error) console.error("Error fetching credentials:", error);
           return data ?? [];
-        }, [] as { id: string; status: string; issued_at: string | null; created_at: string }[]),
+        }, [] as { id: string; status: string; issued_at: string | null; created_at: string; participant_id: string | null }[]),
       },
       // 2: delegations
       {
