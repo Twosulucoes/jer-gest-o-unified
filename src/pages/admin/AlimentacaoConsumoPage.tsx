@@ -63,8 +63,8 @@ export default function AlimentacaoConsumoPage() {
     enabled: !!selectedEventId,
   });
 
-  const stageWindowsCount = windows.filter((w: any) => w.event_stage_id === stageId).length;
-  const showingFallbackWindows = isStageScoped && !!stageId && stageWindowsCount === 0 && windows.length > 0;
+  const stageWindowsCount = windows.length;
+  const showingFallbackWindows = false; // Removido fallback no queryFn
 
   const mealTypesMap = new Map(mealTypes.map((m) => [m.id, m]));
 
