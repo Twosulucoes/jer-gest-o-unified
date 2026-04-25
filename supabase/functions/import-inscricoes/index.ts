@@ -769,6 +769,7 @@ function mapColumns(
   const funcao = getField(raw, "FUNCAO");
   const pcd = getField(raw, "PCD");
   const esfera = getField(raw, "ESFERA");
+  const externalCredential = getField(raw, "CREDENCIAL") || null;
 
   const cpfRaw = cleanCpfRaw(getField(raw, "CPF") || null);
   const cpfDigits = extractCpfDigits(cpfRaw);
