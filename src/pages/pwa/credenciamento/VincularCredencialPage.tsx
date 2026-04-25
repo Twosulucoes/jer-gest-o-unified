@@ -119,9 +119,7 @@ export default function VincularCredencialPage() {
       if (error) throw error;
 
       toast.success("Credencial vinculada com sucesso!");
-      setScannedCode(null);
-      setCurrentOwner(null);
-      setManualQuery("");
+      handleReset();
     } catch (err: any) {
       toast.error(`Erro ao vincular: ${err.message}`);
     } finally {
