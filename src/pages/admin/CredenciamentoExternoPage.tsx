@@ -29,6 +29,7 @@ import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
 import { BackgroundLoadingIndicator } from "@/components/credenciamento/BackgroundLoadingIndicator";
 import { useStageModuleKpis } from "@/contexts/StageModuleKpisContext";
 import PessoaFormDialog from "@/components/admin/people/PessoaFormDialog";
+import { BulkExternalCredentialImport } from "@/components/credenciamento/BulkExternalCredentialImport";
 
 interface ParticipantRow {
   id: string;
@@ -331,27 +332,33 @@ export default function CredenciamentoExternoPage() {
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tipo de Credencial</span>
-            <div className="flex items-center gap-1 rounded-lg border bg-muted/50 p-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={cn("h-7 px-2 text-xs gap-1.5", !isInternalMode && "bg-background shadow-sm text-primary")}
-                onClick={() => setIsInternalMode(false)}
-              >
-                <Link2 className="h-3.5 w-3.5" />
-                Externa
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={cn("h-7 px-2 text-xs gap-1.5", isInternalMode && "bg-background shadow-sm text-primary")}
-                onClick={() => setIsInternalMode(true)}
-              >
-                <IdCard className="h-3.5 w-3.5" />
-                Interna
-              </Button>
+            <div className="flex items-center gap-2">
+              <BulkExternalCredentialImport 
+                eventId={eventId!} 
+                onSuccess={() => qc.invalidateQueries({ queryKey: ["ext-cred-active", eventId] })} 
+              />
+              <div className="flex items-center gap-1 rounded-lg border bg-muted/50 p-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={cn("h-7 px-2 text-xs gap-1.5", !isInternalMode && "bg-background shadow-sm text-primary")}
+                  onClick={() => setIsInternalMode(false)}
+                >
+                  <Link2 className="h-3.5 w-3.5" />
+                  Externa
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={cn("h-7 px-2 text-xs gap-1.5", isInternalMode && "bg-background shadow-sm text-primary")}
+                  onClick={() => setIsInternalMode(true)}
+                >
+                  <IdCard className="h-3.5 w-3.5" />
+                  Interna
+                </Button>
+              </div>
             </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tipo de Credencial</span>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
