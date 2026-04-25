@@ -41,6 +41,24 @@ const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; al
     allowedRoles: ["admin", "secretaria"],
     features: ["Vincular credencial física", "Busca de participantes", "Status de ativação"],
   },
+  arbitragem: {
+    label: "Arbitragem",
+    icon: ShieldCheck,
+    allowedRoles: ["admin", "secretaria", "arbitragem"],
+    features: ["Súmulas eletrônicas", "Avaliação de locais", "Controle de árbitros"],
+  },
+  cde: {
+    label: "CDE (Protestos)",
+    icon: Gavel,
+    allowedRoles: ["admin", "secretaria", "cde"],
+    features: ["Gestão de protestos", "Julgamentos", "Histórico de decisões"],
+  },
+  resultados: {
+    label: "Resultados",
+    icon: Award,
+    allowedRoles: ["admin", "secretaria", "coordenador_modalidade"],
+    features: ["Lançamento de placar", "Finalização de partidas", "Estatísticas"],
+  },
 };
 
 export default function PwaModulePage() {
