@@ -254,7 +254,7 @@ export default function VincularCredencialPage() {
             <div className="space-y-4">
               <div className="text-center space-y-1">
                 <h2 className="text-lg font-bold">Passo 2: Quem é o dono?</h2>
-                <p className="text-sm text-muted-foreground">Busque o participante pelo nome ou CPF</p>
+                <p className="text-sm text-muted-foreground">Busque o participante pelo nome, CPF ou escaneie o QR Code dele (mesmo de outro sistema)</p>
               </div>
 
               <div className="flex gap-2">
