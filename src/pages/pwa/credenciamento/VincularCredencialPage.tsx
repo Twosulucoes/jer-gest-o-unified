@@ -70,10 +70,15 @@ export default function VincularCredencialPage() {
     setScannedCode(code);
     
     try {
-      const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
-      if (resolved) {
-        setCurrentOwner({ name: resolved.full_name || "Sem nome", id: resolved.participant_id });
-        toast.info(`Este código já pertence a: ${resolved.full_name}`);
+      const res = await resolveQrCredential(rawValue, { eventId: activeEventId });
+      setResolved(res);
+      if (res) {
+        setCurrentOwner({ name: res.full_name || "Sem nome", id: res.participant_id });
+        if (res.source === "cpf") {
+          toast.success(`CPF de ${res.full_name} identificado!`);
+        } else {
+          toast.info(`Este código já pertence a: ${res.full_name}`);
+        }
       } else {
         setCurrentOwner(null);
         toast.success("Código disponível para vínculo!");
@@ -82,6 +87,13 @@ export default function VincularCredencialPage() {
       console.error(err);
       toast.error("Erro ao verificar código");
     }
+  };
+
+  const handleReset = () => {
+    setScannedCode(null);
+    setResolved(null);
+    setCurrentOwner(null);
+    setManualQuery("");
   };
 
   const handleLink = async (participant: ParticipantManualSearchRow) => {
