@@ -131,6 +131,7 @@ export default function PesquisaHomePage() {
           !loading && <p className="text-sm text-muted-foreground text-center py-4">Nenhuma coleta ainda</p>
         )}
       </div>
+      </PwaContainer>
     </div>
   );
 }
