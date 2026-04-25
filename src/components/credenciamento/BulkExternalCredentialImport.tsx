@@ -94,12 +94,21 @@ export function BulkExternalCredentialImport({ eventId, onSuccess }: BulkExterna
           continue;
         }
 
-        // 2. Vincular credencial usando a RPC existente
+        // 2. Verificar se já possui credencial ativa para poder substituir
+        const { data: existingCred } = await supabase
+          .from("external_credentials")
+          .select("id")
+          .eq("participant_id", participant.id)
+          .eq("status", "active")
+          .maybeSingle();
+
+        // 3. Vincular credencial usando a RPC existente
         const { error: linkError } = await (supabase as any).rpc("link_external_credential", {
           p_event_id: eventId,
           p_participant_id: participant.id,
           p_credential_code: code,
           p_user_id: user.id,
+          p_replace_id: existingCred?.id ?? null,
         });
 
         if (linkError) {
