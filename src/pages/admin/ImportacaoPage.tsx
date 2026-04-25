@@ -241,7 +241,7 @@ export default function ImportacaoPage() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { toast.error("Sessão expirada. Faça login novamente."); return; }
     const rows = options?.rowsOverride ?? applyMapping(rawParsedRows, confirmedMapping);
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "dfzjrijdcskncrwaiykr";
     const url = `https://${projectId}.supabase.co/functions/v1/import-inscricoes`;
     const payload: Record<string, unknown> = {
       rows, event_id: selectedEventId, event_stage_id: selectedStageId, mode, file_name: file.name,
