@@ -107,7 +107,7 @@ export default function AlimentacaoHubPage() {
       if (error) throw error;
       return (data ?? []) as any[];
     },
-    enabled: !!selectedStageId,
+    enabled: !!selectedStageId && !!selectedEventId,
   });
 
   const typesMap = new Map(mealTypes.map(m => [m.id, m]));
