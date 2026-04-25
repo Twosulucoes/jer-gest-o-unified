@@ -66,12 +66,12 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Eventos", to: "/admin/eventos", icon: <Calendar className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Duplicidades de Pessoas", to: "/admin/participantes/duplicidades", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Duplicidades de Pessoas", to: "/admin/participantes/duplicidades", icon: <Users className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
       { label: "Histórico do Participante", to: "/admin/participantes/historico", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Credencial (Modelos)", to: "/admin/credenciais/modelos", icon: <BadgeCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Vouchers (Validar)", to: "/admin/vouchers", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "alimentacao"] as AppRole[] },
-      { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
@@ -82,7 +82,7 @@ const navGroups: NavGroup[] = [
       { label: "Central de Relatórios", to: "/admin/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Boletins por Modalidade", to: "/admin/relatorios/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Quadro de Medalhas", to: "/admin/relatorios/quadro-medalhas", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Prestação de Contas (OSC)", to: "/admin/relatorios/osc", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Prestação de Contas (OSC)", to: "/admin/relatorios/osc", icon: <FileBarChart className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
     ],
   },
   {
@@ -90,14 +90,14 @@ const navGroups: NavGroup[] = [
     icon: <Layers className="h-4 w-4" />,
     items: [
       { label: "Logística Consolidada", to: "/admin/etapas", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Clonar Logística entre Etapas", to: "/admin/clonar-logistica", icon: <Layers className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Clonar Logística entre Etapas", to: "/admin/clonar-logistica", icon: <Layers className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
     ],
   },
   {
     id: "comunicacao", label: "Comunicação e Visual", description: "Identidade, links e pesquisa.",
     icon: <Radio className="h-4 w-4" />,
     items: [
-      { label: "Páginas e Links", to: "/admin/links", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Páginas e Links", to: "/admin/links", icon: <ExternalLink className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
       { label: "Identidade Visual", to: "/admin/configuracoes/identidade-visual", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
       { label: "Pesquisa de Satisfação", to: "/admin/pesquisa", icon: <ClipboardList className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
@@ -118,8 +118,8 @@ const navGroups: NavGroup[] = [
     id: "acessos", label: "Acessos", description: "Usuários e permissões.",
     icon: <Users className="h-4 w-4" />,
     items: [
-      { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Acessos e Vínculos", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
+      { label: "Acessos e Vínculos", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde", "super_admin"] as AppRole[] },
     ],
   },
@@ -515,3 +515,4 @@ export default function AdminLayout() {
     </TooltipProvider>
   );
 }
+

@@ -94,7 +94,9 @@ export default function AcessosUsuariosPage() {
   const queryClient = useQueryClient();
   const { hasRole, user } = useAuth();
   const { activeEvent } = useEventContext();
+  const isSuperAdmin = hasRole("super_admin");
   const isAdmin = hasRole("admin");
+  const canManageAllRoles = isSuperAdmin || isAdmin;
   const eventId = activeEvent?.id;
 
   // Filters
@@ -179,7 +181,9 @@ export default function AcessosUsuariosPage() {
   });
 
   const filteredUsers = useMemo(() => {
-    let list = users;
+    let list = isSuperAdmin
+      ? users
+      : users.filter((u: any) => !u.roles?.includes("super_admin"));
     if (search) {
       const q = search.toLowerCase();
       list = list.filter((u: any) =>
@@ -200,7 +204,7 @@ export default function AcessosUsuariosPage() {
       });
     }
     return list;
-  }, [users, search, filterRole, filterStatus]);
+  }, [users, isSuperAdmin, search, filterRole, filterStatus]);
 
   const openDrawer = async (u: any) => {
     setSelectedUser(u);
@@ -303,7 +307,8 @@ export default function AcessosUsuariosPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const availableRoles = isAdmin ? ROLES : OPERATIONAL_ROLES;
+  const visibleRoles = isSuperAdmin ? ROLES : ROLES.filter((r) => r.value !== "super_admin");
+  const availableRoles = canManageAllRoles ? visibleRoles : OPERATIONAL_ROLES;
 
   const handleSaveDrawerRoles = () => {
     if (!selectedUser) return;
@@ -350,7 +355,7 @@ export default function AcessosUsuariosPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os perfis</SelectItem>
-            {ROLES.map((r) => (
+            {visibleRoles.map((r) => (
               <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
             ))}
           </SelectContent>
@@ -838,3 +843,6 @@ export default function AcessosUsuariosPage() {
     </div>
   );
 }
+
+
+

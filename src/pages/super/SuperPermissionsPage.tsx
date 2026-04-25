@@ -24,9 +24,9 @@ const PERMISSIONS: PermissionRow[] = [
   { page: "Eventos", path: "/admin/eventos", category: "admin", allowedRoles: ["admin", "secretaria", "coordenacao_tecnica"] },
   { page: "Participantes", path: "/admin/participantes", category: "admin", allowedRoles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] },
   { page: "Delegações", path: "/admin/delegacoes", category: "admin", allowedRoles: ["admin", "secretaria", "coordenacao_tecnica"] },
-  { page: "Importação", path: "/admin/importacao", category: "admin", allowedRoles: ["admin", "secretaria"] },
-  { page: "Usuários", path: "/admin/acessos/usuarios", category: "admin", allowedRoles: ["admin", "secretaria"] },
-  { page: "Vínculos", path: "/admin/acessos/delegacoes", category: "admin", allowedRoles: ["admin", "secretaria"] },
+  { page: "Importação", path: "/admin/importacao", category: "admin", allowedRoles: ["super_admin", "admin", "secretaria"] },
+  { page: "Usuários", path: "/admin/acessos/usuarios", category: "admin", allowedRoles: ["super_admin", "admin", "secretaria"] },
+  { page: "Vínculos", path: "/admin/acessos/delegacoes", category: "admin", allowedRoles: ["super_admin", "admin", "secretaria"] },
   
   // Contexto Etapa
   { page: "Hub da Etapa", path: "/admin/etapa/:id", category: "etapa", allowedRoles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento", "coordenador_modalidade"] },
@@ -154,3 +154,4 @@ export default function SuperPermissionsPage() {
     </div>
   );
 }
+
