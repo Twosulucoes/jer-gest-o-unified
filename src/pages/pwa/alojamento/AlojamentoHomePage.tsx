@@ -5,7 +5,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { getSelectedFacility, setSelectedFacility } from "@/hooks/useAlojamento";
 import { AlojamentoDuplicateAlert } from "@/components/pwa/alojamento/AlojamentoDuplicateAlert";
