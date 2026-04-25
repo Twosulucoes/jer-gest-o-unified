@@ -22,7 +22,7 @@ const KIND_LABELS: Record<string, string> = {
  */
 export default function StageFilterBanner() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { stage, participantIds, isFiltering } = useStageParticipantFilter();
+  const { stage, participantIds } = useStageParticipantFilter();
   const { setSelectedStageId } = useCompetitionContext();
 
   // O banner só deve aparecer se o filtro vier EXPLICITAMENTE da URL (?stage=)
