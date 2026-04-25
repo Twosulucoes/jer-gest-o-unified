@@ -244,20 +244,21 @@ export function useDashboardData(eventId?: string | null) {
 
   const isLoading = queries.some((q) => q.isLoading);
   
-  const [participants, credentials, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, trips, vehicles, sportEvents, matches] =
+  const [participantsRes, credentialsRes, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, tripsRes, vehicles, sportEvents, matchesRes] =
     queries.map((q) => q.data) as [
-      { id: string; credentialed_at: string | null; delegation_id: string | null }[],
-      { id: string; status: string; issued_at: string | null; created_at: string; participant_id: string | null }[],
+      { list: any[]; totalCount: number },
+      { list: any[]; totalCount: number },
       { id: string; school_name: string }[],
       { id: string; service_date: string; meal_type_id: string; label: string | null }[],
       { id: string; name: string }[],
       { id: string; capacity: number; is_active: boolean }[],
       number,
-      { id: string }[],
+      { list: any[]; totalCount: number },
       number,
       Array<{ id: string; name: string | null; sports: { name: string } | null }>,
-      { id: string; status: string; sport_event_id: string | null; match_date: string | null; start_time: string | null }[],
+      { list: any[]; totalCount: number },
     ];
+
 
   // Fallbacks defensivos
   const P = participants ?? [];
