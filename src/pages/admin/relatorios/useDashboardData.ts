@@ -90,15 +90,17 @@ export function useDashboardData(eventId?: string | null) {
       {
         queryKey: ["dash3", "participants", eventId],
         enabled,
-        staleTime: 0, // Disable cache for auditing or quick updates
+        staleTime: 0,
         queryFn: () => safe(async () => {
           const query = supabase.from("participants")
-            .select("id, credentialed_at, delegation_id");
+            .select("id, credentialed_at, delegation_id", { count: "exact" })
+            .limit(5000);
           if (eventId) query.eq("event_id", eventId);
-          const { data, error } = await query;
+          const { data, count, error } = await query;
           if (error) console.error("Error fetching participants:", error);
-          return data ?? [];
-        }, [] as { id: string; credentialed_at: string | null; delegation_id: string | null }[]),
+          // Return both data and the exact count from the header
+          return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
+        }, { list: [], totalCount: 0 }),
       },
       // 1: credentials
       {
@@ -107,12 +109,13 @@ export function useDashboardData(eventId?: string | null) {
         staleTime: 0,
         queryFn: () => safe(async () => {
           const query = supabase.from("participant_credentials")
-            .select("id, status, issued_at, created_at, participant_id");
+            .select("id, status, issued_at, created_at, participant_id", { count: "exact" })
+            .limit(5000);
           if (eventId) query.eq("event_id", eventId);
-          const { data, error } = await query;
+          const { data, count, error } = await query;
           if (error) console.error("Error fetching credentials:", error);
-          return data ?? [];
-        }, [] as { id: string; status: string; issued_at: string | null; created_at: string; participant_id: string | null }[]),
+          return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
+        }, { list: [], totalCount: 0 }),
       },
       // 2: delegations
       {
