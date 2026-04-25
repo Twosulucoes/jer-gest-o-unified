@@ -44,14 +44,36 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Verify caller using getClaims (compatible with new signing-keys system)
+    // Verify caller: try getClaims first (signing-keys), fallback to getUser via user-scoped client
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsErr } = await adminClient.auth.getClaims(token);
-    if (claimsErr || !claimsData?.claims?.sub) {
-      return jsonResponse({ error: "NOT_AUTHENTICATED" }, 401);
+    let callerId: string | null = null;
+    let callerEmail: string | undefined;
+
+    try {
+      const { data: claimsData } = await adminClient.auth.getClaims(token);
+      if (claimsData?.claims?.sub) {
+        callerId = claimsData.claims.sub as string;
+        callerEmail = claimsData.claims.email as string | undefined;
+      }
+    } catch (_) {
+      // ignore, fallback below
     }
-    const callerId = claimsData.claims.sub as string;
-    const caller = { id: callerId, email: claimsData.claims.email as string | undefined };
+
+    if (!callerId) {
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: userData, error: userErr } = await userClient.auth.getUser();
+      if (userErr || !userData?.user?.id) {
+        return jsonResponse({ error: "NOT_AUTHENTICATED" }, 401);
+      }
+      callerId = userData.user.id;
+      callerEmail = userData.user.email ?? undefined;
+    }
+
+    const caller = { id: callerId, email: callerEmail };
 
     // Check admin/secretaria role using admin client (bypasses JWT verification issues)
     const { data: callerRoles } = await adminClient
