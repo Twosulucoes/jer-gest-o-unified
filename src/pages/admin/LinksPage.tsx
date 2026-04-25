@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Plus, Copy, Download, Search, Loader2, Link2, ExternalLink, Trash2,
   QrCode, Info, Pencil, Bus, UtensilsCrossed, Building, Trophy, Users, Radio, Sparkles, Send, MessageSquare,
+  ShieldCheck, Gavel, IdCard, Award
 } from "lucide-react";
 
 const BASE_URL = window.location.origin;
@@ -22,8 +23,12 @@ const MODULE_OPTIONS = [
   { value: "/pwa/alimentacao", label: "Módulo Alimentação", icon: UtensilsCrossed, slug: "alimentacao", title: "Alimentação" },
   { value: "/pwa/alojamento", label: "Módulo Alojamento", icon: Building, slug: "alojamento", title: "Alojamento" },
   { value: "/pwa/coordenacao-tecnica", label: "Módulo Coordenação Técnica", icon: Trophy, slug: "coordenacao", title: "Coordenação Técnica" },
+  { value: "/pwa/resultados", label: "Módulo Resultados (Coord. Modalidade)", icon: Award, slug: "resultados", title: "Resultados" },
   { value: "/pwa/delegacao", label: "Módulo Delegação", icon: Users, slug: "delegacao", title: "Delegação" },
-  { value: "/aovivo", label: "Página Ao Vivo", icon: Radio, slug: "aovivo", title: "Ao Vivo" },
+  { value: "/pwa/arbitragem", label: "Módulo Arbitragem", icon: ShieldCheck, slug: "arbitragem", title: "Arbitragem" },
+  { value: "/pwa/cde", label: "Módulo CDE (Protestos)", icon: Gavel, slug: "cde", title: "CDE" },
+  { value: "/pwa/credenciamento", label: "Módulo Credenciamento", icon: IdCard, slug: "credenciamento", title: "Credenciamento" },
+  { value: "/aovivo", label: "Módulo Ao Vivo / Mesário", icon: Radio, slug: "aovivo", title: "Ao Vivo" },
 ];
 
 function generateSlug(title: string): string {

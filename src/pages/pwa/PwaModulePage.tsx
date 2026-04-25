@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Bus, UtensilsCrossed, Trophy, Users, Building, IdCard } from "lucide-react";
+import { Loader2, Bus, UtensilsCrossed, Trophy, Users, Building, IdCard, ShieldCheck, Gavel, Award } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 
 const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; allowedRoles: string[]; features: string[] }> = {
@@ -40,6 +40,24 @@ const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; al
     icon: IdCard,
     allowedRoles: ["admin", "secretaria"],
     features: ["Vincular credencial física", "Busca de participantes", "Status de ativação"],
+  },
+  arbitragem: {
+    label: "Arbitragem",
+    icon: ShieldCheck,
+    allowedRoles: ["admin", "secretaria", "arbitragem"],
+    features: ["Súmulas eletrônicas", "Avaliação de locais", "Controle de árbitros"],
+  },
+  cde: {
+    label: "CDE (Protestos)",
+    icon: Gavel,
+    allowedRoles: ["admin", "secretaria", "cde"],
+    features: ["Gestão de protestos", "Julgamentos", "Histórico de decisões"],
+  },
+  resultados: {
+    label: "Resultados",
+    icon: Award,
+    allowedRoles: ["admin", "secretaria", "coordenador_modalidade"],
+    features: ["Lançamento de placar", "Finalização de partidas", "Estatísticas"],
   },
 };
 
