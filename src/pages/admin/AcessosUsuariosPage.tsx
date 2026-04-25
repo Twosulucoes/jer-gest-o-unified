@@ -486,7 +486,7 @@ export default function AcessosUsuariosPage() {
                               </Badge>
                             ))}
                             {userStages.map((s) => (
-                              <Badge key={s.stage_id} variant="secondary" className="text-[10px] px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700">
+                              <Badge key={s.stage_id} variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary bg-primary/5">
                                 <Layers className="h-2.5 w-2.5 mr-1" />
                                 {s.name}
                               </Badge>
