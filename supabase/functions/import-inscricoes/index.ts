@@ -856,6 +856,8 @@ interface ReadOnlyMaps {
   sportAliases: Record<string, string>;
   /** Aliases dinâmicos vindos da tabela import_aliases (kind='category'). */
   categoryAliases: Record<string, string>;
+  /** Credenciais externas já ocupadas (credential_code -> participant_id). */
+  existingCredentials: Map<string, string>;
 }
 
 async function loadReadOnlyMaps(
