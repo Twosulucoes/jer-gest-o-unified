@@ -8,7 +8,7 @@ import {
   Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree, Trophy, Bus, UtensilsCrossed, Building2,
   Users, Upload, KeyRound, BadgeCheck, Gavel,
   UsersRound, ChevronDown,
-  Shield, Settings, AlertTriangle, FileBarChart,
+  Shield, Settings, AlertTriangle, FileBarChart, Monitor,
   Info, ExternalLink, ChevronsLeft,
   ChevronsRight, User, FolderOpen,
   Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList, Radio, Layers,
@@ -120,6 +120,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
       { label: "Acessos e Vínculos", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
+      { label: "Auditoria de Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde", "super_admin"] as AppRole[] },
     ],
   },

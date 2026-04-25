@@ -27,6 +27,7 @@ import {
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 import { ScanLine, CheckCircle2, XCircle } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 type ScanMode = "validate" | "checkin" | "checkout";
 
@@ -35,6 +36,7 @@ const MODULE = "alojamento" as const;
 export default function AlojamentoScanPage() {
   const navigate = useNavigate();
   const { activeEvent } = useEventContext();
+  usePwaAudit("alojamento/escanear");
   const stageId = useActiveStageId();
   const { user } = useAuth();
   const userId = user?.id ?? null;
@@ -189,7 +191,7 @@ export default function AlojamentoScanPage() {
       recordOutcome("error");
       reopenIfContinuous();
     }
-  }, [mode, facilityId, isOnline, enqueue, navigate, recordOutcome, reopenIfContinuous, lang, activeEvent?.id]);
+  }, [mode, facilityId, isOnline, enqueue, navigate, recordOutcome, reopenIfContinuous, lang, stageId]);
 
   return (
     <div className="min-h-screen bg-background">

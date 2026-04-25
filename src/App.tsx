@@ -80,6 +80,7 @@ import DelegacaoDetalhePage from "./pages/admin/DelegacaoDetalhePage";
 import CredencialModelosPage from "./pages/admin/CredencialModelosPage";
 import AcessosDelegacoesPage from "./pages/admin/AcessosDelegacoesPage";
 import AcessosUsuariosPage from "./pages/admin/AcessosUsuariosPage";
+import AcessosPwaAuditPage from "./pages/admin/AcessosPwaAuditPage";
 // ParametrosEventoPage removed — consolidated into RegrasEventoPage
 import IrregularidadesPage from "./pages/admin/IrregularidadesPage";
 import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
@@ -308,6 +309,7 @@ const App = () => (
               {/* Acessos */}
               <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
               <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
+              <Route path="acessos/pwa" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosPwaAuditPage /></ProtectedRoute>} />
               {/* Parâmetros e Regras — consolidados em /admin/regras */}
               <Route path="parametros-evento" element={<Navigate to="/admin/regras" replace />} />
               <Route path="regras-evento" element={<Navigate to="/admin/regras" replace />} />
