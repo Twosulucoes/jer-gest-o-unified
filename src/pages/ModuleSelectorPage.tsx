@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Loader2, UtensilsCrossed, Users, Clipboard, Shield, LogOut,
-  LayoutDashboard, Bus, Bed, Trophy, ScanLine,
+  LayoutDashboard, Bus, Bed, Trophy, ScanLine, IdCard
 } from "lucide-react";
 
 interface ModuleOption {
