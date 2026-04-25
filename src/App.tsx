@@ -481,6 +481,10 @@ const App = () => (
             <Route path="/pwa/delegacao/protestos/novo" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
             <Route path="/pwa/delegacao/protestos/:id" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
 
+            {/* Credenciamento */}
+            <Route path="/pwa/credenciamento" element={<PwaRouteGuard allowedRoles={["admin", "secretaria"]}><VincularCredencialPage /></PwaRouteGuard>} />
+            <Route path="/pwa/credenciamento/vincular" element={<PwaRouteGuard allowedRoles={["admin", "secretaria"]}><VincularCredencialPage /></PwaRouteGuard>} />
+
             {/* PWA Module pages (Catch-all for implemented modules but also placeholder for future ones) */}
             <Route path="/pwa/:module" element={<PwaModulePage />} />
             {/* PWA Pesquisa (PIN auth, no Supabase Auth) */}
