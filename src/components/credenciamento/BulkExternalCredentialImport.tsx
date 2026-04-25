@@ -103,7 +103,13 @@ export function BulkExternalCredentialImport({ eventId, onSuccess }: BulkExterna
         });
 
         if (linkError) {
-          errors.push({ row: i + 2, error: linkError.message });
+          let msg = linkError.message;
+          if (msg.includes("uq_external_credentials_active_participant")) {
+            msg = "Participante já possui uma credencial ativa.";
+          } else if (msg.includes("uq_external_credentials_active_code")) {
+            msg = "Este código de credencial já está em uso por outra pessoa.";
+          }
+          errors.push({ row: i + 2, error: msg });
         } else {
           successCount++;
         }
