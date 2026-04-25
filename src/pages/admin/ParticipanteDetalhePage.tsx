@@ -218,15 +218,46 @@ export default function ParticipanteDetalhePage() {
 
   if (loadingParticipant) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground animate-pulse">Carregando dados do participante...</p>
+      </div>
+    );
+  }
+
+  if (participantError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-4 max-w-md mx-auto text-center">
+        <div className="bg-destructive/10 p-3 rounded-full">
+          <Activity className="h-8 w-8 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold">Erro ao carregar dados</h2>
+          <p className="text-sm text-muted-foreground">
+            Ocorreu um problema ao buscar os dados deste participante. 
+            Isso pode ser causado por uma falha na conexão ou um erro inesperado no banco de dados.
+          </p>
+          <p className="text-xs font-mono bg-muted p-2 rounded border break-all">
+            {String(participantError)}
+          </p>
+        </div>
+        <Button onClick={() => window.location.reload()}>Tentar Novamente</Button>
       </div>
     );
   }
 
   if (!participant) {
     return (
-      <div className="text-center py-12 text-muted-foreground">Participante não encontrado.</div>
+      <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
+        <User className="h-10 w-10 text-muted-foreground opacity-50" />
+        <div className="space-y-1">
+          <p className="text-muted-foreground font-medium">Participante não encontrado.</p>
+          <p className="text-sm text-muted-foreground">Verifique se o link está correto ou se o participante ainda existe.</p>
+        </div>
+        <Button variant="outline" asChild>
+          <Link to="/admin/participantes">Voltar para a Lista</Link>
+        </Button>
+      </div>
     );
   }
 
