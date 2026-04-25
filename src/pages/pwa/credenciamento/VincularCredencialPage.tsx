@@ -19,6 +19,7 @@ export default function VincularCredencialPage() {
   usePwaAudit("credenciamento/vincular");
 
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [participantScannerOpen, setParticipantScannerOpen] = useState(false);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
   const [resolved, setResolved] = useState<ResolvedCredential | null>(null);
   const [currentOwner, setCurrentOwner] = useState<{ name: string; id: string } | null>(null);
@@ -86,6 +87,41 @@ export default function VincularCredencialPage() {
     } catch (err) {
       console.error(err);
       toast.error("Erro ao verificar código");
+    }
+  };
+
+  const handleParticipantScan = async (rawValue: string) => {
+    setParticipantScannerOpen(false);
+    if (!rawValue.trim() || !activeEventId) return;
+
+    try {
+      setManualSearching(true);
+      const res = await resolveQrCredential(rawValue, { eventId: activeEventId });
+      
+      if (res && res.participant_id) {
+        // Encontrou o participante via QR (pode ser CPF ou Token do sistema)
+        await handleLink({
+          participant_id: res.participant_id,
+          full_name: res.full_name || "Participante identificado",
+          person_id: "",
+          cpf: "",
+          participant_type: ""
+        });
+      } else {
+        // Tenta buscar por CPF se for apenas dígitos
+        const { cpfDigits } = extractCandidates(rawValue);
+        if (cpfDigits) {
+          setManualQuery(cpfDigits);
+          toast.info("Pesquisando pelo CPF extraído...");
+        } else {
+          toast.error("Não foi possível identificar o participante por este QR Code");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao identificar participante");
+    } finally {
+      setManualSearching(false);
     }
   };
 
@@ -218,18 +254,29 @@ export default function VincularCredencialPage() {
             <div className="space-y-4">
               <div className="text-center space-y-1">
                 <h2 className="text-lg font-bold">Passo 2: Quem é o dono?</h2>
-                <p className="text-sm text-muted-foreground">Busque o participante pelo nome ou CPF</p>
+                <p className="text-sm text-muted-foreground">Busque o participante pelo nome, CPF ou escaneie o QR Code dele (mesmo de outro sistema)</p>
               </div>
 
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome ou CPF…"
-                  value={manualQuery}
-                  onChange={(e) => setManualQuery(e.target.value)}
-                  className="h-12 border-border/80 bg-card/90 pl-10 shadow-app-sm rounded-xl"
-                  autoFocus
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome ou CPF…"
+                    value={manualQuery}
+                    onChange={(e) => setManualQuery(e.target.value)}
+                    className="h-12 border-border/80 bg-card/90 pl-10 shadow-app-sm rounded-xl"
+                    autoFocus
+                  />
+                </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="h-12 w-12 rounded-xl p-0 border-primary/20 bg-primary/5 text-primary shadow-app-sm"
+                  onClick={() => setParticipantScannerOpen(true)}
+                  title="Escanear QR do Participante"
+                >
+                  <ScanLine className="h-5 w-5" />
+                </Button>
               </div>
 
               <div className="min-h-[200px]">
@@ -281,6 +328,13 @@ export default function VincularCredencialPage() {
         onClose={() => setScannerOpen(false)}
         onScan={handleScan}
         title="Escanear Credencial Física"
+      />
+      
+      <QrCodeScanner
+        isOpen={participantScannerOpen}
+        onClose={() => setParticipantScannerOpen(false)}
+        onScan={handleParticipantScan}
+        title="Identificar Participante"
       />
       
       {linking && (
