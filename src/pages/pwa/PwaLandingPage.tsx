@@ -2,10 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers } from "lucide-react";
+import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers, IdCard } from "lucide-react";
 import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PwaBrandLogo } from "@/components/pwa/PwaBrandLogo";
 
 interface UserProfile {
   full_name: string | null;
@@ -19,6 +18,7 @@ const MODULE_CARDS = [
   { role: "alojamento", label: "Alojamento", icon: Building, to: "/pwa/alojamento", gradient: "from-[hsl(133,55%,45%)] to-[hsl(174,87%,34%)]" },
   { role: "coordenacao_tecnica", label: "Coord. Técnica", icon: Trophy, to: "/pwa/coordenacao-tecnica", gradient: "from-[hsl(214,78%,21%)] to-[hsl(212,84%,36%)]" },
   { role: "delegacao", label: "Delegação", icon: Users, to: "/pwa/delegacao", gradient: "from-[hsl(174,87%,34%)] to-[hsl(133,55%,45%)]" },
+  { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento", gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]" },
   { role: "mesario", label: "Mesário", icon: Gavel, to: "/aovivo", gradient: "from-[hsl(25,95%,45%)] to-[hsl(14,89%,36%)]" },
   { role: "arbitragem", label: "Arbitragem", icon: Shield, to: "/aovivo", gradient: "from-[hsl(14,89%,36%)] to-[hsl(25,95%,45%)]" },
   { role: "pesquisa", label: "Pesquisa", icon: ClipboardCheck, to: "/pwa/pesquisa/login", gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]" },
@@ -26,7 +26,7 @@ const MODULE_CARDS = [
 
 export default function PwaLandingPage() {
   const navigate = useNavigate();
-  const { stages, activeStageId, setActiveStageId, stagesLoading } = useStageContext();
+  const { stages, activeStageId, setActiveStageId } = useStageContext();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,15 +57,10 @@ export default function PwaLandingPage() {
         return;
       }
 
-      // Admin/secretaria → redirect to admin panel
-      if (roles.some((r) => r === "admin" || r === "secretaria" || r === "super_admin")) {
-        navigate("/admin", { replace: true });
-        return;
-      }
-
-      // Single operational role → go directly to module
-      const opCards = MODULE_CARDS.filter((c) => roles.includes(c.role));
-      if (opCards.length === 1) {
+      // Se for apenas admin/secretaria e não tiver módulos específicos, pode ir pro desktop
+      // Mas vamos deixar o usuário escolher se estiver no /pwa
+      const opCards = MODULE_CARDS.filter((c) => roles.includes(c.role) || (c.role === "secretaria" && roles.includes("admin")));
+      if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria")) {
         navigate(opCards[0].to, { replace: true });
         return;
       }
@@ -104,7 +99,9 @@ export default function PwaLandingPage() {
   if (!profile) return null;
 
   // Only show modules the user has access to
-  const visibleCards = MODULE_CARDS.filter((c) => profile.roles.includes(c.role));
+  const visibleCards = MODULE_CARDS.filter((c) => 
+    profile.roles.includes(c.role) || (c.role === "secretaria" && profile.roles.includes("admin"))
+  );
 
   return (
     <div className="tactical-cockpit min-h-screen bg-background">

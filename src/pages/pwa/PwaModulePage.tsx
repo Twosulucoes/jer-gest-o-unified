@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Bus, UtensilsCrossed, Trophy, Users, Building } from "lucide-react";
+import { Loader2, Bus, UtensilsCrossed, Trophy, Users, Building, IdCard } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 
 const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; allowedRoles: string[]; features: string[] }> = {
@@ -34,6 +34,12 @@ const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; al
     icon: Users,
     allowedRoles: ["admin", "secretaria", "delegacao"],
     features: ["Meus participantes", "Agenda de competição", "Informações logísticas"],
+  },
+  credenciamento: {
+    label: "Credenciamento",
+    icon: IdCard,
+    allowedRoles: ["admin", "secretaria"],
+    features: ["Vincular credencial física", "Busca de participantes", "Status de ativação"],
   },
 };
 

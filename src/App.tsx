@@ -179,6 +179,7 @@ import DelegacaoProtestoNovoPage from "./pages/pwa/delegacao/DelegacaoProtestoNo
 import DelegacaoProtestoDetalhePage from "./pages/pwa/delegacao/DelegacaoProtestoDetalhePage";
 import ProtestosFilaPage from "./pages/admin/ProtestosFilaPage";
 import QrDiagnosticoPage from "./pages/pwa/diagnostico/QrDiagnosticoPage";
+import VincularCredencialPage from "./pages/pwa/credenciamento/VincularCredencialPage";
 import SuperPermissionsPage from "./pages/super/SuperPermissionsPage";
 import PwaDebugPage from "./pages/pwa/PwaDebugPage";
 import NotFound from "./pages/NotFound";
@@ -479,6 +480,10 @@ const App = () => (
             <Route path="/pwa/delegacao/protestos" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestosPage /></PwaRouteGuard>} />
             <Route path="/pwa/delegacao/protestos/novo" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
             <Route path="/pwa/delegacao/protestos/:id" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
+
+            {/* Credenciamento */}
+            <Route path="/pwa/credenciamento" element={<PwaRouteGuard allowedRoles={["admin", "secretaria"]}><VincularCredencialPage /></PwaRouteGuard>} />
+            <Route path="/pwa/credenciamento/vincular" element={<PwaRouteGuard allowedRoles={["admin", "secretaria"]}><VincularCredencialPage /></PwaRouteGuard>} />
 
             {/* PWA Module pages (Catch-all for implemented modules but also placeholder for future ones) */}
             <Route path="/pwa/:module" element={<PwaModulePage />} />
