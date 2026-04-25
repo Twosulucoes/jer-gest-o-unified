@@ -201,7 +201,7 @@ export default function TransporteHomePage() {
     <div className="op-screen">
       <PwaHeader title="Transporte" icon={Bus} backTo="/pwa" onSignOut={handleSignOut} />
 
-      <PwaContainer size="lg">
+      <PwaContainer size="md">
         <PwaStatTriplet
           loading={loading}
           items={[
