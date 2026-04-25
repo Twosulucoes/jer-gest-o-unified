@@ -206,6 +206,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
+        <PwaUpdateNotice />
         <AuthProvider>
           <EventProvider>
             <StageProvider>
