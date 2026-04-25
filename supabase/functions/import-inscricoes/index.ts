@@ -1136,6 +1136,35 @@ function classifyRow(
     warnings.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING_STAFF", message: "Comissão técnica sem data de nascimento" });
   }
 
+  // ── External Credential validation ──
+  if (row.external_credential) {
+    const code = row.external_credential.trim().toUpperCase();
+    
+    // Check batch duplicate
+    if (batchCredentials?.has(code)) {
+      pending.push({
+        row_number: row.row_number, reason_code: "CREDENTIAL_DUPLICATED",
+        reason_detail: `Credencial "${code}" repetida no arquivo de importação`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
+    }
+    batchCredentials?.add(code);
+
+    // Check DB duplicate (already active in event)
+    const existingOwnerId = maps.existingCredentials.get(code);
+    if (existingOwnerId) {
+      pending.push({
+        row_number: row.row_number, reason_code: "CREDENTIAL_ALREADY_LINKED",
+        reason_detail: `Credencial "${code}" já vinculada a outro participante neste evento`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
+    }
+    
+    resolved.external_credential = code;
+  }
+
   // ── Institution ──
   const instId = maps.institutions.get(row.institution_slug);
   if (!instId) {
