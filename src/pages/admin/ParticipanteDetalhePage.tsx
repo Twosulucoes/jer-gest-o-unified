@@ -104,7 +104,7 @@ export default function ParticipanteDetalhePage() {
         .from("institutions")
         .select("id, name")
         .eq("id", delegation!.institution_id)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
