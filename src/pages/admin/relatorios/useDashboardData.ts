@@ -90,15 +90,17 @@ export function useDashboardData(eventId?: string | null) {
       {
         queryKey: ["dash3", "participants", eventId],
         enabled,
-        staleTime: 0, // Disable cache for auditing or quick updates
+        staleTime: 0,
         queryFn: () => safe(async () => {
           const query = supabase.from("participants")
-            .select("id, credentialed_at, delegation_id");
+            .select("id, credentialed_at, delegation_id", { count: "exact" })
+            .limit(5000);
           if (eventId) query.eq("event_id", eventId);
-          const { data, error } = await query;
+          const { data, count, error } = await query;
           if (error) console.error("Error fetching participants:", error);
-          return data ?? [];
-        }, [] as { id: string; credentialed_at: string | null; delegation_id: string | null }[]),
+          // Return both data and the exact count from the header
+          return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
+        }, { list: [], totalCount: 0 }),
       },
       // 1: credentials
       {
@@ -107,12 +109,13 @@ export function useDashboardData(eventId?: string | null) {
         staleTime: 0,
         queryFn: () => safe(async () => {
           const query = supabase.from("participant_credentials")
-            .select("id, status, issued_at, created_at, participant_id");
+            .select("id, status, issued_at, created_at, participant_id", { count: "exact" })
+            .limit(5000);
           if (eventId) query.eq("event_id", eventId);
-          const { data, error } = await query;
+          const { data, count, error } = await query;
           if (error) console.error("Error fetching credentials:", error);
-          return data ?? [];
-        }, [] as { id: string; status: string; issued_at: string | null; created_at: string; participant_id: string | null }[]),
+          return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
+        }, { list: [], totalCount: 0 }),
       },
       // 2: delegations
       {
@@ -188,11 +191,12 @@ export function useDashboardData(eventId?: string | null) {
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("transport_trips")
-            .select("id");
+            .select("id", { count: "exact" })
+            .limit(5000);
           if (eventId) query.eq("event_id", eventId);
-          const { data } = await query;
-          return data ?? [];
-        }, [] as { id: string }[]),
+          const { data, count } = await query;
+          return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
+        }, { list: [], totalCount: 0 }),
       },
       // 8: transport_vehicles
       {
@@ -227,49 +231,56 @@ export function useDashboardData(eventId?: string | null) {
         staleTime: 0,
         queryFn: () => safe(async () => {
           const query = supabase.from("competition_matches")
-            .select("id, status, sport_event_id, match_date, start_time");
+            .select("id, status, sport_event_id, match_date, start_time", { count: "exact" })
+            .limit(5000);
           if (eventId) query.eq("event_id", eventId);
-          const { data, error } = await query;
+          const { data, count, error } = await query;
           if (error) console.error("Error fetching matches:", error);
-          return data ?? [];
-        }, [] as { id: string; status: string; sport_event_id: string | null; match_date: string | null; start_time: string | null }[]),
+          return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
+        }, { list: [], totalCount: 0 }),
       },
     ],
   });
 
   const isLoading = queries.some((q) => q.isLoading);
   
-  const [participants, credentials, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, trips, vehicles, sportEvents, matches] =
+  const [participantsRes, credentialsRes, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, tripsRes, vehicles, sportEvents, matchesRes] =
     queries.map((q) => q.data) as [
-      { id: string; credentialed_at: string | null; delegation_id: string | null }[],
-      { id: string; status: string; issued_at: string | null; created_at: string; participant_id: string | null }[],
+      { list: any[]; totalCount: number },
+      { list: any[]; totalCount: number },
       { id: string; school_name: string }[],
       { id: string; service_date: string; meal_type_id: string; label: string | null }[],
       { id: string; name: string }[],
       { id: string; capacity: number; is_active: boolean }[],
       number,
-      { id: string }[],
+      { list: any[]; totalCount: number },
       number,
       Array<{ id: string; name: string | null; sports: { name: string } | null }>,
-      { id: string; status: string; sport_event_id: string | null; match_date: string | null; start_time: string | null }[],
+      { list: any[]; totalCount: number },
     ];
 
+
   // Fallbacks defensivos
-  const P = participants ?? [];
-  const C = credentials ?? [];
+  const P = participantsRes?.list ?? [];
+  const P_total = participantsRes?.totalCount ?? 0;
+  const C = credentialsRes?.list ?? [];
+  const C_total = credentialsRes?.totalCount ?? 0;
   const D = delegations ?? [];
   const MW = mealWindows ?? [];
   const MT = mealTypes ?? [];
   const LU = lodgingUnits ?? [];
   const LO = lodgingOccupied ?? 0;
-  const TR = trips ?? [];
+  const TR = tripsRes?.list ?? [];
+  const TR_total = tripsRes?.totalCount ?? 0;
   const VE = vehicles ?? 0;
   const SE = sportEvents ?? [];
-  const MA = matches ?? [];
+  const MA = matchesRes?.list ?? [];
+  const MA_total = matchesRes?.totalCount ?? 0;
 
   // Resumo: passageiros e refeições exigem queries dependentes — feitas em useQueries adicional abaixo
   const tripIds = TR.map((t) => t.id);
   const windowIds = MW.map((w) => w.id);
+
 
   const dependent = useQueries({
     queries: [
@@ -279,11 +290,12 @@ export function useDashboardData(eventId?: string | null) {
         enabled: enabled && windowIds.length > 0,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("meal_consumptions")
-            .select("id, meal_window_id, consumed_at, participant_id")
-            .in("meal_window_id", windowIds);
-          return data ?? [];
-        }, [] as { id: string; meal_window_id: string; consumed_at: string; participant_id: string }[]),
+          const { data, count } = await supabase.from("meal_consumptions")
+            .select("id, meal_window_id, consumed_at, participant_id", { count: "exact" })
+            .in("meal_window_id", windowIds)
+            .limit(5000);
+          return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
+        }, { list: [], totalCount: 0 }),
       },
       // 1: transport_passengers boarded
       {
@@ -314,9 +326,12 @@ export function useDashboardData(eventId?: string | null) {
     ],
   });
 
-  const consumptions = (dependent[0].data ?? []) as { id: string; meal_window_id: string; consumed_at: string; participant_id: string }[];
+  const consumptionsRes = (dependent[0].data ?? { list: [], totalCount: 0 }) as { list: any[]; totalCount: number };
+  const consumptions = consumptionsRes.list;
+  const consumptionsTotal = consumptionsRes.totalCount;
   const passengers = (dependent[1].data ?? 0) as number;
   const results = (dependent[2].data ?? []) as { match_id: string; result_status: string }[];
+
 
   const isLoadingAll = isLoading || dependent.some((q) => q.isLoading);
 
@@ -445,21 +460,22 @@ export function useDashboardData(eventId?: string | null) {
 
   const data: DashboardData = {
     resumo: {
-      participants_total: P.length,
+      participants_total: P_total || P.length,
       credentialed,
-      credentials_active: credActive,
+      credentials_active: C_total || activeCreds.length,
       credentials_today: credToday,
-      matches_total: MA.length,
+      matches_total: MA_total || MA.length,
       matches_done: matchesDone,
       matches_published: matchesPublished,
-      meals_total: consumptions.length,
+      meals_total: consumptionsTotal || consumptions.length,
       meals_today: mealsToday,
       lodging_capacity: LU.reduce((s, u) => s + (u.capacity ?? 0), 0),
       lodging_occupied: LO,
-      transport_trips: TR.length,
+      transport_trips: TR_total || TR.length,
       transport_passengers: passengers,
       transport_vehicles: VE,
     },
+
     credenciamento: { daily: credDaily, by_delegation: byDelegation },
     alimentacao: { daily: mealsDaily, meal_types: mealTypesList, by_delegation: mealsByDelegation },
     competicao: { by_sport: bySport, today: todayMatches },
@@ -469,19 +485,20 @@ export function useDashboardData(eventId?: string | null) {
     // eslint-disable-next-line no-console
     console.log("[KPI dashboard]", {
       eventId,
-      participants_total: P.length,
+      participants_total: P_total,
       credentialed_kpi: credentialed,
       cred_active_distinct_participants: credActiveDistinctParticipants,
       cred_active_rows: credActive,
       credentialed_from_participants_flag: credentialedFromParticipants,
       credentials_today: credToday,
-      matches_total: MA.length,
-      meals_total: consumptions.length,
+      matches_total: MA_total,
+      meals_total: consumptionsTotal,
       lodging_occupied: LO,
-      transport_trips: TR.length,
+      transport_trips: TR_total,
       transport_passengers: passengers,
     });
   }
+
 
   const refetchAll = async () => {
     await Promise.all([
