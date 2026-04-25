@@ -80,6 +80,7 @@ import DelegacaoDetalhePage from "./pages/admin/DelegacaoDetalhePage";
 import CredencialModelosPage from "./pages/admin/CredencialModelosPage";
 import AcessosDelegacoesPage from "./pages/admin/AcessosDelegacoesPage";
 import AcessosUsuariosPage from "./pages/admin/AcessosUsuariosPage";
+import AcessosPwaAuditPage from "./pages/admin/AcessosPwaAuditPage";
 // ParametrosEventoPage removed — consolidated into RegrasEventoPage
 import IrregularidadesPage from "./pages/admin/IrregularidadesPage";
 import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
