@@ -230,14 +230,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
         // Update participant
         const { error: errPart } = await supabase.from("participants").update({
           participant_type: participantType,
-          category: participantCategory,
           delegation_id: participantCategory === "delegation" ? (delegationId || null) : null,
-          organization_subtype: participantCategory === "organization" ? organizationSubtype : null,
-          role_function: participantCategory === "organization" ? roleFunction : null,
-          sector_area: participantCategory === "organization" ? sectorArea : null,
-          responsibilities: participantCategory === "organization" ? responsibilities : null,
-          access_permissions: participantCategory === "organization" ? accessPermissions : null,
-          observations: participantCategory === "organization" ? observations : null,
           needs_transport: needsTransport,
           needs_meals: needsMeals,
           needs_lodging: needsLodging,
