@@ -20,6 +20,7 @@ export default function VincularCredencialPage() {
 
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
+  const [resolved, setResolved] = useState<ResolvedCredential | null>(null);
   const [currentOwner, setCurrentOwner] = useState<{ name: string; id: string } | null>(null);
   
   const [manualQuery, setManualQuery] = useState("");
