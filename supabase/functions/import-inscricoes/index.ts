@@ -1615,6 +1615,7 @@ Deno.serve(async (req: Request) => {
     const manualOverrides = await loadTm2012Overrides(serviceClient, eventId, eventStageId);
     let manualOverridesApplied = 0;
 
+    const batchCredentials = new Set<string>();
     for (const row of normalizedRows) {
       // Aplicar override manual TM 2012, se existir, ANTES de classificar.
       // Chave estável: event_stage_id + source_row_number + fingerprint.
