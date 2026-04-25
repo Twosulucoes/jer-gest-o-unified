@@ -31,6 +31,8 @@ export default function CoordenacaoHomePage() {
   const [kpis, setKpis] = useState({ partidasHoje: 0, emAndamento: 0, finalizadas: 0, totalPartidas: 0 });
   const [agenda, setAgenda] = useState<MatchRow[]>([]);
 
+  usePwaAudit("coordenacao-tecnica");
+
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
