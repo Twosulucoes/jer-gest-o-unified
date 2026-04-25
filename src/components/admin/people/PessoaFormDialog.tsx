@@ -286,7 +286,6 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           event_id: eventId,
           delegation_id: participantCategory === "delegation" ? (delegationId || null) : null,
           participant_type: participantType,
-          category: participantCategory,
           status: "confirmed",
           is_active: true,
           needs_transport: needsTransport,
@@ -298,12 +297,6 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           guardian_phone: participantCategory === "delegation" ? (guardianPhone || null) : null,
           coach_name: participantCategory === "delegation" ? (coachName || null) : null,
           coach_phone: participantCategory === "delegation" ? (coachPhone || null) : null,
-          organization_subtype: participantCategory === "organization" ? organizationSubtype : null,
-          role_function: participantCategory === "organization" ? roleFunction : null,
-          sector_area: participantCategory === "organization" ? sectorArea : null,
-          responsibilities: participantCategory === "organization" ? responsibilities : null,
-          access_permissions: participantCategory === "organization" ? accessPermissions : null,
-          observations: participantCategory === "organization" ? observations : null,
         }).select("id").single();
         if (errPart) throw errPart;
         pId = newPart.id;
