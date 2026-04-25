@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Bus, UtensilsCrossed, Trophy, Users, Building, IdCard } from "lucide-react";
+import { Loader2, Bus, UtensilsCrossed, Trophy, Users, Building, IdCard, ShieldCheck, Gavel, Award } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 
 const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; allowedRoles: string[]; features: string[] }> = {
