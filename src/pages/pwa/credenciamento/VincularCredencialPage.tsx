@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScanLine, CheckCircle, XCircle, Search, Loader2, User, IdCard, Link as LinkIcon, RefreshCcw } from "lucide-react";
+import { ScanLine, CheckCircle, Search, Loader2, User, IdCard, Link as LinkIcon, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
@@ -14,7 +14,7 @@ import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 export default function VincularCredencialPage() {
-  const { user } = useAuth();
+  useAuth();
   const { activeEventId } = useEventContext();
   usePwaAudit("credenciamento/vincular");
 
@@ -59,7 +59,7 @@ export default function VincularCredencialPage() {
     if (!rawValue.trim()) return;
 
     const { values } = extractCandidates(rawValue);
-    const code = values[0]; // Pegamos o primeiro candidato (o código mais provável)
+    const code = values[0]; 
     
     if (!code) {
       toast.error("Código inválido");
@@ -89,10 +89,6 @@ export default function VincularCredencialPage() {
     setLinking(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      // Se já houver um dono, podemos decidir se sobrescrevemos ou avisamos.
-      // Para ser "prático", vamos permitir sobrescrever se o usuário confirmar
-      // Mas aqui vamos apenas inserir/atualizar conforme a regra do negócio.
       
       const { error } = await supabase
         .from("external_credentials")
@@ -169,15 +165,15 @@ export default function VincularCredencialPage() {
             </Card>
 
             {currentOwner ? (
-              <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-4 space-y-2 text-center">
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-300 flex items-center justify-center gap-2">
+              <div className="rounded-xl bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 p-4 space-y-2 text-center">
+                <p className="text-sm font-medium text-orange-800 dark:text-orange-300 flex items-center justify-center gap-2">
                   <User className="h-4 w-4" /> Já vinculada a:
                 </p>
-                <p className="font-bold text-amber-900 dark:text-amber-100">{currentOwner.name}</p>
-                <p className="text-xs text-amber-700 dark:text-amber-400">Vincular a outra pessoa irá transferir este código.</p>
+                <p className="font-bold text-orange-900 dark:text-orange-100">{currentOwner.name}</p>
+                <p className="text-xs text-orange-700 dark:text-orange-400">Vincular a outra pessoa irá transferir este código.</p>
               </div>
             ) : (
-              <div className="rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 p-4 flex items-center justify-center gap-2 text-green-700 dark:text-green-300">
+              <div className="rounded-xl bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 p-4 flex items-center justify-center gap-2 text-green-700 dark:text-green-300">
                 <CheckCircle className="h-5 w-5" />
                 <span className="text-sm font-medium">Código disponível para vínculo</span>
               </div>
@@ -221,7 +217,7 @@ export default function VincularCredencialPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="truncate text-base font-bold text-foreground">{h.full_name}</p>
-                          <p className="truncate text-xs text-muted-foreground">{h.participant_type} • {h.category_name}</p>
+                          <p className="truncate text-xs text-muted-foreground">{h.participant_type}</p>
                         </div>
                         <div className="bg-primary/5 text-primary p-2 rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                           <LinkIcon className="h-5 w-5" />
