@@ -56,11 +56,9 @@ export default function AlimentacaoConsumoPage() {
       if (error) throw error;
       const all = data ?? [];
       if (!isStageScoped || !stageId) return all;
-      const ofStage = all.filter((w: any) => w.event_stage_id === stageId);
-      const legacy = all.filter((w: any) => !w.event_stage_id);
-      // Retorna apenas as janelas da etapa + legadas (sem vínculo).
-      // Removemos o fallback automático "all" que trazia janelas de outras etapas.
-      return [...ofStage, ...legacy];
+      // Retorna apenas as janelas vinculadas explicitamente a esta etapa.
+      // Removemos o fallback de janelas legadas (sem event_stage_id) para garantir isolamento.
+      return all.filter((w: any) => w.event_stage_id === stageId);
     },
     enabled: !!selectedEventId,
   });
