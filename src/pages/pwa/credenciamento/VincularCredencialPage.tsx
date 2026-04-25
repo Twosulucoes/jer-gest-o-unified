@@ -90,6 +90,41 @@ export default function VincularCredencialPage() {
     }
   };
 
+  const handleParticipantScan = async (rawValue: string) => {
+    setParticipantScannerOpen(false);
+    if (!rawValue.trim() || !activeEventId) return;
+
+    try {
+      setManualSearching(true);
+      const res = await resolveQrCredential(rawValue, { eventId: activeEventId });
+      
+      if (res && res.participant_id) {
+        // Encontrou o participante via QR (pode ser CPF ou Token do sistema)
+        await handleLink({
+          participant_id: res.participant_id,
+          full_name: res.full_name || "Participante identificado",
+          person_id: "",
+          cpf: "",
+          participant_type: ""
+        });
+      } else {
+        // Tenta buscar por CPF se for apenas dígitos
+        const { cpfDigits } = extractCandidates(rawValue);
+        if (cpfDigits) {
+          setManualQuery(cpfDigits);
+          toast.info("Pesquisando pelo CPF extraído...");
+        } else {
+          toast.error("Não foi possível identificar o participante por este QR Code");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao identificar participante");
+    } finally {
+      setManualSearching(false);
+    }
+  };
+
   const handleReset = () => {
     setScannedCode(null);
     setResolved(null);
