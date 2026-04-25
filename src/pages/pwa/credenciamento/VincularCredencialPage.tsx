@@ -257,15 +257,26 @@ export default function VincularCredencialPage() {
                 <p className="text-sm text-muted-foreground">Busque o participante pelo nome ou CPF</p>
               </div>
 
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome ou CPF…"
-                  value={manualQuery}
-                  onChange={(e) => setManualQuery(e.target.value)}
-                  className="h-12 border-border/80 bg-card/90 pl-10 shadow-app-sm rounded-xl"
-                  autoFocus
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome ou CPF…"
+                    value={manualQuery}
+                    onChange={(e) => setManualQuery(e.target.value)}
+                    className="h-12 border-border/80 bg-card/90 pl-10 shadow-app-sm rounded-xl"
+                    autoFocus
+                  />
+                </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="h-12 w-12 rounded-xl p-0 border-primary/20 bg-primary/5 text-primary shadow-app-sm"
+                  onClick={() => setParticipantScannerOpen(true)}
+                  title="Escanear QR do Participante"
+                >
+                  <ScanLine className="h-5 w-5" />
+                </Button>
               </div>
 
               <div className="min-h-[200px]">
