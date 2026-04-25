@@ -99,7 +99,9 @@ export default function PwaLandingPage() {
   if (!profile) return null;
 
   // Only show modules the user has access to
-  const visibleCards = MODULE_CARDS.filter((c) => profile.roles.includes(c.role));
+  const visibleCards = MODULE_CARDS.filter((c) => 
+    profile.roles.includes(c.role) || (c.role === "secretaria" && profile.roles.includes("admin"))
+  );
 
   return (
     <div className="tactical-cockpit min-h-screen bg-background">
