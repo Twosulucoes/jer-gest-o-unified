@@ -76,7 +76,7 @@ export default function ParticipanteDetalhePage() {
         .from("people")
         .select("id, full_name, cpf, gender, birth_date, email, phone, photo_url, food_restrictions, disability_type, medical_notes")
         .eq("id", participant!.person_id)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
