@@ -22,7 +22,7 @@ async function logAudit(adminClient: any, action: string, recordId: string, crea
   });
 }
 
-const VALID_ROLES = ["admin", "secretaria", "transporte", "alimentacao", "alojamento", "coordenacao_tecnica", "coordenador_modalidade", "delegacao", "mesario", "arbitragem", "cde"];
+const VALID_ROLES = ["super_admin", "admin", "secretaria", "transporte", "alimentacao", "alojamento", "coordenacao_tecnica", "coordenador_modalidade", "delegacao", "mesario", "arbitragem", "cde"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -165,8 +165,13 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Only super_admin can create super_admin
+        if (!callerIsSuper && targetRoles.includes("super_admin")) {
+          return jsonResponse({ error: "Somente Super Admin pode atribuir este perfil" }, 403);
+        }
+
         // Secretaria cannot create admin or secretaria
-        if (!roles.includes("admin") && targetRoles.some(r => r === "admin" || r === "secretaria")) {
+        if (!roles.includes("admin") && !callerIsSuper && targetRoles.some(r => r === "admin" || r === "secretaria")) {
           return jsonResponse({ error: "Secretaria não pode criar usuários admin ou secretaria" }, 403);
         }
 
@@ -209,8 +214,13 @@ Deno.serve(async (req) => {
           return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
         }
 
+        // Only super_admin can assign super_admin
+        if (!callerIsSuper && role === "super_admin") {
+          return jsonResponse({ error: "Somente Super Admin pode atribuir este perfil" }, 403);
+        }
+
         // Secretaria cannot assign admin/secretaria
-        if (!roles.includes("admin") && (role === "admin" || role === "secretaria")) {
+        if (!roles.includes("admin") && !callerIsSuper && (role === "admin" || role === "secretaria")) {
           return jsonResponse({ error: "Sem permissão para atribuir este perfil" }, 403);
         }
 
@@ -239,8 +249,13 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Only super_admin can assign super_admin
+        if (!callerIsSuper && newRoles.some((r: string) => r === "super_admin")) {
+          return jsonResponse({ error: "Somente Super Admin pode atribuir o perfil super_admin" }, 403);
+        }
+
         // Secretaria cannot assign admin/secretaria
-        if (!roles.includes("admin") && newRoles.some((r: string) => r === "admin" || r === "secretaria")) {
+        if (!roles.includes("admin") && !callerIsSuper && newRoles.some((r: string) => r === "admin" || r === "secretaria")) {
           return jsonResponse({ error: "Sem permissão para atribuir perfis admin ou secretaria" }, 403);
         }
 

@@ -40,23 +40,24 @@ import {
 import SportLinksDialog from "@/components/admin/SportLinksDialog";
 
 const ROLES = [
+  { value: "super_admin", label: "Super Admin" },
   { value: "admin", label: "Administrador" },
   { value: "secretaria", label: "Secretaria" },
   { value: "coordenacao_tecnica", label: "Coord. Técnica" },
   { value: "coordenador_modalidade", label: "Coord. Modalidade" },
-  { value: "transporte", label: "Transporte" },
-  { value: "alimentacao", label: "Alimentação" },
-  { value: "alojamento", label: "Alojamento" },
-  { value: "delegacao", label: "Delegação" },
-  { value: "arbitragem", label: "Arbitragem" },
-  { value: "mesario", label: "Mesário" },
-  { value: "cde", label: "CDE" },
+  { value: "transporte", label: "Transporte (PWA)" },
+  { value: "alimentacao", label: "Alimentação (PWA)" },
+  { value: "alojamento", label: "Alojamento (PWA)" },
+  { value: "delegacao", label: "Delegação (PWA)" },
+  { value: "arbitragem", label: "Arbitragem (PWA)" },
+  { value: "mesario", label: "Mesário / Ao Vivo (PWA)" },
+  { value: "cde", label: "CDE (Protestos)" },
 ];
 
-const OPERATIONAL_ROLES = ROLES.filter((r) => !["admin", "secretaria"].includes(r.value));
+const OPERATIONAL_ROLES = ROLES.filter((r) => !["super_admin", "admin", "secretaria"].includes(r.value));
 
 function roleBadgeVariant(role: string): "default" | "secondary" | "outline" {
-  if (role === "admin") return "default";
+  if (role === "super_admin" || role === "admin") return "default";
   if (role === "secretaria") return "secondary";
   return "outline";
 }
