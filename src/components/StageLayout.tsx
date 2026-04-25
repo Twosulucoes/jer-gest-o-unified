@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, BadgeCheck, Trophy, Building, UtensilsCrossed, Bus,
   AlertTriangle, ClipboardList, FileBarChart, Layers, Menu, X,
-  ChevronsLeft, ChevronsRight, LogOut, User, Home,
+  ChevronsLeft, ChevronsRight, LogOut, User, Home, ScanLine,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -42,6 +42,7 @@ const ALL_OPS: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"];
 const STAGE_NAV: StageNavItem[] = [
   { label: "Visão Geral", to: "", icon: <Home className="h-4 w-4" />, roles: [...ALL_OPS, "transporte", "alimentacao"] },
   { label: "Credenciamento", to: "credenciamento", icon: <BadgeCheck className="h-4 w-4" />, roles: ALL_OPS },
+  { label: "Vinculação de Credencial", to: "credenciamento-externo", icon: <ScanLine className="h-4 w-4" />, roles: ALL_OPS },
   { label: "Competição", to: "competicao", icon: <Trophy className="h-4 w-4" />, roles: [...ALL_OPS, "coordenador_modalidade"] },
   { label: "Alojamento", to: "alojamento", icon: <Building className="h-4 w-4" />, roles: [...ALL_OPS, "alojamento"] },
   { label: "Alimentação", to: "alimentacao", icon: <UtensilsCrossed className="h-4 w-4" />, roles: [...ALL_OPS, "alimentacao"] },

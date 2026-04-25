@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree, Trophy, Bus, UtensilsCrossed, Building2,
-  Users, Upload, KeyRound, BadgeCheck, Gavel,
+  Users, Upload, KeyRound, BadgeCheck, Gavel, ScanLine,
   UsersRound, ChevronDown,
   Shield, Settings, AlertTriangle, FileBarChart, Monitor,
   Info, ExternalLink, ChevronsLeft,
@@ -70,6 +70,7 @@ const navGroups: NavGroup[] = [
       { label: "Histórico do Participante", to: "/admin/participantes/historico", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Credencial (Modelos)", to: "/admin/credenciais/modelos", icon: <BadgeCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Vinculação de Credencial", to: "/admin/credenciamento-externo", icon: <ScanLine className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Vouchers (Validar)", to: "/admin/vouchers", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "alimentacao"] as AppRole[] },
       { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
