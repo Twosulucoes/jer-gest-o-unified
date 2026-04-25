@@ -49,18 +49,22 @@ export default function AlimentacaoRelatoriosPage() {
   });
 
   const { data: consumptions, isLoading, isError } = useQuery({
-    queryKey: ["food-report", eventId, startDate, endDate, delegationFilter, mealTypeFilter],
+    queryKey: ["food-report", eventId, stageId, startDate, endDate, delegationFilter, mealTypeFilter],
     enabled: !!eventId,
     queryFn: async () => {
       let q = supabase
         .from("meal_consumptions")
         .select(`
           *,
-          meal_windows!inner(id, label, service_date, meal_type_id, event_id, meal_types(name)),
+          meal_windows!inner(id, label, service_date, meal_type_id, event_id, event_stage_id, meal_types(name)),
           participants(person:people(full_name), delegation_id, delegations(school_name))
         `)
         .eq("meal_windows.event_id", eventId)
         .order("consumed_at", { ascending: false });
+
+      if (isStageScoped && stageId) {
+        q = q.eq("meal_windows.event_stage_id", stageId);
+      }
 
       // Filter by event through meal_windows
       q = q.not("meal_window_id", "is", null);
