@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { FoodIncidentDialog } from "@/components/pwa/alimentacao/FoodIncidentDialog";
 import { AlimentacaoDuplicateAlert } from "@/components/pwa/alimentacao/AlimentacaoDuplicateAlert";
 import { format } from "date-fns";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 interface OpenWindowState {
   id: string;
