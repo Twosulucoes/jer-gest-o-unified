@@ -158,6 +158,7 @@ interface NormalizedRow {
   funcao: string;
   pcd: string | null;
   esfera: string;
+  external_credential: string | null;
   raw_payload: Record<string, unknown>;
 }
 
@@ -175,6 +176,8 @@ type PendingCode =
   | "SPORT_EVENT_AMBIGUOUS"
   | "TM_2012_MANUAL_CATEGORY_SELECTION"
   | "INSTITUTION_NOT_FOUND"
+  | "CREDENTIAL_DUPLICATED"
+  | "CREDENTIAL_ALREADY_LINKED"
   | "MANUAL_REVIEW_REQUIRED";
 
 // Marcador textual usado para sinalizar caso TM 2012 antes da pendência ser emitida.
@@ -206,7 +209,9 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   "MODALIDADE": ["MODALIDADE", "ESPORTE", "SPORT", "MOD"],
   "PROVA": ["PROVA", "DISCIPLINE", "PROVA/EVENTO"],
   "COMPETICAO": ["COMPETICAO", "COMPETIÇÃO", "COMPETIÇÃO/CATEGORIA", "CATEGORIA", "CATEGORY", "COMP"],
+  "CREDENCIAL": ["CREDENCIAL", "CREDENTIAL", "CREDENTIAL_CODE", "CODIGO", "CREDENTIAL-CODE"],
 };
+
 const REQUIRED_COLUMNS = ["NOME", "ESCOLA", "MODALIDADE"];
 
 function normalizeStr(s: string): string {
@@ -764,6 +769,7 @@ function mapColumns(
   const funcao = getField(raw, "FUNCAO");
   const pcd = getField(raw, "PCD");
   const esfera = getField(raw, "ESFERA");
+  const externalCredential = getField(raw, "CREDENCIAL") || null;
 
   const cpfRaw = cleanCpfRaw(getField(raw, "CPF") || null);
   const cpfDigits = extractCpfDigits(cpfRaw);
@@ -827,6 +833,7 @@ function mapColumns(
     funcao,
     pcd: isBlank(pcd) ? null : pcd,
     esfera,
+    external_credential: externalCredential,
     raw_payload: raw,
   };
 }
@@ -849,13 +856,15 @@ interface ReadOnlyMaps {
   sportAliases: Record<string, string>;
   /** Aliases dinâmicos vindos da tabela import_aliases (kind='category'). */
   categoryAliases: Record<string, string>;
+  /** Credenciais externas já ocupadas (credential_code -> participant_id). */
+  existingCredentials: Map<string, string>;
 }
 
 async function loadReadOnlyMaps(
   supabase: any,
   eventId: string,
 ): Promise<ReadOnlyMaps> {
-  const [instRes, sportRes, catRes, seRes, delRes, evRes, aliasRes] = await Promise.all([
+  const [instRes, sportRes, catRes, seRes, delRes, evRes, aliasRes, credRes] = await Promise.all([
     supabase.from("institutions").select("id, slug").eq("is_active", true),
     supabase.from("sports").select("id, slug").eq("event_id", eventId),
     supabase.from("categories").select("id, slug, min_birth_year, max_birth_year, gender_scope").eq("event_id", eventId),
@@ -865,6 +874,7 @@ async function loadReadOnlyMaps(
     supabase.from("import_aliases")
       .select("alias_norm, canonical_slug, kind, event_id")
       .or(`event_id.eq.${eventId},event_id.is.null`),
+    supabase.from("external_credentials").select("credential_code, participant_id").eq("event_id", eventId).eq("status", "active"),
   ]);
 
   const institutions = new Map<string, string>();
@@ -932,6 +942,10 @@ async function loadReadOnlyMaps(
     if (a.kind === "sport") sportAliases[key] = a.canonical_slug;
     else if (a.kind === "category") categoryAliases[key] = a.canonical_slug;
   }
+  const existingCredentials = new Map<string, string>();
+  for (const c of (credRes.data ?? []) as any[]) {
+    existingCredentials.set(c.credential_code, c.participant_id);
+  }
 
   return {
     institutions,
@@ -947,7 +961,9 @@ async function loadReadOnlyMaps(
     existingInstitutionSlugs: new Set(institutions.keys()),
     sportAliases,
     categoryAliases,
+    existingCredentials,
   };
+
 }
 
 // ─── Incremental People Lookup ───────────────────────────────────────
@@ -1014,7 +1030,9 @@ function classifyRow(
   row: NormalizedRow,
   maps: ReadOnlyMaps,
   people: PeopleMaps,
+  batchCredentials?: Set<string>,
 ): RowClassification {
+
   const errors: RowClassification["errors"] = [];
   const warnings: RowClassification["warnings"] = [];
   const pending: PendingItem[] = [];
@@ -1116,6 +1134,35 @@ function classifyRow(
 
   if (!isAthlete && !row.birth_date) {
     warnings.push({ row: row.row_number, field: "DATA NASCIMENTO", value: null, code: "DOB_MISSING_STAFF", message: "Comissão técnica sem data de nascimento" });
+  }
+
+  // ── External Credential validation ──
+  if (row.external_credential) {
+    const code = row.external_credential.trim().toUpperCase();
+    
+    // Check batch duplicate
+    if (batchCredentials?.has(code)) {
+      pending.push({
+        row_number: row.row_number, reason_code: "CREDENTIAL_DUPLICATED",
+        reason_detail: `Credencial "${code}" repetida no arquivo de importação`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
+    }
+    batchCredentials?.add(code);
+
+    // Check DB duplicate (already active in event)
+    const existingOwnerId = maps.existingCredentials.get(code);
+    if (existingOwnerId) {
+      pending.push({
+        row_number: row.row_number, reason_code: "CREDENTIAL_ALREADY_LINKED",
+        reason_detail: `Credencial "${code}" já vinculada a outro participante neste evento`,
+        row, fingerprint, candidate_person_id: null,
+      });
+      return { status: "pendencia", errors, warnings, pending, resolved };
+    }
+    
+    resolved.external_credential = code;
   }
 
   // ── Institution ──
@@ -1568,6 +1615,7 @@ Deno.serve(async (req: Request) => {
     const manualOverrides = await loadTm2012Overrides(serviceClient, eventId, eventStageId);
     let manualOverridesApplied = 0;
 
+    const batchCredentials = new Set<string>();
     for (const row of normalizedRows) {
       // Aplicar override manual TM 2012, se existir, ANTES de classificar.
       // Chave estável: event_stage_id + source_row_number + fingerprint.
@@ -1587,7 +1635,7 @@ Deno.serve(async (req: Request) => {
         manualOverridesApplied++;
       }
 
-      const result = classifyRow(row, maps, people);
+      const result = classifyRow(row, maps, people, batchCredentials);
       allWarnings.push(...result.warnings);
 
       if (result.status === "skip") { skippedRows++; continue; }
@@ -1936,6 +1984,7 @@ Deno.serve(async (req: Request) => {
                 }
               }
             }
+            if (participantId && resolved.external_credential) { await serviceClient.rpc("link_external_credential", { p_event_id: eventId, p_participant_id: participantId, p_credential_code: resolved.external_credential, p_user_id: operatorId, p_is_internal_mode: false }); }
           } catch (rowErr) {
             commitErrors.push({ row_number: row.row_number, error_code: "UNEXPECTED", error_message: String(rowErr) });
             rowsFailed++;
