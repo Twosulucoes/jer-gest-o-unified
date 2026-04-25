@@ -442,6 +442,28 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
                 </div>
               </div>
 
+              {!isEdit && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Atribuir a Etapa (opcional)</Label>
+                    <Select 
+                      value={selectedStageId} 
+                      onValueChange={setSelectedStageId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Nenhuma / Global" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhuma / Global</SelectItem>
+                        {eventStages.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
               {participantCategory === "delegation" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
@@ -461,25 +483,6 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
                       </SelectContent>
                     </Select>
                   </div>
-                  {!isEdit && (
-                    <div>
-                      <Label>Atribuir a Etapa (opcional)</Label>
-                      <Select 
-                        value={selectedStageId} 
-                        onValueChange={setSelectedStageId}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Nenhuma / Global" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhuma / Global</SelectItem>
-                          {eventStages.map((s) => (
-                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
                   <div className={cn(!isEdit ? "md:col-span-2" : "")}>
                     <Label>Delegação (opcional)</Label>
                     <Popover open={delegationOpen} onOpenChange={setDelegationOpen}>
