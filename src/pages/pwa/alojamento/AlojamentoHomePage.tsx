@@ -5,7 +5,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { getSelectedFacility, setSelectedFacility } from "@/hooks/useAlojamento";
 import { AlojamentoDuplicateAlert } from "@/components/pwa/alojamento/AlojamentoDuplicateAlert";
@@ -14,8 +14,9 @@ import { PwaStatTriplet, occupancyBarClass } from "@/components/pwa/PwaDashboard
 import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { PwaActionGrid } from "@/components/pwa/PwaActionGrid";
 import {
-  ScanLine, Search, Building, AlertTriangle, Wifi, WifiOff, Users,
+  ScanLine, Search, Building, AlertTriangle, Wifi, WifiOff, Users, LogOut
 } from "lucide-react";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 interface Facility {
   id: string;
@@ -35,6 +36,13 @@ export default function AlojamentoHomePage() {
   const [facilityId, setFacilityId] = useState<string>(getSelectedFacility() || "");
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ hospedados: 0, livres: 0, reservados: 0, ocupacao: 0 });
+
+  usePwaAudit("alojamento");
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/pwa/login", { replace: true });
+  };
 
   useEffect(() => {
     (async () => {
@@ -86,7 +94,12 @@ export default function AlojamentoHomePage() {
 
   return (
     <div className="op-screen">
-      <AlojamentoNavHeader showQuickNav={false} />
+      <PwaHeader 
+        title="Alojamento" 
+        icon={Building} 
+        backTo="/pwa" 
+        onSignOut={handleSignOut}
+      />
 
       <PwaContainer>
         <div className="flex items-center justify-between">

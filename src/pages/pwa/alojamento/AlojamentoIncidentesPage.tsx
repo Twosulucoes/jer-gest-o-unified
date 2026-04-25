@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSelectedFacility } from "@/hooks/useAlojamento";
 import { AlertTriangle, Plus } from "lucide-react";
-import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 
 interface Incident {
   id: string;
@@ -53,7 +53,11 @@ export default function AlojamentoIncidentesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AlojamentoNavHeader currentPathLabel="Ocorrências" />
+      <PwaHeader 
+        title="Ocorrências" 
+        icon={AlertTriangle}
+        backTo="/pwa/alojamento" 
+      />
 
       <main className="p-4 max-w-md mx-auto space-y-4 pb-20">
         <div className="flex items-center justify-between">

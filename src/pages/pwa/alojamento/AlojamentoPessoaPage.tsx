@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
 import { ArrowLeft, User, LogIn, LogOut, Bed, ScanLine, AlertCircle, Building, Loader2 } from "lucide-react";
-import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useEventContext } from "@/contexts/EventContext";
 
 interface PersonDetail {
@@ -149,7 +149,11 @@ export default function AlojamentoPessoaPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AlojamentoNavHeader currentPathLabel="Perfil" />
+      <PwaHeader 
+        title="Perfil" 
+        icon={User}
+        backTo="/pwa/alojamento/lista-completa" 
+      />
 
       <main className="p-4 max-w-md mx-auto space-y-4 pb-20">
         {loading ? (

@@ -12,7 +12,7 @@ import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { useAuth } from "@/hooks/useAuth";
-import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import {
@@ -193,7 +193,11 @@ export default function AlojamentoScanPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AlojamentoNavHeader currentPathLabel="Scanner" />
+      <PwaHeader 
+        title="Scanner" 
+        icon={ScanLine}
+        backTo="/pwa/alojamento" 
+      />
 
       <main className="p-4 max-w-md mx-auto space-y-4 pb-20">
         <ScanPreferencesPanel

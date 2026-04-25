@@ -15,6 +15,7 @@ import { PwaContainer, PwaBottomBar } from "@/components/pwa/PwaScreen";
 import { PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
 import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { useEventContext } from "@/contexts/EventContext";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 interface TripRow {
   id: string;
@@ -37,6 +38,8 @@ export default function TransporteHomePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
+
+  usePwaAudit("transporte");
 
   useEffect(() => {
     const meta = document.querySelector('meta[name="viewport"]');
@@ -198,7 +201,7 @@ export default function TransporteHomePage() {
     <div className="op-screen">
       <PwaHeader title="Transporte" icon={Bus} backTo="/pwa" onSignOut={handleSignOut} />
 
-      <PwaContainer size="lg">
+      <PwaContainer size="md">
         <PwaStatTriplet
           loading={loading}
           items={[

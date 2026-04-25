@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { FoodIncidentDialog } from "@/components/pwa/alimentacao/FoodIncidentDialog";
 import { AlimentacaoDuplicateAlert } from "@/components/pwa/alimentacao/AlimentacaoDuplicateAlert";
 import { format } from "date-fns";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 interface OpenWindowState {
   id: string;
@@ -33,6 +34,8 @@ export default function AlimentacaoHomePage() {
   const [kpis, setKpis] = useState({ consumosHoje: 0, janelasAbertas: 0, tiposRefeicao: 0, totalJanelas: 0 });
   const [openWindow, setOpenWindow] = useState<OpenWindowState | null>(null);
   const [incidentOpen, setIncidentOpen] = useState(false);
+
+  usePwaAudit("alimentacao");
 
   useEffect(() => {
     (async () => {

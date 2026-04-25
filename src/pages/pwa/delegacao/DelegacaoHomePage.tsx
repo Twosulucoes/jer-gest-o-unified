@@ -11,6 +11,7 @@ import {
   Users, Calendar, MapPin,
   ClipboardList, Bus, Gavel, ChevronRight, AlertTriangle,
 } from "lucide-react";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 interface AthleteRow {
   id: string;
@@ -33,6 +34,8 @@ export default function DelegacaoHomePage() {
     credenciados: 0,
     pendentesCred: 0,
   });
+
+  usePwaAudit("delegacao");
 
   useEffect(() => {
     (async () => {

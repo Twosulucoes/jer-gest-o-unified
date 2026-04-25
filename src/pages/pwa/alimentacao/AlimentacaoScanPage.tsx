@@ -5,8 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle, Search, Loader2, User } from "lucide-react";
+import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle, Search, Loader2, User, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
@@ -256,23 +257,11 @@ export default function AlimentacaoScanPage() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
-      <header className="relative flex h-14 items-center justify-between border-b border-border/80 bg-card/95 px-4 shadow-app-sm backdrop-blur-sm">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <button type="button" onClick={() => navigate("/pwa/alimentacao")} className="shrink-0 text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <ScanLine className="h-5 w-5 shrink-0 text-primary" />
-              <span className="truncate font-semibold text-foreground">{getPwaMessage("SCAN_QR", lang)}</span>
-            </div>
-            <p className="truncate pl-7 text-[11px] text-muted-foreground">{getPwaMessage("SCAN_TITLE", lang)}</p>
-          </div>
-        </div>
-        <Button size="sm" className="shrink-0 rounded-lg" onClick={() => setScannerOpen(true)} disabled={!windowId}>
-          <ScanLine className="mr-1 h-4 w-4" /> {getPwaMessage("SCAN", lang)}
-        </Button>
-      </header>
+      <PwaHeader 
+        title={getPwaMessage("SCAN_QR", lang)} 
+        icon={ScanLine}
+        backTo="/pwa/alimentacao" 
+      />
 
       <main className="relative mx-auto max-w-md space-y-4 p-4">
         <ScanPreferencesPanel

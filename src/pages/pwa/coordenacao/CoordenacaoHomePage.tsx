@@ -12,6 +12,7 @@ import {
   Medal, BarChart3, Search, AlertTriangle, AlertOctagon,
 } from "lucide-react";
 import { format } from "date-fns";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 interface MatchRow {
   id: string;
@@ -29,6 +30,8 @@ export default function CoordenacaoHomePage() {
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ partidasHoje: 0, emAndamento: 0, finalizadas: 0, totalPartidas: 0 });
   const [agenda, setAgenda] = useState<MatchRow[]>([]);
+
+  usePwaAudit("coordenacao-tecnica");
 
   useEffect(() => {
     (async () => {

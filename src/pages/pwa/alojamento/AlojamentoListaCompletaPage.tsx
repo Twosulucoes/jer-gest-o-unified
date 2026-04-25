@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
-import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
+// AlojamentoNavHeader removed for consistency
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

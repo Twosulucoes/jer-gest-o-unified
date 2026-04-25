@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { getSelectedFacility } from "@/hooks/useAlojamento";
 import { useEventContext } from "@/contexts/EventContext";
-import { AlojamentoNavHeader } from "@/components/pwa/alojamento/AlojamentoNavHeader";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import {
   PwaSectionLabel,
   PwaStatTriplet,
@@ -128,7 +128,11 @@ export default function AlojamentoOcupacaoPage() {
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
       
-      <AlojamentoNavHeader currentPathLabel="Ocupação" />
+      <PwaHeader 
+        title="Ocupação" 
+        icon={Building}
+        backTo="/pwa/alojamento" 
+      />
 
       <main className="relative max-w-md mx-auto space-y-4 px-4 pb-28 pt-4">
         {/* Search Bar */}
