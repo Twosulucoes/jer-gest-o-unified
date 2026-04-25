@@ -309,6 +309,7 @@ const App = () => (
               {/* Acessos */}
               <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
               <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
+              <Route path="acessos/pwa" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosPwaAuditPage /></ProtectedRoute>} />
               {/* Parâmetros e Regras — consolidados em /admin/regras */}
               <Route path="parametros-evento" element={<Navigate to="/admin/regras" replace />} />
               <Route path="regras-evento" element={<Navigate to="/admin/regras" replace />} />
