@@ -6,17 +6,21 @@ const RELOAD_GUARD_KEY = "jer-global-refresh-at";
 const RELOAD_GUARD_WINDOW_MS = 10_000;
 
 export async function dispatchGlobalRefresh() {
-  const { error } = await (supabase as any).from("system_commands").insert({
-    command: REFRESH_EVENT,
+  const channel = supabase.channel("system-commands-refresh");
+  
+  // Envia via broadcast para todos os clientes conectados
+  const response = await channel.send({
+    type: 'broadcast',
+    event: REFRESH_EVENT,
     payload: {
       reason: "manual_super_admin",
       requested_at: new Date().toISOString(),
     },
   });
 
-  if (error) {
-    console.error("Error dispatching global refresh:", error);
-    throw error;
+  if (response !== 'ok') {
+    console.error("Error dispatching global refresh via broadcast:", response);
+    throw new Error("Falha ao enviar comando de atualização");
   }
 }
 
@@ -26,13 +30,8 @@ export function installGlobalRefreshListener() {
   const channel = supabase
     .channel("system-commands-refresh")
     .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "system_commands",
-        filter: `command=eq.${REFRESH_EVENT}`,
-      },
+      "broadcast",
+      { event: REFRESH_EVENT },
       (payload) => {
         console.log("Received global refresh command:", payload);
         
