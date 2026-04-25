@@ -128,7 +128,11 @@ export default function AlojamentoOcupacaoPage() {
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
       
-      <AlojamentoNavHeader currentPathLabel="Ocupação" />
+      <PwaHeader 
+        title="Ocupação" 
+        icon={Building}
+        backTo="/pwa/alojamento" 
+      />
 
       <main className="relative max-w-md mx-auto space-y-4 px-4 pb-28 pt-4">
         {/* Search Bar */}
