@@ -485,19 +485,20 @@ export function useDashboardData(eventId?: string | null) {
     // eslint-disable-next-line no-console
     console.log("[KPI dashboard]", {
       eventId,
-      participants_total: P.length,
+      participants_total: P_total,
       credentialed_kpi: credentialed,
       cred_active_distinct_participants: credActiveDistinctParticipants,
       cred_active_rows: credActive,
       credentialed_from_participants_flag: credentialedFromParticipants,
       credentials_today: credToday,
-      matches_total: MA.length,
-      meals_total: consumptions.length,
+      matches_total: MA_total,
+      meals_total: consumptionsTotal,
       lodging_occupied: LO,
-      transport_trips: TR.length,
+      transport_trips: TR_total,
       transport_passengers: passengers,
     });
   }
+
 
   const refetchAll = async () => {
     await Promise.all([
