@@ -7,7 +7,7 @@ import { ScanLine, CheckCircle, Search, Loader2, User, IdCard, Link as LinkIcon,
 import { toast } from "sonner";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
-import { resolveQrCredential, extractCandidates } from "@/lib/resolveQrCredential";
+import { resolveQrCredential, extractCandidates, type ResolvedCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
@@ -20,6 +20,7 @@ export default function VincularCredencialPage() {
 
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
+  const [resolved, setResolved] = useState<ResolvedCredential | null>(null);
   const [currentOwner, setCurrentOwner] = useState<{ name: string; id: string } | null>(null);
   
   const [manualQuery, setManualQuery] = useState("");
@@ -69,10 +70,15 @@ export default function VincularCredencialPage() {
     setScannedCode(code);
     
     try {
-      const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
-      if (resolved) {
-        setCurrentOwner({ name: resolved.full_name || "Sem nome", id: resolved.participant_id });
-        toast.info(`Este código já pertence a: ${resolved.full_name}`);
+      const res = await resolveQrCredential(rawValue, { eventId: activeEventId });
+      setResolved(res);
+      if (res) {
+        setCurrentOwner({ name: res.full_name || "Sem nome", id: res.participant_id });
+        if (res.source === "cpf") {
+          toast.success(`CPF de ${res.full_name} identificado!`);
+        } else {
+          toast.info(`Este código já pertence a: ${res.full_name}`);
+        }
       } else {
         setCurrentOwner(null);
         toast.success("Código disponível para vínculo!");
@@ -81,6 +87,13 @@ export default function VincularCredencialPage() {
       console.error(err);
       toast.error("Erro ao verificar código");
     }
+  };
+
+  const handleReset = () => {
+    setScannedCode(null);
+    setResolved(null);
+    setCurrentOwner(null);
+    setManualQuery("");
   };
 
   const handleLink = async (participant: ParticipantManualSearchRow) => {
@@ -106,9 +119,7 @@ export default function VincularCredencialPage() {
       if (error) throw error;
 
       toast.success("Credencial vinculada com sucesso!");
-      setScannedCode(null);
-      setCurrentOwner(null);
-      setManualQuery("");
+      handleReset();
     } catch (err: any) {
       toast.error(`Erro ao vincular: ${err.message}`);
     } finally {
@@ -158,24 +169,49 @@ export default function VincularCredencialPage() {
                     <p className="text-lg font-mono font-bold">{scannedCode}</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setScannedCode(null)}>
+                <Button variant="ghost" size="icon" onClick={handleReset}>
                   <RefreshCcw className="h-4 w-4" />
                 </Button>
               </CardContent>
             </Card>
 
-            {currentOwner ? (
-              <div className="rounded-xl bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 p-4 space-y-2 text-center">
+            {resolved?.source === "cpf" ? (
+              <div className="rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-4 space-y-3 text-center animate-in zoom-in-95 duration-300">
+                <div className="flex flex-col items-center gap-1">
+                  <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Pessoa encontrada via CPF</p>
+                  <p className="text-xl font-black text-blue-900 dark:text-blue-100">{resolved.full_name}</p>
+                </div>
+                
+                <Button 
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl h-14 shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+                  onClick={() => void handleLink({ 
+                    participant_id: resolved.participant_id, 
+                    full_name: resolved.full_name || "", 
+                    person_id: "", 
+                    cpf: scannedCode,
+                    participant_type: "" 
+                  })}
+                  disabled={linking}
+                >
+                  <LinkIcon className="mr-2 h-5 w-5" />
+                  Confirmar Vínculo
+                </Button>
+                <p className="text-xs text-blue-700/70 dark:text-blue-400/70 italic">
+                  O CPF será usado como o código da credencial para garantir o rastreio.
+                </p>
+              </div>
+            ) : currentOwner ? (
+              <div className="rounded-xl bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 p-4 space-y-2 text-center animate-in zoom-in-95 duration-300">
                 <p className="text-sm font-medium text-orange-800 dark:text-orange-300 flex items-center justify-center gap-2">
-                  <User className="h-4 w-4" /> Já vinculada a:
+                  <User className="h-4 w-4" /> Código já vinculado a:
                 </p>
                 <p className="font-bold text-orange-900 dark:text-orange-100">{currentOwner.name}</p>
                 <p className="text-xs text-orange-700 dark:text-orange-400">Vincular a outra pessoa irá transferir este código.</p>
               </div>
             ) : (
-              <div className="rounded-xl bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 p-4 flex items-center justify-center gap-2 text-green-700 dark:text-green-300">
+              <div className="rounded-xl bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 p-4 flex items-center justify-center gap-2 text-green-700 dark:text-green-300 animate-in zoom-in-95 duration-300">
                 <CheckCircle className="h-5 w-5" />
-                <span className="text-sm font-medium">Código disponível para vínculo</span>
+                <span className="text-sm font-medium text-green-800 dark:text-green-200">Código disponível para vínculo</span>
               </div>
             )}
 
