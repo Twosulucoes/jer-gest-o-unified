@@ -284,11 +284,12 @@ export function useDashboardData(eventId?: string | null) {
         enabled: enabled && windowIds.length > 0,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("meal_consumptions")
-            .select("id, meal_window_id, consumed_at, participant_id")
-            .in("meal_window_id", windowIds);
-          return data ?? [];
-        }, [] as { id: string; meal_window_id: string; consumed_at: string; participant_id: string }[]),
+          const { data, count } = await supabase.from("meal_consumptions")
+            .select("id, meal_window_id, consumed_at, participant_id", { count: "exact" })
+            .in("meal_window_id", windowIds)
+            .limit(5000);
+          return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
+        }, { list: [], totalCount: 0 }),
       },
       // 1: transport_passengers boarded
       {
