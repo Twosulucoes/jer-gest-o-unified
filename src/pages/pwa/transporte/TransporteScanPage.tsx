@@ -23,6 +23,7 @@ import {
   type ScanTelemetry,
 } from "@/lib/pwaScan";
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 const MODULE = "transporte" as const;
 
