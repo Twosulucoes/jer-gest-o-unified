@@ -97,15 +97,17 @@ export default function AlimentacaoHubPage() {
   });
 
   const { data: windows = [], isLoading: loadingWindows } = useQuery({
-    queryKey: ["meal_windows", selectedStageId],
+    queryKey: ["meal_windows", selectedEventId, selectedStageId],
     queryFn: async () => {
       if (!selectedStageId) return [];
       const { data, error } = await (supabase.from("meal_windows") as any).select("*")
-        .eq("event_stage_id", selectedStageId).order("service_date").order("start_time");
+        .eq("event_id", selectedEventId)
+        .or(`event_stage_id.eq.${selectedStageId},event_stage_id.is.null`)
+        .order("service_date").order("start_time");
       if (error) throw error;
       return (data ?? []) as any[];
     },
-    enabled: !!selectedStageId,
+    enabled: !!selectedStageId && !!selectedEventId,
   });
 
   const typesMap = new Map(mealTypes.map(m => [m.id, m]));
