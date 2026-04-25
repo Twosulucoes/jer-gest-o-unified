@@ -7,7 +7,7 @@ import { ScanLine, CheckCircle, Search, Loader2, User, IdCard, Link as LinkIcon,
 import { toast } from "sonner";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
-import { resolveQrCredential, extractCandidates } from "@/lib/resolveQrCredential";
+import { resolveQrCredential, extractCandidates, type ResolvedCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
