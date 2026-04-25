@@ -35,6 +35,12 @@ const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; al
     allowedRoles: ["admin", "secretaria", "delegacao"],
     features: ["Meus participantes", "Agenda de competição", "Informações logísticas"],
   },
+  credenciamento: {
+    label: "Credenciamento",
+    icon: IdCard,
+    allowedRoles: ["admin", "secretaria"],
+    features: ["Vincular credencial física", "Busca de participantes", "Status de ativação"],
+  },
 };
 
 export default function PwaModulePage() {
