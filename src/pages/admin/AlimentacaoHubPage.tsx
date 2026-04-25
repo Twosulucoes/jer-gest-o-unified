@@ -97,7 +97,7 @@ export default function AlimentacaoHubPage() {
   });
 
   const { data: windows = [], isLoading: loadingWindows } = useQuery({
-    queryKey: ["meal_windows", selectedStageId],
+    queryKey: ["meal_windows", selectedEventId, selectedStageId],
     queryFn: async () => {
       if (!selectedStageId) return [];
       const { data, error } = await (supabase.from("meal_windows") as any).select("*")
