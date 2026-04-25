@@ -165,8 +165,13 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Only super_admin can create super_admin
+        if (!callerIsSuper && targetRoles.includes("super_admin")) {
+          return jsonResponse({ error: "Somente Super Admin pode atribuir este perfil" }, 403);
+        }
+
         // Secretaria cannot create admin or secretaria
-        if (!roles.includes("admin") && targetRoles.some(r => r === "admin" || r === "secretaria")) {
+        if (!roles.includes("admin") && !callerIsSuper && targetRoles.some(r => r === "admin" || r === "secretaria")) {
           return jsonResponse({ error: "Secretaria não pode criar usuários admin ou secretaria" }, 403);
         }
 
