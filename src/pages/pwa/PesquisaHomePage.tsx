@@ -34,6 +34,8 @@ export default function PesquisaHomePage() {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  usePwaAudit("pesquisa");
+
   const session = getSession();
 
   const loadHome = useCallback(async () => {
