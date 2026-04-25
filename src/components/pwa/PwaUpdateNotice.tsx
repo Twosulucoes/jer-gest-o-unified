@@ -10,7 +10,7 @@ import { toast } from 'sonner';
  */
 export function PwaUpdateNotice() {
   const {
-    needUpdate: [needUpdate, setNeedUpdate],
+    needRefresh: [needUpdate, setNeedUpdate],
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(r) {
