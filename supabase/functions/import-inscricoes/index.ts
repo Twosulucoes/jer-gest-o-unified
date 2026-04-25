@@ -1030,7 +1030,9 @@ function classifyRow(
   row: NormalizedRow,
   maps: ReadOnlyMaps,
   people: PeopleMaps,
+  batchCredentials?: Set<string>,
 ): RowClassification {
+
   const errors: RowClassification["errors"] = [];
   const warnings: RowClassification["warnings"] = [];
   const pending: PendingItem[] = [];
