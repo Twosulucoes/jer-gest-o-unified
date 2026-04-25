@@ -1985,6 +1985,7 @@ Deno.serve(async (req: Request) => {
               }
             }
           } catch (rowErr) {
+            if (participantId && resolved.external_credential) { await serviceClient.rpc("link_external_credential", { p_event_id: eventId, p_participant_id: participantId, p_credential_code: resolved.external_credential, p_user_id: operatorId, p_is_internal_mode: false }); }
             commitErrors.push({ row_number: row.row_number, error_code: "UNEXPECTED", error_message: String(rowErr) });
             rowsFailed++;
           }
