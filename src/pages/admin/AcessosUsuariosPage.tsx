@@ -675,7 +675,7 @@ export default function AcessosUsuariosPage() {
                     className="justify-start h-auto py-2 px-3"
                     onClick={() => setStageLinksUser({ id: selectedUser.user_id, name: selectedUser.full_name || selectedUser.email })}
                   >
-                    <Layers className="h-4 w-4 mr-2 text-blue-600" />
+                    <Layers className="h-4 w-4 mr-2 text-primary" />
                     <div className="text-left">
                       <div className="font-medium text-xs">Vínculo de Credenciamento (Etapas)</div>
                       <p className="text-[10px] text-muted-foreground">Restringe o acesso a etapas específicas</p>
