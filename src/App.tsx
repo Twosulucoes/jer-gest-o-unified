@@ -179,6 +179,7 @@ import DelegacaoProtestoNovoPage from "./pages/pwa/delegacao/DelegacaoProtestoNo
 import DelegacaoProtestoDetalhePage from "./pages/pwa/delegacao/DelegacaoProtestoDetalhePage";
 import ProtestosFilaPage from "./pages/admin/ProtestosFilaPage";
 import QrDiagnosticoPage from "./pages/pwa/diagnostico/QrDiagnosticoPage";
+import VincularCredencialPage from "./pages/pwa/credenciamento/VincularCredencialPage";
 import SuperPermissionsPage from "./pages/super/SuperPermissionsPage";
 import PwaDebugPage from "./pages/pwa/PwaDebugPage";
 import NotFound from "./pages/NotFound";
