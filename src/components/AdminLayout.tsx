@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree, Trophy, Bus, UtensilsCrossed, Building2,
-  Users, Upload, KeyRound, BadgeCheck, Gavel,
+  Users, Upload, KeyRound, BadgeCheck, Gavel, ScanLine,
   UsersRound, ChevronDown,
   Shield, Settings, AlertTriangle, FileBarChart, Monitor,
   Info, ExternalLink, ChevronsLeft,
