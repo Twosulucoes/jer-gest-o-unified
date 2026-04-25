@@ -58,9 +58,9 @@ export default function AlimentacaoConsumoPage() {
       if (!isStageScoped || !stageId) return all;
       const ofStage = all.filter((w: any) => w.event_stage_id === stageId);
       const legacy = all.filter((w: any) => !w.event_stage_id);
-      // Se a etapa tem janelas próprias, usa só elas + legadas (sem stage).
-      // Se não tem nenhuma, mostra todas do evento como fallback (com aviso na UI).
-      return ofStage.length > 0 ? [...ofStage, ...legacy] : all;
+      // Retorna apenas as janelas da etapa + legadas (sem vínculo).
+      // Removemos o fallback automático "all" que trazia janelas de outras etapas.
+      return [...ofStage, ...legacy];
     },
     enabled: !!selectedEventId,
   });
