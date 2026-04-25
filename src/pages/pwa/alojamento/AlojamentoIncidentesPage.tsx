@@ -53,7 +53,11 @@ export default function AlojamentoIncidentesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AlojamentoNavHeader currentPathLabel="Ocorrências" />
+      <PwaHeader 
+        title="Ocorrências" 
+        icon={AlertTriangle}
+        backTo="/pwa/alojamento" 
+      />
 
       <main className="p-4 max-w-md mx-auto space-y-4 pb-20">
         <div className="flex items-center justify-between">
