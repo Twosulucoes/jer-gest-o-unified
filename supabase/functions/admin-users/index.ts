@@ -44,18 +44,20 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Verify caller using admin client
+    // Verify caller using getClaims (compatible with new signing-keys system)
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user: caller }, error: userErr } = await adminClient.auth.getUser(token);
-    if (userErr || !caller) {
+    const { data: claimsData, error: claimsErr } = await adminClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims?.sub) {
       return jsonResponse({ error: "NOT_AUTHENTICATED" }, 401);
     }
+    const callerId = claimsData.claims.sub as string;
+    const caller = { id: callerId, email: claimsData.claims.email as string | undefined };
 
     // Check admin/secretaria role using admin client (bypasses JWT verification issues)
     const { data: callerRoles } = await adminClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", caller.id);
+      .eq("user_id", callerId);
     
     const roles = (callerRoles || []).map((r: any) => r.role);
     const callerIsSuper = roles.includes("super_admin");
