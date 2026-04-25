@@ -36,6 +36,7 @@ const MODULE = "alojamento" as const;
 export default function AlojamentoScanPage() {
   const navigate = useNavigate();
   const { activeEvent } = useEventContext();
+  usePwaAudit("alojamento/escanear");
   const stageId = useActiveStageId();
   const { user } = useAuth();
   const userId = user?.id ?? null;
