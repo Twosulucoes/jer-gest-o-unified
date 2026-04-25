@@ -263,7 +263,7 @@ export default function CredenciamentoExternoPage() {
     mutationFn: async (credId: string) => {
       if (!eventId || !selectedParticipant) throw new Error("Participante não selecionado");
 
-      const { error } = await supabase.rpc("cancel_external_credential", {
+      const { error } = await (supabase as any).rpc("cancel_external_credential", {
         p_event_id: eventId,
         p_participant_id: selectedParticipant.id,
         p_cred_id: credId,
