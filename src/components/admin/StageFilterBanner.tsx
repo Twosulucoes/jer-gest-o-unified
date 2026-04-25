@@ -3,6 +3,7 @@ import { Layers, X, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
+import { useCompetitionContext } from "@/contexts/CompetitionContext";
 
 const KIND_LABELS: Record<string, string> = {
   classificatoria: "Classificatória",
