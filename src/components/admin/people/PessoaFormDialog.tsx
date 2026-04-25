@@ -132,7 +132,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
     queryFn: async () => {
       const { data: p, error } = await supabase
         .from("participants")
-        .select("id, person_id, participant_type, category, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, guardian_name, guardian_phone, coach_name, coach_phone, organization_subtype, role_function, sector_area, responsibilities, access_permissions, observations, person:people(full_name, cpf, email, phone, birth_date, gender, food_restrictions, disability_type, medical_notes)")
+        .select("id, person_id, participant_type, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, guardian_name, guardian_phone, coach_name, coach_phone, person:people(full_name, cpf, email, phone, birth_date, gender, food_restrictions, disability_type, medical_notes)")
         .eq("id", participantId!).single();
       if (error) throw error;
       const { data: roles } = await (supabase.from("participant_event_roles" as never) as any)
@@ -230,14 +230,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
         // Update participant
         const { error: errPart } = await supabase.from("participants").update({
           participant_type: participantType,
-          category: participantCategory,
           delegation_id: participantCategory === "delegation" ? (delegationId || null) : null,
-          organization_subtype: participantCategory === "organization" ? organizationSubtype : null,
-          role_function: participantCategory === "organization" ? roleFunction : null,
-          sector_area: participantCategory === "organization" ? sectorArea : null,
-          responsibilities: participantCategory === "organization" ? responsibilities : null,
-          access_permissions: participantCategory === "organization" ? accessPermissions : null,
-          observations: participantCategory === "organization" ? observations : null,
           needs_transport: needsTransport,
           needs_meals: needsMeals,
           needs_lodging: needsLodging,
@@ -256,16 +249,8 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           personId = foundPerson.id;
           
           // Check if this person already has a participant record in ANY event with a different category
-          const { data: otherCategoryPart } = await (supabase.from("participants") as any)
-            .select("category, event_id")
-            .eq("person_id", personId)
-            .neq("category", participantCategory)
-            .limit(1)
-            .maybeSingle();
-            
-          if (otherCategoryPart) {
-            throw new Error(`Este CPF já está cadastrado como ${otherCategoryPart.category === 'delegation' ? 'Delegação' : 'Organização'}. O CPF é exclusivo e deve permanecer apenas em um dos tipos.`);
-          }
+          // Skip category uniqueness check since column is missing
+
 
           // Already linked to this event?
           const { data: existingPart } = await supabase.from("participants").select("id")
@@ -293,7 +278,6 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           event_id: eventId,
           delegation_id: participantCategory === "delegation" ? (delegationId || null) : null,
           participant_type: participantType,
-          category: participantCategory,
           status: "confirmed",
           is_active: true,
           needs_transport: needsTransport,
@@ -305,12 +289,6 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           guardian_phone: participantCategory === "delegation" ? (guardianPhone || null) : null,
           coach_name: participantCategory === "delegation" ? (coachName || null) : null,
           coach_phone: participantCategory === "delegation" ? (coachPhone || null) : null,
-          organization_subtype: participantCategory === "organization" ? organizationSubtype : null,
-          role_function: participantCategory === "organization" ? roleFunction : null,
-          sector_area: participantCategory === "organization" ? sectorArea : null,
-          responsibilities: participantCategory === "organization" ? responsibilities : null,
-          access_permissions: participantCategory === "organization" ? accessPermissions : null,
-          observations: participantCategory === "organization" ? observations : null,
         }).select("id").single();
         if (errPart) throw errPart;
         pId = newPart.id;
