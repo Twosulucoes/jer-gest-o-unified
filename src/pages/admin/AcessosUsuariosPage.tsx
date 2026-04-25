@@ -54,10 +54,10 @@ const ROLES = [
   { value: "cde", label: "CDE (Protestos)" },
 ];
 
-const OPERATIONAL_ROLES = ROLES.filter((r) => !["admin", "secretaria"].includes(r.value));
+const OPERATIONAL_ROLES = ROLES.filter((r) => !["super_admin", "admin", "secretaria"].includes(r.value));
 
 function roleBadgeVariant(role: string): "default" | "secondary" | "outline" {
-  if (role === "admin") return "default";
+  if (role === "super_admin" || role === "admin") return "default";
   if (role === "secretaria") return "secondary";
   return "outline";
 }
