@@ -12,6 +12,7 @@ import {
   Medal, BarChart3, Search, AlertTriangle, AlertOctagon,
 } from "lucide-react";
 import { format } from "date-fns";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 interface MatchRow {
   id: string;
