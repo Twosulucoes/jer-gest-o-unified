@@ -29,6 +29,7 @@ import { useProgressiveParticipants } from "@/hooks/useProgressiveParticipants";
 import { BackgroundLoadingIndicator } from "@/components/credenciamento/BackgroundLoadingIndicator";
 import { useStageModuleKpis } from "@/contexts/StageModuleKpisContext";
 import PessoaFormDialog from "@/components/admin/people/PessoaFormDialog";
+import { BulkExternalCredentialImport } from "@/components/credenciamento/BulkExternalCredentialImport";
 
 interface ParticipantRow {
   id: string;
