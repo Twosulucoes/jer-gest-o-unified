@@ -652,7 +652,7 @@ export default function CredenciamentoPage() {
     for (const id of selectedAwaiting) {
       const credentialCode = generateCredentialCode();
       const qrCodeValue = generateQrCodeValue(selectedEventId, id, credentialCode);
-      const { error } = await supabase.rpc("issue_participant_credential", {
+      const { error } = await (supabase as any).rpc("issue_participant_credential", {
         p_event_id: selectedEventId,
         p_participant_id: id,
         p_credential_code: credentialCode,
