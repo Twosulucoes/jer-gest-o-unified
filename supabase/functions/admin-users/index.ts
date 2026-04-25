@@ -244,8 +244,13 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Only super_admin can assign super_admin
+        if (!callerIsSuper && newRoles.some((r: string) => r === "super_admin")) {
+          return jsonResponse({ error: "Somente Super Admin pode atribuir o perfil super_admin" }, 403);
+        }
+
         // Secretaria cannot assign admin/secretaria
-        if (!roles.includes("admin") && newRoles.some((r: string) => r === "admin" || r === "secretaria")) {
+        if (!roles.includes("admin") && !callerIsSuper && newRoles.some((r: string) => r === "admin" || r === "secretaria")) {
           return jsonResponse({ error: "Sem permissão para atribuir perfis admin ou secretaria" }, 403);
         }
 
