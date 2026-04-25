@@ -11,6 +11,7 @@ import {
   Users, Calendar, MapPin,
   ClipboardList, Bus, Gavel, ChevronRight, AlertTriangle,
 } from "lucide-react";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 interface AthleteRow {
   id: string;
