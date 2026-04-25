@@ -1634,7 +1634,7 @@ Deno.serve(async (req: Request) => {
         manualOverridesApplied++;
       }
 
-      const result = classifyRow(row, maps, people);
+      const result = classifyRow(row, maps, people, batchCredentials);
       allWarnings.push(...result.warnings);
 
       if (result.status === "skip") { skippedRows++; continue; }
