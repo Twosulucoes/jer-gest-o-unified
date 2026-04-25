@@ -864,7 +864,7 @@ async function loadReadOnlyMaps(
   supabase: any,
   eventId: string,
 ): Promise<ReadOnlyMaps> {
-  const [instRes, sportRes, catRes, seRes, delRes, evRes, aliasRes] = await Promise.all([
+  const [instRes, sportRes, catRes, seRes, delRes, evRes, aliasRes, credRes] = await Promise.all([
     supabase.from("institutions").select("id, slug").eq("is_active", true),
     supabase.from("sports").select("id, slug").eq("event_id", eventId),
     supabase.from("categories").select("id, slug, min_birth_year, max_birth_year, gender_scope").eq("event_id", eventId),
@@ -874,6 +874,7 @@ async function loadReadOnlyMaps(
     supabase.from("import_aliases")
       .select("alias_norm, canonical_slug, kind, event_id")
       .or(`event_id.eq.${eventId},event_id.is.null`),
+    supabase.from("external_credentials").select("credential_code, participant_id").eq("event_id", eventId).eq("status", "active"),
   ]);
 
   const institutions = new Map<string, string>();
