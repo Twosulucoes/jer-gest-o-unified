@@ -50,15 +50,20 @@ export default function ParticipanteDetalhePage() {
   const [reissueConfirmOpen, setReissueConfirmOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  const { data: participant, isLoading: loadingParticipant } = useQuery({
+  const { data: participant, isLoading: loadingParticipant, error: participantError } = useQuery({
     queryKey: ["participant_full", participantId],
     queryFn: async () => {
+      console.log("Fetching participant:", participantId);
       const { data, error } = await (supabase
         .from("participants") as any)
         .select("id, participant_type, category, person_id, delegation_id, event_id, status, is_active, notes, created_at, organization_subtype, role_function, sector_area, responsibilities, access_permissions, observations")
         .eq("id", participantId!)
-        .single();
-      if (error) throw error;
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error fetching participant:", error);
+        throw error;
+      }
       return data as any;
     },
     enabled: !!participantId,
