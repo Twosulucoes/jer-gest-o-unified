@@ -30,13 +30,8 @@ export function installGlobalRefreshListener() {
   const channel = supabase
     .channel("system-commands-refresh")
     .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "system_commands",
-        filter: `command=eq.${REFRESH_EVENT}`,
-      },
+      "broadcast",
+      { event: REFRESH_EVENT },
       (payload) => {
         console.log("Received global refresh command:", payload);
         
