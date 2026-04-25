@@ -239,7 +239,7 @@ export default function CredenciamentoExternoPage() {
     mutationFn: async ({ code, replaceId }: { code: string; replaceId?: string }) => {
       if (!eventId || !selectedParticipant || !user) throw new Error("Dados insuficientes");
 
-      const { error } = await supabase.rpc("link_external_credential", {
+      const { error } = await (supabase as any).rpc("link_external_credential", {
         p_event_id: eventId,
         p_participant_id: selectedParticipant.id,
         p_credential_code: code,
