@@ -41,6 +41,7 @@ const MODULE = "alimentacao" as const;
 export default function AlimentacaoScanPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  usePwaAudit("alimentacao/escanear");
   const { activeEventId } = useEventContext();
   const stageId = useActiveStageId();
   const userId = user?.id ?? null;
