@@ -168,6 +168,10 @@ import CoordenacaoPartidaDetalhePage from "./pages/pwa/coordenacao/CoordenacaoPa
 import CoordenacaoResultadosPwaPage from "./pages/pwa/coordenacao/CoordenacaoResultadosPage";
 import CoordenacaoEstatisticasPage from "./pages/pwa/coordenacao/CoordenacaoEstatisticasPage";
 import CoordenacaoConsultaPage from "./pages/pwa/coordenacao/CoordenacaoConsultaPage";
+// PWA Resultados (Lançamento Manual — coordenador_modalidade)
+import ResultadosHomePage from "./pages/pwa/resultados/ResultadosHomePage";
+import ResultadosPartidasPage from "./pages/pwa/resultados/ResultadosPartidasPage";
+import ResultadosPartidaFormPage from "./pages/pwa/resultados/ResultadosPartidaFormPage";
 // PWA Delegação pages
 import DelegacaoHomePage from "./pages/pwa/delegacao/DelegacaoHomePage";
 import DelegacaoParticipantesPage from "./pages/pwa/delegacao/DelegacaoParticipantesPage";
@@ -189,6 +193,7 @@ import PwaAcessoNegadoPage from "./pages/pwa/PwaAcessoNegadoPage";
 import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
 import PublicResultsPage from "./pages/public/PublicResultsPage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
+import EntregaTecnicaPage from "./pages/public/EntregaTecnicaPage";
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 // Ao Vivo PWA (lazy loaded)
 const AoVivoLoginPage = lazy(() => import("./pages/aovivo/AoVivoLoginPage"));
@@ -472,7 +477,12 @@ const App = () => (
             <Route path="/pwa/coordenacao-tecnica/resultados" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoResultadosPwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/estatisticas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoEstatisticasPage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/consulta" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoConsultaPage /></PwaRouteGuard>} />
-            
+
+            {/* PWA Resultados — perfil coordenador_modalidade */}
+            <Route path="/pwa/resultados" element={<PwaRouteGuard allowedRoles={["coordenador_modalidade"]}><ResultadosHomePage /></PwaRouteGuard>} />
+            <Route path="/pwa/resultados/partidas" element={<PwaRouteGuard allowedRoles={["coordenador_modalidade"]}><ResultadosPartidasPage /></PwaRouteGuard>} />
+            <Route path="/pwa/resultados/partida/:matchId" element={<PwaRouteGuard allowedRoles={["coordenador_modalidade"]}><ResultadosPartidaFormPage /></PwaRouteGuard>} />
+
             {/* PWA Delegação — perfil delegacao */}
             <Route path="/pwa/delegacao" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoHomePage /></PwaRouteGuard>} />
             <Route path="/pwa/delegacao/participantes" element={<PwaRouteGuard allowedRoles={["delegacao"]}><DelegacaoParticipantesPage /></PwaRouteGuard>} />
@@ -506,6 +516,7 @@ const App = () => (
             <Route path="/aovivo" element={<Suspense fallback={null}><AoVivoHomePage /></Suspense>} />
             <Route path="/aovivo/partida/:matchId" element={<Suspense fallback={null}><AoVivoMatchPage /></Suspense>} />
             {/* Public content routes */}
+            <Route path="/tecnica" element={<EntregaTecnicaPage />} />
             <Route path="/public/results" element={<PublicResultsPage />} />
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
