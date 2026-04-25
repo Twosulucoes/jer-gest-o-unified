@@ -37,6 +37,12 @@ function concat(...arrs: Uint8Array[]): Uint8Array {
   return out;
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
+}
+
 // ───── VAPID config ─────
 const sanitize = (k: string) =>
   (k ?? "").trim().replace(/\s+/g, "").replace(/=+$/g, "")
@@ -195,7 +201,7 @@ async function encryptPayload(
     await crypto.subtle.encrypt(
       { name: "AES-GCM", iv: nonce as BufferSource },
       aesKey,
-      padded,
+      toArrayBuffer(padded),
     ),
   );
 
