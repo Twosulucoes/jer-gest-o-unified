@@ -6,7 +6,10 @@ import { usePesquisaSync } from '@/hooks/usePesquisaSync';
 import OfflineBadge from '@/components/pesquisa/OfflineBadge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, LogOut, User } from 'lucide-react';
+import { Plus, LogOut, User, ClipboardCheck } from 'lucide-react';
+import { PwaHeader } from '@/components/pwa/PwaHeader';
+import { PwaContainer } from '@/components/pwa/PwaScreen';
+import { usePwaAudit } from '@/hooks/usePwaAudit';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
