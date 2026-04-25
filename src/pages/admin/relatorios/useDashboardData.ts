@@ -261,21 +261,26 @@ export function useDashboardData(eventId?: string | null) {
 
 
   // Fallbacks defensivos
-  const P = participants ?? [];
-  const C = credentials ?? [];
+  const P = participantsRes?.list ?? [];
+  const P_total = participantsRes?.totalCount ?? 0;
+  const C = credentialsRes?.list ?? [];
+  const C_total = credentialsRes?.totalCount ?? 0;
   const D = delegations ?? [];
   const MW = mealWindows ?? [];
   const MT = mealTypes ?? [];
   const LU = lodgingUnits ?? [];
   const LO = lodgingOccupied ?? 0;
-  const TR = trips ?? [];
+  const TR = tripsRes?.list ?? [];
+  const TR_total = tripsRes?.totalCount ?? 0;
   const VE = vehicles ?? 0;
   const SE = sportEvents ?? [];
-  const MA = matches ?? [];
+  const MA = matchesRes?.list ?? [];
+  const MA_total = matchesRes?.totalCount ?? 0;
 
   // Resumo: passageiros e refeições exigem queries dependentes — feitas em useQueries adicional abaixo
   const tripIds = TR.map((t) => t.id);
   const windowIds = MW.map((w) => w.id);
+
 
   const dependent = useQueries({
     queries: [
