@@ -5,7 +5,7 @@ import { Check, X, Shield, Lock, Globe, Smartphone, UserCog, Database } from "lu
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ROLES = [
-  "admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", 
+  "super_admin", "admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", 
   "transporte", "alimentacao", "alojamento", "delegacao", "mesario", "arbitragem", "cde"
 ] as const;
 
