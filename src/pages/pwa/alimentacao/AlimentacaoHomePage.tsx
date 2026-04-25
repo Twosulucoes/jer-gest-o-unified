@@ -35,6 +35,8 @@ export default function AlimentacaoHomePage() {
   const [openWindow, setOpenWindow] = useState<OpenWindowState | null>(null);
   const [incidentOpen, setIncidentOpen] = useState(false);
 
+  usePwaAudit("alimentacao");
+
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
