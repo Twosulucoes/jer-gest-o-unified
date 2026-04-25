@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useStageScope } from "@/hooks/useStageScope";
 import { format } from "date-fns";
-import { Download, Utensils, AlertCircle, Inbox } from "lucide-react";
+import { Download, Utensils, AlertCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 export default function AlimentacaoRelatoriosPage() {
   const eventId = useActiveEventId();
   const { hasRole } = useAuth();
+  const { isStageScoped, stageId, stage } = useStageScope();
   const canExport = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -47,18 +49,22 @@ export default function AlimentacaoRelatoriosPage() {
   });
 
   const { data: consumptions, isLoading, isError } = useQuery({
-    queryKey: ["food-report", eventId, startDate, endDate, delegationFilter, mealTypeFilter],
+    queryKey: ["food-report", eventId, stageId, startDate, endDate, delegationFilter, mealTypeFilter],
     enabled: !!eventId,
     queryFn: async () => {
       let q = supabase
         .from("meal_consumptions")
         .select(`
           *,
-          meal_windows!inner(id, label, service_date, meal_type_id, event_id, meal_types(name)),
+          meal_windows!inner(id, label, service_date, meal_type_id, event_id, event_stage_id, meal_types(name)),
           participants(person:people(full_name), delegation_id, delegations(school_name))
         `)
         .eq("meal_windows.event_id", eventId)
         .order("consumed_at", { ascending: false });
+
+      if (isStageScoped && stageId) {
+        q = q.eq("meal_windows.event_stage_id", stageId);
+      }
 
       // Filter by event through meal_windows
       q = q.not("meal_window_id", "is", null);
@@ -124,7 +130,17 @@ export default function AlimentacaoRelatoriosPage() {
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Relatório de Alimentação</h1>
           <p className="text-sm text-muted-foreground mt-1">Consumos por refeição, delegação e período</p>
+      </div>
+
+      {isStageScoped && stage && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/10">
+          <Info className="h-5 w-5 text-primary shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-primary">Relatório filtrado por etapa: {stage.name}</p>
+            <p className="text-xs text-muted-foreground">Exibindo apenas consumos registrados em janelas desta etapa.</p>
+          </div>
         </div>
+      )}
         {canExport && (
           <Button onClick={exportCsv} disabled={!consumptions?.length}>
             <Download className="mr-2 h-4 w-4" />Exportar CSV
