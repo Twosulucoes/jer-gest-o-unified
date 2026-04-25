@@ -26,6 +26,7 @@ import {
   type ScanTelemetry,
 } from "@/lib/pwaScan";
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 interface MealWindow {
   id: string;
