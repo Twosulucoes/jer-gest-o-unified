@@ -80,24 +80,21 @@ export default function PesquisaHomePage() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-background p-4 max-w-lg mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">
+    <div className="op-screen">
+      <PwaHeader 
+        title="Pesquisa de Satisfação"
+        icon={ClipboardCheck}
+        subtitle={homeData?.event?.name || session.event.name}
+        onSignOut={handleLogout}
+        rightSlot={<OfflineBadge isOnline={isOnline} pendingCount={pendingCount} />}
+      />
+
+      <PwaContainer>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-foreground">
             Olá, {homeData?.researcher_name || session.researcher.name}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {homeData?.event?.name || session.event.name}
-          </p>
+          </h2>
         </div>
-        <div className="flex items-center gap-2">
-          <OfflineBadge isOnline={isOnline} pendingCount={pendingCount} />
-          <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
 
       {/* Stats */}
       <Card className="p-6 text-center">
