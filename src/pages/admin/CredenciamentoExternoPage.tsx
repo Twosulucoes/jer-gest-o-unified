@@ -328,7 +328,7 @@ export default function CredenciamentoExternoPage() {
               Credenciamento Externo
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Vincule uma credencial física ao participante. O código será replicado para todos os módulos.
+              Associe um código físico (pulseira/tag) a um participante. Esta vinculação cria um vínculo permanente no banco de dados, permitindo identificar o participante em qualquer ponto de leitura.
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
