@@ -942,6 +942,10 @@ async function loadReadOnlyMaps(
     if (a.kind === "sport") sportAliases[key] = a.canonical_slug;
     else if (a.kind === "category") categoryAliases[key] = a.canonical_slug;
   }
+  const existingCredentials = new Map<string, string>();
+  for (const c of (credRes.data ?? []) as any[]) {
+    existingCredentials.set(c.credential_code, c.participant_id);
+  }
 
   return {
     institutions,
@@ -957,7 +961,9 @@ async function loadReadOnlyMaps(
     existingInstitutionSlugs: new Set(institutions.keys()),
     sportAliases,
     categoryAliases,
+    existingCredentials,
   };
+
 }
 
 // ─── Incremental People Lookup ───────────────────────────────────────
