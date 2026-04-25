@@ -149,7 +149,11 @@ export default function AlojamentoPessoaPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AlojamentoNavHeader currentPathLabel="Perfil" />
+      <PwaHeader 
+        title="Perfil" 
+        icon={User}
+        backTo="/pwa/alojamento/lista-completa" 
+      />
 
       <main className="p-4 max-w-md mx-auto space-y-4 pb-20">
         {loading ? (
