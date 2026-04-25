@@ -3,6 +3,7 @@ import { Layers, X, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
+import { useCompetitionContext } from "@/contexts/CompetitionContext";
 
 const KIND_LABELS: Record<string, string> = {
   classificatoria: "Classificatória",
@@ -21,11 +22,18 @@ const KIND_LABELS: Record<string, string> = {
  */
 export default function StageFilterBanner() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { stage, participantIds, isFiltering } = useStageParticipantFilter();
+  const { stage, participantIds } = useStageParticipantFilter();
+  const { setSelectedStageId } = useCompetitionContext();
 
-  if (!isFiltering || !stage) return null;
+  // O banner só deve aparecer se o filtro vier EXPLICITAMENTE da URL (?stage=)
+  // ou se estivermos em uma rota que não seja o hub da própria etapa.
+  const hasUrlParam = searchParams.has("stage");
+  
+  if (!hasUrlParam || !stage) return null;
 
   const clear = () => {
+    // Limpa tanto a URL quanto o contexto global para garantir que o banner suma
+    setSelectedStageId(null);
     const next = new URLSearchParams(searchParams);
     next.delete("stage");
     setSearchParams(next, { replace: true });
