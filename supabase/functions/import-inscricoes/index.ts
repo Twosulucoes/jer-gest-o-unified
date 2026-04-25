@@ -158,6 +158,7 @@ interface NormalizedRow {
   funcao: string;
   pcd: string | null;
   esfera: string;
+  external_credential: string | null;
   raw_payload: Record<string, unknown>;
 }
 
