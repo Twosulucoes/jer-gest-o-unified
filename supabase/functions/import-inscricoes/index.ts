@@ -833,6 +833,7 @@ function mapColumns(
     funcao,
     pcd: isBlank(pcd) ? null : pcd,
     esfera,
+    external_credential: externalCredential,
     raw_payload: raw,
   };
 }
