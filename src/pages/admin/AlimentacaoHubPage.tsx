@@ -101,7 +101,9 @@ export default function AlimentacaoHubPage() {
     queryFn: async () => {
       if (!selectedStageId) return [];
       const { data, error } = await (supabase.from("meal_windows") as any).select("*")
-        .eq("event_stage_id", selectedStageId).order("service_date").order("start_time");
+        .eq("event_id", selectedEventId)
+        .or(`event_stage_id.eq.${selectedStageId},event_stage_id.is.null`)
+        .order("service_date").order("start_time");
       if (error) throw error;
       return (data ?? []) as any[];
     },
