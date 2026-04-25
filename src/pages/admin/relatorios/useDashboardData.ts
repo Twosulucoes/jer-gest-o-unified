@@ -326,9 +326,12 @@ export function useDashboardData(eventId?: string | null) {
     ],
   });
 
-  const consumptions = (dependent[0].data ?? []) as { id: string; meal_window_id: string; consumed_at: string; participant_id: string }[];
+  const consumptionsRes = (dependent[0].data ?? { list: [], totalCount: 0 }) as { list: any[]; totalCount: number };
+  const consumptions = consumptionsRes.list;
+  const consumptionsTotal = consumptionsRes.totalCount;
   const passengers = (dependent[1].data ?? 0) as number;
   const results = (dependent[2].data ?? []) as { match_id: string; result_status: string }[];
+
 
   const isLoadingAll = isLoading || dependent.some((q) => q.isLoading);
 
