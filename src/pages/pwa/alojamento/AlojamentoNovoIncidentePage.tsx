@@ -47,7 +47,11 @@ export default function AlojamentoNovoIncidentePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AlojamentoNavHeader currentPathLabel="Nova Ocorrência" />
+      <PwaHeader 
+        title="Nova Ocorrência" 
+        icon={AlertTriangle}
+        backTo="/pwa/alojamento/incidentes" 
+      />
 
       <main className="p-4 max-w-md mx-auto pb-20">
         <Card className="rounded-2xl border-border/60 shadow-md">
