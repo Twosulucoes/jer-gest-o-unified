@@ -35,9 +35,10 @@ import {
 } from "@/components/ui/tooltip";
 import {
   Copy, Key, LogOut as LogOutIcon, UserPlus, Settings2, Search,
-  Mail, ShieldCheck, ShieldX, Clock, User as UserIcon, RefreshCw, Trophy, AlertTriangle,
+  Mail, ShieldCheck, Clock, User as UserIcon, RefreshCw, Trophy, AlertTriangle, Layers,
 } from "lucide-react";
 import SportLinksDialog from "@/components/admin/SportLinksDialog";
+import StageLinksDialog from "@/components/admin/StageLinksDialog";
 
 const ROLES = [
   { value: "super_admin", label: "Super Admin" },
@@ -120,8 +121,9 @@ export default function AcessosUsuariosPage() {
   const [auditEvents, setAuditEvents] = useState<any[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
 
-  // Sport links
+  // Sport & Stage links
   const [sportLinksUser, setSportLinksUser] = useState<{ id: string; name: string } | null>(null);
+  const [stageLinksUser, setStageLinksUser] = useState<{ id: string; name: string } | null>(null);
 
   // Deactivation confirmation
   const [deactivateConfirm, setDeactivateConfirm] = useState<{ user_id: string; name: string } | null>(null);
@@ -164,6 +166,31 @@ export default function AcessosUsuariosPage() {
     }
     return map;
   }, [allSportLinks]);
+
+  // Fetch stage links for all users
+  const { data: allStageLinks = [] } = useQuery({
+    queryKey: ["user-stage-links-all", eventId],
+    queryFn: async () => {
+      if (!eventId) return [];
+      const { data } = await supabase
+        .from("user_stage_assignments")
+        .select("id, user_id, event_stage_id, event_stages(name)")
+        .eq("event_stages.event_id", eventId);
+      return data || [];
+    },
+    enabled: !!eventId,
+  });
+
+  const stageLinksByUser = useMemo(() => {
+    const map: Record<string, { stage_id: string; name: string }[]> = {};
+    for (const link of allStageLinks) {
+      const uid = (link as any).user_id;
+      if (!uid) continue;
+      if (!map[uid]) map[uid] = [];
+      map[uid].push({ stage_id: (link as any).event_stage_id, name: (link as any).event_stages?.name || "—" });
+    }
+    return map;
+  }, [allStageLinks]);
 
   // Drawer-specific sport links query
   const selectedUserIsCoord = drawerRoles.includes("coordenador_modalidade");
@@ -409,6 +436,7 @@ export default function AcessosUsuariosPage() {
                 const userRoles: string[] = u.roles || [];
                 const isCoord = userRoles.includes("coordenador_modalidade");
                 const userSports = isCoord ? (sportLinksByUser[u.user_id] || []) : [];
+                const userStages = stageLinksByUser[u.user_id] || [];
                 return (
                   <TableRow
                     key={u.user_id}
@@ -448,21 +476,29 @@ export default function AcessosUsuariosPage() {
                             </Tooltip>
                           </TooltipProvider>
                         )}
-                        {isCoord && (
+                        
+                        {(userSports.length > 0 || userStages.length > 0) && (
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {userSports.length > 0 ? (
-                              userSports.map((s) => (
-                                <Badge key={s.sport_id} variant="secondary" className="text-[10px] px-1.5 py-0">
-                                  {s.name}
-                                </Badge>
-                              ))
-                            ) : (
-                              <Badge variant="destructive" className="text-[10px] px-1.5 py-0 animate-pulse">
-                                <AlertTriangle className="h-2.5 w-2.5 mr-1" />
-                                Sem modalidade
+                            {userSports.map((s) => (
+                              <Badge key={s.sport_id} variant="secondary" className="text-[10px] px-1.5 py-0 border-primary/20">
+                                <Trophy className="h-2.5 w-2.5 mr-1" />
+                                {s.name}
                               </Badge>
-                            )}
+                            ))}
+                            {userStages.map((s) => (
+                              <Badge key={s.stage_id} variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary bg-primary/5">
+                                <Layers className="h-2.5 w-2.5 mr-1" />
+                                {s.name}
+                              </Badge>
+                            ))}
                           </div>
+                        )}
+
+                        {isCoord && userSports.length === 0 && (
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 animate-pulse mt-1">
+                            <AlertTriangle className="h-2.5 w-2.5 mr-1" />
+                            Sem modalidade
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
@@ -608,7 +644,49 @@ export default function AcessosUsuariosPage() {
 
               <Separator />
 
-              {/* Roles - Multi-select checkboxes */}
+              {/* Vínculos Operacionais Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold flex items-center gap-2">
+                    <Settings2 className="h-4 w-4" />
+                    Vínculos Operacionais
+                  </h3>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-2">
+                  {drawerRoles.includes("coordenador_modalidade") && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="justify-start h-auto py-2 px-3"
+                      onClick={() => setSportLinksUser({ id: selectedUser.user_id, name: selectedUser.full_name || selectedUser.email })}
+                    >
+                      <Trophy className="h-4 w-4 mr-2 text-primary" />
+                      <div className="text-left">
+                        <div className="font-medium text-xs">Vincular Modalidades</div>
+                        <p className="text-[10px] text-muted-foreground">Define quais esportes o coordenador gerencia</p>
+                      </div>
+                    </Button>
+                  )}
+
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="justify-start h-auto py-2 px-3"
+                    onClick={() => setStageLinksUser({ id: selectedUser.user_id, name: selectedUser.full_name || selectedUser.email })}
+                  >
+                    <Layers className="h-4 w-4 mr-2 text-primary" />
+                    <div className="text-left">
+                      <div className="font-medium text-xs">Vínculo de Credenciamento (Etapas)</div>
+                      <p className="text-[10px] text-muted-foreground">Restringe o acesso a etapas específicas</p>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Profiles */}
               <div className="space-y-3">
                 <div>
                   <Label className="font-semibold text-base">Perfis de Acesso</Label>
@@ -807,14 +885,20 @@ export default function AcessosUsuariosPage() {
         </SheetContent>
       </Sheet>
 
-      {sportLinksUser && (
-        <SportLinksDialog
-          open={!!sportLinksUser}
-          onOpenChange={(open) => { if (!open) setSportLinksUser(null); }}
-          userId={sportLinksUser.id}
-          userName={sportLinksUser.name}
-        />
-      )}
+      {/* Linked Resources Dialogs */}
+      <SportLinksDialog
+        open={!!sportLinksUser}
+        onOpenChange={(open) => !open && setSportLinksUser(null)}
+        userId={sportLinksUser?.id || ""}
+        userName={sportLinksUser?.name || ""}
+      />
+
+      <StageLinksDialog
+        open={!!stageLinksUser}
+        onOpenChange={(open) => !open && setStageLinksUser(null)}
+        userId={stageLinksUser?.id || ""}
+        userName={stageLinksUser?.name || ""}
+      />
 
       {/* Deactivation Confirmation */}
       <AlertDialog open={!!deactivateConfirm} onOpenChange={(open) => { if (!open) setDeactivateConfirm(null); }}>
@@ -844,6 +928,3 @@ export default function AcessosUsuariosPage() {
     </div>
   );
 }
-
-
-
