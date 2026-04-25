@@ -176,6 +176,8 @@ type PendingCode =
   | "SPORT_EVENT_AMBIGUOUS"
   | "TM_2012_MANUAL_CATEGORY_SELECTION"
   | "INSTITUTION_NOT_FOUND"
+  | "CREDENTIAL_DUPLICATED"
+  | "CREDENTIAL_ALREADY_LINKED"
   | "MANUAL_REVIEW_REQUIRED";
 
 // Marcador textual usado para sinalizar caso TM 2012 antes da pendência ser emitida.
