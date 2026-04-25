@@ -35,9 +35,10 @@ import {
 } from "@/components/ui/tooltip";
 import {
   Copy, Key, LogOut as LogOutIcon, UserPlus, Settings2, Search,
-  Mail, ShieldCheck, ShieldX, Clock, User as UserIcon, RefreshCw, Trophy, AlertTriangle,
+  Mail, ShieldCheck, ShieldX, Clock, User as UserIcon, RefreshCw, Trophy, AlertTriangle, Layers,
 } from "lucide-react";
 import SportLinksDialog from "@/components/admin/SportLinksDialog";
+import StageLinksDialog from "@/components/admin/StageLinksDialog";
 
 const ROLES = [
   { value: "super_admin", label: "Super Admin" },
