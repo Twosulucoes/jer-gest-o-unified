@@ -8,7 +8,7 @@ import {
   Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree, Trophy, Bus, UtensilsCrossed, Building2,
   Users, Upload, KeyRound, BadgeCheck, Gavel,
   UsersRound, ChevronDown,
-  Shield, Settings, AlertTriangle, FileBarChart,
+  Shield, Settings, AlertTriangle, FileBarChart, Monitor,
   Info, ExternalLink, ChevronsLeft,
   ChevronsRight, User, FolderOpen,
   Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList, Radio, Layers,
