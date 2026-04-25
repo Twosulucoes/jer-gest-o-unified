@@ -94,7 +94,12 @@ export default function AlojamentoHomePage() {
 
   return (
     <div className="op-screen">
-      <AlojamentoNavHeader showQuickNav={false} />
+      <PwaHeader 
+        title="Alojamento" 
+        icon={Building} 
+        backTo="/pwa" 
+        onSignOut={handleSignOut}
+      />
 
       <PwaContainer>
         <div className="flex items-center justify-between">
