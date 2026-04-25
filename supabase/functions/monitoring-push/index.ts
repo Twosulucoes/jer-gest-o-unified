@@ -195,7 +195,7 @@ async function encryptPayload(
     await crypto.subtle.encrypt(
       { name: "AES-GCM", iv: nonce as BufferSource },
       aesKey,
-      padded,
+      padded.buffer.slice(padded.byteOffset, padded.byteOffset + padded.byteLength),
     ),
   );
 
