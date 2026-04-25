@@ -460,21 +460,22 @@ export function useDashboardData(eventId?: string | null) {
 
   const data: DashboardData = {
     resumo: {
-      participants_total: P.length,
+      participants_total: P_total || P.length,
       credentialed,
-      credentials_active: credActive,
+      credentials_active: C_total || activeCreds.length,
       credentials_today: credToday,
-      matches_total: MA.length,
+      matches_total: MA_total || MA.length,
       matches_done: matchesDone,
       matches_published: matchesPublished,
-      meals_total: consumptions.length,
+      meals_total: consumptionsTotal || consumptions.length,
       meals_today: mealsToday,
       lodging_capacity: LU.reduce((s, u) => s + (u.capacity ?? 0), 0),
       lodging_occupied: LO,
-      transport_trips: TR.length,
+      transport_trips: TR_total || TR.length,
       transport_passengers: passengers,
       transport_vehicles: VE,
     },
+
     credenciamento: { daily: credDaily, by_delegation: byDelegation },
     alimentacao: { daily: mealsDaily, meal_types: mealTypesList, by_delegation: mealsByDelegation },
     competicao: { by_sport: bySport, today: todayMatches },
