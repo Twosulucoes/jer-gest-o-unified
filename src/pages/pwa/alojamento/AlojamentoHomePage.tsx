@@ -37,6 +37,13 @@ export default function AlojamentoHomePage() {
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ hospedados: 0, livres: 0, reservados: 0, ocupacao: 0 });
 
+  usePwaAudit("alojamento");
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/pwa/login", { replace: true });
+  };
+
   useEffect(() => {
     (async () => {
       if (!eventId) return;
