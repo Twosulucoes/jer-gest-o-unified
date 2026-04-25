@@ -14,8 +14,9 @@ import { PwaStatTriplet, occupancyBarClass } from "@/components/pwa/PwaDashboard
 import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { PwaActionGrid } from "@/components/pwa/PwaActionGrid";
 import {
-  ScanLine, Search, Building, AlertTriangle, Wifi, WifiOff, Users,
+  ScanLine, Search, Building, AlertTriangle, Wifi, WifiOff, Users, LogOut
 } from "lucide-react";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 
 interface Facility {
   id: string;
