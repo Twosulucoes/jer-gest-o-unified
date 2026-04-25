@@ -214,8 +214,13 @@ Deno.serve(async (req) => {
           return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
         }
 
+        // Only super_admin can assign super_admin
+        if (!callerIsSuper && role === "super_admin") {
+          return jsonResponse({ error: "Somente Super Admin pode atribuir este perfil" }, 403);
+        }
+
         // Secretaria cannot assign admin/secretaria
-        if (!roles.includes("admin") && (role === "admin" || role === "secretaria")) {
+        if (!roles.includes("admin") && !callerIsSuper && (role === "admin" || role === "secretaria")) {
           return jsonResponse({ error: "Sem permissão para atribuir este perfil" }, 403);
         }
 
