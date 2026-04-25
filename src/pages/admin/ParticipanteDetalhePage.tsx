@@ -226,6 +226,12 @@ export default function ParticipanteDetalhePage() {
   }
 
   if (participantError) {
+    const errorMessage = participantError instanceof Error 
+      ? participantError.message 
+      : typeof participantError === 'object' && participantError !== null
+        ? (participantError as any).message || JSON.stringify(participantError)
+        : String(participantError);
+
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4 max-w-md mx-auto text-center">
         <div className="bg-destructive/10 p-3 rounded-full">
@@ -237,8 +243,8 @@ export default function ParticipanteDetalhePage() {
             Ocorreu um problema ao buscar os dados deste participante. 
             Isso pode ser causado por uma falha na conexão ou um erro inesperado no banco de dados.
           </p>
-          <p className="text-xs font-mono bg-muted p-2 rounded border break-all">
-            {String(participantError)}
+          <p className="text-xs font-mono bg-muted p-2 rounded border break-all whitespace-pre-wrap">
+            {errorMessage}
           </p>
         </div>
         <Button onClick={() => window.location.reload()}>Tentar Novamente</Button>
