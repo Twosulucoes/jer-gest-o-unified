@@ -35,6 +35,8 @@ export default function DelegacaoHomePage() {
     pendentesCred: 0,
   });
 
+  usePwaAudit("delegacao");
+
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
