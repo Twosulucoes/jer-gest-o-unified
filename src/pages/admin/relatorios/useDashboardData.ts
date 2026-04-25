@@ -191,11 +191,12 @@ export function useDashboardData(eventId?: string | null) {
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("transport_trips")
-            .select("id");
+            .select("id", { count: "exact" })
+            .limit(5000);
           if (eventId) query.eq("event_id", eventId);
-          const { data } = await query;
-          return data ?? [];
-        }, [] as { id: string }[]),
+          const { data, count } = await query;
+          return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
+        }, { list: [], totalCount: 0 }),
       },
       // 8: transport_vehicles
       {
