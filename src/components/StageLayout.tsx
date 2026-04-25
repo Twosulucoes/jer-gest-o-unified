@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, BadgeCheck, Trophy, Building, UtensilsCrossed, Bus,
   AlertTriangle, ClipboardList, FileBarChart, Layers, Menu, X,
-  ChevronsLeft, ChevronsRight, LogOut, User, Home,
+  ChevronsLeft, ChevronsRight, LogOut, User, Home, ScanLine,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
