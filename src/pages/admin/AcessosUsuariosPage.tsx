@@ -167,6 +167,31 @@ export default function AcessosUsuariosPage() {
     return map;
   }, [allSportLinks]);
 
+  // Fetch stage links for all users
+  const { data: allStageLinks = [] } = useQuery({
+    queryKey: ["user-stage-links-all", eventId],
+    queryFn: async () => {
+      if (!eventId) return [];
+      const { data } = await supabase
+        .from("user_stage_assignments")
+        .select("id, user_id, event_stage_id, event_stages(name)")
+        .eq("event_stages.event_id", eventId);
+      return data || [];
+    },
+    enabled: !!eventId,
+  });
+
+  const stageLinksByUser = useMemo(() => {
+    const map: Record<string, { stage_id: string; name: string }[]> = {};
+    for (const link of allStageLinks) {
+      const uid = (link as any).user_id;
+      if (!uid) continue;
+      if (!map[uid]) map[uid] = [];
+      map[uid].push({ stage_id: (link as any).event_stage_id, name: (link as any).event_stages?.name || "—" });
+    }
+    return map;
+  }, [allStageLinks]);
+
   // Drawer-specific sport links query
   const selectedUserIsCoord = drawerRoles.includes("coordenador_modalidade");
   const { data: drawerSportLinks = [], isLoading: loadingDrawerLinks } = useQuery({
