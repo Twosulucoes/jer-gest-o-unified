@@ -17,6 +17,7 @@ import { toast } from "sonner";
 export default function AlimentacaoRelatoriosPage() {
   const eventId = useActiveEventId();
   const { hasRole } = useAuth();
+  const { isStageScoped, stageId, stage } = useStageScope();
   const canExport = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
