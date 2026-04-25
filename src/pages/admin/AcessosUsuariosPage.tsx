@@ -121,8 +121,9 @@ export default function AcessosUsuariosPage() {
   const [auditEvents, setAuditEvents] = useState<any[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
 
-  // Sport links
+  // Sport & Stage links
   const [sportLinksUser, setSportLinksUser] = useState<{ id: string; name: string } | null>(null);
+  const [stageLinksUser, setStageLinksUser] = useState<{ id: string; name: string } | null>(null);
 
   // Deactivation confirmation
   const [deactivateConfirm, setDeactivateConfirm] = useState<{ user_id: string; name: string } | null>(null);
