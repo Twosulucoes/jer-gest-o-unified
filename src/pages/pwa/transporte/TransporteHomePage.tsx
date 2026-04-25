@@ -39,6 +39,8 @@ export default function TransporteHomePage() {
   const [search, setSearch] = useState("");
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
 
+  usePwaAudit("transporte");
+
   useEffect(() => {
     const meta = document.querySelector('meta[name="viewport"]');
     const original = meta?.getAttribute("content") || "";
