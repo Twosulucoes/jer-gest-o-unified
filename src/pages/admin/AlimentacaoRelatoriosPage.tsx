@@ -130,7 +130,17 @@ export default function AlimentacaoRelatoriosPage() {
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Relatório de Alimentação</h1>
           <p className="text-sm text-muted-foreground mt-1">Consumos por refeição, delegação e período</p>
+      </div>
+
+      {isStageScoped && stage && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/10">
+          <Info className="h-5 w-5 text-primary shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-primary">Relatório filtrado por etapa: {stage.name}</p>
+            <p className="text-xs text-muted-foreground">Exibindo apenas consumos registrados em janelas desta etapa.</p>
+          </div>
         </div>
+      )}
         {canExport && (
           <Button onClick={exportCsv} disabled={!consumptions?.length}>
             <Download className="mr-2 h-4 w-4" />Exportar CSV
