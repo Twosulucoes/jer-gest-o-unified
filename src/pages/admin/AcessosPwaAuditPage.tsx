@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfDay, endOfDay } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -28,7 +27,7 @@ export default function AcessosPwaAuditPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, email")
+        .select("id, full_name")
         .order("full_name");
       if (error) throw error;
       return data || [];
@@ -46,7 +45,7 @@ export default function AcessosPwaAuditPage() {
           payload,
           created_at,
           created_by,
-          profiles:created_by (full_name, email)
+          profiles:created_by (full_name)
         `)
         .eq("table_name", "pwa_access")
         .gte("created_at", startOfDay(new Date(startDate)).toISOString())
@@ -69,8 +68,7 @@ export default function AcessosPwaAuditPage() {
     return logs.filter((log: any) => {
       const module = (log.record_id || "").toLowerCase();
       const userName = (log.profiles?.full_name || "").toLowerCase();
-      const userEmail = (log.profiles?.email || "").toLowerCase();
-      return module.includes(q) || userName.includes(q) || userEmail.includes(q);
+      return module.includes(q) || userName.includes(q);
     });
   }, [logs, search]);
 
@@ -80,14 +78,13 @@ export default function AcessosPwaAuditPage() {
       return;
     }
 
-    const headers = ["Data/Hora", "Módulo/Tela", "Usuário", "Email", "Navegador"];
+    const headers = ["Data/Hora", "Módulo/Tela", "Usuário", "Navegador"];
     const csvContent = [
       headers.join(","),
       ...filteredLogs.map((log: any) => [
         format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss"),
         `"${log.record_id}"`,
         `"${log.profiles?.full_name || "—"}"`,
-        `"${log.profiles?.email || "—"}"`,
         `"${log.payload?.userAgent || "—"}"`,
       ].join(",")),
     ].join("\n");
@@ -141,9 +138,9 @@ export default function AcessosPwaAuditPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os usuários</SelectItem>
-              {users.map((u) => (
+              {users.map((u: any) => (
                 <SelectItem key={u.id} value={u.id}>
-                  {u.full_name || u.email}
+                  {u.full_name || "Sem nome"}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -214,7 +211,6 @@ export default function AcessosPwaAuditPage() {
                         <UserIcon className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <div className="font-medium text-sm">{log.profiles?.full_name || "—"}</div>
-                          <div className="text-xs text-muted-foreground">{log.profiles?.email}</div>
                         </div>
                       </div>
                     </TableCell>
@@ -233,3 +229,4 @@ export default function AcessosPwaAuditPage() {
     </div>
   );
 }
+
