@@ -56,7 +56,7 @@ export default function ParticipanteDetalhePage() {
       console.log("Fetching participant:", participantId);
       const { data, error } = await (supabase
         .from("participants") as any)
-        .select("id, participant_type, category, person_id, delegation_id, event_id, status, is_active, notes, created_at, organization_subtype, role_function, sector_area, responsibilities, access_permissions, observations")
+        .select("id, participant_type, person_id, delegation_id, event_id, status, is_active, notes, created_at")
         .eq("id", participantId!)
         .maybeSingle();
       
