@@ -231,12 +231,13 @@ export function useDashboardData(eventId?: string | null) {
         staleTime: 0,
         queryFn: () => safe(async () => {
           const query = supabase.from("competition_matches")
-            .select("id, status, sport_event_id, match_date, start_time");
+            .select("id, status, sport_event_id, match_date, start_time", { count: "exact" })
+            .limit(5000);
           if (eventId) query.eq("event_id", eventId);
-          const { data, error } = await query;
+          const { data, count, error } = await query;
           if (error) console.error("Error fetching matches:", error);
-          return data ?? [];
-        }, [] as { id: string; status: string; sport_event_id: string | null; match_date: string | null; start_time: string | null }[]),
+          return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
+        }, { list: [], totalCount: 0 }),
       },
     ],
   });
