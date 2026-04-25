@@ -190,6 +190,7 @@ import PwaAcessoNegadoPage from "./pages/pwa/PwaAcessoNegadoPage";
 import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
 import PublicResultsPage from "./pages/public/PublicResultsPage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
+import EntregaTecnicaPage from "./pages/public/EntregaTecnicaPage";
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 // Ao Vivo PWA (lazy loaded)
 const AoVivoLoginPage = lazy(() => import("./pages/aovivo/AoVivoLoginPage"));
@@ -506,6 +507,7 @@ const App = () => (
             <Route path="/aovivo" element={<Suspense fallback={null}><AoVivoHomePage /></Suspense>} />
             <Route path="/aovivo/partida/:matchId" element={<Suspense fallback={null}><AoVivoMatchPage /></Suspense>} />
             {/* Public content routes */}
+            <Route path="/tecnica" element={<EntregaTecnicaPage />} />
             <Route path="/public/results" element={<PublicResultsPage />} />
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
