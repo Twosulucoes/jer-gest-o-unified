@@ -22,7 +22,7 @@ async function logAudit(adminClient: any, action: string, recordId: string, crea
   });
 }
 
-const VALID_ROLES = ["admin", "secretaria", "transporte", "alimentacao", "alojamento", "coordenacao_tecnica", "coordenador_modalidade", "delegacao", "mesario", "arbitragem", "cde"];
+const VALID_ROLES = ["super_admin", "admin", "secretaria", "transporte", "alimentacao", "alojamento", "coordenacao_tecnica", "coordenador_modalidade", "delegacao", "mesario", "arbitragem", "cde"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
