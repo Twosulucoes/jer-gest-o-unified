@@ -90,6 +90,14 @@ const MODULE_OPTIONS: ModuleOption[] = [
     path: "/admin",
     gradient: "from-[hsl(0,72%,51%)] to-[hsl(214,78%,21%)]",
   },
+  {
+    roles: ["admin", "secretaria"],
+    label: "Credenciamento",
+    description: "Vincular credenciais via PWA",
+    icon: IdCard,
+    path: "/pwa/credenciamento",
+    gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]",
+  },
 ];
 
 export default function ModuleSelectorPage() {
