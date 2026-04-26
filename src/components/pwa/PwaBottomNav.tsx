@@ -73,6 +73,24 @@ export function PwaBottomNav() {
         ],
       };
     }
+    if (path.startsWith("/pwa/pesquisa")) {
+      return {
+        items: [
+          { label: "Início", icon: Home, path: "/pwa/pesquisa" },
+          { label: "Eventos", icon: Trophy, path: "/pwa/pesquisa/eventos" },
+          { label: "Sincronizar", icon: History, path: "/pwa/pesquisa/sync" },
+        ],
+      };
+    }
+    if (path.startsWith("/aovivo")) {
+      return {
+        items: [
+          { label: "Início", icon: Home, path: "/aovivo" },
+          { label: "Partidas", icon: Radio, path: "/aovivo" },
+          { label: "Sair", icon: LogOut, path: "/login" },
+        ],
+      };
+    }
 
     // Default or Landing Page
     return {
