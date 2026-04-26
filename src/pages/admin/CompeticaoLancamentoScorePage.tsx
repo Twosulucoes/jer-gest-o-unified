@@ -444,6 +444,7 @@ export default function CompeticaoLancamentoScorePage() {
                                   type="number" 
                                   placeholder="0"
                                   className="h-10 text-center font-bold"
+                                  disabled={isLocked}
                                   value={periodScores[entry.id]?.[`p${i+1}`] || ""}
                                   onChange={(e) => {
                                     const val = e.target.value;
