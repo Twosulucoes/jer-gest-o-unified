@@ -293,13 +293,28 @@ export default function CompeticaoLancamentoScorePage() {
 
   const homologateMut = useMutation({
     mutationFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("rpc_homologate_match_result", {
-        p_match_id: matchId,
-        p_password: homologatePassword,
-        p_observation: homologateObservation
-      });
-      if (error) throw error;
-      return data;
+      setIsVerifyingPassword(true);
+      try {
+        // 1. Verify password via Edge Function
+        const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-current-user-password', {
+          body: { password: homologatePassword }
+        });
+
+        if (verifyError) throw verifyError;
+        if (!verifyData.valid) {
+          throw new Error(verifyData.message || "Senha incorreta");
+        }
+
+        // 2. Call RPC (password removed from params)
+        const { data, error } = await (supabase.rpc as any)("rpc_homologate_match_result", {
+          p_match_id: matchId,
+          p_observation: homologateObservation
+        });
+        if (error) throw error;
+        return data;
+      } finally {
+        setIsVerifyingPassword(false);
+      }
     },
     onSuccess: () => {
       toast.success("Resultado homologado com sucesso!");
