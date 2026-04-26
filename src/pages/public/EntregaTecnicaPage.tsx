@@ -219,9 +219,21 @@ export default function EntregaTecnicaPage() {
             <a href="#modulos" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Módulos</a>
             <a href="#homologacao" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Homologação</a>
           </div>
-          <Button size="sm" className="text-white gap-2 rounded-full" style={{ background: brand.colors.primary }} asChild>
-            <Link to="/">Acessar Sistema <ArrowRight size={14} /></Link>
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:flex gap-2 rounded-full border-slate-200"
+              onClick={handleDownloadPdf}
+              disabled={isDownloading}
+            >
+              {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              PDF
+            </Button>
+            <Button size="sm" className="text-white gap-2 rounded-full" style={{ background: brand.colors.primary }} asChild>
+              <Link to="/">Acessar <span className="hidden sm:inline">Sistema</span> <ArrowRight size={14} /></Link>
+            </Button>
+          </div>
         </div>
       </nav>
 
