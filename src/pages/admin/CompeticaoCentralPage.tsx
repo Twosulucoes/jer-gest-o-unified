@@ -14,6 +14,8 @@ import IndividualHeatBuilderTab from "@/components/admin/competition/IndividualH
 import CentralResultsTab from "@/components/admin/competition/CentralResultsTab";
 import CentralAgendaTab from "@/components/admin/competition/CentralAgendaTab";
 import CentralArbitragemTab from "@/components/admin/competition/CentralArbitragemTab";
+import ResultGovernancePanel from "@/components/admin/competition/ResultGovernancePanel";
+import ProvaReadinessChecklist from "@/components/admin/competition/ProvaReadinessChecklist";
 import WizardStepper, { type WizardStep } from "@/components/admin/competition/WizardStepper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -126,6 +128,7 @@ export default function CompeticaoCentralPage() {
     { key: "arbitragem", label: "Arbitragem" },
     { key: "matches", label: "Check-in de Prova" },
     { key: "results", label: "Resultado e Homologação" },
+    { key: "publish", label: "Publicação no Portal" },
   ], [isCollective]);
 
   const visibleSteps = steps.filter((s) => !s.hidden);
@@ -190,6 +193,13 @@ export default function CompeticaoCentralPage() {
           </Alert>
 
           <CompetitionSummaryCards summary={summary} loading={summaryLoading} />
+
+          <ProvaReadinessChecklist
+            eventId={eventId}
+            sportEventId={sportEventId}
+            stageId={stageId}
+            onJumpTo={handleStepClick}
+          />
 
           <WizardStepper
             steps={steps}
