@@ -49,7 +49,21 @@ import {
   Bus,
   UtensilsCrossed,
   BedDouble,
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Download } from "lucide-react";
+import {
+  exportVouchersCsv,
+  exportVouchersPdf,
+  type VoucherExportRow,
+} from "@/lib/voucherExport";
 
 // -------- Types --------
 interface VoucherRow {
@@ -220,6 +234,59 @@ export default function VouchersPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const buildExportRows = (): VoucherExportRow[] =>
+    filteredVouchers.map((v) => {
+      const p = v.participant_id ? participantsMap.get(v.participant_id) : null;
+      return {
+        id: v.id,
+        voucher_type: v.voucher_type,
+        label: v.label,
+        participant_name: p?.full_name ?? null,
+        participant_type: p?.participant_type ?? null,
+        cpf: p?.cpf ?? null,
+        qr_code_value: v.qr_code_value,
+        status: v.status,
+        is_contingency: v.is_contingency,
+        scope_transport: v.scope_transport,
+        scope_meals: v.scope_meals,
+        scope_lodging: v.scope_lodging,
+        max_uses: v.max_uses,
+        current_uses: v.current_uses,
+        valid_until: v.valid_until,
+        created_at: v.created_at,
+      };
+    });
+
+  const filenameSuffix = typeFilter === "all" ? "todos" : typeFilter;
+
+  const handleExportCsv = () => {
+    const rows = buildExportRows();
+    if (rows.length === 0) {
+      toast.error("Nenhum voucher para exportar com os filtros atuais");
+      return;
+    }
+    exportVouchersCsv(rows, `vouchers-${filenameSuffix}`);
+    toast.success(`CSV gerado (${rows.length} vouchers)`);
+  };
+
+  const handleExportPdf = async () => {
+    const rows = buildExportRows();
+    if (rows.length === 0) {
+      toast.error("Nenhum voucher para exportar com os filtros atuais");
+      return;
+    }
+    try {
+      await exportVouchersPdf(
+        rows,
+        { typeFilter, statusFilter, scopeFilter },
+        `vouchers-${filenameSuffix}`
+      );
+      toast.success(`PDF gerado (${rows.length} vouchers)`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao gerar PDF");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -229,9 +296,26 @@ export default function VouchersPage() {
             Emita, revogue e auditе vouchers QR (transporte, alimentação, alojamento)
           </p>
         </div>
-        <Button onClick={() => setIssueOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Emitir Voucher
-        </Button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={filteredVouchers.length === 0}>
+                <Download className="h-4 w-4 mr-2" /> Exportar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportCsv}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" /> CSV (Excel)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportPdf}>
+                <FileText className="h-4 w-4 mr-2" /> PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={() => setIssueOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Emitir Voucher
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
