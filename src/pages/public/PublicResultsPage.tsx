@@ -50,30 +50,43 @@ export default function PublicResultsPage() {
     },
   });
 
-  // Fetch published results for selected sport_event
-  const { data: results = [], isLoading: loadingResults } = useQuery({
-    queryKey: ["public-results-detail", selectedSportEventId],
+  // Fetch published results for selected sport_event.
+  // Importante: filtramos por result_status='publicado' E pelo evento ativo,
+  // garantindo que apenas resultados oficialmente publicados (vinculados a
+  // um boletim publicado via rpc_publish_results_for_sport_event) cheguem ao
+  // portal público.
+  const {
+    data: results = [],
+    isLoading: loadingResults,
+    error: resultsError,
+  } = useQuery({
+    queryKey: ["public-results-detail", selectedEventId, selectedSportEventId],
     enabled: !!selectedSportEventId && activeTab === "results",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("competition_match_results")
         .select(`
           id, outcome, score, time_ms, distance_cm, points, position, result_status,
+          published_at,
           competition_match_entries(
             side,
             teams(name),
             participant_sport_events(participants(people(full_name)))
           ),
           competition_matches!inner(
-            match_number, match_date, status, sport_event_id,
+            match_number, match_date, status, sport_event_id, event_id,
             competition_phases(name),
             competition_groups(name)
           )
         `)
         .eq("result_status", "publicado")
-        .eq("competition_matches.sport_event_id", selectedSportEventId!);
+        .eq("competition_matches.event_id", selectedEventId!)
+        .eq("competition_matches.sport_event_id", selectedSportEventId!)
+        .order("published_at", { ascending: false });
       if (error) throw error;
-      return (data || []).filter((r: any) => r.competition_matches !== null);
+      // O !inner já garante o join; nada de filter extra que pudesse mascarar
+      // resultados válidos quando o JSON aninhado vier nulo por algum motivo.
+      return data ?? [];
     },
   });
 
@@ -234,10 +247,23 @@ export default function PublicResultsPage() {
                 <div className="flex justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
+              ) : resultsError ? (
+                <Card className="border-destructive/40 bg-destructive/5">
+                  <CardContent className="py-12 text-center space-y-2">
+                    <p className="font-semibold text-destructive">Não foi possível carregar os resultados.</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(resultsError as Error).message}
+                    </p>
+                  </CardContent>
+                </Card>
               ) : results.length === 0 ? (
                 <Card>
-                  <CardContent className="py-12 text-center text-muted-foreground">
-                    Nenhum resultado publicado para esta prova.
+                  <CardContent className="py-12 text-center text-muted-foreground space-y-2">
+                    <p className="font-medium">Nenhum resultado publicado para esta prova.</p>
+                    <p className="text-xs">
+                      Resultados só aparecem aqui após serem <strong>validados</strong> pela
+                      coordenação técnica e <strong>vinculados a um Boletim Oficial publicado</strong>.
+                    </p>
                   </CardContent>
                 </Card>
               ) : (

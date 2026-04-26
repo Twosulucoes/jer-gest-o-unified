@@ -259,9 +259,11 @@ export default function DashboardPage() {
                   <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
                     {data.competicao.by_sport.slice(0, 8).map((row) => (
                       <div key={row.sport_event_id} className="space-y-1">
-                        <div className="flex justify-between text-[11px] items-center">
-                          <span className="truncate font-medium flex-1">{row.name}</span>
-                          <div className="flex gap-3 text-muted-foreground tabular-nums">
+                        <div className="flex justify-between text-[11px] items-start gap-3">
+                          <span className="font-medium flex-1 leading-tight line-clamp-2" title={row.name}>
+                            {row.name}
+                          </span>
+                          <div className="flex gap-3 text-muted-foreground tabular-nums shrink-0">
                             <span>{row.done}/{row.total}</span>
                             <span className="w-8 text-right font-semibold text-foreground">{row.pct}%</span>
                           </div>

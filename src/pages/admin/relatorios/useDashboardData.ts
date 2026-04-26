@@ -221,10 +221,15 @@ export function useDashboardData(eventId?: string | null) {
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("sport_events")
-            .select("id, name, sports(name)");
+            .select("id, name, sports(name), categories(name)");
           if (eventId) query.eq("event_id", eventId);
           const { data } = await query;
-          return (data ?? []) as Array<{ id: string; name: string | null; sports: { name: string } | null }>;
+          return (data ?? []) as Array<{
+            id: string;
+            name: string | null;
+            sports: { name: string } | null;
+            categories: { name: string } | null;
+          }>;
         }, []),
       },
       // 10: competition_matches
@@ -258,7 +263,7 @@ export function useDashboardData(eventId?: string | null) {
       number,
       { list: any[]; totalCount: number },
       number,
-      Array<{ id: string; name: string | null; sports: { name: string } | null }>,
+      Array<{ id: string; name: string | null; sports: { name: string } | null; categories: { name: string } | null }>,
       { list: any[]; totalCount: number },
     ];
 
@@ -450,7 +455,24 @@ export function useDashboardData(eventId?: string | null) {
     .sort((a, b) => b.total - a.total);
 
   // Competição
-  const seName = new Map(SE.map((s) => [s.id, s.sports?.name ? `${s.sports.name}${s.name ? " — " + s.name : ""}` : (s.name ?? "Modalidade")] as const));
+  // Monta um label compacto e sem duplicação para cada prova:
+  // "<Sport> · <Categoria> · <Prova>"; remove o nome do sport/categoria do
+  // início do `sport_event.name` quando já estão repetidos.
+  const buildSeLabel = (s: typeof SE[number]) => {
+    const sportName = s.sports?.name?.trim() ?? "";
+    const catName = s.categories?.name?.trim() ?? "";
+    let provaName = (s.name ?? "").trim();
+    // Remove prefixos redundantes do tipo "Vôlei de Praia — ..." ou "Sub-15 — ..."
+    const stripPrefix = (txt: string, prefix: string) => {
+      if (!prefix) return txt;
+      const re = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*[—\\-:·]\\s*`, "i");
+      return txt.replace(re, "").trim();
+    };
+    provaName = stripPrefix(provaName, sportName);
+    provaName = stripPrefix(provaName, catName);
+    return [sportName, catName, provaName].filter(Boolean).join(" · ");
+  };
+  const seName = new Map(SE.map((s) => [s.id, buildSeLabel(s) || "Modalidade"] as const));
   const matchesDone = MA.filter((m) => m.status === "completed" || m.status === "finished").length;
   const publishedMatchIds = new Set(results.filter((r) => r.result_status === "publicado").map((r) => r.match_id));
   const matchesPublished = publishedMatchIds.size;
