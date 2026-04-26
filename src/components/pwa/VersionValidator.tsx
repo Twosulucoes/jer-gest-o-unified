@@ -102,13 +102,18 @@ export function VersionValidator({ children }: { children: React.ReactNode }) {
               Detectada: {localStorage.getItem(VERSION_KEY)}
             </div>
           </div>
-          <Button 
-            onClick={handleUpdateVersion} 
-            className="w-full gap-2 h-11 shadow-lg shadow-primary/20"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Sincronizar e Recarregar
-          </Button>
+          <div className="w-full space-y-3">
+            <Button 
+              onClick={handleUpdateVersion} 
+              className="w-full gap-2 h-11 shadow-lg shadow-primary/20"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Atualizar agora
+            </Button>
+            <p className="text-[10px] text-muted-foreground">
+              Recarregando automaticamente em {countdown} segundos...
+            </p>
+          </div>
         </div>
       </div>
     );
