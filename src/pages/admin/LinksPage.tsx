@@ -11,12 +11,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Plus, Copy, Download, Search, Loader2, Link2, ExternalLink, Trash2,
-  QrCode, Info, Pencil, Bus, UtensilsCrossed, Building, Trophy, Users, Radio, Sparkles, Send, MessageSquare,
+  Plus, Copy, Search, Loader2, Link2, Trash2,
+  Info, Pencil, Bus, UtensilsCrossed, Building, Trophy, Users, Radio, Sparkles, Send,
   ShieldCheck, Gavel, IdCard, Award, History
 } from "lucide-react";
+import { slugify } from "@/lib/slug";
+import { QrCodePreview } from "@/components/admin/links/QrCodePreview";
 
-const BASE_URL = window.location.origin;
+const getBaseUrl = () => window.location.origin;
 
 const MODULE_OPTIONS = [
   { value: "/pwa/transporte", label: "Módulo Transporte", icon: Bus, slug: "transporte", title: "Transporte" },
