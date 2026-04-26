@@ -19,6 +19,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
+import { type IncidentModule, type IncidentStatus } from "@/types/incidents";
+
 
 interface MealWindowOption {
   id: string;
