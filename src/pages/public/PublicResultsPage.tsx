@@ -247,10 +247,23 @@ export default function PublicResultsPage() {
                 <div className="flex justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
+              ) : resultsError ? (
+                <Card className="border-destructive/40 bg-destructive/5">
+                  <CardContent className="py-12 text-center space-y-2">
+                    <p className="font-semibold text-destructive">Não foi possível carregar os resultados.</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(resultsError as Error).message}
+                    </p>
+                  </CardContent>
+                </Card>
               ) : results.length === 0 ? (
                 <Card>
-                  <CardContent className="py-12 text-center text-muted-foreground">
-                    Nenhum resultado publicado para esta prova.
+                  <CardContent className="py-12 text-center text-muted-foreground space-y-2">
+                    <p className="font-medium">Nenhum resultado publicado para esta prova.</p>
+                    <p className="text-xs">
+                      Resultados só aparecem aqui após serem <strong>validados</strong> pela
+                      coordenação técnica e <strong>vinculados a um Boletim Oficial publicado</strong>.
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
