@@ -20,5 +20,5 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// For telemetry to avoid recursion if needed, though the interceptor handles it
-export const rawSupabase = supabase;
+// For telemetry to avoid any recursion risk
+export const rawSupabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
