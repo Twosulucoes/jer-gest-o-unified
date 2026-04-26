@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Trophy, Swords, Info, RefreshCw, Plus } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import BracketView from "@/components/admin/competition/BracketView";
+import { useKnockoutBracket } from "@/hooks/useKnockoutBracket";
 
 interface BracketTabProps {
   sportEventId: string;
