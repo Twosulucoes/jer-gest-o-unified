@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { clearPersistedFilters } from "@/hooks/usePersistedState";
+import { useQueryClient } from "@tanstack/react-query";
+import { handleContextChange } from "@/lib/context-manager";
 
 interface CompetitionContextType {
   selectedSportId: string | null;
@@ -20,6 +21,7 @@ const STAGE_STORAGE_KEY = "competition_selected_stage";
 const PHASE_STORAGE_KEY = "competition_selected_phase";
 
 export function CompetitionProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [selectedSportId, setSelectedSportIdState] = useState<string | null>(() => {
     return localStorage.getItem(SPORT_STORAGE_KEY);
   });
@@ -37,7 +39,7 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
   });
 
   const setSelectedSportId = (id: string | null) => {
-    if (id !== selectedSportId) clearPersistedFilters();
+    if (id !== selectedSportId) handleContextChange(queryClient);
     setSelectedSportIdState(id);
     if (id) {
       localStorage.setItem(SPORT_STORAGE_KEY, id);
@@ -47,7 +49,7 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
   };
 
   const setSelectedSportEventId = (id: string | null) => {
-    if (id !== selectedSportEventId) clearPersistedFilters();
+    if (id !== selectedSportEventId) handleContextChange(queryClient);
     setSelectedSportEventIdState(id);
     if (id) {
       localStorage.setItem(SPORT_EVENT_STORAGE_KEY, id);
@@ -57,7 +59,7 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
   };
 
   const setSelectedStageId = (id: string | null) => {
-    if (id !== selectedStageId) clearPersistedFilters();
+    if (id !== selectedStageId) handleContextChange(queryClient);
     setSelectedStageIdState(id);
     if (id) {
       localStorage.setItem(STAGE_STORAGE_KEY, id);
@@ -67,7 +69,7 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
   };
 
   const setSelectedPhaseId = (id: string | null) => {
-    if (id !== selectedPhaseId) clearPersistedFilters();
+    if (id !== selectedPhaseId) handleContextChange(queryClient);
     setSelectedPhaseIdState(id);
     if (id) {
       localStorage.setItem(PHASE_STORAGE_KEY, id);
