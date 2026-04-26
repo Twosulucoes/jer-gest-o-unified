@@ -66,7 +66,7 @@ export default function PublicResultsPage() {
       const { data, error } = await supabase
         .from("competition_match_results")
         .select(`
-          id, outcome, score, time_ms, distance_cm, points, position, result_status,
+          id, outcome, score, time_ms, distance_cm, points, position, result_status, combat_detail,
           published_at,
           competition_match_entries(
             side,
@@ -287,7 +287,16 @@ export default function PublicResultsPage() {
                             </p>
                           </div>
                           <div className="text-right">
-                            {r.score && <p className="text-xl font-black text-primary">{r.score}</p>}
+                            {r.score && (
+                              <p className="text-xl font-black text-primary">
+                                {r.score}
+                                {r.combat_detail?.shootout && (
+                                  <span className="text-sm font-bold text-muted-foreground ml-1">
+                                    ({r.combat_detail.shootout})
+                                  </span>
+                                )}
+                              </p>
+                            )}
                             {r.position && (
                               <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 font-bold">
                                 {r.position}º lugar

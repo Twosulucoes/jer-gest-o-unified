@@ -54,10 +54,11 @@ const STATUS_COLORS: Record<string, string> = {
 function TabPlacar({ matchId, entries }: { matchId: string; entries: EntradaPartida[] }) {
   const salvar = useSalvarPlacar(matchId);
 
-  const [scores, setScores] = useState<Record<string, { scoreFinal: string; outcome: string }>>(() =>
+  const [scores, setScores] = useState<Record<string, { scoreFinal: string; outcome: string; shootoutScore: string }>>(() =>
     Object.fromEntries(entries.map((e) => [e.id, {
       scoreFinal: e.score?.score_final ?? "",
       outcome: e.score?.outcome ?? "",
+      shootoutScore: e.score?.score_detail?.shootout ?? "",
     }]))
   );
 
@@ -66,6 +67,7 @@ function TabPlacar({ matchId, entries }: { matchId: string; entries: EntradaPart
       entryId: e.id,
       scoreFinal: scores[e.id]?.scoreFinal ?? "",
       outcome: scores[e.id]?.outcome ?? "",
+      shootoutScore: scores[e.id]?.shootoutScore ?? "",
     }));
     salvar.mutate(payload);
   };
@@ -129,6 +131,24 @@ function TabPlacar({ matchId, entries }: { matchId: string; entries: EntradaPart
               </Select>
             </div>
           </div>
+
+          {(scores[entry.id]?.outcome === "empate" || scores[entry.id]?.shootoutScore) && (
+            <div className="pt-2 border-t border-dashed">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Disputa de Pênaltis (Shootout)</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Gols nos pênaltis"
+                  value={scores[entry.id]?.shootoutScore ?? ""}
+                  onChange={(e) =>
+                    setScores((prev) => ({ ...prev, [entry.id]: { ...prev[entry.id], shootoutScore: e.target.value } }))
+                  }
+                  className="h-11 text-center font-bold border-primary/30 focus:border-primary"
+                />
+              </div>
+            </div>
+          )}
         </div>
       ))}
 

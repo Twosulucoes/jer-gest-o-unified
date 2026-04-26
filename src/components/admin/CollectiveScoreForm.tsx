@@ -20,10 +20,16 @@ const OUTCOME_OPTIONS = [
 export interface ScoreEntry {
   match_entry_id: string;
   score_final: string;
-  score_detail: Record<string, string> | null;
+  score_detail: Record<string, any> | null;
   outcome: string;
 }
 
+interface StateScore {
+  final: string;
+  detail: Record<string, any>;
+  outcome: string;
+  shootout: string;
+}
 interface CollectiveScoreFormProps {
   matchConfig: MatchConfig;
   entries: Array<{ id: string; label: string }>;
@@ -53,7 +59,7 @@ export default function CollectiveScoreForm({
 
   const existingMap = new Map(existingScores.map((s) => [s.match_entry_id, s]));
 
-  const [scores, setScores] = useState<Record<string, { final: string; detail: Record<string, string>; outcome: string }>>({});
+  const [scores, setScores] = useState<Record<string, StateScore>>({});
   const [notes, setNotes] = useState(initialNotes);
 
   useEffect(() => {
@@ -70,6 +76,7 @@ export default function CollectiveScoreForm({
         final: existing?.score_final ?? "",
         detail,
         outcome: existing?.outcome ?? "",
+        shootout: existing?.score_detail?.shootout ?? "",
       };
     });
     setScores(init);
@@ -98,7 +105,10 @@ export default function CollectiveScoreForm({
       return {
         match_entry_id: entry.id,
         score_final: s?.final ?? "",
-        score_detail: scoreType !== "simple" && s?.detail ? s.detail : null,
+        score_detail: {
+          ...(scoreType !== "simple" && s?.detail ? s.detail : {}),
+          shootout: s?.shootout || undefined
+        },
         outcome: s?.outcome === "__none__" ? "" : (s?.outcome ?? ""),
       };
     });
@@ -116,13 +126,21 @@ export default function CollectiveScoreForm({
               <CardTitle className="text-sm">{entry.label}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Placar final</Label>
                   <Input
                     placeholder="Ex: 3"
                     value={s.final}
                     onChange={(e) => updateScore(entry.id, "final", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Pênaltis (shootout)</Label>
+                  <Input
+                    placeholder="Ex: 5"
+                    value={s.shootout}
+                    onChange={(e) => updateScore(entry.id, "shootout", e.target.value)}
                   />
                 </div>
                 <div className="space-y-1">

@@ -173,6 +173,11 @@ export default function BulletinScore({ data }: { data: BulletinDataset }) {
                       <TableCell>{home?.display_name ?? "—"}</TableCell>
                       <TableCell className="text-center font-bold">
                         {homeR?.score ?? "—"} × {awayR?.score ?? "—"}
+                        {(homeR?.combat_detail?.shootout || awayR?.combat_detail?.shootout) && (
+                          <div className="text-[10px] text-muted-foreground font-normal">
+                            ({homeR?.combat_detail?.shootout ?? "0"} × {awayR?.combat_detail?.shootout ?? "0"} Pênaltis)
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>{away?.display_name ?? "—"}</TableCell>
                       <TableCell><Badge variant={sb.tone}>{sb.label}</Badge></TableCell>
