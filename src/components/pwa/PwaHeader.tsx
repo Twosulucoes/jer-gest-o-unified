@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getPwaLang, setPwaLang } from "@/lib/pwa-messages";
 import { useStageContext } from "@/contexts/StageContext";
+import { PwaRefreshButton } from "./PwaRefreshButton";
 
 interface PwaHeaderProps {
   title: string;
@@ -66,6 +67,7 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onSignOut, righ
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle />
+          <PwaRefreshButton />
           {rightSlot}
           <Button
             variant="ghost"
