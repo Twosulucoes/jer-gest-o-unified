@@ -57,7 +57,7 @@ export default function CompeticaoPublicacaoPage() {
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("validado");
+  const [statusFilter, setStatusFilter] = useState("resultado_validado");
   const [selectedMatches, setSelectedMatches] = useState<string[]>([]);
   const [showConfirmBatch, setShowConfirmBatch] = useState(false);
   const [historyMatchId, setHistoryMatchId] = useState<string | null>(null);
@@ -167,7 +167,7 @@ export default function CompeticaoPublicacaoPage() {
 
   const handleSelectAll = () => {
     const validatableIds = filteredMatches
-      .filter((m: any) => m.competition_match_results[0]?.result_status === "validado")
+      .filter((m: any) => m.competition_match_results[0]?.result_status === "resultado_validado")
       .map((m: any) => m.id);
     
     if (selectedMatches.length === validatableIds.length && validatableIds.length > 0) {
