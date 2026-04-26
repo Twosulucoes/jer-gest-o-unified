@@ -399,6 +399,7 @@ const App = () => (
               <Route path="relatorios" element={<StageReportsPage />} />
               {/* Credenciamento */}
               <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoPage /></ProtectedRoute>} />
+              <Route path="credenciamento/seguro" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoSeguroPage /></ProtectedRoute>} />
               <Route path="credenciamento-externo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoExternoPage /></ProtectedRoute>} />
               <Route path="validacao-qr" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ValidacaoQRPage /></ProtectedRoute>} />
               {/* Participantes e Delegações no contexto da etapa */}
