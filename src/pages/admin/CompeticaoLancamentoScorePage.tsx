@@ -359,7 +359,21 @@ export default function CompeticaoLancamentoScorePage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate(-1)}>Cancelar</Button>
-            <Button className="gap-2" onClick={() => launchMut.mutate()} disabled={launchMut.isPending || !canWrite}>
+            {canHomologate && (
+              <Button 
+                variant="secondary" 
+                className="gap-2 bg-amber-500 hover:bg-amber-600 text-white border-none"
+                onClick={() => setShowHomologateDialog(true)}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Homologar Resultado
+              </Button>
+            )}
+            <Button 
+              className="gap-2" 
+              onClick={() => launchMut.mutate()} 
+              disabled={launchMut.isPending || !canWrite || isLocked}
+            >
               <Save className="h-4 w-4" /> 
               {launchMut.isPending ? "Salvando..." : "Salvar Resultado"}
             </Button>
