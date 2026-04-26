@@ -429,6 +429,7 @@ const App = () => (
               {/* Competição */}
               <Route path="competicao" element={<Navigate to="painel" replace />} />
               <Route path="competicao/painel" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelPage /></ProtectedRoute>} />
+              <Route path="competicao/publicacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><CompeticaoPublicacaoPage /></ProtectedRoute>} />
               <Route path="competicao/painel-score/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelScorePage /></ProtectedRoute>} />
               <Route path="competicao/painel-sets/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelSetsPage /></ProtectedRoute>} />
               <Route path="competicao/painel-combat/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelCombatPage /></ProtectedRoute>} />
