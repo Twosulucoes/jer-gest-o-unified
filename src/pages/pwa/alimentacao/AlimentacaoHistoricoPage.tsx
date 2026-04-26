@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, BarChart3 } from "lucide-react";
+import { BarChart3 } from "lucide-react";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { format } from "date-fns";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 interface ConsumptionItem {
   id: string;
@@ -16,7 +15,6 @@ interface ConsumptionItem {
 }
 
 export default function AlimentacaoHistoricoPage() {
-  const navigate = useNavigate();
   const [items, setItems] = useState<ConsumptionItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,14 +34,7 @@ export default function AlimentacaoHistoricoPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate("/pwa/alimentacao")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <BarChart3 className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Histórico de Hoje</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Histórico de Hoje" icon={BarChart3} backTo="/pwa/alimentacao" />
 
       <main className="p-4 max-w-md mx-auto space-y-3">
         {loading && [1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-14 w-full" />)}

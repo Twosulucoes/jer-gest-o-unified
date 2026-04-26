@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Gavel, AlertTriangle, Clock, Upload, X, CheckCircle2 } from "lucide-react";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { Gavel, AlertTriangle, Clock, Upload, X, CheckCircle2 } from "lucide-react";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { toast } from "@/hooks/use-toast";
 import { format, differenceInMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -138,14 +138,7 @@ export default function DelegacaoProtestoNovoPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate("/pwa/delegacao/protestos")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <Gavel className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Novo Protesto</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Novo Protesto" icon={Gavel} backTo="/pwa/delegacao/protestos" />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
         <Card>

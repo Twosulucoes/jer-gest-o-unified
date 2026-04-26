@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ClipboardList, ChevronRight, LogOut, Trophy } from "lucide-react";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { ClipboardList, ChevronRight, Trophy } from "lucide-react";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useMinhasModalidades } from "@/hooks/useLancamentoResultados";
 
 export default function ResultadosHomePage() {
@@ -32,19 +32,7 @@ export default function ResultadosHomePage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b bg-card px-4 h-14 shrink-0">
-        <div className="flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-foreground">Lançamento de Resultados</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <PwaRefreshButton />
-          <button onClick={handleSignOut} className="text-muted-foreground p-2 -mr-2 active:opacity-60" aria-label="Sair">
-            <LogOut className="h-5 w-5" />
-          </button>
-        </div>
-      </header>
+      <PwaHeader title="Lançamento de Resultados" icon={Trophy} onSignOut={handleSignOut} />
 
       <main className="flex-1 p-4 max-w-md mx-auto w-full space-y-4">
         <p className="text-sm text-muted-foreground">Selecione a modalidade que deseja gerenciar.</p>

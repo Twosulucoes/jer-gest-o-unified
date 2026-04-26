@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, BarChart3 } from "lucide-react";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { BarChart3 } from "lucide-react";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 
 export default function CoordenacaoEstatisticasPage() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, agendadas: 0, emAndamento: 0, finalizadas: 0, canceladas: 0 });
 
@@ -41,14 +39,7 @@ export default function CoordenacaoEstatisticasPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate("/pwa/coordenacao-tecnica")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <BarChart3 className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Estatísticas</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Estatísticas" icon={BarChart3} backTo="/pwa/coordenacao-tecnica" />
 
       <main className="p-4 max-w-md mx-auto space-y-3">
         {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full" />)}

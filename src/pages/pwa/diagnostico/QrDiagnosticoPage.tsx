@@ -1,14 +1,12 @@
 import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { isNativeApp } from "@/lib/runtime";
 import QrScanner from "@/components/QrScanner";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import {
-  ArrowLeft,
   ShieldCheck,
   Camera,
   Wifi,
@@ -31,7 +29,6 @@ interface DiagCheck {
 type TestModule = "alojamento" | "transporte" | "alimentacao" | null;
 
 export default function QrDiagnosticoPage() {
-  const navigate = useNavigate();
   const [checks, setChecks] = useState<DiagCheck[]>([]);
   const [cameraStatus, setCameraStatus] = useState<CheckStatus>("pending");
   const [testModule, setTestModule] = useState<TestModule>(null);
@@ -125,14 +122,7 @@ export default function QrDiagnosticoPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b border-border bg-surface px-4 h-14">
-        <button onClick={() => navigate("/pwa")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <ShieldCheck className="h-5 w-5 text-[hsl(var(--module-accent))]" />
-        <span className="font-semibold text-foreground">Diagnóstico QR</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Diagnóstico QR" icon={ShieldCheck} backTo="/pwa" />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
         {/* Auto checks */}

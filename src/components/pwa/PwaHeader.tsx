@@ -12,15 +12,24 @@ interface PwaHeaderProps {
   subtitle?: string;
   icon?: React.ElementType;
   backTo?: string;
+  onBack?: () => void;
   onSignOut?: () => void;
   rightSlot?: React.ReactNode;
+  /** Segunda linha sticky abaixo do header — para botões operacionais (Scan, Manual, Finalizar, etc.) */
+  actionsBar?: React.ReactNode;
 }
 
-export function PwaHeader({ title, subtitle, icon: Icon, backTo, onSignOut, rightSlot }: PwaHeaderProps) {
+export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignOut, rightSlot, actionsBar }: PwaHeaderProps) {
   const navigate = useNavigate();
   const { roles } = useAuth();
   const { activeStage } = useStageContext();
   const showSwitcher = roles.length >= 2;
+
+  const handleBack = () => {
+    if (onBack) onBack();
+    else if (backTo) navigate(backTo);
+    else navigate(-1);
+  };
 
   return (
     <header className="sticky top-0 z-20 border-b border-border/70 bg-background/90 backdrop-blur-md">
@@ -33,9 +42,9 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onSignOut, righ
       />
       <div className="relative flex items-center justify-between gap-2 px-4 h-14">
         <div className="flex min-w-0 items-center gap-3">
-          {backTo && (
+          {(backTo || onBack) && (
             <button
-              onClick={() => navigate(backTo)}
+              onClick={handleBack}
               className="-ml-2 flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
               aria-label="Voltar"
             >
@@ -105,6 +114,11 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onSignOut, righ
           )}
         </div>
       </div>
+      {actionsBar && (
+        <div className="border-t border-border/40 px-3 py-2">
+          {actionsBar}
+        </div>
+      )}
     </header>
   );
 }

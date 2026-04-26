@@ -1,11 +1,8 @@
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Bus, UtensilsCrossed, Building } from "lucide-react";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { Bus, UtensilsCrossed, Building } from "lucide-react";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 
 export default function DelegacaoLogisticaPage() {
-  const navigate = useNavigate();
-
   const items = [
     { label: "Transporte", desc: "Viagens e horários", icon: Bus, color: "text-blue-600" },
     { label: "Alimentação", desc: "Janelas e locais de refeição", icon: UtensilsCrossed, color: "text-orange-600" },
@@ -14,14 +11,7 @@ export default function DelegacaoLogisticaPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate("/pwa/delegacao")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <Bus className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Logística</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Logística" icon={Bus} backTo="/pwa/delegacao" />
 
       <main className="p-4 max-w-md mx-auto space-y-3">
         {items.map((item) => (

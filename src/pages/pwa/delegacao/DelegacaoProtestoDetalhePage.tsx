@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Gavel, FileText, Paperclip } from "lucide-react";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { Gavel, FileText, Paperclip } from "lucide-react";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function DelegacaoProtestoDetalhePage() {
-  const navigate = useNavigate();
   const { id } = useParams();
   const [protest, setProtest] = useState<any>(null);
   const [attachments, setAttachments] = useState<any[]>([]);
@@ -43,14 +42,7 @@ export default function DelegacaoProtestoDetalhePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate("/pwa/delegacao/protestos")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <Gavel className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">{protest.protocol_number}</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title={protest.protocol_number} icon={Gavel} backTo="/pwa/delegacao/protestos" />
 
       <main className="p-4 max-w-md mx-auto space-y-3">
         <Card>

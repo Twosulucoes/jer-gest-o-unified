@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 import { format } from "date-fns";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 
 interface WindowItem {
   id: string;
@@ -19,7 +18,6 @@ interface WindowItem {
 }
 
 export default function AlimentacaoJanelasPage() {
-  const navigate = useNavigate();
   const eventId = useActiveEventId();
   const stageId = useActiveStageId();
   const [windows, setWindows] = useState<WindowItem[]>([]);
@@ -55,14 +53,7 @@ export default function AlimentacaoJanelasPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate("/pwa/alimentacao")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <Clock className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Janelas de Hoje</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Janelas de Hoje" icon={Clock} backTo="/pwa/alimentacao" />
 
       <main className="p-4 max-w-md mx-auto space-y-3">
         {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full" />)}
