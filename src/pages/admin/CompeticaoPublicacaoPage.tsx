@@ -359,14 +359,9 @@ export default function CompeticaoPublicacaoPage() {
                             className="h-8 w-8 text-destructive" 
                             title="Reverter Status"
                             onClick={() => {
-                              const reason = prompt("Justificativa para reversão:");
-                              if (reason) {
-                                revertMut.mutate({ 
-                                  matchId: m.id, 
-                                  targetStatus: "resultado_lancado", 
-                                  reason 
-                                });
-                              }
+                              setRevertMatchId(m.id);
+                              setRevertReason("");
+                              setShowRevertDialog(true);
                             }}
                           >
                             <AlertTriangle className="h-4 w-4" />
