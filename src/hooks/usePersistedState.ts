@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 
 const PREFIX = "jer_persisted_";
-const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+export const PERSISTENCE_TTLS = {
+  SENSITIVE: 15 * 60 * 1000,      // 15 minutes
+  DEFAULT: 24 * 60 * 60 * 1000,   // 24 hours
+  LONG: 7 * 24 * 60 * 60 * 1000,    // 7 days
+};
 
 interface PersistedValue<T> {
   value: T;
@@ -13,7 +19,7 @@ interface PersistedValue<T> {
  * Useful for preserving filters and UI state across reloads.
  * Now includes a TTL (Time To Live) to automatically clear expired data.
  */
-export function usePersistedState<T>(key: string, defaultValue: T, ttl: number = DEFAULT_TTL) {
+export function usePersistedState<T>(key: string, defaultValue: T, ttl: number = PERSISTENCE_TTLS.DEFAULT) {
   const storageKey = `${PREFIX}${key}`;
   
   const [state, setState] = useState<T>(() => {
@@ -29,6 +35,7 @@ export function usePersistedState<T>(key: string, defaultValue: T, ttl: number =
             return parsed.value;
           } else {
             // TTL expired
+            logger.info(`TTL expired for localStorage key "${storageKey}". Clearing.`);
             localStorage.removeItem(storageKey);
             return defaultValue;
           }
@@ -38,7 +45,7 @@ export function usePersistedState<T>(key: string, defaultValue: T, ttl: number =
         return parsed as unknown as T;
       }
     } catch (error) {
-      console.warn(`Error reading localStorage key "${storageKey}":`, error);
+      logger.warn(`Error reading localStorage key "${storageKey}":`, error);
     }
     return defaultValue;
   });
@@ -51,7 +58,7 @@ export function usePersistedState<T>(key: string, defaultValue: T, ttl: number =
       };
       localStorage.setItem(storageKey, JSON.stringify(dataToSave));
     } catch (error) {
-      console.warn(`Error writing localStorage key "${storageKey}":`, error);
+      logger.warn(`Error writing localStorage key "${storageKey}":`, error);
     }
   }, [storageKey, state]);
 
@@ -71,6 +78,7 @@ export function clearPersistedFilters() {
       }
     });
   } catch (error) {
-    console.warn("Error clearing persisted filters:", error);
+    logger.warn("Error clearing persisted filters:", error);
   }
 }
+
