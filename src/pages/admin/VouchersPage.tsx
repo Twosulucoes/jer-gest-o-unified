@@ -497,37 +497,70 @@ function IssueVoucherDialog({
 
   const issueMutation = useMutation({
     mutationFn: async () => {
-      if (!participantId) throw new Error("Selecione um participante");
       if (!scopeTransport && !scopeMeals && !scopeLodging) throw new Error("Selecione ao menos um escopo");
       const max = maxUses.trim() ? parseInt(maxUses.trim(), 10) : null;
       if (maxUses.trim() && (Number.isNaN(max) || max! < 1)) throw new Error("Máximo de usos inválido");
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      const { data, error } = await supabase
-        .from("service_vouchers")
-        .insert({
-          event_id: eventId,
-          participant_id: participantId,
-          qr_code_value: genQrValue(),
-          scope_transport: scopeTransport,
-          scope_meals: scopeMeals,
-          scope_lodging: scopeLodging,
-          max_uses: max,
-          valid_until: validUntil ? new Date(validUntil).toISOString() : null,
-          notes: notes.trim() || null,
-          issued_by: user?.id ?? null,
-        })
+
+      if (voucherType === "nominal") {
+        if (!participantId) throw new Error("Selecione um participante");
+        const { data, error } = await (supabase.from("service_vouchers") as any)
+          .insert({
+            event_id: eventId,
+            participant_id: participantId,
+            voucher_type: "nominal",
+            is_contingency: true,
+            qr_code_value: genQrValue(),
+            scope_transport: scopeTransport,
+            scope_meals: scopeMeals,
+            scope_lodging: scopeLodging,
+            max_uses: max,
+            valid_until: validUntil ? new Date(validUntil).toISOString() : null,
+            notes: notes.trim() || null,
+            issued_by: user?.id ?? null,
+          })
+          .select(
+            "id, participant_id, qr_code_value, status, voucher_type, label, is_contingency, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
+          )
+          .single();
+        if (error) throw error;
+        return data as VoucherRow;
+      }
+
+      // Aggregate (with optional batch)
+      const labelBase = aggregateLabel.trim();
+      if (!labelBase) throw new Error("Informe um identificador (label) para o voucher agregado");
+      const batch = Math.max(1, parseInt(aggregateBatchSize || "1", 10) || 1);
+      const rows = Array.from({ length: batch }, (_, i) => ({
+        event_id: eventId,
+        participant_id: null,
+        voucher_type: "aggregate",
+        label: batch > 1 ? `${labelBase} #${String(i + 1).padStart(2, "0")}` : labelBase,
+        is_contingency: false,
+        qr_code_value: genQrValue(),
+        scope_transport: scopeTransport,
+        scope_meals: scopeMeals,
+        scope_lodging: scopeLodging,
+        max_uses: max,
+        valid_until: validUntil ? new Date(validUntil).toISOString() : null,
+        notes: notes.trim() || null,
+        issued_by: user?.id ?? null,
+      }));
+      const { data, error } = await (supabase.from("service_vouchers") as any)
+        .insert(rows)
         .select(
-          "id, participant_id, qr_code_value, status, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
-        )
-        .single();
+          "id, participant_id, qr_code_value, status, voucher_type, label, is_contingency, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
+        );
       if (error) throw error;
-      return data as VoucherRow;
+      return (data as VoucherRow[])[0];
     },
     onSuccess: (v) => {
       queryClient.invalidateQueries({ queryKey: ["vouchers"] });
-      toast.success("Voucher emitido");
+      toast.success(voucherType === "aggregate" && parseInt(aggregateBatchSize, 10) > 1
+        ? `${aggregateBatchSize} vouchers emitidos`
+        : "Voucher emitido");
       onOpenChange(false);
       onIssued(v);
     },
