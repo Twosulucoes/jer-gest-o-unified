@@ -10,7 +10,7 @@ export const brand = {
     accentGreen: '#1E6B2C', // Adjusted for 4.5:1 contrast
     accentLime: '#7BA60D', // Adjusted for 4.5:1 contrast
     text: '#0B1220',
-    muted: '#64748B',
+    muted: '#516075', // Adjusted for 4.5:1+ contrast
     border: '#E2E8F0',
     background: '#F6F8FC',
     surface: '#FFFFFF',
