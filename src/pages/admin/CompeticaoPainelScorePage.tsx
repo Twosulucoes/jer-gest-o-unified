@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -28,23 +28,19 @@ import { Input } from "@/components/ui/input";
 import { 
   Plus, 
   Search, 
-  Filter, 
   Pencil, 
   Trash2, 
   AlertTriangle,
-  Info,
   Calendar,
   Clock,
   MapPin,
-  Users
+  Info
 } from "lucide-react";
 import { 
   useScoreMatches, 
   useModalityDetails, 
   useModalityPhases, 
-  useModalityGroups, 
-  useModalitySchools, 
-  useModalityReferees 
+  useModalityGroups
 } from "@/hooks/useScoreMatches";
 import { useSportEventRules } from "@/hooks/useSportEventRules";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -53,7 +49,7 @@ import { MatchScoreFormDrawer } from "@/components/admin/competition/MatchScoreF
 export default function CompeticaoPainelScorePage() {
   const { sportEventId } = useParams();
   const eventId = useActiveEventId();
-  const { user, hasRole } = useAuth();
+  const { hasRole } = useAuth();
   const qc = useQueryClient();
 
   const [phaseFilter, setPhaseFilter] = useState("all");
