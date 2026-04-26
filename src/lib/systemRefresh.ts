@@ -46,6 +46,13 @@ export function installGlobalRefreshListener() {
         
         sessionStorage.setItem(RELOAD_GUARD_KEY, String(now));
         
+        // Salva a rota atual para restauração pós-refresh
+        const currentPath = window.location.pathname + window.location.search + window.location.hash;
+        if (currentPath !== "/" && !currentPath.includes("/login")) {
+          localStorage.setItem("jer_last_pwa_path", currentPath);
+        }
+
+        
         toast.info("Atualização global detectada!", {
           description: "O sistema está sendo sincronizado para garantir a última versão em todos os módulos.",
           duration: 5000,

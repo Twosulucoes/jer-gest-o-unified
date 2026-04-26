@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { usePersistedState } from "@/hooks/usePersistedState";
+
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +21,7 @@ export default function CoordenacaoPartidasPage() {
   const navigate = useNavigate();
   const [matches, setMatches] = useState<MatchItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = usePersistedState("coordenacao_partidas_filter", "");
 
   useEffect(() => {
     (async () => {
