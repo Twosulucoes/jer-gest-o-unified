@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft, Trophy, Users, Paperclip, Send,
-  // PwaRefreshButton importado abaixo
   Trash2, Plus, Upload, FileText, Image, CheckCircle2,
 } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 import {
   usePartidaDetalhe,
   useArbitrosPartida,
