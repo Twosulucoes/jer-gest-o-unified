@@ -12,6 +12,7 @@ export function VersionValidator({ children }: { children: React.ReactNode }) {
   const [isSyncing, setIsSyncing] = useState(true);
   const [versionMismatch, setVersionMismatch] = useState(false);
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
     // Exponha a versão para depuração
