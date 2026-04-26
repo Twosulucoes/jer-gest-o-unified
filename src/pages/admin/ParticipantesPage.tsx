@@ -214,9 +214,9 @@ export default function ParticipantesPage() {
       if (noSearchMatches) return { rows: [] as any[], total: 0 };
 
       const baseFields =
-        "id, status, participant_type, category, person_id, delegation_id, created_at, " +
+        "id, status, participant_type, person_id, delegation_id, created_at, " +
         "person:people(id, full_name, cpf, gender), " +
-        "delegation:delegations(id, school_name, institution_id)";
+        "delegation:delegations(id, school_name, institution_id, institution:institutions(name))";
 
       const from = page * pageSize;
       const to = from + pageSize - 1;
@@ -238,7 +238,7 @@ export default function ParticipantesPage() {
 
       q = q.eq("event_id", selectedEventId!);
 
-      if (categoryFilter !== "all") q = q.eq("category", categoryFilter);
+      // if (categoryFilter !== "all") q = q.eq("category", categoryFilter);
       if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
       if (isSearching && matchingPersonIds && matchingPersonIds.length > 0) {
@@ -667,7 +667,7 @@ export default function ParticipantesPage() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Categoria</label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -676,7 +676,7 @@ export default function ParticipantesPage() {
                   {Object.entries(CATEGORY_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Tipo</label>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -906,7 +906,7 @@ export default function ParticipantesPage() {
                       <TableCell className="text-muted-foreground">{institutionName}</TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          <Badge variant="outline" className="w-fit">{CATEGORY_LABELS[p.category] ?? p.category}</Badge>
+                          {/* <Badge variant="outline" className="w-fit">{CATEGORY_LABELS[p.category] ?? p.category}</Badge> */}
                           <Badge variant="secondary" className="w-fit text-[10px]">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
                         </div>
                       </TableCell>
