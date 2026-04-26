@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ClipboardList, ChevronRight, LogOut, Trophy } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 import { useMinhasModalidades } from "@/hooks/useLancamentoResultados";
 
 export default function ResultadosHomePage() {
@@ -37,9 +38,12 @@ export default function ResultadosHomePage() {
           <Trophy className="h-5 w-5 text-primary" />
           <span className="font-semibold text-foreground">Lançamento de Resultados</span>
         </div>
-        <button onClick={handleSignOut} className="text-muted-foreground p-2 -mr-2 active:opacity-60">
-          <LogOut className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <PwaRefreshButton />
+          <button onClick={handleSignOut} className="text-muted-foreground p-2 -mr-2 active:opacity-60" aria-label="Sair">
+            <LogOut className="h-5 w-5" />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 p-4 max-w-md mx-auto w-full space-y-4">
