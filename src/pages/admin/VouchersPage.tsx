@@ -115,8 +115,7 @@ export default function VouchersPage() {
   const { data: vouchers = [], isLoading } = useQuery({
     queryKey: ["vouchers", eventId, statusFilter, scopeFilter, typeFilter],
     queryFn: async () => {
-      let q = supabase
-        .from("service_vouchers")
+      let q = (supabase.from("service_vouchers") as any)
         .select(
           "id, participant_id, qr_code_value, status, voucher_type, label, is_contingency, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
         )
