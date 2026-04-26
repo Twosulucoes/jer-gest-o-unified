@@ -30,14 +30,30 @@ export default function CoordenacaoAgendaPage() {
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
+
+      // Se há etapa em escopo, primeiro descobre quais venues servem essa etapa (N:N)
+      let venueIdsFilter: string[] | null = null;
+      if (stageId) {
+        const { data: links } = await (supabase as any)
+          .from("venue_event_stages")
+          .select("venue_id")
+          .eq("event_stage_id", stageId);
+        venueIdsFilter = (links ?? []).map((l: any) => l.venue_id as string);
+        if (venueIdsFilter.length === 0) {
+          setMatches([]);
+          setLoading(false);
+          return;
+        }
+      }
+
       let query = supabase
         .from("competition_matches")
-        .select("id, match_date, start_time, status, match_number, venue:venues!inner(name, event_id, event_stage_id), phase:competition_phases(name, sport_event:sport_events(sport:sports(name), category:categories(name)))")
+        .select("id, match_date, start_time, status, match_number, venue:venues!inner(name, event_id), phase:competition_phases(name, sport_event:sport_events(sport:sports(name), category:categories(name)))")
         .eq("match_date", today)
         .eq("venues.event_id", eventId);
 
-      if (stageId) {
-        query = query.eq("venues.event_stage_id", stageId);
+      if (venueIdsFilter) {
+        query = query.in("venue_id", venueIdsFilter);
       }
 
       const { data } = await query.order("start_time");
