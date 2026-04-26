@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
+import { clearPersistedFilters } from "@/hooks/usePersistedState";
 
 const STORAGE_KEY = "jer_active_event_id";
 
@@ -76,16 +77,22 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
 
     setActiveEventIdState(null);
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    clearPersistedFilters(); // Clear filters on logout/session expiry
   }, [authLoading, user]);
 
   const setActiveEventId = useCallback(
     (id: string) => {
+      // If we are changing to a different event, clear previous filters
+      if (id !== activeEventId) {
+        clearPersistedFilters();
+      }
+      
       setActiveEventIdState(id);
       try { localStorage.setItem(STORAGE_KEY, id); } catch {}
       // Invalidate all event-scoped queries
       queryClient.invalidateQueries();
     },
-    [queryClient],
+    [queryClient, activeEventId],
   );
 
   const clearActiveEvent = useCallback(() => {
