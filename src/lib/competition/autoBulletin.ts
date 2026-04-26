@@ -6,7 +6,8 @@ export type BulletinStatusFilter = "publicado" | "resultado_validado";
 export interface AutoBulletinFilters {
   eventId: string;
   scope: BulletinScope;
-  stageId?: string | null;
+  /** Lista pré-resolvida de sport_event_ids da etapa (passar quando scope='stage'). */
+  stageSportEventIds?: string[] | null;
   sportEventId?: string | null;
   statusFilter: BulletinStatusFilter;
   dateFrom?: string | null; // YYYY-MM-DD
@@ -71,24 +72,16 @@ function entryLabel(e: MatchRow["competition_match_entries"][number], statusFilt
  * partidas com resultado pelo escopo solicitado.
  */
 export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Promise<AutoBulletinResult> {
-  const { eventId, scope, stageId, sportEventId, statusFilter, dateFrom, dateTo } = filters;
+  const { eventId, scope, stageSportEventIds, sportEventId, statusFilter, dateFrom, dateTo } = filters;
 
   // Resolve sport_event_ids alvo conforme o escopo
   let sportEventIds: string[] | null = null;
   if (scope === "sport_event" && sportEventId) {
     sportEventIds = [sportEventId];
-  } else if (scope === "stage" && stageId) {
-    const { data: ses, error: sesErr } = await supabase
-      .from("sport_events")
-      .select("id")
-      .eq("event_id", eventId)
-      .eq("stage_id", stageId);
-    if (sesErr) throw sesErr;
-    sportEventIds = (ses ?? []).map((s) => s.id);
-    if (sportEventIds.length === 0) {
-      // Etapa sem provas — retorna boletim vazio sem ir ao banco
-      sportEventIds = ["00000000-0000-0000-0000-000000000000"];
-    }
+  } else if (scope === "stage") {
+    sportEventIds = stageSportEventIds && stageSportEventIds.length > 0
+      ? stageSportEventIds
+      : ["00000000-0000-0000-0000-000000000000"]; // etapa sem provas → resultado vazio
   }
 
   // 1) Busca partidas com resultado no status solicitado
