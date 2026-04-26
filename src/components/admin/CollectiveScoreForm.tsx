@@ -105,7 +105,10 @@ export default function CollectiveScoreForm({
       return {
         match_entry_id: entry.id,
         score_final: s?.final ?? "",
-        score_detail: scoreType !== "simple" && s?.detail ? s.detail : null,
+        score_detail: {
+          ...(scoreType !== "simple" && s?.detail ? s.detail : {}),
+          shootout: s?.shootout || undefined
+        },
         outcome: s?.outcome === "__none__" ? "" : (s?.outcome ?? ""),
       };
     });
