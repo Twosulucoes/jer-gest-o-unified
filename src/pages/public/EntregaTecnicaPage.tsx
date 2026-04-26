@@ -1038,8 +1038,8 @@ function MockCompeticao() {
           </div>
           {[
             { pos: 1, time: "Boa Vista", pts: 9, color: brand.colors.warning },
-            { pos: 2, time: "Caracaraí", pts: 6, color: '#94A3B8' },
-            { pos: 3, time: "Mucajaí", pts: 3, color: '#CD7F32' },
+            { pos: 2, time: "Caracaraí", pts: 6, color: '#71717A' },
+            { pos: 3, time: "Mucajaí", pts: 3, color: '#8B4513' },
           ].map((t) => (
             <div key={t.time} className="px-3 py-2 border-b border-slate-50 last:border-0 flex items-center gap-2 text-[11px]">
               <span className="w-5 h-5 rounded-full text-white flex items-center justify-center text-[10px] font-black" style={{ background: t.color }}>{t.pos}</span>
