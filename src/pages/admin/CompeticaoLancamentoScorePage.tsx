@@ -152,7 +152,7 @@ export default function CompeticaoLancamentoScorePage() {
   const [homologateObservation, setHomologateObservation] = useState("");
 
   const resultStatus = match?.entries?.[0]?.results?.[0]?.result_status || "agendado";
-  const isLocked = (resultStatus === "validado" || resultStatus === "publicado") && !hasRole("admin");
+  const isLocked = (resultStatus === "resultado_validado" || resultStatus === "publicado") && !hasRole("admin");
   const isAlreadyPublished = resultStatus === "publicado";
   const canHomologate = (hasRole("admin") || hasRole("coordenacao_tecnica")) && resultStatus === "resultado_lancado";
 
