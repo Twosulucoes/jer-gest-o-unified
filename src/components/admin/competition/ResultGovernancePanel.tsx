@@ -362,27 +362,77 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
         </CardContent>
       </Card>
 
-      {/* Published list with bulletin reference */}
+      {/* Published list with bulletin reference + auditoria + despublicar */}
       {publishedRows.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">
               <FileText className="h-4 w-4" /> Resultados publicados (últimos 10)
             </CardTitle>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive">
+                  {unpublishResults.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Undo2 className="h-3.5 w-3.5" />}
+                  Despublicar todos
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Despublicar resultados desta prova?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Os {counts?.published ?? 0} resultado(s) publicado(s) voltarão para o status <strong>Validado</strong> e <strong>sairão do portal público imediatamente</strong>. A ação fica registrada na auditoria.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="py-2 space-y-2">
+                  <Label htmlFor="unpub-reason" className="text-xs">Motivo (opcional, mas recomendado)</Label>
+                  <Input
+                    id="unpub-reason"
+                    placeholder="Ex.: erro de digitação no placar, recurso CDE deferido…"
+                    value={unpublishReason}
+                    onChange={(e) => setUnpublishReason(e.target.value)}
+                  />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => unpublishResults.mutate()}
+                    className="bg-destructive text-white hover:bg-destructive/90"
+                  >
+                    Despublicar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardHeader>
           <CardContent>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {publishedRows.map((r: any) => (
-                <div key={r.id} className="flex items-center justify-between gap-2 text-xs border-b pb-1.5 last:border-0">
-                  <span className="font-medium">Partida #{r.competition_matches?.match_number ?? "?"}</span>
-                  {r.official_bulletins ? (
-                    <Badge variant="secondary" className="font-normal">
-                      <FileText className="h-3 w-3 mr-1" />
-                      Boletim #{r.official_bulletins.number} — {r.official_bulletins.title}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="font-normal text-muted-foreground">sem boletim</Badge>
-                  )}
+                <div key={r.id} className="flex flex-col gap-1 text-xs border-b pb-2 last:border-0">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="font-medium">Partida #{r.competition_matches?.match_number ?? "?"}</span>
+                    {r.official_bulletins ? (
+                      <Badge variant="secondary" className="font-normal">
+                        <FileText className="h-3 w-3 mr-1" />
+                        Boletim #{r.official_bulletins.number} — {r.official_bulletins.title}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="font-normal text-muted-foreground">sem boletim</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                    {r.published_at && (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {format(new Date(r.published_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </span>
+                    )}
+                    {r.publisher_name && (
+                      <span className="flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {r.publisher_name}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
