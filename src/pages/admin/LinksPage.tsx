@@ -175,11 +175,27 @@ export default function LinksPage() {
     toast.success("Instruções copiadas para a área de transferência!");
   };
 
-  const filtered = (items || []).filter((item) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return item.title.toLowerCase().includes(q) || item.slug.toLowerCase().includes(q);
-  });
+  const filtered = useMemo(() => {
+    return (items || []).filter((item) => {
+      if (statusFilter === "active" && !item.active) return false;
+      if (statusFilter === "inactive" && item.active) return false;
+      if (moduleFilter !== "all") {
+        const opt = MODULE_OPTIONS.find((o) => o.slug === moduleFilter);
+        if (!opt || item.destination_url !== opt.value) return false;
+      }
+      if (search) {
+        const q = search.toLowerCase();
+        if (!item.title.toLowerCase().includes(q) && !item.slug.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [items, statusFilter, moduleFilter, search]);
+
+  const counts = useMemo(() => {
+    const total = (items || []).length;
+    const active = (items || []).filter((i) => i.active).length;
+    return { total, active, inactive: total - active };
+  }, [items]);
 
   return (
     <div className="space-y-6">
@@ -200,20 +216,40 @@ export default function LinksPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar links..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 w-64"
-          />
+      {/* Toolbar: search + filters + actions */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 w-48"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos ({counts.total})</SelectItem>
+              <SelectItem value="active">Ativos ({counts.active})</SelectItem>
+              <SelectItem value="inactive">Inativos ({counts.inactive})</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={moduleFilter} onValueChange={setModuleFilter}>
+            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Módulo" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os módulos</SelectItem>
+              {MODULE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.slug} value={opt.slug}>{opt.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => autoGenerateLinks.mutate()} 
+          <Button
+            variant="outline"
+            onClick={() => autoGenerateLinks.mutate()}
             disabled={autoGenerateLinks.isPending}
             className="gap-2 border-primary/30 text-primary hover:bg-primary/10"
           >
@@ -234,15 +270,24 @@ export default function LinksPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <Link2 className="h-12 w-12 mx-auto text-muted-foreground/40" />
-          <p className="text-muted-foreground">Nenhum link criado ainda.</p>
-          <Button variant="outline" onClick={() => setShowCreate(true)} className="gap-2">
-            <Plus className="h-4 w-4" /> Criar primeiro link
-          </Button>
+          <p className="text-muted-foreground">
+            {(items || []).length === 0 ? "Nenhum link criado ainda." : "Nenhum link corresponde aos filtros."}
+          </p>
+          {(items || []).length === 0 && (
+            <Button variant="outline" onClick={() => setShowCreate(true)} className="gap-2">
+              <Plus className="h-4 w-4" /> Criar primeiro link
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
-            <div key={item.id} className="rounded-xl border bg-card shadow-app-sm p-4 space-y-3 flex flex-col">
+            <div
+              key={item.id}
+              className={`rounded-xl border bg-card shadow-app-sm p-4 space-y-3 flex flex-col transition-opacity ${
+                item.active ? "" : "opacity-60"
+              }`}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-foreground truncate">{item.title}</h3>
@@ -251,40 +296,80 @@ export default function LinksPage() {
                 <Switch
                   checked={item.active}
                   onCheckedChange={(checked) => toggleActive.mutate({ id: item.id, active: checked })}
+                  aria-label={item.active ? "Desativar link" : "Ativar link"}
                 />
               </div>
 
-              <QrCodePreview value={`/go/${item.slug}`} size={100} />
+              <QrCodePreview value={`${getBaseUrl()}/go/${item.slug}`} size={100} filename={`qr-${item.slug}`} showDownload />
 
               <div className="flex items-center gap-1 pt-1 border-t">
-                <Button variant="ghost" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => copyLink(item.slug)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-xs flex-1"
+                  onClick={() => copyLink(item.slug)}
+                >
                   <Link2 className="h-3.5 w-3.5" /> Link
-                </Button>
-                <Button variant="ghost" size="sm" className="gap-1.5 text-xs flex-1 text-primary hover:text-primary hover:bg-primary/10" onClick={() => copyInstructions(item.title, item.slug)}>
-                  <Send className="h-3.5 w-3.5" /> Instruções
-                </Button>
-                <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => navigate(`/admin/links/${item.id}`)}>
-                  <Pencil className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="gap-1.5 text-xs text-destructive hover:text-destructive"
-                  onClick={() => {
-                    if (confirm("Remover este link?")) deleteMutation.mutate(item.id);
-                  }}
+                  className="gap-1.5 text-xs flex-1 text-primary hover:text-primary hover:bg-primary/10"
+                  onClick={() => copyInstructions(item.title, item.slug)}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Send className="h-3.5 w-3.5" /> Instruções
                 </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label="Mais ações" className="h-8 w-8">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate(`/admin/links/${item.id}`)}>
+                      <Pencil className="h-4 w-4 mr-2" /> Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate(`/admin/auditoria?table=public_content&search=${item.id}`)}>
+                      <History className="h-4 w-4 mr-2" /> Histórico
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => setDeleteId(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" /> Remover
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-
-              <Badge variant={item.active ? "default" : "secondary"} className="text-xs w-fit">
-                {item.active ? "Ativo" : "Inativo"}
-              </Badge>
             </div>
           ))}
         </div>
       )}
+
+      {/* Confirmação de exclusão */}
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => { if (!o) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover link?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é permanente. Operadores que tenham o link salvo não conseguirão mais acessar o módulo por este endereço.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteId) deleteMutation.mutate(deleteId);
+                setDeleteId(null);
+              }}
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* Create Wizard Dialog */}
       <Dialog open={showCreate} onOpenChange={(open) => { if (!open) resetWizard(); }}>
