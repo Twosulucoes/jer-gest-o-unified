@@ -295,7 +295,7 @@ export function MatchCombatFormDrawer({
                             <SelectItem value="none" disabled>Nenhum árbitro vinculado</SelectItem>
                           ) : (
                             referees.filter(r => !assignments.some(a => a.user_id === r.id)).map(r => (
-                              <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                              <SelectItem key={r.id} value={r.id}>{r.full_name}</SelectItem>
                             ))
                           )}
                         </SelectContent>
@@ -308,7 +308,7 @@ export function MatchCombatFormDrawer({
                         return (
                           <div key={a.user_id} className="flex items-center gap-2 p-2 rounded-lg border bg-background group">
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium truncate">{ref?.name}</div>
+                              <div className="text-sm font-medium truncate">{ref?.full_name}</div>
                             </div>
                             <Select 
                               value={a.role} 
