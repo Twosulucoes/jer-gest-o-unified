@@ -14,7 +14,11 @@ import {
   XCircle,
   AlertCircle,
   History,
-  RotateCcw
+  RotateCcw,
+  Calendar,
+  Clock,
+  MapPin,
+  CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +60,7 @@ interface MatchCard {
   id?: string;
   match_entry_id: string;
   participant_id: string;
-  card_type: 'yellow' | 'red' | 'red_2yellows' | 'technical' | 'unsportsmanlike';
+  card_type: string;
   period: number;
   minute: number;
 }
@@ -103,7 +107,7 @@ export default function CompeticaoLancamentoScorePage() {
     enabled: !!matchId,
   });
 
-  const { rules, isLoading: loadingRules } = useSportEventRules(eventId, sportEventId || null);
+  const { rules, rulesData, isLoading: loadingRules } = useSportEventRules(eventId, sportEventId || null);
 
   // Fetch lineups
   const { data: lineups = [], isLoading: loadingLineups } = useQuery({
@@ -133,7 +137,10 @@ export default function CompeticaoLancamentoScorePage() {
   const [numPeriods, setNumPeriods] = useState(2);
   const [hasOvertime, setHasOvertime] = useState(false);
 
-  // Initialize state from existing data (simulated for now, would fetch from results)
+  // Modality name from rulesData (source)
+  const modalityName = (rulesData as any)?.sport_name || "Modalidade";
+
+  // Initialize state from existing data
   useEffect(() => {
     if (match && rules) {
       const p = (rules as any)?.periods || 2;
@@ -155,21 +162,29 @@ export default function CompeticaoLancamentoScorePage() {
 
   const totalScoreA = useMemo(() => {
     if (!schoolA) return 0;
+    if (isWO) {
+        if (woWinnerId === schoolA.id) return 1; // Default WO score if not defined in rules
+        return 0;
+    }
     let sum = 0;
     Object.values(periodScores[schoolA.id] || {}).forEach(v => {
       sum += parseInt(v) || 0;
     });
     return sum;
-  }, [periodScores, schoolA]);
+  }, [periodScores, schoolA, isWO, woWinnerId]);
 
   const totalScoreB = useMemo(() => {
     if (!schoolB) return 0;
+    if (isWO) {
+        if (woWinnerId === schoolB.id) return 1;
+        return 0;
+    }
     let sum = 0;
     Object.values(periodScores[schoolB.id] || {}).forEach(v => {
       sum += parseInt(v) || 0;
     });
     return sum;
-  }, [periodScores, schoolB]);
+  }, [periodScores, schoolB, isWO, woWinnerId]);
 
   const launchMut = useMutation({
     mutationFn: async () => {
@@ -194,7 +209,7 @@ export default function CompeticaoLancamentoScorePage() {
       const { data, error } = await supabase.rpc("rpc_launch_match_result", {
         p_event_id: eventId,
         p_match_id: matchId,
-        p_payload: payload
+        p_payload: payload as any
       });
       if (error) throw error;
       return data;
@@ -229,16 +244,16 @@ export default function CompeticaoLancamentoScorePage() {
             <div>
               <h1 className="text-xl font-bold flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-primary" />
-                Lançar Resultado
+                Lançamento de Resultado
               </h1>
               <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
-                {rules?.sport?.name} • {match?.phase?.name} {match?.group?.name ? `(${match?.group?.name})` : ""}
+                {modalityName} • {match?.phase?.name} {match?.group?.name ? `(${match?.group?.name})` : ""}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate(-1)}>Cancelar</Button>
-            <Button className="gap-2" onClick={() => launchMut.mutate()} disabled={launchMut.isPending}>
+            <Button className="gap-2" onClick={() => launchMut.mutate()} disabled={launchMut.isPending || !canWrite}>
               <Save className="h-4 w-4" /> 
               {launchMut.isPending ? "Salvando..." : "Salvar Resultado"}
             </Button>
@@ -363,42 +378,122 @@ export default function CompeticaoLancamentoScorePage() {
               </CardContent>
             </Card>
 
-            {/* W.O. */}
-            <Card className={isWO ? "border-primary bg-primary/5" : ""}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+            {/* Cartões (Gaps Stage 4) */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <XCircle className="h-4 w-4" /> Registro de W.O.
+                  <XCircle className="h-4 w-4 text-destructive" /> Cartões
                 </CardTitle>
-                <Switch 
-                  checked={isWO} 
-                  onCheckedChange={(val) => {
-                    setIsWO(val);
-                    if (!val) setWoWinnerId("");
-                  }} 
-                />
+                <Button variant="outline" size="sm" onClick={() => {
+                    const newCard: MatchCard = {
+                        match_entry_id: schoolA?.id || "",
+                        participant_id: "",
+                        card_type: "yellow",
+                        period: 1,
+                        minute: 0
+                    };
+                    setCards([...cards, newCard]);
+                }}>
+                    <Plus className="h-4 w-4 mr-1" /> Adicionar Cartão
+                </Button>
               </CardHeader>
               <CardContent>
-                {isWO && (
-                  <div className="space-y-4 pt-2">
-                    <Label className="text-sm">Selecione a escola vencedora por W.O.</Label>
-                    <Select value={woWinnerId} onValueChange={setWoWinnerId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a vencedora" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {match?.entries.map((e: any) => (
-                          <SelectItem key={e.id} value={e.id}>{e.teams?.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Alert className="bg-primary/10 border-primary/20 text-primary">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        Ao confirmar o W.O., o placar oficial das regras será aplicado automaticamente.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                )}
+                <div className="space-y-4">
+                  {cards.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum cartão registrado.</p>
+                  ) : (
+                    <div className="border rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Escola</TableHead>
+                            <TableHead>Jogador</TableHead>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead className="w-[100px]">Minuto</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {cards.map((card, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell>
+                                <Select value={card.match_entry_id} onValueChange={(val) => {
+                                    const newCards = [...cards];
+                                    newCards[idx].match_entry_id = val;
+                                    newCards[idx].participant_id = "";
+                                    setCards(newCards);
+                                }}>
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {match?.entries.map((e: any) => (
+                                      <SelectItem key={e.id} value={e.id}>{e.teams?.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Select value={card.participant_id} onValueChange={(val) => {
+                                    const newCards = [...cards];
+                                    newCards[idx].participant_id = val;
+                                    setCards(newCards);
+                                }}>
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue placeholder="Selecione" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {lineups.filter(l => l.match_entry_id === card.match_entry_id).map((l: any) => (
+                                      <SelectItem key={l.participant_id} value={l.participant_id}>
+                                        {l.jersey_number ? `#${l.jersey_number} ` : ""}{l.participant?.person?.full_name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Select value={card.card_type} onValueChange={(val) => {
+                                    const newCards = [...cards];
+                                    newCards[idx].card_type = val;
+                                    setCards(newCards);
+                                }}>
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="yellow">Amarelo</SelectItem>
+                                    <SelectItem value="red">Vermelho</SelectItem>
+                                    <SelectItem value="red_2yellows">2º Amarelo (Vermelho)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Input 
+                                  type="number" 
+                                  className="h-8" 
+                                  value={card.minute} 
+                                  onChange={(e) => {
+                                    const newCards = [...cards];
+                                    newCards[idx].minute = parseInt(e.target.value);
+                                    setCards(newCards);
+                                  }} 
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => {
+                                    const newCards = cards.filter((_, i) => i !== idx);
+                                    setCards(newCards);
+                                }}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -428,6 +523,55 @@ export default function CompeticaoLancamentoScorePage() {
                     <Badge variant="outline">{match?.status}</Badge>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* W.O. */}
+            <Card className={isWO ? "border-primary bg-primary/5" : ""}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" /> W.O.
+                </CardTitle>
+                <Switch 
+                  checked={isWO} 
+                  onCheckedChange={(val) => {
+                    setIsWO(val);
+                    if (!val) setWoWinnerId("");
+                  }} 
+                />
+              </CardHeader>
+              <CardContent>
+                {isWO ? (
+                  <div className="space-y-4 pt-2">
+                    <Label className="text-sm">Vencedora por W.O.</Label>
+                    <Select value={woWinnerId} onValueChange={setWoWinnerId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {match?.entries.map((e: any) => (
+                          <SelectItem key={e.id} value={e.id}>{e.teams?.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Ative para registrar vitória por não comparecimento.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Histórico/Logs */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <History className="h-4 w-4" /> Histórico de Auditoria
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground italic">
+                  As alterações nesta tela são gravadas com snapshot completo para fins de auditoria.
+                </p>
               </CardContent>
             </Card>
           </div>
