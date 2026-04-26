@@ -120,39 +120,54 @@ export default function CoordenacaoIncidentesPage() {
 
       <main className="relative mx-auto max-w-md space-y-3 p-4">
         {activeEventId && (
-          <div className="flex gap-2 mb-2">
-            <div className="flex-1">
-              <Select value={filterModule} onValueChange={setFilterModule}>
-                <SelectTrigger className="h-9 bg-card/50 border-border/40 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <Filter className="h-3 w-3 opacity-50" />
-                    <SelectValue placeholder="Módulo" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos Módulos</SelectItem>
-                  {(Object.entries(INCIDENT_MODULES) as [IncidentModule, any][]).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                  ))}
-                </SelectContent>
-
-              </Select>
+          <div className="flex flex-col gap-2 mb-2">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Select value={filterModule} onValueChange={setFilterModule}>
+                  <SelectTrigger className="h-9 bg-card/50 border-border/40 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <Filter className="h-3 w-3 opacity-50" />
+                      <SelectValue placeholder="Módulo" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos Módulos</SelectItem>
+                    {(Object.entries(INCIDENT_MODULES) as [IncidentModule, any][]).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="h-9 bg-card/50 border-border/40 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <ClipboardList className="h-3 w-3 opacity-50" />
+                      <SelectValue placeholder="Status" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos Status</SelectItem>
+                    {(Object.entries(INCIDENT_STATUSES) as [IncidentStatus, any][]).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex-1">
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <div className="w-full">
+              <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "asc" | "desc")}>
                 <SelectTrigger className="h-9 bg-card/50 border-border/40 text-xs">
                   <div className="flex items-center gap-1.5">
-                    <ClipboardList className="h-3 w-3 opacity-50" />
-                    <SelectValue placeholder="Status" />
+                    <ArrowUpDown className="h-3 w-3 opacity-50" />
+                    <span className="opacity-70 mr-1">Ordenação:</span>
+                    <SelectValue placeholder="Data" />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos Status</SelectItem>
-                  {(Object.entries(INCIDENT_STATUSES) as [IncidentStatus, any][]).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                  ))}
+                  <SelectItem value="desc">Mais recentes primeiro</SelectItem>
+                  <SelectItem value="asc">Mais antigos primeiro</SelectItem>
                 </SelectContent>
-
               </Select>
             </div>
           </div>
