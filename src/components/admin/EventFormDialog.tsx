@@ -237,6 +237,50 @@ export default function EventFormDialog({
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+              <FormField
+                control={form.control}
+                name="is_public"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Público</FormLabel>
+                      <div className="text-[10px] text-muted-foreground">
+                        Visível no portal
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="public_agenda_published"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Agenda</FormLabel>
+                      <div className="text-[10px] text-muted-foreground">
+                        Publicar agenda
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <DialogFooter>
               <Button
                 type="button"
