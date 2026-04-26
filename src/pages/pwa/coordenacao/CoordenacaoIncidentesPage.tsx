@@ -102,7 +102,7 @@ export default function CoordenacaoIncidentesPage() {
 
   useEffect(() => {
     fetchIncidents();
-  }, [activeEventId, filterModule, filterStatus]);
+  }, [fetchIncidents]);
 
   const handleLoadMore = () => {
     fetchIncidents(true);
