@@ -435,14 +435,24 @@ export default function CredenciamentoPage() {
       .sort((a, b) => {
         const stateA = getParticipantState(a);
         const stateB = getParticipantState(b);
-        const prioA = STATE_PRIORITY[stateA] ?? 9;
-        const prioB = STATE_PRIORITY[stateB] ?? 9;
+        
+        let prioA = 9;
+        let prioB = 9;
+
+        if (sortBy === "workflow") {
+          prioA = WORKFLOW_PRIORITY[stateA] ?? 9;
+          prioB = WORKFLOW_PRIORITY[stateB] ?? 9;
+        } else if (sortBy === "priority") {
+          prioA = STATE_PRIORITY[stateA] ?? 9;
+          prioB = STATE_PRIORITY[stateB] ?? 9;
+        }
+
         if (prioA !== prioB) return prioA - prioB;
         const nameA = a.person?.full_name ?? "";
         const nameB = b.person?.full_name ?? "";
         return nameA.localeCompare(nameB);
       });
-  }, [participants, searchTerm, filterType, filterState, filterInstitution, blockedParticipantIds, getParticipantState, getInstitutionId, activeCredMap]);
+  }, [participants, searchTerm, filterType, filterState, filterInstitution, sortBy, blockedParticipantIds, getParticipantState, getInstitutionId, activeCredMap]);
 
   // --- Pagination ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
