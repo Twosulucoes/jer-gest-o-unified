@@ -329,7 +329,7 @@ export default function CredenciamentoPage() {
 
   // --- Active credentials ---
   // Quando há filtro de etapa, busca somente credenciais cujos participant_id estejam na etapa.
-  const { data: activeCredentials = [], error: credentialsError } = useQuery({
+  const { data: activeCredentials = [], error: credentialsError, isLoading: isCredsLoading } = useQuery({
     queryKey: ["credenciamento-credentials", selectedEventId, stageId, effectiveStageFilter?.length ?? -1],
     queryFn: async () => {
       if (!selectedEventId) return [];
