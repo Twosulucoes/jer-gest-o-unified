@@ -51,7 +51,9 @@ import {
   BedDouble,
   FileSpreadsheet,
   FileText,
+  Users,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
