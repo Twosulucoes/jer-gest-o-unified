@@ -78,10 +78,13 @@ export function usePainelProvas({
       const rulesMap = new Map(rulesData.map(r => [r.sport_event_id, (r.rules as any)?.family]));
 
       return (summaryData ?? [])
-        .map((row: any) => ({
-          ...computeProvaData(row),
-          family: rulesMap.get(row.sport_event_id) || null
-        }))
+        .map((row: any) => {
+          const family = rulesMap.get(row.sport_event_id) || null;
+          return {
+            ...computeProvaData(row, family),
+            family
+          };
+        })
         .filter(p => p.family === "score" || p.family === "sets" || p.family === "combat");
     },
   });
