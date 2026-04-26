@@ -150,20 +150,19 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
     }
   };
 
-  if (loadingPhases) return <div>Carregando chave...</div>;
+  if (loadingPhases) return <div className="p-8 flex justify-center"><RefreshCw className="animate-spin h-8 w-8 text-muted-foreground" /></div>;
 
-  const hasBracket = phases.length > 0;
-  const isWeighingIncomplete = (weighingStats?.pending || 0) > 0;
+  const firstKnockoutPhase = phases.find((p: any) => p.phase_type === "knockout");
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h4 className="text-lg font-semibold">Chave de Competição</h4>
-          <p className="text-sm text-muted-foreground">Visualize e organize o chaveamento da categoria.</p>
+          <p className="text-sm text-muted-foreground">Visualize a progressão dos atletas no bracket.</p>
         </div>
         
-        {!hasBracket && (
+        {!firstKnockoutPhase && (
           <div className="flex gap-2">
             <Button 
               disabled={isWeighingIncomplete || isMounting} 
@@ -185,7 +184,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
         )}
       </div>
 
-      {isWeighingIncomplete && !hasBracket && (
+      {isWeighingIncomplete && !firstKnockoutPhase && (
         <Alert variant="destructive">
           <Info className="h-4 w-4" />
           <AlertTitle>Pesagem Pendente</AlertTitle>
@@ -196,43 +195,9 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
         </Alert>
       )}
 
-      {hasBracket ? (
-        <div className="bg-muted/10 border rounded-xl p-8 min-h-[400px] flex flex-col items-center">
-          <div className="grid grid-flow-col gap-12 overflow-x-auto w-full pb-8">
-            {/* Simple visual representation for now */}
-            {phases.map((phase: any) => (
-              <div key={phase.id} className="space-y-4 min-w-[200px]">
-                <h5 className="font-bold text-center border-b pb-2 uppercase text-xs tracking-wider">
-                  {phase.name}
-                </h5>
-                <div className="space-y-6 flex flex-col justify-around h-full py-4">
-                  {phase.matches?.map((match: any) => (
-                    <div 
-                      key={match.id} 
-                      className="relative border rounded bg-background p-2 shadow-sm cursor-pointer hover:border-primary transition-colors"
-                    >
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-xs truncate font-medium">
-                            {match.entries?.find((e: any) => e.side === "A")?.participant?.participant?.persons?.name || "BYE"}
-                          </span>
-                        </div>
-                        <div className="border-t my-1" />
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-xs truncate font-medium">
-                            {match.entries?.find((e: any) => e.side === "B")?.participant?.participant?.persons?.name || "BYE"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-muted text-[10px] h-4 w-4 flex items-center justify-center rounded-full border">
-                        {match.match_number}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+      {firstKnockoutPhase ? (
+        <div className="bg-muted/5 border rounded-xl p-6 min-h-[400px]">
+          <BracketContent phaseId={firstKnockoutPhase.id} />
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-xl text-muted-foreground">
@@ -247,6 +212,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
   );
 }
 
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(" ");
+function BracketContent({ phaseId }: { phaseId: string }) {
+  const { data, isLoading } = useKnockoutBracket(phaseId);
+  return <BracketView data={data} isLoading={isLoading} />;
 }
