@@ -88,7 +88,7 @@ export default function PublicResultsPage() {
           id, match_number, match_date, start_time, status,
           competition_phases(name),
           competition_groups(name),
-          venues(name),
+          venues(name, is_active, deleted_at),
           competition_match_entries(
             side,
             teams(name),
