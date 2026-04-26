@@ -202,6 +202,7 @@ export default function EventosPage() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Ano</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Visibilidade</TableHead>
                 <TableHead>Início</TableHead>
                 <TableHead>Término</TableHead>
                 {canWrite && <TableHead className="w-[60px]" />}
