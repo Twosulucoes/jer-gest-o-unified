@@ -634,7 +634,6 @@ export default function CredenciamentoPage() {
   };
 
   // --- Stats ---
-  const confirmedCount = (participants ?? []).filter((p) => p.status === "confirmed").length;
 
 
   const handleOpenPreview = (participantId: string) => {
@@ -915,7 +914,7 @@ export default function CredenciamentoPage() {
             label: "Irregulares",
             value: stats.blocked,
             icon: <ShieldAlert className="h-3.5 w-3.5" />,
-            tone: "destructive" as const,
+            tone: "danger" as const,
           }] : []),
         ]}
       />
