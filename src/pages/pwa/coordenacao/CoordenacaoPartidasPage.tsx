@@ -21,7 +21,7 @@ export default function CoordenacaoPartidasPage() {
   const navigate = useNavigate();
   const [matches, setMatches] = useState<MatchItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = usePersistedState("coordenacao_partidas_filter", "");
 
   useEffect(() => {
     (async () => {
