@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react";
+import { clearPersistedFilters } from "@/hooks/usePersistedState";
 
 interface CompetitionContextType {
   selectedSportId: string | null;
