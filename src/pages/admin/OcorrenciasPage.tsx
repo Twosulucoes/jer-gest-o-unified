@@ -352,10 +352,11 @@ export default function OcorrenciasPage() {
                 <CardContent className="p-4 space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">Módulo:</span>
-                    <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${(MODULE_LABELS[selected.module] || MODULE_LABELS.outro).color}`}>
-                      {(MODULE_LABELS[selected.module] || MODULE_LABELS.outro).label}
+                    <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${(INCIDENT_MODULES[selected.module] || INCIDENT_MODULES.outro).color}`}>
+                      {(INCIDENT_MODULES[selected.module] || INCIDENT_MODULES.outro).label}
                     </span>
                   </div>
+
                   {selected.reference_label && (
                     <div>
                       <span className="font-medium">Referência:</span>{" "}
