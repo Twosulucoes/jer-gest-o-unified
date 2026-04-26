@@ -986,9 +986,108 @@ export default function CompeticaoLancamentoScorePage() {
                 </p>
               </CardContent>
             </Card>
+
+            {hasRole("admin") && isLocked && (
+              <Card className="border-destructive/20 bg-destructive/5">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold uppercase tracking-wider text-destructive flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" /> Ações de Administrador
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-xs text-muted-foreground">
+                    Como administrador, você pode reverter o status deste resultado para permitir edições ou correções.
+                  </p>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => {
+                      const reason = prompt("Justificativa para reversão:");
+                      if (reason) {
+                        revertMut.mutate({ targetStatus: "resultado_lancado", reason });
+                      }
+                    }}
+                  >
+                    Reverter para "Lançado"
+                  </Button>
+                  {resultStatus === "publicado" && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full text-destructive border-destructive/20 hover:bg-destructive/10"
+                      onClick={() => {
+                        const reason = prompt("Justificativa para reversão:");
+                        if (reason) {
+                          revertMut.mutate({ targetStatus: "validado", reason });
+                        }
+                      }}
+                    >
+                      Reverter para "Validado" (Despublicar)
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
+
+      <Dialog open={showHomologateDialog} onOpenChange={setShowHomologateDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Homologar Resultado</DialogTitle>
+            <DialogDescription>
+              Confirme os dados antes de homologar. Após esta ação, o resultado não poderá mais ser editado pela coordenação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-muted rounded-lg border flex items-center justify-between font-bold">
+              <div className="text-center flex-1">
+                <div className="text-xs text-muted-foreground mb-1">{schoolAName}</div>
+                <div className="text-2xl">{totalScoreA}</div>
+              </div>
+              <div className="px-4 text-muted-foreground">×</div>
+              <div className="text-center flex-1">
+                <div className="text-xs text-muted-foreground mb-1">{schoolBName}</div>
+                <div className="text-2xl">{totalScoreB}</div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Senha do Coordenador</Label>
+              <Input 
+                type="password" 
+                placeholder="Digite sua senha para confirmar" 
+                value={homologatePassword}
+                onChange={(e) => setHomologatePassword(e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Observações (opcional)</Label>
+              <Textarea 
+                placeholder="Registro de eventual observação da homologação" 
+                value={homologateObservation}
+                onChange={(e) => setHomologateObservation(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowHomologateDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-amber-500 hover:bg-amber-600 text-white" 
+              onClick={() => homologateMut.mutate()}
+              disabled={homologateMut.isPending || !homologatePassword}
+            >
+              {homologateMut.isPending ? "Confirmando..." : "Confirmar Homologação"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
