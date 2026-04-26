@@ -48,7 +48,7 @@ ALTER TABLE public.event_role_catalog ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "role_catalog_read_authenticated" ON public.event_role_catalog; CREATE POLICY "role_catalog_read_authenticated"
   ON public.event_role_catalog FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "role_catalog_write_admin"
+DROP POLICY IF EXISTS "role_catalog_write_admin" ON public.event_role_catalog; CREATE POLICY "role_catalog_write_admin"
   ON public.event_role_catalog FOR ALL TO authenticated
   USING (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'secretaria') OR public.has_role(auth.uid(),'super_admin'))
   WITH CHECK (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'secretaria') OR public.has_role(auth.uid(),'super_admin'));
