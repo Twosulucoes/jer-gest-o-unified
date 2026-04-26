@@ -332,7 +332,7 @@ export function useDashboardData(eventId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { count } = await supabase.from("people")
+          const { count } = await (supabase.from("people") as any)
             .select("id", { count: "exact", head: true })
             .eq("kind", "arbitro")
             .eq("is_active", true);
