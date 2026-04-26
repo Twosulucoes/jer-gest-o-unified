@@ -42,7 +42,11 @@ export default function LocaisPage() {
   const [editingVenue, setEditingVenue] = useState<(VenueRow & { event_stage_ids?: string[] }) | null>(null);
   const [stageFilter, setStageFilter] = useState<string>(STAGE_FILTER_ALL);
 
-  const canWrite = hasRole("admin") || hasRole("secretaria");
+  const canWrite =
+    hasRole("admin") ||
+    hasRole("secretaria") ||
+    hasRole("coordenacao_tecnica") ||
+    hasRole("super_admin");
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
