@@ -24,6 +24,7 @@ import { NavigationHistoryTracker } from "@/hooks/useNavigationHistory";
 import { useMobileBackGuard } from "@/hooks/useMobileBackGuard";
 import { brand } from "@/theme/brand";
 import { GlobalRefreshButton } from "@/components/admin/GlobalRefreshButton";
+import { VersionBadge } from "@/components/VersionBadge";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -273,6 +274,7 @@ export default function AdminLayout() {
       <RequireActiveEvent>
         <NavigationHistoryTracker />
         <Outlet />
+        <VersionBadge />
       </RequireActiveEvent>
     );
   }
@@ -514,6 +516,7 @@ export default function AdminLayout() {
           </main>
         </div>
       </div>
+      <VersionBadge />
     </TooltipProvider>
   );
 }

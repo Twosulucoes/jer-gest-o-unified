@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import AuthLoadingScreen from "@/components/auth/AuthLoadingScreen";
 import type { AppRole } from "@/config/accessControl";
+import { VersionBadge } from "@/components/VersionBadge";
 
 interface PwaModuleLayoutProps {
   children: React.ReactNode;
@@ -73,6 +74,7 @@ export default function PwaModuleLayout({ children, moduleTitle, moduleIcon: Ico
         </div>
       </header>
       <main className="flex-1">{children}</main>
+      <VersionBadge />
     </div>
   );
 }
