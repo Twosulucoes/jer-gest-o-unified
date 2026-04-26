@@ -81,8 +81,8 @@ export default function CompeticaoPainelScorePage() {
       
       if (search) {
         const s = search.toLowerCase();
-        const schoolA = m.match_entries?.[0]?.teams?.delegations?.name?.toLowerCase() || "";
-        const schoolB = m.match_entries?.[1]?.teams?.delegations?.name?.toLowerCase() || "";
+        const schoolA = m.match_entries?.[0]?.teams?.delegations?.institutions?.name?.toLowerCase() || "";
+        const schoolB = m.match_entries?.[1]?.teams?.delegations?.institutions?.name?.toLowerCase() || "";
         if (!schoolA.includes(s) && !schoolB.includes(s)) return false;
       }
       
