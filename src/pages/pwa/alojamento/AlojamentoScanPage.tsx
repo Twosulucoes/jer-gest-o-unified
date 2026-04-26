@@ -10,7 +10,7 @@ import { rpcResolveQr, rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility
 import { extractQrToken } from "@/lib/resolveQrCredential";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
-import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
+import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { useAuth } from "@/hooks/useAuth";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
