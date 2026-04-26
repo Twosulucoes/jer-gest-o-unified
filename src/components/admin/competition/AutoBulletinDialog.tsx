@@ -246,7 +246,7 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
             </Button>
             {previewMeta && (
               <Badge variant="outline">
-                {previewMeta.items} item(ns) · {previewMeta.matches} partida(s) · próximo nº #{previewMeta.number}
+                {previewMeta.items} item(ns) · {previewMeta.matches} partida(s) · {previewMeta.sportEventIds.length} prova(s) · próximo nº #{previewMeta.number}
               </Badge>
             )}
           </div>
