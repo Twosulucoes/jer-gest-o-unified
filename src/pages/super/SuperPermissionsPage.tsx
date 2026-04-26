@@ -10,6 +10,21 @@ const ROLES = [
   "transporte", "alimentacao", "alojamento", "delegacao", "mesario", "arbitragem", "cde"
 ] as const;
 
+const ROLE_INFO: Record<string, { label: string, description: string }> = {
+  super_admin: { label: "Super Admin", description: "Acesso total e irrestrito a todas as funções, configurações e logs do sistema." },
+  admin: { label: "Administrador", description: "Gestão completa do evento, participantes, delegações e usuários." },
+  secretaria: { label: "Secretaria", description: "Operação de cadastros, inscrições, documentos e suporte aos usuários." },
+  coordenacao_tecnica: { label: "Coord. Técnica", description: "Gestão técnica de competições, chaves, resultados e classificação." },
+  coordenador_modalidade: { label: "Coord. Modalidade", description: "Gestão específica de uma modalidade e suas provas vinculadas." },
+  transporte: { label: "Transporte", description: "Gestão operacional de frotas, rotas e horários via aplicativo." },
+  alimentacao: { label: "Alimentação", description: "Controle de acesso a refeitórios e consumo de refeições via QR Code." },
+  alojamento: { label: "Alojamento", description: "Gestão de ocupação, check-in e check-out em unidades de alojamento." },
+  delegacao: { label: "Delegação", description: "Consulta de inscritos e documentos da delegação pelo aplicativo." },
+  mesario: { label: "Mesário", description: "Controle de placar, tempo e estatísticas das partidas ao vivo." },
+  arbitragem: { label: "Arbitragem", description: "Registro de ocorrências e súmulas simplificadas em tempo real." },
+  cde: { label: "CDE", description: "Análise e parecer técnico sobre protestos e irregularidades." }
+};
+
 type Role = typeof ROLES[number];
 
 interface PermissionRow {
