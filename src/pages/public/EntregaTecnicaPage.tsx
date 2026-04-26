@@ -1022,7 +1022,7 @@ function MockCompeticao() {
             </div>
             <div className="text-center">
               <p className="text-3xl font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>
-                3 <span className="text-slate-300">×</span> 2
+                3 <span className="text-slate-500">×</span> 2
               </p>
               <p className="text-[10px] text-slate-600 font-mono">SET 5 · 14:23</p>
             </div>
