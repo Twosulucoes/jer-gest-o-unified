@@ -51,10 +51,11 @@ CREATE POLICY "Public can read published results"
 | Campo | Descrição |
 |-------|-----------|
 | `recorded_at` / `recorded_by` | Quem lançou o resultado |
+| `updated_at` / `updated_by` | Quem alterou por último |
 | `validated_at` / `validated_by` | Quem validou |
 | `published_at` / `published_by` | Quem publicou |
 | `published_bulletin_id` | Boletim oficial vinculado |
-| `combat_detail` | JSONB com detalhes de combate (judô, karatê, etc.) |
+| `combat_detail` | JSONB com detalhes (incluindo placar por períodos e shootout) |
 
 ## Fluxos de Lançamento
 
@@ -89,9 +90,9 @@ Campo `combat_detail` (JSONB) em `competition_match_results`:
 
 Componente: `CombatResultForm` (renderizado quando `family='combat'`)
 
-## Tabela de Auditoria
-
-`audit_events` registra ações relevantes de governança.
+## Tabelas de Auditoria
+- `audit_events`: registra ações relevantes de governança.
+- `match_results_history`: registra snapshots completos do payload a cada salvamento em modalidades Score.
 
 ## Dados Reais (2026-04-14)
 

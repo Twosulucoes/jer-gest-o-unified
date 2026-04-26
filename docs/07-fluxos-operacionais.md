@@ -116,6 +116,14 @@ FLUXO SCORE/SETS:
      - Define equipe de arbitragem (filtrada por modalidade)
      - Referência: formulário exibe formato de sets (melhor de X) das regras
   → Salvar: Cria confronto + entries + assignments
+  → Lançar Resultado (Novo):
+     - Botão "Troféu" na grade → Abre rota dedicada full-screen
+     - Placar por Período: soma automática para o placar total
+     - W.O.: ativa toggle → seleciona vencedor → aplica placar automático das regras
+     - Cartões: registro individual por atleta com tipo e minuto
+     - Pênaltis: em caso de empate em eliminatórias, registra cobranças individuais
+     - Auditoria: snapshot completo do payload gravado no histórico a cada salvamento
+     - Vencedor: identificado automaticamente pela RPC com base no placar consolidado
 ```
 
 ### 7.2 Outras Famílias (Central Legada)

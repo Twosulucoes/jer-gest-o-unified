@@ -34,7 +34,8 @@ import {
   Calendar,
   Clock,
   MapPin,
-  Info
+  Info,
+  Trophy
 } from "lucide-react";
 import { 
   useScoreMatches, 
@@ -223,79 +224,104 @@ export default function CompeticaoPainelScorePage() {
               </TableRow>
             ) : (
               filteredMatches.map((m) => {
-                const status = getMatchStatus(m);
-                const schoolA = m.match_entries?.[0]?.teams?.delegations?.institutions?.name || "—";
-                const schoolB = m.match_entries?.[1]?.teams?.delegations?.institutions?.name || "—";
-                
                 return (
                   <TableRow key={m.id} className="group text-sm">
-                    <TableCell className="font-mono text-xs font-semibold">
-                      #{m.match_number || "—"}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {schoolA}
-                    </TableCell>
-                    <TableCell className="text-center text-muted-foreground px-0">
-                      ×
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {schoolB}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-3 w-3 text-muted-foreground" />
-                        {m.match_date ? new Date(m.match_date + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        {m.start_time?.slice(0, 5) || "—"}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs max-w-[150px] truncate">
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                        {m.venues?.name || "—"}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={status.variant} className={`${status.color} border-0`}>
-                        {status.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8" 
-                          asChild
-                        >
-                          <Link to={`/admin/competicao/partida/${m.id}`}>
-                            <Info className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        {(canEdit || canEditAgenda) && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={() => { setEditingMatch(m); setIsDrawerOpen(true); }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {canEdit && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(m.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
+                    {(() => {
+                      const status = getMatchStatus(m);
+                      const schoolA = m.match_entries?.[0]?.teams?.delegations?.institutions?.name || "—";
+                      const schoolB = m.match_entries?.[1]?.teams?.delegations?.institutions?.name || "—";
+                      const hasResults = (m.match_results?.length || 0) > 0;
+                      const validated = m.match_results?.every((r: any) => r.result_status === "resultado_validado" || r.result_status === "publicado");
+                      const published = m.match_results?.some((r: any) => r.result_status === "publicado");
+                      
+                      return (
+                        <>
+                          <TableCell className="font-mono text-xs font-semibold">
+                            #{m.match_number || "—"}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {schoolA}
+                          </TableCell>
+                          <TableCell className="text-center text-muted-foreground px-0">
+                            ×
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {schoolB}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3 w-3 text-muted-foreground" />
+                              {m.match_date ? new Date(m.match_date + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <Clock className="h-3 w-3 text-muted-foreground" />
+                              {m.start_time?.slice(0, 5) || "—"}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs max-w-[150px] truncate">
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                              {m.venues?.name || "—"}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={status.variant} className={`${status.color} border-0`}>
+                              {status.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              {(m.status === "scheduled" || m.status === "in_progress" || hasResults) && !validated && !published && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                                  title="Lançar Resultado"
+                                  asChild
+                                >
+                                  <Link to={`confronto/${m.id}/resultado`}>
+                                    <Trophy className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                              )}
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-muted-foreground" 
+                                title="Informações"
+                                asChild
+                              >
+                                <Link to={`/admin/competicao/partida/${m.id}`}>
+                                  <Info className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              {(canEdit || canEditAgenda) && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-muted-foreground"
+                                  title="Editar Confronto"
+                                  onClick={() => { setEditingMatch(m); setIsDrawerOpen(true); }}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canEdit && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  title="Excluir"
+                                  onClick={() => handleDelete(m.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </>
+                      );
+                    })()}
                   </TableRow>
                 );
               })
