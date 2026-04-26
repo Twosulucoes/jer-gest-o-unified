@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { brand } from "@/theme/brand";
+import { APP_VERSION } from "@/config/version";
 
 const ROLE_REDIRECT_MAP: Record<string, string> = {
   admin: "/admin",
@@ -282,9 +283,14 @@ export default function LoginPage() {
 
           {/* Footer Info */}
           <footer className="mt-12 text-center space-y-6">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest leading-relaxed max-w-[300px] mx-auto">
-              Acesso restrito e monitorado • Sistema de Gestão Esportiva
-            </p>
+            <div className="space-y-1">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest leading-relaxed max-w-[300px] mx-auto">
+                Acesso restrito e monitorado • Sistema de Gestão Esportiva
+              </p>
+              <p className="text-[9px] text-slate-600/50 font-mono">
+                v{APP_VERSION}
+              </p>
+            </div>
             <div className="flex flex-col items-center gap-1">
               <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">Desenvolvido por</span>
               <a
