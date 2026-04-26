@@ -5,25 +5,21 @@ import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Plus, Pencil, MapPin, Layers } from "lucide-react";
+import { Plus, MapPin, Layers, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table, TableBody, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import VenueFormDialog, { type VenueFormValues } from "@/components/admin/VenueFormDialog";
-
-const VENUE_TYPE_MAP: Record<string, string> = {
-  arena: "Arena", gymnasium: "Ginásio", ginasio: "Ginásio", field: "Campo", campo: "Campo",
-  pool: "Piscina", piscina: "Piscina", court: "Quadra", quadra: "Quadra",
-  track: "Pista", pista: "Pista", other: "Outro", outro: "Outro",
-};
+import { VenueTableRow, VenueCard } from "@/components/admin/locais/VenueRowItem";
 
 const STAGE_FILTER_ALL = "__all__";
 const STAGE_FILTER_NONE = "__none__";
