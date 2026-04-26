@@ -66,19 +66,28 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
   });
   const profileMap = new Map(assignedProfiles.map((p) => [p.id, p]));
 
-  const { data: searchResults = [] } = useQuery({
+  const {
+    data: searchResults = [],
+    isFetching: searchLoading,
+    error: searchError,
+  } = useQuery({
     queryKey: ["search_users_for_assignment", search],
     queryFn: async () => {
-      if (search.length < 2) return [];
+      const term = search.trim();
+      if (term.length < 2) return [];
+      // Escapa caracteres especiais do PostgREST (% , _ , vírgula) para evitar
+      // que o ilike quebre quando o usuário digita pontuação.
+      const safe = term.replace(/[%_,()]/g, (c) => `\\${c}`);
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name")
-        .or(`full_name.ilike.%${search}%`)
-        .limit(10);
+        .ilike("full_name", `%${safe}%`)
+        .order("full_name", { ascending: true })
+        .limit(20);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
-    enabled: search.length >= 2,
+    enabled: search.trim().length >= 2,
   });
 
   const { data: assignmentCounts = [] } = useQuery({
@@ -249,18 +258,38 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
                   className="pl-9"
                 />
               </div>
-              {searchResults.length > 0 && (
-                <div className="border rounded-md max-h-[150px] overflow-y-auto divide-y">
-                  {searchResults.map((u) => (
-                    <button
-                      key={u.id}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors ${selectedUserId === u.id ? "bg-primary/10 font-medium" : ""}`}
-                      onClick={() => setSelectedUserId(u.id)}
-                    >
-                      {u.full_name ?? "Sem nome"}
-                    </button>
-                  ))}
+              {search.trim().length >= 2 && (
+                <div className="border rounded-md max-h-[180px] overflow-y-auto">
+                  {searchLoading ? (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">Buscando…</p>
+                  ) : searchError ? (
+                    <p className="px-3 py-2 text-xs text-destructive">
+                      Erro ao buscar usuários: {(searchError as Error).message}
+                    </p>
+                  ) : searchResults.length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">
+                      Nenhum usuário encontrado para “{search.trim()}”.
+                    </p>
+                  ) : (
+                    <div className="divide-y">
+                      {searchResults.map((u) => (
+                        <button
+                          key={u.id}
+                          type="button"
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors ${selectedUserId === u.id ? "bg-primary/10 font-medium" : ""}`}
+                          onClick={() => setSelectedUserId(u.id)}
+                        >
+                          {u.full_name ?? "Sem nome"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              )}
+              {search.trim().length > 0 && search.trim().length < 2 && (
+                <p className="text-[11px] text-muted-foreground">
+                  Digite ao menos 2 caracteres para buscar.
+                </p>
               )}
             </div>
             <div className="space-y-1.5">
