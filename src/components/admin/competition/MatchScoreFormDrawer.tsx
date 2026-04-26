@@ -254,6 +254,27 @@ export function MatchScoreFormDrawer({
           <form onSubmit={form.handleSubmit(v => upsertMutation.mutate(v))} className="flex-1 flex flex-col min-h-0">
             <ScrollArea className="flex-1 px-6">
               <div className="space-y-6 py-4">
+                {rules && (
+                  <Alert className="bg-primary/5 border-primary/20">
+                    <Info className="h-4 w-4 text-primary" />
+                    <AlertTitle className="text-xs font-bold">Informações da Modalidade</AlertTitle>
+                    <AlertDescription className="text-[11px]">
+                      Família: <span className="font-semibold uppercase">{rules.family}</span> · 
+                      Formato: <span className="font-semibold">{rules.scoring?.best_of ? `Melhor de ${rules.scoring.best_of} sets` : "Placar simples"}</span>
+                      {rules.scoring?.set_points && ` (${rules.scoring.set_points} pts)`}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {!rules && !loadingRules && (
+                   <Alert variant="destructive" className="py-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-[10px]">
+                      Aviso: Regras não configuradas para esta modalidade.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {/* Bloco 1 — Confronto */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold flex items-center gap-2">
