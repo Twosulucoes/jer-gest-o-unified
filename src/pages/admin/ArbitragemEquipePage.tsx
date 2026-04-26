@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEventContext } from "@/contexts/EventContext";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +18,13 @@ import {
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { format, parse } from "date-fns";
 import { EscalaLoteDialog, formatMatchLabel } from "@/components/admin/arbitragem/EscalaLoteDialog";
+import { downloadCsv, downloadPdf, type EscalaExportRow } from "@/components/admin/arbitragem/escalaExport";
 
 const ROLE_LABELS: Record<string, string> = {
   mesario: "Mesário",
@@ -56,7 +62,8 @@ type MatchRow = {
 };
 
 export default function ArbitragemEquipePage() {
-  const { activeEventId } = useEventContext();
+  const { activeEventId, activeEvent } = useEventContext();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [sportFilter, setSportFilter] = useState<string>("all");
@@ -295,6 +302,84 @@ export default function ArbitragemEquipePage() {
     }
   };
 
+  // Linhas para exportação (respeita filtros aplicados)
+  const exportRows: EscalaExportRow[] = useMemo(() => {
+    return filteredAssignments
+      .map((a) => {
+        const m = matchMap.get(a.match_id);
+        const profile = profileMap.get(a.user_id);
+        const stageName = m?.event_stage_id ? stageMap.get(m.event_stage_id) ?? "" : "";
+        return {
+          official_name: profile?.full_name ?? "Usuário",
+          role_label: ROLE_LABELS[a.role] ?? a.role,
+          stage: stageName,
+          match_number: m?.match_number != null ? String(m.match_number) : "—",
+          sport: m?.sport_events?.sports?.name ?? "—",
+          category: m?.sport_events?.categories?.name ?? "",
+          phase: m?.competition_phases?.name ?? "",
+          match_date: m?.match_date
+            ? (() => {
+                try {
+                  return format(parse(m.match_date, "yyyy-MM-dd", new Date()), "dd/MM/yyyy");
+                } catch {
+                  return m.match_date ?? "";
+                }
+              })()
+            : "",
+          start_time: m?.start_time ? m.start_time.slice(0, 5) : "",
+          venue: m?.venues?.name ?? "",
+        };
+      })
+      .sort((a, b) => {
+        const k = a.stage.localeCompare(b.stage);
+        if (k !== 0) return k;
+        const k2 = a.sport.localeCompare(b.sport);
+        if (k2 !== 0) return k2;
+        const k3 = a.match_date.localeCompare(b.match_date);
+        if (k3 !== 0) return k3;
+        return a.official_name.localeCompare(b.official_name);
+      });
+  }, [filteredAssignments, matchMap, profileMap, stageMap]);
+
+  const exportFilenameBase = useMemo(() => {
+    const parts = ["escalas-arbitragem"];
+    if (stageFilter !== "all") {
+      const s = stages.find((x) => x.id === stageFilter)?.name;
+      if (s) parts.push(s.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+    }
+    parts.push(format(new Date(), "yyyyMMdd-HHmm"));
+    return parts.join("_");
+  }, [stageFilter, stages]);
+
+  const handleExportCsv = () => {
+    if (exportRows.length === 0) {
+      toast.info("Nenhuma escala para exportar com os filtros atuais.");
+      return;
+    }
+    downloadCsv(exportRows, `${exportFilenameBase}.csv`);
+    toast.success(`CSV exportado (${exportRows.length} linha(s)).`);
+  };
+
+  const handleExportPdf = async () => {
+    if (exportRows.length === 0) {
+      toast.info("Nenhuma escala para exportar com os filtros atuais.");
+      return;
+    }
+    try {
+      const stageName =
+        stageFilter !== "all" ? stages.find((x) => x.id === stageFilter)?.name : undefined;
+      await downloadPdf(exportRows, `${exportFilenameBase}.pdf`, {
+        eventName: activeEvent?.name,
+        stageName,
+        activeEventId,
+        userId: user?.id ?? null,
+      });
+      toast.success(`PDF gerado (${exportRows.length} linha(s)).`);
+    } catch (e) {
+      toast.error("Falha ao gerar PDF: " + (e as Error).message);
+    }
+  };
+
   if (!activeEventId) {
     return (
       <Card>
@@ -309,15 +394,35 @@ export default function ArbitragemEquipePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Radio className="h-6 w-6 text-primary" />
-          Equipe de Arbitragem
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Lista consolidada de árbitros e mesários do evento, com escalas por modalidade e etapa.
-          Para escalar oficiais em uma partida, abra o detalhe da partida.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Radio className="h-6 w-6 text-primary" />
+            Equipe de Arbitragem
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Lista consolidada de árbitros e mesários do evento, com escalas por modalidade e etapa.
+            Para escalar oficiais em uma partida, abra o detalhe da partida.
+          </p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Download className="mr-1 h-4 w-4" />
+              Exportar escalas
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportCsv}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              CSV (filtros aplicados)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportPdf}>
+              <FileText className="mr-2 h-4 w-4" />
+              PDF (filtros aplicados)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* KPIs */}
