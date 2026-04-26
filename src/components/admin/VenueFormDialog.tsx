@@ -344,6 +344,66 @@ export default function VenueFormDialog({
               )}
             />
 
+            {/* Painel de conflitos / incompatibilidades */}
+            {(conflicts.crossEvent.length > 0 ||
+              conflicts.overlapping.length > 0 ||
+              conflicts.orphanMatches.length > 0) && (
+              <div className="space-y-2">
+                {conflicts.crossEvent.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Etapa de outro evento</AlertTitle>
+                    <AlertDescription className="text-xs">
+                      Não é possível vincular este local a etapas de outro evento:{" "}
+                      <strong>{conflicts.crossEvent.join(", ")}</strong>. Remova-as antes de salvar.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {conflicts.overlapping.length > 0 && (
+                  <Alert>
+                    <CalendarClock className="h-4 w-4" />
+                    <AlertTitle>Etapas com datas sobrepostas</AlertTitle>
+                    <AlertDescription className="text-xs space-y-1">
+                      <p>
+                        O mesmo local não pode ocorrer simultaneamente em etapas diferentes.
+                        Verifique:
+                      </p>
+                      <ul className="list-disc list-inside">
+                        {conflicts.overlapping.map((o, i) => (
+                          <li key={i}>
+                            <strong>{o.a}</strong> × <strong>{o.b}</strong> — sobreposição em {o.range}
+                          </li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {conflicts.orphanMatches.length > 0 && (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Agenda existente fora do escopo</AlertTitle>
+                    <AlertDescription className="text-xs space-y-1">
+                      <p>
+                        Este local já tem {conflicts.orphanMatches.length} partida(s) agendada(s) em datas
+                        que não pertencem a nenhuma etapa selecionada:
+                      </p>
+                      <ul className="list-disc list-inside max-h-24 overflow-y-auto">
+                        {conflicts.orphanMatches.slice(0, 8).map((m, i) => (
+                          <li key={i}>{m.date} — {m.sport}</li>
+                        ))}
+                        {conflicts.orphanMatches.length > 8 && (
+                          <li>… e mais {conflicts.orphanMatches.length - 8}</li>
+                        )}
+                      </ul>
+                      <p className="text-muted-foreground">
+                        Considere incluir a etapa correspondente ou remarcar essas partidas.
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+
             <FormField
               control={form.control}
               name="name"
