@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useProvaStatus } from "@/hooks/useProvaStatus";
 import { canTransition, PROVA_STATUS_LABEL } from "@/lib/competition/provaStatus";
+import AutoBulletinDialog from "./AutoBulletinDialog";
 
 interface Props {
   sportEventId: string | null;
@@ -325,6 +326,8 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
                 </SelectContent>
               </Select>
             </div>
+
+            <AutoBulletinDialog eventId={eventId} sportEventId={sportEventId} />
 
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>
