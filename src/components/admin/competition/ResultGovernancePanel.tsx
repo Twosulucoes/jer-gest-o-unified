@@ -71,8 +71,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
         .select(`
           id, published_at, published_bulletin_id, published_by,
           competition_matches!inner(match_number, event_id, sport_event_id),
-          official_bulletins:published_bulletin_id(number, title),
-          publisher:profiles!competition_match_results_published_by_fkey(full_name)
+          official_bulletins:published_bulletin_id(number, title)
         `)
         .eq("competition_matches.event_id", eventId)
         .eq("competition_matches.sport_event_id", sportEventId!)
@@ -80,7 +79,18 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
         .order("published_at", { ascending: false })
         .limit(10);
       if (error) throw error;
-      return data || [];
+
+      // Buscar nomes dos publicadores (lookup separado — não há FK declarada para profiles)
+      const publisherIds = Array.from(new Set((data || []).map((r: any) => r.published_by).filter(Boolean)));
+      let publisherMap: Record<string, string> = {};
+      if (publisherIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", publisherIds);
+        publisherMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.full_name]));
+      }
+      return (data || []).map((r: any) => ({ ...r, publisher_name: r.published_by ? publisherMap[r.published_by] ?? "—" : null }));
     },
   });
 
