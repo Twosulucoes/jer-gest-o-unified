@@ -289,7 +289,7 @@ export default function CompeticaoLancamentoScorePage() {
 
   const homologateMut = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc("rpc_homologate_match_result", {
+      const { data, error } = await (supabase.rpc as any)("rpc_homologate_match_result", {
         p_match_id: matchId,
         p_password: homologatePassword,
         p_observation: homologateObservation
@@ -311,7 +311,7 @@ export default function CompeticaoLancamentoScorePage() {
 
   const revertMut = useMutation({
     mutationFn: async ({ targetStatus, reason }: { targetStatus: string, reason: string }) => {
-      const { data, error } = await supabase.rpc("rpc_revert_match_result_status", {
+      const { data, error } = await (supabase.rpc as any)("rpc_revert_match_result_status", {
         p_match_id: matchId,
         p_target_status: targetStatus,
         p_reason: reason
