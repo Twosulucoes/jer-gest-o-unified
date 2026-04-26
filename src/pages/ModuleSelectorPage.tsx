@@ -155,6 +155,19 @@ export default function ModuleSelectorPage() {
       </div>
     );
   }
+  if (availableModules.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="text-center space-y-4 max-w-sm">
+          <h2 className="text-xl font-bold text-destructive">Sem permissões</h2>
+          <p className="text-muted-foreground">Seu usuário não tem permissões configuradas. Contate o administrador.</p>
+          <Button variant="outline" onClick={handleSignOut} className="h-12">
+            <LogOut className="mr-2 h-4 w-4" /> Sair
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
