@@ -66,7 +66,7 @@
   - ✅ Aba Chave: visualização de bracket eliminatório com montagem automática
   - ✅ Aba Lutas: grade densa (estilo planilha) com filtros por fase e status
   - ✅ Formulário lateral (Drawer) para edição de lutas com designação de arbitragem por modalidade
-  - ✅ Progressão automática de vencedor no bracket após homologação (Etapa 4 em andamento)
+  - ✅ Progressão automática de vencedor no bracket após homologação (Etapa 3 concluída)
 - **Features legadas (reaproveitadas)**:
   - ✅ Wizard de 8 passos (coletivas) / 7 passos (individuais time/mark)
   - ✅ Estrutura automática de grupos com sugestão
