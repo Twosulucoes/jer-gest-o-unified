@@ -44,6 +44,14 @@ const MODULE_OPTIONS: ModuleOption[] = [
     gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]",
   },
   {
+    roles: ["coordenacao_tecnica"],
+    label: "Coord. Técnica",
+    description: "Operação técnica PWA",
+    icon: Clipboard,
+    path: "/pwa/coordenacao",
+    gradient: "from-[hsl(174,87%,34%)] to-[hsl(212,84%,36%)]",
+  },
+  {
     roles: ["transporte"],
     label: "Transporte",
     description: "Gerenciar embarques e viagens",
@@ -77,6 +85,14 @@ const MODULE_OPTIONS: ModuleOption[] = [
   },
   {
     roles: ["mesario"],
+    label: "Lançamento de Resultados",
+    description: "PWA de Resultados",
+    icon: ScanLine,
+    path: "/pwa/resultados",
+    gradient: "from-[hsl(214,78%,21%)] to-[hsl(212,84%,36%)]",
+  },
+  {
+    roles: ["mesario", "arbitragem"],
     label: "Ao Vivo",
     description: "Registro de partidas",
     icon: ScanLine,
