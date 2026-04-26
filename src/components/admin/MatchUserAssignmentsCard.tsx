@@ -249,7 +249,7 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
                         <Badge variant="outline" className="text-[10px]">{count} partidas no evento</Badge>
                       )}
                     </div>
-                    {canWrite && (
+                    {canManageAssignments && (
                       <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setRemoveId(a.id)}>
                         <Trash2 className="h-3 w-3 text-destructive" />
                       </Button>
