@@ -13,6 +13,7 @@ import DisputeBuilderTab from "@/components/admin/competition/DisputeBuilderTab"
 import IndividualHeatBuilderTab from "@/components/admin/competition/IndividualHeatBuilderTab";
 import CentralResultsTab from "@/components/admin/competition/CentralResultsTab";
 import CentralAgendaTab from "@/components/admin/competition/CentralAgendaTab";
+import CentralArbitragemTab from "@/components/admin/competition/CentralArbitragemTab";
 import WizardStepper, { type WizardStep } from "@/components/admin/competition/WizardStepper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -122,6 +123,7 @@ export default function CompeticaoCentralPage() {
     { key: "participants", label: isCollective ? "Inscritos (Equipes)" : "Inscritos (Atletas)" },
     { key: "builder", label: "Montagem Manual de Disputas" },
     { key: "agenda", label: "Agenda e Local" },
+    { key: "arbitragem", label: "Arbitragem" },
     { key: "matches", label: "Check-in de Prova" },
     { key: "results", label: "Resultado e Homologação" },
   ], [isCollective]);
@@ -135,6 +137,7 @@ export default function CompeticaoCentralPage() {
     if ((summary.enrolled_count > 0) || (summary.teams_count > 0)) completed.push("participants");
     if (summary.matches_count > 0) completed.push("builder");
     if (summary.matches_count > 0) completed.push("agenda");
+    if (summary.matches_count > 0) completed.push("arbitragem");
     if (summary.matches_count > 0) completed.push("matches");
     if (summary.matches_count > 0 && summary.matches_no_result === 0) {
       completed.push("results");
@@ -182,7 +185,7 @@ export default function CompeticaoCentralPage() {
             <Info className="h-4 w-4" />
             <AlertDescription className="text-xs">
               Fluxo manual ativo: visualize inscritos, monte disputas por arraste, defina agenda/local,
-              realize check-in de prova e homologue/publice os resultados.
+              escale a arbitragem, realize check-in de prova e homologue/publique os resultados.
             </AlertDescription>
           </Alert>
 
@@ -235,6 +238,14 @@ export default function CompeticaoCentralPage() {
                 sportEventId={sportEventId}
                 stageId={stageId}
                 onChanged={() => undefined}
+              />
+            )}
+
+            {currentStep === "arbitragem" && (
+              <CentralArbitragemTab
+                eventId={eventId}
+                sportEventId={sportEventId}
+                stageId={stageId}
               />
             )}
 
