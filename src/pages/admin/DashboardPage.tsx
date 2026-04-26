@@ -144,9 +144,9 @@ export default function DashboardPage() {
       )}
 
       {/* KPI Resumo Principal */}
-      <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         {isLoading ? (
-          Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-[100px]" />)
+          Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-[100px]" />)
         ) : (
           <>
             <AppKPI icon={Users} label="Participantes" value={r.participants_total}
@@ -161,6 +161,11 @@ export default function DashboardPage() {
             <AppKPI icon={Trophy} label="Partidas" value={r.matches_total}
               sub={`${r.matches_done} concluídas`}
               loading={isLoading}
+            />
+            <AppKPI icon={Gavel} label="Árbitros" value={r.referees_total}
+              sub={r.referees_assigned > 0 ? `${r.referees_assigned} designados no evento` : "Nenhum designado"}
+              loading={isLoading}
+              className="bg-accent/5 border-accent/10"
             />
             <AppKPI icon={UtensilsCrossed} label="Refeições" value={r.meals_total}
               sub={`${r.meals_today} hoje`}
