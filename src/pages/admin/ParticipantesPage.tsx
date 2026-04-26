@@ -814,7 +814,7 @@ export default function ParticipantesPage() {
           <XCircle className="h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground font-medium text-lg">Nenhum participante encontrado</p>
           <p className="text-sm text-muted-foreground mt-1 mb-6">
-            {searchTerm ? "Tente outro termo de busca." : "Você ainda não tem participantes cadastrados para este evento."}
+            {searchTerm ? "Tente outro termo de busca." : "Importe ou cadastre participantes para começar a gerenciar seu evento."}
           </p>
           {!searchTerm && (
             <div className="flex flex-col sm:flex-row gap-3">
