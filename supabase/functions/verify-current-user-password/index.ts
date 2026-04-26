@@ -69,6 +69,12 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
+    // 2. Rate limiting
+    if (isRateLimited(user.email)) {
+      return jsonResponse({ valid: false, message: "Muitas tentativas. Tente novamente em 1 minuto." }, 429);
+    }
+    recordAttempt(user.email);
+
     const body = await req.json();
     const { password } = body;
 
