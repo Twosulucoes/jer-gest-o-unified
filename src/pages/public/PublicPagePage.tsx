@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { VisualIdentity } from "@/components/public/VisualIdentity";
 
 // Simple markdown-to-HTML (headings, bold, italic, links, lists, paragraphs)
 function renderMarkdown(md: string): string {
@@ -108,6 +109,11 @@ export default function PublicPagePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <header className="border-b bg-white px-4 py-3 sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto">
+          <VisualIdentity size="sm" subtitle={content.title} />
+        </div>
+      </header>
       <div className="mx-auto max-w-2xl px-4 py-12">
         <div
           className="prose prose-sm max-w-none"

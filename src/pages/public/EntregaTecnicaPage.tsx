@@ -46,6 +46,7 @@ import { brand } from "@/theme/brand";
 import { systemMap } from "@/config/systemMap";
 import twoLogo from "@/assets/two-solucoes-logo.png";
 import { exportEntregaTecnicaPdf } from "@/components/public/EntregaTecnicaPdfExporter";
+import { VisualIdentity } from "@/components/public/VisualIdentity";
 
 interface VersionInfo {
   appVersion: string;
@@ -187,6 +188,15 @@ export default function EntregaTecnicaPage() {
       .then((res) => res.json())
       .then((data) => setVersion(data))
       .catch(() => setVersion(null));
+
+    // Pre-check if images are already cached to avoid skeleton flicker
+    const desktopImg = new Image();
+    desktopImg.src = "/screenshots/desktop.png";
+    if (desktopImg.complete) setDesktopCaptureLoaded(true);
+
+    const mobileImg = new Image();
+    mobileImg.src = "/screenshots/mobile.png";
+    if (mobileImg.complete) setMobileCaptureLoaded(true);
   }, []);
 
   const nextStep = () => setCurrentStep((p) => (p + 1) % tourSteps.length);
@@ -199,20 +209,7 @@ export default function EntregaTecnicaPage() {
       {/* ── Navbar ────────────────────────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-xl border-b border-slate-100 px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg"
-              style={{ background: brand.gradients.brandGradient, boxShadow: `0 8px 24px -8px ${brand.colors.primary}` }}
-            >
-              <Trophy size={20} />
-            </div>
-            <div>
-              <p className="font-bold text-base tracking-tight leading-none" style={{ fontFamily: brand.typography.headingFont }}>
-                JER <span style={{ color: brand.colors.accentTeal }}>Gestão</span>
-              </p>
-              <p className="text-[10px] text-slate-600 font-mono uppercase tracking-widest leading-tight mt-0.5">Entrega Técnica · 2026</p>
-            </div>
-          </div>
+          <VisualIdentity subtitle="Entrega Técnica · 2026" />
           <div className="hidden md:flex items-center gap-8">
             <a href="#solucao" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Visão Geral</a>
             <a href="#stack" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Tecnologia</a>

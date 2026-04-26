@@ -7,6 +7,7 @@ import { Loader2, Trophy, ChevronRight, ArrowLeft, Calendar, Swords } from "luci
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, parse } from "date-fns";
+import { VisualIdentity } from "@/components/public/VisualIdentity";
 
 export default function PublicResultsPage() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -119,16 +120,15 @@ export default function PublicResultsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card px-4 py-4 sticky top-0 z-10 shadow-sm">
-        <div className="mx-auto flex max-w-4xl items-center gap-3">
-          {(selectedEventId || selectedSportEventId) && (
-            <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          )}
+      <header className="border-b bg-white px-4 py-3 sticky top-0 z-10 shadow-sm">
+        <div className="mx-auto flex max-w-4xl items-center justify-between">
           <div className="flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold">{currentTitle}</h1>
+            {(selectedEventId || selectedSportEventId) && (
+              <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8 rounded-full">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <VisualIdentity size="sm" subtitle={currentTitle} />
           </div>
         </div>
       </header>

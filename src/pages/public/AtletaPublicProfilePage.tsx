@@ -10,6 +10,7 @@ import { Share2, Copy, Trophy, Calendar, MapPin, Dumbbell, AlertCircle } from "l
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { VisualIdentity } from "@/components/public/VisualIdentity";
 
 interface AthleteProfile {
   athlete: {
@@ -112,6 +113,10 @@ export default function AtletaPublicProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <div className="bg-white border-b border-slate-100 px-4 py-3 flex justify-center">
+        <VisualIdentity size="sm" subtitle="Perfil Público" />
+      </div>
+
       {/* Header */}
       <div className="bg-primary text-primary-foreground px-4 pt-8 pb-12">
         <div className="max-w-lg mx-auto flex flex-col items-center text-center gap-3">
