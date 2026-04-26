@@ -126,7 +126,7 @@ export default function CollectiveScoreForm({
               <CardTitle className="text-sm">{entry.label}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Placar final</Label>
                   <Input
