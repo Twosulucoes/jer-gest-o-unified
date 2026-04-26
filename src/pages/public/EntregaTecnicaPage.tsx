@@ -289,8 +289,15 @@ export default function EntregaTecnicaPage() {
               <Button asChild size="lg" className="rounded-2xl h-13 px-7 text-base font-bold text-white shadow-xl" style={{ background: brand.colors.primary }}>
                 <a href="#tour">Iniciar Tour Guiado</a>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-2xl h-13 px-7 text-base font-bold border-2">
-                <a href="#stack">Ver Stack Técnica</a>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="rounded-2xl h-13 px-7 text-base font-bold border-2 gap-2"
+                onClick={handleDownloadPdf}
+                disabled={isDownloading}
+              >
+                {isDownloading ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                Baixar Versão PDF
               </Button>
             </div>
           </div>
