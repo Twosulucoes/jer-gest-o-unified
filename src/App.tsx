@@ -38,6 +38,7 @@ import ImportacaoPendenciasPage from "./pages/admin/ImportacaoPendenciasPage";
 // ImportacaoCatalogoPage removed — consolidated into RegrasPage
 import CredenciamentoPage from "./pages/admin/CredenciamentoPage";
 import CredenciamentoExternoPage from "./pages/admin/CredenciamentoExternoPage";
+import CredenciamentoSeguroPage from "./pages/admin/CredenciamentoSeguroPage";
 import ValidacaoQRPage from "./pages/admin/ValidacaoQRPage";
 import TransporteHubPage from "./pages/admin/TransporteHubPage";
 import TransporteVeiculosPage from "./pages/admin/TransporteVeiculosPage";
@@ -398,6 +399,7 @@ const App = () => (
               <Route path="relatorios" element={<StageReportsPage />} />
               {/* Credenciamento */}
               <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoPage /></ProtectedRoute>} />
+              <Route path="credenciamento/seguro" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoSeguroPage /></ProtectedRoute>} />
               <Route path="credenciamento-externo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoExternoPage /></ProtectedRoute>} />
               <Route path="validacao-qr" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ValidacaoQRPage /></ProtectedRoute>} />
               {/* Participantes e Delegações no contexto da etapa */}
