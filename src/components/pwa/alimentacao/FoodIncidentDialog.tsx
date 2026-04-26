@@ -138,7 +138,7 @@ export function FoodIncidentDialog({
         reporter_name: profile?.full_name ?? null,
         reporter_phone: null,
         incident_description: description.trim(),
-        incident_status: "pending",
+        incident_status: "pending" as IncidentStatus,
       });
 
       if (error) throw error;
