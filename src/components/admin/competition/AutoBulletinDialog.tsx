@@ -13,13 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Loader2, Sparkles, FileText } from "lucide-react";
+import { Loader2, Sparkles, FileText, Lock, RefreshCw } from "lucide-react";
 import { BULLETIN_STATUS } from "@/lib/resultStatus";
 import {
   buildAutoBulletinContent,
   type BulletinScope,
   type BulletinStatusFilter,
 } from "@/lib/competition/autoBulletin";
+import { useNextBulletinNumber } from "@/hooks/useNextBulletinNumber";
 
 interface Props {
   eventId: string;
