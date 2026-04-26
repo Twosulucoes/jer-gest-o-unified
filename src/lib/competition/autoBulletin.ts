@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { RESULT_STATUS } from "@/lib/resultStatus";
 
 export type BulletinScope = "event" | "stage" | "sport_event";
 export type BulletinStatusFilter = "publicado" | "resultado_validado";
@@ -27,7 +26,7 @@ interface MatchRow {
   match_number: number | null;
   match_date: string | null;
   start_time: string | null;
-  event_stage_id: string | null;
+  sport_event_id: string | null;
   venues: { name: string | null } | null;
   competition_phases: { name: string | null } | null;
   sport_events: {
@@ -52,8 +51,8 @@ interface MatchRow {
 
 function formatDate(iso: string | null): string {
   if (!iso) return "s/data";
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}`;
+  const parts = iso.split("-");
+  return `${parts[2]}/${parts[1]}`;
 }
 
 function entryLabel(e: MatchRow["competition_match_entries"][number], statusFilter: BulletinStatusFilter): string {
@@ -74,11 +73,29 @@ function entryLabel(e: MatchRow["competition_match_entries"][number], statusFilt
 export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Promise<AutoBulletinResult> {
   const { eventId, scope, stageId, sportEventId, statusFilter, dateFrom, dateTo } = filters;
 
+  // Resolve sport_event_ids alvo conforme o escopo
+  let sportEventIds: string[] | null = null;
+  if (scope === "sport_event" && sportEventId) {
+    sportEventIds = [sportEventId];
+  } else if (scope === "stage" && stageId) {
+    const { data: ses, error: sesErr } = await supabase
+      .from("sport_events")
+      .select("id")
+      .eq("event_id", eventId)
+      .eq("stage_id", stageId);
+    if (sesErr) throw sesErr;
+    sportEventIds = (ses ?? []).map((s) => s.id);
+    if (sportEventIds.length === 0) {
+      // Etapa sem provas — retorna boletim vazio sem ir ao banco
+      sportEventIds = ["00000000-0000-0000-0000-000000000000"];
+    }
+  }
+
   // 1) Busca partidas com resultado no status solicitado
   let q = supabase
     .from("competition_matches")
     .select(`
-      id, match_number, match_date, start_time, event_stage_id,
+      id, match_number, match_date, start_time, sport_event_id,
       venues(name),
       competition_phases(name),
       sport_events!inner(
@@ -95,8 +112,7 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
     `)
     .eq("event_id", eventId);
 
-  if (scope === "stage" && stageId) q = q.eq("event_stage_id", stageId);
-  if (scope === "sport_event" && sportEventId) q = q.eq("sport_event_id", sportEventId);
+  if (sportEventIds) q = q.in("sport_event_id", sportEventIds);
   if (dateFrom) q = q.gte("match_date", dateFrom);
   if (dateTo) q = q.lte("match_date", dateTo);
 
