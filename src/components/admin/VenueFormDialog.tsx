@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,8 +17,9 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { Tables } from "@/integrations/supabase/types";
-import { Layers } from "lucide-react";
+import { Layers, AlertTriangle, CalendarClock } from "lucide-react";
 
 const VENUE_TYPE_OPTIONS = [
   { value: "arena", label: "Arena" },
@@ -78,13 +79,34 @@ export default function VenueFormDialog({
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("event_stages")
-        .select("id, name, status, sort_order, host_name, host_city")
+        .select("id, name, status, sort_order, host_name, host_city, starts_at, ends_at, event_id")
         .eq("event_id", selectedEventId)
         .order("sort_order", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Array<{
         id: string; name: string; status: string; sort_order: number;
         host_name: string | null; host_city: string | null;
+        starts_at: string | null; ends_at: string | null;
+        event_id: string;
+      }>;
+    },
+  });
+
+  // Partidas já agendadas neste venue (para detectar conflito de escopo de etapas)
+  const { data: scheduledMatches = [] } = useQuery({
+    queryKey: ["venue-matches-scope", venue?.id],
+    enabled: !!venue?.id && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_matches")
+        .select("id, match_date, sport_event_id, sport_events(sports(name))")
+        .eq("venue_id", venue!.id)
+        .not("match_date", "is", null);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string; match_date: string;
+        sport_event_id: string;
+        sport_events: { sports: { name: string } | null } | null;
       }>;
     },
   });
