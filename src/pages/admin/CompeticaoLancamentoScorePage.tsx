@@ -1024,10 +1024,9 @@ export default function CompeticaoLancamentoScorePage() {
                     size="sm" 
                     className="w-full"
                     onClick={() => {
-                      const reason = prompt("Justificativa para reversão:");
-                      if (reason) {
-                        revertMut.mutate({ targetStatus: "resultado_lancado", reason });
-                      }
+                      setRevertTargetStatus("resultado_lancado");
+                      setRevertReason("");
+                      setShowRevertDialog(true);
                     }}
                   >
                     Reverter para "Lançado"
@@ -1038,10 +1037,9 @@ export default function CompeticaoLancamentoScorePage() {
                       size="sm" 
                       className="w-full text-destructive border-destructive/20 hover:bg-destructive/10"
                       onClick={() => {
-                        const reason = prompt("Justificativa para reversão:");
-                        if (reason) {
-                          revertMut.mutate({ targetStatus: "validado", reason });
-                        }
+                        setRevertTargetStatus("resultado_validado");
+                        setRevertReason("");
+                        setShowRevertDialog(true);
                       }}
                     >
                       Reverter para "Validado" (Despublicar)
