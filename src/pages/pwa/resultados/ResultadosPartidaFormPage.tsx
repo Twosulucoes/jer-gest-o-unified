@@ -131,6 +131,24 @@ function TabPlacar({ matchId, entries }: { matchId: string; entries: EntradaPart
               </Select>
             </div>
           </div>
+
+          {(scores[entry.id]?.outcome === "empate" || scores[entry.id]?.shootoutScore) && (
+            <div className="pt-2 border-t border-dashed">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Disputa de Pênaltis (Shootout)</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Gols nos pênaltis"
+                  value={scores[entry.id]?.shootoutScore ?? ""}
+                  onChange={(e) =>
+                    setScores((prev) => ({ ...prev, [entry.id]: { ...prev[entry.id], shootoutScore: e.target.value } }))
+                  }
+                  className="h-11 text-center font-bold border-primary/30 focus:border-primary"
+                />
+              </div>
+            </div>
+          )}
         </div>
       ))}
 
