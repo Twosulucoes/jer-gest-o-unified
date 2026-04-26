@@ -648,8 +648,12 @@ export default function CredenciamentoPage() {
   const handleBatchCredential = async () => {
     if (selectedAwaiting.length === 0) return;
     setBatchProcessing(true);
-    let success = 0, errors = 0;
+    let success = 0, errors = 0, blocked = 0;
     for (const id of selectedAwaiting) {
+      if (blockedParticipantIds.has(id)) {
+        blocked++;
+        continue;
+      }
       const credentialCode = generateCredentialCode();
       const qrCodeValue = generateQrCodeValue(selectedEventId, id, credentialCode);
       const { error } = await (supabase as any).rpc("issue_participant_credential", {
@@ -660,20 +664,32 @@ export default function CredenciamentoPage() {
         p_user_id: user?.id,
         p_binding_source: "manual",
       });
-      if (error) errors++; else success++;
+      if (error) {
+        console.error(`[Batch] Error issuing for ${id}:`, error);
+        errors++;
+      } else {
+        success++;
+      }
     }
     setBatchProcessing(false);
     setSelectedIds(new Set());
     queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
     queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
-    toast.success(`${success} credencial(is) emitida(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
+    
+    if (success > 0) toast.success(`${success} credencial(is) emitida(s) com sucesso.`);
+    if (blocked > 0) toast.error(`${blocked} participante(s) bloqueado(s) por irregularidade.`);
+    if (errors > 0) toast.error(`${errors} erro(s) inesperado(s). Verifique o console.`);
   };
 
   const handleBatchEmit = async () => {
     if (selectedReadyToEmit.length === 0) return;
     setBatchProcessing(true);
-    let success = 0, errors = 0;
+    let success = 0, errors = 0, blocked = 0;
     for (const id of selectedReadyToEmit) {
+      if (blockedParticipantIds.has(id)) {
+        blocked++;
+        continue;
+      }
       const credentialCode = generateCredentialCode();
       const qrCodeValue = generateQrCodeValue(selectedEventId, id, credentialCode);
       const { error } = await (supabase as any).rpc("issue_participant_credential", {
@@ -684,12 +700,20 @@ export default function CredenciamentoPage() {
         p_user_id: user?.id,
         p_binding_source: "manual",
       });
-      if (error) errors++; else success++;
+      if (error) {
+        console.error(`[Batch] Error issuing for ${id}:`, error);
+        errors++;
+      } else {
+        success++;
+      }
     }
     setBatchProcessing(false);
     setSelectedIds(new Set());
     queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
-    toast.success(`${success} credencial(is) emitida(s) em lote.${errors > 0 ? ` ${errors} erro(s).` : ""}`);
+    
+    if (success > 0) toast.success(`${success} credencial(is) emitida(s) com sucesso.`);
+    if (blocked > 0) toast.error(`${blocked} participante(s) bloqueado(s) por irregularidade.`);
+    if (errors > 0) toast.error(`${errors} erro(s) inesperado(s). Verifique o console.`);
   };
 
   const handleStartCredenciamento = (p: CredentialParticipantRow) => {
