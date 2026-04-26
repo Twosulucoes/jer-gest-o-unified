@@ -54,9 +54,12 @@ import {
 // -------- Types --------
 interface VoucherRow {
   id: string;
-  participant_id: string;
+  participant_id: string | null;
   qr_code_value: string;
   status: string;
+  voucher_type: "nominal" | "aggregate";
+  label: string | null;
+  is_contingency: boolean;
   scope_transport: boolean;
   scope_meals: boolean;
   scope_lodging: boolean;
