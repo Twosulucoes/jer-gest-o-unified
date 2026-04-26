@@ -203,7 +203,7 @@ export default function CredenciamentoPage() {
   }, [searchTerm, filterType, filterState, filterInstitution, sortBy, currentPage, searchParams, setSearchParams]);
 
   // Reset page on filter change
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution, sortBy]);
   useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSortBy("priority"); }, [selectedEventId]);
 
 
