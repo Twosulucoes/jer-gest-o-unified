@@ -75,27 +75,29 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
     setTitle("");
     setContent("");
     setPreviewMeta(null);
+    setSplitByPhase(false);
+    setPhasesPreview([]);
   }, [open, sportEventId, stageId]);
+
+  const resolveStageSportEventIds = async (): Promise<string[] | null> => {
+    if (scope !== "stage" || !stageId) return null;
+    const { data: pse, error } = await supabase
+      .from("participant_sport_events")
+      .select("sport_event_id, participants!inner(participant_event_stages!inner(event_stage_id))")
+      .eq("participants.participant_event_stages.event_stage_id", stageId);
+    if (error) throw error;
+    return Array.from(
+      new Set(((pse ?? []) as Array<{ sport_event_id: string | null }>)
+        .map((r) => r.sport_event_id)
+        .filter((id): id is string => !!id)),
+    );
+  };
 
   const generate = async () => {
     setGenerating(true);
     try {
-      // Resolve sport_event_ids da etapa via participant_event_stages → participant_sport_events
-      let stageSportEventIds: string[] | null = null;
-      if (scope === "stage" && stageId) {
-        const { data: pse, error } = await supabase
-          .from("participant_sport_events")
-          .select("sport_event_id, participants!inner(participant_event_stages!inner(event_stage_id))")
-          .eq("participants.participant_event_stages.event_stage_id", stageId);
-        if (error) throw error;
-        stageSportEventIds = Array.from(
-          new Set(((pse ?? []) as Array<{ sport_event_id: string | null }>)
-            .map((r) => r.sport_event_id)
-            .filter((id): id is string => !!id)),
-        );
-      }
-
-      const result = await buildAutoBulletinContent({
+      const stageSportEventIds = await resolveStageSportEventIds();
+      const baseFilters = {
         eventId,
         scope,
         sportEventId: scope === "sport_event" ? sportEventId : null,
@@ -103,7 +105,18 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
         statusFilter,
         dateFrom: dateFrom || null,
         dateTo: dateTo || null,
-      });
+      };
+
+      let result: AutoBulletinResult;
+      let phases: PhaseBulletin[] = [];
+
+      if (splitByPhase) {
+        const byPhase = await buildAutoBulletinByPhase(baseFilters);
+        result = byPhase.aggregate;
+        phases = byPhase.perPhase;
+      } else {
+        result = await buildAutoBulletinContent(baseFilters);
+      }
 
       setContent(result.contentMd);
       setTitle(result.suggestedTitle);
@@ -114,11 +127,16 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
         matchIds: result.matchIds,
         sportEventIds: result.sportEventIds,
       });
+      setPhasesPreview(phases);
 
       if (result.itemsCount === 0) {
         toast.warning("Nenhum resultado encontrado", {
           description: "Ajuste os filtros (status, escopo, datas) e tente novamente.",
         });
+      } else if (splitByPhase) {
+        toast.success(
+          `${result.itemsCount} item(ns) · ${phases.length} fase(s) com resultado`,
+        );
       } else {
         toast.success(`${result.itemsCount} item(ns) compilado(s)`);
       }
