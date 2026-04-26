@@ -287,6 +287,47 @@ export default function CompeticaoLancamentoScorePage() {
     }
   });
 
+  const homologateMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("rpc_homologate_match_result", {
+        p_match_id: matchId,
+        p_password: homologatePassword,
+        p_observation: homologateObservation
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Resultado homologado com sucesso!");
+      setShowHomologateDialog(false);
+      setHomologatePassword("");
+      setHomologateObservation("");
+      refetchMatch();
+    },
+    onError: (e: any) => {
+      toast.error("Erro ao homologar: " + e.message);
+    }
+  });
+
+  const revertMut = useMutation({
+    mutationFn: async ({ targetStatus, reason }: { targetStatus: string, reason: string }) => {
+      const { data, error } = await supabase.rpc("rpc_revert_match_result_status", {
+        p_match_id: matchId,
+        p_target_status: targetStatus,
+        p_reason: reason
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Status revertido com sucesso!");
+      refetchMatch();
+    },
+    onError: (e: any) => {
+      toast.error("Erro ao reverter: " + e.message);
+    }
+  });
+
   if (loadingMatch || loadingRules || loadingLineups) {
     return (
       <div className="p-8 space-y-4">
