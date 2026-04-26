@@ -26,7 +26,9 @@ import {
   type ScanTelemetry,
 } from "@/lib/pwaScan";
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
-import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
+import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
+
 
 interface MealWindow {
   id: string;
