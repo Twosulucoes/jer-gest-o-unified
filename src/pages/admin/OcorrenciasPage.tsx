@@ -16,37 +16,31 @@ import { toast } from "sonner";
 import { AlertTriangle, Search, Phone, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { 
+  INCIDENT_MODULES, 
+  INCIDENT_STATUSES, 
+  type IncidentModule, 
+  type IncidentStatus 
+} from "@/types/incidents";
 
 interface Incident {
   id: string;
   event_id: string;
   event_stage_id: string | null;
-  module: string;
+  module: IncidentModule;
   reference_id: string | null;
   reference_label: string | null;
   reported_by_user_id: string;
   reporter_name: string | null;
   reporter_phone: string | null;
   incident_description: string;
-  incident_status: string;
+  incident_status: IncidentStatus;
   admin_response: string | null;
   resolved_at: string | null;
   resolved_by_user_id: string | null;
   created_at: string;
 }
 
-const MODULE_LABELS: Record<string, { label: string; color: string }> = {
-  transporte: { label: "Transporte", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
-  alimentacao: { label: "Alimentação", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
-  alojamento: { label: "Alojamento", color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" },
-  outro: { label: "Outro", color: "bg-muted text-muted-foreground" },
-};
-
-const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
-  pending: { label: "Pendente", variant: "outline" },
-  in_progress: { label: "Em análise", variant: "secondary" },
-  resolved: { label: "Resolvida", variant: "default" },
-};
 
 export default function OcorrenciasPage() {
   const { activeEvent } = useEventContext();
