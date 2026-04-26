@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Trophy, MapPin, Clock } from "lucide-react";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { Trophy, MapPin, Clock } from "lucide-react";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 
 interface MatchDetail {
   id: string;
@@ -54,14 +54,7 @@ export default function CoordenacaoPartidaDetalhePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate(-1)} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <Trophy className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Detalhe da Partida</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Detalhe da Partida" icon={Trophy} onBack={() => navigate(-1)} />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
         {loading && <Skeleton className="h-40 w-full" />}

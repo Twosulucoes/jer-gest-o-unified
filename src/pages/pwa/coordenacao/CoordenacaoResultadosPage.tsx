@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Medal } from "lucide-react";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { Medal } from "lucide-react";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 
 interface ResultItem {
   id: string;
@@ -35,14 +35,7 @@ export default function CoordenacaoResultadosPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b border-border bg-surface px-4 h-14">
-        <button onClick={() => navigate("/pwa/coordenacao-tecnica")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <Medal className="h-5 w-5 text-[hsl(var(--module-accent))]" />
-        <span className="font-semibold text-foreground">Resultados</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Resultados" icon={Medal} backTo="/pwa/coordenacao-tecnica" />
 
       <main className="p-4 max-w-md mx-auto space-y-3">
         {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}

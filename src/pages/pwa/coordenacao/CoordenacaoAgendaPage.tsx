@@ -7,10 +7,10 @@ import { useActiveStageId } from "@/contexts/StageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 
 interface MatchItem {
   id: string;
@@ -71,17 +71,7 @@ export default function CoordenacaoAgendaPage() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
-      <header className="relative flex h-14 items-center gap-2 border-b border-border/80 bg-card/95 px-4 shadow-app-sm backdrop-blur-sm">
-        <button type="button" onClick={() => navigate("/pwa/coordenacao-tecnica")} className="text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <Calendar className="h-5 w-5 text-primary" />
-        <div className="flex flex-col">
-          <span className="font-semibold leading-tight text-foreground">Agenda de hoje</span>
-          <span className="text-[11px] text-muted-foreground">Painel técnico do evento</span>
-        </div>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Agenda de hoje" subtitle="Painel técnico do evento" icon={Calendar} backTo="/pwa/coordenacao-tecnica" />
 
       <main className="relative mx-auto max-w-md space-y-3 p-4">
         {loading && [1, 2, 3].map((i) => <Skeleton key={i} className="h-[88px] w-full rounded-2xl" />)}
