@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { clearPersistedFilters } from "@/hooks/usePersistedState";
+import { useQueryClient } from "@tanstack/react-query";
+import { handleContextChange } from "@/lib/context-manager";
 
 interface CompetitionContextType {
   selectedSportId: string | null;
