@@ -88,7 +88,7 @@ export default function PublicResultsPage() {
           id, match_number, match_date, start_time, status,
           competition_phases(name),
           competition_groups(name),
-          venues(name),
+          venues(name, is_active, deleted_at),
           competition_match_entries(
             side,
             teams(name),
@@ -330,7 +330,7 @@ export default function PublicResultsPage() {
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                               <Swords className="h-3.5 w-3.5 text-primary" />
-                              {m.venues?.name || "Local a definir"}
+                              {m.venues && m.venues.is_active && !m.venues.deleted_at ? m.venues.name : "Local a definir"}
                             </div>
                           </div>
                         </div>
