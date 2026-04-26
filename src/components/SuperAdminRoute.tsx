@@ -26,7 +26,7 @@ export default function SuperAdminRoute({ children }: SuperAdminRouteProps) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (!isSuperAdmin) return <Navigate to="/admin" replace />;
+  if (!isSuperAdmin) return <Navigate to="/acesso-negado" replace />;
 
   return <>{children}</>;
 }

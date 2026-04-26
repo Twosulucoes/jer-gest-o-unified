@@ -73,7 +73,7 @@ export default function PwaRouteGuard({ children, allowedRoles }: PwaRouteGuardP
   if (allowedRoles && allowedRoles.length > 0) {
     const authorized = hasRole("admin") || hasRole("secretaria") || allowedRoles.some((r) => hasRole(r));
     if (!authorized) {
-      return <Navigate to="/pwa/acesso-negado" replace />;
+      return <Navigate to="/acesso-negado" replace />;
     }
   }
 

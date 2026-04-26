@@ -40,7 +40,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   if (allowedRoles && allowedRoles.length > 0) {
     const authorized = allowedRoles.some((r) => hasRole(r));
     if (!authorized) {
-      return <Navigate to="/admin" replace />;
+      return <Navigate to="/acesso-negado" replace />;
     }
   }
 

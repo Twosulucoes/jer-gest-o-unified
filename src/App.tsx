@@ -201,7 +201,7 @@ import { PwaInstallNotice } from "./components/pwa/PwaInstallNotice";
 import { AppStatePreserver } from "./components/pwa/AppStatePreserver";
 import { VersionValidator } from "./components/pwa/VersionValidator";
 
-import PwaAcessoNegadoPage from "./pages/pwa/PwaAcessoNegadoPage";
+import AccessDeniedPage from "./pages/AccessDeniedPage";
 import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
 import PublicResultsPage from "./pages/public/PublicResultsPage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
@@ -240,6 +240,7 @@ const App = () => (
             <Route path="/status" element={<StatusPage />} />
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
             <Route path="/selecionar-modulo" element={<ModuleSelectorPage />} />
+            <Route path="/acesso-negado" element={<AccessDeniedPage />} />
             {/* Super Admin routes */}
             <Route
               path="/super"
@@ -533,8 +534,6 @@ const App = () => (
             <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
             <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
             <Route path="/pwa/install" element={<PwaInstallPage />} />
-            {/* PWA Acesso Negado */}
-            <Route path="/pwa/acesso-negado" element={<PwaAcessoNegadoPage />} />
             <Route path="/pwa/debug" element={<PwaDebugPage />} />
             <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
             {/* PWA Diagnóstico */}
