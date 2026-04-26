@@ -77,7 +77,7 @@ export function usePainelProvas({
 
       const rulesMap = new Map(rulesData.map(r => [r.sport_event_id, (r.rules as any)?.family]));
 
-      return (summaryData ?? [])
+      const rawProvas = (summaryData ?? [])
         .map((row: any) => {
           const family = rulesMap.get(row.sport_event_id) || null;
           return {
@@ -86,6 +86,43 @@ export function usePainelProvas({
           };
         })
         .filter(p => p.family === "score" || p.family === "sets" || p.family === "combat");
+
+      // Group combat by sport if needed, or keep them as individual weight classes.
+      // The requirement says "O card de cada modalidade", implying one card for Judo, one for Taekwondo.
+      const combatSports = new Map<string, any>();
+      const result: ProvaRow[] = [];
+
+      for (const p of rawProvas) {
+        if (p.family === "combat") {
+          const existing = combatSports.get(p.sport_id);
+          if (existing) {
+            existing.category_count++;
+            existing.enrolled_count += p.enrolled_count;
+            existing.match_count += p.match_count;
+            existing.results_validated += p.results_validated;
+            existing.matches_with_result += p.matches_with_result;
+            existing.matches_with_schedule += p.matches_with_schedule;
+            // Update status if any is in progress
+            if (p.status === "em_andamento" && existing.status !== "com_pendencia") {
+              existing.status = "em_andamento";
+            } else if (p.status === "com_pendencia") {
+              existing.status = "com_pendencia";
+            }
+          } else {
+            combatSports.set(p.sport_id, {
+              ...p,
+              name: p.sport_name, // Use sport name as the card title
+              category_count: 1,
+              // We'll use this to identify it's a grouped combat card
+              is_grouped_combat: true 
+            });
+          }
+        } else {
+          result.push(p);
+        }
+      }
+
+      return [...result, ...Array.from(combatSports.values())];
     },
   });
 
