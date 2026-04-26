@@ -58,7 +58,7 @@ export default function CoordenacaoIncidentesPage() {
         .from("operational_incidents")
         .select("id, incident_description, incident_status, module, created_at")
         .eq("event_id", activeEventId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: sortOrder === "asc" });
 
       if (filterModule !== "all") {
         query = query.eq("module", filterModule as any);
