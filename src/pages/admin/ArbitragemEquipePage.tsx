@@ -420,25 +420,18 @@ export default function ArbitragemEquipePage() {
             Para escalar oficiais em uma partida, abra o detalhe da partida.
           </p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Download className="mr-1 h-4 w-4" />
-              Exportar escalas
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleExportCsv}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              CSV (filtros aplicados)
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExportPdf}>
-              <FileText className="mr-2 h-4 w-4" />
-              PDF (filtros aplicados)
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+          <Download className="mr-1 h-4 w-4" />
+          Exportar escalas
+        </Button>
       </div>
+
+      <ExportColumnsDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        rowCount={exportRows.length}
+        onConfirm={handleExport}
+      />
 
       {/* KPIs */}
       <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
