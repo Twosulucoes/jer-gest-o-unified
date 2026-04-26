@@ -128,9 +128,17 @@ const navGroups: NavGroup[] = [
       { label: "Monitoramento DB", to: "/admin/monitoramento-db", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["super_admin", "admin"] as AppRole[] },
       { label: "Status do PWA", to: "/admin/pwa-status", icon: <Cloud className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
 
-      { label: "Equipe de Arbitragem", to: "/admin/competicao/arbitragem", icon: <Radio className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem"] as AppRole[] },
-      { label: "Arbitragem (Escalas PWA)", to: "/aovivo", icon: <Radio className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem", "mesario"] as AppRole[] },
       { label: "Resultados (Coord. Modalidade)", to: "/pwa/resultados", icon: <Trophy className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as AppRole[] },
+    ],
+  },
+  {
+    id: "arbitragem", label: "Arbitragem", description: "Equipe, escalas e operação ao vivo.",
+    icon: <Gavel className="h-4 w-4" />,
+    items: [
+      { label: "Equipe de Arbitragem", to: "/admin/competicao/arbitragem?tab=officials", icon: <Users className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem"] as AppRole[] },
+      { label: "Escalas por etapa", to: "/admin/competicao/arbitragem?tab=sports", icon: <ListTree className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem"] as AppRole[] },
+      { label: "Escala em Lote", to: "/admin/competicao/arbitragem?tab=lote", icon: <ClipboardList className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem"] as AppRole[] },
+      { label: "AOVivo (PWA)", to: "/aovivo", icon: <Radio className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem", "mesario"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde", "super_admin"] as AppRole[] },
     ],
   },
@@ -175,9 +183,10 @@ function getRoleLabel(role: AppRole): string {
 }
 
 function getAllGroupRoutes(group: NavGroup): string[] {
-  const routes = group.items.map((i) => i.to);
+  const strip = (u: string) => u.split("?")[0];
+  const routes = group.items.map((i) => strip(i.to));
   if (group.subGroups) {
-    group.subGroups.forEach((sg) => sg.items.forEach((i) => routes.push(i.to)));
+    group.subGroups.forEach((sg) => sg.items.forEach((i) => routes.push(strip(i.to))));
   }
   return routes;
 }

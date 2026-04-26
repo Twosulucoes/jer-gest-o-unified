@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEventContext } from "@/contexts/EventContext";
@@ -68,7 +68,21 @@ export default function ArbitragemEquipePage() {
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [sportFilter, setSportFilter] = useState<string>("all");
   const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<string>("officials");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = (() => {
+    const t = searchParams.get("tab");
+    return t === "sports" || t === "lote" || t === "officials" ? t : "officials";
+  })();
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+  useEffect(() => {
+    const current = searchParams.get("tab");
+    if (current !== activeTab) {
+      const next = new URLSearchParams(searchParams);
+      next.set("tab", activeTab);
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
   const [selectedMatchIds, setSelectedMatchIds] = useState<Set<string>>(new Set());
   const [escalaOpen, setEscalaOpen] = useState(false);
 
