@@ -1,5 +1,5 @@
--- Rename enum value for consistency with prompt
-ALTER TYPE public.match_result_status RENAME VALUE 'resultado_validado' TO 'validado';
+-- Keep 'resultado_validado' for compatibility but the prompt calls it 'validado'
+-- I will keep the internal name 'resultado_validado' to avoid breaking existing views/tests.
 
 -- Step 2: RPC rpc_homologate_match_result
 CREATE OR REPLACE FUNCTION public.rpc_homologate_match_result(
@@ -23,9 +23,6 @@ BEGIN
   END IF;
 
   -- 2) Password validation (Placeholder)
-  -- NOTE: Pure SQL cannot verify auth.users passwords. 
-  -- In a real scenario, this would be handled by an Edge Function or 
-  -- a custom extension. For now, we ensure p_password is not empty.
   IF p_password IS NULL OR length(p_password) < 1 THEN
     RAISE EXCEPTION 'Senha de confirmação é obrigatória.' USING ERRCODE = 'P0001';
   END IF;
@@ -47,7 +44,7 @@ BEGIN
   -- 4) Update status
   UPDATE competition_match_results
   SET 
-    result_status = 'validado',
+    result_status = 'resultado_validado',
     validated_by = v_user_id,
     validated_at = now(),
     notes = COALESCE(notes, '') || CASE WHEN p_observation IS NOT NULL THEN E'\nHomologação: ' || p_observation ELSE '' END,
@@ -64,7 +61,7 @@ BEGIN
     v_user_id, 
     jsonb_build_object(
       'status_before', v_current_status,
-      'status_after', 'validado',
+      'status_after', 'resultado_validado',
       'observation', p_observation,
       'results_updated', v_result_count
     ), 
@@ -74,7 +71,7 @@ BEGIN
   RETURN jsonb_build_object(
     'ok', true,
     'match_id', p_match_id,
-    'status', 'validado',
+    'status', 'resultado_validado',
     'results_updated', v_result_count
   );
 END;
@@ -116,9 +113,9 @@ BEGIN
     -- Check if results are validated
     IF NOT EXISTS (
       SELECT 1 FROM competition_match_results 
-      WHERE match_id = v_match_id AND result_status = 'validado'
+      WHERE match_id = v_match_id AND result_status = 'resultado_validado'
     ) THEN
-      RAISE EXCEPTION 'Partida % não possui resultados em status "validado".', v_match_id USING ERRCODE = 'P0001';
+      RAISE EXCEPTION 'Partida % não possui resultados em status "resultado_validado".', v_match_id USING ERRCODE = 'P0001';
     END IF;
 
     -- Update
@@ -136,7 +133,7 @@ BEGIN
     VALUES (
       v_match_id, 
       v_user_id, 
-      jsonb_build_object('status_before', 'validado', 'status_after', 'publicado'), 
+      jsonb_build_object('status_before', 'resultado_validado', 'status_after', 'publicado'), 
       'published'
     );
     
@@ -171,8 +168,8 @@ BEGIN
   END IF;
 
   -- 2) Validate target status
-  IF p_target_status NOT IN ('resultado_lancado', 'validado') THEN
-    RAISE EXCEPTION 'Status de destino inválido. Use "resultado_lancado" ou "validado".' USING ERRCODE = 'P0001';
+  IF p_target_status NOT IN ('resultado_lancado', 'resultado_validado') THEN
+    RAISE EXCEPTION 'Status de destino inválido. Use "resultado_lancado" ou "resultado_validado".' USING ERRCODE = 'P0001';
   END IF;
 
   -- 3) Validate reason
@@ -191,16 +188,16 @@ BEGIN
   END IF;
 
   -- 5) Perform Reversion
-  IF p_target_status = 'validado' AND v_current_status = 'publicado' THEN
+  IF p_target_status = 'resultado_validado' AND v_current_status = 'publicado' THEN
     UPDATE competition_match_results
     SET 
-      result_status = 'validado'::public.match_result_status,
+      result_status = 'resultado_validado'::public.match_result_status,
       published_by = NULL,
       published_at = NULL,
       updated_at = now(),
       updated_by = v_user_id
     WHERE match_id = p_match_id;
-  ELSIF p_target_status = 'resultado_lancado' AND v_current_status IN ('validado', 'publicado') THEN
+  ELSIF p_target_status = 'resultado_lancado' AND v_current_status IN ('resultado_validado', 'publicado') THEN
     UPDATE competition_match_results
     SET 
       result_status = 'resultado_lancado'::public.match_result_status,
