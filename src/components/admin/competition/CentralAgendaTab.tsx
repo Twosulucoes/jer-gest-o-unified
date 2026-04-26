@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useVenuesPicker } from "@/hooks/useVenuesByStage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -603,34 +604,8 @@ export default function CentralAgendaTab({ eventId, sportEventId, stageId, onCha
   const [filterSchedule, setFilterSchedule] = useState<string>("__all__");
   const [filterStatus, setFilterStatus] = useState<string>("__all__");
 
-  // Fetch venues — filtra pela etapa em escopo via venue_event_stages (N:N)
-  const { data: venues = [] } = useQuery({
-    queryKey: ["venues-for-scheduling", eventId, stageId ?? "all"],
-    queryFn: async () => {
-      let venueIdsForStage: string[] | null = null;
-      if (stageId) {
-        const { data: links, error: linkErr } = await (supabase as any)
-          .from("venue_event_stages")
-          .select("venue_id")
-          .eq("event_stage_id", stageId);
-        if (linkErr) throw linkErr;
-        venueIdsForStage = (links ?? []).map((l: any) => l.venue_id as string);
-        if (venueIdsForStage.length === 0) return [] as Venue[];
-      }
-
-      let q = supabase
-        .from("venues")
-        .select("id, name, address, city")
-        .eq("event_id", eventId)
-        .eq("is_active", true)
-        .order("name");
-      if (venueIdsForStage) q = q.in("id", venueIdsForStage);
-
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as Venue[];
-    },
-  });
+  // Fetch venues — fonte única (resolve etapa via venue_event_stages quando aplicável)
+  const { data: venues = [] } = useVenuesPicker({ eventId, stageId });
 
   // Fetch matches with entries and venue
   const { data: matches = [], isLoading, isError, refetch } = useQuery({
