@@ -54,10 +54,11 @@ const STATUS_COLORS: Record<string, string> = {
 function TabPlacar({ matchId, entries }: { matchId: string; entries: EntradaPartida[] }) {
   const salvar = useSalvarPlacar(matchId);
 
-  const [scores, setScores] = useState<Record<string, { scoreFinal: string; outcome: string }>>(() =>
+  const [scores, setScores] = useState<Record<string, { scoreFinal: string; outcome: string; shootoutScore: string }>>(() =>
     Object.fromEntries(entries.map((e) => [e.id, {
       scoreFinal: e.score?.score_final ?? "",
       outcome: e.score?.outcome ?? "",
+      shootoutScore: e.score?.score_detail?.shootout ?? "",
     }]))
   );
 
