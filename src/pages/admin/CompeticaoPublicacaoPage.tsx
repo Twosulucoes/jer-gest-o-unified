@@ -281,7 +281,7 @@ export default function CompeticaoPublicacaoPage() {
                 return (
                   <TableRow key={m.id}>
                     <TableCell>
-                      {res?.result_status === "validado" && (
+                      {res?.result_status === "resultado_validado" && (
                         <Checkbox 
                           checked={selectedMatches.includes(m.id)}
                           onCheckedChange={() => handleToggleSelect(m.id)}
