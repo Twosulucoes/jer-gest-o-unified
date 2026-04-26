@@ -157,13 +157,19 @@ export default function AlojamentoScanPage() {
       }
 
       let res: Record<string, any>;
+      const eventId = activeEvent?.id;
+
       if (mode === "validate") {
         res = await rpcResolveQr(token);
+        dbTelemetry.log({ moduleName: MODULE, tableName: 'RPC:rpcResolveQr', operation: 'SELECT', eventId, isSuccess: res.ok, errorCode: res.error });
       } else if (mode === "checkin") {
         res = await rpcCheckin(deviceId, token, facilityId);
+        dbTelemetry.log({ moduleName: MODULE, tableName: 'lodging_assignments', operation: 'INSERT', eventId, isSuccess: res.ok, errorCode: res.error });
       } else {
         res = await rpcCheckout(deviceId, token, facilityId);
+        dbTelemetry.log({ moduleName: MODULE, tableName: 'lodging_assignments', operation: 'UPDATE', eventId, isSuccess: res.ok, errorCode: res.error });
       }
+
 
       setResult(res);
 
