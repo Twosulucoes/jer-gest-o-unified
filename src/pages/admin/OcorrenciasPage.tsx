@@ -83,11 +83,11 @@ export default function OcorrenciasPage() {
       }
 
       if (filterModule !== "all") {
-        query = query.eq("module", filterModule);
+        query = query.eq("module", filterModule as any);
       }
       
       if (filterStatus !== "all") {
-        query = query.eq("incident_status", filterStatus);
+        query = query.eq("incident_status", filterStatus as any);
       }
 
       if (search) {
