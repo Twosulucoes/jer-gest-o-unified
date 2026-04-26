@@ -435,7 +435,9 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
             disabled={!content || !title.trim() || saveDraft.isPending}
           >
             {saveDraft.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-            Salvar como rascunho
+            {splitByPhase
+              ? `Salvar agregado (rascunho) + ${phasesPreview.length} por fase (publicado)`
+              : "Salvar como rascunho"}
           </Button>
         </DialogFooter>
       </DialogContent>
