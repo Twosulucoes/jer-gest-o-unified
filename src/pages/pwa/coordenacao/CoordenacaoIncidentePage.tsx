@@ -8,12 +8,18 @@ import { useEventContext } from "@/contexts/EventContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AlertTriangle, ClipboardList, Phone, User } from "lucide-react";
+import { 
+  INCIDENT_MODULES, 
+  INCIDENT_STATUSES, 
+  type IncidentModule, 
+  type IncidentStatus 
+} from "@/types/incidents";
 
 type IncidentDetail = {
   id: string;
   incident_description: string;
-  incident_status: string;
-  module: string;
+  incident_status: IncidentStatus;
+  module: IncidentModule;
   reference_label: string | null;
   reference_id: string | null;
   reporter_name: string | null;
@@ -24,18 +30,6 @@ type IncidentDetail = {
   event_stage_id: string;
 };
 
-const MODULE_LABELS: Record<string, string> = {
-  transporte: "Transporte",
-  alimentacao: "Alimentação",
-  alojamento: "Alojamento",
-  outro: "Geral",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Pendente",
-  in_progress: "Em análise",
-  resolved: "Resolvida",
-};
 
 export default function CoordenacaoIncidentePage() {
   const { incidentId } = useParams<{ incidentId: string }>();
