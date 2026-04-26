@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import AuthLoadingScreen from "@/components/auth/AuthLoadingScreen";
 import type { AppRole } from "@/config/accessControl";
 import { VersionBadge } from "@/components/VersionBadge";
+import { PwaBottomNav } from "./PwaBottomNav";
 
 interface PwaModuleLayoutProps {
   children: React.ReactNode;
@@ -73,7 +74,8 @@ export default function PwaModuleLayout({ children, moduleTitle, moduleIcon: Ico
           </div>
         </div>
       </header>
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 overflow-auto pb-20">{children}</main>
+      <PwaBottomNav />
       <VersionBadge />
     </div>
   );
