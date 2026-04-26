@@ -11,27 +11,21 @@ import { useEventContext } from "@/contexts/EventContext";
 import { AlertTriangle, ClipboardList, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { 
+  INCIDENT_MODULES, 
+  INCIDENT_STATUSES, 
+  type IncidentModule, 
+  type IncidentStatus 
+} from "@/types/incidents";
 
 interface IncidentItem {
   id: string;
   incident_description: string;
-  incident_status: string;
-  module: string;
+  incident_status: IncidentStatus;
+  module: IncidentModule;
   created_at: string;
 }
 
-const MODULE_LABELS: Record<string, string> = {
-  transporte: "Transporte",
-  alimentacao: "Alimentação",
-  alojamento: "Alojamento",
-  outro: "Geral",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Pendente",
-  in_progress: "Em análise",
-  resolved: "Resolvida",
-};
 
 export default function CoordenacaoIncidentesPage() {
   const navigate = useNavigate();
@@ -136,11 +130,11 @@ export default function CoordenacaoIncidentesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos Módulos</SelectItem>
-                  <SelectItem value="transporte">Transporte</SelectItem>
-                  <SelectItem value="alimentacao">Alimentação</SelectItem>
-                  <SelectItem value="alojamento">Alojamento</SelectItem>
-                  <SelectItem value="outro">Geral</SelectItem>
+                  {(Object.entries(INCIDENT_MODULES) as [IncidentModule, any][]).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  ))}
                 </SelectContent>
+
               </Select>
             </div>
             <div className="flex-1">
@@ -153,10 +147,11 @@ export default function CoordenacaoIncidentesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos Status</SelectItem>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="in_progress">Em análise</SelectItem>
-                  <SelectItem value="resolved">Resolvida</SelectItem>
+                  {(Object.entries(INCIDENT_STATUSES) as [IncidentStatus, any][]).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  ))}
                 </SelectContent>
+
               </Select>
             </div>
           </div>
@@ -204,15 +199,16 @@ export default function CoordenacaoIncidentesPage() {
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">
-                  {MODULE_LABELS[inc.module] ?? inc.module}
+                  {INCIDENT_MODULES[inc.module]?.label ?? inc.module}
                 </Badge>
                 <Badge 
-                  variant={inc.incident_status === "pending" ? "destructive" : "secondary"}
+                  variant={INCIDENT_STATUSES[inc.incident_status]?.variant ?? "outline"}
                   className="text-[10px] uppercase font-bold"
                 >
-                  {STATUS_LABELS[inc.incident_status] ?? inc.incident_status}
+                  {INCIDENT_STATUSES[inc.incident_status]?.label ?? inc.incident_status}
                 </Badge>
               </div>
+
               
               <p className="text-sm font-medium text-foreground leading-snug line-clamp-2">
                 {inc.incident_description}

@@ -19,6 +19,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
+import { type IncidentModule, type IncidentStatus } from "@/types/incidents";
+
 
 interface MealWindowOption {
   id: string;
@@ -129,14 +131,14 @@ export function FoodIncidentDialog({
       const { error } = await supabase.from("operational_incidents").insert({
         event_id: eventId,
         event_stage_id: eventStageId,
-        module: "alimentacao",
+        module: "alimentacao" as IncidentModule,
         reference_id: chosenWindow?.id ?? null,
         reference_label: referenceLabel,
         reported_by_user_id: session.user.id,
         reporter_name: profile?.full_name ?? null,
         reporter_phone: null,
         incident_description: description.trim(),
-        incident_status: "pending",
+        incident_status: "pending" as IncidentStatus,
       });
 
       if (error) throw error;

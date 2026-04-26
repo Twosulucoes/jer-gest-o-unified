@@ -14,6 +14,8 @@ import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
 
 import { toast } from "sonner";
+import { type IncidentModule } from "@/types/incidents";
+
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { TripInfoCard } from "@/components/pwa/transporte/TripInfoCard";
 import { FinishTripDialog } from "@/components/pwa/transporte/FinishTripDialog";
@@ -212,7 +214,7 @@ export default function TransporteEmbarquePage() {
             await supabase.from("operational_incidents").insert({
               event_id: (tripData as any).event_id,
               event_stage_id: eventStageId,
-              module: "transporte" as any,
+              module: "transporte" as IncidentModule,
               reference_id: tripId!,
               reference_label: label,
               reported_by_user_id: userId,

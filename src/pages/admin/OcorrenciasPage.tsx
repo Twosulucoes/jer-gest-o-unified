@@ -16,37 +16,31 @@ import { toast } from "sonner";
 import { AlertTriangle, Search, Phone, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { 
+  INCIDENT_MODULES, 
+  INCIDENT_STATUSES, 
+  type IncidentModule, 
+  type IncidentStatus 
+} from "@/types/incidents";
 
 interface Incident {
   id: string;
   event_id: string;
   event_stage_id: string | null;
-  module: string;
+  module: IncidentModule;
   reference_id: string | null;
   reference_label: string | null;
   reported_by_user_id: string;
   reporter_name: string | null;
   reporter_phone: string | null;
   incident_description: string;
-  incident_status: string;
+  incident_status: IncidentStatus;
   admin_response: string | null;
   resolved_at: string | null;
   resolved_by_user_id: string | null;
   created_at: string;
 }
 
-const MODULE_LABELS: Record<string, { label: string; color: string }> = {
-  transporte: { label: "Transporte", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
-  alimentacao: { label: "Alimentação", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
-  alojamento: { label: "Alojamento", color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" },
-  outro: { label: "Outro", color: "bg-muted text-muted-foreground" },
-};
-
-const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
-  pending: { label: "Pendente", variant: "outline" },
-  in_progress: { label: "Em análise", variant: "secondary" },
-  resolved: { label: "Resolvida", variant: "default" },
-};
 
 export default function OcorrenciasPage() {
   const { activeEvent } = useEventContext();
@@ -190,11 +184,11 @@ export default function OcorrenciasPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="transporte">Transporte</SelectItem>
-                  <SelectItem value="alimentacao">Alimentação</SelectItem>
-                  <SelectItem value="alojamento">Alojamento</SelectItem>
-                  <SelectItem value="outro">Outro</SelectItem>
+                  {(Object.entries(INCIDENT_MODULES) as [IncidentModule, any][]).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  ))}
                 </SelectContent>
+
               </Select>
             </div>
             <div className="w-[160px]">
@@ -203,10 +197,11 @@ export default function OcorrenciasPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="in_progress">Em análise</SelectItem>
-                  <SelectItem value="resolved">Resolvida</SelectItem>
+                  {(Object.entries(INCIDENT_STATUSES) as [IncidentStatus, any][]).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  ))}
                 </SelectContent>
+
               </Select>
             </div>
           </div>
@@ -242,8 +237,9 @@ export default function OcorrenciasPage() {
                 </TableHeader>
                 <TableBody>
                   {incidents.map((incident) => {
-                    const mod = MODULE_LABELS[incident.module] || MODULE_LABELS.outro;
-                    const status = STATUS_LABELS[incident.incident_status] || STATUS_LABELS.pending;
+                    const mod = INCIDENT_MODULES[incident.module] || INCIDENT_MODULES.outro;
+                    const status = INCIDENT_STATUSES[incident.incident_status] || INCIDENT_STATUSES.pending;
+
                     return (
                       <TableRow
                         key={incident.id}
@@ -357,10 +353,11 @@ export default function OcorrenciasPage() {
                 <CardContent className="p-4 space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">Módulo:</span>
-                    <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${(MODULE_LABELS[selected.module] || MODULE_LABELS.outro).color}`}>
-                      {(MODULE_LABELS[selected.module] || MODULE_LABELS.outro).label}
+                    <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${(INCIDENT_MODULES[selected.module] || INCIDENT_MODULES.outro).color}`}>
+                      {(INCIDENT_MODULES[selected.module] || INCIDENT_MODULES.outro).label}
                     </span>
                   </div>
+
                   {selected.reference_label && (
                     <div>
                       <span className="font-medium">Referência:</span>{" "}
@@ -400,10 +397,11 @@ export default function OcorrenciasPage() {
                 <Select value={editStatus} onValueChange={setEditStatus}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="in_progress">Em análise</SelectItem>
-                    <SelectItem value="resolved">Resolvida</SelectItem>
+                    {(Object.entries(INCIDENT_STATUSES) as [IncidentStatus, any][]).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                    ))}
                   </SelectContent>
+
                 </Select>
               </div>
 
