@@ -199,6 +199,8 @@ import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
 import EntregaTecnicaPage from "./pages/public/EntregaTecnicaPage";
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 // Ao Vivo PWA (lazy loaded)
+import StatusPage from "./pages/Status";
+
 const AoVivoLoginPage = lazy(() => import("./pages/aovivo/AoVivoLoginPage"));
 const AoVivoHomePage = lazy(() => import("./pages/aovivo/AoVivoHomePage"));
 const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
@@ -225,6 +227,7 @@ const App = () => (
                   <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/status" element={<StatusPage />} />
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
             <Route path="/selecionar-modulo" element={<ModuleSelectorPage />} />
             {/* Super Admin routes */}
