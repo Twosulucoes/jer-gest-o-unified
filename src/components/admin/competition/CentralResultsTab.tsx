@@ -9,7 +9,7 @@ import { ExternalLink, Download, PenLine, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import LaunchResultDialog from "./LaunchResultDialog";
-import ResultGovernancePanel from "./ResultGovernancePanel";
+
 import HomologarClassificadoCard from "./HomologarClassificadoCard";
 interface Props {
   eventId: string;
@@ -255,11 +255,7 @@ export default function CentralResultsTab({ eventId, sportEventId, isCollective 
         </Card>
       </div>
 
-      {/* Governance */}
-      <div className="mt-8">
-        <h3 className="text-lg font-semibold mb-3">Governança de Resultados</h3>
-        <ResultGovernancePanel sportEventId={sportEventId} />
-      </div>
+      {/* Governança movida para o passo "Publicação" do wizard */}
 
       <LaunchResultDialog
         open={showLaunchDialog}
