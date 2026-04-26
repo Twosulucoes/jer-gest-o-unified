@@ -69,7 +69,7 @@ async function handleRestTelemetry(url: string, init: RequestInit | undefined, r
       try {
         const errorData = await response.json();
         errorCode = errorData?.code || errorData?.message || String(response.status);
-      } catch (e) {
+      } catch (_e) {
         errorCode = String(response.status);
       }
     }
