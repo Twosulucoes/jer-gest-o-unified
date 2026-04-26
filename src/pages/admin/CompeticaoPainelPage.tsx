@@ -193,6 +193,10 @@ export default function CompeticaoPainelPage() {
       navigate(`/admin/competicao/painel-score/${prova.id}`);
       return;
     }
+    if (prova.family === "sets") {
+      navigate(`/admin/competicao/painel-sets/${prova.id}`);
+      return;
+    }
 
     const base = stageId
       ? `/admin/etapa/${stageId}/competicao`
