@@ -84,7 +84,8 @@ function MatchCard({ match, totalRounds }: { match: BracketMatch; totalRounds: n
             isBye={isBye && !sideA}
           />
         </div>
-        <div className="p-1.5 rounded-md transition-colors",
+        <div className={cn(
+          "p-1.5 rounded-md transition-colors",
           sideB?.is_winner ? "bg-primary/5 ring-1 ring-primary/20" : "bg-muted/30"
         )}>
           <EntryLabel 
