@@ -362,7 +362,7 @@ export default function EntregaTecnicaPage() {
                 Jornada do Sistema
               </h2>
               <p className="text-slate-500 max-w-xl">
-                Navegue pelas 5 etapas centrais do fluxo operacional do JER 2026 — da importação dos atletas até a publicação pública.
+                Navegue pelos {tourSteps.length} grupos operacionais do JER 2026 — uma visão completa do fluxo de ponta a ponta.
               </p>
             </div>
             <div className="flex gap-3">
