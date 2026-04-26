@@ -17,6 +17,8 @@ import {
   ScanLine, Search, Building, AlertTriangle, Wifi, WifiOff, Users, LogOut
 } from "lucide-react";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { dbTelemetry } from "@/lib/monitoring/dbTelemetry";
+
 
 interface Facility {
   id: string;
