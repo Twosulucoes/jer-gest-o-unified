@@ -510,14 +510,23 @@ export default function AcessosUsuariosPage() {
                         {userRoles.length === 0 ? (
                           <span className="text-muted-foreground text-xs">Sem perfil</span>
                         ) : userRoles.length === 1 ? (
-                          <Badge variant={roleBadgeVariant(userRoles[0])}>
-                            <RoleLabel value={userRoles[0]} />
-                          </Badge>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant={roleBadgeVariant(userRoles[0])} className="cursor-help">
+                                  <RoleLabel value={userRoles[0]} />
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">{ROLES.find(r => r.value === userRoles[0])?.description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         ) : (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 cursor-help">
                                   <Badge variant={roleBadgeVariant(userRoles[0])}>
                                     <RoleLabel value={userRoles[0]} />
                                   </Badge>
@@ -527,10 +536,18 @@ export default function AcessosUsuariosPage() {
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <div className="space-y-0.5">
-                                  {userRoles.map((r: string) => (
-                                    <div key={r} className="text-xs"><RoleLabel value={r} /></div>
-                                  ))}
+                                <div className="space-y-2 p-1">
+                                  {userRoles.map((r: string) => {
+                                    const roleData = ROLES.find(rd => rd.value === r);
+                                    return (
+                                      <div key={r} className="space-y-0.5">
+                                        <div className="text-xs font-bold">{roleData?.label || r}</div>
+                                        <div className="text-[10px] text-muted-foreground leading-tight max-w-[180px]">
+                                          {roleData?.description}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </TooltipContent>
                             </Tooltip>
