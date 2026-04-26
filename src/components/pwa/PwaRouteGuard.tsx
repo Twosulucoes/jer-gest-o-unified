@@ -75,19 +75,31 @@ export default function PwaRouteGuard({ children, allowedRoles }: PwaRouteGuardP
     }
   }
 
+  // Resource Ownership Check: For specific routes like incidents, ensure it belongs to the active event
+  if (resourceError) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <div className="h-16 w-16 bg-destructive/10 rounded-full flex items-center justify-center mb-2">
+          <Lock className="h-8 w-8 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold tracking-tight">Acesso Negado</h2>
+          <p className="text-muted-foreground max-w-[280px]">
+            {resourceError}
+          </p>
+        </div>
+        <Button asChild variant="outline" className="w-full max-w-[240px]">
+          <Link to="/pwa/coordenacao-tecnica/incidentes">Voltar para Incidentes</Link>
+        </Button>
+      </div>
+    );
+  }
+
   // Central Event Scope Check: If no event is selected, block PWA usage
   if (!activeEventId) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center space-y-4">
-        <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-2">
-          <CalendarDays className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-xl font-bold tracking-tight">Nenhum Evento Selecionado</h2>
-          <p className="text-muted-foreground max-w-[280px]">
-            Para utilizar os módulos do PWA, você precisa selecionar um evento ativo no seletor principal.
-          </p>
-        </div>
+...
         <Button asChild variant="default" className="w-full max-w-[240px]">
           <Link to="/selecionar-modulo">Voltar para Seleção</Link>
         </Button>
