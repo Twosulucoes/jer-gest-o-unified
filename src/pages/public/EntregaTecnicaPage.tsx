@@ -58,12 +58,12 @@ interface VersionInfo {
 }
 
 const techStack = [
-  { name: "React 18", icon: Code2, desc: "Interface reativa, modular e performática", color: "text-sky-500" },
-  { name: "TypeScript 5", icon: Code2, desc: "Tipagem estática end-to-end", color: "text-blue-600" },
-  { name: "Supabase", icon: Database, desc: "Postgres + Auth + Storage + Realtime", color: "text-emerald-500" },
-  { name: "Tailwind CSS 3", icon: Layout, desc: "Design system tokenizado JER", color: "text-cyan-500" },
-  { name: "Vite 5", icon: Zap, desc: "Build ultrarrápido e HMR instantâneo", color: "text-amber-500" },
-  { name: "PWA + Capacitor", icon: Smartphone, desc: "Instalável, offline e nativo MLKit", color: "text-orange-500" },
+  { name: "React 18", icon: Code2, desc: "Interface reativa, modular e performática", color: "text-sky-700" },
+  { name: "TypeScript 5", icon: Code2, desc: "Tipagem estática end-to-end", color: "text-blue-700" },
+  { name: "Supabase", icon: Database, desc: "Postgres + Auth + Storage + Realtime", color: "text-emerald-700" },
+  { name: "Tailwind CSS 3", icon: Layout, desc: "Design system tokenizado JER", color: "text-cyan-700" },
+  { name: "Vite 5", icon: Zap, desc: "Build ultrarrápido e HMR instantâneo", color: "text-amber-700" },
+  { name: "PWA + Capacitor", icon: Smartphone, desc: "Instalável, offline e nativo MLKit", color: "text-orange-700" },
 ];
 
 // Métricas reais derivadas do systemMap
