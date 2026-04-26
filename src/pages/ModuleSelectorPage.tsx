@@ -20,6 +20,14 @@ interface ModuleOption {
 
 const MODULE_OPTIONS: ModuleOption[] = [
   {
+    roles: ["super_admin"],
+    label: "Super Admin",
+    description: "Painel de controle mestre",
+    icon: Shield,
+    path: "/super",
+    gradient: "from-[hsl(262,83%,58%)] to-[hsl(262,80%,40%)]",
+  },
+  {
     roles: ["admin", "secretaria", "coordenacao_tecnica"],
     label: "Administração",
     description: "Gestão completa do evento",
@@ -98,6 +106,14 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: IdCard,
     path: "/pwa/credenciamento",
     gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]",
+  },
+  {
+    roles: ["pesquisador", "coordenador_pesquisa"],
+    label: "Pesquisa",
+    description: "Coleta de dados em campo",
+    icon: Search,
+    path: "/pwa/pesquisa",
+    gradient: "from-[hsl(25,95%,53%)] to-[hsl(15,90%,40%)]",
   },
 ];
 
