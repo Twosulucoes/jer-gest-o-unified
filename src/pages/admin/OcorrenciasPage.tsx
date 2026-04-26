@@ -184,11 +184,11 @@ export default function OcorrenciasPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="transporte">Transporte</SelectItem>
-                  <SelectItem value="alimentacao">Alimentação</SelectItem>
-                  <SelectItem value="alojamento">Alojamento</SelectItem>
-                  <SelectItem value="outro">Outro</SelectItem>
+                  {(Object.entries(INCIDENT_MODULES) as [IncidentModule, any][]).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  ))}
                 </SelectContent>
+
               </Select>
             </div>
             <div className="w-[160px]">
