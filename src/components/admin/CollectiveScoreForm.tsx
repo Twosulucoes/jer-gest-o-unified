@@ -30,6 +30,7 @@ interface StateScore {
   outcome: string;
   shootout: string;
 }
+interface CollectiveScoreFormProps {
   matchConfig: MatchConfig;
   entries: Array<{ id: string; label: string }>;
   existingScores?: Array<{
