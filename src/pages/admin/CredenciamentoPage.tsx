@@ -1014,7 +1014,7 @@ export default function CredenciamentoPage() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSearchTerm(""); setSortBy("priority"); }}
+                  onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSearchTerm(""); setSortBy("workflow"); }}
                   className="h-11 w-11 text-muted-foreground hover:text-foreground"
                   title="Limpar filtros"
                 >
