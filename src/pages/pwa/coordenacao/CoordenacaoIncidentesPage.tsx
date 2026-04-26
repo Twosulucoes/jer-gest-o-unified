@@ -40,6 +40,8 @@ export default function CoordenacaoIncidentesPage() {
 
   useEffect(() => {
     if (!activeEventId) {
+      setIncidents([]);
+      setError(null);
       setLoading(false);
       return;
     }
