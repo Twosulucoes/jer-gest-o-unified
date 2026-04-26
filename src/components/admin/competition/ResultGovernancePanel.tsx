@@ -140,7 +140,32 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Create + auto-publish a new bulletin inline
+  // Despublicar — volta resultados de 'publicado' para 'resultado_validado'
+  const [unpublishReason, setUnpublishReason] = useState("");
+  const unpublishResults = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("rpc_unpublish_results_for_sport_event" as any, {
+        p_event_id: eventId,
+        p_sport_event_id: sportEventId!,
+        p_reason: unpublishReason.trim() || null,
+      } as any);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      const count = data?.unpublished_count ?? 0;
+      if (count === 0) {
+        toast.info("Nenhum resultado publicado para despublicar.");
+      } else {
+        toast.success(`${count} resultado(s) despublicado(s). Saíram do portal público.`);
+      }
+      setUnpublishReason("");
+      queryClient.invalidateQueries({ queryKey: ["governance-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["published-results-bulletin"] });
+      queryClient.invalidateQueries({ queryKey: ["public-results"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
   const createBulletin = useMutation({
     mutationFn: async () => {
       if (!newTitle.trim()) throw new Error("Informe um título para o boletim.");
