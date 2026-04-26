@@ -43,6 +43,16 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { BackButton } from "@/components/navigation/BackButton";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useSportEventRules } from "@/hooks/useSportEventRules";
