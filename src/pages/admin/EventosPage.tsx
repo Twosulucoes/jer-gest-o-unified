@@ -221,6 +221,13 @@ export default function EventosPage() {
                     <TableCell>
                       <Badge variant={status.variant}>{status.label}</Badge>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {event.is_public && <Badge variant="default" className="bg-blue-500 hover:bg-blue-600">Público</Badge>}
+                        {event.public_agenda_published && <Badge variant="outline" className="text-blue-500 border-blue-500">Agenda</Badge>}
+                        {!event.is_public && !event.public_agenda_published && <span className="text-muted-foreground text-xs">Privado</span>}
+                      </div>
+                    </TableCell>
                     <TableCell>{formatDate(event.start_date)}</TableCell>
                     <TableCell>{formatDate(event.end_date)}</TableCell>
                     {canWrite && (
