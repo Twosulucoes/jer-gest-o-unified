@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { isNativeApp } from "@/lib/runtime";
 import QrScanner from "@/components/QrScanner";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 import {
   ArrowLeft,
   ShieldCheck,
