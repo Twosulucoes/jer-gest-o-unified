@@ -1,4 +1,4 @@
-import { Home, Scan, Search, History, ClipboardList, Users, Calendar, Bus, Trophy, LayoutDashboard } from "lucide-react";
+import { Home, Scan, Search, History, ClipboardList, Users, Calendar, Bus, Trophy, LayoutDashboard, Radio, LogOut } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
