@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,6 +13,11 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Plus } from "lucide-react";
+import VenueFormDialog, { type VenueFormValues } from "./VenueFormDialog";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const schema = z.object({
   phase_id: z.string().min(1, "Selecione a fase"),
@@ -34,6 +39,7 @@ interface Props {
   phases: any[];
   groups: any[];
   venues: any[];
+  events: any[];
   onSubmit: (values: MatchFormValues) => void;
   isPending: boolean;
 }
