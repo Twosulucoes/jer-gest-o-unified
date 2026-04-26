@@ -42,7 +42,10 @@ export default function LinksPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [moduleFilter, setModuleFilter] = useState<string>("all");
   const [showCreate, setShowCreate] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Wizard state
   const [wizModule, setWizModule] = useState("");
@@ -50,6 +53,7 @@ export default function LinksPage() {
   const [wizSlug, setWizSlug] = useState("");
   const [wizCreating, setWizCreating] = useState(false);
   const [wizCreated, setWizCreated] = useState<{ slug: string; url: string } | null>(null);
+
 
   const { data: items, isLoading } = useQuery({
     queryKey: ["public_content"],
@@ -69,12 +73,23 @@ export default function LinksPage() {
       const { error } = await supabase.from("public_content").update({ active }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["public_content"] });
-      toast.success("Status atualizado");
+    onMutate: async ({ id, active }) => {
+      await queryClient.cancelQueries({ queryKey: ["public_content"] });
+      const previous = queryClient.getQueryData<any[]>(["public_content"]);
+      queryClient.setQueryData<any[]>(["public_content"], (old) =>
+        (old || []).map((it) => (it.id === id ? { ...it, active } : it))
+      );
+      return { previous };
     },
-    onError: () => toast.error("Erro ao atualizar status"),
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(["public_content"], context.previous);
+      toast.error("Erro ao atualizar status");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["public_content"] });
+    },
   });
+
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
