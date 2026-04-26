@@ -61,6 +61,9 @@ export default function ArbitragemEquipePage() {
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [sportFilter, setSportFilter] = useState<string>("all");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<string>("officials");
+  const [selectedMatchIds, setSelectedMatchIds] = useState<Set<string>>(new Set());
+  const [escalaOpen, setEscalaOpen] = useState(false);
 
   // Etapas do evento (para filtro)
   const { data: stages = [] } = useQuery({
