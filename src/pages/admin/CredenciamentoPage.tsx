@@ -885,27 +885,35 @@ export default function CredenciamentoPage() {
         <ModuleHeader route="/admin/credenciamento" />
 
       {/* Flow guide */}
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5">
-        <Info className="h-4 w-4 text-muted-foreground shrink-0" />
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Fluxo:</span>
-          <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700 text-[10px] gap-1">
-            <AlertCircle className="h-3 w-3" /> Pendente
-          </Badge>
-          <ArrowRight className="h-3 w-3" />
-          <Badge variant="outline" className="border-yellow-300 bg-yellow-50 text-yellow-700 text-[10px] gap-1">
-            <Clock className="h-3 w-3" /> Confirmado
-          </Badge>
-          <ArrowRight className="h-3 w-3" />
-          <span className="text-[10px]">Registrar presença →</span>
-          <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700 text-[10px] gap-1">
-            <CreditCard className="h-3 w-3" /> Pronto p/ emissão
-          </Badge>
-          <ArrowRight className="h-3 w-3" />
-          <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700 text-[10px] gap-1">
-            <ShieldCheck className="h-3 w-3" /> Credencial ativa
-          </Badge>
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Info className="h-4 w-4 text-muted-foreground shrink-0" />
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Workflow de Credenciamento:</span>
         </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[10px]">
+          <div className="flex items-center gap-1.5 bg-background border rounded-md px-2 py-1 shadow-sm">
+            <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700 h-4 px-1">Pendente</Badge>
+            <span className="text-muted-foreground">Importado, aguarda confirmação</span>
+          </div>
+          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <div className="flex items-center gap-1.5 bg-background border rounded-md px-2 py-1 shadow-sm">
+            <Badge variant="outline" className="border-yellow-300 bg-yellow-50 text-yellow-700 h-4 px-1">Confirmado</Badge>
+            <span className="text-muted-foreground">Confirmado, aguarda presença</span>
+          </div>
+          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <div className="flex items-center gap-1.5 bg-background border rounded-md px-2 py-1 shadow-sm">
+            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700 h-4 px-1">Pronto p/ emissão</Badge>
+            <span className="text-muted-foreground">Presença registrada, aguarda impressão</span>
+          </div>
+          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <div className="flex items-center gap-1.5 bg-background border rounded-md px-2 py-1 shadow-sm">
+            <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700 h-4 px-1">Credencial ativa</Badge>
+            <span className="text-muted-foreground">Credencial emitida e válida</span>
+          </div>
+        </div>
+        <p className="text-[10px] text-muted-foreground italic">
+          * Dica: Você pode pesquisar por Nome, CPF ou pelo Código da Credencial (ex: A-1234).
+        </p>
       </div>
 
       {/* Search and Filters */}
