@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function DelegacaoProtestoDetalhePage() {
-  const navigate = useNavigate();
   const { id } = useParams();
   const [protest, setProtest] = useState<any>(null);
   const [attachments, setAttachments] = useState<any[]>([]);
