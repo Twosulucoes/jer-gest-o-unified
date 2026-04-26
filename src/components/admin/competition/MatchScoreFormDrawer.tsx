@@ -450,7 +450,7 @@ export function MatchScoreFormDrawer({
                         </SelectTrigger>
                         <SelectContent>
                           {referees.filter(r => !assignments.some(a => a.user_id === r.id)).map(r => (
-                            <SelectItem key={r.id} value={r.id}>{r.full_name || r.email}</SelectItem>
+                            <SelectItem key={r.id} value={r.id}>{r.full_name || "Sem nome"}</SelectItem>
                           ))}
                           {referees.length === 0 && (
                             <div className="p-2 text-xs text-muted-foreground text-center">Nenhum árbitro vinculado a esta modalidade</div>
@@ -465,7 +465,7 @@ export function MatchScoreFormDrawer({
                         return (
                           <div key={a.user_id} className="flex items-center gap-2 bg-muted/50 p-2 rounded-md border text-sm">
                             <div className="flex-1 font-medium truncate">
-                              {ref?.full_name || ref?.email || "Usuário"}
+                              {ref?.full_name || "Usuário"}
                             </div>
                             <Select value={a.role} onValueChange={(r) => updateRefereeRole(a.user_id, r)}>
                               <SelectTrigger className="w-[140px] h-8 text-xs">
