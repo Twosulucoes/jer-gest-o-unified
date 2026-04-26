@@ -144,7 +144,7 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
   const nextNumber = (lastBulletin?.number ?? 0) + 1;
   const eventName = eventRow?.name ?? "—";
   const today = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Boa_Vista" });
-  const suggestedTitle = `Boletim Automático #${nextNumber} — ${today}`;
+  const suggestedTitle = `Boletim Automático #${nextNumber} — ${today}${titleSuffix ? ` · ${titleSuffix}` : ""}`;
 
   // 3) Cabeçalho
   const lines: string[] = [];
