@@ -23,11 +23,22 @@ const ACTIONS_LABELS: Record<string, string> = {
   invite_resent: "Reenvio de Convite",
   password_reset: "Reset de Senha",
   sessions_revoked: "Revogação de Sessões",
+  // Generic actions
+  insert: "Inserção",
+  update: "Atualização",
+  delete: "Exclusão",
 };
+
+const TABLE_OPTIONS = [
+  { value: "users", label: "Usuários / Perfis" },
+  { value: "public_content", label: "Links / Páginas Públicas" },
+  { value: "pwa_access", label: "Acessos PWA" },
+];
 
 export default function AuditoriaPage() {
   const [search, setSearch] = useState("");
   const [userId, setUserId] = useState("all");
+  const [tableName, setTableName] = useState("users");
   const [actionFilter, setActionFilter] = useState("all");
   const [startDate, setStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
