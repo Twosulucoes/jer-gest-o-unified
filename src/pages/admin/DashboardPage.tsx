@@ -8,7 +8,7 @@ import {
   Users, UserCheck, ShieldCheck, Bus, UtensilsCrossed, Building, Trophy,
   CheckCircle2, AlertTriangle, Clock, TrendingUp,
   Upload, UsersRound, ScanLine, Navigation, ClipboardList, CalendarDays, KeyRound,
-  RefreshCw, Bed, Truck, CalendarClock, Calendar
+  RefreshCw, Bed, Truck, CalendarClock, Calendar, Whistle as WhistleIcon, Gavel
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
