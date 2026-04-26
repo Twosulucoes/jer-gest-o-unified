@@ -218,6 +218,7 @@ export default function EntregaTecnicaPage() {
             <a href="#stack" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Tecnologia</a>
             <a href="#tour" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Tour Guiado</a>
             <a href="#modulos" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Módulos</a>
+            <a href="#faq" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">FAQ</a>
             <a href="#homologacao" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Homologação</a>
           </div>
           <div className="flex items-center gap-3">
