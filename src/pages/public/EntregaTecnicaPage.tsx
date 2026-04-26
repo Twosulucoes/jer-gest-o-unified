@@ -77,15 +77,15 @@ const modulosConcluidos = systemMap.reduce((acc, g) => {
 }, 0);
 
 const groupMeta: Record<string, { icon: any, color: string }> = {
-  dashboard: { icon: LayoutDashboard, color: "from-blue-500 to-indigo-600" },
-  preparacao: { icon: Users, color: "from-sky-500 to-blue-600" },
-  credenciamento: { icon: QrCode, color: "from-purple-500 to-indigo-600" },
-  competicao: { icon: Trophy, color: "from-emerald-500 to-teal-600" },
-  logistica: { icon: Bus, color: "from-orange-500 to-amber-600" },
-  cadastros: { icon: Database, color: "from-slate-500 to-slate-700" },
-  acessos: { icon: Shield, color: "from-rose-500 to-pink-600" },
-  configuracoes: { icon: Zap, color: "from-amber-400 to-orange-500" },
-  ajuda: { icon: Bell, color: "from-cyan-500 to-blue-500" },
+  dashboard: { icon: LayoutDashboard, color: "from-blue-600 to-indigo-700" },
+  preparacao: { icon: Users, color: "from-sky-600 to-blue-700" },
+  credenciamento: { icon: QrCode, color: "from-purple-600 to-indigo-700" },
+  competicao: { icon: Trophy, color: "from-emerald-600 to-teal-700" },
+  logistica: { icon: Bus, color: "from-orange-600 to-amber-700" },
+  cadastros: { icon: Database, color: "from-slate-600 to-slate-800" },
+  acessos: { icon: Shield, color: "from-rose-600 to-pink-700" },
+  configuracoes: { icon: Zap, color: "from-amber-600 to-orange-700" },
+  ajuda: { icon: Bell, color: "from-cyan-600 to-blue-700" },
 };
 
 const tourSteps = systemMap.map(group => {
