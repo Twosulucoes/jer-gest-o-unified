@@ -277,7 +277,6 @@ export function getPwaMessage(code: PwaMessageCode, lang?: PwaLang): string {
  * @deprecated Prefira `voucherErrorMessage` de `@/lib/voucherMessages`
  * (dicionário único). Mantido como fachada para compatibilidade.
  */
-import { voucherErrorMessage } from "./voucherMessages";
 export function getVoucherMessage(reason: string | undefined, lang?: PwaLang): string {
   return voucherErrorMessage(reason, lang).text;
 }
