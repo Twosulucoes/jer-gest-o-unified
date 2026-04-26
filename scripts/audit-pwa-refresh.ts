@@ -52,7 +52,7 @@ const rows: Row[] = files.map((abs) => {
   const src = readFileSync(abs, "utf8");
   const hasRefreshButton = /PwaRefreshButton/.test(src);
   const hasPwaHeader = /\bPwaHeader\b/.test(src);
-  const exception = isException(rel);
+  const exception = isPwaRefreshException(rel);
   const ok = exception || hasRefreshButton || hasPwaHeader;
   return { file: rel, hasRefreshButton, hasPwaHeader, ok, exception };
 }).sort((a, b) => a.file.localeCompare(b.file));
