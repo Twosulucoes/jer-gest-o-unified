@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers, IdCard } from "lucide-react";
+import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers, IdCard, Download } from "lucide-react";
 import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VersionBadge } from "@/components/VersionBadge";
