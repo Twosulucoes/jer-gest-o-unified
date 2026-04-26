@@ -43,7 +43,13 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [previewMeta, setPreviewMeta] = useState<{ items: number; matches: number; number: number } | null>(null);
+  const [previewMeta, setPreviewMeta] = useState<{
+    items: number;
+    matches: number;
+    number: number;
+    matchIds: string[];
+    sportEventIds: string[];
+  } | null>(null);
   const [generating, setGenerating] = useState(false);
 
   // Reset ao abrir
