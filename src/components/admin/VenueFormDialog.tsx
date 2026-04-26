@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,8 +17,9 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { Tables } from "@/integrations/supabase/types";
-import { Layers } from "lucide-react";
+import { Layers, AlertTriangle, CalendarClock } from "lucide-react";
 
 const VENUE_TYPE_OPTIONS = [
   { value: "arena", label: "Arena" },
@@ -78,13 +79,34 @@ export default function VenueFormDialog({
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("event_stages")
-        .select("id, name, status, sort_order, host_name, host_city")
+        .select("id, name, status, sort_order, host_name, host_city, starts_at, ends_at, event_id")
         .eq("event_id", selectedEventId)
         .order("sort_order", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Array<{
         id: string; name: string; status: string; sort_order: number;
         host_name: string | null; host_city: string | null;
+        starts_at: string | null; ends_at: string | null;
+        event_id: string;
+      }>;
+    },
+  });
+
+  // Partidas já agendadas neste venue (para detectar conflito de escopo de etapas)
+  const { data: scheduledMatches = [] } = useQuery({
+    queryKey: ["venue-matches-scope", venue?.id],
+    enabled: !!venue?.id && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_matches")
+        .select("id, match_date, sport_event_id, sport_events(sports(name))")
+        .eq("venue_id", venue!.id)
+        .not("match_date", "is", null);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string; match_date: string;
+        sport_event_id: string;
+        sport_events: { sports: { name: string } | null } | null;
       }>;
     },
   });
@@ -142,6 +164,76 @@ export default function VenueFormDialog({
     const next = checked ? [...current, stageId] : current.filter((id) => id !== stageId);
     form.setValue("event_stage_ids", next, { shouldValidate: true, shouldDirty: true });
   };
+
+  // ─── Detecção de conflitos ────────────────────────────────────────
+  const conflicts = useMemo(() => {
+    const result = {
+      crossEvent: [] as string[],         // BLOQUEIO: etapa de outro evento
+      overlapping: [] as Array<{ a: string; b: string; range: string }>, // ALERTA: etapas marcadas com datas sobrepostas
+      orphanMatches: [] as Array<{ date: string; sport: string }>,        // ALERTA: partidas existentes fora do escopo
+    };
+
+    if (!selectedStageIds?.length) return result;
+
+    const selectedStages = stages.filter((s) => selectedStageIds.includes(s.id));
+
+    // 1) Cross-event (hard block)
+    for (const s of selectedStages) {
+      if (s.event_id !== selectedEventId) {
+        result.crossEvent.push(s.name);
+      }
+    }
+
+    // 2) Sobreposição de datas entre etapas selecionadas
+    for (let i = 0; i < selectedStages.length; i++) {
+      for (let j = i + 1; j < selectedStages.length; j++) {
+        const A = selectedStages[i];
+        const B = selectedStages[j];
+        const aStart = A.starts_at ? new Date(A.starts_at).getTime() : null;
+        const aEnd = A.ends_at ? new Date(A.ends_at).getTime() : null;
+        const bStart = B.starts_at ? new Date(B.starts_at).getTime() : null;
+        const bEnd = B.ends_at ? new Date(B.ends_at).getTime() : null;
+        if (aStart == null || aEnd == null || bStart == null || bEnd == null) continue;
+        if (aStart <= bEnd && bStart <= aEnd) {
+          const fmt = (d: number) => new Date(d).toLocaleDateString("pt-BR");
+          const ovStart = Math.max(aStart, bStart);
+          const ovEnd = Math.min(aEnd, bEnd);
+          result.overlapping.push({
+            a: A.name,
+            b: B.name,
+            range: `${fmt(ovStart)} → ${fmt(ovEnd)}`,
+          });
+        }
+      }
+    }
+
+    // 3) Partidas já agendadas que caem fora do range de qualquer etapa marcada
+    if (scheduledMatches.length > 0 && selectedStages.length > 0) {
+      const ranges = selectedStages
+        .map((s) => ({
+          start: s.starts_at ? new Date(s.starts_at).getTime() : null,
+          end: s.ends_at ? new Date(s.ends_at).getTime() : null,
+        }))
+        .filter((r) => r.start != null && r.end != null) as Array<{ start: number; end: number }>;
+
+      if (ranges.length > 0) {
+        for (const m of scheduledMatches) {
+          const t = new Date(m.match_date).getTime();
+          const inside = ranges.some((r) => t >= r.start && t <= r.end);
+          if (!inside) {
+            result.orphanMatches.push({
+              date: new Date(m.match_date).toLocaleDateString("pt-BR"),
+              sport: m.sport_events?.sports?.name ?? "—",
+            });
+          }
+        }
+      }
+    }
+
+    return result;
+  }, [selectedStageIds, stages, selectedEventId, scheduledMatches]);
+
+  const hasBlockingConflict = conflicts.crossEvent.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -252,6 +344,66 @@ export default function VenueFormDialog({
               )}
             />
 
+            {/* Painel de conflitos / incompatibilidades */}
+            {(conflicts.crossEvent.length > 0 ||
+              conflicts.overlapping.length > 0 ||
+              conflicts.orphanMatches.length > 0) && (
+              <div className="space-y-2">
+                {conflicts.crossEvent.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Etapa de outro evento</AlertTitle>
+                    <AlertDescription className="text-xs">
+                      Não é possível vincular este local a etapas de outro evento:{" "}
+                      <strong>{conflicts.crossEvent.join(", ")}</strong>. Remova-as antes de salvar.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {conflicts.overlapping.length > 0 && (
+                  <Alert>
+                    <CalendarClock className="h-4 w-4" />
+                    <AlertTitle>Etapas com datas sobrepostas</AlertTitle>
+                    <AlertDescription className="text-xs space-y-1">
+                      <p>
+                        O mesmo local não pode ocorrer simultaneamente em etapas diferentes.
+                        Verifique:
+                      </p>
+                      <ul className="list-disc list-inside">
+                        {conflicts.overlapping.map((o, i) => (
+                          <li key={i}>
+                            <strong>{o.a}</strong> × <strong>{o.b}</strong> — sobreposição em {o.range}
+                          </li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {conflicts.orphanMatches.length > 0 && (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Agenda existente fora do escopo</AlertTitle>
+                    <AlertDescription className="text-xs space-y-1">
+                      <p>
+                        Este local já tem {conflicts.orphanMatches.length} partida(s) agendada(s) em datas
+                        que não pertencem a nenhuma etapa selecionada:
+                      </p>
+                      <ul className="list-disc list-inside max-h-24 overflow-y-auto">
+                        {conflicts.orphanMatches.slice(0, 8).map((m, i) => (
+                          <li key={i}>{m.date} — {m.sport}</li>
+                        ))}
+                        {conflicts.orphanMatches.length > 8 && (
+                          <li>… e mais {conflicts.orphanMatches.length - 8}</li>
+                        )}
+                      </ul>
+                      <p className="text-muted-foreground">
+                        Considere incluir a etapa correspondente ou remarcar essas partidas.
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+
             <FormField
               control={form.control}
               name="name"
@@ -329,7 +481,7 @@ export default function VenueFormDialog({
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || hasBlockingConflict}>
                 {isPending ? "Salvando..." : isEditing ? "Salvar" : "Criar"}
               </Button>
             </DialogFooter>
