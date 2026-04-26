@@ -240,6 +240,19 @@ export default function AlimentacaoScanPage() {
           reopenIfContinuous();
           return;
         }
+
+        // Voucher AGREGADO: não tem participant_id, registra apenas o uso (já feito pela RPC)
+        if (voucher.voucher_type === "aggregate" || !voucher.participant_id) {
+          const displayLabel = voucher.label || voucher.person_name || "Acompanhante";
+          const successMsg = `Voucher agregado · ${displayLabel}`;
+          setResult({ ok: true, source: "qr", message: successMsg });
+          toast.success(successMsg);
+          recordOutcome("ok");
+          if (navigator.vibrate) navigator.vibrate(200);
+          reopenIfContinuous();
+          return;
+        }
+
         participantId = voucher.participant_id ?? null;
         participantName = voucher.person_name ?? null;
         method = "voucher";
