@@ -116,6 +116,7 @@ Componente: `CombatResultForm` (renderizado quando `family='combat'`)
 - ✅ Auto-finish da partida em ambos os fluxos
 - ✅ Sincronização match_scores → resultado oficial
 - ✅ Base para combate (combat_detail + CombatResultForm)
+- ✅ **Lançamento dedicado para Sets (Etapa 6 concluída)**: Suporte total para modalidades de sets com cômputo de averages e parciais.
 - 🟡 CombatResultForm não integrado automaticamente na página da partida (requer detecção de family)
 - ⛔ Sem portal público para consulta externa
 - ⛔ Sem geração de boletins oficiais em PDF
