@@ -103,6 +103,56 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
   const addMut = useMutation({
     mutationFn: async () => {
       if (!selectedUserId || !selectedRole) throw new Error("Selecione usuário e função");
+
+      // Fetch the target match and validate status / scheduling
+      const { data: match, error: mErr } = await supabase
+        .from("competition_matches")
+        .select("id, status, match_date, start_time, end_time, event_id")
+        .eq("id", matchId)
+        .maybeSingle();
+      if (mErr) throw mErr;
+      if (!match) throw new Error("Partida não encontrada");
+      if (match.event_id !== eventId) throw new Error("Partida fora do evento ativo");
+
+      const BLOCKED = new Set(["cancelled", "canceled", "wo", "w_o", "draft"]);
+      if (BLOCKED.has((match.status ?? "").toLowerCase())) {
+        throw new Error(`Partida com status inválido (${match.status}) — não é permitido escalar.`);
+      }
+      if (!match.match_date || !match.start_time) {
+        throw new Error("Partida sem data/hora — defina antes de escalar.");
+      }
+
+      // Conflict check: same user already assigned to an overlapping match in the same event/day
+      const start = new Date(`${match.match_date}T${match.start_time}`);
+      const end = match.end_time
+        ? new Date(`${match.match_date}T${match.end_time}`)
+        : new Date(start.getTime() + 90 * 60 * 1000);
+
+      const { data: existing, error: eErr } = await supabase
+        .from("match_user_assignments" as any)
+        .select(
+          "match_id, competition_matches!inner(id, match_date, start_time, end_time)",
+        )
+        .eq("event_id", eventId)
+        .eq("user_id", selectedUserId)
+        .eq("competition_matches.match_date", match.match_date)
+        .neq("match_id", matchId);
+      if (eErr) throw eErr;
+
+      for (const row of (existing as any[]) ?? []) {
+        const cm = row.competition_matches;
+        if (!cm?.start_time) continue;
+        const s = new Date(`${cm.match_date}T${cm.start_time}`);
+        const e = cm.end_time
+          ? new Date(`${cm.match_date}T${cm.end_time}`)
+          : new Date(s.getTime() + 90 * 60 * 1000);
+        if (start < e && s < end) {
+          throw new Error(
+            "Conflito de horário: este oficial já está escalado em outra partida no mesmo intervalo.",
+          );
+        }
+      }
+
       const { error } = await supabase.from("match_user_assignments" as any).insert({
         match_id: matchId,
         user_id: selectedUserId,
@@ -121,7 +171,7 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
       setSearch("");
       setAddOpen(false);
     },
-    onError: (e: Error) => toast.error("Erro: " + e.message),
+    onError: (e: Error) => toast.error("Erro ao designar", { description: e.message }),
   });
 
   const removeMut = useMutation({
