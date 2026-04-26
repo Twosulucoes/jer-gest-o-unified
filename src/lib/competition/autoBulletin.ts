@@ -81,7 +81,10 @@ function entryLabel(e: MatchRow["competition_match_entries"][number], statusFilt
  * partidas com resultado pelo escopo solicitado.
  */
 export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Promise<AutoBulletinResult> {
-  const { eventId, scope, stageSportEventIds, sportEventId, statusFilter, dateFrom, dateTo } = filters;
+  const {
+    eventId, scope, stageSportEventIds, sportEventId, statusFilter,
+    dateFrom, dateTo, phaseId, titleSuffix,
+  } = filters;
 
   // Resolve sport_event_ids alvo conforme o escopo
   let sportEventIds: string[] | null = null;
