@@ -28,6 +28,8 @@ import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 import { ScanLine, CheckCircle2, XCircle } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { dbTelemetry } from "@/lib/monitoring/dbTelemetry";
+
 
 type ScanMode = "validate" | "checkin" | "checkout";
 
