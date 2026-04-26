@@ -7,6 +7,7 @@ import { Loader2, Trophy, ChevronRight, ArrowLeft, Calendar, Swords } from "luci
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, parse } from "date-fns";
+import { VisualIdentity } from "@/components/public/VisualIdentity";
 
 export default function PublicResultsPage() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
