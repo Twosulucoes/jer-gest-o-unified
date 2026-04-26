@@ -937,6 +937,7 @@ export default function CompeticaoLancamentoScorePage() {
                 </CardTitle>
                 <Switch 
                   checked={isWO} 
+                  disabled={isLocked}
                   onCheckedChange={(val) => {
                     setIsWO(val);
                     if (!val) setWoWinnerId("");
@@ -947,7 +948,7 @@ export default function CompeticaoLancamentoScorePage() {
                 {isWO ? (
                   <div className="space-y-4 pt-2">
                     <Label className="text-sm">Vencedora por W.O.</Label>
-                    <Select value={woWinnerId} onValueChange={setWoWinnerId}>
+                    <Select value={woWinnerId} onValueChange={setWoWinnerId} disabled={isLocked}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
