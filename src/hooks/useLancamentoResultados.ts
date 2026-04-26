@@ -120,7 +120,7 @@ export function usePartidasModalidade(sportEventId: string | null) {
             participant_sport_event:participant_sport_events(
               participant:participants(person:people(full_name))
             ),
-            score:match_scores(id, score_final, outcome)
+            score:match_scores(id, score_final, outcome, score_detail)
           )
         `)
         .eq("event_id", eventId)
