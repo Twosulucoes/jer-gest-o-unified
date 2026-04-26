@@ -1,10 +1,12 @@
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link, useParams, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
 import AuthLoadingScreen from "@/components/auth/AuthLoadingScreen";
-import { AlertCircle, CalendarDays } from "lucide-react";
+import { AlertCircle, CalendarDays, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AppRole } from "@/config/accessControl";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PwaRouteGuardProps {
   children: React.ReactNode;
