@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchVenueIdsForStage } from "@/hooks/useVenuesByStage";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,19 +32,12 @@ export default function CoordenacaoAgendaPage() {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
 
-      // Se há etapa em escopo, primeiro descobre quais venues servem essa etapa (N:N)
-      let venueIdsFilter: string[] | null = null;
-      if (stageId) {
-        const { data: links } = await (supabase as any)
-          .from("venue_event_stages")
-          .select("venue_id")
-          .eq("event_stage_id", stageId);
-        venueIdsFilter = (links ?? []).map((l: any) => l.venue_id as string);
-        if (venueIdsFilter.length === 0) {
-          setMatches([]);
-          setLoading(false);
-          return;
-        }
+      // Resolve venues da etapa via fonte única (null = todas as etapas)
+      const venueIdsFilter = await fetchVenueIdsForStage(stageId);
+      if (venueIdsFilter && venueIdsFilter.length === 0) {
+        setMatches([]);
+        setLoading(false);
+        return;
       }
 
       let query = supabase

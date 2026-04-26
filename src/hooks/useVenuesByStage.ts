@@ -70,3 +70,17 @@ export function useVenuesPicker(opts: UseVenuesByStageOptions) {
     select: "id, name, address, city",
   });
 }
+
+/**
+ * Helper imperativo (fora de React Query) para resolver os venue_ids de uma etapa.
+ * Retorna null se stageId for falsy (sem filtro). Retorna [] se a etapa não tem venues.
+ */
+export async function fetchVenueIdsForStage(stageId: string | null | undefined): Promise<string[] | null> {
+  if (!stageId) return null;
+  const { data, error } = await (supabase as any)
+    .from("venue_event_stages")
+    .select("venue_id")
+    .eq("event_stage_id", stageId);
+  if (error) throw error;
+  return (data ?? []).map((l: any) => l.venue_id as string);
+}
