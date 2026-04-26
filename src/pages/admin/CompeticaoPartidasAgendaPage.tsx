@@ -60,6 +60,15 @@ export default function CompeticaoPartidasAgendaPage() {
     if (stageId) setSelectedStageId(stageId);
   }, [stageId, setSelectedStageId]);
 
+  const { data: events = [] } = useQuery({
+    queryKey: ["events"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("events").select("*").order("year", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: sportEvents = [] } = useQuery({
     queryKey: ["sport_events", selectedEventId, mySportIds],
     queryFn: async () => {
@@ -417,6 +426,7 @@ export default function CompeticaoPartidasAgendaPage() {
         phases={phases}
         groups={groups}
         venues={venues}
+        events={events}
         onSubmit={handleSubmit}
         isPending={createMut.isPending || updateMut.isPending}
       />

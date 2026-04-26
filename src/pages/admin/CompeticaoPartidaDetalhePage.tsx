@@ -120,6 +120,15 @@ export default function CompeticaoPartidaDetalhePage() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [publishBulletinId, setPublishBulletinId] = useState("");
 
+  const { data: events = [] } = useQuery({
+    queryKey: ["events"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("events").select("*").order("year", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Fetch match
   const { data: match, isLoading } = useQuery({
     queryKey: ["competition_match", matchId],
@@ -621,7 +630,7 @@ export default function CompeticaoPartidaDetalhePage() {
   const allPublished = hasResults && results.every((r) => r.result_status === RESULT_STATUS.PUBLISHED);
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-6 pb-20">
       <BackButton fallbackTo="/admin/competicao" />
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
@@ -1162,6 +1171,7 @@ export default function CompeticaoPartidaDetalhePage() {
         phases={allPhases}
         groups={allGroups}
         venues={allVenues}
+        events={events}
         onSubmit={(v) => updateMatchMut.mutate(v)}
         isPending={updateMatchMut.isPending}
       />
