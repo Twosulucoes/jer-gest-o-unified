@@ -66,19 +66,28 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
   });
   const profileMap = new Map(assignedProfiles.map((p) => [p.id, p]));
 
-  const { data: searchResults = [] } = useQuery({
+  const {
+    data: searchResults = [],
+    isFetching: searchLoading,
+    error: searchError,
+  } = useQuery({
     queryKey: ["search_users_for_assignment", search],
     queryFn: async () => {
-      if (search.length < 2) return [];
+      const term = search.trim();
+      if (term.length < 2) return [];
+      // Escapa caracteres especiais do PostgREST (% , _ , vírgula) para evitar
+      // que o ilike quebre quando o usuário digita pontuação.
+      const safe = term.replace(/[%_,()]/g, (c) => `\\${c}`);
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name")
-        .or(`full_name.ilike.%${search}%`)
-        .limit(10);
+        .ilike("full_name", `%${safe}%`)
+        .order("full_name", { ascending: true })
+        .limit(20);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
-    enabled: search.length >= 2,
+    enabled: search.trim().length >= 2,
   });
 
   const { data: assignmentCounts = [] } = useQuery({
