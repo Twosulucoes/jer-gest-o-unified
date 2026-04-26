@@ -136,7 +136,8 @@ export default function EntregaTecnicaPage() {
         totalModulos,
         stats,
         techStack: techStack.map(t => ({ name: t.name, desc: t.desc })),
-        checklistItems
+        checklistItems,
+        modules: tourSteps.map(s => ({ title: s.title, desc: s.desc }))
       });
     } catch (error) {
       console.error("Erro ao gerar PDF:", error);
