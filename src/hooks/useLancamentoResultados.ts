@@ -20,7 +20,7 @@ export interface EntradaPartida {
   side: string;
   team: { id: string; name: string } | null;
   participantName: string | null;
-  score: { id: string; score_final: string | null; outcome: string | null } | null;
+  score: { id: string; score_final: string | null; outcome: string | null; score_detail: any } | null;
 }
 
 export interface PartidaItem {
