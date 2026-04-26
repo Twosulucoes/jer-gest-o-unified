@@ -285,7 +285,7 @@ export function useSalvarPlacar(matchId: string) {
 
   return useMutation({
     mutationFn: async (
-      scores: Array<{ entryId: string; scoreFinal: string; outcome: string }>
+      scores: Array<{ entryId: string; scoreFinal: string; outcome: string; shootoutScore?: string }>
     ) => {
       for (const s of scores) {
         const { error: scoreErr } = await supabase.from("match_scores").upsert(
