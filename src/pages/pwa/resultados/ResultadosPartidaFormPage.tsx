@@ -484,6 +484,7 @@ export default function ResultadosPartidaFormPage() {
         <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${STATUS_COLORS[match.status] ?? "bg-slate-100 text-slate-700"}`}>
           {STATUS_LABELS[match.status] ?? match.status}
         </span>
+        <PwaRefreshButton />
       </header>
 
       {/* Card resumo */}
