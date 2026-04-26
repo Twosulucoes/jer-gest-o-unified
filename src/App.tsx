@@ -190,6 +190,7 @@ import NotFound from "./pages/NotFound";
 import PwaRouteGuard from "./components/pwa/PwaRouteGuard";
 import { PwaUpdateNotice } from "./components/pwa/PwaUpdateNotice";
 import { AppStatePreserver } from "./components/pwa/AppStatePreserver";
+import { VersionValidator } from "./components/pwa/VersionValidator";
 
 import PwaAcessoNegadoPage from "./pages/pwa/PwaAcessoNegadoPage";
 import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
