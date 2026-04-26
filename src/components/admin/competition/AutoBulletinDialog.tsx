@@ -12,13 +12,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, Sparkles, FileText, Lock, RefreshCw } from "lucide-react";
+import { Loader2, Sparkles, FileText, Lock, RefreshCw, Layers } from "lucide-react";
 import { BULLETIN_STATUS } from "@/lib/resultStatus";
 import {
   buildAutoBulletinContent,
+  buildAutoBulletinByPhase,
   type BulletinScope,
   type BulletinStatusFilter,
+  type AutoBulletinResult,
+  type PhaseBulletin,
 } from "@/lib/competition/autoBulletin";
 import { useNextBulletinNumber } from "@/hooks/useNextBulletinNumber";
 
@@ -57,6 +61,10 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
   } | null>(null);
   const [generating, setGenerating] = useState(false);
 
+  // Modo "separar por fase": além do agregado em rascunho, gera 1 boletim por fase.
+  const [splitByPhase, setSplitByPhase] = useState(false);
+  const [phasesPreview, setPhasesPreview] = useState<PhaseBulletin[]>([]);
+
   // Reset ao abrir
   useEffect(() => {
     if (!open) return;
@@ -67,27 +75,29 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
     setTitle("");
     setContent("");
     setPreviewMeta(null);
+    setSplitByPhase(false);
+    setPhasesPreview([]);
   }, [open, sportEventId, stageId]);
+
+  const resolveStageSportEventIds = async (): Promise<string[] | null> => {
+    if (scope !== "stage" || !stageId) return null;
+    const { data: pse, error } = await supabase
+      .from("participant_sport_events")
+      .select("sport_event_id, participants!inner(participant_event_stages!inner(event_stage_id))")
+      .eq("participants.participant_event_stages.event_stage_id", stageId);
+    if (error) throw error;
+    return Array.from(
+      new Set(((pse ?? []) as Array<{ sport_event_id: string | null }>)
+        .map((r) => r.sport_event_id)
+        .filter((id): id is string => !!id)),
+    );
+  };
 
   const generate = async () => {
     setGenerating(true);
     try {
-      // Resolve sport_event_ids da etapa via participant_event_stages → participant_sport_events
-      let stageSportEventIds: string[] | null = null;
-      if (scope === "stage" && stageId) {
-        const { data: pse, error } = await supabase
-          .from("participant_sport_events")
-          .select("sport_event_id, participants!inner(participant_event_stages!inner(event_stage_id))")
-          .eq("participants.participant_event_stages.event_stage_id", stageId);
-        if (error) throw error;
-        stageSportEventIds = Array.from(
-          new Set(((pse ?? []) as Array<{ sport_event_id: string | null }>)
-            .map((r) => r.sport_event_id)
-            .filter((id): id is string => !!id)),
-        );
-      }
-
-      const result = await buildAutoBulletinContent({
+      const stageSportEventIds = await resolveStageSportEventIds();
+      const baseFilters = {
         eventId,
         scope,
         sportEventId: scope === "sport_event" ? sportEventId : null,
@@ -95,7 +105,18 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
         statusFilter,
         dateFrom: dateFrom || null,
         dateTo: dateTo || null,
-      });
+      };
+
+      let result: AutoBulletinResult;
+      let phases: PhaseBulletin[] = [];
+
+      if (splitByPhase) {
+        const byPhase = await buildAutoBulletinByPhase(baseFilters);
+        result = byPhase.aggregate;
+        phases = byPhase.perPhase;
+      } else {
+        result = await buildAutoBulletinContent(baseFilters);
+      }
 
       setContent(result.contentMd);
       setTitle(result.suggestedTitle);
@@ -106,11 +127,16 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
         matchIds: result.matchIds,
         sportEventIds: result.sportEventIds,
       });
+      setPhasesPreview(phases);
 
       if (result.itemsCount === 0) {
         toast.warning("Nenhum resultado encontrado", {
           description: "Ajuste os filtros (status, escopo, datas) e tente novamente.",
         });
+      } else if (splitByPhase) {
+        toast.success(
+          `${result.itemsCount} item(ns) · ${phases.length} fase(s) com resultado`,
+        );
       } else {
         toast.success(`${result.itemsCount} item(ns) compilado(s)`);
       }
@@ -121,77 +147,110 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
     }
   };
 
+  /**
+   * Cria um único boletim com vínculos automáticos.
+   * - Reserva o número via RPC `rpc_create_bulletin` (atômico server-side).
+   * - Aplica `status` desejado (rascunho ou publicado) e registra `updated_by`.
+   * - Persiste vínculos n:n com sport_events / matches (defensivo).
+   */
+  const createOneBulletin = async (params: {
+    titleText: string;
+    contentMd: string;
+    matchIds: string[];
+    sportEventIds: string[];
+    status: typeof BULLETIN_STATUS[keyof typeof BULLETIN_STATUS];
+  }): Promise<{ id: string; number: number; linkWarn: string }> => {
+    const { data: rpcData, error: rpcErr } = await supabase.rpc("rpc_create_bulletin", {
+      p_event_id: eventId,
+      p_title: params.titleText,
+      p_content_md: params.contentMd,
+    });
+    if (rpcErr) throw rpcErr;
+
+    const reserved = rpcData as { id: string; number: number };
+    const bulletinId = reserved.id;
+
+    const updates: {
+      status: typeof BULLETIN_STATUS[keyof typeof BULLETIN_STATUS];
+      updated_by: string | null;
+      published_at?: string;
+      published_by?: string | null;
+    } = {
+      status: params.status,
+      updated_by: user?.id ?? null,
+    };
+    if (params.status === BULLETIN_STATUS.PUBLICADO) {
+      updates.published_at = new Date().toISOString();
+      updates.published_by = user?.id ?? null;
+    }
+
+    const { error: updErr } = await supabase
+      .from("official_bulletins")
+      .update(updates)
+      .eq("id", bulletinId);
+    if (updErr) throw updErr;
+
+    let linkWarn = "";
+    if (params.sportEventIds.length > 0) {
+      const rows = params.sportEventIds.map((sport_event_id) => ({
+        bulletin_id: bulletinId, sport_event_id,
+      }));
+      const { error } = await (supabase as any).from("bulletin_sport_events").insert(rows);
+      if (error) { console.warn("[AutoBulletin] vínculo sport_events:", error.message); linkWarn = error.message; }
+    }
+    if (params.matchIds.length > 0) {
+      const rows = params.matchIds.map((match_id) => ({ bulletin_id: bulletinId, match_id }));
+      const { error } = await (supabase as any).from("bulletin_matches").insert(rows);
+      if (error) { console.warn("[AutoBulletin] vínculo matches:", error.message); linkWarn = error.message; }
+    }
+
+    return { id: bulletinId, number: reserved.number, linkWarn };
+  };
+
   const saveDraft = useMutation({
     mutationFn: async () => {
       if (!title.trim()) throw new Error("Informe um título.");
       if (!content.trim()) throw new Error("Gere o conteúdo antes de salvar.");
       if (!previewMeta) throw new Error("Pré-visualize o conteúdo antes de salvar.");
 
-      // 1) Reserva atômica do número via RPC (server-side, evita duplicidade
-      //    quando dois usuários criam boletins simultaneamente).
-      const { data: rpcData, error: rpcErr } = await supabase.rpc("rpc_create_bulletin", {
-        p_event_id: eventId,
-        p_title: title.trim(),
-        p_content_md: content,
+      // 1) Boletim agregado (sempre como RASCUNHO)
+      const aggregate = await createOneBulletin({
+        titleText: title.trim(),
+        contentMd: content,
+        matchIds: previewMeta.matchIds,
+        sportEventIds: previewMeta.sportEventIds,
+        status: BULLETIN_STATUS.RASCUNHO,
       });
-      if (rpcErr) throw rpcErr;
 
-      const reserved = rpcData as { id: string; number: number };
-      const bulletinId = reserved.id;
-      const reservedNumber = reserved.number;
-
-      // 2) Garante status `rascunho` e rastreia updated_by (RPC cria com defaults).
-      const { error: updErr } = await supabase
-        .from("official_bulletins")
-        .update({
-          status: BULLETIN_STATUS.RASCUNHO,
-          updated_by: user?.id ?? null,
-        })
-        .eq("id", bulletinId);
-      if (updErr) throw updErr;
-
-      const data = { id: bulletinId, number: reservedNumber };
-
-      let linkWarn = "";
-      if (previewMeta.sportEventIds.length > 0) {
-        const rows = previewMeta.sportEventIds.map((sport_event_id) => ({
-          bulletin_id: bulletinId,
-          sport_event_id,
-        }));
-        const { error: linkErr } = await (supabase as any)
-          .from("bulletin_sport_events")
-          .insert(rows);
-        if (linkErr) {
-          console.warn("[AutoBulletin] vínculo sport_events falhou:", linkErr.message);
-          linkWarn = linkErr.message;
-        }
-      }
-      if (previewMeta.matchIds.length > 0) {
-        const rows = previewMeta.matchIds.map((match_id) => ({
-          bulletin_id: bulletinId,
-          match_id,
-        }));
-        const { error: linkErr } = await (supabase as any)
-          .from("bulletin_matches")
-          .insert(rows);
-        if (linkErr) {
-          console.warn("[AutoBulletin] vínculo matches falhou:", linkErr.message);
-          linkWarn = linkErr.message;
+      // 2) Boletins por fase (PUBLICADOS) — sequencial para preservar a ordem dos números
+      const phaseResults: Array<{ phaseName: string; number: number; linkWarn: string }> = [];
+      if (splitByPhase) {
+        for (const ph of phasesPreview) {
+          const created = await createOneBulletin({
+            titleText: ph.result.suggestedTitle,
+            contentMd: ph.result.contentMd,
+            matchIds: ph.result.matchIds,
+            sportEventIds: ph.result.sportEventIds,
+            status: BULLETIN_STATUS.PUBLICADO,
+          });
+          phaseResults.push({ phaseName: ph.phaseName, number: created.number, linkWarn: created.linkWarn });
         }
       }
 
-      return { ...data, linkWarn };
+      return { aggregate, phaseResults };
     },
-    onSuccess: (data: any) => {
+    onSuccess: ({ aggregate, phaseResults }) => {
       const previewN = previewMeta?.number;
-      const reservedN = data.number;
-      const numberShifted = previewN != null && previewN !== reservedN;
-      toast.success(`Boletim #${reservedN} criado em rascunho`, {
+      const numberShifted = previewN != null && previewN !== aggregate.number;
+      const phaseSummary = phaseResults.length > 0
+        ? `${phaseResults.length} boletim(ns) por fase publicado(s).`
+        : `${previewMeta?.matchIds.length ?? 0} partida(s) e ${previewMeta?.sportEventIds.length ?? 0} prova(s) vinculadas.`;
+
+      toast.success(`Agregado #${aggregate.number} em rascunho`, {
         description: [
-          numberShifted ? `Número reajustado (prévia era #${previewN}, outro usuário gerou primeiro).` : null,
-          data.linkWarn
-            ? `Vínculos não persistidos: ${data.linkWarn}`
-            : `${previewMeta?.matchIds.length ?? 0} partida(s) e ${previewMeta?.sportEventIds.length ?? 0} prova(s) vinculadas.`,
+          numberShifted ? `Número reajustado (prévia era #${previewN}).` : null,
+          phaseSummary,
+          aggregate.linkWarn ? `Vínculos do agregado: ${aggregate.linkWarn}` : null,
         ].filter(Boolean).join(" "),
       });
       queryClient.invalidateQueries({ queryKey: ["bulletins-all"] });
@@ -284,7 +343,25 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Switch: separar por fase */}
+          <div className="flex items-start gap-3 rounded-md border bg-muted/30 px-3 py-2">
+            <Layers className="h-4 w-4 mt-0.5 text-muted-foreground" />
+            <div className="flex-1 space-y-0.5">
+              <Label className="text-sm flex items-center gap-2">
+                Separar por fase
+                <Switch
+                  checked={splitByPhase}
+                  onCheckedChange={(v) => { setSplitByPhase(v); setPhasesPreview([]); }}
+                />
+              </Label>
+              <p className="text-[11px] text-muted-foreground">
+                Cria <strong>1 boletim publicado por fase</strong> (com vínculos próprios) e mantém o agregado
+                como <strong>rascunho</strong> para revisão.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" onClick={generate} disabled={generating}>
               {generating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
               Gerar prévia
@@ -294,7 +371,37 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
                 {previewMeta.items} item(ns) · {previewMeta.matches} partida(s) · {previewMeta.sportEventIds.length} prova(s) · próximo nº #{previewMeta.number}
               </Badge>
             )}
+            {splitByPhase && phasesPreview.length > 0 && (
+              <Badge variant="secondary" className="gap-1">
+                <Layers className="h-3 w-3" />
+                {phasesPreview.length} fase(s) com resultado
+              </Badge>
+            )}
           </div>
+
+          {/* Lista de fases (quando splitByPhase) */}
+          {splitByPhase && phasesPreview.length > 0 && (
+            <div className="rounded-md border p-2 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground px-1">
+                Boletins que serão publicados por fase:
+              </p>
+              <ScrollArea className="max-h-[140px]">
+                <ul className="text-xs space-y-1 px-1">
+                  {phasesPreview.map((ph) => (
+                    <li key={ph.phaseId} className="flex items-center justify-between gap-2 py-0.5">
+                      <span className="truncate">
+                        <Layers className="h-3 w-3 inline mr-1 text-muted-foreground" />
+                        {ph.phaseName}
+                      </span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {ph.result.matchesCount} partida(s) · {ph.result.sportEventIds.length} prova(s)
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            </div>
+          )}
 
           {/* Título e conteúdo editáveis */}
           {content && (
@@ -328,7 +435,9 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
             disabled={!content || !title.trim() || saveDraft.isPending}
           >
             {saveDraft.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-            Salvar como rascunho
+            {splitByPhase
+              ? `Salvar agregado (rascunho) + ${phasesPreview.length} por fase (publicado)`
+              : "Salvar como rascunho"}
           </Button>
         </DialogFooter>
       </DialogContent>

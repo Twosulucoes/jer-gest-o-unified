@@ -12,6 +12,10 @@ export interface AutoBulletinFilters {
   statusFilter: BulletinStatusFilter;
   dateFrom?: string | null; // YYYY-MM-DD
   dateTo?: string | null;
+  /** Quando informado, restringe às partidas dessa fase. */
+  phaseId?: string | null;
+  /** Sufixo opcional para o título sugerido (ex.: nome da fase). */
+  titleSuffix?: string | null;
 }
 
 export interface AutoBulletinResult {
@@ -32,6 +36,7 @@ interface MatchRow {
   match_date: string | null;
   start_time: string | null;
   sport_event_id: string | null;
+  phase_id: string | null;
   venues: { name: string | null } | null;
   competition_phases: { name: string | null } | null;
   sport_events: {
@@ -76,7 +81,10 @@ function entryLabel(e: MatchRow["competition_match_entries"][number], statusFilt
  * partidas com resultado pelo escopo solicitado.
  */
 export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Promise<AutoBulletinResult> {
-  const { eventId, scope, stageSportEventIds, sportEventId, statusFilter, dateFrom, dateTo } = filters;
+  const {
+    eventId, scope, stageSportEventIds, sportEventId, statusFilter,
+    dateFrom, dateTo, phaseId, titleSuffix,
+  } = filters;
 
   // Resolve sport_event_ids alvo conforme o escopo
   let sportEventIds: string[] | null = null;
@@ -92,7 +100,7 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
   let q = supabase
     .from("competition_matches")
     .select(`
-      id, match_number, match_date, start_time, sport_event_id,
+      id, match_number, match_date, start_time, sport_event_id, phase_id,
       venues(name),
       competition_phases(name),
       sport_events!inner(
@@ -110,6 +118,7 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
     .eq("event_id", eventId);
 
   if (sportEventIds) q = q.in("sport_event_id", sportEventIds);
+  if (phaseId) q = q.eq("phase_id", phaseId);
   if (dateFrom) q = q.gte("match_date", dateFrom);
   if (dateTo) q = q.lte("match_date", dateTo);
 
@@ -135,7 +144,7 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
   const nextNumber = (lastBulletin?.number ?? 0) + 1;
   const eventName = eventRow?.name ?? "—";
   const today = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Boa_Vista" });
-  const suggestedTitle = `Boletim Automático #${nextNumber} — ${today}`;
+  const suggestedTitle = `Boletim Automático #${nextNumber} — ${today}${titleSuffix ? ` · ${titleSuffix}` : ""}`;
 
   // 3) Cabeçalho
   const lines: string[] = [];
@@ -214,4 +223,64 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
     matchIds,
     sportEventIds: usedSportEventIds,
   };
+}
+
+export interface PhaseBulletin {
+  phaseId: string;
+  phaseName: string;
+  result: AutoBulletinResult;
+}
+
+export interface AutoBulletinByPhaseResult {
+  /** Boletim agregado (todas as fases juntas), para salvar como rascunho. */
+  aggregate: AutoBulletinResult;
+  /** Um boletim por fase, prontos para serem publicados individualmente. */
+  perPhase: PhaseBulletin[];
+}
+
+/**
+ * Gera o boletim agregado **e** um boletim por fase com resultado.
+ * As fases são descobertas a partir das partidas filtradas.
+ */
+export async function buildAutoBulletinByPhase(
+  filters: AutoBulletinFilters,
+): Promise<AutoBulletinByPhaseResult> {
+  // 1) Agregado (sem filtro de fase)
+  const aggregate = await buildAutoBulletinContent({ ...filters, phaseId: null });
+
+  // 2) Descobrir fases distintas presentes nas partidas do agregado
+  if (aggregate.matchIds.length === 0) {
+    return { aggregate, perPhase: [] };
+  }
+
+  const { data: phaseRows, error } = await supabase
+    .from("competition_matches")
+    .select("phase_id, competition_phases(name)")
+    .in("id", aggregate.matchIds);
+  if (error) throw error;
+
+  const phaseMap = new Map<string, string>();
+  for (const r of (phaseRows ?? []) as Array<{
+    phase_id: string | null;
+    competition_phases: { name: string | null } | null;
+  }>) {
+    if (r.phase_id && !phaseMap.has(r.phase_id)) {
+      phaseMap.set(r.phase_id, r.competition_phases?.name ?? "Fase");
+    }
+  }
+
+  // 3) Gera um boletim por fase (sequencial para evitar concorrência no MAX number)
+  const perPhase: PhaseBulletin[] = [];
+  for (const [phaseId, phaseName] of phaseMap) {
+    const result = await buildAutoBulletinContent({
+      ...filters,
+      phaseId,
+      titleSuffix: phaseName,
+    });
+    if (result.matchesCount > 0) {
+      perPhase.push({ phaseId, phaseName, result });
+    }
+  }
+
+  return { aggregate, perPhase };
 }
