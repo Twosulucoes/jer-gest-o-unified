@@ -455,6 +455,49 @@ export default function CompeticaoPublicacaoPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={showRevertDialog} onOpenChange={setShowRevertDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reverter Status do Resultado</DialogTitle>
+            <DialogDescription>
+              Esta ação é registrada no histórico e deve ser devidamente justificada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Justificativa para Reversão</Label>
+              <Textarea 
+                placeholder="Explique o motivo da reversão (mínimo 5 caracteres)" 
+                value={revertReason}
+                onChange={(e) => setRevertReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowRevertDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                if (revertMatchId) {
+                  revertMut.mutate({ 
+                    matchId: revertMatchId, 
+                    targetStatus: revertTargetStatus, 
+                    reason: revertReason 
+                  });
+                  setShowRevertDialog(false);
+                }
+              }}
+              disabled={revertMut.isPending || revertReason.trim().length < 5}
+            >
+              {revertMut.isPending ? "Revertendo..." : "Confirmar Reversão"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
