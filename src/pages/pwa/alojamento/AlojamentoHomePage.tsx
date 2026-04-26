@@ -90,7 +90,17 @@ export default function AlojamentoHomePage() {
     setSelectedFacility(facilityId);
     (async () => {
       // For now, continue using the KPI RPC, but it might need to be replaced if it doesn't support the new schema
-      const { data } = await supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId });
+      const { data, error } = await supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId });
+      
+      dbTelemetry.log({
+        moduleName: 'alojamento',
+        tableName: 'RPC:get_alojamento_kpis',
+        operation: 'SELECT',
+        eventId: eventId,
+        isSuccess: !error,
+        errorCode: error?.code
+      });
+
       if (data) {
         const kpi = data as any;
         const total = kpi.total_beds || 0;
