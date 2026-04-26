@@ -103,7 +103,7 @@ CREATE INDEX IF NOT EXISTS idx_service_vouchers_status ON public.service_voucher
 
 ALTER TABLE public.service_vouchers ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "vouchers_read_admin_ops"
+DROP POLICY IF EXISTS "vouchers_read_admin_ops" ON public.service_vouchers; CREATE POLICY "vouchers_read_admin_ops"
   ON public.service_vouchers FOR SELECT TO authenticated
   USING (
     public.has_role(auth.uid(),'admin')
@@ -115,7 +115,7 @@ CREATE POLICY "vouchers_read_admin_ops"
     OR public.has_role(auth.uid(),'alojamento')
   );
 
-CREATE POLICY "vouchers_write_admin"
+DROP POLICY IF EXISTS "vouchers_write_admin" ON public.service_vouchers; CREATE POLICY "vouchers_write_admin"
   ON public.service_vouchers FOR ALL TO authenticated
   USING (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'secretaria') OR public.has_role(auth.uid(),'super_admin'))
   WITH CHECK (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'secretaria') OR public.has_role(auth.uid(),'super_admin'));
@@ -140,7 +140,7 @@ CREATE INDEX IF NOT EXISTS idx_voucher_uses_kind ON public.service_voucher_uses(
 
 ALTER TABLE public.service_voucher_uses ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "voucher_uses_read"
+DROP POLICY IF EXISTS "voucher_uses_read" ON public.service_voucher_uses; CREATE POLICY "voucher_uses_read"
   ON public.service_voucher_uses FOR SELECT TO authenticated
   USING (
     public.has_role(auth.uid(),'admin')
