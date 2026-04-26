@@ -43,11 +43,12 @@ export default function CoordenacaoHomePage() {
 
       const today = new Date().toISOString().slice(0, 10);
 
-      const [todayRes, andamentoRes, pendentesRes, totalRes, agendaRes] = await Promise.all([
+      const [todayRes, andamentoRes, pendentesRes, totalRes, incidentsRes, agendaRes] = await Promise.all([
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("match_date", today),
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "em_andamento"),
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "finalizada"),
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
+        supabase.from("operational_incidents").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("incident_status", "pending"),
         supabase
           .from("competition_matches")
           .select("id, match_date, start_time, status, sport_event_id, venue_id, venue:venues(name)")
@@ -62,6 +63,7 @@ export default function CoordenacaoHomePage() {
         emAndamento: andamentoRes.count || 0,
         finalizadas: pendentesRes.count || 0,
         totalPartidas: totalRes.count || 0,
+        pendingIncidents: incidentsRes.count || 0,
       });
       setAgenda((agendaRes.data as any) || []);
       setLoading(false);
