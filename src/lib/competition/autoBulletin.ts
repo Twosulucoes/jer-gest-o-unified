@@ -118,6 +118,7 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
     .eq("event_id", eventId);
 
   if (sportEventIds) q = q.in("sport_event_id", sportEventIds);
+  if (phaseId) q = q.eq("phase_id", phaseId);
   if (dateFrom) q = q.gte("match_date", dateFrom);
   if (dateTo) q = q.lte("match_date", dateTo);
 
