@@ -93,6 +93,8 @@ const TYPE_LABELS: Record<string, string> = {
   commission: "Comissão",
 };
 
+const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, pending_import: 2, complete: 3 };
+
 const PAGE_SIZE = 250;
 const FILTER_CHUNK_SIZE = 150;
 
@@ -393,7 +395,6 @@ export default function CredenciamentoPage() {
   }, [activeCredMap]);
 
   // --- Filter & Sort ---
-  const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, pending_import: 2, complete: 3 };
 
   const filtered = useMemo(() => {
     const normalizedTerm = searchTerm.trim().toLowerCase();
@@ -403,7 +404,14 @@ export default function CredenciamentoPage() {
         if (normalizedTerm) {
           const fullName = p.person?.full_name?.toLowerCase() ?? "";
           const cpf = p.person?.cpf ?? "";
-          if (!fullName.includes(normalizedTerm) && !cpf.includes(normalizedTerm)) return false;
+          const activeCred = activeCredMap.get(p.id);
+          const credCode = activeCred?.credential_code?.toLowerCase() ?? "";
+          
+          if (
+            !fullName.includes(normalizedTerm) && 
+            !cpf.includes(normalizedTerm) && 
+            !credCode.includes(normalizedTerm)
+          ) return false;
         }
         // Type filter
         if (filterType !== "all" && p.participant_type !== filterType) return false;
@@ -431,7 +439,7 @@ export default function CredenciamentoPage() {
         const nameB = b.person?.full_name ?? "";
         return nameA.localeCompare(nameB);
       });
-  }, [participants, searchTerm, filterType, filterState, filterInstitution, blockedParticipantIds, getParticipantState, getInstitutionId]);
+  }, [participants, searchTerm, filterType, filterState, filterInstitution, blockedParticipantIds, getParticipantState, getInstitutionId, activeCredMap]);
 
   // --- Pagination ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -567,6 +575,23 @@ export default function CredenciamentoPage() {
     },
     onError: (err: Error) => {
       toast.error(`Erro ao desfazer credenciamento: ${err.message}`);
+    },
+  });
+
+  const confirmParticipantMutation = useMutation({
+    mutationFn: async (participantId: string) => {
+      const { error } = await supabase
+        .from("participants")
+        .update({ status: "confirmed" })
+        .eq("id", participantId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      toast.success("Participante confirmado com sucesso!");
+    },
+    onError: (err: Error) => {
+      toast.error(`Erro ao confirmar participante: ${err.message}`);
     },
   });
 
@@ -861,27 +886,35 @@ export default function CredenciamentoPage() {
         <ModuleHeader route="/admin/credenciamento" />
 
       {/* Flow guide */}
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5">
-        <Info className="h-4 w-4 text-muted-foreground shrink-0" />
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Fluxo:</span>
-          <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700 text-[10px] gap-1">
-            <AlertCircle className="h-3 w-3" /> Pendente
-          </Badge>
-          <ArrowRight className="h-3 w-3" />
-          <Badge variant="outline" className="border-yellow-300 bg-yellow-50 text-yellow-700 text-[10px] gap-1">
-            <Clock className="h-3 w-3" /> Confirmado
-          </Badge>
-          <ArrowRight className="h-3 w-3" />
-          <span className="text-[10px]">Registrar presença →</span>
-          <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700 text-[10px] gap-1">
-            <CreditCard className="h-3 w-3" /> Pronto p/ emissão
-          </Badge>
-          <ArrowRight className="h-3 w-3" />
-          <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700 text-[10px] gap-1">
-            <ShieldCheck className="h-3 w-3" /> Credencial ativa
-          </Badge>
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Info className="h-4 w-4 text-muted-foreground shrink-0" />
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Workflow de Credenciamento:</span>
         </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[10px]">
+          <div className="flex items-center gap-1.5 bg-background border rounded-md px-2 py-1 shadow-sm">
+            <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700 h-4 px-1">Pendente</Badge>
+            <span className="text-muted-foreground">Importado, aguarda confirmação</span>
+          </div>
+          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <div className="flex items-center gap-1.5 bg-background border rounded-md px-2 py-1 shadow-sm">
+            <Badge variant="outline" className="border-yellow-300 bg-yellow-50 text-yellow-700 h-4 px-1">Confirmado</Badge>
+            <span className="text-muted-foreground">Confirmado, aguarda presença</span>
+          </div>
+          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <div className="flex items-center gap-1.5 bg-background border rounded-md px-2 py-1 shadow-sm">
+            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700 h-4 px-1">Pronto p/ emissão</Badge>
+            <span className="text-muted-foreground">Presença registrada, aguarda impressão</span>
+          </div>
+          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <div className="flex items-center gap-1.5 bg-background border rounded-md px-2 py-1 shadow-sm">
+            <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700 h-4 px-1">Credencial ativa</Badge>
+            <span className="text-muted-foreground">Credencial emitida e válida</span>
+          </div>
+        </div>
+        <p className="text-[10px] text-muted-foreground italic">
+          * Dica: Você pode pesquisar por Nome, CPF ou pelo Código da Credencial (ex: A-1234).
+        </p>
       </div>
 
       {/* Search and Filters */}
@@ -1171,6 +1204,18 @@ export default function CredenciamentoPage() {
                       {canCredential && (
                         <TableCell className="py-3 text-right">
                           <div className="flex justify-end gap-1.5 flex-wrap items-center">
+                            {state === "pending_import" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 text-[11px] font-bold border-orange-600 text-orange-600 hover:bg-orange-50"
+                                onClick={() => confirmParticipantMutation.mutate(p.id)}
+                                disabled={confirmParticipantMutation.isPending}
+                              >
+                                <Check className="h-3.5 w-3.5 mr-1.5" /> Confirmar
+                              </Button>
+                            )}
+
                             {state === "awaiting" && (
                               <Button
                                 size="sm"
