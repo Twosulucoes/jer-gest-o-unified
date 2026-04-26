@@ -233,6 +233,7 @@ export default function CompeticaoCentralPage() {
               <CentralAgendaTab
                 eventId={eventId}
                 sportEventId={sportEventId}
+                stageId={stageId}
                 onChanged={() => undefined}
               />
             )}

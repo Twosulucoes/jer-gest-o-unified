@@ -31,6 +31,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 interface Props {
   eventId: string;
   sportEventId: string;
+  stageId?: string | null;
   onChanged?: () => void;
 }
 
@@ -585,7 +586,7 @@ function formatTime(time: string | null): string {
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
-export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: Props) {
+export default function CentralAgendaTab({ eventId, sportEventId, stageId, onChanged }: Props) {
   const { hasRole } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -602,16 +603,30 @@ export default function CentralAgendaTab({ eventId, sportEventId, onChanged }: P
   const [filterSchedule, setFilterSchedule] = useState<string>("__all__");
   const [filterStatus, setFilterStatus] = useState<string>("__all__");
 
-  // Fetch venues
+  // Fetch venues — filtra pela etapa em escopo via venue_event_stages (N:N)
   const { data: venues = [] } = useQuery({
-    queryKey: ["venues-for-scheduling", eventId],
+    queryKey: ["venues-for-scheduling", eventId, stageId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let venueIdsForStage: string[] | null = null;
+      if (stageId) {
+        const { data: links, error: linkErr } = await (supabase as any)
+          .from("venue_event_stages")
+          .select("venue_id")
+          .eq("event_stage_id", stageId);
+        if (linkErr) throw linkErr;
+        venueIdsForStage = (links ?? []).map((l: any) => l.venue_id as string);
+        if (venueIdsForStage.length === 0) return [] as Venue[];
+      }
+
+      let q = supabase
         .from("venues")
         .select("id, name, address, city")
         .eq("event_id", eventId)
         .eq("is_active", true)
         .order("name");
+      if (venueIdsForStage) q = q.in("id", venueIdsForStage);
+
+      const { data, error } = await q;
       if (error) throw error;
       return data as Venue[];
     },
