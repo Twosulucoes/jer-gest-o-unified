@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useVenuesByStage } from "@/hooks/useVenuesByStage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -205,14 +206,9 @@ export default function CompeticaoPartidaDetalhePage() {
     enabled: !!match?.event_id,
   });
 
-  const { data: allVenues = [] } = useQuery({
-    queryKey: ["venues", match?.event_id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("venues").select("*").eq("event_id", match!.event_id).eq("is_active", true).order("name");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!match?.event_id,
+  const { data: allVenues = [] } = useVenuesByStage({
+    eventId: match?.event_id ?? null,
+    onlyActive: true,
   });
 
   const { data: entries = [] } = useQuery({

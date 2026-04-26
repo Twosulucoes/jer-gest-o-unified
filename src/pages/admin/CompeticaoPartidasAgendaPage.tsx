@@ -8,6 +8,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useCompetitionContext } from "@/contexts/CompetitionContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import { useStageScope } from "@/hooks/useStageScope";
+import { useVenuesByStage } from "@/hooks/useVenuesByStage";
 import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Plus, Pencil, Swords, MapPin, Eye, List, Calendar, AlertTriangle, AlertCircle } from "lucide-react";
@@ -94,15 +95,10 @@ export default function CompeticaoPartidasAgendaPage() {
     enabled: !!selectedEventId,
   });
 
-  const { data: venues = [] } = useQuery({
-    queryKey: ["venues", selectedEventId],
-    queryFn: async () => {
-      if (!selectedEventId) return [];
-      const { data, error } = await supabase.from("venues").select("*").eq("event_id", selectedEventId).order("name");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedEventId,
+  const { data: venues = [] } = useVenuesByStage({
+    eventId: selectedEventId,
+    stageId: isStageScoped ? stageId : null,
+    onlyActive: false,
   });
 
   // Filter matches — if coordenador_modalidade, restrict to sport_events from linked sports
