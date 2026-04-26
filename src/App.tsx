@@ -168,6 +168,8 @@ import CoordenacaoPartidaDetalhePage from "./pages/pwa/coordenacao/CoordenacaoPa
 import CoordenacaoResultadosPwaPage from "./pages/pwa/coordenacao/CoordenacaoResultadosPage";
 import CoordenacaoEstatisticasPage from "./pages/pwa/coordenacao/CoordenacaoEstatisticasPage";
 import CoordenacaoConsultaPage from "./pages/pwa/coordenacao/CoordenacaoConsultaPage";
+import CoordenacaoIncidentePage from "./pages/pwa/coordenacao/CoordenacaoIncidentePage";
+import CoordenacaoIncidentesPage from "./pages/pwa/coordenacao/CoordenacaoIncidentesPage";
 // PWA Resultados (Lançamento Manual — coordenador_modalidade)
 import ResultadosHomePage from "./pages/pwa/resultados/ResultadosHomePage";
 import ResultadosPartidasPage from "./pages/pwa/resultados/ResultadosPartidasPage";
@@ -486,6 +488,8 @@ const App = () => (
             <Route path="/pwa/coordenacao-tecnica/resultados" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoResultadosPwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/estatisticas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoEstatisticasPage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/consulta" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoConsultaPage /></PwaRouteGuard>} />
+            <Route path="/pwa/coordenacao-tecnica/incidentes" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoIncidentesPage /></PwaRouteGuard>} />
+            <Route path="/pwa/coordenacao-tecnica/incidente/:incidentId" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoIncidentePage /></PwaRouteGuard>} />
 
             {/* PWA Resultados — perfil coordenador_modalidade */}
             <Route path="/pwa/resultados" element={<PwaRouteGuard allowedRoles={["coordenador_modalidade"]}><ResultadosHomePage /></PwaRouteGuard>} />

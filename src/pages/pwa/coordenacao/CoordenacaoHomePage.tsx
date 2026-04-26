@@ -147,7 +147,7 @@ export default function CoordenacaoHomePage() {
             { label: "Partidas", icon: ClipboardList, to: "/pwa/coordenacao-tecnica/partidas" },
             { label: "Resultados", icon: Medal, to: "/pwa/coordenacao-tecnica/resultados" },
             { label: "Estatísticas", icon: BarChart3, to: "/pwa/coordenacao-tecnica/estatisticas" },
-            { label: "Incidentes", icon: AlertTriangle, to: "/pwa/coordenacao-tecnica/partidas" },
+            { label: "Ocorrências", icon: AlertTriangle, to: "/pwa/coordenacao-tecnica/incidentes" },
           ]}
         />
       </PwaContainer>
