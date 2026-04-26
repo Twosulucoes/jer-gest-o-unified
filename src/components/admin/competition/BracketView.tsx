@@ -1,6 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Trophy } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { BracketData, BracketMatch, BracketEntry } from "@/hooks/useKnockoutBracket";
 
 interface Props {
