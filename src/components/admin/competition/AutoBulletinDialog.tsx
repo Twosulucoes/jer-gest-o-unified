@@ -170,7 +170,12 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
     const reserved = rpcData as { id: string; number: number };
     const bulletinId = reserved.id;
 
-    const updates: Record<string, unknown> = {
+    const updates: {
+      status: typeof BULLETIN_STATUS[keyof typeof BULLETIN_STATUS];
+      updated_by: string | null;
+      published_at?: string;
+      published_by?: string | null;
+    } = {
       status: params.status,
       updated_by: user?.id ?? null,
     };
