@@ -218,10 +218,11 @@ const App = () => (
         <PwaUpdateNotice />
 
         <AuthProvider>
-          <EventProvider>
-            <StageProvider>
-              <CompetitionProvider>
-                <Routes>
+          <VersionValidator>
+            <EventProvider>
+              <StageProvider>
+                <CompetitionProvider>
+                  <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
