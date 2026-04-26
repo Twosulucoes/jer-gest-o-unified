@@ -19,13 +19,15 @@ import {
   Link,
   QrCode,
   TrendingUp,
-  Share2
+  Share2,
+  Copy
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 interface VersionInfo {
   appVersion: string;
@@ -102,6 +104,15 @@ export default function EntregaTecnicaPage() {
     setCheckedItems(prev => ({ ...prev, [item]: !prev[item] }));
   };
 
+  const copyToClipboard = (text: string) => {
+    if (text === "#") return;
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copiado!",
+      description: "Link copiado para a área de transferência.",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 pb-20">
       
@@ -167,7 +178,7 @@ export default function EntregaTecnicaPage() {
                       <div className={`p-2 rounded-lg bg-slate-100 ${env.color}`}>
                         <env.icon size={24} />
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className="font-semibold text-sm">{env.name}</p>
                           <Badge variant="outline" className="text-[10px] uppercase font-bold px-1.5 h-4">
@@ -176,7 +187,31 @@ export default function EntregaTecnicaPage() {
                         </div>
                         <p className="text-xs text-slate-500 truncate">{env.url}</p>
                       </div>
-                      <ExternalLink size={14} className="text-slate-300" />
+                      <div className="flex gap-1">
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-8 w-8 text-slate-400 hover:text-blue-600 shrink-0"
+                          onClick={() => copyToClipboard(env.url)}
+                          disabled={env.url === "#"}
+                          title="Copiar URL"
+                        >
+                          <Copy size={14} />
+                        </Button>
+                        {env.url !== "#" && (
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-8 w-8 text-slate-400 hover:text-blue-600 shrink-0"
+                            asChild
+                            title="Abrir link"
+                          >
+                            <a href={env.url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink size={14} />
+                            </a>
+                          </Button>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
