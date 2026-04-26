@@ -93,7 +93,7 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
   let q = supabase
     .from("competition_matches")
     .select(`
-      id, match_number, match_date, start_time, sport_event_id,
+      id, match_number, match_date, start_time, sport_event_id, phase_id,
       venues(name),
       competition_phases(name),
       sport_events!inner(
