@@ -207,6 +207,7 @@ export default function CompeticaoPublicacaoPage() {
     <div className="space-y-6">
       <ModuleHeader 
         title="Central de Publicação de Resultados"
+        route="/admin/competicao/painel"
       />
 
       <div className="flex flex-col md:flex-row gap-4 bg-muted/30 p-4 rounded-lg border">
