@@ -30,6 +30,8 @@ export function MatchesTab({ sportEventId }: MatchesTabProps) {
       return data;
     }
   });
+
+  const { data: matches = [], isLoading } = useQuery({
     queryKey: ["combat-matches", sportEventId],
     queryFn: async () => {
       const { data, error } = await (supabase
@@ -156,7 +158,15 @@ export function MatchesTab({ sportEventId }: MatchesTabProps) {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => {
+                          setSelectedMatch(m);
+                          setIsDrawerOpen(true);
+                        }}
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -167,6 +177,13 @@ export function MatchesTab({ sportEventId }: MatchesTabProps) {
           </TableBody>
         </Table>
       </div>
+
+      <MatchCombatFormDrawer
+        open={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        match={selectedMatch}
+        sportId={sportEvent?.sport_id}
+      />
     </div>
   );
 }
