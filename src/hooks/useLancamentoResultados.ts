@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
