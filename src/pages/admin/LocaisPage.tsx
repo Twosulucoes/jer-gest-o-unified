@@ -239,6 +239,44 @@ export default function LocaisPage() {
     onError: (err: Error) => toast.error("Erro ao alterar status: " + err.message),
   });
 
+  // P3: arquivar (soft-delete) com checagem de partidas futuras
+  const archiveMutation = useMutation({
+    mutationFn: async ({ venueId, force, reason }: { venueId: string; force: boolean; reason: string }) => {
+      const { data, error } = await (supabase as any).rpc("rpc_archive_venue", {
+        p_venue_id: venueId,
+        p_force: force,
+        p_reason: reason || null,
+      });
+      if (error) throw error;
+      return data as { matches_future: number };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["locais-bootstrap"] });
+      queryClient.invalidateQueries({ queryKey: ["venues-by-stage"] });
+      toast.success(
+        data?.matches_future
+          ? `Local arquivado (${data.matches_future} partida(s) futura(s) afetada(s))`
+          : "Local arquivado"
+      );
+      setArchiveTarget(null);
+    },
+    onError: (err: Error) => toast.error("Erro ao arquivar: " + err.message),
+  });
+
+  // P3: restaurar venue arquivado
+  const restoreMutation = useMutation({
+    mutationFn: async (venueId: string) => {
+      const { error } = await (supabase as any).rpc("rpc_restore_venue", { p_venue_id: venueId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["locais-bootstrap"] });
+      queryClient.invalidateQueries({ queryKey: ["venues-by-stage"] });
+      toast.success("Local restaurado");
+    },
+    onError: (err: Error) => toast.error("Erro ao restaurar: " + err.message),
+  });
+
   const handleSubmit = (values: VenueFormValues) => {
     if (editingVenue) {
       updateMutation.mutate({ id: editingVenue.id, ...values });
