@@ -36,9 +36,11 @@ export interface ProvaRow {
   progress: number;
   firstIncompleteStep: string;
   family?: string | null;
+  category_count?: number;
+  is_grouped_combat?: boolean;
 }
 
-export function computeProvaData(row: any): ProvaRow {
+export function computeProvaData(row: any, family?: string | null): ProvaRow {
   const isCollective = !!row.is_collective;
   const releasedAt = row.released_at ?? null;
 
@@ -51,66 +53,87 @@ export function computeProvaData(row: any): ProvaRow {
   const validated = Number(row.results_validated || 0);
   const published = Number(row.results_published || 0);
 
-  const steps: StepStatus[] = isCollective
-    ? [
-        { key: "teams", label: "Equipes", state: teams > 0 ? "done" : "pending" },
-        { key: "structure", label: "Estrutura", state: phases > 0 ? "done" : "pending" },
-        { key: "matches", label: "Partidas", state: matchCount > 0 ? "done" : "pending" },
-        {
-          key: "agenda",
-          label: "Agenda",
-          state:
-            matchCount > 0 && withSchedule === matchCount
-              ? "done"
-              : withSchedule > 0
-              ? "active"
-              : "pending",
-        },
-        {
-          key: "results",
-          label: "Resultados",
-          state:
-            matchCount > 0 && withResult === matchCount
-              ? "done"
-              : withResult > 0
-              ? "active"
-              : "pending",
-        },
-        {
-          key: "published",
-          label: "Publicado",
-          state:
-            matchCount > 0 && published === matchCount
-              ? "done"
-              : published > 0
-              ? "active"
-              : "pending",
-        },
-      ]
-    : [
-        { key: "athletes", label: "Atletas", state: enrolled > 0 ? "done" : "pending" },
-        { key: "structure", label: "Estrutura", state: phases > 0 ? "done" : "pending" },
-        {
-          key: "results",
-          label: "Resultados",
-          state:
-            matchCount > 0 && withResult === matchCount
-              ? "done"
-              : withResult > 0
-              ? "active"
-              : "pending",
-        },
-        {
-          key: "published",
-          label: "Publicado",
-          state:
-            matchCount > 0 && published === matchCount
-              ? "done"
-              : published > 0
-              ? "active"
-              : "pending",
-        },
-      ];
+  let steps: StepStatus[] = [];
+  
+  if (family === "combat") {
+    steps = [
+      { key: "athletes", label: "Atletas", state: enrolled > 0 ? "done" : "pending" },
+      { key: "weighing", label: "Pesagem", state: "pending" }, // TODO: Implement weighing status in query
+      { key: "bracket", label: "Chave", state: phases > 0 ? "done" : "pending" },
+      { key: "matches", label: "Lutas", state: matchCount > 0 ? "done" : "pending" },
+      {
+        key: "results",
+        label: "Resultados",
+        state:
+          matchCount > 0 && withResult === matchCount
+            ? "done"
+            : withResult > 0
+            ? "active"
+            : "pending",
+      },
+    ];
+  } else if (isCollective) {
+    steps = [
+      { key: "teams", label: "Equipes", state: teams > 0 ? "done" : "pending" },
+      { key: "structure", label: "Estrutura", state: phases > 0 ? "done" : "pending" },
+      { key: "matches", label: "Partidas", state: matchCount > 0 ? "done" : "pending" },
+      {
+        key: "agenda",
+        label: "Agenda",
+        state:
+          matchCount > 0 && withSchedule === matchCount
+            ? "done"
+            : withSchedule > 0
+            ? "active"
+            : "pending",
+      },
+      {
+        key: "results",
+        label: "Resultados",
+        state:
+          matchCount > 0 && withResult === matchCount
+            ? "done"
+            : withResult > 0
+            ? "active"
+            : "pending",
+      },
+      {
+        key: "published",
+        label: "Publicado",
+        state:
+          matchCount > 0 && published === matchCount
+            ? "done"
+            : published > 0
+            ? "active"
+            : "pending",
+      },
+    ];
+  } else {
+    steps = [
+      { key: "athletes", label: "Atletas", state: enrolled > 0 ? "done" : "pending" },
+      { key: "structure", label: "Estrutura", state: phases > 0 ? "done" : "pending" },
+      {
+        key: "results",
+        label: "Resultados",
+        state:
+          matchCount > 0 && withResult === matchCount
+            ? "done"
+            : withResult > 0
+            ? "active"
+            : "pending",
+      },
+      {
+        key: "published",
+        label: "Publicado",
+        state:
+          matchCount > 0 && published === matchCount
+            ? "done"
+            : published > 0
+            ? "active"
+            : "pending",
+      },
+    ];
+  }
 
   const doneCount = steps.filter((s) => s.state === "done").length;
   const progress = Math.round((doneCount / steps.length) * 100);

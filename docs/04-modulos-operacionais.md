@@ -55,17 +55,18 @@
 - **Gaps**: ❌ Sem controle temporal de permanência
 - **Dados reais**: 0 ocupações
 
-## 7. Competição (✅ Pronto — Refatoração Etapa 2: Painel Score & Sets)
+## 7. Competição (✅ Pronto — Refatoração Etapa 3: Painel Combat)
 - **Tabelas**: 15 tabelas (phases, groups, matches, entries, results, scores, lineups, events, penalties, officials, attachments, attempts, player_stats, discipline, match_user_assignments)
-- **Páginas admin**: painel (entry point), painel-score, painel-sets (novo), fases, grupos, equipes, partidas, detalhe da partida, agenda, resultados, central, pré-validação, regras, regras em lote, diagnóstico, sincronizar equipes
-- **Painel Score & Sets (Novos)**:
-  - ✅ Lista modalidades das famílias "score" e "sets"
-  - ✅ Cards operacionais com contagem de confrontos: registrados, pendentes, homologados
-  - ✅ Grade densa (estilo planilha) com filtros por fase, grupo e status
-  - ✅ Adaptação para sets: exibição de placar (3×1) e parciais (25-18 / ...) na grade
-  - ✅ Formulário lateral (Drawer) para criação/edição rápida de confrontos com referência de regras (melhor de X sets)
-  - ✅ Seleção de escolas com escalação automática de equipes (sem cadastro manual)
-  - ✅ Designação de arbitragem vinculada à modalidade
+- **Páginas admin**: painel (entry point), painel-score, painel-sets, painel-combat (novo), fases, grupos, equipes, partidas, detalhe da partida, agenda, resultados, central, pré-validação, regras, regras em lote, diagnóstico, sincronizar equipes
+- **Painel Score, Sets & Combat (Novos)**:
+  - ✅ Lista modalidades das famílias "score", "sets" e "combat"
+  - ✅ Cards operacionais com contagem adaptada (Categorias, Atletas, Lutas)
+  - ✅ Painel Combat dedicado com seletor de categoria de peso
+  - ✅ Aba Pesagem: registro de peso oficial, status (conferido/fora do peso) e auditoria
+  - ✅ Aba Chave: visualização de bracket eliminatório com montagem automática
+  - ✅ Aba Lutas: grade densa (estilo planilha) com filtros por fase e status
+  - ✅ Formulário lateral (Drawer) para edição de lutas com designação de arbitragem por modalidade
+  - ✅ Progressão automática de vencedor no bracket após homologação (Etapa 4 em andamento)
 - **Features legadas (reaproveitadas)**:
   - ✅ Wizard de 8 passos (coletivas) / 7 passos (individuais time/mark)
   - ✅ Estrutura automática de grupos com sugestão

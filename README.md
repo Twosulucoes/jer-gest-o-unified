@@ -7,7 +7,7 @@ Gerencia toda a operação do evento **após a fase de inscrição**: credenciam
 > **Pessoas Unificadas + Vouchers QR ✅** — Toda pessoa do evento (atletas, técnicos, mesários, motoristas, cozinheiras, fiscais, terceiros) é cadastrada como **Pessoa única** (CPF como chave), podendo ter **múltiplas funções**. Vouchers QR multiuso liberam consumo logístico para quem não tem credencial. Relatório consolidado por pessoa em `/admin/relatorios` e merge de duplicidades em `/admin/pessoas/duplicidades` (2026-04-19)
 > **Tipos de Participantes ✅ Delegação vs Organização** — Separação clara entre participantes de delegações (Atleta/Staff) e participantes da organização (Coordenação/Apoio), com campos administrativos específicos e regras rígidas de privacidade e exclusividade de CPF (2026-04-21)
 > **Navegação ✅ Refatorada Global vs Etapa** — Separação total entre contexto Global e contexto de Etapa (2026-04-17)
-> **Refatoração Competição ✅ Painel Score & Sets** — Nova experiência de operação para modalidades de placar (Futsal, Futebol, etc) e sets (Vôlei, Tênis de Mesa, etc) com grade densa, parciais e escalação automática (2026-04-22)
+> **Refatoração Competição ✅ Painel Score, Sets & Combat** — Nova experiência de operação para modalidades de placar (Futsal, Futebol, etc), sets (Vôlei, Tênis de Mesa, etc) e combate (Judô, Karatê, etc) com pesagem oficial, montagem de chave e grade densa (2026-04-23)
 
 ---
 

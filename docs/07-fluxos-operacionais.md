@@ -91,23 +91,31 @@ Coordenação prepara evento
 
 ## 7. Competição (Operação por Família)
 
-### 7.1 Famílias "Score" e "Sets" (Novos Painéis)
+### 7.1 Famílias "Score", "Sets" e "Combat" (Novos Painéis)
 ```
-Coordenação opera modalidades "score" ou "sets"
+Coordenação opera modalidades "score", "sets" ou "combat"
   → Painel da Competição (/admin/competicao/painel)
-  → Seleciona modalidade (Card Score ou Card Sets) → Abre Painel correspondente
+  → Seleciona modalidade (Card Score, Sets ou Combat) → Abre Painel correspondente
+
+FLUXO COMBAT:
+  → Seleciona Categoria de Peso no topo do painel
+  → Aba Pesagem: Registra peso oficial e marca status (Conferido / Fora do Peso)
+  → Aba Chave: Quando pesagem concluída, clica em "Montar Chave"
+  → Sistema gera bracket eliminatório (BYE automático) e confrontos da 1ª fase
+  → Aba Lutas: Visualiza grade densa com agenda e status das lutas
+  → Editar Luta (Drawer): Define data/hora/local e designa arbitragem por modalidade
+  → Pós-Luta: Lança resultado no detalhe da partida (vencedor avança automaticamente)
+
+FLUXO SCORE/SETS:
   → Grade de confrontos: filtra por fase/grupo/status
   → Visualização Sets: mostra placar (ex: 3×1) e parciais (ex: 25-18 / ...) na grade
-  → "Novo Confronto" ou "Editar":
+  → "Novo Confronto" ou "Editar" (Drawer):
      - Seleciona Fase/Grupo
      - Seleciona Escola A e B (lista filtrada por inscritos)
      - Define Data/Hora/Local
      - Define equipe de arbitragem (filtrada por modalidade)
      - Referência: formulário exibe formato de sets (melhor de X) das regras
   → Salvar: Cria confronto + entries + assignments
-  → No dia: registra placar e eventos na página da partida
-  → Lança resultado (resultado_lancado)
-  → Coordenação valida (homologado) → Secretaria publica (publicado)
 ```
 
 ### 7.2 Outras Famílias (Central Legada)
