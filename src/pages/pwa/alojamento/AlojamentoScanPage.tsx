@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { rpcResolveQr, rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
 import { extractQrToken } from "@/lib/resolveQrCredential";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
+import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
 import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { useAuth } from "@/hooks/useAuth";
