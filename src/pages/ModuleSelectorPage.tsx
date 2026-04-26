@@ -130,6 +130,13 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: Search,
     path: "/pwa/pesquisa",
     gradient: "from-[hsl(25,95%,53%)] to-[hsl(15,90%,40%)]",
+  {
+    roles: ["admin", "secretaria", "coordenacao_tecnica", "super_admin"],
+    label: "Diagnóstico QR",
+    description: "Verificar integridade de credenciais",
+    icon: Search,
+    path: "/pwa/diagnostico",
+    gradient: "from-[hsl(174,87%,34%)] to-[hsl(212,84%,36%)]",
   },
 ];
 
