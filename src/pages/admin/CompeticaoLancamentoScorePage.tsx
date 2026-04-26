@@ -148,8 +148,12 @@ export default function CompeticaoLancamentoScorePage() {
   const [numPeriods, setNumPeriods] = useState(2);
   const [hasOvertime, setHasOvertime] = useState(false);
   const [showHomologateDialog, setShowHomologateDialog] = useState(false);
+  const [showRevertDialog, setShowRevertDialog] = useState(false);
+  const [revertTargetStatus, setRevertTargetStatus] = useState("");
+  const [revertReason, setRevertReason] = useState("");
   const [homologatePassword, setHomologatePassword] = useState("");
   const [homologateObservation, setHomologateObservation] = useState("");
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
   const resultStatus = match?.entries?.[0]?.results?.[0]?.result_status || "agendado";
   const isLocked = (resultStatus === "resultado_validado" || resultStatus === "publicado") && !hasRole("admin");
