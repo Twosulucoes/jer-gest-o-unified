@@ -100,27 +100,30 @@ export function useModalitySchools(sportEventId: string | undefined) {
     queryKey: ["modality-schools", sportEventId],
     enabled: !!sportEventId,
     queryFn: async () => {
-      const { data: pse } = await supabase
-        .from("participant_sport_events")
-        .select("participant_id")
-        .eq("sport_event_id", sportEventId!);
-      
-      if (!pse || pse.length === 0) return [];
-
-      const { data: p } = await supabase
-        .from("participants")
-        .select("delegation_id")
-        .in("id", pse.map(x => x.participant_id));
-
-      if (!p || p.length === 0) return [];
-
+      // Get teams for this modality, which link to delegations and institutions
       const { data, error } = await supabase
-        .from("delegations")
-        .select("id, name")
-        .in("id", [...new Set(p.map(x => x.delegation_id))].filter(Boolean) as string[]);
+        .from("teams")
+        .select(`
+          id,
+          delegation_id,
+          delegations (
+            id,
+            institutions (
+              id,
+              name
+            )
+          )
+        `)
+        .eq("sport_event_id", sportEventId!);
 
       if (error) throw error;
-      return data;
+      
+      // Map to a simpler structure: { team_id, school_id, school_name }
+      return (data || []).map(t => ({
+        team_id: t.id,
+        school_id: t.delegation_id,
+        school_name: (t.delegations as any)?.institutions?.name || "Sem Nome"
+      }));
     },
   });
 }
