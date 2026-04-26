@@ -38,7 +38,7 @@ export interface ProvaRow {
   family?: string | null;
 }
 
-export function computeProvaData(row: any): ProvaRow {
+export function computeProvaData(row: any, family?: string | null): ProvaRow {
   const isCollective = !!row.is_collective;
   const releasedAt = row.released_at ?? null;
 
