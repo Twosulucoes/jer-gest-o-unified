@@ -130,11 +130,11 @@ export default function CoordenacaoIncidentesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos Módulos</SelectItem>
-                  <SelectItem value="transporte">Transporte</SelectItem>
-                  <SelectItem value="alimentacao">Alimentação</SelectItem>
-                  <SelectItem value="alojamento">Alojamento</SelectItem>
-                  <SelectItem value="outro">Geral</SelectItem>
+                  {(Object.entries(INCIDENT_MODULES) as [IncidentModule, any][]).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  ))}
                 </SelectContent>
+
               </Select>
             </div>
             <div className="flex-1">
