@@ -51,6 +51,17 @@ export function VersionValidator({ children }: { children: React.ReactNode }) {
     checkSync();
   }, []);
 
+  useEffect(() => {
+    if (versionMismatch && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (versionMismatch && countdown === 0) {
+      handleUpdateVersion();
+    }
+  }, [versionMismatch, countdown]);
+
   const handleUpdateVersion = () => {
     localStorage.setItem(VERSION_KEY, APP_VERSION);
     window.location.reload();
