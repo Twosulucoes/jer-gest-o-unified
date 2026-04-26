@@ -20,11 +20,16 @@ const OUTCOME_OPTIONS = [
 export interface ScoreEntry {
   match_entry_id: string;
   score_final: string;
-  score_detail: Record<string, string> | null;
+  score_detail: Record<string, any> | null;
   outcome: string;
 }
 
-interface CollectiveScoreFormProps {
+interface StateScore {
+  final: string;
+  detail: Record<string, any>;
+  outcome: string;
+  shootout: string;
+}
   matchConfig: MatchConfig;
   entries: Array<{ id: string; label: string }>;
   existingScores?: Array<{
