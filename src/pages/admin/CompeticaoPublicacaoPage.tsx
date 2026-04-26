@@ -247,7 +247,7 @@ export default function CompeticaoPublicacaoPage() {
             <TableRow className="bg-muted/50">
               <TableHead className="w-[40px]">
                 <Checkbox 
-                  checked={selectedMatches.length > 0 && selectedMatches.length === filteredMatches.filter((m: any) => m.competition_match_results[0]?.result_status === "validado").length}
+                  checked={selectedMatches.length > 0 && selectedMatches.length === filteredMatches.filter((m: any) => m.competition_match_results[0]?.result_status === "resultado_validado").length}
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
