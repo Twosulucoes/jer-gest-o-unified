@@ -24,7 +24,8 @@ import {
 import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { format, parse } from "date-fns";
 import { EscalaLoteDialog, formatMatchLabel } from "@/components/admin/arbitragem/EscalaLoteDialog";
-import { downloadCsv, downloadPdf, type EscalaExportRow } from "@/components/admin/arbitragem/escalaExport";
+import { downloadCsv, downloadPdf, type EscalaExportRow, type EscalaColumnKey } from "@/components/admin/arbitragem/escalaExport";
+import { ExportColumnsDialog } from "@/components/admin/arbitragem/ExportColumnsDialog";
 
 const ROLE_LABELS: Record<string, string> = {
   mesario: "Mesário",
