@@ -224,3 +224,63 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
     sportEventIds: usedSportEventIds,
   };
 }
+
+export interface PhaseBulletin {
+  phaseId: string;
+  phaseName: string;
+  result: AutoBulletinResult;
+}
+
+export interface AutoBulletinByPhaseResult {
+  /** Boletim agregado (todas as fases juntas), para salvar como rascunho. */
+  aggregate: AutoBulletinResult;
+  /** Um boletim por fase, prontos para serem publicados individualmente. */
+  perPhase: PhaseBulletin[];
+}
+
+/**
+ * Gera o boletim agregado **e** um boletim por fase com resultado.
+ * As fases são descobertas a partir das partidas filtradas.
+ */
+export async function buildAutoBulletinByPhase(
+  filters: AutoBulletinFilters,
+): Promise<AutoBulletinByPhaseResult> {
+  // 1) Agregado (sem filtro de fase)
+  const aggregate = await buildAutoBulletinContent({ ...filters, phaseId: null });
+
+  // 2) Descobrir fases distintas presentes nas partidas do agregado
+  if (aggregate.matchIds.length === 0) {
+    return { aggregate, perPhase: [] };
+  }
+
+  const { data: phaseRows, error } = await supabase
+    .from("competition_matches")
+    .select("phase_id, competition_phases(name)")
+    .in("id", aggregate.matchIds);
+  if (error) throw error;
+
+  const phaseMap = new Map<string, string>();
+  for (const r of (phaseRows ?? []) as Array<{
+    phase_id: string | null;
+    competition_phases: { name: string | null } | null;
+  }>) {
+    if (r.phase_id && !phaseMap.has(r.phase_id)) {
+      phaseMap.set(r.phase_id, r.competition_phases?.name ?? "Fase");
+    }
+  }
+
+  // 3) Gera um boletim por fase (sequencial para evitar concorrência no MAX number)
+  const perPhase: PhaseBulletin[] = [];
+  for (const [phaseId, phaseName] of phaseMap) {
+    const result = await buildAutoBulletinContent({
+      ...filters,
+      phaseId,
+      titleSuffix: phaseName,
+    });
+    if (result.matchesCount > 0) {
+      perPhase.push({ phaseId, phaseName, result });
+    }
+  }
+
+  return { aggregate, perPhase };
+}
