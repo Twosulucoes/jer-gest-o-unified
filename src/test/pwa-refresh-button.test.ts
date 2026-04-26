@@ -85,3 +85,51 @@ describe("PWA: PwaRefreshButton invariant", () => {
     }
   });
 });
+
+describe("PWA: normalização de caminho", () => {
+  it("normalizePath converte separadores Windows para POSIX", () => {
+    expect(normalizePath("src\\pages\\pwa\\PwaLoginPage.tsx")).toBe(
+      "src/pages/pwa/PwaLoginPage.tsx"
+    );
+  });
+
+  it("normalizePath remove prefixos `./` e `/` inicial", () => {
+    expect(normalizePath("./src/pages/pwa/PwaLoginPage.tsx")).toBe(
+      "src/pages/pwa/PwaLoginPage.tsx"
+    );
+    expect(normalizePath("/src/pages/pwa/PwaLoginPage.tsx")).toBe(
+      "src/pages/pwa/PwaLoginPage.tsx"
+    );
+  });
+
+  it("normalizePath colapsa barras duplicadas", () => {
+    expect(normalizePath("src//pages///pwa/PwaLoginPage.tsx")).toBe(
+      "src/pages/pwa/PwaLoginPage.tsx"
+    );
+  });
+
+  it("normalizeKey é case-insensitive", () => {
+    expect(normalizeKey("SRC/Pages/PWA/PwaLoginPage.tsx")).toBe(
+      "src/pages/pwa/pwaloginpage.tsx"
+    );
+  });
+
+  const exampleException = WHITELIST_ROUTES[0]?.file;
+
+  it.runIf(!!exampleException)(
+    "isPwaRefreshException reconhece variações de separador, case e prefixo",
+    () => {
+      const file = exampleException!;
+      expect(isPwaRefreshException(file)).toBe(true);
+      expect(isPwaRefreshException(file.replace(/\//g, "\\"))).toBe(true);
+      expect(isPwaRefreshException("./" + file)).toBe(true);
+      expect(isPwaRefreshException("/" + file)).toBe(true);
+      expect(isPwaRefreshException(file.toUpperCase())).toBe(true);
+      expect(isPwaRefreshException(file.replace("src/", "src//"))).toBe(true);
+    }
+  );
+
+  it("isPwaRefreshException rejeita caminhos não listados", () => {
+    expect(isPwaRefreshException("src/pages/pwa/__nao_existe__.tsx")).toBe(false);
+  });
+});
