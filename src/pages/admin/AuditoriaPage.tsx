@@ -317,7 +317,7 @@ export default function AuditoriaPage() {
                       <div className="flex items-center gap-2">
                         <Target className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-mono text-xs">
-                          {targetProfiles[log.record_id] || log.record_id || "—"}
+                          {targetNames[log.record_id] || log.record_id || "—"}
                         </span>
                       </div>
                     </TableCell>
