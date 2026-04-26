@@ -13,13 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Loader2, Sparkles, FileText } from "lucide-react";
+import { Loader2, Sparkles, FileText, Lock, RefreshCw } from "lucide-react";
 import { BULLETIN_STATUS } from "@/lib/resultStatus";
 import {
   buildAutoBulletinContent,
   type BulletinScope,
   type BulletinStatusFilter,
 } from "@/lib/competition/autoBulletin";
+import { useNextBulletinNumber } from "@/hooks/useNextBulletinNumber";
 
 interface Props {
   eventId: string;
@@ -33,6 +34,10 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+
+  // Prévia em tempo real do próximo número (revalida ao focar a janela).
+  // O número definitivo é reservado server-side pela RPC `rpc_create_bulletin`.
+  const nextNumberQuery = useNextBulletinNumber(eventId, open);
 
   const [scope, setScope] = useState<BulletinScope>(
     sportEventId ? "sport_event" : stageId ? "stage" : "event",
@@ -122,26 +127,30 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
       if (!content.trim()) throw new Error("Gere o conteúdo antes de salvar.");
       if (!previewMeta) throw new Error("Pré-visualize o conteúdo antes de salvar.");
 
-      const { data, error } = await supabase
+      // 1) Reserva atômica do número via RPC (server-side, evita duplicidade
+      //    quando dois usuários criam boletins simultaneamente).
+      const { data: rpcData, error: rpcErr } = await supabase.rpc("rpc_create_bulletin", {
+        p_event_id: eventId,
+        p_title: title.trim(),
+        p_content_md: content,
+      });
+      if (rpcErr) throw rpcErr;
+
+      const reserved = rpcData as { id: string; number: number };
+      const bulletinId = reserved.id;
+      const reservedNumber = reserved.number;
+
+      // 2) Garante status `rascunho` e rastreia updated_by (RPC cria com defaults).
+      const { error: updErr } = await supabase
         .from("official_bulletins")
-        .insert({
-          event_id: eventId,
-          number: previewMeta.number,
-          title: title.trim(),
-          content_md: content,
+        .update({
           status: BULLETIN_STATUS.RASCUNHO,
-          created_by: user?.id ?? null,
           updated_by: user?.id ?? null,
         })
-        .select("id, number")
-        .single();
+        .eq("id", bulletinId);
+      if (updErr) throw updErr;
 
-      if (error) throw error;
-
-      // Persiste vínculos automáticos (n:n) com sport_events e partidas-fonte.
-      // Defensivo: se as tabelas ainda não existirem, apenas avisa em console
-      // sem bloquear a criação do boletim.
-      const bulletinId = data.id as string;
+      const data = { id: bulletinId, number: reservedNumber };
 
       let linkWarn = "";
       if (previewMeta.sportEventIds.length > 0) {
@@ -174,12 +183,19 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
       return { ...data, linkWarn };
     },
     onSuccess: (data: any) => {
-      toast.success(`Boletim #${data.number} criado em rascunho`, {
-        description: data.linkWarn
-          ? `Vínculos não persistidos: ${data.linkWarn}`
-          : `${previewMeta?.matchIds.length ?? 0} partida(s) e ${previewMeta?.sportEventIds.length ?? 0} prova(s) vinculadas.`,
+      const previewN = previewMeta?.number;
+      const reservedN = data.number;
+      const numberShifted = previewN != null && previewN !== reservedN;
+      toast.success(`Boletim #${reservedN} criado em rascunho`, {
+        description: [
+          numberShifted ? `Número reajustado (prévia era #${previewN}, outro usuário gerou primeiro).` : null,
+          data.linkWarn
+            ? `Vínculos não persistidos: ${data.linkWarn}`
+            : `${previewMeta?.matchIds.length ?? 0} partida(s) e ${previewMeta?.sportEventIds.length ?? 0} prova(s) vinculadas.`,
+        ].filter(Boolean).join(" "),
       });
       queryClient.invalidateQueries({ queryKey: ["bulletins-all"] });
+      queryClient.invalidateQueries({ queryKey: ["next-bulletin-number", eventId] });
       setOpen(false);
     },
     onError: (e: any) => toast.error("Falha ao salvar", { description: e?.message }),
@@ -206,6 +222,35 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Prévia do próximo número (com trava server-side) */}
+          <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Próximo número (prévia):</span>
+              {nextNumberQuery.isLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Badge variant="secondary" className="font-mono">
+                  #{nextNumberQuery.data ?? "—"}
+                </Badge>
+              )}
+              <span className="text-[11px] text-muted-foreground">
+                Reservado de forma atômica no salvamento.
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 text-xs"
+              onClick={() => nextNumberQuery.refetch()}
+              disabled={nextNumberQuery.isFetching}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${nextNumberQuery.isFetching ? "animate-spin" : ""}`} />
+              Atualizar
+            </Button>
+          </div>
+
           {/* Filtros */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
