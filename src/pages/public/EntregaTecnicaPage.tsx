@@ -282,10 +282,10 @@ export default function EntregaTecnicaPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { icon: Users, label: "Atletas", val: "5.247", color: brand.colors.accentBlue },
-                    { icon: Trophy, label: "Modalidades", val: "32", color: brand.colors.accentTeal },
-                    { icon: Award, label: "Medalhas", val: "187", color: brand.colors.accentGreen },
-                    { icon: ClipboardList, label: "Provas hoje", val: "24", color: brand.colors.warning },
+                    { icon: Users, label: "Atletas", val: stats?.athletes.toLocaleString() || "0", color: brand.colors.accentBlue },
+                    { icon: Trophy, label: "Modalidades", val: stats?.sports.toString() || "0", color: brand.colors.accentTeal },
+                    { icon: Award, label: "Medalhas", val: stats?.medals.toString() || "0", color: brand.colors.accentGreen },
+                    { icon: ClipboardList, label: "Provas hoje", val: stats?.matchesToday.toString() || "0", color: brand.colors.warning },
                   ].map((m) => (
                     <div key={m.label} className="bg-white rounded-xl p-3 border border-slate-100">
                       <m.icon size={14} style={{ color: m.color }} />
