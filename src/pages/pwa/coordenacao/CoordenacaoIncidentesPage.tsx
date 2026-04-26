@@ -38,37 +38,75 @@ export default function CoordenacaoIncidentesPage() {
   const { activeEventId } = useEventContext();
   const [incidents, setIncidents] = useState<IncidentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Filters and Pagination
+  const [filterModule, setFilterModule] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const pageSize = 15;
 
-  useEffect(() => {
+  const fetchIncidents = useCallback(async (isLoadMore = false) => {
     if (!activeEventId) {
       setIncidents([]);
-      setError(null);
       setLoading(false);
       return;
     }
-    
-    (async () => {
-      try {
-        setError(null);
-        const { data, error: fetchError } = await supabase
-          .from("operational_incidents")
-          .select("id, incident_description, incident_status, module, created_at")
-          .eq("event_id", activeEventId)
-          .order("created_at", { ascending: false })
-          .limit(50);
-        
-        if (fetchError) throw fetchError;
-        
-        setIncidents((data as any) || []);
-      } catch (err: any) {
-        console.error("Erro ao carregar ocorrências:", err);
-        setError("Não foi possível carregar a lista de ocorrências. Tente novamente mais tarde.");
-      } finally {
-        setLoading(false);
+
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
+
+    try {
+      let query = supabase
+        .from("operational_incidents")
+        .select("id, incident_description, incident_status, module, created_at")
+        .eq("event_id", activeEventId)
+        .order("created_at", { ascending: false });
+
+      if (filterModule !== "all") {
+        query = query.eq("module", filterModule as any);
       }
-    })();
-  }, [activeEventId]);
+      
+      if (filterStatus !== "all") {
+        query = query.eq("incident_status", filterStatus as any);
+      }
+
+      const from = (isLoadMore ? page : 0) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error: fetchError } = await query.range(from, to);
+      
+      if (fetchError) throw fetchError;
+      
+      const newItems = (data as any) || [];
+      if (isLoadMore) {
+        setIncidents(prev => [...prev, ...newItems]);
+        setPage(prev => prev + 1);
+      } else {
+        setIncidents(newItems);
+        setPage(1);
+      }
+      
+      setHasMore(newItems.length === pageSize);
+      setError(null);
+    } catch (err: any) {
+      console.error("Erro ao carregar ocorrências:", err);
+      setError("Não foi possível carregar a lista de ocorrências.");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [activeEventId, filterModule, filterStatus, page]);
+
+  useEffect(() => {
+    fetchIncidents();
+  }, [activeEventId, filterModule, filterStatus]);
+
+  const handleLoadMore = () => {
+    fetchIncidents(true);
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
