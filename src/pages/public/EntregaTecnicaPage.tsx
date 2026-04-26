@@ -127,6 +127,23 @@ export default function EntregaTecnicaPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [desktopCaptureLoaded, setDesktopCaptureLoaded] = useState(false);
   const [mobileCaptureLoaded, setMobileCaptureLoaded] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    try {
+      setIsDownloading(true);
+      await exportEntregaTecnicaPdf({
+        totalModulos,
+        stats,
+        techStack: techStack.map(t => ({ name: t.name, desc: t.desc })),
+        checklistItems
+      });
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const { data: stats } = useQuery({
     queryKey: ["entrega-tecnica-stats"],
