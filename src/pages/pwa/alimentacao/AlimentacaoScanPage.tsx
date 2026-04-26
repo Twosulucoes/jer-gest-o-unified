@@ -291,6 +291,8 @@ export default function AlimentacaoScanPage() {
       />
 
       <main className="relative mx-auto max-w-md space-y-4 p-4">
+        <OfflineSyncStatus />
+
         <ScanPreferencesPanel
           prefs={prefs}
           telemetry={telemetry}
