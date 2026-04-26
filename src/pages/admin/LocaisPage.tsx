@@ -153,8 +153,7 @@ export default function LocaisPage() {
     city: values.city || null,
     address: values.address || null,
     is_active: values.is_active,
-    // mantém event_stage_id (legado) apontando para a primeira etapa, se houver — para compatibilidade
-    event_stage_id: values.event_stage_ids[0] ?? null,
+    // event_stage_id (legado) é mantido pela RPC rpc_sync_venue_stages
   });
 
   const syncStages = async (venueId: string, stageIds: string[]) => {
