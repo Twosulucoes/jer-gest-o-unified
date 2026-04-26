@@ -1017,6 +1017,11 @@ export default function CredenciamentoPage() {
               <span className="text-sm font-medium text-foreground">
                 {selectedIds.size} selecionado(s)
               </span>
+              {selectedIds.size < filtered.length && (
+                <Button size="sm" variant="link" className="px-0 h-auto text-xs" onClick={() => setSelectedIds(new Set(filtered.map(p => p.id)))}>
+                  Selecionar todos os {filtered.length} resultados
+                </Button>
+              )}
               <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())}>
                 Limpar
               </Button>
