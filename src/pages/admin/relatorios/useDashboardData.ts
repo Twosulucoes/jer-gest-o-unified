@@ -326,6 +326,33 @@ export function useDashboardData(eventId?: string | null) {
           return data ?? [];
         }, [] as { match_id: string; result_status: string }[]),
       },
+      // 3: árbitros cadastrados (people kind=arbitro)
+      {
+        queryKey: ["dash3", "referees_total"],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const { count } = await supabase.from("people")
+            .select("id", { count: "exact", head: true })
+            .eq("kind", "arbitro")
+            .eq("is_active", true);
+          return count ?? 0;
+        }, 0),
+      },
+      // 4: árbitros designados no evento ativo
+      {
+        queryKey: ["dash3", "referees_assigned", eventId],
+        enabled: enabled && !!eventId,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          if (!eventId) return 0;
+          const { data } = await supabase.from("referee_event_assignments" as any)
+            .select("person_id")
+            .eq("event_id", eventId);
+          const set = new Set((data ?? []).map((r: any) => r.person_id));
+          return set.size;
+        }, 0),
+      },
     ],
   });
 
