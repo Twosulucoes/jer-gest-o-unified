@@ -127,26 +127,30 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
       if (!content.trim()) throw new Error("Gere o conteúdo antes de salvar.");
       if (!previewMeta) throw new Error("Pré-visualize o conteúdo antes de salvar.");
 
-      const { data, error } = await supabase
+      // 1) Reserva atômica do número via RPC (server-side, evita duplicidade
+      //    quando dois usuários criam boletins simultaneamente).
+      const { data: rpcData, error: rpcErr } = await supabase.rpc("rpc_create_bulletin", {
+        p_event_id: eventId,
+        p_title: title.trim(),
+        p_content_md: content,
+      });
+      if (rpcErr) throw rpcErr;
+
+      const reserved = rpcData as { id: string; number: number };
+      const bulletinId = reserved.id;
+      const reservedNumber = reserved.number;
+
+      // 2) Garante status `rascunho` e rastreia updated_by (RPC cria com defaults).
+      const { error: updErr } = await supabase
         .from("official_bulletins")
-        .insert({
-          event_id: eventId,
-          number: previewMeta.number,
-          title: title.trim(),
-          content_md: content,
+        .update({
           status: BULLETIN_STATUS.RASCUNHO,
-          created_by: user?.id ?? null,
           updated_by: user?.id ?? null,
         })
-        .select("id, number")
-        .single();
+        .eq("id", bulletinId);
+      if (updErr) throw updErr;
 
-      if (error) throw error;
-
-      // Persiste vínculos automáticos (n:n) com sport_events e partidas-fonte.
-      // Defensivo: se as tabelas ainda não existirem, apenas avisa em console
-      // sem bloquear a criação do boletim.
-      const bulletinId = data.id as string;
+      const data = { id: bulletinId, number: reservedNumber };
 
       let linkWarn = "";
       if (previewMeta.sportEventIds.length > 0) {
