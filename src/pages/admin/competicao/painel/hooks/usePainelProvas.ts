@@ -82,7 +82,7 @@ export function usePainelProvas({
           ...computeProvaData(row),
           family: rulesMap.get(row.sport_event_id) || null
         }))
-        .filter(p => p.family === "score");
+        .filter(p => p.family === "score" || p.family === "sets");
     },
   });
 

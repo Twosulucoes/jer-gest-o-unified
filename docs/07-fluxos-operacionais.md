@@ -91,17 +91,19 @@ Coordenação prepara evento
 
 ## 7. Competição (Operação por Família)
 
-### 7.1 Família "Score" (Novo Painel)
+### 7.1 Famílias "Score" e "Sets" (Novos Painéis)
 ```
-Coordenação opera modalidades "score" (Futsal, Futebol, etc)
+Coordenação opera modalidades "score" ou "sets"
   → Painel da Competição (/admin/competicao/painel)
-  → Seleciona modalidade (Card Score) → Abre Painel Score
+  → Seleciona modalidade (Card Score ou Card Sets) → Abre Painel correspondente
   → Grade de confrontos: filtra por fase/grupo/status
+  → Visualização Sets: mostra placar (ex: 3×1) e parciais (ex: 25-18 / ...) na grade
   → "Novo Confronto" ou "Editar":
      - Seleciona Fase/Grupo
      - Seleciona Escola A e B (lista filtrada por inscritos)
      - Define Data/Hora/Local
      - Define equipe de arbitragem (filtrada por modalidade)
+     - Referência: formulário exibe formato de sets (melhor de X) das regras
   → Salvar: Cria confronto + entries + assignments
   → No dia: registra placar e eventos na página da partida
   → Lança resultado (resultado_lancado)
@@ -110,10 +112,10 @@ Coordenação opera modalidades "score" (Futsal, Futebol, etc)
 
 ### 7.2 Outras Famílias (Central Legada)
 ```
-Coordenação monta chaves/fases por prova
+Coordenação monta chaves/fases por prova (Individuais, Combate)
   → Central da Competição (/admin/competicao/central)
   → Seleciona prova → sistema carrega regras (sport_event_rules)
-  → Wizard adapta labels conforme família/formato (Individual, Combat, Sets)
+  → Wizard adapta labels conforme família/formato
   → Cria partidas com entries (equipes ou individuais)
   → Mesmos fluxos de resultado e publicação
 ```
