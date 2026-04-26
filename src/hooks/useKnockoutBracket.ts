@@ -12,7 +12,6 @@ export interface BracketEntry {
   outcome?: string | null;
   is_winner?: boolean;
 }
-}
 
 export interface BracketMatch {
   match_id: string;
