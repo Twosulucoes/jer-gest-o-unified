@@ -36,6 +36,8 @@ const eventSchema = z.object({
   status: z.string().min(1, "Selecione um status"),
   start_date: z.string().optional().or(z.literal("")),
   end_date: z.string().optional().or(z.literal("")),
+  is_public: z.boolean().default(false),
+  public_agenda_published: z.boolean().default(false),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
