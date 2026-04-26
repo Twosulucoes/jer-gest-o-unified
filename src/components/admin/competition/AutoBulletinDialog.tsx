@@ -343,7 +343,25 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Switch: separar por fase */}
+          <div className="flex items-start gap-3 rounded-md border bg-muted/30 px-3 py-2">
+            <Layers className="h-4 w-4 mt-0.5 text-muted-foreground" />
+            <div className="flex-1 space-y-0.5">
+              <Label className="text-sm flex items-center gap-2">
+                Separar por fase
+                <Switch
+                  checked={splitByPhase}
+                  onCheckedChange={(v) => { setSplitByPhase(v); setPhasesPreview([]); }}
+                />
+              </Label>
+              <p className="text-[11px] text-muted-foreground">
+                Cria <strong>1 boletim publicado por fase</strong> (com vínculos próprios) e mantém o agregado
+                como <strong>rascunho</strong> para revisão.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" onClick={generate} disabled={generating}>
               {generating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
               Gerar prévia
@@ -353,7 +371,37 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
                 {previewMeta.items} item(ns) · {previewMeta.matches} partida(s) · {previewMeta.sportEventIds.length} prova(s) · próximo nº #{previewMeta.number}
               </Badge>
             )}
+            {splitByPhase && phasesPreview.length > 0 && (
+              <Badge variant="secondary" className="gap-1">
+                <Layers className="h-3 w-3" />
+                {phasesPreview.length} fase(s) com resultado
+              </Badge>
+            )}
           </div>
+
+          {/* Lista de fases (quando splitByPhase) */}
+          {splitByPhase && phasesPreview.length > 0 && (
+            <div className="rounded-md border p-2 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground px-1">
+                Boletins que serão publicados por fase:
+              </p>
+              <ScrollArea className="max-h-[140px]">
+                <ul className="text-xs space-y-1 px-1">
+                  {phasesPreview.map((ph) => (
+                    <li key={ph.phaseId} className="flex items-center justify-between gap-2 py-0.5">
+                      <span className="truncate">
+                        <Layers className="h-3 w-3 inline mr-1 text-muted-foreground" />
+                        {ph.phaseName}
+                      </span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {ph.result.matchesCount} partida(s) · {ph.result.sportEventIds.length} prova(s)
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            </div>
+          )}
 
           {/* Título e conteúdo editáveis */}
           {content && (
