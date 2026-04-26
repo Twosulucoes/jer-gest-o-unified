@@ -133,7 +133,9 @@ Resultado Lançado (Mesário/Coordenador)
   → Tela de Lançamento (/admin/competicao/painel-score/.../resultado)
   → Coordenador clica "Homologar Resultado"
   → Diálogo de confirmação → Digita senha do coordenador
-  → RPC rpc_homologate_match_result → Status: "resultado_validado"
+  → Frontend chama Edge Function verify-current-user-password (validação real de auth.users)
+  → Se sucesso, chama RPC rpc_homologate_match_result → Status: "resultado_validado"
+  → Se falha, registra tentativa malsucedida em audit_events e bloqueia operação
   → Bloqueia edição para todos exceto Admin
 
 Publicação (Secretaria)
