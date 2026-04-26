@@ -891,6 +891,20 @@ function IssueVoucherDialog({
 
           {step === 4 && (
             <div className="space-y-3">
+              {/* Prévia visual do voucher */}
+              <VoucherPreviewCard
+                voucherType={voucherType}
+                label={voucherType === "aggregate" ? aggregateLabel : selected?.full_name ?? ""}
+                participantType={voucherType === "nominal" ? selected?.participant_type ?? null : null}
+                cpf={voucherType === "nominal" ? selected?.cpf ?? null : null}
+                scopeTransport={scopeTransport}
+                scopeMeals={scopeMeals}
+                scopeLodging={scopeLodging}
+                maxUses={maxUses.trim() || null}
+                validUntil={validUntil || null}
+                batchN={batchN}
+              />
+
               <Card className="p-3 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tipo</span>
@@ -938,8 +952,9 @@ function IssueVoucherDialog({
                   <span className="font-medium">{validUntil || "Sem validade"}</span>
                 </div>
               </Card>
-              <p className="text-xs text-muted-foreground">
-                Após emitir, abrirá automaticamente a tela de impressão/QR.
+              <p className="text-[11px] text-muted-foreground text-center">
+                O QR exibido acima é uma <strong>simulação</strong>. O QR final será gerado e
+                aberto para impressão após emitir.
               </p>
             </div>
           )}
