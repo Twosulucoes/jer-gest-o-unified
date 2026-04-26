@@ -615,11 +615,9 @@ export default function CredenciamentoPage() {
   };
 
   // --- Stats ---
-  const pendingCount = (participants ?? []).filter((p) => p.status === "pending").length;
   const confirmedCount = (participants ?? []).filter((p) => p.status === "confirmed").length;
-  const credentialedCount = (participants ?? []).filter((p) => p.status === "credentialed").length;
   const credentialsEmittedCount = activeCredentials.length;
-  const pendingEmission = confirmedCount - credentialsEmittedCount;
+
 
   const handleOpenPreview = (participantId: string) => {
     const tmpl = eventTemplate ?? createDefaultTemplateMutation.data;
