@@ -74,11 +74,11 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
     setIsMounting(true);
     try {
       // 1. Get confirmed athletes
-      const { data: athletes, error: athError } = await supabase
-        .from("participant_sport_events")
+      const { data: athletes, error: athError } = await (supabase
+        .from("participant_sport_events") as any)
         .select("id")
         .eq("sport_event_id", sportEventId)
-        .eq("weighing_status" as any, "confirmed");
+        .eq("weighing_status", "confirmed");
 
       if (athError) throw athError;
       if (athletes.length < 2) {
