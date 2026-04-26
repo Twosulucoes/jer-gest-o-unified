@@ -16,17 +16,32 @@ function getRoundLabel(roundNum: number, totalRounds: number): string {
   return `Rodada ${roundNum}`;
 }
 
-function EntryLabel({ entry, side }: { entry?: BracketEntry; side: string }) {
+function EntryLabel({ entry, side, isWinner, isFinished, isBye }: { 
+  entry?: BracketEntry; 
+  side: string; 
+  isWinner: boolean;
+  isFinished: boolean;
+  isBye: boolean;
+}) {
   if (!entry) {
+    if (isBye) return <span className="text-xs text-muted-foreground italic opacity-50">BYE</span>;
     return <span className="text-xs text-muted-foreground italic">A definir</span>;
   }
-  const label = entry.team_name || entry.participant_name || "BYE";
+  
+  const label = entry.participant_name || entry.team_name || "—";
+  const isLoser = isFinished && !isWinner && !isBye;
+
   return (
-    <div className="flex items-center gap-1.5 min-w-0">
+    <div className={cn(
+      "flex items-center gap-1.5 min-w-0 transition-all",
+      isWinner && "font-bold text-primary",
+      isLoser && "line-through opacity-50 text-muted-foreground"
+    )}>
       {entry.seed && (
         <span className="text-[10px] font-bold text-muted-foreground shrink-0">[{entry.seed}]</span>
       )}
-      <span className="text-xs font-medium truncate">{label}</span>
+      <span className="text-xs truncate">{label}</span>
+      {isWinner && <Trophy className="h-3 w-3 text-amber-500 shrink-0" />}
     </div>
   );
 }
