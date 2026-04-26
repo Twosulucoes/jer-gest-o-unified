@@ -810,12 +810,22 @@ export default function ParticipantesPage() {
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center px-4">
           <XCircle className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhum participante encontrado</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {searchTerm ? "Tente outro termo de busca." : "Importe ou cadastre participantes."}
+          <p className="text-muted-foreground font-medium text-lg">Nenhum participante encontrado</p>
+          <p className="text-sm text-muted-foreground mt-1 mb-6">
+            {searchTerm ? "Tente outro termo de busca." : "Importe ou cadastre participantes para começar a gerenciar seu evento."}
           </p>
+          {!searchTerm && (
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button variant="outline" onClick={() => navigate("/admin/importacao")}>
+                Importar Participantes
+              </Button>
+              <Button onClick={() => { setEditingId(null); setInitialFormCategory("delegation"); setFormOpen(true); }}>
+                Cadastrar Novo
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
