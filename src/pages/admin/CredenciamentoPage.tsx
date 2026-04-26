@@ -443,23 +443,19 @@ export default function CredenciamentoPage() {
         return true;
       })
       .sort((a, b) => {
-        const stateA = getParticipantState(a);
-        const stateB = getParticipantState(b);
-        
-        let prioA = 9;
-        let prioB = 9;
-
-        if (sortBy === "workflow") {
-          prioA = WORKFLOW_PRIORITY[stateA] ?? 9;
-          prioB = WORKFLOW_PRIORITY[stateB] ?? 9;
-        } else if (sortBy === "priority") {
-          prioA = STATE_PRIORITY[stateA] ?? 9;
-          prioB = STATE_PRIORITY[stateB] ?? 9;
-        }
-
-        if (prioA !== prioB) return prioA - prioB;
         const nameA = a.person?.full_name ?? "";
         const nameB = b.person?.full_name ?? "";
+
+        if (sortBy === "name") {
+          return nameA.localeCompare(nameB);
+        }
+
+        const stateA = getParticipantState(a);
+        const stateB = getParticipantState(b);
+        const map = sortBy === "priority" ? STATE_PRIORITY : WORKFLOW_PRIORITY;
+        const prioA = map[stateA] ?? 9;
+        const prioB = map[stateB] ?? 9;
+        if (prioA !== prioB) return prioA - prioB;
         return nameA.localeCompare(nameB);
       });
   }, [participants, searchTerm, filterType, filterState, filterInstitution, sortBy, blockedParticipantIds, getParticipantState, getInstitutionId, activeCredMap]);
@@ -842,15 +838,30 @@ export default function CredenciamentoPage() {
     }
   };
 
-  const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "" || sortBy !== "priority";
+  const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "" || sortBy !== "workflow";
 
-  const stats = {
-    total: participants.length,
-    ready: filtered.filter(p => getParticipantState(p) === "ready_to_emit").length,
-    awaiting: filtered.filter(p => getParticipantState(p) === "awaiting").length,
-    emitted: credentialsEmittedCount,
-    pendingEmission: Math.max(0, confirmedCount - credentialsEmittedCount)
-  };
+  // KPIs derivados do estado real de cada participante (escopados pelo evento/etapa)
+  const stats = useMemo(() => {
+    let pending = 0, awaiting = 0, ready = 0, complete = 0;
+    for (const p of participants) {
+      const st = getParticipantState(p);
+      if (st === "pending_import") pending++;
+      else if (st === "awaiting") awaiting++;
+      else if (st === "ready_to_emit") ready++;
+      else if (st === "complete") complete++;
+    }
+    return {
+      total: participants.length,
+      pending,
+      awaiting,
+      ready,
+      complete,
+      blocked: blockedParticipantIds.size,
+      // pendentes de emissão = aguardando presença + prontos
+      pendingEmission: awaiting + ready,
+      emitted: complete,
+    };
+  }, [participants, getParticipantState, blockedParticipantIds]);
 
   return (
     <div className="space-y-4">
