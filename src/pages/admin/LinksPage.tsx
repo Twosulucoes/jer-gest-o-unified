@@ -1,24 +1,29 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Plus, Copy, Search, Loader2, Link2, Trash2,
   Info, Pencil, Bus, UtensilsCrossed, Building, Trophy, Users, Radio, Sparkles, Send,
-  ShieldCheck, Gavel, IdCard, Award, History
+  ShieldCheck, Gavel, IdCard, Award, History, MoreVertical,
 } from "lucide-react";
 import { slugify } from "@/lib/slug";
 import { QrCodePreview } from "@/components/admin/links/QrCodePreview";
 
 const getBaseUrl = () => window.location.origin;
+
 
 const MODULE_OPTIONS = [
   { value: "/pwa/transporte", label: "Módulo Transporte", icon: Bus, slug: "transporte", title: "Transporte" },
