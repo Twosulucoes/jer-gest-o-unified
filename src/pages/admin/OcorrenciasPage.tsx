@@ -51,7 +51,7 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
 
 export default function OcorrenciasPage() {
   const { activeEvent } = useEventContext();
-  const { isStageScoped, stageId, stage, error: stageError } = useStageScope();
+  const { isStageScoped, stageId } = useStageScope();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -62,31 +62,67 @@ export default function OcorrenciasPage() {
   const [editStatus, setEditStatus] = useState("");
   const [editResponse, setEditResponse] = useState("");
   const [saving, setSaving] = useState(false);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 15;
 
   const fetchIncidents = useCallback(async () => {
     if (!activeEvent) return;
     setLoading(true);
-    let query = supabase
-      .from("operational_incidents")
-      .select("*")
-      .eq("event_id", activeEvent.id)
-      .order("created_at", { ascending: false });
+    
+    try {
+      let query = supabase
+        .from("operational_incidents")
+        .select("*", { count: "exact" })
+        .eq("event_id", activeEvent.id);
 
-    if (isStageScoped && stageId) {
-      query = query.eq("event_stage_id", stageId);
+      if (isStageScoped && stageId) {
+        query = query.eq("event_stage_id", stageId);
+      }
+
+      if (filterModule !== "all") {
+        query = query.eq("module", filterModule);
+      }
+      
+      if (filterStatus !== "all") {
+        query = query.eq("incident_status", filterStatus);
+      }
+
+      if (search) {
+        // Simple search across multiple columns
+        query = query.or(`reporter_name.ilike.%${search}%,reference_label.ilike.%${search}%,incident_description.ilike.%${search}%`);
+      }
+
+      // Pagination
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await query
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+      
+      setIncidents((data as any) || []);
+      setTotalCount(count || 0);
+    } catch (err: any) {
+      console.error("Error fetching incidents:", err);
+      toast.error("Erro ao carregar ocorrências");
+    } finally {
+      setLoading(false);
     }
+  }, [activeEvent, filterModule, filterStatus, isStageScoped, stageId, currentPage, search]);
 
+  useEffect(() => {
+    fetchIncidents();
+  }, [fetchIncidents]);
 
-    if (filterModule !== "all") query = query.eq("module", filterModule as any);
-    if (filterStatus !== "all") query = query.eq("incident_status", filterStatus as any);
-
-    const { data, error } = await query;
-    if (error) console.error(error);
-    setIncidents((data as any) || []);
-    setLoading(false);
-  }, [activeEvent, filterModule, filterStatus, isStageScoped, stageId]);
-
-  useEffect(() => { fetchIncidents(); }, [fetchIncidents]);
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterModule, filterStatus, search]);
 
   const openDrawer = (incident: Incident) => {
     setSelected(incident);
