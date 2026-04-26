@@ -121,3 +121,27 @@ export function clearPersistedFilters() {
   }
 }
 
+/**
+ * Returns the current stats of expired keys by category.
+ */
+export function getPersistedStateStats() {
+  try {
+    const saved = localStorage.getItem(STATS_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+/**
+ * Resets the expiration stats.
+ */
+export function resetPersistedStateStats() {
+  try {
+    localStorage.removeItem(STATS_KEY);
+    logger.info("[Persistence] Stats reset successfully.");
+  } catch (error) {
+    logger.warn("Error resetting persistence stats:", error);
+  }
+}
+
