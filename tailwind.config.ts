@@ -64,6 +64,10 @@ export default {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
         },
+        pending: {
+          DEFAULT: "hsl(var(--pending))",
+          foreground: "hsl(var(--pending-foreground))",
+        },
         bg: "var(--bg)",
         surface: "var(--surface)",
         surface2: "var(--surface2)",
