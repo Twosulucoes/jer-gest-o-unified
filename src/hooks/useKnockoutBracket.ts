@@ -131,8 +131,8 @@ export function useKnockoutBracket(phaseId: string | null) {
         }));
 
       return {
-        phase_id: phase.id,
-        bracket_config: phase.bracket_config,
+        phase_id: phaseData.id,
+        bracket_config: phaseData.bracket_config,
         rounds,
       } as BracketData;
     },
