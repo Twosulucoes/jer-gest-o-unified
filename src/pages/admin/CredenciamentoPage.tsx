@@ -157,6 +157,7 @@ export default function CredenciamentoPage() {
   const [filterType, setFilterType] = useState(searchParams.get("type") || "all");
   const [filterState, setFilterState] = useState(searchParams.get("status") || "all");
   const [filterInstitution, setFilterInstitution] = useState(searchParams.get("inst") || "all");
+  const [sortBy, setSortBy] = useState(searchParams.get("sort") || "priority");
   const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
   const [previewParticipantId, setPreviewParticipantId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
