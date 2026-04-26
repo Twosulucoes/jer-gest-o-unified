@@ -394,15 +394,35 @@ export default function ArbitragemEquipePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Radio className="h-6 w-6 text-primary" />
-          Equipe de Arbitragem
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Lista consolidada de árbitros e mesários do evento, com escalas por modalidade e etapa.
-          Para escalar oficiais em uma partida, abra o detalhe da partida.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Radio className="h-6 w-6 text-primary" />
+            Equipe de Arbitragem
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Lista consolidada de árbitros e mesários do evento, com escalas por modalidade e etapa.
+            Para escalar oficiais em uma partida, abra o detalhe da partida.
+          </p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Download className="mr-1 h-4 w-4" />
+              Exportar escalas
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportCsv}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              CSV (filtros aplicados)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportPdf}>
+              <FileText className="mr-2 h-4 w-4" />
+              PDF (filtros aplicados)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* KPIs */}
