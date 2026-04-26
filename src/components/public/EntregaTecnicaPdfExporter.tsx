@@ -245,6 +245,19 @@ const EntregaTecnicaDocument = ({ data }: { data: EntregaTecnicaData }) => (
         </View>
       </View>
 
+      {/* Módulos (New Section) */}
+      <View style={styles.section} break>
+        <Text style={styles.sectionTitle}>Detalhamento dos Módulos</Text>
+        <View style={styles.grid}>
+          {data.modules.map((mod, i) => (
+            <View key={i} style={styles.card}>
+              <Text style={styles.cardTitle}>{mod.title}</Text>
+              <Text style={styles.cardDesc}>{mod.desc}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
       {/* Footer */}
       <View style={styles.footer} fixed>
         <Text style={styles.footerText}>Gerado em {new Date().toLocaleDateString('pt-BR')}</Text>
