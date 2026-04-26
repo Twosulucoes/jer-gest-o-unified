@@ -17,8 +17,49 @@ interface PwaRouteGuardProps {
 export default function PwaRouteGuard({ children, allowedRoles }: PwaRouteGuardProps) {
   const { user, loading, hasRole } = useAuth();
   const { activeEventId, eventsLoading } = useEventContext();
+  const { incidentId } = useParams();
+  const location = useLocation();
+  const [resourceValidating, setResourceValidating] = useState(false);
+  const [resourceError, setResourceError] = useState<string | null>(null);
 
-  if (loading || eventsLoading) {
+  useEffect(() => {
+    const validateIncident = async () => {
+      // Only run this specific check for the incident detail route
+      if (!incidentId || !activeEventId || !location.pathname.includes("/pwa/coordenacao-tecnica/incidente/")) {
+        setResourceError(null);
+        return;
+      }
+
+      setResourceValidating(true);
+      try {
+        const { data, error } = await supabase
+          .from("operational_incidents")
+          .select("event_id")
+          .eq("id", incidentId)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error fetching incident for validation:", error);
+          setResourceError("Ocorreu um erro ao validar o acesso ao incidente.");
+        } else if (!data) {
+          setResourceError("Incidente não encontrado.");
+        } else if (data.event_id !== activeEventId) {
+          setResourceError("Este incidente não pertence ao evento selecionado.");
+        } else {
+          setResourceError(null);
+        }
+      } catch (err) {
+        console.error("Unexpected error validating incident:", err);
+        setResourceError("Erro inesperado ao validar o incidente.");
+      } finally {
+        setResourceValidating(false);
+      }
+    };
+
+    validateIncident();
+  }, [incidentId, activeEventId, location.pathname]);
+
+  if (loading || eventsLoading || resourceValidating) {
     return <AuthLoadingScreen />;
   }
 
