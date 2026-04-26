@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.event_role_catalog (
 
 ALTER TABLE public.event_role_catalog ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "role_catalog_read_authenticated"
+DROP POLICY IF EXISTS "role_catalog_read_authenticated" ON public.event_role_catalog; CREATE POLICY "role_catalog_read_authenticated"
   ON public.event_role_catalog FOR SELECT TO authenticated USING (true);
 
 CREATE POLICY "role_catalog_write_admin"
