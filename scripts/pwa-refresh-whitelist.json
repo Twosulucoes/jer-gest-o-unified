@@ -1,0 +1,18 @@
+{
+  "$schema": "./pwa-refresh-whitelist.schema.json",
+  "description": "Whitelist de páginas PWA isentas da invariante PwaRefreshButton. Mantida em conjunto com scripts/pwa-refresh-exceptions.ts. Toda nova rota PWA é considerada OPERACIONAL por padrão (precisa do refresh) — só inclua aqui se for autenticação/utilitária.",
+  "categories": {
+    "auth": "Telas de autenticação / pré-sessão — sem dados a recarregar",
+    "utility": "Telas utilitárias / status fixo — conteúdo estático ou pós-ação"
+  },
+  "routes": [
+    { "file": "src/pages/pwa/PwaLoginPage.tsx", "category": "auth", "reason": "Tela de login PWA principal" },
+    { "file": "src/pages/pwa/PwaRecoverPage.tsx", "category": "auth", "reason": "Recuperação de senha" },
+    { "file": "src/pages/pwa/PwaSetPasswordPage.tsx", "category": "auth", "reason": "Definição inicial de senha" },
+    { "file": "src/pages/pwa/PesquisaLoginPage.tsx", "category": "auth", "reason": "Login do módulo Pesquisa" },
+    { "file": "src/pages/aovivo/AoVivoLoginPage.tsx", "category": "auth", "reason": "Login do PWA JER Ao Vivo (mesário)" },
+    { "file": "src/pages/pwa/PwaAcessoNegadoPage.tsx", "category": "utility", "reason": "Tela de acesso negado — conteúdo estático" },
+    { "file": "src/pages/pwa/PwaDebugPage.tsx", "category": "utility", "reason": "Página de diagnóstico interna" },
+    { "file": "src/pages/pwa/PesquisaConfirmacaoPage.tsx", "category": "utility", "reason": "Confirmação pós-envio da pesquisa" }
+  ]
+}
