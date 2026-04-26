@@ -333,6 +333,7 @@ const App = () => (
               <Route path="competicao/agenda" element={<RedirectToEtapas />} />
               <Route path="competicao/partidas-agenda" element={<RedirectToEtapas />} />
               <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />
+              <Route path="competicao/painel-score/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoScorePage /></ProtectedRoute>} />
               <Route path="competicao/equipes" element={<RedirectToEtapas />} />
               <Route path="competicao/resultados" element={<RedirectToEtapas />} />
               <Route path="competicao/sincronizar-equipes" element={<RedirectToEtapas />} />
