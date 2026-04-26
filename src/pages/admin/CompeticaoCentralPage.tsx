@@ -266,6 +266,18 @@ export default function CompeticaoCentralPage() {
                 isCollective={isCollective}
               />
             )}
+
+            {currentStep === "publish" && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Publicação no Portal dos Jogos</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Última etapa: valide os resultados, vincule a um boletim oficial e publique no portal público.
+                  </p>
+                </div>
+                <ResultGovernancePanel sportEventId={sportEventId} />
+              </div>
+            )}
           </div>
 
           {/* Navigation buttons */}
