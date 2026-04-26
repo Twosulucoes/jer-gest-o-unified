@@ -771,17 +771,36 @@ export default function AcessosUsuariosPage() {
                   <Label className="font-semibold text-base">Perfis de Acesso</Label>
                   <p className="text-xs text-muted-foreground mt-0.5">Selecione todos os módulos que este usuário pode acessar</p>
                 </div>
-                <div className="space-y-1.5">
-                  {availableRoles.map((r) => (
-                    <label key={r.value} className="flex items-center gap-2 cursor-pointer rounded-md border p-2.5 hover:bg-muted/50 transition-colors">
-                      <Checkbox
-                        checked={drawerRoles.includes(r.value)}
-                        onCheckedChange={() => toggleDrawerRole(r.value)}
-                      />
-                      <span className="text-sm">{r.label}</span>
-                    </label>
-                  ))}
-                </div>
+                  <div className="space-y-1.5">
+                    {availableRoles.map((r) => (
+                      <TooltipProvider key={r.value}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <label className="flex items-start gap-2 cursor-pointer rounded-md border p-2.5 hover:bg-muted/50 transition-colors">
+                              <Checkbox
+                                checked={drawerRoles.includes(r.value)}
+                                onCheckedChange={() => toggleDrawerRole(r.value)}
+                                className="mt-0.5"
+                              />
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-sm font-medium leading-none">{r.label}</span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {r.areas.map((area) => (
+                                    <span key={area} className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                      {area}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </label>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="max-w-[200px]">
+                            <p className="text-xs">{r.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
+                  </div>
                 {drawerRoles.length === 0 && (
                   <p className="text-xs text-destructive">Selecione pelo menos um perfil</p>
                 )}
