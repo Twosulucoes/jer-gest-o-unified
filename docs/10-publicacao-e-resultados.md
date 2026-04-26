@@ -11,8 +11,8 @@ resultado_lancado → resultado_validado → publicado
 | Status | Visível para | Quem pode alterar |
 |--------|-------------|-------------------|
 | `resultado_lancado` | admin, secretaria, coord_tecnica | coord_tecnica, secretaria, mesário |
-| `resultado_validado` | admin, secretaria, coord_tecnica | admin, secretaria, coordenacao_tecnica |
-| `publicado` | **todos** (incluindo público anon) | admin |
+| `resultado_validado` | admin, secretaria, coord_tecnica | admin (reverter), coordenacao_tecnica (homologar) |
+| `publicado` | **todos** (incluindo público anon) | admin (reverter), secretaria (publicar) |
 
 ## Strings Canônicas (Fonte de Verdade)
 
