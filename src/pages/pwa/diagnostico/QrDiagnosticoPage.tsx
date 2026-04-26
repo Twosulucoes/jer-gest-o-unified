@@ -122,14 +122,7 @@ export default function QrDiagnosticoPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b border-border bg-surface px-4 h-14">
-        <button onClick={() => navigate("/pwa")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <ShieldCheck className="h-5 w-5 text-[hsl(var(--module-accent))]" />
-        <span className="font-semibold text-foreground">Diagnóstico QR</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Diagnóstico QR" icon={ShieldCheck} backTo="/pwa" />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
         {/* Auto checks */}
