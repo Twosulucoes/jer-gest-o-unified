@@ -4,9 +4,9 @@ import { useEventContext } from "@/contexts/EventContext";
 
 /**
  * Hook to audit PWA module access and usage.
- * Now includes event scope validation.
+ * Now includes automatic event scope validation.
  */
-export function usePwaAudit(moduleName: string, additionalData?: any) {
+export function usePwaAudit(moduleName: string, currentModuleEventId?: string | null, additionalData?: any) {
   const { activeEventId } = useEventContext();
 
   useEffect(() => {
@@ -15,6 +15,7 @@ export function usePwaAudit(moduleName: string, additionalData?: any) {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
+        // Log general access
         await supabase.from("audit_events").insert({
           table_name: "pwa_access",
           record_id: moduleName,
@@ -23,22 +24,43 @@ export function usePwaAudit(moduleName: string, additionalData?: any) {
           payload: {
             module: moduleName,
             activeEventId,
+            currentModuleEventId,
             timestamp: new Date().toISOString(),
             userAgent: navigator.userAgent,
             ...additionalData,
           },
         });
+
+        // Validate scope: if currentModuleEventId is provided and differs from activeEventId, register alert
+        if (currentModuleEventId && activeEventId && currentModuleEventId !== activeEventId) {
+          console.warn(`[Scope Audit] Module ${moduleName} is accessing event ${currentModuleEventId} while active event is ${activeEventId}`);
+          
+          await supabase.from("audit_events").insert({
+            table_name: "pwa_scope_violation",
+            record_id: moduleName,
+            action: "scope_violation",
+            created_by: session.user.id,
+            payload: {
+              module: moduleName,
+              violation_type: "context_mismatch",
+              requested_event_id: currentModuleEventId,
+              active_event_id: activeEventId,
+              timestamp: new Date().toISOString(),
+              ...additionalData,
+            },
+          });
+        }
       } catch (err) {
-        console.error("Failed to log PWA access:", err);
+        console.error("Failed to log PWA audit:", err);
       }
     };
 
     logAccess();
-  }, [moduleName]);
+  }, [moduleName, currentModuleEventId, activeEventId]);
 
   /**
-   * Validates if a given eventId matches the active event scope.
-   * If it doesn't, registers an alert in the audit log.
+   * Manually validate if a given eventId matches the active event scope.
+   * Useful for dynamic queries inside the same module.
    */
   const validateEventScope = useCallback(async (targetEventId: string | null, action: string = "query") => {
     if (!targetEventId || !activeEventId) return true;
