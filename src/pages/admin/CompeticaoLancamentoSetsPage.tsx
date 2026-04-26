@@ -255,16 +255,24 @@ export default function CompeticaoLancamentoSetsPage() {
             outcome = 'draw';
           }
 
-          const scoreDetail: Record<string, string> = {};
+          // Format for rpc_extract_match_outcome (array of {home, away})
+          const scoreDetailArray = sets.map(s => ({
+            home: parseInt(s.a) || 0,
+            away: parseInt(s.b) || 0
+          }));
+
+          // Keeping old format for compatibility if needed elsewhere
+          const scoreDetailObj: Record<string, string> = {};
           sets.forEach((s, i) => {
-            scoreDetail[`p${i+1}`] = isA ? s.a : s.b;
+            scoreDetailObj[`p${i+1}`] = isA ? s.a : s.b;
           });
 
           return {
             match_entry_id: e.id,
             score: scoreSets.toString(),
             outcome,
-            score_detail: scoreDetail
+            // We send the array format in combat_detail/score_detail
+            score_detail: scoreDetailArray
           };
         }),
         observation
