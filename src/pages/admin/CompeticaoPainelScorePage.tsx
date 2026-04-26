@@ -60,6 +60,8 @@ export default function CompeticaoPainelScorePage() {
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<any>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [matchToDelete, setMatchToDelete] = useState<string | null>(null);
 
   const { data: modality, isLoading: loadingModality } = useModalityDetails(sportEventId);
   const { data: matches = [], isLoading: loadingMatches, error: matchesError } = useScoreMatches(sportEventId);
