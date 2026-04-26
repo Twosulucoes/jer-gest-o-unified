@@ -71,6 +71,7 @@ export const TIPOS_ANEXO = [
 export function useMinhasModalidades() {
   const eventId = useActiveEventId();
   const { sportIds, isLoading: linksLoading } = useUserSportLinks();
+  usePwaAudit("resultados/minhas-modalidades", eventId);
 
   const { data: modalidades = [], isLoading } = useQuery({
     queryKey: ["minhas-modalidades", eventId, sportIds],
