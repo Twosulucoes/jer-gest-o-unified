@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useEventContext } from "@/contexts/EventContext";
-import { AlertTriangle, ClipboardList, Filter } from "lucide-react";
+import { AlertTriangle, ClipboardList, Filter, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
@@ -38,6 +38,7 @@ export default function CoordenacaoIncidentesPage() {
   // Filters and Pagination
   const [filterModule, setFilterModule] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 15;
@@ -57,7 +58,7 @@ export default function CoordenacaoIncidentesPage() {
         .from("operational_incidents")
         .select("id, incident_description, incident_status, module, created_at")
         .eq("event_id", activeEventId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: sortOrder === "asc" });
 
       if (filterModule !== "all") {
         query = query.eq("module", filterModule as any);
@@ -92,7 +93,7 @@ export default function CoordenacaoIncidentesPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [activeEventId, filterModule, filterStatus, page]);
+  }, [activeEventId, filterModule, filterStatus, sortOrder, page]);
 
   useEffect(() => {
     fetchIncidents();
@@ -119,39 +120,54 @@ export default function CoordenacaoIncidentesPage() {
 
       <main className="relative mx-auto max-w-md space-y-3 p-4">
         {activeEventId && (
-          <div className="flex gap-2 mb-2">
-            <div className="flex-1">
-              <Select value={filterModule} onValueChange={setFilterModule}>
-                <SelectTrigger className="h-9 bg-card/50 border-border/40 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <Filter className="h-3 w-3 opacity-50" />
-                    <SelectValue placeholder="Módulo" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos Módulos</SelectItem>
-                  {(Object.entries(INCIDENT_MODULES) as [IncidentModule, any][]).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                  ))}
-                </SelectContent>
-
-              </Select>
+          <div className="flex flex-col gap-2 mb-2">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Select value={filterModule} onValueChange={setFilterModule}>
+                  <SelectTrigger className="h-9 bg-card/50 border-border/40 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <Filter className="h-3 w-3 opacity-50" />
+                      <SelectValue placeholder="Módulo" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos Módulos</SelectItem>
+                    {(Object.entries(INCIDENT_MODULES) as [IncidentModule, any][]).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="h-9 bg-card/50 border-border/40 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <ClipboardList className="h-3 w-3 opacity-50" />
+                      <SelectValue placeholder="Status" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos Status</SelectItem>
+                    {(Object.entries(INCIDENT_STATUSES) as [IncidentStatus, any][]).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex-1">
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <div className="w-full">
+              <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "asc" | "desc")}>
                 <SelectTrigger className="h-9 bg-card/50 border-border/40 text-xs">
                   <div className="flex items-center gap-1.5">
-                    <ClipboardList className="h-3 w-3 opacity-50" />
-                    <SelectValue placeholder="Status" />
+                    <ArrowUpDown className="h-3 w-3 opacity-50" />
+                    <span className="opacity-70 mr-1">Ordenação:</span>
+                    <SelectValue placeholder="Data" />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos Status</SelectItem>
-                  {(Object.entries(INCIDENT_STATUSES) as [IncidentStatus, any][]).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                  ))}
+                  <SelectItem value="desc">Mais recentes primeiro</SelectItem>
+                  <SelectItem value="asc">Mais antigos primeiro</SelectItem>
                 </SelectContent>
-
               </Select>
             </div>
           </div>
