@@ -150,4 +150,8 @@ export const ALIASES_CATEGORIAS: Record<string, string> = {
   "11/14": "jerpa-11-14",
   "JERPA 11-14": "jerpa-11-14",
   "JERPA 15-17": "jerpa-15-17",
+  "SUB-14": "jers-12-14",
+  "SUB-17": "jers-15-17",
+  "SUB 14": "jers-12-14",
+  "SUB 17": "jers-15-17",
 };
