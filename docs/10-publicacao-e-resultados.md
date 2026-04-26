@@ -90,9 +90,9 @@ Campo `combat_detail` (JSONB) em `competition_match_results`:
 
 Componente: `CombatResultForm` (renderizado quando `family='combat'`)
 
-## Tabela de Auditoria
-
-`audit_events` registra ações relevantes de governança.
+## Tabelas de Auditoria
+- `audit_events`: registra ações relevantes de governança.
+- `match_results_history`: registra snapshots completos do payload a cada salvamento em modalidades Score.
 
 ## Dados Reais (2026-04-14)
 
