@@ -1,4 +1,4 @@
-import { ArrowLeft, LogOut, ArrowLeftRight, Layers, RefreshCw } from "lucide-react";
+import { ArrowLeft, LogOut, ArrowLeftRight, Layers } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,15 +6,6 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getPwaLang, setPwaLang } from "@/lib/pwa-messages";
 import { useStageContext } from "@/contexts/StageContext";
 import { PwaRefreshButton } from "./PwaRefreshButton";
-
-interface PwaHeaderProps {
-  title: string;
-  subtitle?: string;
-  icon?: React.ElementType;
-  backTo?: string;
-  onSignOut?: () => void;
-  rightSlot?: React.ReactNode;
-}
 
 interface PwaHeaderProps {
   title: string;
@@ -76,6 +67,7 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onSignOut, righ
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle />
+          <PwaRefreshButton />
           {rightSlot}
           <Button
             variant="ghost"
