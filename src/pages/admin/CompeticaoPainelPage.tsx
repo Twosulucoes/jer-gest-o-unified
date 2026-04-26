@@ -64,8 +64,9 @@ export default function CompeticaoPainelPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("event_stages")
-        .select("name")
+        .select("name, event_id")
         .eq("id", stageId!)
+        .eq("event_id", eventId!)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -204,6 +205,11 @@ export default function CompeticaoPainelPage() {
     navigate(`${base}/central?sport_event_id=${prova.id}&step=${step}`);
   }
 
+  const openManualFlow = () => {
+    const base = stageId ? `/admin/etapa/${stageId}/competicao` : "/admin/competicao";
+    navigate(`${base}/central`);
+  };
+
   // Coordenador without sport links
   if (isCoordModalidade && mySportIds && mySportIds.length === 0) {
     return (
@@ -244,18 +250,23 @@ export default function CompeticaoPainelPage() {
         route={headerRoute}
         title={headerTitle}
         actions={
-          <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
-            <span
-              className={cn(
-                "inline-block h-1.5 w-1.5 rounded-full",
-                isFetching ? "bg-warning animate-pulse" : "bg-success"
-              )}
-              aria-hidden
-            />
-            <RefreshCw
-              className={cn("h-3 w-3", isFetching && "animate-spin")}
-            />
-            Atualizado em: {lastUpdate.toLocaleTimeString()}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button size="sm" onClick={openManualFlow}>
+              Fluxo manual completo
+            </Button>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
+              <span
+                className={cn(
+                  "inline-block h-1.5 w-1.5 rounded-full",
+                  isFetching ? "bg-warning animate-pulse" : "bg-success"
+                )}
+                aria-hidden
+              />
+              <RefreshCw
+                className={cn("h-3 w-3", isFetching && "animate-spin")}
+              />
+              Atualizado em: {lastUpdate.toLocaleTimeString()}
+            </div>
           </div>
         }
       />
