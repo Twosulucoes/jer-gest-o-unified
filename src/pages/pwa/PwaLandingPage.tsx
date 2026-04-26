@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers, IdCard } from "lucide-react";
 import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { VersionBadge } from "@/components/VersionBadge";
 
 interface UserProfile {
   full_name: string | null;
@@ -184,6 +185,7 @@ export default function PwaLandingPage() {
           )}
         </div>
       </div>
+      <VersionBadge />
     </div>
   );
 }
