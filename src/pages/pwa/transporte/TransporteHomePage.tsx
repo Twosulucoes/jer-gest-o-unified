@@ -204,7 +204,9 @@ export default function TransporteHomePage() {
       <PwaHeader title="Transporte" icon={Bus} backTo="/pwa" onSignOut={handleSignOut} />
 
       <PwaContainer size="md">
+        <OfflineSyncStatus />
         <PwaStatTriplet
+
           loading={loading}
           items={[
             { label: "Embarques hoje", value: myTrips.reduce((s, t) => s + boardedCount(t), 0), tone: "module" },
