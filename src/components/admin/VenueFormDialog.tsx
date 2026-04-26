@@ -165,6 +165,76 @@ export default function VenueFormDialog({
     form.setValue("event_stage_ids", next, { shouldValidate: true, shouldDirty: true });
   };
 
+  // ─── Detecção de conflitos ────────────────────────────────────────
+  const conflicts = useMemo(() => {
+    const result = {
+      crossEvent: [] as string[],         // BLOQUEIO: etapa de outro evento
+      overlapping: [] as Array<{ a: string; b: string; range: string }>, // ALERTA: etapas marcadas com datas sobrepostas
+      orphanMatches: [] as Array<{ date: string; sport: string }>,        // ALERTA: partidas existentes fora do escopo
+    };
+
+    if (!selectedStageIds?.length) return result;
+
+    const selectedStages = stages.filter((s) => selectedStageIds.includes(s.id));
+
+    // 1) Cross-event (hard block)
+    for (const s of selectedStages) {
+      if (s.event_id !== selectedEventId) {
+        result.crossEvent.push(s.name);
+      }
+    }
+
+    // 2) Sobreposição de datas entre etapas selecionadas
+    for (let i = 0; i < selectedStages.length; i++) {
+      for (let j = i + 1; j < selectedStages.length; j++) {
+        const A = selectedStages[i];
+        const B = selectedStages[j];
+        const aStart = A.starts_at ? new Date(A.starts_at).getTime() : null;
+        const aEnd = A.ends_at ? new Date(A.ends_at).getTime() : null;
+        const bStart = B.starts_at ? new Date(B.starts_at).getTime() : null;
+        const bEnd = B.ends_at ? new Date(B.ends_at).getTime() : null;
+        if (aStart == null || aEnd == null || bStart == null || bEnd == null) continue;
+        if (aStart <= bEnd && bStart <= aEnd) {
+          const fmt = (d: number) => new Date(d).toLocaleDateString("pt-BR");
+          const ovStart = Math.max(aStart, bStart);
+          const ovEnd = Math.min(aEnd, bEnd);
+          result.overlapping.push({
+            a: A.name,
+            b: B.name,
+            range: `${fmt(ovStart)} → ${fmt(ovEnd)}`,
+          });
+        }
+      }
+    }
+
+    // 3) Partidas já agendadas que caem fora do range de qualquer etapa marcada
+    if (scheduledMatches.length > 0 && selectedStages.length > 0) {
+      const ranges = selectedStages
+        .map((s) => ({
+          start: s.starts_at ? new Date(s.starts_at).getTime() : null,
+          end: s.ends_at ? new Date(s.ends_at).getTime() : null,
+        }))
+        .filter((r) => r.start != null && r.end != null) as Array<{ start: number; end: number }>;
+
+      if (ranges.length > 0) {
+        for (const m of scheduledMatches) {
+          const t = new Date(m.match_date).getTime();
+          const inside = ranges.some((r) => t >= r.start && t <= r.end);
+          if (!inside) {
+            result.orphanMatches.push({
+              date: new Date(m.match_date).toLocaleDateString("pt-BR"),
+              sport: m.sport_events?.sports?.name ?? "—",
+            });
+          }
+        }
+      }
+    }
+
+    return result;
+  }, [selectedStageIds, stages, selectedEventId, scheduledMatches]);
+
+  const hasBlockingConflict = conflicts.crossEvent.length > 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
