@@ -42,7 +42,11 @@ export default function LocaisPage() {
   const [editingVenue, setEditingVenue] = useState<(VenueRow & { event_stage_ids?: string[] }) | null>(null);
   const [stageFilter, setStageFilter] = useState<string>(STAGE_FILTER_ALL);
 
-  const canWrite = hasRole("admin") || hasRole("secretaria");
+  const canWrite =
+    hasRole("admin") ||
+    hasRole("secretaria") ||
+    hasRole("coordenacao_tecnica") ||
+    hasRole("super_admin");
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
@@ -53,48 +57,47 @@ export default function LocaisPage() {
     },
   });
 
-  const { data: stages = [] } = useQuery({
-    queryKey: ["event_stages_with_host", activeEventId],
+  // P1: bootstrap único — paraleliza stages + venues, e em seguida busca links em uma única query
+  const { data: bootstrap, isLoading } = useQuery({
+    queryKey: ["locais-bootstrap", activeEventId],
     enabled: !!activeEventId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("event_stages")
-        .select("id, name, status, sort_order, host_name, host_city")
-        .eq("event_id", activeEventId)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as StageRow[];
+      const [stagesRes, venuesRes] = await Promise.all([
+        (supabase as any)
+          .from("event_stages")
+          .select("id, name, status, sort_order, host_name, host_city")
+          .eq("event_id", activeEventId)
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("venues")
+          .select("*")
+          .eq("event_id", activeEventId)
+          .order("name"),
+      ]);
+      if (stagesRes.error) throw stagesRes.error;
+      if (venuesRes.error) throw venuesRes.error;
+
+      const stages = (stagesRes.data ?? []) as StageRow[];
+      const venues = (venuesRes.data ?? []) as VenueRow[];
+
+      let links: Array<{ venue_id: string; event_stage_id: string }> = [];
+      if (venues.length > 0) {
+        const venueIds = venues.map((v) => v.id);
+        const linksRes = await (supabase as any)
+          .from("venue_event_stages")
+          .select("venue_id, event_stage_id")
+          .in("venue_id", venueIds);
+        if (linksRes.error) throw linksRes.error;
+        links = (linksRes.data ?? []) as Array<{ venue_id: string; event_stage_id: string }>;
+      }
+
+      return { stages, venues, links };
     },
   });
 
-  const { data: venues, isLoading } = useQuery({
-    queryKey: ["venues", activeEventId],
-    enabled: !!activeEventId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("venues")
-        .select("*")
-        .eq("event_id", activeEventId)
-        .order("name");
-      if (error) throw error;
-      return (data ?? []) as VenueRow[];
-    },
-  });
-
-  // Vínculos N:N venue × stage
-  const { data: links = [] } = useQuery({
-    queryKey: ["venue_event_stages", activeEventId, (venues ?? []).map((v) => v.id).join(",")],
-    enabled: !!venues && venues.length > 0,
-    queryFn: async () => {
-      const venueIds = (venues ?? []).map((v) => v.id);
-      const { data, error } = await (supabase as any)
-        .from("venue_event_stages")
-        .select("venue_id, event_stage_id")
-        .in("venue_id", venueIds);
-      if (error) throw error;
-      return (data ?? []) as Array<{ venue_id: string; event_stage_id: string }>;
-    },
-  });
+  const stages = bootstrap?.stages ?? [];
+  const venues = bootstrap?.venues;
+  const links = bootstrap?.links ?? [];
 
   const stagesMap = useMemo(() => new Map(stages.map((s) => [s.id, s])), [stages]);
 
@@ -176,8 +179,8 @@ export default function LocaisPage() {
       await syncStages(data.id, values.event_stage_ids);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["venues"] });
-      queryClient.invalidateQueries({ queryKey: ["venue_event_stages"] });
+      queryClient.invalidateQueries({ queryKey: ["locais-bootstrap"] });
+      queryClient.invalidateQueries({ queryKey: ["venues-by-stage"] });
       toast.success("Local criado com sucesso");
       setDialogOpen(false);
     },
@@ -192,8 +195,8 @@ export default function LocaisPage() {
       await syncStages(id, values.event_stage_ids);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["venues"] });
-      queryClient.invalidateQueries({ queryKey: ["venue_event_stages"] });
+      queryClient.invalidateQueries({ queryKey: ["locais-bootstrap"] });
+      queryClient.invalidateQueries({ queryKey: ["venues-by-stage"] });
       toast.success("Local atualizado com sucesso");
       setDialogOpen(false);
       setEditingVenue(null);

@@ -93,6 +93,7 @@ export default function VenueFormDialog({
   });
 
   // Partidas já agendadas neste venue (para detectar conflito de escopo de etapas)
+  // P1: limit defensivo para evitar payload massivo em venues muito usados
   const { data: scheduledMatches = [] } = useQuery({
     queryKey: ["venue-matches-scope", venue?.id],
     enabled: !!venue?.id && open,
@@ -101,7 +102,9 @@ export default function VenueFormDialog({
         .from("competition_matches")
         .select("id, match_date, sport_event_id, sport_events(sports(name))")
         .eq("venue_id", venue!.id)
-        .not("match_date", "is", null);
+        .not("match_date", "is", null)
+        .order("match_date", { ascending: true })
+        .limit(500);
       if (error) throw error;
       return (data ?? []) as Array<{
         id: string; match_date: string;
