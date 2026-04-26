@@ -337,7 +337,7 @@ export default function CompeticaoPublicacaoPage() {
                           <History className="h-4 w-4" />
                         </Button>
                         
-                        {res?.result_status === "validado" && (
+                        {res?.result_status === "resultado_validado" && (
                           <Button 
                             variant="secondary" 
                             size="sm" 
