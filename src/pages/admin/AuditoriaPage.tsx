@@ -37,12 +37,20 @@ const TABLE_OPTIONS = [
 ];
 
 export default function AuditoriaPage() {
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [userId, setUserId] = useState("all");
-  const [tableName, setTableName] = useState("users");
+  const [tableName, setTableName] = useState(searchParams.get("table") || "users");
   const [actionFilter, setActionFilter] = useState("all");
   const [startDate, setStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+
+  useEffect(() => {
+    const tableParam = searchParams.get("table");
+    if (tableParam && tableParam !== tableName) {
+      setTableName(tableParam);
+    }
+  }, [searchParams]);
 
   // Fetch users for filter
   const { data: users = [] } = useQuery({
