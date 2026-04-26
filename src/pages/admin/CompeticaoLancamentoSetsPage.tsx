@@ -675,6 +675,14 @@ export default function CompeticaoLancamentoSetsPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <Button 
+                    variant="destructive" 
+                    className="w-full gap-2" 
+                    onClick={applyWithdrawal}
+                    disabled={isLocked || !withdrawalTeamId || withdrawalSetIndex === null}
+                  >
+                    <Save className="h-4 w-4" /> Calcular Placar Final
+                  </Button>
                   <Alert variant="destructive" className="bg-white/50 py-2">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription className="text-[10px]">
