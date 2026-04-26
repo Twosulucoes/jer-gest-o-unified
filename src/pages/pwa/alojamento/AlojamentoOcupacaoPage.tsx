@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { getSelectedFacility } from "@/hooks/useAlojamento";
 import { useEventContext } from "@/contexts/EventContext";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import {
   PwaSectionLabel,
@@ -45,6 +46,7 @@ interface PersonResult {
 export default function AlojamentoOcupacaoPage() {
   const navigate = useNavigate();
   const { activeEventId } = useEventContext();
+  usePwaAudit("alojamento/ocupacao", activeEventId);
   const [blocks, setBlocks] = useState<BlockInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

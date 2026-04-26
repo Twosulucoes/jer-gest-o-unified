@@ -32,8 +32,8 @@ const MODULE = "transporte" as const;
 
 export default function TransporteScanPage() {
   const { user } = useAuth();
-  usePwaAudit("transporte/escanear");
   const { activeEventId } = useEventContext();
+  usePwaAudit("transporte/escanear", activeEventId);
   const userId = user?.id ?? null;
   const lang = getPwaLang();
   const [searchParams] = useSearchParams();

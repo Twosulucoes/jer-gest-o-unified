@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -70,6 +71,7 @@ export const TIPOS_ANEXO = [
 export function useMinhasModalidades() {
   const eventId = useActiveEventId();
   const { sportIds, isLoading: linksLoading } = useUserSportLinks();
+  usePwaAudit("resultados/minhas-modalidades", eventId);
 
   const { data: modalidades = [], isLoading } = useQuery({
     queryKey: ["minhas-modalidades", eventId, sportIds],
@@ -100,6 +102,7 @@ export function useMinhasModalidades() {
 
 export function usePartidasModalidade(sportEventId: string | null) {
   const eventId = useActiveEventId();
+  usePwaAudit("resultados/partidas", eventId);
 
   return useQuery({
     queryKey: ["partidas-modalidade", sportEventId, eventId],
