@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -76,7 +76,7 @@ export default function VenueFormDialog({
     queryKey: ["event_stages_with_host", selectedEventId],
     enabled: !!selectedEventId && open,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("event_stages")
         .select("id, name, status, sort_order, host_name, host_city")
         .eq("event_id", selectedEventId)
