@@ -38,7 +38,7 @@ const TABLE_OPTIONS = [
 
 export default function AuditoriaPage() {
   const [searchParams] = useSearchParams();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchParams.get("search") || "");
   const [userId, setUserId] = useState("all");
   const [tableName, setTableName] = useState(searchParams.get("table") || "users");
   const [actionFilter, setActionFilter] = useState("all");
@@ -49,6 +49,10 @@ export default function AuditoriaPage() {
     const tableParam = searchParams.get("table");
     if (tableParam && tableParam !== tableName) {
       setTableName(tableParam);
+    }
+    const searchParam = searchParams.get("search");
+    if (searchParam && searchParam !== search) {
+      setSearch(searchParam);
     }
   }, [searchParams]);
 
