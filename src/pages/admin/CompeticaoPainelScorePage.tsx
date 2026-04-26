@@ -113,7 +113,7 @@ export default function CompeticaoPainelScorePage() {
     if (allValidated) return { label: "Validado", variant: "default" as const, color: "bg-blue-600 hover:bg-blue-700 animate-pulse" };
     if (someLaunched) return { label: "Resultado Lançado", variant: "default" as const, color: "bg-amber-500 hover:bg-amber-600" };
     if (m.status === "in_progress") return { label: "Em Andamento", variant: "default" as const, color: "bg-orange-500 hover:bg-orange-600" };
-    return { label: "Agendado", variant: "outline" as const, color: "text-muted-foreground" };
+    return { label: "Agendado", variant: "secondary" as const, color: "bg-slate-500 hover:bg-slate-600 text-white" };
   };
 
   if (loadingModality || loadingRules) {
