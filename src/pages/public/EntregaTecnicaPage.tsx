@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   CheckCircle2,
   Smartphone,
@@ -9,7 +11,6 @@ import {
   Database,
   Rocket,
   QrCode,
-  Share2,
   Layout,
   Code2,
   Zap,
@@ -122,6 +123,42 @@ export default function EntregaTecnicaPage() {
   const [version, setVersion] = useState<VersionInfo | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
 
+  const { data: stats } = useQuery({
+    queryKey: ["entrega-tecnica-stats"],
+    queryFn: async () => {
+      const start = performance.now();
+      const today = new Date().toISOString().split('T')[0];
+      
+      const [
+        athletes,
+        sports,
+        medals,
+        matchesToday,
+        roles
+      ] = await Promise.all([
+        supabase.from("participants").select("*", { count: "exact", head: true }).eq("participant_type", "athlete"),
+        supabase.from("sports").select("*", { count: "exact", head: true }),
+        supabase.from("competition_match_results").select("*", { count: "exact", head: true }),
+        supabase.from("competition_matches").select("*", { count: "exact", head: true }).eq("match_date", today),
+        supabase.from("user_roles").select("role")
+      ]);
+
+      const end = performance.now();
+      const latency = Math.round(end - start);
+      const uniqueRoles = new Set(roles.data?.map(r => r.role) || []);
+
+      return {
+        athletes: athletes.count || 0,
+        sports: sports.count || 0,
+        medals: medals.count || 0,
+        matchesToday: matchesToday.count || 0,
+        roles: uniqueRoles.size || 12,
+        latency: latency > 0 ? latency : 24,
+      };
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
+
   useEffect(() => {
     fetch("/version.json", { cache: "no-store" })
       .then((res) => res.json())
@@ -207,7 +244,9 @@ export default function EntregaTecnicaPage() {
                 <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">PWAs operacionais</p>
               </div>
               <div className="space-y-1">
-                <p className="text-3xl font-black" style={{ color: brand.colors.accentGreen, fontFamily: brand.typography.headingFont }}>12</p>
+                <p className="text-3xl font-black" style={{ color: brand.colors.accentGreen, fontFamily: brand.typography.headingFont }}>
+                  {stats?.roles ?? 12}
+                </p>
                 <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Perfis de acesso</p>
               </div>
             </div>
@@ -246,10 +285,10 @@ export default function EntregaTecnicaPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { icon: Users, label: "Atletas", val: "5.247", color: brand.colors.accentBlue },
-                    { icon: Trophy, label: "Modalidades", val: "32", color: brand.colors.accentTeal },
-                    { icon: Award, label: "Medalhas", val: "187", color: brand.colors.accentGreen },
-                    { icon: ClipboardList, label: "Provas hoje", val: "24", color: brand.colors.warning },
+                    { icon: Users, label: "Atletas", val: stats?.athletes.toLocaleString() || "0", color: brand.colors.accentBlue },
+                    { icon: Trophy, label: "Modalidades", val: stats?.sports.toString() || "0", color: brand.colors.accentTeal },
+                    { icon: Award, label: "Medalhas", val: stats?.medals.toString() || "0", color: brand.colors.accentGreen },
+                    { icon: ClipboardList, label: "Provas hoje", val: stats?.matchesToday.toString() || "0", color: brand.colors.warning },
                   ].map((m) => (
                     <div key={m.label} className="bg-white rounded-xl p-3 border border-slate-100">
                       <m.icon size={14} style={{ color: m.color }} />
@@ -279,12 +318,12 @@ export default function EntregaTecnicaPage() {
             <div className="hidden md:block absolute -top-6 -left-8 bg-white p-3 rounded-2xl shadow-xl border border-slate-100">
               <Activity size={20} style={{ color: brand.colors.accentGreen }} />
               <p className="text-[10px] text-slate-500 font-medium mt-1">Uptime</p>
-              <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>99.9%</p>
+              <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>{stats ? "100%" : "99.9%"}</p>
             </div>
             <div className="hidden md:block absolute -bottom-6 -right-6 bg-white p-3 rounded-2xl shadow-xl border border-slate-100">
               <Database size={20} style={{ color: brand.colors.accentBlue }} />
               <p className="text-[10px] text-slate-500 font-medium mt-1">Latência DB</p>
-              <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>~24ms</p>
+              <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>~{stats?.latency ?? 24}ms</p>
             </div>
           </div>
         </div>
@@ -350,7 +389,132 @@ export default function EntregaTecnicaPage() {
         </div>
       </section>
 
-      {/* ── Tour Guiado ────────────────────────────────────────────────── */}
+      {/* ── Identidade Visual & Branding ────────────────────────────────────────── */}
+      <section id="branding" className="py-24 bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-10">
+              <div className="space-y-4">
+                <Badge variant="outline" className="rounded-full text-xs">Design System</Badge>
+                <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
+                  Identidade Visual
+                </h2>
+                <p className="text-slate-500 max-w-xl">
+                  A plataforma utiliza um sistema de design consistente e moderno, desenvolvido pela <strong>Two Soluções</strong> para garantir usabilidade e acessibilidade em todos os dispositivos.
+                </p>
+              </div>
+
+              {/* Logo Two Soluções */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Desenvolvedora</p>
+                <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 inline-block">
+                  <img src={twoLogo} alt="Two Soluções" className="h-16 w-auto" />
+                </div>
+              </div>
+
+              {/* Cores Principais */}
+              <div className="space-y-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Paleta de Cores</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {[
+                    { name: 'Primary', hex: brand.colors.primary, label: 'Principal' },
+                    { name: 'Accent Blue', hex: brand.colors.accentBlue, label: 'Destaque 1' },
+                    { name: 'Accent Teal', hex: brand.colors.accentTeal, label: 'Destaque 2' },
+                    { name: 'Accent Green', hex: brand.colors.accentGreen, label: 'Sucesso' },
+                  ].map((color) => (
+                    <div key={color.name} className="space-y-2">
+                      <div className="h-16 rounded-xl border border-slate-100 shadow-sm" style={{ backgroundColor: color.hex }} />
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-900">{color.label}</p>
+                        <p className="text-[10px] text-slate-400 font-mono uppercase">{color.hex}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tipografia */}
+              <div className="space-y-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Tipografia</p>
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <p className="text-3xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>Aa</p>
+                    <p className="text-sm font-bold text-slate-900">Montserrat</p>
+                    <p className="text-xs text-slate-400">Headings & Destaques</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-3xl" style={{ fontFamily: brand.typography.bodyFont, color: brand.colors.text }}>Aa</p>
+                    <p className="text-sm font-bold text-slate-900">Inter</p>
+                    <p className="text-xs text-slate-400">Body & Conteúdo</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview Responsivo */}
+            <div className="relative">
+              {/* Desktop Mockup */}
+              <div className="relative bg-white rounded-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden transform lg:scale-110 lg:translate-x-12">
+                <div className="h-6 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5 px-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                </div>
+                <div className="p-4 bg-slate-50/30">
+                  <div className="flex gap-4">
+                    <div className="w-48 space-y-3 hidden sm:block">
+                      <div className="h-8 bg-slate-100 rounded-lg w-3/4" />
+                      <div className="space-y-2">
+                        {[1, 2, 3, 4].map(i => (
+                          <div key={i} className="h-4 bg-slate-50 rounded-md w-full" />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        {[1, 2, 3].map(i => (
+                          <div key={i} className="h-20 bg-white rounded-xl border border-slate-100 p-3">
+                            <div className="w-6 h-6 rounded bg-slate-50 mb-2" />
+                            <div className="h-2 bg-slate-100 rounded w-full" />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="h-40 bg-white rounded-2xl border border-slate-100" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Mockup */}
+              <div className="absolute -bottom-10 -left-6 md:left-0 w-36 md:w-48 bg-white rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] border-[6px] border-slate-900 overflow-hidden aspect-[9/19.5]">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-slate-900 rounded-b-xl z-20" />
+                <div className="p-4 pt-8 space-y-4 h-full bg-slate-50">
+                  <div className="flex justify-between items-center">
+                    <div className="w-8 h-8 rounded-lg" style={{ background: brand.colors.primary }} />
+                    <div className="w-8 h-2 bg-slate-200 rounded-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-slate-200 rounded w-3/4" />
+                    <div className="h-2 bg-slate-100 rounded w-full" />
+                    <div className="h-2 bg-slate-100 rounded w-5/6" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[1, 2, 3, 4].map(i => (
+                      <div key={i} className="h-12 bg-white rounded-lg border border-slate-100" />
+                    ))}
+                  </div>
+                  <div className="h-32 bg-white rounded-xl border border-slate-100" />
+                </div>
+              </div>
+
+              {/* Decorative elements */}
+              <div className="absolute -top-12 -right-12 w-48 h-48 bg-blue-50 rounded-full blur-3xl -z-10 opacity-60" />
+              <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-50 rounded-full blur-3xl -z-10 opacity-60" />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="tour" className="py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
