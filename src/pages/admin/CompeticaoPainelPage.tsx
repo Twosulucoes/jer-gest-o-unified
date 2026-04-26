@@ -199,6 +199,10 @@ export default function CompeticaoPainelPage() {
       navigate(`${baseNav}/painel-sets/${prova.id}`);
       return;
     }
+    if (prova.family === "combat") {
+      navigate(`${baseNav}/painel-combat/${prova.id}`);
+      return;
+    }
     if (prova.family === "sets") {
       navigate(`/admin/competicao/painel-sets/${prova.id}`);
       return;
