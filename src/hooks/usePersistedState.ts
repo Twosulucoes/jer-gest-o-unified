@@ -9,6 +9,27 @@ export const PERSISTENCE_TTLS = {
   LONG: 7 * 24 * 60 * 60 * 1000,    // 7 days
 };
 
+/**
+ * Returns the TTL for a given key based on patterns or overrides.
+ */
+const getTTLForKey = (key: string, overrideTTL?: number): number => {
+  if (overrideTTL !== undefined) return overrideTTL;
+  
+  const lowerKey = key.toLowerCase();
+  
+  // Sensitive data should expire quickly
+  if (lowerKey.includes("sensitive") || lowerKey.includes("auth") || lowerKey.includes("private") || lowerKey.includes("password")) {
+    return PERSISTENCE_TTLS.SENSITIVE;
+  }
+  
+  // Filters and preferences often want to stay longer
+  if (lowerKey.includes("filter") || lowerKey.includes("search") || lowerKey.includes("pref") || lowerKey.includes("view")) {
+    return PERSISTENCE_TTLS.LONG;
+  }
+
+  return PERSISTENCE_TTLS.DEFAULT;
+};
+
 interface PersistedValue<T> {
   value: T;
   timestamp: number;
@@ -19,8 +40,9 @@ interface PersistedValue<T> {
  * Useful for preserving filters and UI state across reloads.
  * Now includes a TTL (Time To Live) to automatically clear expired data.
  */
-export function usePersistedState<T>(key: string, defaultValue: T, ttl: number = PERSISTENCE_TTLS.DEFAULT) {
+export function usePersistedState<T>(key: string, defaultValue: T, ttl?: number) {
   const storageKey = `${PREFIX}${key}`;
+  const effectiveTTL = getTTLForKey(key, ttl);
   
   const [state, setState] = useState<T>(() => {
     try {
@@ -31,7 +53,7 @@ export function usePersistedState<T>(key: string, defaultValue: T, ttl: number =
         // Check if it's the new format with timestamp
         if (parsed && typeof parsed === "object" && "timestamp" in parsed && "value" in parsed) {
           const now = Date.now();
-          if (now - parsed.timestamp < ttl) {
+          if (now - parsed.timestamp < effectiveTTL) {
             return parsed.value;
           } else {
             // TTL expired
@@ -40,6 +62,7 @@ export function usePersistedState<T>(key: string, defaultValue: T, ttl: number =
             return defaultValue;
           }
         }
+
         
         // Handle legacy format (just the value)
         return parsed as unknown as T;
