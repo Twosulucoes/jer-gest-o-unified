@@ -97,8 +97,8 @@
 - **Publicação**: exige boletim oficial publicado
 - **RLS anon**: `result_status = 'publicado'` permite SELECT para público
 - **Strings canônicas**: `src/lib/resultStatus.ts` — fonte de verdade
-- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento inline por confronto | ✅ Progressão manual de vencedores | ✅ Validação em lote | ✅ Publicação com boletim | ✅ Auto-finish da partida | ✅ Auditoria de resultados e movimentações | ✅ Homologação de classificado direto (único apto)
-- **Gaps**: ❌ Sem portal público para consulta externa | ❌ Sem geração de boletins em PDF | 🟡 CombatResultForm não integrado automaticamente
+- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento dedicado Score Page (placar por período, pênaltis, W.O. automático) | ✅ Lançamento inline por confronto | ✅ Progressão manual de vencedores | ✅ Validação em lote | ✅ Publicação com boletim | ✅ Auto-finish da partida | ✅ Auditoria completa (tabela history + updated_by) | ✅ Homologação de classificado direto (único apto)
+- **Gaps**: ❌ Sem portal público para consulta externa | ❌ Sem geração de boletins em PDF | ✅ CombatResultForm integrado e funcional (Etapa 4 gaps fechados)
 
 ## 10. Boletins Oficiais (🟡 Parcial)
 - **Página**: `/admin/boletins`
