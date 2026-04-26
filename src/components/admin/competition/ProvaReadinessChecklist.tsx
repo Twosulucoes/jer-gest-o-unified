@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, AlertCircle, XCircle, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,14 +34,12 @@ export default function ProvaReadinessChecklist({ eventId, sportEventId, stageId
         .select("id", { count: "exact", head: true })
         .eq("sport_event_id", sportEventId);
 
-      // Partidas
-      let qMatches = supabase
+      // Partidas (escopo por sport_event_id; stage está implícito na prova)
+      const { data: matches = [], count: matchesCount } = await supabase
         .from("competition_matches")
-        .select("id, status, match_date, start_time, venue_id, event_stage_id", { count: "exact" })
+        .select("id, status, match_date, start_time, venue_id", { count: "exact" })
         .eq("event_id", eventId)
         .eq("sport_event_id", sportEventId);
-      if (stageId) qMatches = qMatches.eq("event_stage_id", stageId);
-      const { data: matches = [], count: matchesCount } = await qMatches;
 
       const matchIds = (matches ?? []).map((m: any) => m.id);
       const scheduled = (matches ?? []).filter((m: any) => m.match_date && m.start_time && m.venue_id).length;
