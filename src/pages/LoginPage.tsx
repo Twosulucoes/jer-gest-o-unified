@@ -172,9 +172,6 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
-                JER <span className="text-primary">Gestão</span>
-              </h1>
               <p className="text-sm font-medium text-slate-400 max-w-[280px] mx-auto leading-relaxed">
                 Entre com as credenciais da sua instituição para acessar a plataforma.
               </p>
