@@ -161,16 +161,16 @@ Deno.serve(async (req) => {
     console.warn(`[${requestId}] Consistency warning: Found ${stageCount} stages but 0 results for event ${eventId}`);
   }
 
-  // Check for suspicious entries (e.g. missing crucial fields)
-  const suspiciousCount = items.filter(i => !i.sport_name || !i.display_name).length;
-  if (suspiciousCount > 0) {
-    console.error(`[${requestId}] Consistency error: ${suspiciousCount} items missing sport_name or display_name`);
+  // Check if all items belong to the requested event (sanity check)
+  const inconsistentEvents = items.filter(i => i.event_id !== eventId);
+  if (inconsistentEvents.length > 0) {
+    console.error(`[${requestId}] Consistency error: ${inconsistentEvents.length} items belong to different events! Expected ${eventId}`);
   }
 
   const cacheMaxAge = bulletinNumberStr ? 300 : 60;
   const totalDuration = performance.now() - t0;
   
-  console.log(`[${requestId}] Request completed in ${totalDuration.toFixed(2)}ms`);
+  console.log(`[${requestId}] Request completed in ${totalDuration.toFixed(2)}ms. IP: ${req.headers.get("x-real-ip") || "unknown"}`);
 
   return new Response(
     JSON.stringify({
@@ -179,9 +179,11 @@ Deno.serve(async (req) => {
       generated_at: new Date().toISOString(),
       items,
       metrics: {
+        stages_check_ms: (tStagesEnd - tStagesStart),
         query_duration_ms: queryDuration,
         total_duration_ms: totalDuration,
-        result_count: items.length
+        result_count: items.length,
+        consistent: inconsistentEvents.length === 0 && suspiciousCount === 0
       }
     }),
     {
