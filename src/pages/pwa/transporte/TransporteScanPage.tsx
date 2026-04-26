@@ -24,6 +24,9 @@ import {
 } from "@/lib/pwaScan";
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
+import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
+
 
 const MODULE = "transporte" as const;
 
