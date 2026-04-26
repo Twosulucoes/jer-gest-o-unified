@@ -77,6 +77,9 @@ export default function MatchResultInlineCard({ match, canEdit, onResultSaved }:
       // Upsert results for each entry if finished
       if (isFinished && match.entries.length > 0) {
         const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser?.id) {
+          throw new Error("Usuário não autenticado — faça login novamente.");
+        }
         for (const entry of match.entries) {
           const isWinner = entry.entryId === winnerId;
           const score = entry.side === "home" ? scoreHome : scoreAway;
@@ -84,7 +87,7 @@ export default function MatchResultInlineCard({ match, canEdit, onResultSaved }:
             ? isWinner ? "win" : "loss"
             : null;
 
-          await supabase
+          const { error: rErr } = await supabase
             .from("competition_match_results")
             .upsert(
               {
@@ -93,11 +96,12 @@ export default function MatchResultInlineCard({ match, canEdit, onResultSaved }:
                 outcome,
                 score: score || null,
                 result_status: status === "homologated" ? "resultado_validado" : "resultado_lancado",
-                recorded_by: authUser?.id ?? "system",
+                recorded_by: authUser.id,
                 recorded_at: new Date().toISOString(),
               } as any,
               { onConflict: "match_entry_id" }
             );
+          if (rErr) throw rErr;
         }
       }
 
