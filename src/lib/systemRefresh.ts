@@ -46,13 +46,31 @@ export function installGlobalRefreshListener() {
         
         sessionStorage.setItem(RELOAD_GUARD_KEY, String(now));
         
-        toast.info("Comando de atualização global recebido. Recarregando em breve...", {
-          duration: 3000,
+        toast.info("Atualização global detectada!", {
+          description: "O sistema está sendo sincronizado para garantir a última versão em todos os módulos.",
+          duration: 5000,
         });
         
-        setTimeout(() => {
+        setTimeout(async () => {
+          console.log("Executing global refresh cleanup...");
+          try {
+            // Limpar caches para garantir que não pegue arquivos antigos
+            if ("caches" in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((k) => caches.delete(k)));
+            }
+            
+            // Unregister Service Workers para forçar re-registro na próxima carga
+            const registrations = await navigator.serviceWorker?.getRegistrations();
+            if (registrations) {
+              await Promise.all(registrations.map(r => r.unregister()));
+            }
+          } catch (err) {
+            console.error("Error during global refresh cleanup:", err);
+          }
+          
           window.location.reload();
-        }, 1500);
+        }, 2000);
       },
     )
     .subscribe((status) => {
