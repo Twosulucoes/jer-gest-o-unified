@@ -218,7 +218,7 @@ export default function OcorrenciasPage() {
         <div className="space-y-2">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : incidents.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -226,67 +226,122 @@ export default function OcorrenciasPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">Módulo</TableHead>
-                  <TableHead>Referência</TableHead>
-                  <TableHead>Reportado por</TableHead>
-                  <TableHead className="max-w-[300px]">Descrição</TableHead>
-                  <TableHead className="w-[100px]">Status</TableHead>
-                  <TableHead className="w-[120px]">Data</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((incident) => {
-                  const mod = MODULE_LABELS[incident.module] || MODULE_LABELS.outro;
-                  const status = STATUS_LABELS[incident.incident_status] || STATUS_LABELS.pending;
-                  return (
-                    <TableRow
-                      key={incident.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => openDrawer(incident)}
-                    >
-                      <TableCell>
-                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${mod.color}`}>
-                          {mod.label}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-sm">{incident.reference_label || "—"}</TableCell>
-                      <TableCell>
-                        <div className="text-sm">{incident.reporter_name || "—"}</div>
-                        {incident.reporter_phone && (
-                          <a
-                            href={`tel:${incident.reporter_phone}`}
-                            className="text-xs text-primary flex items-center gap-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Phone className="h-3 w-3" />{incident.reporter_phone}
-                          </a>
-                        )}
-                      </TableCell>
-                      <TableCell className="max-w-[300px]">
-                        <p className="text-sm truncate">
-                          {incident.incident_description.length > 80
-                            ? incident.incident_description.slice(0, 80) + "..."
-                            : incident.incident_description}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={status.variant}>{status.label}</Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {format(new Date(incident.created_at), "dd/MM HH:mm", { locale: ptBR })}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Módulo</TableHead>
+                    <TableHead>Referência</TableHead>
+                    <TableHead>Reportado por</TableHead>
+                    <TableHead className="max-w-[300px]">Descrição</TableHead>
+                    <TableHead className="w-[100px]">Status</TableHead>
+                    <TableHead className="w-[120px]">Data</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {incidents.map((incident) => {
+                    const mod = MODULE_LABELS[incident.module] || MODULE_LABELS.outro;
+                    const status = STATUS_LABELS[incident.incident_status] || STATUS_LABELS.pending;
+                    return (
+                      <TableRow
+                        key={incident.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => openDrawer(incident)}
+                      >
+                        <TableCell>
+                          <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${mod.color}`}>
+                            {mod.label}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-sm">{incident.reference_label || "—"}</TableCell>
+                        <TableCell>
+                          <div className="text-sm">{incident.reporter_name || "—"}</div>
+                          {incident.reporter_phone && (
+                            <a
+                              href={`tel:${incident.reporter_phone}`}
+                              className="text-xs text-primary flex items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Phone className="h-3 w-3" />{incident.reporter_phone}
+                            </a>
+                          )}
+                        </TableCell>
+                        <TableCell className="max-w-[300px]">
+                          <p className="text-sm truncate">
+                            {incident.incident_description.length > 80
+                              ? incident.incident_description.slice(0, 80) + "..."
+                              : incident.incident_description}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={status.variant}>{status.label}</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {format(new Date(incident.created_at), "dd/MM HH:mm", { locale: ptBR })}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-2 py-4">
+              <p className="text-sm text-muted-foreground">
+                Mostrando <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> a{" "}
+                <span className="font-medium">
+                  {Math.min(currentPage * pageSize, totalCount)}
+                </span>{" "}
+                de <span className="font-medium">{totalCount}</span> resultados
+              </p>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    // Logic to show a window of pages around current
+                    let pageNum = currentPage;
+                    if (totalPages <= 5) pageNum = i + 1;
+                    else if (currentPage <= 3) pageNum = i + 1;
+                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                    else pageNum = currentPage - 2 + i;
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Detail Drawer */}
