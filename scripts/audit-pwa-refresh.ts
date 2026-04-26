@@ -17,13 +17,40 @@ import { join, relative } from "node:path";
 const ROOTS = ["src/pages/pwa", "src/pages/aovivo"];
 const REPO = process.cwd();
 
-// Páginas conhecidas que são exceção (sem header padrão por design).
+/**
+ * REGRA DE NEGÓCIO — Telas isentas de PwaRefreshButton
+ * ----------------------------------------------------
+ * O botão de refresh só faz sentido em telas operacionais autenticadas que
+ * exibem dados sincronizáveis. Estão isentas, por design:
+ *
+ *  1. Telas de autenticação / pré-sessão
+ *     (Login, Recover, SetPassword) — não há dados a recarregar.
+ *  2. Telas utilitárias / status fixo
+ *     (AcessoNegado, Debug, Confirmação pós-ação) — conteúdo estático.
+ *
+ * Para marcar uma nova tela como isenta:
+ *   - Adicione o caminho relativo abaixo, OU
+ *   - Renomeie para um padrão coberto pelos regex EXCEPTION_PATTERNS.
+ */
+const EXCEPTION_PATTERNS: RegExp[] = [
+  // Autenticação / pré-sessão
+  /Login(Page)?\.tsx$/,
+  /RecoverPage\.tsx$/,
+  /SetPasswordPage\.tsx$/,
+  // Utilitárias / status
+  /AcessoNegadoPage\.tsx$/,
+  /DebugPage\.tsx$/,
+  /ConfirmacaoPage\.tsx$/,
+];
+
 const EXCEPTIONS = new Set<string>([
-  // status-only screen
-  "src/pages/pwa/PesquisaConfirmacaoPage.tsx",
-  // Mesário tem header dark próprio com PwaRefreshButton embutido manualmente
-  // (mantém-se na auditoria normal — só listamos exceções "sem refresh esperado")
+  // Adicione aqui exceções pontuais que não casam com os padrões acima.
 ]);
+
+function isException(rel: string): boolean {
+  if (EXCEPTIONS.has(rel)) return true;
+  return EXCEPTION_PATTERNS.some((re) => re.test(rel));
+}
 
 const args = new Set(process.argv.slice(2));
 const asJson = args.has("--json");
