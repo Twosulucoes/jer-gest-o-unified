@@ -72,68 +72,38 @@ const modulosConcluidos = systemMap.reduce((acc, g) => {
   return acc + items.filter((i) => i.status === "done").length;
 }, 0);
 
-const tourSteps = [
-  {
-    title: "Importação SIGECOM",
-    desc: "Espelhamento operacional via planilhas Excel do sistema oficial. Validação automática, normalização de nomes e detecção de duplicidades.",
-    icon: Users,
-    module: "/admin/importacao",
+const groupMeta: Record<string, { icon: any, color: string }> = {
+  dashboard: { icon: LayoutDashboard, color: "from-blue-500 to-indigo-600" },
+  preparacao: { icon: Users, color: "from-sky-500 to-blue-600" },
+  credenciamento: { icon: QrCode, color: "from-purple-500 to-indigo-600" },
+  competicao: { icon: Trophy, color: "from-emerald-500 to-teal-600" },
+  logistica: { icon: Bus, color: "from-orange-500 to-amber-600" },
+  cadastros: { icon: Database, color: "from-slate-500 to-slate-700" },
+  acessos: { icon: Shield, color: "from-rose-500 to-pink-600" },
+  configuracoes: { icon: Zap, color: "from-amber-400 to-orange-500" },
+  ajuda: { icon: Bell, color: "from-cyan-500 to-blue-500" },
+};
+
+const tourSteps = systemMap.map(group => {
+  const mainItem = group.items[0] || (group.subGroups?.[0]?.items[0]);
+  const meta = groupMeta[group.id] || { icon: Activity, color: "from-slate-400 to-slate-500" };
+  const items = [...group.items, ...(group.subGroups?.flatMap(sg => sg.items) ?? [])];
+  const doneCount = items.filter(i => i.status === "done").length;
+  
+  return {
+    id: group.id,
+    title: group.label,
+    desc: mainItem?.description || `Gestão completa do módulo de ${group.label}.`,
+    icon: meta.icon,
+    module: mainItem?.route || "#",
     metrics: [
-      { label: "Atletas processados", value: "5.000+" },
-      { label: "Tempo médio", value: "~12s" },
-      { label: "Taxa de erro", value: "0,3%" },
+      { label: "Submódulos", value: items.length.toString() },
+      { label: "Finalizados", value: doneCount.toString() },
+      { label: "Progresso", value: `${Math.round((doneCount / (items.length || 1)) * 100)}%` },
     ],
-    color: "from-sky-500 to-blue-600",
-  },
-  {
-    title: "Credenciamento Digital",
-    desc: "Geração de credenciais visuais (Canvas) com QR único, vinculação em campo e reemissão controlada com invalidação histórica.",
-    icon: QrCode,
-    module: "/admin/credenciamento",
-    metrics: [
-      { label: "Credenciais", value: "Únicas" },
-      { label: "Validação", value: "MLKit" },
-      { label: "Modelos", value: "Por evento" },
-    ],
-    color: "from-purple-500 to-indigo-600",
-  },
-  {
-    title: "Competição em Tempo Real",
-    desc: "Geração de chaves, fases, grupos e partidas. Lançamento de resultados pelos coordenadores via PWA, com sincronização offline-first.",
-    icon: Trophy,
-    module: "/admin/competicao",
-    metrics: [
-      { label: "Modalidades", value: "Multi-família" },
-      { label: "Tipos", value: "Coletiva+Indiv." },
-      { label: "Desempates", value: "Cascata" },
-    ],
-    color: "from-emerald-500 to-teal-600",
-  },
-  {
-    title: "Logística Operacional",
-    desc: "Transporte, alimentação e alojamento integrados. Controle anti-duplo-consumo, scan de QR em refeitórios e rotas em tempo real.",
-    icon: Bus,
-    module: "/admin/logistica",
-    metrics: [
-      { label: "PWAs", value: "3 dedicados" },
-      { label: "Sync offline", value: "Sim" },
-      { label: "QR multiuso", value: "Vouchers" },
-    ],
-    color: "from-orange-500 to-amber-600",
-  },
-  {
-    title: "Portal Público & Resultados",
-    desc: "Resultados, medalhas e boletins sincronizados via Edge Functions para o portal JERS.COM.BR. Tokens públicos por atleta.",
-    icon: Share2,
-    module: "/admin/relatorios",
-    metrics: [
-      { label: "Edge Funcs", value: "Public API" },
-      { label: "Formatos", value: "PDF + XLSX" },
-      { label: "Atualização", value: "Realtime" },
-    ],
-    color: "from-rose-500 to-pink-600",
-  },
-];
+    color: meta.color,
+  };
+});
 
 const checklistItems = [
   { mod: "Core System", desc: "Autenticação, RLS, RBAC e auditoria" },
@@ -392,7 +362,7 @@ export default function EntregaTecnicaPage() {
                 Jornada do Sistema
               </h2>
               <p className="text-slate-500 max-w-xl">
-                Navegue pelas 5 etapas centrais do fluxo operacional do JER 2026 — da importação dos atletas até a publicação pública.
+                Navegue pelos {tourSteps.length} grupos operacionais do JER 2026 — uma visão completa do fluxo de ponta a ponta.
               </p>
             </div>
             <div className="flex gap-3">
@@ -411,7 +381,7 @@ export default function EntregaTecnicaPage() {
                 <currentTour.icon size={36} />
               </div>
               <div>
-                <p className="text-xs font-mono text-slate-400 uppercase tracking-widest mb-2">Etapa {currentStep + 1} · {currentTour.module}</p>
+                <p className="text-xs font-mono text-slate-400 uppercase tracking-widest mb-2">Etapa {currentStep + 1} · {currentTour.id}</p>
                 <h3 className="text-3xl md:text-4xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
                   {currentTour.title}
                 </h3>
@@ -425,6 +395,22 @@ export default function EntregaTecnicaPage() {
                     <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider">{m.label}</p>
                   </div>
                 ))}
+              </div>
+
+              <div className="pt-6 flex flex-wrap gap-3">
+                <Button asChild size="lg" className="rounded-2xl gap-2 text-white shadow-xl h-12" style={{ background: brand.colors.primary }}>
+                  <Link to={currentTour.module}>Abrir Módulo <ExternalLink size={16} /></Link>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="rounded-2xl gap-2 border-slate-200 h-12" 
+                  onClick={() => {
+                    document.getElementById(`modulo-${currentTour.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                >
+                  Ver no Mapa <ArrowRight size={16} />
+                </Button>
               </div>
 
               <div className="pt-4 flex gap-2">
@@ -465,7 +451,7 @@ export default function EntregaTecnicaPage() {
               const total = items.length;
               const pct = total > 0 ? Math.round((done / total) * 100) : 100;
               return (
-                <div key={group.id} className="bg-white rounded-2xl p-5 border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                <div key={group.id} id={`modulo-${group.id}`} className="bg-white rounded-2xl p-5 border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all scroll-mt-24">
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-bold text-base" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>
@@ -609,17 +595,46 @@ export default function EntregaTecnicaPage() {
    Mockups dinâmicos do tour — UI real do sistema (sem fotos stock)
    ───────────────────────────────────────────────────────────────── */
 function TourMockup({ step }: { step: number }) {
+  const currentTour = tourSteps[step];
+  
   return (
     <div
       className="relative rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 bg-white animate-in zoom-in-95 fade-in duration-700"
       key={`mock-${step}`}
     >
-      {step === 0 && <MockImportacao />}
-      {step === 1 && <MockCredencial />}
-      {step === 2 && <MockCompeticao />}
-      {step === 3 && <MockLogistica />}
-      {step === 4 && <MockPortal />}
+      {currentTour.id === "preparacao" && <MockImportacao />}
+      {currentTour.id === "credenciamento" && <MockCredencial />}
+      {currentTour.id === "competicao" && <MockCompeticao />}
+      {currentTour.id === "logistica" && <MockLogistica />}
+      {currentTour.id === "relatorios" && <MockPortal />}
+      {!["preparacao", "credenciamento", "competicao", "logistica", "relatorios"].includes(currentTour.id) && (
+        <MockGenerico tour={currentTour} />
+      )}
     </div>
+  );
+}
+
+function MockGenerico({ tour }: { tour: any }) {
+  return (
+    <BrowserFrame url={`jergestao.com.br${tour.module}`}>
+      <div className="flex flex-col items-center justify-center h-[350px] text-center space-y-6">
+        <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${tour.color} flex items-center justify-center text-white shadow-2xl`}>
+          <tour.icon size={48} />
+        </div>
+        <div className="space-y-2">
+          <h4 className="text-2xl font-black" style={{ color: brand.colors.primary }}>{tour.title}</h4>
+          <p className="text-slate-500 max-w-sm mx-auto">{tour.desc}</p>
+        </div>
+        <div className="flex gap-2">
+          {tour.metrics.map((m: any) => (
+            <div key={m.label} className="px-4 py-2 bg-white rounded-xl border border-slate-100 shadow-sm">
+              <p className="text-xs font-bold text-slate-400 uppercase">{m.label}</p>
+              <p className="text-lg font-black" style={{ color: brand.colors.primary }}>{m.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </BrowserFrame>
   );
 }
 
