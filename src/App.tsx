@@ -168,6 +168,7 @@ import CoordenacaoPartidaDetalhePage from "./pages/pwa/coordenacao/CoordenacaoPa
 import CoordenacaoResultadosPwaPage from "./pages/pwa/coordenacao/CoordenacaoResultadosPage";
 import CoordenacaoEstatisticasPage from "./pages/pwa/coordenacao/CoordenacaoEstatisticasPage";
 import CoordenacaoConsultaPage from "./pages/pwa/coordenacao/CoordenacaoConsultaPage";
+import CoordenacaoIncidentePage from "./pages/pwa/coordenacao/CoordenacaoIncidentePage";
 // PWA Resultados (Lançamento Manual — coordenador_modalidade)
 import ResultadosHomePage from "./pages/pwa/resultados/ResultadosHomePage";
 import ResultadosPartidasPage from "./pages/pwa/resultados/ResultadosPartidasPage";
