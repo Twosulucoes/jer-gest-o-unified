@@ -60,16 +60,17 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
   const activeStageId = routeStageId || persistedStageId;
 
   const setActiveStageId = useCallback((id: string | null) => {
+    if (id !== persistedStageId) {
+      handleContextChange(queryClient);
+    }
+    
     setPersistedStageId(id);
     if (id) {
       localStorage.setItem(STORAGE_KEY, id);
     } else {
       localStorage.removeItem(STORAGE_KEY);
     }
-    // Invalidate stage-scoped queries
-    queryClient.invalidateQueries({ queryKey: ["event_stage_meta"] });
-    queryClient.invalidateQueries({ queryKey: ["stage_participant_ids"] });
-  }, [queryClient]);
+  }, [queryClient, persistedStageId]);
 
   // If we have an activeStageId but it's not in the list of stages for the current event, clear it
   useEffect(() => {
