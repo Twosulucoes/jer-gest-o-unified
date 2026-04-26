@@ -1325,11 +1325,14 @@ function BulkIssueByDelegationDialog({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("delegations")
-        .select("id, name")
+        .select("id, school_name")
         .eq("event_id", eventId)
-        .order("name", { ascending: true });
+        .order("school_name", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as Array<{ id: string; name: string }>;
+      return ((data ?? []) as Array<{ id: string; school_name: string | null }>).map((d) => ({
+        id: d.id,
+        name: d.school_name ?? "(sem nome)",
+      }));
     },
     enabled: open && !!eventId,
   });
