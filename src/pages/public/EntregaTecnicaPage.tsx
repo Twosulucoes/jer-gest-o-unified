@@ -124,6 +124,38 @@ export default function EntregaTecnicaPage() {
   const [version, setVersion] = useState<VersionInfo | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
 
+  const { data: stats } = useQuery({
+    queryKey: ["entrega-tecnica-stats"],
+    queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const [
+        athletes,
+        sports,
+        medals,
+        matchesToday,
+        roles
+      ] = await Promise.all([
+        supabase.from("participants").select("*", { count: "exact", head: true }).eq("participant_type", "athlete"),
+        supabase.from("sports").select("*", { count: "exact", head: true }),
+        supabase.from("competition_match_results").select("*", { count: "exact", head: true }),
+        supabase.from("competition_matches").select("*", { count: "exact", head: true }).eq("match_date", today),
+        supabase.from("user_roles").select("role")
+      ]);
+
+      const uniqueRoles = new Set(roles.data?.map(r => r.role) || []);
+
+      return {
+        athletes: athletes.count || 0,
+        sports: sports.count || 0,
+        medals: medals.count || 0,
+        matchesToday: matchesToday.count || 0,
+        roles: uniqueRoles.size || 12,
+      };
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
+
   useEffect(() => {
     fetch("/version.json", { cache: "no-store" })
       .then((res) => res.json())
