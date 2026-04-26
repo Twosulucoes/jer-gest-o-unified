@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
-import { AppRole } from "@/types/auth";
+import { Database } from "@/integrations/supabase/types";
 
+export type AppRole = Database["public"]["Enums"]["app_role"];
 export type DbOp = 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
 
 interface TelemetryParams {
@@ -26,23 +27,23 @@ export const dbTelemetry = {
     metadata = {}
   }: TelemetryParams) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
 
-      // Get user role if possible (optional, can be done on server side too if we want, 
-      // but let's try to get it from local storage or session if available to save a query)
-      // For now, we'll let the database handle it if we used a trigger, 
-      // but since we want to be explicit:
+      const userId = session.user.id;
       
+      // Get user role if possible
       const { data: roleData } = await supabase
-        .from('user_roles')
+        .from('user_roles' as any)
         .select('role')
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', userId)
+        .maybeSingle();
 
-      await supabase.from('db_operation_logs').insert({
-        user_id: user.id,
-        user_role: roleData?.role as AppRole,
+      const userRole = roleData?.role as AppRole;
+
+      await (supabase.from('db_operation_logs' as any) as any).insert({
+        user_id: userId,
+        user_role: userRole,
         module_name: moduleName,
         table_name: tableName,
         operation,
@@ -58,3 +59,4 @@ export const dbTelemetry = {
     }
   }
 };
+
