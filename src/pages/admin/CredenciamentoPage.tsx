@@ -1076,7 +1076,7 @@ export default function CredenciamentoPage() {
                   : "Nenhum participante importado para este evento."}
               </p>
               {hasActiveFilters && (
-                <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSortBy("priority"); }}>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSortBy("workflow"); }}>
                   Limpar filtros
                 </Button>
               )}
