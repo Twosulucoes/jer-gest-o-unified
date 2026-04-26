@@ -349,7 +349,7 @@ function TabPublicar({
   const [incluirBoletim, setIncluirBoletim] = useState(false);
 
   const isPublicado = matchStatus === "publicado";
-  const isFinalizada = matchStatus === "finalizada" || isPublicado;
+  const isFinalizada = matchStatus === "finished" || matchStatus === "finalizada" || isPublicado;
 
   const handlePublicar = () => {
     if (!sportEventId) return;

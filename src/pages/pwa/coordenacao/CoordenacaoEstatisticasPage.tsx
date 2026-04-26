@@ -13,10 +13,10 @@ export default function CoordenacaoEstatisticasPage() {
     (async () => {
       const [totalRes, agendRes, andRes, finRes, canRes] = await Promise.all([
         supabase.from("competition_matches").select("id", { count: "exact", head: true }),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "agendada"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "em_andamento"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "finalizada"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "cancelada"),
+        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "scheduled"),
+        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "in_progress"),
+        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "finished"),
+        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "cancelled"),
       ]);
       setStats({
         total: totalRes.count || 0,

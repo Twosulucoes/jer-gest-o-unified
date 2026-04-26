@@ -45,8 +45,8 @@ export default function CoordenacaoHomePage() {
 
       const [todayRes, andamentoRes, pendentesRes, totalRes, incidentsRes, agendaRes] = await Promise.all([
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("match_date", today),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "em_andamento"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "finalizada"),
+        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "in_progress"),
+        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "finished"),
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
         supabase.from("operational_incidents").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("incident_status", "pending"),
         supabase
@@ -75,15 +75,17 @@ export default function CoordenacaoHomePage() {
     navigate("/pwa/login", { replace: true });
   };
   const statusTone = (s: string) => {
-    if (s === "em_andamento") return "live";
-    if (s === "finalizada") return "ok";
-    if (s === "scheduled") return "scheduled";
+    const v = s === "em_andamento" ? "in_progress" : s === "finalizada" ? "finished" : s;
+    if (v === "in_progress") return "live";
+    if (v === "finished") return "ok";
+    if (v === "scheduled") return "scheduled";
     return "neutral";
   };
   const statusLabel = (s: string) => {
-    if (s === "em_andamento") return "Em curso";
-    if (s === "finalizada") return "Concluído";
-    if (s === "scheduled") return "Próximo";
+    const v = s === "em_andamento" ? "in_progress" : s === "finalizada" ? "finished" : s;
+    if (v === "in_progress") return "Em curso";
+    if (v === "finished") return "Concluído";
+    if (v === "scheduled") return "Próximo";
     return s;
   };
 

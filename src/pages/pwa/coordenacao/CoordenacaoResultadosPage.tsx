@@ -25,7 +25,7 @@ export default function CoordenacaoResultadosPage() {
       const { data } = await supabase
         .from("competition_matches")
         .select("id, match_number, match_date, status, phase:competition_phases(name)")
-        .eq("status", "finalizada")
+        .in("status", ["finished", "publicado"])
         .order("match_date", { ascending: false })
         .limit(50);
       setMatches((data as any) || []);

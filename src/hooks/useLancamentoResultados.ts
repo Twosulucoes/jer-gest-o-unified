@@ -312,9 +312,9 @@ export function useSalvarPlacar(matchId: string) {
 
       const { error: statusErr } = await supabase
         .from("competition_matches")
-        .update({ status: "finalizada" })
+        .update({ status: "finished" })
         .eq("id", matchId)
-        .in("status", ["agendada", "em_andamento"]);
+        .in("status", ["scheduled", "in_progress"]);
       if (statusErr) throw statusErr;
     },
     onSuccess: () => {
