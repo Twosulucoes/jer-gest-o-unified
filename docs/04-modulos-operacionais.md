@@ -55,7 +55,7 @@
 - **Gaps**: ❌ Sem controle temporal de permanência
 - **Dados reais**: 0 ocupações
 
-## 7. Competição (✅ Pronto — Refatoração Etapa 1: Painel Score)
+## 7. Competição (✅ Pronto — Refatoração Etapa 2: Painel Score & Sets)
 - **Tabelas**: 15 tabelas (phases, groups, matches, entries, results, scores, lineups, events, penalties, officials, attachments, attempts, player_stats, discipline, match_user_assignments)
 - **Páginas admin**: painel (entry point), painel-score (novo), fases, grupos, equipes, partidas, detalhe da partida, agenda, resultados, central, pré-validação, regras, regras em lote, diagnóstico, sincronizar equipes
 - **Painel Score (Novo)**:
