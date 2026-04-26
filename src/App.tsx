@@ -199,6 +199,8 @@ import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
 import EntregaTecnicaPage from "./pages/public/EntregaTecnicaPage";
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 // Ao Vivo PWA (lazy loaded)
+import StatusPage from "./pages/Status";
+
 const AoVivoLoginPage = lazy(() => import("./pages/aovivo/AoVivoLoginPage"));
 const AoVivoHomePage = lazy(() => import("./pages/aovivo/AoVivoHomePage"));
 const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
