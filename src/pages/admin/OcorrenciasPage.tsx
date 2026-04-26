@@ -157,15 +157,7 @@ export default function OcorrenciasPage() {
     }
   };
 
-  const filtered = incidents.filter((i) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      i.reporter_name?.toLowerCase().includes(q) ||
-      i.reference_label?.toLowerCase().includes(q) ||
-      i.incident_description.toLowerCase().includes(q)
-    );
-  });
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="space-y-6">
