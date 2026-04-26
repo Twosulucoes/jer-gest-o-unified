@@ -62,7 +62,7 @@ async function handleRestTelemetry(url: string, init: RequestInit | undefined, r
         } else if (data && typeof data === 'object') {
           rowsAffected = 1;
         }
-      } catch (e) {
+      } catch (_e) {
         // Not JSON or empty response
       }
     } else {
