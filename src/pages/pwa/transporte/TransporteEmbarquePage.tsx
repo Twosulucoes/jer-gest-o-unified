@@ -250,6 +250,15 @@ export default function TransporteEmbarquePage() {
           toast.error(getVoucherMessage(voucher?.reason, lang));
           return;
         }
+
+        // Voucher AGREGADO: apenas confirma; não há FK para participant_id
+        if (voucher.voucher_type === "aggregate" || !voucher.participant_id) {
+          const displayLabel = voucher.label || voucher.person_name || "Acompanhante";
+          toast.success(`🎫 Voucher agregado validado — ${displayLabel}`);
+          if (navigator.vibrate) navigator.vibrate(200);
+          return;
+        }
+
         participantId = voucher.participant_id ?? null;
         name = voucher.person_name || name;
         viaVoucher = true;
