@@ -137,6 +137,8 @@ export default function EventosPage() {
     status: string;
     start_date?: string;
     end_date?: string;
+    is_public: boolean;
+    public_agenda_published: boolean;
   }) => {
     if (editingEvent) {
       updateMutation.mutate({ id: editingEvent.id, ...values });
