@@ -577,6 +577,23 @@ export default function CredenciamentoPage() {
     },
   });
 
+  const confirmParticipantMutation = useMutation({
+    mutationFn: async (participantId: string) => {
+      const { error } = await supabase
+        .from("participants")
+        .update({ status: "confirmed" })
+        .eq("id", participantId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      toast.success("Participante confirmado com sucesso!");
+    },
+    onError: (err: Error) => {
+      toast.error(`Erro ao confirmar participante: ${err.message}`);
+    },
+  });
+
   // --- Blocking check before emit/reissue ---
   const checkBlockingAndAct = async (participantId: string, personName: string, action: "emit" | "reissue") => {
     const { data, error } = await supabase.rpc("get_blocking_irregularities", {
