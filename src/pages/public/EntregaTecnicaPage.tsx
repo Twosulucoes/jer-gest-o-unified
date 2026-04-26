@@ -210,7 +210,7 @@ export default function EntregaTecnicaPage() {
               <p className="font-bold text-base tracking-tight leading-none" style={{ fontFamily: brand.typography.headingFont }}>
                 JER <span style={{ color: brand.colors.accentTeal }}>Gestão</span>
               </p>
-              <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest leading-tight mt-0.5">Entrega Técnica · 2026</p>
+              <p className="text-[10px] text-slate-600 font-mono uppercase tracking-widest leading-tight mt-0.5">Entrega Técnica · 2026</p>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-8">
@@ -272,17 +272,17 @@ export default function EntregaTecnicaPage() {
             <div className="grid grid-cols-3 gap-4 pt-4 max-w-2xl">
               <div className="space-y-1">
                 <p className="text-3xl font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>{totalModulos}</p>
-                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Módulos integrados</p>
+                <p className="text-xs text-slate-600 font-medium uppercase tracking-wider">Módulos integrados</p>
               </div>
               <div className="space-y-1">
                 <p className="text-3xl font-black" style={{ color: brand.colors.accentTeal, fontFamily: brand.typography.headingFont }}>3</p>
-                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">PWAs operacionais</p>
+                <p className="text-xs text-slate-600 font-medium uppercase tracking-wider">PWAs operacionais</p>
               </div>
               <div className="space-y-1">
                 <p className="text-3xl font-black" style={{ color: brand.colors.accentGreen, fontFamily: brand.typography.headingFont }}>
                   {stats?.roles ?? 12}
                 </p>
-                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Perfis de acesso</p>
+                <p className="text-xs text-slate-600 font-medium uppercase tracking-wider">Perfis de acesso</p>
               </div>
             </div>
 
@@ -311,7 +311,7 @@ export default function EntregaTecnicaPage() {
                 <div className="w-2.5 h-2.5 rounded-full bg-rose-400" />
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                <div className="ml-3 px-3 py-1 bg-white rounded-md text-[10px] text-slate-500 font-mono border border-slate-200">
+                <div className="ml-3 px-3 py-1 bg-white rounded-md text-[10px] text-slate-600 font-mono border border-slate-200">
                   jergestao.com.br/admin
                 </div>
               </div>
@@ -323,7 +323,7 @@ export default function EntregaTecnicaPage() {
                     </div>
                     <p className="font-bold text-sm" style={{ color: brand.colors.primary }}>Dashboard JER 2026</p>
                   </div>
-                  <Bell size={14} className="text-slate-400" />
+                  <Bell size={14} className="text-slate-600" />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
@@ -335,21 +335,21 @@ export default function EntregaTecnicaPage() {
                     <div key={m.label} className="bg-white rounded-xl p-3 border border-slate-100">
                       <m.icon size={14} style={{ color: m.color }} />
                       <p className="text-xl font-black mt-1" style={{ color: brand.colors.text, fontFamily: brand.typography.headingFont }}>{m.val}</p>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">{m.label}</p>
+                      <p className="text-[10px] text-slate-600 uppercase tracking-wider">{m.label}</p>
                     </div>
                   ))}
                 </div>
                 <div className="bg-white rounded-xl p-3 border border-slate-100">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-bold text-slate-700">Cronograma do dia</p>
-                    <CalendarDays size={12} className="text-slate-400" />
+                    <CalendarDays size={12} className="text-slate-600" />
                   </div>
                   <div className="space-y-1.5">
                     {["Atletismo · Pista 1", "Natação · Piscina A", "Vôlei · Quadra 3"].map((t, i) => (
                       <div key={t} className="flex items-center gap-2 text-[11px]">
                         <div className="w-1.5 h-1.5 rounded-full" style={{ background: brand.colors.accentTeal }} />
                         <span className="text-slate-700">{t}</span>
-                        <span className="ml-auto text-slate-400 font-mono">0{8 + i}:00</span>
+                        <span className="ml-auto text-slate-600 font-mono">0{8 + i}:00</span>
                       </div>
                     ))}
                   </div>
@@ -359,12 +359,12 @@ export default function EntregaTecnicaPage() {
 
             <div className="hidden md:block absolute -top-6 -left-8 bg-white p-3 rounded-2xl shadow-xl border border-slate-100">
               <Activity size={20} style={{ color: brand.colors.accentGreen }} />
-              <p className="text-[10px] text-slate-500 font-medium mt-1">Uptime</p>
+              <p className="text-[10px] text-slate-600 font-medium mt-1">Uptime</p>
               <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>{stats ? "100%" : "99.9%"}</p>
             </div>
             <div className="hidden md:block absolute -bottom-6 -right-6 bg-white p-3 rounded-2xl shadow-xl border border-slate-100">
               <Database size={20} style={{ color: brand.colors.accentBlue }} />
-              <p className="text-[10px] text-slate-500 font-medium mt-1">Latência DB</p>
+              <p className="text-[10px] text-slate-600 font-medium mt-1">Latência DB</p>
               <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>~{stats?.latency ?? 24}ms</p>
             </div>
           </div>
@@ -379,7 +379,7 @@ export default function EntregaTecnicaPage() {
             <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
               Stack Tecnológica
             </h2>
-            <p className="text-slate-500 max-w-2xl mx-auto">
+            <p className="text-slate-600 max-w-2xl mx-auto">
               Tecnologias modernas, mantidas e escaláveis. Toda a plataforma é construída sobre padrões abertos e ferramentas líderes de mercado.
             </p>
           </div>
@@ -392,7 +392,7 @@ export default function EntregaTecnicaPage() {
                     <tech.icon className={`${tech.color} w-6 h-6`} />
                   </div>
                   <CardTitle className="text-lg font-bold" style={{ color: brand.colors.primary }}>{tech.name}</CardTitle>
-                  <CardDescription className="text-slate-500 text-sm">{tech.desc}</CardDescription>
+                  <CardDescription className="text-slate-600 text-sm">{tech.desc}</CardDescription>
                 </CardHeader>
               </Card>
             ))}
@@ -441,14 +441,14 @@ export default function EntregaTecnicaPage() {
                 <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
                   Identidade Visual
                 </h2>
-                <p className="text-slate-500 max-w-xl">
+                <p className="text-slate-600 max-w-xl">
                   A plataforma utiliza um sistema de design consistente e moderno, desenvolvido pela <strong>Two Soluções</strong> para garantir usabilidade e acessibilidade em todos os dispositivos.
                 </p>
               </div>
 
               {/* Logo Two Soluções */}
               <div className="space-y-3">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Desenvolvedora</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Desenvolvedora</p>
                 <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 inline-block">
                   <img src={twoLogo} alt="Two Soluções" className="h-16 w-auto" />
                 </div>
@@ -456,7 +456,7 @@ export default function EntregaTecnicaPage() {
 
               {/* Cores Principais */}
               <div className="space-y-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Paleta de Cores</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Paleta de Cores</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {[
                     { name: 'Primary', hex: brand.colors.primary, label: 'Principal' },
@@ -468,7 +468,7 @@ export default function EntregaTecnicaPage() {
                       <div className="h-16 rounded-xl border border-slate-100 shadow-sm" style={{ backgroundColor: color.hex }} />
                       <div>
                         <p className="text-[10px] font-bold text-slate-900">{color.label}</p>
-                        <p className="text-[10px] text-slate-400 font-mono uppercase">{color.hex}</p>
+                        <p className="text-[10px] text-slate-600 font-mono uppercase">{color.hex}</p>
                       </div>
                     </div>
                   ))}
@@ -477,17 +477,17 @@ export default function EntregaTecnicaPage() {
 
               {/* Tipografia */}
               <div className="space-y-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Tipografia</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Tipografia</p>
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-1">
                     <p className="text-3xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>Aa</p>
                     <p className="text-sm font-bold text-slate-900">Montserrat</p>
-                    <p className="text-xs text-slate-400">Headings & Destaques</p>
+                    <p className="text-xs text-slate-600">Headings & Destaques</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-3xl" style={{ fontFamily: brand.typography.bodyFont, color: brand.colors.text }}>Aa</p>
                     <p className="text-sm font-bold text-slate-900">Inter</p>
-                    <p className="text-xs text-slate-400">Body & Conteúdo</p>
+                    <p className="text-xs text-slate-600">Body & Conteúdo</p>
                   </div>
                 </div>
               </div>
@@ -501,7 +501,7 @@ export default function EntregaTecnicaPage() {
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                  <div className="ml-2 text-[8px] font-mono text-slate-400 uppercase tracking-widest">jergestao.com.br/admin</div>
+                  <div className="ml-2 text-[8px] font-mono text-slate-600 uppercase tracking-widest">jergestao.com.br/admin</div>
                 </div>
                 
                 <div className="relative aspect-video bg-slate-50">
@@ -593,7 +593,7 @@ export default function EntregaTecnicaPage() {
               <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
                 Jornada do Sistema
               </h2>
-              <p className="text-slate-500 max-w-xl">
+              <p className="text-slate-600 max-w-xl">
                 Navegue pelos {tourSteps.length} grupos operacionais do JER 2026 — uma visão completa do fluxo de ponta a ponta.
               </p>
             </div>
@@ -613,7 +613,7 @@ export default function EntregaTecnicaPage() {
                 <currentTour.icon size={36} />
               </div>
               <div>
-                <p className="text-xs font-mono text-slate-400 uppercase tracking-widest mb-2">Etapa {currentStep + 1} · {currentTour.id}</p>
+                <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-2">Etapa {currentStep + 1} · {currentTour.id}</p>
                 <h3 className="text-3xl md:text-4xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
                   {currentTour.title}
                 </h3>
@@ -624,7 +624,7 @@ export default function EntregaTecnicaPage() {
                 {currentTour.metrics.map((m) => (
                   <div key={m.label} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <p className="text-base font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>{m.value}</p>
-                    <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider">{m.label}</p>
+                    <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider">{m.label}</p>
                   </div>
                 ))}
               </div>
@@ -671,7 +671,7 @@ export default function EntregaTecnicaPage() {
             <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
               Mapa de Funcionalidades
             </h2>
-            <p className="text-slate-500 max-w-2xl mx-auto">
+            <p className="text-slate-600 max-w-2xl mx-auto">
               Todos os grupos funcionais entregues, organizados pela arquitetura oficial do sistema (<code className="text-xs bg-slate-200 px-1.5 py-0.5 rounded">systemMap.ts</code>).
             </p>
           </div>
@@ -689,7 +689,7 @@ export default function EntregaTecnicaPage() {
                       <h3 className="font-bold text-base" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>
                         {group.label}
                       </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">{total} {total === 1 ? "módulo" : "módulos"}</p>
+                      <p className="text-xs text-slate-600 mt-0.5">{total} {total === 1 ? "módulo" : "módulos"}</p>
                     </div>
                     <Badge className="text-[10px] text-white border-0" style={{ background: pct === 100 ? brand.colors.accentGreen : brand.colors.warning }}>
                       {pct}%
@@ -708,7 +708,7 @@ export default function EntregaTecnicaPage() {
                       </span>
                     ))}
                     {items.length > 5 && (
-                      <span className="text-[10px] text-slate-400 px-2 py-0.5">+{items.length - 5}</span>
+                      <span className="text-[10px] text-slate-600 px-2 py-0.5">+{items.length - 5}</span>
                     )}
                   </div>
                 </div>
@@ -726,7 +726,7 @@ export default function EntregaTecnicaPage() {
             <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: brand.typography.headingFont }}>
               Homologação Técnica
             </h2>
-            <p className="text-slate-400">
+            <p className="text-slate-600">
               Checklist rigoroso de validação dos módulos operacionais. Todos os domínios passaram por testes E2E automatizados (Playwright)
               e validação manual com dados reais.
             </p>
@@ -739,7 +739,7 @@ export default function EntregaTecnicaPage() {
                 <p className="text-3xl font-black" style={{ fontFamily: brand.typography.headingFont }}>
                   {Math.round((modulosConcluidos / totalModulos) * 100)}%
                 </p>
-                <p className="text-xs text-slate-400">{modulosConcluidos}/{totalModulos} módulos</p>
+                <p className="text-xs text-slate-600">{modulosConcluidos}/{totalModulos} módulos</p>
               </div>
             </div>
           </div>
@@ -752,7 +752,7 @@ export default function EntregaTecnicaPage() {
                 </div>
                 <div>
                   <p className="font-bold text-slate-100 text-sm">{item.mod}</p>
-                  <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{item.desc}</p>
+                  <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -765,7 +765,7 @@ export default function EntregaTecnicaPage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center gap-2 mb-8">
             <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: brand.colors.accentGreen }} />
-            <p className="text-xs font-mono uppercase tracking-widest text-slate-500">Build Status · Live</p>
+            <p className="text-xs font-mono uppercase tracking-widest text-slate-600">Build Status · Live</p>
           </div>
           <div className="grid lg:grid-cols-4 gap-6">
             {[
@@ -775,7 +775,7 @@ export default function EntregaTecnicaPage() {
               { label: "Build", value: version?.buildDate ? new Date(version.buildDate).toLocaleDateString('pt-BR') : "Hoje", color: brand.colors.accentGreen },
             ].map((s) => (
               <div key={s.label} className="space-y-2 p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{s.label}</p>
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{s.label}</p>
                 <p className={`text-2xl font-black ${s.mono ? 'font-mono' : ''}`} style={{ color: s.color, fontFamily: s.mono ? 'monospace' : brand.typography.headingFont }}>
                   {s.value}
                 </p>
@@ -790,28 +790,28 @@ export default function EntregaTecnicaPage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col items-center text-center space-y-8">
             <div className="space-y-4">
-              <p className="text-xs font-mono uppercase tracking-widest text-slate-400">Desenvolvido por</p>
+              <p className="text-xs font-mono uppercase tracking-widest text-slate-600">Desenvolvido por</p>
               <a href="https://twosulucoes.com.br" target="_blank" rel="noopener noreferrer" className="inline-block transition-transform hover:scale-105">
                 <img src={twoLogo} alt="Two Soluções" className="h-24 w-auto mx-auto" />
               </a>
-              <p className="text-sm text-slate-500 font-medium">Arquitetura & Engenharia de Software</p>
+              <p className="text-sm text-slate-600 font-medium">Arquitetura & Engenharia de Software</p>
             </div>
 
             <div className="flex flex-wrap justify-center gap-6 pt-4">
-              <a href="https://twosulucoes.com.br" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-2 transition-colors">
+              <a href="https://twosulucoes.com.br" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-2 transition-colors">
                 <Globe size={16} /> twosulucoes.com.br
               </a>
-              <a href="#" className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-2 transition-colors">
+              <a href="#" className="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-2 transition-colors">
                 <Github size={16} /> Repositório
               </a>
-              <a href="#" className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-2 transition-colors">
+              <a href="#" className="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-2 transition-colors">
                 <ExternalLink size={16} /> Documentação
               </a>
             </div>
 
             <Separator className="bg-slate-200 max-w-md" />
 
-            <div className="flex flex-col md:flex-row justify-center items-center gap-2 text-xs text-slate-400 text-center">
+            <div className="flex flex-col md:flex-row justify-center items-center gap-2 text-xs text-slate-600 text-center">
               <p>© 2026 JER Gestão · Todos os direitos reservados</p>
               <span className="hidden md:inline">·</span>
               <p>Plataforma oficial dos Jogos Escolares de Roraima</p>
@@ -855,12 +855,12 @@ function MockGenerico({ tour }: { tour: any }) {
         </div>
         <div className="space-y-2">
           <h4 className="text-2xl font-black" style={{ color: brand.colors.primary }}>{tour.title}</h4>
-          <p className="text-slate-500 max-w-sm mx-auto">{tour.desc}</p>
+          <p className="text-slate-600 max-w-sm mx-auto">{tour.desc}</p>
         </div>
         <div className="flex gap-2">
           {tour.metrics.map((m: any) => (
             <div key={m.label} className="px-4 py-2 bg-white rounded-xl border border-slate-100 shadow-sm">
-              <p className="text-xs font-bold text-slate-400 uppercase">{m.label}</p>
+              <p className="text-xs font-bold text-slate-600 uppercase">{m.label}</p>
               <p className="text-lg font-black" style={{ color: brand.colors.primary }}>{m.value}</p>
             </div>
           ))}
@@ -877,7 +877,7 @@ function BrowserFrame({ url, children }: { url: string; children: React.ReactNod
         <div className="w-2.5 h-2.5 rounded-full bg-rose-400" />
         <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
         <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-        <div className="ml-3 px-3 py-1 bg-white rounded-md text-[10px] text-slate-500 font-mono border border-slate-200 truncate">
+        <div className="ml-3 px-3 py-1 bg-white rounded-md text-[10px] text-slate-600 font-mono border border-slate-200 truncate">
           {url}
         </div>
       </div>
@@ -917,7 +917,7 @@ function MockImportacao() {
             <FileText size={20} style={{ color: brand.colors.accentBlue }} />
             <div className="flex-1">
               <p className="text-xs font-medium text-slate-700">atletas-jer-2026.xlsx</p>
-              <p className="text-[10px] text-slate-400">5.247 registros · 2.4 MB</p>
+              <p className="text-[10px] text-slate-600">5.247 registros · 2.4 MB</p>
             </div>
             <span className="text-xs font-bold" style={{ color: brand.colors.accentGreen }}>87%</span>
           </div>
@@ -933,20 +933,20 @@ function MockImportacao() {
           ].map((s) => (
             <div key={s.label} className="bg-white rounded-lg p-2 border border-slate-100">
               <p className="text-base font-black" style={{ color: s.color, fontFamily: brand.typography.headingFont }}>{s.val}</p>
-              <p className="text-[9px] text-slate-500 uppercase tracking-wider">{s.label}</p>
+              <p className="text-[9px] text-slate-600 uppercase tracking-wider">{s.label}</p>
             </div>
           ))}
         </div>
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Últimas validações</p>
-            <Search size={12} className="text-slate-400" />
+            <Search size={12} className="text-slate-600" />
           </div>
           {["MARIA SILVA", "JOÃO SANTOS", "ANA OLIVEIRA"].map((nome) => (
             <div key={nome} className="px-3 py-2 border-b border-slate-50 last:border-0 flex items-center gap-2 text-[11px]">
               <CheckCircle2 size={12} style={{ color: brand.colors.accentGreen }} />
               <span className="text-slate-700 flex-1">{nome}</span>
-              <span className="text-slate-400 font-mono">OK</span>
+              <span className="text-slate-600 font-mono">OK</span>
             </div>
           ))}
         </div>
@@ -971,24 +971,24 @@ function MockCredencial() {
             </div>
           </div>
           <div className="p-2 bg-white">
-            <p className="text-[8px] text-center text-slate-400 font-mono">JER-2026-AT-005247</p>
+            <p className="text-[8px] text-center text-slate-600 font-mono">JER-2026-AT-005247</p>
           </div>
         </div>
         <div className="space-y-2">
           <div className="bg-white rounded-xl p-3 border border-slate-100">
             <Users size={14} style={{ color: brand.colors.accentBlue }} />
             <p className="text-lg font-black mt-1" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>4.832</p>
-            <p className="text-[9px] text-slate-500 uppercase tracking-wider">Credenciados</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-wider">Credenciados</p>
           </div>
           <div className="bg-white rounded-xl p-3 border border-slate-100">
             <Clock size={14} style={{ color: brand.colors.warning }} />
             <p className="text-lg font-black mt-1" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>415</p>
-            <p className="text-[9px] text-slate-500 uppercase tracking-wider">Pendentes</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-wider">Pendentes</p>
           </div>
           <div className="bg-white rounded-xl p-3 border border-slate-100">
             <CheckCircle2 size={14} style={{ color: brand.colors.accentGreen }} />
             <p className="text-lg font-black mt-1" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>92%</p>
-            <p className="text-[9px] text-slate-500 uppercase tracking-wider">Cobertura</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-wider">Cobertura</p>
           </div>
         </div>
         <div className="col-span-2 bg-white rounded-xl border border-slate-100 p-3 flex items-center gap-3">
@@ -997,7 +997,7 @@ function MockCredencial() {
           </div>
           <div className="flex-1">
             <p className="text-xs font-bold text-slate-700">Validador MLKit (PWA)</p>
-            <p className="text-[10px] text-slate-500">Scan offline em campo · Última: há 2s</p>
+            <p className="text-[10px] text-slate-600">Scan offline em campo · Última: há 2s</p>
           </div>
           <Badge style={{ background: brand.colors.accentGreen, color: 'white' }} className="text-[10px] border-0">Ativo</Badge>
         </div>
@@ -1024,7 +1024,7 @@ function MockCompeticao() {
               <p className="text-3xl font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>
                 3 <span className="text-slate-300">×</span> 2
               </p>
-              <p className="text-[10px] text-slate-400 font-mono">SET 5 · 14:23</p>
+              <p className="text-[10px] text-slate-600 font-mono">SET 5 · 14:23</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-white font-black text-sm" style={{ background: brand.colors.accentTeal }}>CAR</div>
@@ -1063,11 +1063,11 @@ function MockLogistica() {
       <div className="p-4 space-y-3">
         <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Janela ativa</p>
-            <Clock size={10} className="text-slate-400" />
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Janela ativa</p>
+            <Clock size={10} className="text-slate-600" />
           </div>
           <p className="font-bold text-sm" style={{ color: brand.colors.primary }}>06:30 — 09:00</p>
-          <p className="text-[10px] text-slate-500 mt-1">Refeitório Central · Boa Vista</p>
+          <p className="text-[10px] text-slate-600 mt-1">Refeitório Central · Boa Vista</p>
         </div>
 
         <div className="aspect-square bg-slate-900 rounded-2xl flex items-center justify-center relative overflow-hidden">
@@ -1094,7 +1094,7 @@ function MockLogistica() {
           ].map((s) => (
             <div key={s.label} className="text-center">
               <p className="text-sm font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>{s.val}</p>
-              <p className="text-[9px] text-slate-500 uppercase">{s.label}</p>
+              <p className="text-[9px] text-slate-600 uppercase">{s.label}</p>
             </div>
           ))}
         </div>
@@ -1108,7 +1108,7 @@ function MockPortal() {
     <BrowserFrame url="jers.com.br/resultados">
       <div className="space-y-3">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Portal Público</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600">Portal Público</p>
           <h4 className="font-bold text-base" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>
             Quadro de Medalhas · JER 2026
           </h4>
@@ -1124,7 +1124,7 @@ function MockPortal() {
               <span className="col-span-1 font-black" style={{ color: brand.colors.primary }}>{d.pos}º</span>
               <span className="col-span-5 font-medium text-slate-700">{d.dele}</span>
               <span className="col-span-2 text-center font-bold" style={{ color: brand.colors.warning }}>{d.o}</span>
-              <span className="col-span-2 text-center font-bold text-slate-500">{d.p}</span>
+              <span className="col-span-2 text-center font-bold text-slate-600">{d.p}</span>
               <span className="col-span-2 text-center font-bold" style={{ color: '#CD7F32' }}>{d.b}</span>
             </div>
           ))}
@@ -1133,12 +1133,12 @@ function MockPortal() {
           <div className="bg-white rounded-xl p-3 border border-slate-100">
             <BarChart3 size={14} style={{ color: brand.colors.accentBlue }} />
             <p className="text-base font-black mt-1" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>187</p>
-            <p className="text-[9px] text-slate-500 uppercase tracking-wider">Provas concluídas</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-wider">Provas concluídas</p>
           </div>
           <div className="bg-white rounded-xl p-3 border border-slate-100">
             <TrendingUp size={14} style={{ color: brand.colors.accentGreen }} />
             <p className="text-base font-black mt-1" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>Live</p>
-            <p className="text-[9px] text-slate-500 uppercase tracking-wider">Sync via Edge</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-wider">Sync via Edge</p>
           </div>
         </div>
       </div>
