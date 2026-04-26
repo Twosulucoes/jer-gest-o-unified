@@ -133,11 +133,11 @@ export default function AuditoriaPage() {
     const q = search.toLowerCase();
     return logs.filter((log: any) => {
       const userName = (log.profiles?.full_name || "").toLowerCase();
-      const targetName = (targetProfiles[log.record_id] || "").toLowerCase();
+      const targetName = (targetNames[log.record_id] || "").toLowerCase();
       const actionName = (ACTIONS_LABELS[log.action] || log.action).toLowerCase();
       return userName.includes(q) || targetName.includes(q) || actionName.includes(q);
     });
-  }, [logs, search, targetProfiles]);
+  }, [logs, search, targetNames]);
 
   const handleExportCSV = () => {
     if (filteredLogs.length === 0) {
@@ -152,7 +152,7 @@ export default function AuditoriaPage() {
         format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss"),
         `"${ACTIONS_LABELS[log.action] || log.action}"`,
         `"${log.profiles?.full_name || "—"}"`,
-        `"${targetProfiles[log.record_id] || log.record_id || "—"}"`,
+        `"${targetNames[log.record_id] || log.record_id || "—"}"`,
         `"${JSON.stringify(log.payload || {}).replace(/"/g, '""')}"`,
       ].join(",")),
     ].join("\n");
