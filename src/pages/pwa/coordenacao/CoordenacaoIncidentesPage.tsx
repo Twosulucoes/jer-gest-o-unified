@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useEventContext } from "@/contexts/EventContext";
-import { AlertTriangle, ClipboardList } from "lucide-react";
+import { AlertTriangle, ClipboardList, Filter, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
