@@ -37,6 +37,7 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
   });
 
   const setSelectedSportId = (id: string | null) => {
+    if (id !== selectedSportId) clearPersistedFilters();
     setSelectedSportIdState(id);
     if (id) {
       localStorage.setItem(SPORT_STORAGE_KEY, id);
@@ -46,6 +47,7 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
   };
 
   const setSelectedSportEventId = (id: string | null) => {
+    if (id !== selectedSportEventId) clearPersistedFilters();
     setSelectedSportEventIdState(id);
     if (id) {
       localStorage.setItem(SPORT_EVENT_STORAGE_KEY, id);
@@ -55,6 +57,7 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
   };
 
   const setSelectedStageId = (id: string | null) => {
+    if (id !== selectedStageId) clearPersistedFilters();
     setSelectedStageIdState(id);
     if (id) {
       localStorage.setItem(STAGE_STORAGE_KEY, id);
@@ -64,6 +67,7 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
   };
 
   const setSelectedPhaseId = (id: string | null) => {
+    if (id !== selectedPhaseId) clearPersistedFilters();
     setSelectedPhaseIdState(id);
     if (id) {
       localStorage.setItem(PHASE_STORAGE_KEY, id);
