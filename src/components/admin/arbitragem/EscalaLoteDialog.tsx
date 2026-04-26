@@ -14,7 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Search, Trash2, UserPlus } from "lucide-react";
+import { Loader2, Search, Trash2, UserPlus, Users } from "lucide-react";
 import { format, parse } from "date-fns";
 
 const ROLE_OPTIONS = [
@@ -51,6 +51,8 @@ export function EscalaLoteDialog({ open, onOpenChange, matches, onSuccess }: Pro
   const [pendingRole, setPendingRole] = useState<string>("arbitro_principal");
   const [picks, setPicks] = useState<OfficialPick[]>([]);
 
+  const [showSuggested, setShowSuggested] = useState(false);
+
   const { data: searchResults = [], isFetching: isSearching } = useQuery({
     queryKey: ["escala-lote-search", search],
     enabled: search.trim().length >= 2,
@@ -62,6 +64,27 @@ export function EscalaLoteDialog({ open, onOpenChange, matches, onSuccess }: Pro
         .limit(15);
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+  // Sugestões: usuários cadastrados com perfis de arbitragem
+  const { data: suggestedOfficials = [], isFetching: isLoadingSuggested } = useQuery({
+    queryKey: ["escala-lote-suggested", activeEventId],
+    enabled: open && showSuggested,
+    queryFn: async () => {
+      const { data: roles, error: rolesErr } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["arbitragem", "mesario", "coordenador_modalidade"] as any);
+      if (rolesErr) throw rolesErr;
+      const ids = Array.from(new Set((roles ?? []).map((r: any) => r.user_id)));
+      if (ids.length === 0) return [];
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", ids)
+        .order("full_name");
+      return (profs ?? []) as Array<{ id: string; full_name: string | null }>;
     },
   });
 
@@ -358,6 +381,48 @@ export function EscalaLoteDialog({ open, onOpenChange, matches, onSuccess }: Pro
                 />
               </div>
             </div>
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => setShowSuggested((v) => !v)}
+              >
+                <Users className="mr-1 h-3.5 w-3.5" />
+                {showSuggested ? "Ocultar sugestões" : "Sugerir do cadastro (árbitros, mesários)"}
+              </Button>
+              {showSuggested && (
+                <span className="text-[11px] text-muted-foreground">
+                  {isLoadingSuggested ? "Carregando..." : `${suggestedOfficials.length} disponíveis`}
+                </span>
+              )}
+            </div>
+            {showSuggested && (
+              <div className="border rounded-md max-h-[180px] overflow-y-auto divide-y bg-muted/20">
+                {isLoadingSuggested ? (
+                  <div className="p-3 text-sm text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Carregando sugestões...
+                  </div>
+                ) : suggestedOfficials.length === 0 ? (
+                  <div className="p-3 text-sm text-muted-foreground">
+                    Nenhum usuário com perfil de arbitragem cadastrado.
+                  </div>
+                ) : (
+                  suggestedOfficials.map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => addPick(u.id, u.full_name ?? "Sem nome")}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors flex items-center justify-between"
+                    >
+                      <span>{u.full_name ?? "Sem nome"}</span>
+                      <Badge variant="outline" className="text-[10px]">cadastro</Badge>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
             {search.trim().length >= 2 && (
               <div className="border rounded-md max-h-[180px] overflow-y-auto divide-y">
                 {isSearching ? (
