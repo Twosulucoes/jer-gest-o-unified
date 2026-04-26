@@ -210,6 +210,20 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Estado canônico da prova (single source of truth) */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 text-sm">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <span className="font-medium">Estado da prova:</span>
+            <Badge variant="secondary">{PROVA_STATUS_LABEL[provaStatus]}</Badge>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Botões de Validar/Publicar ficam habilitados conforme as transições permitidas pelo estado.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Visual step guide */}
       <Card className="bg-muted/30">
         <CardContent className="pt-4">
@@ -257,7 +271,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
           </p>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button size="sm" disabled={!counts?.launched || validateResults.isPending}>
+              <Button size="sm" disabled={!canValidate || !counts?.launched || validateResults.isPending} title={!canValidate ? "Aguardando todas as partidas terminarem" : undefined}>
                 {validateResults.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
                 Validar {counts?.launched || 0} resultado(s)
               </Button>
@@ -347,7 +361,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" disabled={!counts?.validated || !selectedBulletinId || publishResults.isPending}>
+                <Button size="sm" disabled={!canPublish || !counts?.validated || !selectedBulletinId || publishResults.isPending} title={!canPublish ? "A prova precisa estar com todos os resultados validados e ter um boletim publicado disponível" : undefined}>
                   {publishResults.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
                   Publicar {counts?.validated || 0}
                 </Button>
