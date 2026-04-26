@@ -529,11 +529,12 @@ const App = () => (
             <Route path="/a/:token" element={<AtletaPublicProfilePage />} />
             {/* Evento Rules Center routes removed — consolidated into /admin/regras-evento */}
             <Route path="*" element={<NotFound />} />
-            </Routes>
+                </Routes>
               </CompetitionProvider>
             </StageProvider>
           </EventProvider>
-        </AuthProvider>
+        </VersionValidator>
+      </AuthProvider>
       </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
