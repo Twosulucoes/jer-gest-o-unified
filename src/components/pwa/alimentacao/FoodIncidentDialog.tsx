@@ -131,7 +131,7 @@ export function FoodIncidentDialog({
       const { error } = await supabase.from("operational_incidents").insert({
         event_id: eventId,
         event_stage_id: eventStageId,
-        module: "alimentacao",
+        module: "alimentacao" as IncidentModule,
         reference_id: chosenWindow?.id ?? null,
         reference_label: referenceLabel,
         reported_by_user_id: session.user.id,
