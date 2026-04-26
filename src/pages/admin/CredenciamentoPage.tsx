@@ -1029,17 +1029,27 @@ export default function CredenciamentoPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-          <XCircle className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhum participante encontrado</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {hasActiveFilters
-              ? "Nenhum resultado para os filtros aplicados. Tente ajustar os filtros."
-              : "Nenhum participante importado para este evento."}
-          </p>
-          {hasActiveFilters && (
-            <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }}>
-              Limpar filtros
-            </Button>
+          {isCredsLoading && searchTerm ? (
+            <>
+              <Loader2 className="h-10 w-10 text-primary mb-3 animate-spin" />
+              <p className="text-foreground font-medium">Buscando por código da credencial...</p>
+              <p className="text-sm text-muted-foreground mt-1">Isso pode levar alguns segundos enquanto carregamos os dados da etapa.</p>
+            </>
+          ) : (
+            <>
+              <XCircle className="h-10 w-10 text-muted-foreground mb-3" />
+              <p className="text-muted-foreground font-medium">Nenhum participante encontrado</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {hasActiveFilters
+                  ? "Nenhum resultado para os filtros aplicados. Tente ajustar os filtros."
+                  : "Nenhum participante importado para este evento."}
+              </p>
+              {hasActiveFilters && (
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }}>
+                  Limpar filtros
+                </Button>
+              )}
+            </>
           )}
         </div>
       ) : (
