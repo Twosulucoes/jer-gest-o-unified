@@ -125,9 +125,11 @@ export default function ModuleSelectorPage() {
       setUserRoles(roles);
       setUserName(profileRes.data?.full_name || session.user.email || "");
 
-      // If single role, redirect directly
-      const available = MODULE_OPTIONS.filter(m => m.roles.some(r => roles.includes(r)));
-      if (available.length <= 1) {
+      // If super_admin or single role, redirect or allow selection
+      const isSuperAdmin = roles.includes("super_admin");
+      const available = isSuperAdmin ? MODULE_OPTIONS : MODULE_OPTIONS.filter(m => m.roles.some(r => roles.includes(r)));
+      
+      if (!isSuperAdmin && available.length <= 1) {
         const target = available.length === 1 ? available[0].path : "/pwa";
         navigate(target, { replace: true });
         return;
@@ -142,7 +144,8 @@ export default function ModuleSelectorPage() {
     navigate("/login", { replace: true });
   };
 
-  const availableModules = MODULE_OPTIONS.filter(m => m.roles.some(r => userRoles.includes(r)));
+  const isSuperAdmin = userRoles.includes("super_admin");
+  const availableModules = isSuperAdmin ? MODULE_OPTIONS : MODULE_OPTIONS.filter(m => m.roles.some(r => userRoles.includes(r)));
   const filteredModules = availableModules.filter(m => 
     m.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
     m.description.toLowerCase().includes(searchTerm.toLowerCase())
