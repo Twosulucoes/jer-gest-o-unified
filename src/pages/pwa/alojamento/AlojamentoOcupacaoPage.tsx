@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { getSelectedFacility } from "@/hooks/useAlojamento";
 import { useEventContext } from "@/contexts/EventContext";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import {
   PwaSectionLabel,
