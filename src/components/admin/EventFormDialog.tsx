@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Form,
   FormField,
@@ -36,6 +37,8 @@ const eventSchema = z.object({
   status: z.string().min(1, "Selecione um status"),
   start_date: z.string().optional().or(z.literal("")),
   end_date: z.string().optional().or(z.literal("")),
+  is_public: z.boolean().default(false),
+  public_agenda_published: z.boolean().default(false),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -73,6 +76,8 @@ export default function EventFormDialog({
       status: "draft",
       start_date: "",
       end_date: "",
+      is_public: false,
+      public_agenda_published: false,
     },
   });
 
@@ -85,6 +90,8 @@ export default function EventFormDialog({
         status: event.status,
         start_date: event.start_date ?? "",
         end_date: event.end_date ?? "",
+        is_public: event.is_public ?? false,
+        public_agenda_published: event.public_agenda_published ?? false,
       });
     } else {
       form.reset({
@@ -94,6 +101,8 @@ export default function EventFormDialog({
         status: "draft",
         start_date: "",
         end_date: "",
+        is_public: false,
+        public_agenda_published: false,
       });
     }
   }, [event, form]);
@@ -223,6 +232,50 @@ export default function EventFormDialog({
                       <Input type="date" {...field} />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+              <FormField
+                control={form.control}
+                name="is_public"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Público</FormLabel>
+                      <div className="text-[10px] text-muted-foreground">
+                        Visível no portal
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="public_agenda_published"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Agenda</FormLabel>
+                      <div className="text-[10px] text-muted-foreground">
+                        Publicar agenda
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />

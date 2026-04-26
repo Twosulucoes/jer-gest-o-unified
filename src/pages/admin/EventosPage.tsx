@@ -56,6 +56,8 @@ export default function EventosPage() {
       status: string;
       start_date?: string;
       end_date?: string;
+      is_public: boolean;
+      public_agenda_published: boolean;
     }) => {
       const { error } = await supabase.from("events").insert({
         name: values.name,
@@ -64,6 +66,8 @@ export default function EventosPage() {
         status: values.status,
         start_date: values.start_date || null,
         end_date: values.end_date || null,
+        is_public: values.is_public,
+        public_agenda_published: values.public_agenda_published,
       });
       if (error) throw error;
     },
@@ -93,6 +97,8 @@ export default function EventosPage() {
       status: string;
       start_date?: string;
       end_date?: string;
+      is_public: boolean;
+      public_agenda_published: boolean;
     }) => {
       const { error } = await supabase
         .from("events")
@@ -103,6 +109,8 @@ export default function EventosPage() {
           status: values.status,
           start_date: values.start_date || null,
           end_date: values.end_date || null,
+          is_public: values.is_public,
+          public_agenda_published: values.public_agenda_published,
         })
         .eq("id", id);
       if (error) throw error;
@@ -129,6 +137,8 @@ export default function EventosPage() {
     status: string;
     start_date?: string;
     end_date?: string;
+    is_public: boolean;
+    public_agenda_published: boolean;
   }) => {
     if (editingEvent) {
       updateMutation.mutate({ id: editingEvent.id, ...values });
@@ -192,6 +202,7 @@ export default function EventosPage() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Ano</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Visibilidade</TableHead>
                 <TableHead>Início</TableHead>
                 <TableHead>Término</TableHead>
                 {canWrite && <TableHead className="w-[60px]" />}
@@ -209,6 +220,13 @@ export default function EventosPage() {
                     <TableCell>{event.year}</TableCell>
                     <TableCell>
                       <Badge variant={status.variant}>{status.label}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {event.is_public && <Badge className="bg-primary hover:bg-primary/90">Público</Badge>}
+                        {event.public_agenda_published && <Badge variant="outline" className="text-primary border-primary">Agenda</Badge>}
+                        {!event.is_public && !event.public_agenda_published && <span className="text-muted-foreground text-xs">Privado</span>}
+                      </div>
                     </TableCell>
                     <TableCell>{formatDate(event.start_date)}</TableCell>
                     <TableCell>{formatDate(event.end_date)}</TableCell>
