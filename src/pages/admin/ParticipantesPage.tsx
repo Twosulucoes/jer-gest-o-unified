@@ -906,7 +906,7 @@ export default function ParticipantesPage() {
                       <TableCell className="text-muted-foreground">{institutionName}</TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          <Badge variant="outline" className="w-fit">{CATEGORY_LABELS[p.category] ?? p.category}</Badge>
+                          {/* <Badge variant="outline" className="w-fit">{CATEGORY_LABELS[p.category] ?? p.category}</Badge> */}
                           <Badge variant="secondary" className="w-fit text-[10px]">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
                         </div>
                       </TableCell>
