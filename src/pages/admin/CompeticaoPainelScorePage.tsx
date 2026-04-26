@@ -34,7 +34,8 @@ import {
   Calendar,
   Clock,
   MapPin,
-  Info
+  Info,
+  Trophy
 } from "lucide-react";
 import { 
   useScoreMatches, 
