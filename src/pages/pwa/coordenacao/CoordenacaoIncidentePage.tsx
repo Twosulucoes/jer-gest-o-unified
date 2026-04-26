@@ -104,11 +104,12 @@ export default function CoordenacaoIncidentePage() {
         {row && (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">{MODULE_LABELS[row.module] ?? row.module}</Badge>
-              <Badge variant={row.incident_status === "pending" ? "destructive" : "secondary"}>
-                {STATUS_LABELS[row.incident_status] ?? row.incident_status}
+              <Badge variant="outline">{INCIDENT_MODULES[row.module]?.label ?? row.module}</Badge>
+              <Badge variant={INCIDENT_STATUSES[row.incident_status]?.variant ?? "outline"}>
+                {INCIDENT_STATUSES[row.incident_status]?.label ?? row.incident_status}
               </Badge>
             </div>
+
 
             <Card className="border-border/80 bg-card/95 shadow-app-sm">
               <CardContent className="space-y-4 p-4">
