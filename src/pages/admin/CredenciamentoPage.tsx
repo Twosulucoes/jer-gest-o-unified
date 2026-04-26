@@ -158,7 +158,7 @@ export default function CredenciamentoPage() {
   const [filterType, setFilterType] = useState(searchParams.get("type") || "all");
   const [filterState, setFilterState] = useState(searchParams.get("status") || "all");
   const [filterInstitution, setFilterInstitution] = useState(searchParams.get("inst") || "all");
-  const [sortBy, setSortBy] = useState(searchParams.get("sort") || "priority");
+  const [sortBy, setSortBy] = useState(searchParams.get("sort") || "workflow");
   const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
   const [previewParticipantId, setPreviewParticipantId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
@@ -194,7 +194,7 @@ export default function CredenciamentoPage() {
     if (filterType !== "all") next.set("type", filterType); else next.delete("type");
     if (filterState !== "all") next.set("status", filterState); else next.delete("status");
     if (filterInstitution !== "all") next.set("inst", filterInstitution); else next.delete("inst");
-    if (sortBy !== "priority") next.set("sort", sortBy); else next.delete("sort");
+    if (sortBy !== "workflow") next.set("sort", sortBy); else next.delete("sort");
     if (currentPage > 1) next.set("page", String(currentPage)); else next.delete("page");
     
     if (next.toString() !== searchParams.toString()) {
@@ -202,9 +202,19 @@ export default function CredenciamentoPage() {
     }
   }, [searchTerm, filterType, filterState, filterInstitution, sortBy, currentPage, searchParams, setSearchParams]);
 
+  // Sync state with URL when it changes (back/forward buttons)
+  useEffect(() => {
+    setSearchTerm(searchParams.get("search") || "");
+    setFilterType(searchParams.get("type") || "all");
+    setFilterState(searchParams.get("status") || "all");
+    setFilterInstitution(searchParams.get("inst") || "all");
+    setSortBy(searchParams.get("sort") || "workflow");
+    setCurrentPage(Number(searchParams.get("page")) || 1);
+  }, [searchParams]);
+
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution, sortBy]);
-  useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSortBy("priority"); }, [selectedEventId]);
+  useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSortBy("workflow"); }, [selectedEventId]);
 
 
   // --- Blocked participants ---
@@ -1004,7 +1014,7 @@ export default function CredenciamentoPage() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSearchTerm(""); setSortBy("priority"); }}
+                  onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSearchTerm(""); setSortBy("workflow"); }}
                   className="h-11 w-11 text-muted-foreground hover:text-foreground"
                   title="Limpar filtros"
                 >
@@ -1066,7 +1076,7 @@ export default function CredenciamentoPage() {
                   : "Nenhum participante importado para este evento."}
               </p>
               {hasActiveFilters && (
-                <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSortBy("priority"); }}>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSortBy("workflow"); }}>
                   Limpar filtros
                 </Button>
               )}
