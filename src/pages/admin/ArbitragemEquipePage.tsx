@@ -367,18 +367,15 @@ export default function ArbitragemEquipePage() {
     return parts.join("_");
   }, [stageFilter, stages]);
 
-  const handleExportCsv = () => {
+  const handleExport = async (fmt: "csv" | "pdf", selected: EscalaColumnKey[]) => {
     if (exportRows.length === 0) {
       toast.info("Nenhuma escala para exportar com os filtros atuais.");
       return;
     }
-    downloadCsv(exportRows, `${exportFilenameBase}.csv`);
-    toast.success(`CSV exportado (${exportRows.length} linha(s)).`);
-  };
-
-  const handleExportPdf = async () => {
-    if (exportRows.length === 0) {
-      toast.info("Nenhuma escala para exportar com os filtros atuais.");
+    if (fmt === "csv") {
+      downloadCsv(exportRows, `${exportFilenameBase}.csv`, selected);
+      toast.success(`CSV exportado (${exportRows.length} linha(s)).`);
+      setExportOpen(false);
       return;
     }
     try {
@@ -389,8 +386,10 @@ export default function ArbitragemEquipePage() {
         stageName,
         activeEventId,
         userId: user?.id ?? null,
+        selectedColumns: selected,
       });
       toast.success(`PDF gerado (${exportRows.length} linha(s)).`);
+      setExportOpen(false);
     } catch (e) {
       toast.error("Falha ao gerar PDF: " + (e as Error).message);
     }
