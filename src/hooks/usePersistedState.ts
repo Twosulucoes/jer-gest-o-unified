@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 
+const PREFIX = "jer_persisted_";
+
 /**
  * A hook that works like useState but persists the value in localStorage.
  * Useful for preserving filters and UI state across reloads.
  */
 export function usePersistedState<T>(key: string, defaultValue: T) {
-  const storageKey = `jer_persisted_${key}`;
+  const storageKey = `${PREFIX}${key}`;
   
   const [state, setState] = useState<T>(() => {
     try {
@@ -29,3 +31,21 @@ export function usePersistedState<T>(key: string, defaultValue: T) {
 
   return [state, setState] as const;
 }
+
+/**
+ * Clears all persisted filters/UI state managed by usePersistedState.
+ * Should be called when switching event/stage context or on logout.
+ */
+export function clearPersistedFilters() {
+  try {
+    const keys = Object.keys(localStorage);
+    keys.forEach((key) => {
+      if (key.startsWith(PREFIX)) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (error) {
+    console.warn("Error clearing persisted filters:", error);
+  }
+}
+
