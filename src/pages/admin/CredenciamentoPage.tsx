@@ -194,7 +194,7 @@ export default function CredenciamentoPage() {
     if (filterType !== "all") next.set("type", filterType); else next.delete("type");
     if (filterState !== "all") next.set("status", filterState); else next.delete("status");
     if (filterInstitution !== "all") next.set("inst", filterInstitution); else next.delete("inst");
-    if (sortBy !== "priority") next.set("sort", sortBy); else next.delete("sort");
+    if (sortBy !== "workflow") next.set("sort", sortBy); else next.delete("sort");
     if (currentPage > 1) next.set("page", String(currentPage)); else next.delete("page");
     
     if (next.toString() !== searchParams.toString()) {
@@ -202,9 +202,19 @@ export default function CredenciamentoPage() {
     }
   }, [searchTerm, filterType, filterState, filterInstitution, sortBy, currentPage, searchParams, setSearchParams]);
 
+  // Sync state with URL when it changes (back/forward buttons)
+  useEffect(() => {
+    setSearchTerm(searchParams.get("search") || "");
+    setFilterType(searchParams.get("type") || "all");
+    setFilterState(searchParams.get("status") || "all");
+    setFilterInstitution(searchParams.get("inst") || "all");
+    setSortBy(searchParams.get("sort") || "workflow");
+    setCurrentPage(Number(searchParams.get("page")) || 1);
+  }, [searchParams]);
+
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution, sortBy]);
-  useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSortBy("priority"); }, [selectedEventId]);
+  useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSortBy("workflow"); }, [selectedEventId]);
 
 
   // --- Blocked participants ---
