@@ -130,6 +130,7 @@ import PesquisaEventosPage from "./pages/admin/PesquisaEventosPage";
 import PesquisaFormEditorPage from "./pages/admin/PesquisaFormEditorPage";
 import PesquisaPesquisadoresPage from "./pages/admin/PesquisaPesquisadoresPage";
 import DatabaseMonitoringPage from "./pages/admin/DatabaseMonitoringPage";
+import AuditoriaPage from "./pages/admin/AuditoriaPage";
 
 // PWA pages
 import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
