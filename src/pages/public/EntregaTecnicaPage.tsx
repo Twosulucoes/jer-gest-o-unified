@@ -1125,7 +1125,7 @@ function MockPortal() {
               <span className="col-span-5 font-medium text-slate-700">{d.dele}</span>
               <span className="col-span-2 text-center font-bold" style={{ color: brand.colors.warning }}>{d.o}</span>
               <span className="col-span-2 text-center font-bold text-slate-600">{d.p}</span>
-              <span className="col-span-2 text-center font-bold" style={{ color: '#CD7F32' }}>{d.b}</span>
+              <span className="col-span-2 text-center font-bold" style={{ color: '#8B4513' }}>{d.b}</span>
             </div>
           ))}
         </div>
