@@ -31,7 +31,7 @@ export type BulletinStatusValue = (typeof BULLETIN_STATUS)[keyof typeof BULLETIN
 export const RESULT_STATUS_LABEL: Record<string, string> = {
   [RESULT_STATUS.LAUNCHED]: "Lançado",
   [RESULT_STATUS.VALIDATED]: "Validado",
-  [RESULT_STATUS.PUBLISHED]: "Publicado Oficialmente",
+  [RESULT_STATUS.PUBLISHED]: "Publicado",
 };
 
 export const BULLETIN_STATUS_LABEL: Record<string, string> = {
