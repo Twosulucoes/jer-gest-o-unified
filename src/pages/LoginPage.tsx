@@ -172,9 +172,6 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
-                JER <span className="text-primary">Gestão</span>
-              </h1>
               <p className="text-sm font-medium text-slate-400 max-w-[280px] mx-auto leading-relaxed">
                 Entre com as credenciais da sua instituição para acessar a plataforma.
               </p>
@@ -229,9 +226,23 @@ export default function LoginPage() {
                         className="absolute right-0 top-0 flex h-14 w-14 items-center justify-center text-slate-400 hover:text-white transition-colors"
                         tabIndex={-1}
                       >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
-                    </div>
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                  <ul className="ml-1 mt-2 space-y-1 text-[11px] text-slate-500">
+                    <li className="flex items-center gap-1.5">
+                      <span className="h-1 w-1 rounded-full bg-slate-500" />
+                      Mínimo de 8 caracteres
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="h-1 w-1 rounded-full bg-slate-500" />
+                      Uma letra maiúscula e uma minúscula
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="h-1 w-1 rounded-full bg-slate-500" />
+                      Um número e um caractere especial
+                    </li>
+                  </ul>
                   </div>
 
                   {error && (
