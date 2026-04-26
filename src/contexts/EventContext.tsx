@@ -83,15 +83,13 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
 
   const setActiveEventId = useCallback(
     (id: string) => {
-      // If we are changing to a different event, clear previous filters
+      // If we are changing to a different event, trigger standard context change flow
       if (id !== activeEventId) {
-        clearPersistedFilters();
+        handleContextChange(queryClient);
       }
       
       setActiveEventIdState(id);
       try { localStorage.setItem(STORAGE_KEY, id); } catch {}
-      // Invalidate all event-scoped queries
-      queryClient.invalidateQueries();
     },
     [queryClient, activeEventId],
   );
