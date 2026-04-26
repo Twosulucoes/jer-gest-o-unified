@@ -124,9 +124,12 @@ export default function PwaLandingPage() {
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-primary-foreground/85 hover:text-primary-foreground hover:bg-primary-foreground/15">
-            <LogOut className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <PwaRefreshButton />
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-primary-foreground/85 hover:text-primary-foreground hover:bg-primary-foreground/15">
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
 
