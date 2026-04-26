@@ -340,18 +340,14 @@ export function useDashboardData(eventId?: string | null) {
         }, 0),
       },
       // 4: árbitros designados no evento ativo
+      // NOTA: a tabela `referee_event_assignments` ainda não existe no schema
+      // (gera 404 em PostgREST). Mantemos o slot do KPI retornando 0 até que
+      // a tabela seja criada e tipada em src/integrations/supabase/types.ts.
       {
         queryKey: ["dash3", "referees_assigned", eventId],
         enabled: enabled && !!eventId,
         staleTime: STALE,
-        queryFn: () => safe(async () => {
-          if (!eventId) return 0;
-          const { data } = await supabase.from("referee_event_assignments" as any)
-            .select("person_id")
-            .eq("event_id", eventId);
-          const set = new Set((data ?? []).map((r: any) => r.person_id));
-          return set.size;
-        }, 0),
+        queryFn: () => safe(async () => 0, 0),
       },
     ],
   });
