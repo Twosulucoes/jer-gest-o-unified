@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { rawSupabase as supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 
 export type AppRole = Database["public"]["Enums"]["app_role"];
