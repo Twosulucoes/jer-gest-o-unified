@@ -19,13 +19,15 @@ import {
   Link,
   QrCode,
   TrendingUp,
-  Share2
+  Share2,
+  Copy
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 interface VersionInfo {
   appVersion: string;
