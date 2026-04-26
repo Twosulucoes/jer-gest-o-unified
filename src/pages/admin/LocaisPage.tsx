@@ -529,6 +529,16 @@ export default function LocaisPage() {
         onSubmit={handleSubmit}
         isPending={createMutation.isPending || updateMutation.isPending}
       />
+
+      <ArchiveVenueDialog
+        open={!!archiveTarget}
+        onOpenChange={(o) => { if (!o) setArchiveTarget(null); }}
+        venue={archiveTarget}
+        isPending={archiveMutation.isPending}
+        onConfirm={({ force, reason }) =>
+          archiveTarget && archiveMutation.mutate({ venueId: archiveTarget.id, force, reason })
+        }
+      />
     </div>
   );
 }
