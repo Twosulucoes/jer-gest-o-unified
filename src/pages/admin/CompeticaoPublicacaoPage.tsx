@@ -311,9 +311,9 @@ export default function CompeticaoPublicacaoPage() {
                     </TableCell>
                     <TableCell>
                       {res?.result_status === "publicado" ? (
-                        <Badge className="bg-emerald-600 border-none text-white">Publicado</Badge>
+                        <Badge className="bg-emerald-600 hover:bg-emerald-700 border-none text-white">Publicado</Badge>
                       ) : (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100 animate-pulse">Aguardando</Badge>
+                        <Badge className="bg-blue-600 hover:bg-blue-700 border-none text-white animate-pulse">Validado</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-xs">
