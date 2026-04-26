@@ -18,6 +18,8 @@ import {
   isPwaRefreshException,
   findOrphanWhitelistEntries,
   WHITELIST_ROUTES,
+  normalizePath,
+  normalizeKey,
 } from "../../scripts/pwa-refresh-exceptions";
 
 const REPO = resolve(__dirname, "../..");
