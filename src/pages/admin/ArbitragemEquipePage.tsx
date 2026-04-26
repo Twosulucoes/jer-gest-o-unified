@@ -86,6 +86,7 @@ export default function ArbitragemEquipePage() {
   }, [activeTab]);
   const [selectedMatchIds, setSelectedMatchIds] = useState<Set<string>>(new Set());
   const [escalaOpen, setEscalaOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   // Etapas do evento (para filtro)
   const { data: stages = [] } = useQuery({
