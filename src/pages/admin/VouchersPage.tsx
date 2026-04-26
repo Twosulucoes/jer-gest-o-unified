@@ -462,6 +462,7 @@ export default function VouchersPage() {
 
       {/* Issue Dialog */}
       <IssueVoucherDialog open={issueOpen} onOpenChange={setIssueOpen} eventId={eventId} onIssued={(v) => setPrintVoucher(v)} />
+      <BulkIssueByDelegationDialog open={bulkOpen} onOpenChange={setBulkOpen} eventId={eventId} />
 
       {/* Print/QR Dialog */}
       <PrintVoucherDialog
