@@ -41,7 +41,7 @@ export default function CentralArbitragemTab({ eventId, sportEventId, stageId }:
         .order("match_date", { ascending: true, nullsFirst: false })
         .order("start_time", { ascending: true, nullsFirst: false })
         .order("match_number", { ascending: true });
-      if (stageId) q = q.eq("event_stage_id", stageId);
+      if (stageId) q = (q as any).eq("event_stage_id", stageId);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
@@ -57,7 +57,8 @@ export default function CentralArbitragemTab({ eventId, sportEventId, stageId }:
   const toggleMatch = (id: string, checked: boolean) => {
     setSelectedMatchIds((prev) => {
       const next = new Set(prev);
-      checked ? next.add(id) : next.delete(id);
+      if (checked) next.add(id);
+      else next.delete(id);
       return next;
     });
   };
