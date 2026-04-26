@@ -104,59 +104,20 @@ export default function EntregaTecnicaPage() {
     setCheckedItems(prev => ({ ...prev, [item]: !prev[item] }));
   };
 
+  const copyToClipboard = (text: string) => {
+    if (text === "#") return;
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copiado!",
+      description: "Link copiado para a área de transferência.",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 pb-20">
       
       {/* ── Capa / Hero ────────────────────────────────────────────────────────── */}
-      <header 
-        className="relative overflow-hidden text-white pt-20 pb-24 px-6 text-center"
-        style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, ${BLUE} 100%)` }}
-      >
-        <div className="max-w-4xl mx-auto relative z-10">
-          <Badge className="mb-4 bg-lime-400 text-slate-900 font-bold hover:bg-lime-500 transition-colors uppercase tracking-wider">
-            Entrega Técnica — 2026
-          </Badge>
-          <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
-            Sistema JER 2026
-          </h1>
-          <p className="text-xl opacity-90 max-w-2xl mx-auto leading-relaxed">
-            Plataforma integrada para gestão total dos 53º Jogos Escolares de Roraima.
-            Ambientes, módulos e processos consolidados.
-          </p>
-        </div>
-        
-        {/* Decorative element */}
-        <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-        <div className="absolute -top-12 -left-12 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl"></div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-6 -mt-10">
-        
-        {/* ── Visão Geral ─────────────────────────────────────────────────────── */}
-        <section className="mb-12">
-          <Card className="border-none shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <ShieldCheck className="text-blue-600" />
-                Visão Geral do Sistema
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-slate-600 leading-relaxed text-lg">
-              <p>
-                O Sistema JER 2026 foi desenvolvido para modernizar a gestão esportiva de Roraima, 
-                eliminando o uso extensivo de papel e centralizando informações de inscrições, 
-                logística e resultados em tempo real. Com foco em mobilidade, o sistema atende 
-                desde a coordenação central até os técnicos em quadra.
-              </p>
-            </CardContent>
-          </Card>
-        </section>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          
-          {/* ── Coluna Esquerda ────────────────────────────────────────────────── */}
-          <div className="md:col-span-2 space-y-12">
-            
+...
             {/* Ambientes */}
             <section>
               <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
@@ -169,7 +130,7 @@ export default function EntregaTecnicaPage() {
                       <div className={`p-2 rounded-lg bg-slate-100 ${env.color}`}>
                         <env.icon size={24} />
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className="font-semibold text-sm">{env.name}</p>
                           <Badge variant="outline" className="text-[10px] uppercase font-bold px-1.5 h-4">
@@ -178,7 +139,29 @@ export default function EntregaTecnicaPage() {
                         </div>
                         <p className="text-xs text-slate-500 truncate">{env.url}</p>
                       </div>
-                      <ExternalLink size={14} className="text-slate-300" />
+                      <div className="flex gap-1">
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-8 w-8 text-slate-400 hover:text-blue-600 shrink-0"
+                          onClick={() => copyToClipboard(env.url)}
+                          disabled={env.url === "#"}
+                        >
+                          <Copy size={14} />
+                        </Button>
+                        {env.url !== "#" && (
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-8 w-8 text-slate-400 hover:text-blue-600 shrink-0"
+                            asChild
+                          >
+                            <a href={env.url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink size={14} />
+                            </a>
+                          </Button>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
