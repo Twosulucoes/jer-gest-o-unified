@@ -60,8 +60,18 @@ export default function AlojamentoHomePage() {
         query = query.eq("event_stage_id", stageId);
       }
 
-      const { data, error } = await query.order("name");
+      const { data, error, status } = await query.order("name");
       
+      dbTelemetry.log({
+        moduleName: 'alojamento',
+        tableName: 'lodging_locations',
+        operation: 'SELECT',
+        eventId: eventId,
+        isSuccess: !error,
+        errorCode: error?.code,
+        rowsAffected: data?.length || 0
+      });
+
       if (!error) {
         const list = (data || []) as Facility[];
         setFacilities(list);
@@ -71,6 +81,7 @@ export default function AlojamentoHomePage() {
         }
       }
       setLoading(false);
+
     })();
   }, [eventId, stageId]);
 
