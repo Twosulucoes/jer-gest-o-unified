@@ -173,6 +173,7 @@ interface EntregaTecnicaData {
   } | undefined;
   techStack: { name: string; desc: string }[];
   checklistItems: { mod: string; desc: string }[];
+  modules: { title: string; desc: string }[];
 }
 
 const EntregaTecnicaDocument = ({ data }: { data: EntregaTecnicaData }) => (
