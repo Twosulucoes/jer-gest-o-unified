@@ -105,7 +105,7 @@ export default function CompeticaoPainelScorePage() {
 
   const getMatchStatus = (m: any) => {
     const hasResults = (m.match_results?.length || 0) > 0;
-    const allValidated = hasResults && m.match_results?.every((r: any) => r.result_status === "validado" || r.result_status === "publicado");
+    const allValidated = hasResults && m.match_results?.every((r: any) => r.result_status === "resultado_validado" || r.result_status === "publicado");
     const allPublished = hasResults && m.match_results?.every((r: any) => r.result_status === "publicado");
     const someLaunched = hasResults && m.match_results?.some((r: any) => r.result_status === "resultado_lancado");
 
