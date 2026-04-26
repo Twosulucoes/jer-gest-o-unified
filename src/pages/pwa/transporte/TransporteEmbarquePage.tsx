@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, ScanLine, Users, ShieldAlert, UserPlus } from "lucide-react";
+import { ArrowLeft, ScanLine, Users, ShieldAlert, UserPlus, CloudOff } from "lucide-react";
+import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
+import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
+
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { TripInfoCard } from "@/components/pwa/transporte/TripInfoCard";
