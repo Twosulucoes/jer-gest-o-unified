@@ -84,7 +84,7 @@ export default function CompeticaoLancamentoScorePage() {
   const canWrite = hasRole("admin") || hasRole("coordenacao_tecnica") || hasRole("mesario");
 
   // Fetch match details
-  const { data: match, isLoading: loadingMatch } = useQuery({
+  const { data: match, isLoading: loadingMatch, refetch: refetchMatch } = useQuery({
     queryKey: ["match-detail", matchId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -96,7 +96,8 @@ export default function CompeticaoLancamentoScorePage() {
           venue:venues(id, name),
           entries:competition_match_entries(
             id, side, team_id, participant_sport_event_id,
-            teams(id, name, delegations(id, institutions(id, name)))
+            teams(id, name, delegations(id, institutions(id, name))),
+            results:competition_match_results(*)
           )
         `)
         .eq("id", matchId)
