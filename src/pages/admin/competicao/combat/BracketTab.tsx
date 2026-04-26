@@ -150,6 +150,8 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
     }
   };
 
+  const isWeighingIncomplete = (weighingStats?.pending || 0) > 0;
+  
   if (loadingPhases) return <div className="p-8 flex justify-center"><RefreshCw className="animate-spin h-8 w-8 text-muted-foreground" /></div>;
 
   const firstKnockoutPhase = phases.find((p: any) => p.phase_type === "knockout");
