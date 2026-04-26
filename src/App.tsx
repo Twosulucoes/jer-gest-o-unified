@@ -61,6 +61,7 @@ import CompeticaoFasesPage from "./pages/admin/CompeticaoFasesPage";
 import CompeticaoPartidasAgendaPage from "./pages/admin/CompeticaoPartidasAgendaPage";
 import CompeticaoPartidaDetalhePage from "./pages/admin/CompeticaoPartidaDetalhePage";
 import CompeticaoLancamentoScorePage from "./pages/admin/CompeticaoLancamentoScorePage";
+import CompeticaoLancamentoSetsPage from "./pages/admin/CompeticaoLancamentoSetsPage";
 import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
 import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
 import CompeticaoEquipesPage from "./pages/admin/CompeticaoEquipesPage";
