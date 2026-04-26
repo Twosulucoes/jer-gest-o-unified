@@ -1,5 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { clearPersistedFilters } from "@/hooks/usePersistedState";
+import { logger } from "@/lib/logger";
 
 /**
  * Standardizes the "context change" flow.
@@ -48,7 +49,7 @@ const CONTEXT_QUERY_WHITELIST = [
 ];
 
 export const handleContextChange = (queryClient: QueryClient) => {
-  console.log("Context change detected. Clearing filters and invalidating whitelisted queries...");
+  logger.log("Context change detected. Clearing filters and invalidating whitelisted queries...");
   
   // 1. Clear all persisted UI filters/states
   clearPersistedFilters();

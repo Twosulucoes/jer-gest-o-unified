@@ -1,7 +1,34 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 
 const PREFIX = "jer_persisted_";
-const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+export const PERSISTENCE_TTLS = {
+  SENSITIVE: 15 * 60 * 1000,      // 15 minutes
+  DEFAULT: 24 * 60 * 60 * 1000,   // 24 hours
+  LONG: 7 * 24 * 60 * 60 * 1000,    // 7 days
+};
+
+/**
+ * Returns the TTL for a given key based on patterns or overrides.
+ */
+const getTTLForKey = (key: string, overrideTTL?: number): number => {
+  if (overrideTTL !== undefined) return overrideTTL;
+  
+  const lowerKey = key.toLowerCase();
+  
+  // Sensitive data should expire quickly
+  if (lowerKey.includes("sensitive") || lowerKey.includes("auth") || lowerKey.includes("private") || lowerKey.includes("password")) {
+    return PERSISTENCE_TTLS.SENSITIVE;
+  }
+  
+  // Filters and preferences often want to stay longer
+  if (lowerKey.includes("filter") || lowerKey.includes("search") || lowerKey.includes("pref") || lowerKey.includes("view")) {
+    return PERSISTENCE_TTLS.LONG;
+  }
+
+  return PERSISTENCE_TTLS.DEFAULT;
+};
 
 interface PersistedValue<T> {
   value: T;
@@ -13,8 +40,9 @@ interface PersistedValue<T> {
  * Useful for preserving filters and UI state across reloads.
  * Now includes a TTL (Time To Live) to automatically clear expired data.
  */
-export function usePersistedState<T>(key: string, defaultValue: T, ttl: number = DEFAULT_TTL) {
+export function usePersistedState<T>(key: string, defaultValue: T, ttl?: number) {
   const storageKey = `${PREFIX}${key}`;
+  const effectiveTTL = getTTLForKey(key, ttl);
   
   const [state, setState] = useState<T>(() => {
     try {
@@ -25,20 +53,22 @@ export function usePersistedState<T>(key: string, defaultValue: T, ttl: number =
         // Check if it's the new format with timestamp
         if (parsed && typeof parsed === "object" && "timestamp" in parsed && "value" in parsed) {
           const now = Date.now();
-          if (now - parsed.timestamp < ttl) {
+          if (now - parsed.timestamp < effectiveTTL) {
             return parsed.value;
           } else {
             // TTL expired
+            logger.info(`TTL expired for localStorage key "${storageKey}". Clearing.`);
             localStorage.removeItem(storageKey);
             return defaultValue;
           }
         }
+
         
         // Handle legacy format (just the value)
         return parsed as unknown as T;
       }
     } catch (error) {
-      console.warn(`Error reading localStorage key "${storageKey}":`, error);
+      logger.warn(`Error reading localStorage key "${storageKey}":`, error);
     }
     return defaultValue;
   });
@@ -51,7 +81,7 @@ export function usePersistedState<T>(key: string, defaultValue: T, ttl: number =
       };
       localStorage.setItem(storageKey, JSON.stringify(dataToSave));
     } catch (error) {
-      console.warn(`Error writing localStorage key "${storageKey}":`, error);
+      logger.warn(`Error writing localStorage key "${storageKey}":`, error);
     }
   }, [storageKey, state]);
 
@@ -71,6 +101,7 @@ export function clearPersistedFilters() {
       }
     });
   } catch (error) {
-    console.warn("Error clearing persisted filters:", error);
+    logger.warn("Error clearing persisted filters:", error);
   }
 }
+
