@@ -89,25 +89,34 @@ Coordenação prepara evento
 | KARATE_KUMITE | contém "karatê/karate" + "kumite" | combat |
 | Fallback | não encontrou match | score (genérico) |
 
-## 7. Competição e Resultado
+## 7. Competição (Operação por Família)
 
+### 7.1 Família "Score" (Novo Painel)
+```
+Coordenação opera modalidades "score" (Futsal, Futebol, etc)
+  → Painel da Competição (/admin/competicao/painel)
+  → Seleciona modalidade (Card Score) → Abre Painel Score
+  → Grade de confrontos: filtra por fase/grupo/status
+  → "Novo Confronto" ou "Editar":
+     - Seleciona Fase/Grupo
+     - Seleciona Escola A e B (lista filtrada por inscritos)
+     - Define Data/Hora/Local
+     - Define equipe de arbitragem (filtrada por modalidade)
+  → Salvar: Cria confronto + entries + assignments
+  → No dia: registra placar e eventos na página da partida
+  → Lança resultado (resultado_lancado)
+  → Coordenação valida (homologado) → Secretaria publica (publicado)
+```
+
+### 7.2 Outras Famílias (Central Legada)
 ```
 Coordenação monta chaves/fases por prova
   → Central da Competição (/admin/competicao/central)
   → Seleciona prova → sistema carrega regras (sport_event_rules)
-  → Wizard adapta labels conforme família/formato:
-     - score/sets → "Confrontos" / mostra Grupos
-     - time/mark → "Séries/Baterias" / oculta Grupos
-     - combat → "Lutas (Chave)" / oculta Grupos
-     - knockout → "Chaves" / oculta Grupos
+  → Wizard adapta labels conforme família/formato (Individual, Combat, Sets)
   → Cria partidas com entries (equipes ou individuais)
-  → No dia: registra lineups, eventos de jogo, placar
-  → Pós-jogo: lança resultado (resultado_lancado)
-  → Coordenação valida → validado
-  → Secretaria publica → publicado (visível ao público)
+  → Mesmos fluxos de resultado e publicação
 ```
-
-**Cenário real**: Na Central, ao selecionar "Futsal Sub-14 Masc", o sistema carrega as regras (W.O. 5×0, fase de grupos, pênaltis no mata-mata) e ajusta a interface automaticamente.
 
 ## 8. Consulta do Quadro de Medalhas e Classificação Geral
 
@@ -121,5 +130,3 @@ Coordenação publica resultados de partidas (result_status = 'publicado')
   → Banner amarelo aparece se houver SE com partidas concluídas mas sem publicação
   → Exporta PDF (selo OFICIAL/PARCIAL) ou XLSX
 ```
-
-**Cenário real**: Após a final do Futsal Sub-14, secretaria publica o resultado. O quadro recalcula automaticamente e a escola campeã ganha 10 pts em "Coletivas".
