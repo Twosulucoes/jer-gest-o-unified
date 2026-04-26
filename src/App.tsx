@@ -197,6 +197,7 @@ import PwaDebugPage from "./pages/pwa/PwaDebugPage";
 import NotFound from "./pages/NotFound";
 import PwaRouteGuard from "./components/pwa/PwaRouteGuard";
 import { PwaUpdateNotice } from "./components/pwa/PwaUpdateNotice";
+import { PwaInstallNotice } from "./components/pwa/PwaInstallNotice";
 import { AppStatePreserver } from "./components/pwa/AppStatePreserver";
 import { VersionValidator } from "./components/pwa/VersionValidator";
 
