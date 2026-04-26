@@ -97,6 +97,8 @@ export default function EventosPage() {
       status: string;
       start_date?: string;
       end_date?: string;
+      is_public: boolean;
+      public_agenda_published: boolean;
     }) => {
       const { error } = await supabase
         .from("events")
@@ -107,6 +109,8 @@ export default function EventosPage() {
           status: values.status,
           start_date: values.start_date || null,
           end_date: values.end_date || null,
+          is_public: values.is_public,
+          public_agenda_published: values.public_agenda_published,
         })
         .eq("id", id);
       if (error) throw error;
