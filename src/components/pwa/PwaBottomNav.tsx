@@ -1,4 +1,4 @@
-import { Home, Scan, Search, History, ClipboardList, Users, Calendar, Bus, Utensils, Building, Trophy, LayoutDashboard, PlusCircle } from "lucide-react";
+import { Home, Scan, Search, History, ClipboardList, Users, Calendar, Bus, Trophy, LayoutDashboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -74,6 +74,7 @@ export function PwaBottomNav() {
       };
     }
 
+    // Default or Landing Page
     return {
       items: [
         { label: "Módulos", icon: LayoutDashboard, path: "/pwa" },
@@ -84,11 +85,8 @@ export function PwaBottomNav() {
 
   const { items } = getModuleConfig();
 
-
-  // Don't show on specific pages if needed (like scanner full screen)
-  if (path.includes("/scan") && items.length > 1) {
-    // Optionally hide or show a simplified version
-  }
+  // Se o caminho for exatamente /pwa ou selecionar-modulo, podemos querer um comportamento diferente
+  // Mas vamos manter a consistência por enquanto.
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-background/90 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_10px_rgba(0,0,0,0.05)]">
@@ -100,8 +98,8 @@ export function PwaBottomNav() {
               key={item.path}
               to={item.path}
               className={cn(
-                "group flex flex-col items-center justify-center gap-1 rounded-lg px-3 py-1 transition-all active:scale-90",
-                isActive ? colorClass : "text-muted-foreground hover:text-foreground"
+                "group relative flex flex-col items-center justify-center gap-1 rounded-lg px-3 py-1 transition-all active:scale-95",
+                isActive ? "text-module" : "text-muted-foreground hover:text-foreground"
               )}
             >
               <item.icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
@@ -109,7 +107,7 @@ export function PwaBottomNav() {
                 {item.label}
               </span>
               {isActive && (
-                <div className={cn("absolute bottom-1 h-1 w-1 rounded-full", colorClass.replace("text-", "bg-"))} />
+                <div className="absolute -bottom-1 h-1 w-1 rounded-full bg-module" />
               )}
             </Link>
           );
