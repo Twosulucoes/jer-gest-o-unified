@@ -14,7 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Search, Trash2, UserPlus } from "lucide-react";
+import { Loader2, Search, Trash2, UserPlus, Users } from "lucide-react";
 import { format, parse } from "date-fns";
 
 const ROLE_OPTIONS = [
@@ -51,6 +51,8 @@ export function EscalaLoteDialog({ open, onOpenChange, matches, onSuccess }: Pro
   const [pendingRole, setPendingRole] = useState<string>("arbitro_principal");
   const [picks, setPicks] = useState<OfficialPick[]>([]);
 
+  const [showSuggested, setShowSuggested] = useState(false);
+
   const { data: searchResults = [], isFetching: isSearching } = useQuery({
     queryKey: ["escala-lote-search", search],
     enabled: search.trim().length >= 2,
@@ -62,6 +64,27 @@ export function EscalaLoteDialog({ open, onOpenChange, matches, onSuccess }: Pro
         .limit(15);
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+  // Sugestões: usuários cadastrados com perfis de arbitragem
+  const { data: suggestedOfficials = [], isFetching: isLoadingSuggested } = useQuery({
+    queryKey: ["escala-lote-suggested", activeEventId],
+    enabled: open && showSuggested,
+    queryFn: async () => {
+      const { data: roles, error: rolesErr } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["arbitragem", "mesario", "coordenador_modalidade"] as any);
+      if (rolesErr) throw rolesErr;
+      const ids = Array.from(new Set((roles ?? []).map((r: any) => r.user_id)));
+      if (ids.length === 0) return [];
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", ids)
+        .order("full_name");
+      return (profs ?? []) as Array<{ id: string; full_name: string | null }>;
     },
   });
 
