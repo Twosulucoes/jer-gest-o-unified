@@ -89,11 +89,11 @@ const STATUS_LABEL: Record<string, { label: string; variant: "default" | "second
 };
 
 function genQrValue() {
-  // 16 bytes, base32-like (sem confusões)
+  // Prefixo `voucher:` é obrigatório para detecção pelo PWA (isVoucherQr).
   const alpha = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "VCH-";
-  for (let i = 0; i < 20; i++) out += alpha[Math.floor(Math.random() * alpha.length)];
-  return out;
+  let suffix = "";
+  for (let i = 0; i < 20; i++) suffix += alpha[Math.floor(Math.random() * alpha.length)];
+  return `voucher:${Date.now().toString(36).toUpperCase()}-${suffix}`;
 }
 
 // -------- Page --------
