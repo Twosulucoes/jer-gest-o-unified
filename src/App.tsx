@@ -227,6 +227,7 @@ const App = () => (
         <ScrollToTop />
         <AppStatePreserver />
         <PwaUpdateNotice />
+        <PwaInstallNotice />
 
         <AuthProvider>
           <VersionValidator>
