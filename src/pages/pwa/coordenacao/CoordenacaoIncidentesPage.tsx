@@ -198,15 +198,16 @@ export default function CoordenacaoIncidentesPage() {
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">
-                  {MODULE_LABELS[inc.module] ?? inc.module}
+                  {INCIDENT_MODULES[inc.module]?.label ?? inc.module}
                 </Badge>
                 <Badge 
-                  variant={inc.incident_status === "pending" ? "destructive" : "secondary"}
+                  variant={INCIDENT_STATUSES[inc.incident_status]?.variant ?? "outline"}
                   className="text-[10px] uppercase font-bold"
                 >
-                  {STATUS_LABELS[inc.incident_status] ?? inc.incident_status}
+                  {INCIDENT_STATUSES[inc.incident_status]?.label ?? inc.incident_status}
                 </Badge>
               </div>
+
               
               <p className="text-sm font-medium text-foreground leading-snug line-clamp-2">
                 {inc.incident_description}
