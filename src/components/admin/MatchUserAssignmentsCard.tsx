@@ -226,7 +226,7 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
           <CardTitle className="text-base flex items-center gap-2">
             <Users className="h-4 w-4" />Designações de Oficiais
           </CardTitle>
-          {canWrite && (
+          {canManageAssignments && (
             <Button size="sm" variant="outline" onClick={() => { setSearch(""); setSelectedUserId(""); setSelectedRole(""); setAddOpen(true); }}>
               <Plus className="mr-1 h-3.5 w-3.5" />Designar
             </Button>
