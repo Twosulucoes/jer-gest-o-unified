@@ -23,8 +23,8 @@ export function MatchesTab({ sportEventId }: MatchesTabProps) {
   const { data: matches = [], isLoading } = useQuery({
     queryKey: ["combat-matches", sportEventId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("competition_matches")
+      const { data, error } = await (supabase
+        .from("competition_matches") as any)
         .select(`
           id,
           match_number,
