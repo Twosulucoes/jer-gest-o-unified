@@ -425,6 +425,11 @@ export default function LinksPage() {
                     onChange={(e) => setWizSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
                   />
                 </div>
+                {(wizSlug || wizTitle) && (
+                  <p className="text-xs text-muted-foreground font-mono break-all">
+                    {getBaseUrl()}/go/{wizSlug || slugify(wizTitle)}
+                  </p>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={resetWizard}>Cancelar</Button>
