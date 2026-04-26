@@ -89,7 +89,7 @@ export default function CoordenacaoIncidentePage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
-      <PwaHeader title="Incidente" icon={ClipboardList} backTo="/pwa/coordenacao-tecnica" onSignOut={handleSignOut} />
+      <PwaHeader title="Incidente" icon={ClipboardList} backTo="/pwa/coordenacao-tecnica/incidentes" onSignOut={handleSignOut} />
 
       <main className="relative mx-auto max-w-md space-y-4 p-4">
         {loading && <p className="text-sm text-muted-foreground">Carregando…</p>}
