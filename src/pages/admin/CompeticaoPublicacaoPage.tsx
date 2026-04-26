@@ -221,13 +221,13 @@ export default function CompeticaoPublicacaoPage() {
           />
         </div>
         <div className="flex gap-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os Status</SelectItem>
-              <SelectItem value="validado">Aguardando Publicação</SelectItem>
+              <SelectItem value="resultado_validado">Aguardando Publicação</SelectItem>
               <SelectItem value="publicado">Publicados</SelectItem>
             </SelectContent>
           </Select>
