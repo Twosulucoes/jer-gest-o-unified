@@ -372,6 +372,8 @@ export default function TransporteEmbarquePage() {
       </header>
 
       <main className="p-3 max-w-4xl mx-auto space-y-3">
+        <OfflineSyncStatus />
+
         {!loading && <DelegationAlertBanner delegationCounts={delegationCounts} />}
 
         {tripId && !loading && (
