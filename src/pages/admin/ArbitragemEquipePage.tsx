@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEventContext } from "@/contexts/EventContext";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +18,13 @@ import {
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { format, parse } from "date-fns";
 import { EscalaLoteDialog, formatMatchLabel } from "@/components/admin/arbitragem/EscalaLoteDialog";
+import { downloadCsv, downloadPdf, type EscalaExportRow } from "@/components/admin/arbitragem/escalaExport";
 
 const ROLE_LABELS: Record<string, string> = {
   mesario: "Mesário",
