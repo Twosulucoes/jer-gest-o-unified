@@ -47,6 +47,7 @@
 | Agenda | `/admin/competicao/agenda` | 🟡 Parcial |
 | Resultados | `/admin/competicao/resultados` | 🟡 Parcial |
 | Lançamento Score | `/admin/competicao/painel-score/:id/confronto/:matchId/resultado` | ✅ Feito |
+| Lançamento Sets | `/admin/competicao/painel-sets/:id/confronto/:matchId/resultado` | ✅ Feito |
 | Regras por Prova | `/admin/competicao/regras` | ✅ Feito |
 | Regras em Lote | `/admin/competicao/regras/lote` | ✅ Feito |
 | Diagnóstico | `/admin/diagnostico-competicao` | ✅ Feito |
