@@ -5,10 +5,37 @@
  * (templateCatalog, import-catalog, hardcoded) está OBSOLETA.
  */
 
-export type Familia = "score" | "sets" | "time" | "mark" | "combat" | "ranking";
-export type Formato = "RR" | "SE" | "DE" | "GP+SE" | "GP+DE" | "SUICO" | "RANK" | "ELIM+REP";
-export type Naipe = "Masculino" | "Feminino" | "Misto";
-export type TipoModalidade = "individual" | "coletiva" | "individual_paralimpica";
+export enum Familia {
+  SCORE = "score",
+  SETS = "sets",
+  TIME = "time",
+  MARK = "mark",
+  COMBAT = "combat",
+  RANKING = "ranking",
+}
+
+export enum Formato {
+  RR = "RR",
+  SE = "SE",
+  DE = "DE",
+  GP_SE = "GP+SE",
+  GP_DE = "GP+DE",
+  SUICO = "SUICO",
+  RANK = "RANK",
+  ELIM_REP = "ELIM+REP",
+}
+
+export enum Naipe {
+  MASCULINO = "Masculino",
+  FEMININO = "Feminino",
+  MISTO = "Misto",
+}
+
+export enum TipoModalidade {
+  INDIVIDUAL = "individual",
+  COLETIVA = "coletiva",
+  INDIVIDUAL_PARALIMPICA = "individual_paralimpica",
+}
 
 export interface CategoriaEtaria {
   /** Slug canônico (ex.: "12-14", "jerpa-15-17", "nat-12-14"). */
