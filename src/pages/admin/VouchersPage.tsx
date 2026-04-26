@@ -134,8 +134,11 @@ export default function VouchersPage() {
     enabled: !!eventId,
   });
 
-  // -------- People for vouchers --------
-  const participantIds = useMemo(() => [...new Set(vouchers.map((v) => v.participant_id))], [vouchers]);
+  // -------- People for vouchers (only nominal) --------
+  const participantIds = useMemo(
+    () => [...new Set(vouchers.filter((v) => v.participant_id).map((v) => v.participant_id as string))],
+    [vouchers]
+  );
 
   const { data: participantsMap = new Map<string, ParticipantOption>() } = useQuery({
     queryKey: ["vouchers-participants", participantIds],
@@ -173,7 +176,13 @@ export default function VouchersPage() {
     if (!search.trim()) return vouchers;
     const term = search.toLowerCase();
     return vouchers.filter((v) => {
-      const p = participantsMap.get(v.participant_id);
+      if (v.voucher_type === "aggregate") {
+        return (
+          (v.label ?? "").toLowerCase().includes(term) ||
+          v.qr_code_value.toLowerCase().includes(term)
+        );
+      }
+      const p = v.participant_id ? participantsMap.get(v.participant_id) : null;
       if (!p) return v.qr_code_value.toLowerCase().includes(term);
       return (
         p.full_name.toLowerCase().includes(term) ||
