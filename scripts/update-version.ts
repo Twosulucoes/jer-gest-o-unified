@@ -9,12 +9,23 @@ try {
   const buildDate = new Date().toISOString();
   
   const versionPath = join(process.cwd(), 'public', 'version.json');
-  let currentData = {};
+  let currentData: any = {};
   
   try {
-    currentData = JSON.parse(readFileSync(versionPath, 'utf8'));
+    let content = readFileSync(versionPath, 'utf8');
+    // Remove BOM if present
+    if (content.charCodeAt(0) === 0xFEFF) {
+      content = content.slice(1);
+    }
+    currentData = JSON.parse(content);
   } catch (e) {
-    console.log('Arquivo version.json não encontrado ou inválido, criando novo...');
+    console.log('Aviso: version.json não pôde ser lido, usando valores padrão.');
+    // Se falhar, tentamos manter os valores que sabemos que existiam (baseado no estado anterior)
+    currentData = {
+      appVersion: "0.4.0",
+      environment: "teste",
+      supabaseProjectRef: "wiwvpokdbklathfkjmzl"
+    };
   }
   
   const newData = {
