@@ -20,6 +20,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import VenueFormDialog, { type VenueFormValues } from "@/components/admin/VenueFormDialog";
 import { VenueTableRow, VenueCard } from "@/components/admin/locais/VenueRowItem";
+import ArchiveVenueDialog from "@/components/admin/locais/ArchiveVenueDialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const STAGE_FILTER_ALL = "__all__";
 const STAGE_FILTER_NONE = "__none__";
