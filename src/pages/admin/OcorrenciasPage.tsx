@@ -236,8 +236,9 @@ export default function OcorrenciasPage() {
                 </TableHeader>
                 <TableBody>
                   {incidents.map((incident) => {
-                    const mod = MODULE_LABELS[incident.module] || MODULE_LABELS.outro;
-                    const status = STATUS_LABELS[incident.incident_status] || STATUS_LABELS.pending;
+                    const mod = INCIDENT_MODULES[incident.module] || INCIDENT_MODULES.outro;
+                    const status = INCIDENT_STATUSES[incident.incident_status] || INCIDENT_STATUSES.pending;
+
                     return (
                       <TableRow
                         key={incident.id}
