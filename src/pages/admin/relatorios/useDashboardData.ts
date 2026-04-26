@@ -51,6 +51,8 @@ export interface DashboardData {
     transport_trips: number;
     transport_passengers: number;
     transport_vehicles: number;
+    referees_total: number;
+    referees_assigned: number;
   };
   credenciamento: {
     daily: DailyPoint[];
