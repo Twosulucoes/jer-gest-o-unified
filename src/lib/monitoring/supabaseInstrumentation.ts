@@ -74,9 +74,10 @@ async function handleRestTelemetry(url: string, init: RequestInit | undefined, r
       }
     }
 
-    // 4. Log to telemetry
+    const moduleName = window.location.pathname.split('/').filter(Boolean).slice(0, 2).join('_').toUpperCase() || 'PWA_AUTO';
+
     await dbTelemetry.log({
-      moduleName: 'PWA_AUTO_FETCH',
+      moduleName,
       tableName,
       operation,
       isSuccess,
