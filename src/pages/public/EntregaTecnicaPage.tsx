@@ -35,6 +35,8 @@ import {
   Wifi,
   Battery,
   Signal,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +45,7 @@ import { Button } from "@/components/ui/button";
 import { brand } from "@/theme/brand";
 import { systemMap } from "@/config/systemMap";
 import twoLogo from "@/assets/two-solucoes-logo.png";
+import { exportEntregaTecnicaPdf } from "@/components/public/EntregaTecnicaPdfExporter";
 
 interface VersionInfo {
   appVersion: string;
@@ -124,6 +127,24 @@ export default function EntregaTecnicaPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [desktopCaptureLoaded, setDesktopCaptureLoaded] = useState(false);
   const [mobileCaptureLoaded, setMobileCaptureLoaded] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    try {
+      setIsDownloading(true);
+      await exportEntregaTecnicaPdf({
+        totalModulos,
+        stats,
+        techStack: techStack.map(t => ({ name: t.name, desc: t.desc })),
+        checklistItems,
+        modules: tourSteps.map(s => ({ title: s.title, desc: s.desc }))
+      });
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const { data: stats } = useQuery({
     queryKey: ["entrega-tecnica-stats"],
@@ -199,9 +220,21 @@ export default function EntregaTecnicaPage() {
             <a href="#modulos" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Módulos</a>
             <a href="#homologacao" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Homologação</a>
           </div>
-          <Button size="sm" className="text-white gap-2 rounded-full" style={{ background: brand.colors.primary }} asChild>
-            <Link to="/">Acessar Sistema <ArrowRight size={14} /></Link>
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:flex gap-2 rounded-full border-slate-200"
+              onClick={handleDownloadPdf}
+              disabled={isDownloading}
+            >
+              {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              PDF
+            </Button>
+            <Button size="sm" className="text-white gap-2 rounded-full" style={{ background: brand.colors.primary }} asChild>
+              <Link to="/">Acessar <span className="hidden sm:inline">Sistema</span> <ArrowRight size={14} /></Link>
+            </Button>
+          </div>
         </div>
       </nav>
 
@@ -257,8 +290,15 @@ export default function EntregaTecnicaPage() {
               <Button asChild size="lg" className="rounded-2xl h-13 px-7 text-base font-bold text-white shadow-xl" style={{ background: brand.colors.primary }}>
                 <a href="#tour">Iniciar Tour Guiado</a>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-2xl h-13 px-7 text-base font-bold border-2">
-                <a href="#stack">Ver Stack Técnica</a>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="rounded-2xl h-13 px-7 text-base font-bold border-2 gap-2"
+                onClick={handleDownloadPdf}
+                disabled={isDownloading}
+              >
+                {isDownloading ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                Baixar Versão PDF
               </Button>
             </div>
           </div>
