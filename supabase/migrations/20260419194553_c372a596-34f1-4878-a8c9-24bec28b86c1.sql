@@ -45,10 +45,10 @@ CREATE TABLE IF NOT EXISTS public.event_role_catalog (
 
 ALTER TABLE public.event_role_catalog ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "role_catalog_read_authenticated"
+DROP POLICY IF EXISTS "role_catalog_read_authenticated" ON public.event_role_catalog; CREATE POLICY "role_catalog_read_authenticated"
   ON public.event_role_catalog FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "role_catalog_write_admin"
+DROP POLICY IF EXISTS "role_catalog_write_admin" ON public.event_role_catalog; CREATE POLICY "role_catalog_write_admin"
   ON public.event_role_catalog FOR ALL TO authenticated
   USING (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'secretaria') OR public.has_role(auth.uid(),'super_admin'))
   WITH CHECK (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'secretaria') OR public.has_role(auth.uid(),'super_admin'));
@@ -70,7 +70,7 @@ INSERT INTO public.event_role_catalog (code, name, description, sort_order) VALU
   ('terceiro','Terceiro','Prestador de serviÃƒÂ§o externo',140)
 ON CONFLICT (code) DO NOTHING;
 
-CREATE TRIGGER trg_role_catalog_touch
+DROP TRIGGER IF EXISTS trg_role_catalog_touch ON public.event_role_catalog; CREATE TRIGGER trg_role_catalog_touch
   BEFORE UPDATE ON public.event_role_catalog
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
@@ -103,7 +103,7 @@ CREATE INDEX IF NOT EXISTS idx_service_vouchers_status ON public.service_voucher
 
 ALTER TABLE public.service_vouchers ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "vouchers_read_admin_ops"
+DROP POLICY IF EXISTS "vouchers_read_admin_ops" ON public.service_vouchers; CREATE POLICY "vouchers_read_admin_ops"
   ON public.service_vouchers FOR SELECT TO authenticated
   USING (
     public.has_role(auth.uid(),'admin')
@@ -115,12 +115,12 @@ CREATE POLICY "vouchers_read_admin_ops"
     OR public.has_role(auth.uid(),'alojamento')
   );
 
-CREATE POLICY "vouchers_write_admin"
+DROP POLICY IF EXISTS "vouchers_write_admin" ON public.service_vouchers; CREATE POLICY "vouchers_write_admin"
   ON public.service_vouchers FOR ALL TO authenticated
   USING (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'secretaria') OR public.has_role(auth.uid(),'super_admin'))
   WITH CHECK (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'secretaria') OR public.has_role(auth.uid(),'super_admin'));
 
-CREATE TRIGGER trg_service_vouchers_touch
+DROP TRIGGER IF EXISTS trg_service_vouchers_touch ON public.service_vouchers; CREATE TRIGGER trg_service_vouchers_touch
   BEFORE UPDATE ON public.service_vouchers
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
@@ -140,7 +140,7 @@ CREATE INDEX IF NOT EXISTS idx_voucher_uses_kind ON public.service_voucher_uses(
 
 ALTER TABLE public.service_voucher_uses ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "voucher_uses_read"
+DROP POLICY IF EXISTS "voucher_uses_read" ON public.service_voucher_uses; CREATE POLICY "voucher_uses_read"
   ON public.service_voucher_uses FOR SELECT TO authenticated
   USING (
     public.has_role(auth.uid(),'admin')
