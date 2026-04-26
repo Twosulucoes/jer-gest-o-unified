@@ -832,7 +832,7 @@ export default function CredenciamentoPage() {
     }
   };
 
-  const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "";
+  const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "" || sortBy !== "priority";
 
   const stats = {
     total: participants.length,
