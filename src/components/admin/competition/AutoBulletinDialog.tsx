@@ -61,28 +61,19 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
   const generate = async () => {
     setGenerating(true);
     try {
-      // Resolve sport_event_ids da etapa quando necessário
+      // Resolve sport_event_ids da etapa via participant_event_stages → participant_sport_events
       let stageSportEventIds: string[] | null = null;
       if (scope === "stage" && stageId) {
-        const { data: ms, error } = await supabase
-          .from("competition_matches")
-          .select("sport_event_id")
-          .eq("event_id", eventId)
-          .eq("event_stage_id" as any, stageId as any);
-        if (error) {
-          // Fallback: se a coluna não existir, deriva pela tabela de participantes
-          const { data: pse } = await supabase
-            .from("participant_sport_events")
-            .select("sport_event_id, participants!inner(participant_event_stages!inner(event_stage_id))")
-            .eq("participants.participant_event_stages.event_stage_id", stageId);
-          stageSportEventIds = Array.from(
-            new Set(((pse ?? []) as any[]).map((r) => r.sport_event_id).filter(Boolean)),
-          );
-        } else {
-          stageSportEventIds = Array.from(
-            new Set((ms ?? []).map((m) => m.sport_event_id).filter(Boolean) as string[]),
-          );
-        }
+        const { data: pse, error } = await supabase
+          .from("participant_sport_events")
+          .select("sport_event_id, participants!inner(participant_event_stages!inner(event_stage_id))")
+          .eq("participants.participant_event_stages.event_stage_id", stageId);
+        if (error) throw error;
+        stageSportEventIds = Array.from(
+          new Set(((pse ?? []) as Array<{ sport_event_id: string | null }>)
+            .map((r) => r.sport_event_id)
+            .filter((id): id is string => !!id)),
+        );
       }
 
       const result = await buildAutoBulletinContent({
