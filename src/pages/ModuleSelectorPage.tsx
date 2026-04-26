@@ -143,29 +143,13 @@ export default function ModuleSelectorPage() {
   };
 
   const availableModules = MODULE_OPTIONS.filter(m => m.roles.some(r => userRoles.includes(r)));
+  const filteredModules = availableModules.filter(m => 
+    m.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    m.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (availableModules.length === 0) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="text-center space-y-4 max-w-sm">
-          <h2 className="text-xl font-bold text-destructive">Sem permissões</h2>
-          <p className="text-muted-foreground">Seu usuário não tem permissões configuradas. Contate o administrador.</p>
-          <Button variant="outline" onClick={handleSignOut} className="h-12">
-            <LogOut className="mr-2 h-4 w-4" /> Sair
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
+...
   return (
     <div
       className="min-h-screen px-4 py-8"
@@ -184,24 +168,40 @@ export default function ModuleSelectorPage() {
           </p>
         </div>
 
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar função do sistema..."
+            className="pl-9 h-11 bg-background/50 backdrop-blur-sm border-muted-foreground/20 focus-visible:ring-primary/30"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {availableModules.map((mod, idx) => (
-            <Card
-              key={`${mod.label}-${idx}`}
-              className="cursor-pointer hover:shadow-app-md active:scale-[0.98] transition-all border-2 hover:border-primary/30"
-              onClick={() => navigate(mod.path)}
-            >
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${mod.gradient} text-white shadow-app-sm shrink-0`}>
-                  <mod.icon className="h-6 w-6" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{mod.label}</p>
-                  <p className="text-xs text-muted-foreground truncate">{mod.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {filteredModules.length > 0 ? (
+            filteredModules.map((mod, idx) => (
+              <Card
+                key={`${mod.label}-${idx}`}
+                className="cursor-pointer hover:shadow-app-md active:scale-[0.98] transition-all border-2 hover:border-primary/30"
+                onClick={() => navigate(mod.path)}
+              >
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${mod.gradient} text-white shadow-app-sm shrink-0`}>
+                    <mod.icon className="h-6 w-6" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{mod.label}</p>
+                    <p className="text-xs text-muted-foreground truncate">{mod.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-full py-8 text-center text-muted-foreground">
+              Nenhuma função encontrada para "{searchTerm}"
+            </div>
+          )}
         </div>
 
         <div className="text-center pt-2">
