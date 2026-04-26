@@ -128,7 +128,8 @@ const navGroups: NavGroup[] = [
       { label: "Monitoramento DB", to: "/admin/monitoramento-db", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["super_admin", "admin"] as AppRole[] },
       { label: "Status do PWA", to: "/admin/pwa-status", icon: <Cloud className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
 
-      { label: "Arbitragem (Escalas)", to: "/aovivo", icon: <Radio className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem", "mesario"] as AppRole[] },
+      { label: "Equipe de Arbitragem", to: "/admin/competicao/arbitragem", icon: <Radio className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem"] as AppRole[] },
+      { label: "Arbitragem (Escalas PWA)", to: "/aovivo", icon: <Radio className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem", "mesario"] as AppRole[] },
       { label: "Resultados (Coord. Modalidade)", to: "/pwa/resultados", icon: <Trophy className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde", "super_admin"] as AppRole[] },
     ],

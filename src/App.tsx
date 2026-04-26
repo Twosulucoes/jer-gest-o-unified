@@ -98,6 +98,7 @@ import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 // RegrasEventoPage removed — consolidated into RegrasPage
 import RegrasPage from "./pages/admin/RegrasPage";
+import ArbitragemEquipePage from "./pages/admin/ArbitragemEquipePage";
 import ImportacaoAliasesPage from "./pages/admin/ImportacaoAliasesPage";
 import AjudaChatPage from "./pages/admin/AjudaChatPage";
 import AjudaManualPage from "./pages/admin/AjudaManualPage";
@@ -433,6 +434,7 @@ const App = () => (
               <Route path="competicao/sincronizar-equipes" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><SincronizarEquipesPage /></ProtectedRoute>} />
               <Route path="competicao/regras" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><RegrasProvaPage /></ProtectedRoute>} />
               <Route path="competicao/regras/lote" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><RegrasLotePage /></ProtectedRoute>} />
+              <Route path="competicao/arbitragem" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "arbitragem"]}><ArbitragemEquipePage /></ProtectedRoute>} />
               {/* Alojamento */}
               <Route path="alojamento" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoHubPage /></ProtectedRoute>} />
               <Route path="alojamento/locais" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoLocaisPage /></ProtectedRoute>} />
