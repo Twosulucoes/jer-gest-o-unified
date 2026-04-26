@@ -653,28 +653,97 @@ function IssueVoucherDialog({
 
   const selected = participantOptions.find((p) => p.id === participantId);
 
+  // ===== Wizard state =====
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  useEffect(() => {
+    if (open) setStep(1);
+  }, [open]);
+
+  const stepTitles: Record<1 | 2 | 3 | 4, { title: string; hint: string }> = {
+    1: { title: "Tipo de voucher", hint: "Quem vai usar este voucher?" },
+    2: {
+      title: voucherType === "aggregate" ? "Identificação do lote" : "Selecionar pessoa",
+      hint:
+        voucherType === "aggregate"
+          ? "Dê um nome de referência e quantos vouchers gerar."
+          : "Apenas para credenciados sem credencial (contingência).",
+    },
+    3: { title: "Escopos e limites", hint: "Onde o voucher pode ser usado e até quando?" },
+    4: { title: "Revisão e emissão", hint: "Confira tudo antes de gerar o QR." },
+  };
+
+  const scopeCount = [scopeTransport, scopeMeals, scopeLodging].filter(Boolean).length;
+  const batchN = Math.max(1, parseInt(aggregateBatchSize || "1", 10) || 1);
+
+  const canAdvance = (() => {
+    if (step === 1) return true;
+    if (step === 2) {
+      if (voucherType === "aggregate") return aggregateLabel.trim().length > 0;
+      return !!participantId;
+    }
+    if (step === 3) return scopeCount > 0;
+    return true;
+  })();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Emitir Voucher QR</DialogTitle>
+          <DialogTitle>Emitir voucher — Passo {step} de 4</DialogTitle>
           <DialogDescription>
-            <strong>Agregado</strong> é o padrão para acompanhantes/pais (sem nome).{" "}
-            <strong>Nominal</strong> é apenas contingência para credenciados sem credencial.
+            <strong>{stepTitles[step].title}.</strong> {stepTitles[step].hint}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <Tabs value={voucherType} onValueChange={(v) => setVoucherType(v as "aggregate" | "nominal")}>
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="aggregate">Agregado (padrão)</TabsTrigger>
-              <TabsTrigger value="nominal">Nominal (contingência)</TabsTrigger>
-            </TabsList>
+        <div className="flex items-center gap-1.5 -mt-2" aria-label={`Passo ${step} de 4`}>
+          {[1, 2, 3, 4].map((n) => (
+            <div
+              key={n}
+              className={`h-1.5 flex-1 rounded-full transition-colors ${
+                n <= step ? "bg-primary" : "bg-muted"
+              }`}
+            />
+          ))}
+        </div>
 
-            <TabsContent value="aggregate" className="space-y-3 pt-3">
-              <div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                Voucher sem identificação de pessoa. Use para pais, acompanhantes ou público externo.
-              </div>
+        <div className="space-y-4 pt-2">
+          {step === 1 && (
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setVoucherType("aggregate")}
+                className={`w-full text-left rounded-lg border p-4 transition-all ${
+                  voucherType === "aggregate"
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                    : "border-border hover:bg-muted/40"
+                }`}
+              >
+                <p className="font-semibold text-sm">Agregado (recomendado)</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Voucher sem nome. Use para acompanhantes, pais, equipe externa, voluntários.
+                  Pode gerar vários de uma vez (lote).
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setVoucherType("nominal")}
+                className={`w-full text-left rounded-lg border p-4 transition-all ${
+                  voucherType === "nominal"
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                    : "border-border hover:bg-muted/40"
+                }`}
+              >
+                <p className="font-semibold text-sm">Nominal (contingência)</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Vinculado a um participante específico. Use somente quando o credenciado
+                  estiver sem credencial física disponível.
+                </p>
+              </button>
+            </div>
+          )}
+
+          {step === 2 && voucherType === "aggregate" && (
+            <div className="space-y-3">
               <div className="space-y-2">
                 <Label>Identificador (label) *</Label>
                 <Input
@@ -682,10 +751,14 @@ function IssueVoucherDialog({
                   value={aggregateLabel}
                   onChange={(e) => setAggregateLabel(e.target.value)}
                   maxLength={120}
+                  autoFocus
                 />
+                <p className="text-[11px] text-muted-foreground">
+                  Aparece no relatório de uso do voucher.
+                </p>
               </div>
               <div className="space-y-2">
-                <Label>Quantidade (lote)</Label>
+                <Label>Quantidade no lote</Label>
                 <Input
                   type="number"
                   min={1}
@@ -693,128 +766,208 @@ function IssueVoucherDialog({
                   value={aggregateBatchSize}
                   onChange={(e) => setAggregateBatchSize(e.target.value)}
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  Quando &gt; 1, será adicionado sufixo numérico ao label (#01, #02, ...).
-                </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="nominal" className="space-y-3 pt-3">
-              <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
-                <strong>Atenção:</strong> Vouchers nominais são marcados como <strong>contingência</strong>.
-                O fluxo padrão para credenciados é a <strong>credencial</strong>.
-              </div>
-              <div className="space-y-2">
-                <Label>Participante *</Label>
-                {selected ? (
-                  <Card className="p-3 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{selected.full_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {selected.participant_type} {selected.cpf ? `· CPF ${selected.cpf}` : ""}
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => setParticipantId(null)}>
-                      Trocar
-                    </Button>
-                  </Card>
-                ) : (
-                  <>
-                    <Input
-                      placeholder="Buscar por nome ou CPF (mín. 2 caracteres)"
-                      value={participantSearch}
-                      onChange={(e) => setParticipantSearch(e.target.value)}
-                    />
-                    {participantOptions.length > 0 && (
-                      <Card className="max-h-48 overflow-auto divide-y divide-border">
-                        {participantOptions.map((p) => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => setParticipantId(p.id)}
-                            className="w-full text-left p-2 hover:bg-accent transition-colors"
-                          >
-                            <p className="text-sm font-medium">{p.full_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {p.participant_type} {p.cpf ? `· ${p.cpf}` : ""}
-                            </p>
-                          </button>
-                        ))}
-                      </Card>
-                    )}
-                  </>
+                {batchN > 1 && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Serão criados <strong>{batchN}</strong> vouchers com sufixo #01, #02, ...
+                  </p>
                 )}
               </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="space-y-2">
-            <Label>Escopos *</Label>
-            <div className="space-y-2">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <Switch checked={scopeTransport} onCheckedChange={setScopeTransport} />
-                <span className="flex items-center gap-2 text-sm">
-                  <Bus className="h-4 w-4" /> Transporte
-                </span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <Switch checked={scopeMeals} onCheckedChange={setScopeMeals} />
-                <span className="flex items-center gap-2 text-sm">
-                  <UtensilsCrossed className="h-4 w-4" /> Alimentação
-                </span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <Switch checked={scopeLodging} onCheckedChange={setScopeLodging} />
-                <span className="flex items-center gap-2 text-sm">
-                  <BedDouble className="h-4 w-4" /> Alojamento
-                </span>
-              </label>
             </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Máx. usos</Label>
-              <Input
-                type="number"
-                min={1}
-                placeholder="Ilimitado"
-                value={maxUses}
-                onChange={(e) => setMaxUses(e.target.value)}
-              />
+          {step === 2 && voucherType === "nominal" && (
+            <div className="space-y-3">
+              <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
+                Vouchers nominais são marcados como <strong>contingência</strong>. O fluxo padrão
+                para credenciados é a credencial física.
+              </div>
+              {selected ? (
+                <Card className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{selected.full_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {selected.participant_type}
+                      {selected.cpf ? ` · CPF ${selected.cpf}` : ""}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => setParticipantId(null)}>
+                    Trocar
+                  </Button>
+                </Card>
+              ) : (
+                <>
+                  <Label>Buscar participante *</Label>
+                  <Input
+                    placeholder="Nome ou CPF (mín. 2 caracteres)"
+                    value={participantSearch}
+                    onChange={(e) => setParticipantSearch(e.target.value)}
+                    autoFocus
+                  />
+                  {participantSearch.trim().length >= 2 && participantOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Nenhum participante encontrado.</p>
+                  )}
+                  {participantOptions.length > 0 && (
+                    <Card className="max-h-48 overflow-auto divide-y divide-border">
+                      {participantOptions.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setParticipantId(p.id)}
+                          className="w-full text-left p-2 hover:bg-accent transition-colors"
+                        >
+                          <p className="text-sm font-medium">{p.full_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {p.participant_type}
+                            {p.cpf ? ` · ${p.cpf}` : ""}
+                          </p>
+                        </button>
+                      ))}
+                    </Card>
+                  )}
+                </>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label>Válido até</Label>
-              <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
-            </div>
-          </div>
+          )}
 
-          <div className="space-y-2">
-            <Label>Observações</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Opcional"
-              rows={2}
-              maxLength={500}
-            />
-          </div>
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Onde pode ser usado *</Label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 cursor-pointer rounded-md border border-border p-2.5 hover:bg-muted/40">
+                    <Switch checked={scopeTransport} onCheckedChange={setScopeTransport} />
+                    <Bus className="h-4 w-4" />
+                    <span className="text-sm">Transporte</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer rounded-md border border-border p-2.5 hover:bg-muted/40">
+                    <Switch checked={scopeMeals} onCheckedChange={setScopeMeals} />
+                    <UtensilsCrossed className="h-4 w-4" />
+                    <span className="text-sm">Alimentação</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer rounded-md border border-border p-2.5 hover:bg-muted/40">
+                    <Switch checked={scopeLodging} onCheckedChange={setScopeLodging} />
+                    <BedDouble className="h-4 w-4" />
+                    <span className="text-sm">Alojamento</span>
+                  </label>
+                </div>
+                {scopeCount === 0 && (
+                  <p className="text-xs text-destructive">Selecione pelo menos um escopo.</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Máx. usos</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="Ilimitado"
+                    value={maxUses}
+                    onChange={(e) => setMaxUses(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Válido até</Label>
+                  <Input
+                    type="date"
+                    value={validUntil}
+                    onChange={(e) => setValidUntil(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Observações</Label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Opcional"
+                  rows={2}
+                  maxLength={500}
+                />
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-3">
+              <Card className="p-3 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tipo</span>
+                  <span className="font-medium">
+                    {voucherType === "aggregate" ? "Agregado" : "Nominal (contingência)"}
+                  </span>
+                </div>
+                {voucherType === "aggregate" ? (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Identificador</span>
+                      <span className="font-medium truncate max-w-[60%]">{aggregateLabel}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Quantidade</span>
+                      <span className="font-medium">{batchN}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Participante</span>
+                    <span className="font-medium truncate max-w-[60%]">
+                      {selected?.full_name ?? "—"}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Escopos</span>
+                  <span className="font-medium">
+                    {[
+                      scopeTransport && "Transporte",
+                      scopeMeals && "Alimentação",
+                      scopeLodging && "Alojamento",
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Máx. usos</span>
+                  <span className="font-medium">{maxUses.trim() || "Ilimitado"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Válido até</span>
+                  <span className="font-medium">{validUntil || "Sem validade"}</span>
+                </div>
+              </Card>
+              <p className="text-xs text-muted-foreground">
+                Após emitir, abrirá automaticamente a tela de impressão/QR.
+              </p>
+            </div>
+          )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={() => issueMutation.mutate()}
-            disabled={
-              issueMutation.isPending ||
-              (voucherType === "nominal" && !participantId) ||
-              (voucherType === "aggregate" && !aggregateLabel.trim())
-            }
-          >
-            {issueMutation.isPending ? "Emitindo..." : "Emitir"}
-          </Button>
+        <DialogFooter className="flex-row justify-between sm:justify-between gap-2">
+          {step > 1 ? (
+            <Button variant="outline" onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}>
+              Voltar
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+          )}
+          {step < 4 ? (
+            <Button onClick={() => setStep((s) => (s + 1) as 2 | 3 | 4)} disabled={!canAdvance}>
+              Avançar
+            </Button>
+          ) : (
+            <Button onClick={() => issueMutation.mutate()} disabled={issueMutation.isPending}>
+              {issueMutation.isPending
+                ? "Emitindo..."
+                : voucherType === "aggregate" && batchN > 1
+                ? `Emitir ${batchN} vouchers`
+                : "Emitir voucher"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
