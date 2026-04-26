@@ -227,6 +227,7 @@ const App = () => (
                   <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/status" element={<StatusPage />} />
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
             <Route path="/selecionar-modulo" element={<ModuleSelectorPage />} />
             {/* Super Admin routes */}
