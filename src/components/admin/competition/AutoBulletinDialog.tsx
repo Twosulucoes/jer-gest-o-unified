@@ -183,12 +183,19 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
       return { ...data, linkWarn };
     },
     onSuccess: (data: any) => {
-      toast.success(`Boletim #${data.number} criado em rascunho`, {
-        description: data.linkWarn
-          ? `Vínculos não persistidos: ${data.linkWarn}`
-          : `${previewMeta?.matchIds.length ?? 0} partida(s) e ${previewMeta?.sportEventIds.length ?? 0} prova(s) vinculadas.`,
+      const previewN = previewMeta?.number;
+      const reservedN = data.number;
+      const numberShifted = previewN != null && previewN !== reservedN;
+      toast.success(`Boletim #${reservedN} criado em rascunho`, {
+        description: [
+          numberShifted ? `Número reajustado (prévia era #${previewN}, outro usuário gerou primeiro).` : null,
+          data.linkWarn
+            ? `Vínculos não persistidos: ${data.linkWarn}`
+            : `${previewMeta?.matchIds.length ?? 0} partida(s) e ${previewMeta?.sportEventIds.length ?? 0} prova(s) vinculadas.`,
+        ].filter(Boolean).join(" "),
       });
       queryClient.invalidateQueries({ queryKey: ["bulletins-all"] });
+      queryClient.invalidateQueries({ queryKey: ["next-bulletin-number", eventId] });
       setOpen(false);
     },
     onError: (e: any) => toast.error("Falha ao salvar", { description: e?.message }),
