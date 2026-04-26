@@ -54,9 +54,9 @@ export default function LocaisPage() {
     },
   });
 
-  // P1: bootstrap único — paraleliza stages + venues, e em seguida busca links em uma única query
+  // P1+P3: bootstrap único — paraleliza stages + venues + dependências
   const { data: bootstrap, isLoading } = useQuery({
-    queryKey: ["locais-bootstrap", activeEventId],
+    queryKey: ["locais-bootstrap", activeEventId, showArchived],
     enabled: !!activeEventId,
     queryFn: async () => {
       const [stagesRes, venuesRes] = await Promise.all([
@@ -65,11 +65,11 @@ export default function LocaisPage() {
           .select("id, name, status, sort_order, host_name, host_city")
           .eq("event_id", activeEventId)
           .order("sort_order", { ascending: true }),
-        supabase
-          .from("venues")
-          .select("*")
-          .eq("event_id", activeEventId)
-          .order("name"),
+        // P3: traz arquivados se o filtro estiver ativo (RLS controla visibilidade)
+        (showArchived
+          ? (supabase as any).from("venues").select("*").eq("event_id", activeEventId).not("deleted_at", "is", null).order("name")
+          : (supabase as any).from("venues").select("*").eq("event_id", activeEventId).is("deleted_at", null).order("name")
+        ),
       ]);
       if (stagesRes.error) throw stagesRes.error;
       if (venuesRes.error) throw venuesRes.error;
@@ -78,23 +78,39 @@ export default function LocaisPage() {
       const venues = (venuesRes.data ?? []) as VenueRow[];
 
       let links: Array<{ venue_id: string; event_stage_id: string }> = [];
+      let deps: Record<string, { matches_total: number; matches_future: number }> = {};
+
       if (venues.length > 0) {
         const venueIds = venues.map((v) => v.id);
-        const linksRes = await (supabase as any)
-          .from("venue_event_stages")
-          .select("venue_id, event_stage_id")
-          .in("venue_id", venueIds);
+        const [linksRes, depsRes] = await Promise.all([
+          (supabase as any)
+            .from("venue_event_stages")
+            .select("venue_id, event_stage_id")
+            .in("venue_id", venueIds),
+          // P3: view de dependências; tolera ausência (antes do SQL aplicado)
+          (supabase as any)
+            .from("v_venue_dependencies")
+            .select("venue_id, matches_total, matches_future")
+            .in("venue_id", venueIds),
+        ]);
         if (linksRes.error) throw linksRes.error;
         links = (linksRes.data ?? []) as Array<{ venue_id: string; event_stage_id: string }>;
+
+        if (!depsRes.error && Array.isArray(depsRes.data)) {
+          for (const d of depsRes.data as Array<{ venue_id: string; matches_total: number; matches_future: number }>) {
+            deps[d.venue_id] = { matches_total: d.matches_total ?? 0, matches_future: d.matches_future ?? 0 };
+          }
+        }
       }
 
-      return { stages, venues, links };
+      return { stages, venues, links, deps };
     },
   });
 
   const stages = bootstrap?.stages ?? [];
   const venues = bootstrap?.venues;
   const links = bootstrap?.links ?? [];
+  const deps = bootstrap?.deps ?? {};
 
   const stagesMap = useMemo(() => new Map(stages.map((s) => [s.id, s])), [stages]);
 
