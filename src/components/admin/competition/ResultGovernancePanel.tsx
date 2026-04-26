@@ -61,14 +61,19 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
 
   const publishedBulletins = bulletins.filter((b: any) => b.status === BULLETIN_STATUS.PUBLICADO);
 
-  // Published results with bulletin info (for "Publicados" list)
+  // Published results with bulletin info + auditoria de quem publicou
   const { data: publishedRows = [] } = useQuery({
     queryKey: ["published-results-bulletin", eventId, sportEventId],
     enabled: !!sportEventId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("competition_match_results")
-        .select("id, published_at, published_bulletin_id, competition_matches!inner(match_number, event_id, sport_event_id), official_bulletins:published_bulletin_id(number, title)")
+        .select(`
+          id, published_at, published_bulletin_id, published_by,
+          competition_matches!inner(match_number, event_id, sport_event_id),
+          official_bulletins:published_bulletin_id(number, title),
+          publisher:profiles!competition_match_results_published_by_fkey(full_name)
+        `)
         .eq("competition_matches.event_id", eventId)
         .eq("competition_matches.sport_event_id", sportEventId!)
         .eq("result_status", RESULT_STATUS.PUBLISHED)
