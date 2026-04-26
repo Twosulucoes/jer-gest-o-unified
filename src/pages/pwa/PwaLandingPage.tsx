@@ -208,7 +208,15 @@ export default function PwaLandingPage() {
           )}
         </div>
 
-        <div className="text-center pt-2">
+        <div className="text-center pt-2 space-y-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate("/pwa/install")}
+              className="rounded-full border-primary/20 text-primary hover:bg-primary/5"
+            >
+              <Download className="h-4 w-4 mr-2" /> Instruções de Instalação
+            </Button>
             <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest opacity-40">
                 JER Gestão Operacional • PWA v2.0
             </p>
