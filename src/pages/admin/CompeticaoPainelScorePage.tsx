@@ -137,9 +137,9 @@ export default function CompeticaoPainelScorePage() {
       />
 
       {!rules && !loadingRules && (
-        <Alert variant="warning" className="bg-amber-50 border-amber-200">
+        <Alert className="bg-amber-50 border-amber-200">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-amber-800">Regras não cadastradas</AlertTitle>
+          <AlertTitle className="text-amber-800 font-bold">Regras não cadastradas</AlertTitle>
           <AlertDescription className="text-amber-700">
             Esta modalidade ainda não possui regras configuradas. 
             <Link to="/admin/competicao/regras" className="ml-1 font-bold underline">Configurar Regras</Link>
@@ -228,11 +228,11 @@ export default function CompeticaoPainelScorePage() {
             ) : (
               filteredMatches.map((m) => {
                 const status = getMatchStatus(m);
-                const schoolA = m.match_entries?.[0]?.teams?.delegations?.name || "—";
-                const schoolB = m.match_entries?.[1]?.teams?.delegations?.name || "—";
+                const schoolA = m.match_entries?.[0]?.teams?.delegations?.institutions?.name || "—";
+                const schoolB = m.match_entries?.[1]?.teams?.delegations?.institutions?.name || "—";
                 
                 return (
-                  <TableRow key={m.id} className="group">
+                  <TableRow key={m.id} className="group text-sm">
                     <TableCell className="font-mono text-xs font-semibold">
                       #{m.match_number || "—"}
                     </TableCell>
