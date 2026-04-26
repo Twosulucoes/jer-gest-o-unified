@@ -241,7 +241,9 @@ export default function EntregaTecnicaPage() {
                 <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">PWAs operacionais</p>
               </div>
               <div className="space-y-1">
-                <p className="text-3xl font-black" style={{ color: brand.colors.accentGreen, fontFamily: brand.typography.headingFont }}>12</p>
+                <p className="text-3xl font-black" style={{ color: brand.colors.accentGreen, fontFamily: brand.typography.headingFont }}>
+                  {stats?.roles ?? 12}
+                </p>
                 <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Perfis de acesso</p>
               </div>
             </div>
