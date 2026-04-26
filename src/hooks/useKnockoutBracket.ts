@@ -87,9 +87,10 @@ export function useKnockoutBracket(phaseId: string | null) {
         .single();
 
       if (error) throw error;
-      if (!phase) return null;
+      const phaseData = phase as any;
+      if (!phaseData) return null;
 
-      const matches = (phase as any).matches || [];
+      const matches = phaseData.matches || [];
       const roundsMap: Record<number, BracketMatch[]> = {};
 
       matches.forEach((m: any) => {
