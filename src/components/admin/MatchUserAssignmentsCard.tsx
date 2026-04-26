@@ -202,6 +202,11 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
 
   const removeMut = useMutation({
     mutationFn: async (id: string) => {
+      if (!canManageAssignments) {
+        throw new Error(
+          "Seu perfil não tem permissão para remover designações.",
+        );
+      }
       const { error } = await supabase.from("match_user_assignments" as any).delete().eq("id", id);
       if (error) throw error;
     },
