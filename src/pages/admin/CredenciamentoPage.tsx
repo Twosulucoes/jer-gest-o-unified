@@ -94,6 +94,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, pending_import: 2, complete: 3 };
+const WORKFLOW_PRIORITY: Record<string, number> = { pending_import: 0, awaiting: 1, ready_to_emit: 2, complete: 3 };
 
 const PAGE_SIZE = 250;
 const FILTER_CHUNK_SIZE = 150;
