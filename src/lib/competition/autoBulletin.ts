@@ -12,6 +12,10 @@ export interface AutoBulletinFilters {
   statusFilter: BulletinStatusFilter;
   dateFrom?: string | null; // YYYY-MM-DD
   dateTo?: string | null;
+  /** Quando informado, restringe às partidas dessa fase. */
+  phaseId?: string | null;
+  /** Sufixo opcional para o título sugerido (ex.: nome da fase). */
+  titleSuffix?: string | null;
 }
 
 export interface AutoBulletinResult {
