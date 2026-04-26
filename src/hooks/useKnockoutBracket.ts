@@ -9,6 +9,9 @@ export interface BracketEntry {
   team_name: string | null;
   participant_sport_event_id: string | null;
   participant_name: string | null;
+  outcome?: string | null;
+  is_winner?: boolean;
+}
 }
 
 export interface BracketMatch {
