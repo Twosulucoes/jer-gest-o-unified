@@ -102,6 +102,146 @@ export function EscalaLoteDialog({ open, onOpenChange, matches, onSuccess }: Pro
       const userResp = await supabase.auth.getUser();
       const createdBy = userResp.data.user?.id ?? null;
 
+      const matchIds = matches.map((m) => m.id);
+
+      // 1) Fetch fresh match data for validation (status / horários / evento)
+      const { data: matchRows, error: matchErr } = await supabase
+        .from("competition_matches")
+        .select("id, status, match_date, start_time, end_time, event_id")
+        .in("id", matchIds);
+      if (matchErr) throw matchErr;
+
+      const matchMap = new Map<string, any>((matchRows ?? []).map((m) => [m.id, m]));
+      const labelOf = (id: string) =>
+        matches.find((mm) => mm.id === id)?.label ?? `#${id.slice(0, 6)}`;
+
+      // 2) Block invalid statuses and event mismatch
+      const BLOCKED_STATUSES = new Set([
+        "cancelled",
+        "canceled",
+        "wo",
+        "w_o",
+        "draft",
+      ]);
+      const errors: string[] = [];
+      for (const m of matches) {
+        const row = matchMap.get(m.id);
+        if (!row) {
+          errors.push(`Partida não encontrada: ${m.label}`);
+          continue;
+        }
+        if (row.event_id !== activeEventId) {
+          errors.push(`Partida fora do evento ativo: ${m.label}`);
+        }
+        if (BLOCKED_STATUSES.has((row.status ?? "").toLowerCase())) {
+          errors.push(`Partida com status inválido (${row.status}): ${m.label}`);
+        }
+        if (!row.match_date || !row.start_time) {
+          errors.push(`Partida sem data/hora definida: ${m.label}`);
+        }
+      }
+      if (errors.length) {
+        throw new Error(
+          `Não foi possível escalar:\n• ${errors.slice(0, 5).join("\n• ")}${
+            errors.length > 5 ? `\n(+${errors.length - 5} outros)` : ""
+          }`,
+        );
+      }
+
+      // Helper: convert a match row to [startMs, endMs] interval (default 90min if no end)
+      const intervalOf = (row: any): [number, number] | null => {
+        if (!row.match_date || !row.start_time) return null;
+        const start = new Date(`${row.match_date}T${row.start_time}`);
+        if (Number.isNaN(start.getTime())) return null;
+        const end = row.end_time
+          ? new Date(`${row.match_date}T${row.end_time}`)
+          : new Date(start.getTime() + 90 * 60 * 1000);
+        return [start.getTime(), end.getTime()];
+      };
+      const overlaps = (a: [number, number], b: [number, number]) =>
+        a[0] < b[1] && b[0] < a[1];
+
+      // 3) Internal conflicts (selected matches overlapping each other for the same official)
+      const selectedIntervals = matchIds
+        .map((id) => ({ id, iv: intervalOf(matchMap.get(id)) }))
+        .filter((x) => x.iv) as { id: string; iv: [number, number] }[];
+
+      const internalConflicts: string[] = [];
+      for (let i = 0; i < selectedIntervals.length; i++) {
+        for (let j = i + 1; j < selectedIntervals.length; j++) {
+          if (overlaps(selectedIntervals[i].iv, selectedIntervals[j].iv)) {
+            internalConflicts.push(
+              `${labelOf(selectedIntervals[i].id)} ⇄ ${labelOf(selectedIntervals[j].id)}`,
+            );
+          }
+        }
+      }
+      if (internalConflicts.length && picks.length > 0) {
+        throw new Error(
+          `Partidas selecionadas se sobrepõem no horário (mesmo oficial não pode):\n• ${internalConflicts
+            .slice(0, 5)
+            .join("\n• ")}`,
+        );
+      }
+
+      // 4) External conflicts: existing assignments for these officials on the same dates
+      const userIds = Array.from(new Set(picks.map((p) => p.user_id)));
+      const dates = Array.from(
+        new Set(
+          (matchRows ?? [])
+            .map((m: any) => m.match_date)
+            .filter((d): d is string => !!d),
+        ),
+      );
+
+      let existingByUser = new Map<string, any[]>();
+      if (userIds.length && dates.length) {
+        const { data: existing, error: exErr } = await supabase
+          .from("match_user_assignments" as any)
+          .select(
+            "user_id, match_id, competition_matches!inner(id, match_date, start_time, end_time, status)",
+          )
+          .eq("event_id", activeEventId)
+          .in("user_id", userIds)
+          .in("competition_matches.match_date", dates);
+        if (exErr) throw exErr;
+
+        for (const row of (existing as any[]) ?? []) {
+          const arr = existingByUser.get(row.user_id) ?? [];
+          arr.push(row);
+          existingByUser.set(row.user_id, arr);
+        }
+      }
+
+      const externalConflicts: string[] = [];
+      for (const p of picks) {
+        const userExisting = existingByUser.get(p.user_id) ?? [];
+        for (const sel of selectedIntervals) {
+          for (const ex of userExisting) {
+            if (ex.match_id === sel.id) continue; // duplicate handled by upsert
+            const exIv = intervalOf(ex.competition_matches);
+            if (!exIv) continue;
+            if (overlaps(sel.iv, exIv)) {
+              externalConflicts.push(
+                `${p.full_name} já escalado em outra partida no mesmo horário (${labelOf(sel.id)})`,
+              );
+            }
+          }
+        }
+      }
+      if (externalConflicts.length) {
+        throw new Error(
+          `Conflito de agenda detectado:\n• ${externalConflicts
+            .slice(0, 5)
+            .join("\n• ")}${
+            externalConflicts.length > 5
+              ? `\n(+${externalConflicts.length - 5} outros)`
+              : ""
+          }`,
+        );
+      }
+
+      // 5) Build rows and upsert (duplicates ignored)
       const rows = matches.flatMap((m) =>
         picks.map((p) => ({
           match_id: m.id,
@@ -112,15 +252,12 @@ export function EscalaLoteDialog({ open, onOpenChange, matches, onSuccess }: Pro
         })),
       );
 
-      // Insert with on_conflict ignore for (match_id, user_id, role) duplicates.
-      // Falls back to per-row insert if upsert is not supported by the table constraints.
       const { data, error } = await supabase
         .from("match_user_assignments" as any)
         .upsert(rows, { onConflict: "match_id,user_id,role", ignoreDuplicates: true })
         .select("id");
 
       if (error) {
-        // Fallback: try one-by-one, counting duplicates as skipped.
         let inserted = 0;
         let skipped = 0;
         for (const row of rows) {
@@ -149,7 +286,8 @@ export function EscalaLoteDialog({ open, onOpenChange, matches, onSuccess }: Pro
       onOpenChange(false);
       onSuccess?.();
     },
-    onError: (e: Error) => toast.error("Falha: " + e.message),
+    onError: (e: Error) =>
+      toast.error("Falha ao escalar", { description: e.message }),
   });
 
   return (
