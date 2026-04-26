@@ -14,6 +14,9 @@ export function VersionValidator({ children }: { children: React.ReactNode }) {
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
 
   useEffect(() => {
+    // Exponha a versão para depuração
+    (window as any).APP_VERSION = APP_VERSION;
+    
     // Simula uma pequena verificação de sincronização de módulos
     const storedVersion = localStorage.getItem(VERSION_KEY);
     setCurrentVersion(APP_VERSION);
