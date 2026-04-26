@@ -426,6 +426,7 @@ export default function CompeticaoPartidasAgendaPage() {
         phases={phases}
         groups={groups}
         venues={venues}
+        events={events}
         onSubmit={handleSubmit}
         isPending={createMut.isPending || updateMut.isPending}
       />
