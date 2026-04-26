@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { logger } from "@/lib/logger";
 
 const PREFIX = "jer_persisted_";
+const STATS_KEY = "jer_persisted_stats";
 
 export const PERSISTENCE_TTLS = {
   SENSITIVE: 15 * 60 * 1000,      // 15 minutes
@@ -9,25 +10,39 @@ export const PERSISTENCE_TTLS = {
   LONG: 7 * 24 * 60 * 60 * 1000,    // 7 days
 };
 
+type PersistenceCategory = "SENSITIVE" | "DEFAULT" | "LONG" | "OVERRIDE";
+
 /**
- * Returns the TTL for a given key based on patterns or overrides.
+ * Returns the TTL and category for a given key based on patterns or overrides.
  */
-const getTTLForKey = (key: string, overrideTTL?: number): number => {
-  if (overrideTTL !== undefined) return overrideTTL;
+const getTTLMetadata = (key: string, overrideTTL?: number): { ttl: number; category: PersistenceCategory } => {
+  if (overrideTTL !== undefined) return { ttl: overrideTTL, category: "OVERRIDE" };
   
   const lowerKey = key.toLowerCase();
   
   // Sensitive data should expire quickly
   if (lowerKey.includes("sensitive") || lowerKey.includes("auth") || lowerKey.includes("private") || lowerKey.includes("password")) {
-    return PERSISTENCE_TTLS.SENSITIVE;
+    return { ttl: PERSISTENCE_TTLS.SENSITIVE, category: "SENSITIVE" };
   }
   
   // Filters and preferences often want to stay longer
   if (lowerKey.includes("filter") || lowerKey.includes("search") || lowerKey.includes("pref") || lowerKey.includes("view")) {
-    return PERSISTENCE_TTLS.LONG;
+    return { ttl: PERSISTENCE_TTLS.LONG, category: "LONG" };
   }
 
-  return PERSISTENCE_TTLS.DEFAULT;
+  return { ttl: PERSISTENCE_TTLS.DEFAULT, category: "DEFAULT" };
+};
+
+const incrementExpirationStat = (category: string) => {
+  try {
+    const saved = localStorage.getItem(STATS_KEY);
+    const stats = saved ? JSON.parse(saved) : {};
+    stats[category] = (stats[category] || 0) + 1;
+    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    logger.info(`[Persistence] Incrementada expiração para categoria: ${category}. Total:`, stats);
+  } catch (error) {
+    // Silently fail for stats
+  }
 };
 
 interface PersistedValue<T> {
@@ -42,7 +57,7 @@ interface PersistedValue<T> {
  */
 export function usePersistedState<T>(key: string, defaultValue: T, ttl?: number) {
   const storageKey = `${PREFIX}${key}`;
-  const effectiveTTL = getTTLForKey(key, ttl);
+  const { ttl: effectiveTTL, category } = getTTLMetadata(key, ttl);
   
   const [state, setState] = useState<T>(() => {
     try {
@@ -57,7 +72,8 @@ export function usePersistedState<T>(key: string, defaultValue: T, ttl?: number)
             return parsed.value;
           } else {
             // TTL expired
-            logger.info(`TTL expired for localStorage key "${storageKey}". Clearing.`);
+            logger.info(`TTL expired for localStorage key "${storageKey}" (${category}). Clearing.`);
+            incrementExpirationStat(category);
             localStorage.removeItem(storageKey);
             return defaultValue;
           }
@@ -102,6 +118,30 @@ export function clearPersistedFilters() {
     });
   } catch (error) {
     logger.warn("Error clearing persisted filters:", error);
+  }
+}
+
+/**
+ * Returns the current stats of expired keys by category.
+ */
+export function getPersistedStateStats() {
+  try {
+    const saved = localStorage.getItem(STATS_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+/**
+ * Resets the expiration stats.
+ */
+export function resetPersistedStateStats() {
+  try {
+    localStorage.removeItem(STATS_KEY);
+    logger.info("[Persistence] Stats reset successfully.");
+  } catch (error) {
+    logger.warn("Error resetting persistence stats:", error);
   }
 }
 
