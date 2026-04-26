@@ -50,10 +50,11 @@ export default function AlojamentoListaCompletaPage() {
   const stageId = useActiveStageId();
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [unitFilter, setUnitFilter] = useState("all");
-  const [delegationFilter, setDelegationFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = usePersistedState("alojamento_lista_search", "");
+  const [unitFilter, setUnitFilter] = usePersistedState("alojamento_lista_unit", "all");
+  const [delegationFilter, setDelegationFilter] = usePersistedState("alojamento_lista_delegation", "all");
+  const [statusFilter, setStatusFilter] = usePersistedState("alojamento_lista_status", "all");
+
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
   const [contactModal, setContactModal] = useState<Guest | null>(null);
   const [contactType, setContactType] = useState<"guardian" | "coach">("guardian");
