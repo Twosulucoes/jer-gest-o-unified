@@ -90,8 +90,6 @@ export default function CompeticaoPainelScorePage() {
   }, [matches, phaseFilter, groupFilter, statusFilter, search]);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Tem certeza que deseja excluir este confronto?")) return;
-    
     const { error } = await supabase
       .from("competition_matches")
       .delete()
