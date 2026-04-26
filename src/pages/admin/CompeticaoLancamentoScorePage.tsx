@@ -148,8 +148,12 @@ export default function CompeticaoLancamentoScorePage() {
   const [numPeriods, setNumPeriods] = useState(2);
   const [hasOvertime, setHasOvertime] = useState(false);
   const [showHomologateDialog, setShowHomologateDialog] = useState(false);
+  const [showRevertDialog, setShowRevertDialog] = useState(false);
+  const [revertTargetStatus, setRevertTargetStatus] = useState("");
+  const [revertReason, setRevertReason] = useState("");
   const [homologatePassword, setHomologatePassword] = useState("");
   const [homologateObservation, setHomologateObservation] = useState("");
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
   const resultStatus = match?.entries?.[0]?.results?.[0]?.result_status || "agendado";
   const isLocked = (resultStatus === "resultado_validado" || resultStatus === "publicado") && !hasRole("admin");
@@ -289,13 +293,28 @@ export default function CompeticaoLancamentoScorePage() {
 
   const homologateMut = useMutation({
     mutationFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("rpc_homologate_match_result", {
-        p_match_id: matchId,
-        p_password: homologatePassword,
-        p_observation: homologateObservation
-      });
-      if (error) throw error;
-      return data;
+      setIsVerifyingPassword(true);
+      try {
+        // 1. Verify password via Edge Function
+        const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-current-user-password', {
+          body: { password: homologatePassword }
+        });
+
+        if (verifyError) throw verifyError;
+        if (!verifyData.valid) {
+          throw new Error(verifyData.message || "Senha incorreta");
+        }
+
+        // 2. Call RPC (password removed from params)
+        const { data, error } = await (supabase.rpc as any)("rpc_homologate_match_result", {
+          p_match_id: matchId,
+          p_observation: homologateObservation
+        });
+        if (error) throw error;
+        return data;
+      } finally {
+        setIsVerifyingPassword(false);
+      }
     },
     onSuccess: () => {
       toast.success("Resultado homologado com sucesso!");
@@ -1005,10 +1024,9 @@ export default function CompeticaoLancamentoScorePage() {
                     size="sm" 
                     className="w-full"
                     onClick={() => {
-                      const reason = prompt("Justificativa para reversão:");
-                      if (reason) {
-                        revertMut.mutate({ targetStatus: "resultado_lancado", reason });
-                      }
+                      setRevertTargetStatus("resultado_lancado");
+                      setRevertReason("");
+                      setShowRevertDialog(true);
                     }}
                   >
                     Reverter para "Lançado"
@@ -1019,10 +1037,9 @@ export default function CompeticaoLancamentoScorePage() {
                       size="sm" 
                       className="w-full text-destructive border-destructive/20 hover:bg-destructive/10"
                       onClick={() => {
-                        const reason = prompt("Justificativa para reversão:");
-                        if (reason) {
-                          revertMut.mutate({ targetStatus: "validado", reason });
-                        }
+                        setRevertTargetStatus("resultado_validado");
+                        setRevertReason("");
+                        setShowRevertDialog(true);
                       }}
                     >
                       Reverter para "Validado" (Despublicar)
@@ -1083,9 +1100,47 @@ export default function CompeticaoLancamentoScorePage() {
             <Button 
               className="bg-amber-500 hover:bg-amber-600 text-white" 
               onClick={() => homologateMut.mutate()}
-              disabled={homologateMut.isPending || !homologatePassword}
+              disabled={homologateMut.isPending || isVerifyingPassword || !homologatePassword}
             >
-              {homologateMut.isPending ? "Confirmando..." : "Confirmar Homologação"}
+              {isVerifyingPassword ? "Verificando senha..." : 
+               homologateMut.isPending ? "Confirmando..." : "Confirmar Homologação"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRevertDialog} onOpenChange={setShowRevertDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reverter Status do Resultado</DialogTitle>
+            <DialogDescription>
+              Esta ação é registrada no histórico e deve ser devidamente justificada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Justificativa para Reversão</Label>
+              <Textarea 
+                placeholder="Explique o motivo da reversão (mínimo 5 caracteres)" 
+                value={revertReason}
+                onChange={(e) => setRevertReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowRevertDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                revertMut.mutate({ targetStatus: revertTargetStatus, reason: revertReason });
+                setShowRevertDialog(false);
+              }}
+              disabled={revertMut.isPending || revertReason.trim().length < 5}
+            >
+              {revertMut.isPending ? "Revertendo..." : "Confirmar Reversão"}
             </Button>
           </DialogFooter>
         </DialogContent>

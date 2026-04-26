@@ -49,7 +49,8 @@ import {
   SheetTitle, 
   SheetDescription 
 } from "@/components/ui/sheet";
-
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 export default function CompeticaoPublicacaoPage() {
   const eventId = useActiveEventId();
@@ -61,6 +62,10 @@ export default function CompeticaoPublicacaoPage() {
   const [selectedMatches, setSelectedMatches] = useState<string[]>([]);
   const [showConfirmBatch, setShowConfirmBatch] = useState(false);
   const [historyMatchId, setHistoryMatchId] = useState<string | null>(null);
+  const [showRevertDialog, setShowRevertDialog] = useState(false);
+  const [revertMatchId, setRevertMatchId] = useState<string | null>(null);
+  const [revertReason, setRevertReason] = useState("");
+  const [revertTargetStatus, setRevertTargetStatus] = useState("resultado_lancado");
 
   // Fetch results that are validated or published
   const { data: matches = [], isLoading } = useQuery({
@@ -306,9 +311,9 @@ export default function CompeticaoPublicacaoPage() {
                     </TableCell>
                     <TableCell>
                       {res?.result_status === "publicado" ? (
-                        <Badge className="bg-emerald-600 border-none text-white">Publicado</Badge>
+                        <Badge className="bg-emerald-600 hover:bg-emerald-700 border-none text-white">Publicado</Badge>
                       ) : (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100 animate-pulse">Aguardando</Badge>
+                        <Badge className="bg-blue-600 hover:bg-blue-700 border-none text-white animate-pulse">Validado</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-xs">
@@ -355,14 +360,9 @@ export default function CompeticaoPublicacaoPage() {
                             className="h-8 w-8 text-destructive" 
                             title="Reverter Status"
                             onClick={() => {
-                              const reason = prompt("Justificativa para reversão:");
-                              if (reason) {
-                                revertMut.mutate({ 
-                                  matchId: m.id, 
-                                  targetStatus: "resultado_lancado", 
-                                  reason 
-                                });
-                              }
+                              setRevertMatchId(m.id);
+                              setRevertReason("");
+                              setShowRevertDialog(true);
                             }}
                           >
                             <AlertTriangle className="h-4 w-4" />
@@ -455,6 +455,49 @@ export default function CompeticaoPublicacaoPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={showRevertDialog} onOpenChange={setShowRevertDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reverter Status do Resultado</DialogTitle>
+            <DialogDescription>
+              Esta ação é registrada no histórico e deve ser devidamente justificada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Justificativa para Reversão</Label>
+              <Textarea 
+                placeholder="Explique o motivo da reversão (mínimo 5 caracteres)" 
+                value={revertReason}
+                onChange={(e) => setRevertReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowRevertDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                if (revertMatchId) {
+                  revertMut.mutate({ 
+                    matchId: revertMatchId, 
+                    targetStatus: revertTargetStatus, 
+                    reason: revertReason 
+                  });
+                  setShowRevertDialog(false);
+                }
+              }}
+              disabled={revertMut.isPending || revertReason.trim().length < 5}
+            >
+              {revertMut.isPending ? "Revertendo..." : "Confirmar Reversão"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

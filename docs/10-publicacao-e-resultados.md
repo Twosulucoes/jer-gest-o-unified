@@ -33,7 +33,7 @@ Todas as RPCs, filtros de frontend e RLS policies usam estas strings.
 | RPC | Permissão | Descrição |
 |-----|-----------|-----------|
 | `rpc_launch_match_result` | authenticated | Grava resultados com status `resultado_lancado`, marca partida como `finished` |
-| `rpc_homologate_match_result` | admin, coord_tecnica | Homologa resultado lançado (exige senha), status → `resultado_validado` |
+| `rpc_homologate_match_result` | admin, coord_tecnica | Homologa resultado lançado (exige verificação prévia de senha via Edge Function), status → `resultado_validado` |
 | `rpc_publish_match_result` | admin, secretaria | Publica resultado validado (individual ou lote), status → `publicado` |
 | `rpc_revert_match_result_status` | admin | Reverte status de resultado (justificativa obrigatória) |
 | `rpc_sync_match_scores_to_results` | authenticated | Sincroniza match_scores → competition_match_results |
@@ -94,6 +94,12 @@ Componente: `CombatResultForm` (renderizado quando `family='combat'`)
 ## Tabelas de Auditoria
 - `audit_events`: registra ações relevantes de governança.
 - `match_results_history`: registra snapshots completos do payload a cada salvamento em modalidades Score.
+
+## Segurança e Autenticação
+
+- **Validação Real de Senha**: A homologação não utiliza apenas um campo de texto; a senha é conferida contra o hash real do usuário no Supabase Auth através da Edge Function `verify-current-user-password`.
+- **Auditoria de Falhas**: Tentativas de homologação com senha incorreta são registradas na tabela `audit_events` com ação `password_verification_failed`.
+- **Isolamento de Senha**: A senha nunca é passada para a RPC SQL, permanecendo apenas no contexto da Edge Function durante a verificação.
 
 ## Dados Reais (2026-04-14)
 

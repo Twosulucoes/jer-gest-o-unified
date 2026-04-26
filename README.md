@@ -158,7 +158,7 @@ O cliente distribui acessos para operadores através de **links curtos** com QR 
 | **Modelos de Credencial** | 🟡 Parcial | 70% |
 | **Competição — Central/Wizard** (Fases, Grupos, Estrutura, Confrontos, Agenda) | ✅ Pronto | 90% |
 | **Competição — Motor de Regras** (Presets, Seed, Editor) | ✅ Pronto | 100% |
-| **Competição — Resultados e Governança** (Lançamento dedicado, Placar por Período, Pênaltis, W.O. automático, Auditoria, Validação) | ✅ Pronto | 100% |
+| **Competição — Resultados e Governança** (Lançamento dedicado, Placar por Período, Pênaltis, W.O. automático, Auditoria, Validação Real com Senha) | ✅ Pronto | 100% |
 | **Competição — Classificação** (Standings coletivas, Ranking individual/cross-heat) | ✅ Pronto | 85% |
 | **Competição — Combate** (combat_detail JSONB, CombatResultForm, auto-detecção) | ✅ Pronto | 90% |
 | **Competição — Página da Partida** (Lineup, Eventos, Placar, Oficiais, Anexos, Rota dedicada Score) | ✅ Pronto | 100% |

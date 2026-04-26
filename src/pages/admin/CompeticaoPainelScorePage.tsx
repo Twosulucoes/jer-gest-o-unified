@@ -38,6 +38,14 @@ import {
   Trophy
 } from "lucide-react";
 import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { 
   useScoreMatches, 
   useModalityDetails, 
   useModalityPhases, 
@@ -60,6 +68,8 @@ export default function CompeticaoPainelScorePage() {
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<any>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [matchToDelete, setMatchToDelete] = useState<string | null>(null);
 
   const { data: modality, isLoading: loadingModality } = useModalityDetails(sportEventId);
   const { data: matches = [], isLoading: loadingMatches, error: matchesError } = useScoreMatches(sportEventId);
@@ -88,8 +98,6 @@ export default function CompeticaoPainelScorePage() {
   }, [matches, phaseFilter, groupFilter, statusFilter, search]);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Tem certeza que deseja excluir este confronto?")) return;
-    
     const { error } = await supabase
       .from("competition_matches")
       .delete()
@@ -113,7 +121,7 @@ export default function CompeticaoPainelScorePage() {
     if (allValidated) return { label: "Validado", variant: "default" as const, color: "bg-blue-600 hover:bg-blue-700 animate-pulse" };
     if (someLaunched) return { label: "Resultado Lançado", variant: "default" as const, color: "bg-amber-500 hover:bg-amber-600" };
     if (m.status === "in_progress") return { label: "Em Andamento", variant: "default" as const, color: "bg-orange-500 hover:bg-orange-600" };
-    return { label: "Agendado", variant: "outline" as const, color: "text-muted-foreground" };
+    return { label: "Agendado", variant: "secondary" as const, color: "bg-slate-500 hover:bg-slate-600 text-white" };
   };
 
   if (loadingModality || loadingRules) {
@@ -313,7 +321,10 @@ export default function CompeticaoPainelScorePage() {
                                   size="icon" 
                                   className="h-8 w-8 text-destructive hover:text-destructive"
                                   title="Excluir"
-                                  onClick={() => handleDelete(m.id)}
+                                  onClick={() => {
+                                    setMatchToDelete(m.id);
+                                    setShowDeleteConfirm(true);
+                                  }}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -340,6 +351,26 @@ export default function CompeticaoPainelScorePage() {
         phases={phases}
         groups={groups}
       />
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir este confronto? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => {
+              if (matchToDelete) {
+                handleDelete(matchToDelete);
+                setShowDeleteConfirm(false);
+              }
+            }}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

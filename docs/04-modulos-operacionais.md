@@ -92,14 +92,14 @@
 
 ## 9. Resultados e Governança (✅ Pronto)
 - **Ciclo**: `resultado_lancado` → `resultado_validado` → `publicado`
-- **RPCs**: `rpc_launch_match_result`, `rpc_homologate_match_result`, `rpc_publish_match_result`, `rpc_revert_match_result_status`
+- **RPCs**: `rpc_launch_match_result`, `rpc_homologate_match_result` (sem senha), `rpc_publish_match_result`, `rpc_revert_match_result_status`
 - **Frontend**: 
   - ✅ **Central de Publicação** (`/admin/competicao/publicacao`): Tela operacional para secretaria com publicação individual/lote e auditoria.
-  - ✅ **Homologação Dedicada**: Botão com senha do coordenador na tela de lançamento.
-  - ✅ **Indicadores de Ciclo**: Pulse visual no Painel Score para resultados validados aguardando publicação.
-  - ✅ **Reversão Admin**: Fluxo de exceção para administradores corrigirem status com justificativa obrigatória.
+  - ✅ **Homologação Real com Senha**: Botão chama Edge Function `verify-current-user-password` para autenticação real do coordenador antes de acionar a RPC de homologação.
+  - ✅ **Indicadores de Ciclo**: Badges padronizados (Agendado → Em Andamento → Lançado → Validado → Publicado).
+  - ✅ **Reversão Admin**: Fluxo de exceção para administradores corrigirem status com diálogos Shadcn UI e justificativa obrigatória.
 - **RLS**: funcional para anon (SELECT WHERE `result_status = 'publicado'`)
-- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento dedicado Score Page | ✅ Homologação com senha | ✅ Publicação Centralizada | ✅ Reversão de status | ✅ Auditoria completa (tabela history)
+- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento dedicado Score Page | ✅ Homologação com senha real | ✅ Publicação Centralizada | ✅ Reversão de status | ✅ Auditoria completa (tabela history + audit_events)
 
 ## 10. Boletins Oficiais (🟡 Parcial)
 - **Página**: `/admin/boletins`
