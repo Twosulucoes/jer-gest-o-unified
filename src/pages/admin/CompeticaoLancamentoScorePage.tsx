@@ -147,6 +147,14 @@ export default function CompeticaoLancamentoScorePage() {
   const [penalties, setPenalties] = useState<PenaltyShot[]>([]);
   const [numPeriods, setNumPeriods] = useState(2);
   const [hasOvertime, setHasOvertime] = useState(false);
+  const [showHomologateDialog, setShowHomologateDialog] = useState(false);
+  const [homologatePassword, setHomologatePassword] = useState("");
+  const [homologateObservation, setHomologateObservation] = useState("");
+
+  const resultStatus = match?.entries?.[0]?.results?.[0]?.result_status || "agendado";
+  const isLocked = (resultStatus === "validado" || resultStatus === "publicado") && !hasRole("admin");
+  const isAlreadyPublished = resultStatus === "publicado";
+  const canHomologate = (hasRole("admin") || hasRole("coordenacao_tecnica")) && resultStatus === "resultado_lancado";
 
   // Modality name from rulesData
   const modalityName = (rulesData as any)?.sport_name || "Modalidade";
