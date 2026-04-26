@@ -12,7 +12,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle, Send, Loader2, FileText, Plus, ArrowRight } from "lucide-react";
+import { CheckCircle, Send, Loader2, FileText, Plus, ArrowRight, Undo2, User, Calendar } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface Props {
   sportEventId: string | null;
@@ -59,21 +61,36 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
 
   const publishedBulletins = bulletins.filter((b: any) => b.status === BULLETIN_STATUS.PUBLICADO);
 
-  // Published results with bulletin info (for "Publicados" list)
+  // Published results with bulletin info + auditoria de quem publicou
   const { data: publishedRows = [] } = useQuery({
     queryKey: ["published-results-bulletin", eventId, sportEventId],
     enabled: !!sportEventId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("competition_match_results")
-        .select("id, published_at, published_bulletin_id, competition_matches!inner(match_number, event_id, sport_event_id), official_bulletins:published_bulletin_id(number, title)")
+        .select(`
+          id, published_at, published_bulletin_id, published_by,
+          competition_matches!inner(match_number, event_id, sport_event_id),
+          official_bulletins:published_bulletin_id(number, title)
+        `)
         .eq("competition_matches.event_id", eventId)
         .eq("competition_matches.sport_event_id", sportEventId!)
         .eq("result_status", RESULT_STATUS.PUBLISHED)
         .order("published_at", { ascending: false })
         .limit(10);
       if (error) throw error;
-      return data || [];
+
+      // Buscar nomes dos publicadores (lookup separado — não há FK declarada para profiles)
+      const publisherIds = Array.from(new Set((data || []).map((r: any) => r.published_by).filter(Boolean)));
+      let publisherMap: Record<string, string> = {};
+      if (publisherIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", publisherIds);
+        publisherMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.full_name]));
+      }
+      return (data || []).map((r: any) => ({ ...r, publisher_name: r.published_by ? publisherMap[r.published_by] ?? "—" : null }));
     },
   });
 
@@ -123,7 +140,32 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Create + auto-publish a new bulletin inline
+  // Despublicar — volta resultados de 'publicado' para 'resultado_validado'
+  const [unpublishReason, setUnpublishReason] = useState("");
+  const unpublishResults = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("rpc_unpublish_results_for_sport_event" as any, {
+        p_event_id: eventId,
+        p_sport_event_id: sportEventId!,
+        p_reason: unpublishReason.trim() || null,
+      } as any);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      const count = data?.unpublished_count ?? 0;
+      if (count === 0) {
+        toast.info("Nenhum resultado publicado para despublicar.");
+      } else {
+        toast.success(`${count} resultado(s) despublicado(s). Saíram do portal público.`);
+      }
+      setUnpublishReason("");
+      queryClient.invalidateQueries({ queryKey: ["governance-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["published-results-bulletin"] });
+      queryClient.invalidateQueries({ queryKey: ["public-results"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
   const createBulletin = useMutation({
     mutationFn: async () => {
       if (!newTitle.trim()) throw new Error("Informe um título para o boletim.");
@@ -320,27 +362,77 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
         </CardContent>
       </Card>
 
-      {/* Published list with bulletin reference */}
+      {/* Published list with bulletin reference + auditoria + despublicar */}
       {publishedRows.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">
               <FileText className="h-4 w-4" /> Resultados publicados (últimos 10)
             </CardTitle>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive">
+                  {unpublishResults.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Undo2 className="h-3.5 w-3.5" />}
+                  Despublicar todos
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Despublicar resultados desta prova?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Os {counts?.published ?? 0} resultado(s) publicado(s) voltarão para o status <strong>Validado</strong> e <strong>sairão do portal público imediatamente</strong>. A ação fica registrada na auditoria.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="py-2 space-y-2">
+                  <Label htmlFor="unpub-reason" className="text-xs">Motivo (opcional, mas recomendado)</Label>
+                  <Input
+                    id="unpub-reason"
+                    placeholder="Ex.: erro de digitação no placar, recurso CDE deferido…"
+                    value={unpublishReason}
+                    onChange={(e) => setUnpublishReason(e.target.value)}
+                  />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => unpublishResults.mutate()}
+                    className="bg-destructive text-white hover:bg-destructive/90"
+                  >
+                    Despublicar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardHeader>
           <CardContent>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {publishedRows.map((r: any) => (
-                <div key={r.id} className="flex items-center justify-between gap-2 text-xs border-b pb-1.5 last:border-0">
-                  <span className="font-medium">Partida #{r.competition_matches?.match_number ?? "?"}</span>
-                  {r.official_bulletins ? (
-                    <Badge variant="secondary" className="font-normal">
-                      <FileText className="h-3 w-3 mr-1" />
-                      Boletim #{r.official_bulletins.number} — {r.official_bulletins.title}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="font-normal text-muted-foreground">sem boletim</Badge>
-                  )}
+                <div key={r.id} className="flex flex-col gap-1 text-xs border-b pb-2 last:border-0">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="font-medium">Partida #{r.competition_matches?.match_number ?? "?"}</span>
+                    {r.official_bulletins ? (
+                      <Badge variant="secondary" className="font-normal">
+                        <FileText className="h-3 w-3 mr-1" />
+                        Boletim #{r.official_bulletins.number} — {r.official_bulletins.title}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="font-normal text-muted-foreground">sem boletim</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                    {r.published_at && (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {format(new Date(r.published_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </span>
+                    )}
+                    {r.publisher_name && (
+                      <span className="flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {r.publisher_name}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
