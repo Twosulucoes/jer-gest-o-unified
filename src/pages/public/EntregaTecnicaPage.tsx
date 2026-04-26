@@ -381,7 +381,7 @@ export default function EntregaTecnicaPage() {
                 <currentTour.icon size={36} />
               </div>
               <div>
-                <p className="text-xs font-mono text-slate-400 uppercase tracking-widest mb-2">Etapa {currentStep + 1} · {currentTour.module}</p>
+                <p className="text-xs font-mono text-slate-400 uppercase tracking-widest mb-2">Etapa {currentStep + 1} · {currentTour.id}</p>
                 <h3 className="text-3xl md:text-4xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
                   {currentTour.title}
                 </h3>
@@ -395,6 +395,22 @@ export default function EntregaTecnicaPage() {
                     <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider">{m.label}</p>
                   </div>
                 ))}
+              </div>
+
+              <div className="pt-6 flex flex-wrap gap-3">
+                <Button asChild size="lg" className="rounded-2xl gap-2 text-white shadow-xl h-12" style={{ background: brand.colors.primary }}>
+                  <Link to={currentTour.module}>Abrir Módulo <ExternalLink size={16} /></Link>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="rounded-2xl gap-2 border-slate-200 h-12" 
+                  onClick={() => {
+                    document.getElementById(`modulo-${currentTour.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                >
+                  Ver no Mapa <ArrowRight size={16} />
+                </Button>
               </div>
 
               <div className="pt-4 flex gap-2">
