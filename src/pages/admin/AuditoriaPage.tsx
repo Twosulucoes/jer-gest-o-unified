@@ -167,7 +167,21 @@ export default function AuditoriaPage() {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-card p-4 rounded-lg border">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 bg-card p-4 rounded-lg border">
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">Entidade/Tabela</label>
+          <Select value={tableName} onValueChange={setTableName}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione..." />
+            </SelectTrigger>
+            <SelectContent>
+              {TABLE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground">Buscar</label>
           <div className="relative">
