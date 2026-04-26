@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { handleContextChange } from "@/lib/context-manager";
 
 const STORAGE_KEY = "jer_active_stage_id";
 
