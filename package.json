@@ -5,17 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "bun run validate:data && vite build",
+    "build": "bun run update-version && bun run validate:data && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "dev:teste": "vite --mode teste",
-    "build:teste": "bun run validate:data && vite build --mode teste",
+    "build:teste": "bun run update-version && bun run validate:data && vite build --mode teste",
     "dev:prod": "vite --mode production",
-    "build:prod": "bun run validate:data && vite build --mode production",
-    "validate:data": "bun scripts/validate-frontend-data.ts"
+    "build:prod": "bun run update-version && bun run validate:data && vite build --mode production",
+    "validate:data": "bun scripts/validate-frontend-data.ts",
+    "update-version": "bun scripts/update-version.ts"
   },
   "dependencies": {
     "@capacitor-mlkit/barcode-scanning": "^8.0.1",
