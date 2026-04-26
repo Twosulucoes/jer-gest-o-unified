@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -14,8 +16,9 @@ import {
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin } from "lucide-react";
+import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks } from "lucide-react";
 import { format, parse } from "date-fns";
+import { EscalaLoteDialog, formatMatchLabel } from "@/components/admin/arbitragem/EscalaLoteDialog";
 
 const ROLE_LABELS: Record<string, string> = {
   mesario: "Mesário",
