@@ -16,7 +16,7 @@ import { usePwaAudit } from "@/hooks/usePwaAudit";
 export default function VincularCredencialPage() {
   useAuth();
   const { activeEventId } = useEventContext();
-  usePwaAudit("credenciamento/vincular");
+  usePwaAudit("credenciamento/vincular", activeEventId);
 
   const [scannerOpen, setScannerOpen] = useState(false);
   const [participantScannerOpen, setParticipantScannerOpen] = useState(false);
