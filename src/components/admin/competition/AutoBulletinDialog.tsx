@@ -222,6 +222,35 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Prévia do próximo número (com trava server-side) */}
+          <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Próximo número (prévia):</span>
+              {nextNumberQuery.isLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Badge variant="secondary" className="font-mono">
+                  #{nextNumberQuery.data ?? "—"}
+                </Badge>
+              )}
+              <span className="text-[11px] text-muted-foreground">
+                Reservado de forma atômica no salvamento.
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 text-xs"
+              onClick={() => nextNumberQuery.refetch()}
+              disabled={nextNumberQuery.isFetching}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${nextNumberQuery.isFetching ? "animate-spin" : ""}`} />
+              Atualizar
+            </Button>
+          </div>
+
           {/* Filtros */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
