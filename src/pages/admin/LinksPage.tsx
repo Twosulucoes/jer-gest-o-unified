@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Plus, Copy, Download, Search, Loader2, Link2, ExternalLink, Trash2,
   QrCode, Info, Pencil, Bus, UtensilsCrossed, Building, Trophy, Users, Radio, Sparkles, Send, MessageSquare,
-  ShieldCheck, Gavel, IdCard, Award
+  ShieldCheck, Gavel, IdCard, Award, History
 } from "lucide-react";
 
 const BASE_URL = window.location.origin;
