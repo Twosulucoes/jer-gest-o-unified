@@ -891,6 +891,20 @@ function IssueVoucherDialog({
 
           {step === 4 && (
             <div className="space-y-3">
+              {/* Prévia visual do voucher */}
+              <VoucherPreviewCard
+                voucherType={voucherType}
+                label={voucherType === "aggregate" ? aggregateLabel : selected?.full_name ?? ""}
+                participantType={voucherType === "nominal" ? selected?.participant_type ?? null : null}
+                cpf={voucherType === "nominal" ? selected?.cpf ?? null : null}
+                scopeTransport={scopeTransport}
+                scopeMeals={scopeMeals}
+                scopeLodging={scopeLodging}
+                maxUses={maxUses.trim() || null}
+                validUntil={validUntil || null}
+                batchN={batchN}
+              />
+
               <Card className="p-3 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tipo</span>
@@ -938,8 +952,9 @@ function IssueVoucherDialog({
                   <span className="font-medium">{validUntil || "Sem validade"}</span>
                 </div>
               </Card>
-              <p className="text-xs text-muted-foreground">
-                Após emitir, abrirá automaticamente a tela de impressão/QR.
+              <p className="text-[11px] text-muted-foreground text-center">
+                O QR exibido acima é uma <strong>simulação</strong>. O QR final será gerado e
+                aberto para impressão após emitir.
               </p>
             </div>
           )}
@@ -971,6 +986,124 @@ function IssueVoucherDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// -------- Voucher Preview Card (mostra prévia visual + QR simulado) --------
+function VoucherPreviewCard({
+  voucherType,
+  label,
+  participantType,
+  cpf,
+  scopeTransport,
+  scopeMeals,
+  scopeLodging,
+  maxUses,
+  validUntil,
+  batchN,
+}: {
+  voucherType: "aggregate" | "nominal";
+  label: string;
+  participantType: string | null;
+  cpf: string | null;
+  scopeTransport: boolean;
+  scopeMeals: boolean;
+  scopeLodging: boolean;
+  maxUses: string | null;
+  validUntil: string | null;
+  batchN: number;
+}) {
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
+
+  useEffect(() => {
+    const previewValue = `PREVIEW::${voucherType}::${label || "—"}::${Date.now()}`;
+    QRCode.toDataURL(previewValue, { width: 220, margin: 1 })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(""));
+  }, [voucherType, label, scopeTransport, scopeMeals, scopeLodging]);
+
+  const fmtDate = (iso: string) => {
+    try {
+      return new Date(iso + "T00:00:00").toLocaleDateString("pt-BR");
+    } catch {
+      return iso;
+    }
+  };
+
+  return (
+    <Card className="overflow-hidden border-2 border-primary/30">
+      <div className="bg-primary text-primary-foreground px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <QrIcon className="h-4 w-4" />
+          <span className="text-xs font-semibold uppercase tracking-wide">
+            Prévia do voucher
+          </span>
+        </div>
+        <Badge variant="secondary" className="text-[10px]">
+          {voucherType === "aggregate" ? "Agregado" : "Nominal"}
+        </Badge>
+      </div>
+
+      <div className="p-4 grid grid-cols-[110px_1fr] gap-4 items-center">
+        <div className="flex flex-col items-center">
+          {qrDataUrl ? (
+            <img
+              src={qrDataUrl}
+              alt="QR Code (prévia)"
+              className="h-[110px] w-[110px] rounded border border-border"
+            />
+          ) : (
+            <div className="h-[110px] w-[110px] rounded border border-border bg-muted animate-pulse" />
+          )}
+          <span className="text-[9px] text-muted-foreground mt-1">prévia</span>
+        </div>
+
+        <div className="space-y-1.5 min-w-0">
+          <p className="font-semibold text-sm leading-tight truncate" title={label}>
+            {label || <span className="text-muted-foreground italic">Sem identificador</span>}
+          </p>
+          {voucherType === "nominal" && participantType && (
+            <p className="text-[11px] text-muted-foreground">
+              {participantType}
+              {cpf ? ` · ${cpf}` : ""}
+            </p>
+          )}
+          {voucherType === "aggregate" && batchN > 1 && (
+            <p className="text-[11px] text-muted-foreground">Lote de {batchN} vouchers</p>
+          )}
+
+          <div className="flex flex-wrap gap-1 pt-1">
+            {scopeTransport && (
+              <Badge variant="outline" className="text-[10px] gap-1">
+                <Bus className="h-3 w-3" /> Transporte
+              </Badge>
+            )}
+            {scopeMeals && (
+              <Badge variant="outline" className="text-[10px] gap-1">
+                <UtensilsCrossed className="h-3 w-3" /> Alimentação
+              </Badge>
+            )}
+            {scopeLodging && (
+              <Badge variant="outline" className="text-[10px] gap-1">
+                <BedDouble className="h-3 w-3" /> Alojamento
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-1">
+            <span>
+              <strong className="text-foreground">{maxUses ?? "∞"}</strong> uso(s)
+            </span>
+            <span>
+              Válido até{" "}
+              <strong className="text-foreground">
+                {validUntil ? fmtDate(validUntil) : "sem prazo"}
+              </strong>
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
 
