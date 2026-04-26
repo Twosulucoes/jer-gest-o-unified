@@ -98,6 +98,8 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
         items: result.itemsCount,
         matches: result.matchesCount,
         number: result.suggestedNumber,
+        matchIds: result.matchIds,
+        sportEventIds: result.sportEventIds,
       });
 
       if (result.itemsCount === 0) {
