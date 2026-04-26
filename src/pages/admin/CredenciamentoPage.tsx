@@ -757,18 +757,13 @@ export default function CredenciamentoPage() {
   };
 
   const handleStartCredenciamento = (p: CredentialParticipantRow) => {
+    // Workflow simplificado: vai direto para o modal de emissão (sistema vs externa).
+    // Edição de dados pessoais e responsável fica acessível via botão Editar (lápis) na linha.
     setSelectedForCred(p);
-    setIsWorkflowActive(true);
-    setEditingParticipantId(p.id);
-    setEditDialogOpen(true);
-    
-    // We prepare the guardian data for the next step
-    setTempGuardianData({
-      name: p.guardian_name || "",
-      phone: p.guardian_phone || "",
-      relationship: p.coach_name || "",
-    });
-    
+    setIsWorkflowActive(false); // não dispara o fluxo guiado de edição+responsável
+    setEditingParticipantId(null);
+    setEditDialogOpen(false);
+    setGuardianConfirmOpen(false);
     setIsLinkingExternal(false);
     setManualCode("");
     setScannerOpen(false);
