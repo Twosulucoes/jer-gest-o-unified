@@ -24,7 +24,8 @@ import {
 import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { format, parse } from "date-fns";
 import { EscalaLoteDialog, formatMatchLabel } from "@/components/admin/arbitragem/EscalaLoteDialog";
-import { downloadCsv, downloadPdf, type EscalaExportRow } from "@/components/admin/arbitragem/escalaExport";
+import { downloadCsv, downloadPdf, type EscalaExportRow, type EscalaColumnKey } from "@/components/admin/arbitragem/escalaExport";
+import { ExportColumnsDialog } from "@/components/admin/arbitragem/ExportColumnsDialog";
 
 const ROLE_LABELS: Record<string, string> = {
   mesario: "Mesário",
@@ -85,6 +86,7 @@ export default function ArbitragemEquipePage() {
   }, [activeTab]);
   const [selectedMatchIds, setSelectedMatchIds] = useState<Set<string>>(new Set());
   const [escalaOpen, setEscalaOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   // Etapas do evento (para filtro)
   const { data: stages = [] } = useQuery({
@@ -365,18 +367,15 @@ export default function ArbitragemEquipePage() {
     return parts.join("_");
   }, [stageFilter, stages]);
 
-  const handleExportCsv = () => {
+  const handleExport = async (fmt: "csv" | "pdf", selected: EscalaColumnKey[]) => {
     if (exportRows.length === 0) {
       toast.info("Nenhuma escala para exportar com os filtros atuais.");
       return;
     }
-    downloadCsv(exportRows, `${exportFilenameBase}.csv`);
-    toast.success(`CSV exportado (${exportRows.length} linha(s)).`);
-  };
-
-  const handleExportPdf = async () => {
-    if (exportRows.length === 0) {
-      toast.info("Nenhuma escala para exportar com os filtros atuais.");
+    if (fmt === "csv") {
+      downloadCsv(exportRows, `${exportFilenameBase}.csv`, selected);
+      toast.success(`CSV exportado (${exportRows.length} linha(s)).`);
+      setExportOpen(false);
       return;
     }
     try {
@@ -387,8 +386,10 @@ export default function ArbitragemEquipePage() {
         stageName,
         activeEventId,
         userId: user?.id ?? null,
+        selectedColumns: selected,
       });
       toast.success(`PDF gerado (${exportRows.length} linha(s)).`);
+      setExportOpen(false);
     } catch (e) {
       toast.error("Falha ao gerar PDF: " + (e as Error).message);
     }
@@ -419,25 +420,18 @@ export default function ArbitragemEquipePage() {
             Para escalar oficiais em uma partida, abra o detalhe da partida.
           </p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Download className="mr-1 h-4 w-4" />
-              Exportar escalas
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleExportCsv}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              CSV (filtros aplicados)
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExportPdf}>
-              <FileText className="mr-2 h-4 w-4" />
-              PDF (filtros aplicados)
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+          <Download className="mr-1 h-4 w-4" />
+          Exportar escalas
+        </Button>
       </div>
+
+      <ExportColumnsDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        rowCount={exportRows.length}
+        onConfirm={handleExport}
+      />
 
       {/* KPIs */}
       <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
