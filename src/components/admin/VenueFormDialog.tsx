@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription,
 } from "@/components/ui/form";
@@ -17,6 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
+import { Layers } from "lucide-react";
 
 const VENUE_TYPE_OPTIONS = [
   { value: "arena", label: "Arena" },
@@ -30,7 +32,7 @@ const VENUE_TYPE_OPTIONS = [
 
 const venueSchema = z.object({
   event_id: z.string().min(1, "Selecione um evento"),
-  event_stage_id: z.string().min(1, "Selecione a etapa"),
+  event_stage_ids: z.array(z.string()).min(1, "Vincule o local a pelo menos uma etapa"),
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres"),
   venue_type: z.string().min(1, "Selecione o tipo"),
   city: z.string().optional().or(z.literal("")),
@@ -43,7 +45,7 @@ export type VenueFormValues = z.infer<typeof venueSchema>;
 interface VenueFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  venue?: (Tables<"venues"> & { event_stage_id?: string | null }) | null;
+  venue?: (Tables<"venues"> & { event_stage_ids?: string[] }) | null;
   events: Tables<"events">[];
   onSubmit: (values: VenueFormValues) => void;
   isPending: boolean;
@@ -58,7 +60,7 @@ export default function VenueFormDialog({
     resolver: zodResolver(venueSchema),
     defaultValues: {
       event_id: "",
-      event_stage_id: "",
+      event_stage_ids: [],
       name: "",
       venue_type: "arena",
       city: "",
@@ -68,18 +70,36 @@ export default function VenueFormDialog({
   });
 
   const selectedEventId = form.watch("event_id");
+  const selectedStageIds = form.watch("event_stage_ids");
 
   const { data: stages = [] } = useQuery({
-    queryKey: ["event_stages", selectedEventId],
+    queryKey: ["event_stages_with_host", selectedEventId],
     enabled: !!selectedEventId && open,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("event_stages")
-        .select("id, name, status, sort_order")
+        .select("id, name, status, sort_order, host_name, host_city")
         .eq("event_id", selectedEventId)
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Array<{
+        id: string; name: string; status: string; sort_order: number;
+        host_name: string | null; host_city: string | null;
+      }>;
+    },
+  });
+
+  // Carrega vínculos atuais quando editando
+  const { data: existingLinks } = useQuery({
+    queryKey: ["venue_event_stages", venue?.id],
+    enabled: !!venue?.id && open,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("venue_event_stages")
+        .select("event_stage_id")
+        .eq("venue_id", venue!.id);
+      if (error) throw error;
+      return (data ?? []).map((r: any) => r.event_stage_id as string);
     },
   });
 
@@ -87,7 +107,7 @@ export default function VenueFormDialog({
     if (venue) {
       form.reset({
         event_id: venue.event_id,
-        event_stage_id: venue.event_stage_id ?? "",
+        event_stage_ids: existingLinks ?? venue.event_stage_ids ?? [],
         name: venue.name,
         venue_type: venue.venue_type,
         city: venue.city ?? "",
@@ -97,7 +117,7 @@ export default function VenueFormDialog({
     } else {
       form.reset({
         event_id: events.length === 1 ? events[0].id : "",
-        event_stage_id: "",
+        event_stage_ids: [],
         name: "",
         venue_type: "arena",
         city: "",
@@ -105,20 +125,27 @@ export default function VenueFormDialog({
         is_active: true,
       });
     }
-  }, [venue, events, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [venue, events, existingLinks?.join(",")]);
 
-  // Pré-seleciona a etapa ativa ao criar (não sobrescreve edição nem escolha manual)
+  // Pré-seleciona a etapa ativa ao criar (se ainda não houver seleção)
   useEffect(() => {
     if (isEditing) return;
     if (!stages.length) return;
-    if (form.getValues("event_stage_id")) return;
+    if ((form.getValues("event_stage_ids") ?? []).length > 0) return;
     const active = stages.find((s) => s.status === "active");
-    if (active) form.setValue("event_stage_id", active.id, { shouldValidate: true });
+    if (active) form.setValue("event_stage_ids", [active.id], { shouldValidate: true });
   }, [stages, isEditing, form]);
+
+  const toggleStage = (stageId: string, checked: boolean) => {
+    const current = form.getValues("event_stage_ids") ?? [];
+    const next = checked ? [...current, stageId] : current.filter((id) => id !== stageId);
+    form.setValue("event_stage_ids", next, { shouldValidate: true, shouldDirty: true });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Local" : "Novo Local"}</DialogTitle>
           <DialogDescription>
@@ -137,7 +164,7 @@ export default function VenueFormDialog({
                   <Select
                     onValueChange={(v) => {
                       field.onChange(v);
-                      form.setValue("event_stage_id", "");
+                      form.setValue("event_stage_ids", []);
                     }}
                     value={field.value}
                     disabled={isEditing}
@@ -158,41 +185,71 @@ export default function VenueFormDialog({
 
             <FormField
               control={form.control}
-              name="event_stage_id"
-              render={({ field }) => {
-                const activeStage = stages.find((s) => s.status === "active");
-                return (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-1">
-                      Etapa do evento
-                      <span className="text-destructive" aria-label="obrigatório">*</span>
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={!selectedEventId || !stages.length}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={!selectedEventId ? "Selecione um evento primeiro" : !stages.length ? "Nenhuma etapa cadastrada" : "Selecione a etapa"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {stages.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.name}{s.status === "active" ? " (ativa)" : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Campo obrigatório — cada local pertence a uma única etapa.
-                      {!isEditing && activeStage && field.value === activeStage.id && (
-                        <span className="block text-primary mt-1">
-                          ✓ Etapa ativa "{activeStage.name}" pré-selecionada.
-                        </span>
-                      )}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
+              name="event_stage_ids"
+              render={() => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1">
+                    <Layers className="h-4 w-4" />
+                    Etapas atendidas
+                    <span className="text-destructive" aria-label="obrigatório">*</span>
+                  </FormLabel>
+                  <FormDescription>
+                    Marque <strong>todas as etapas</strong> em que este local será utilizado.
+                    Cada etapa tem uma sede (ex: cidade), e um mesmo local pode atender etapas diferentes.
+                  </FormDescription>
+                  {!selectedEventId ? (
+                    <p className="text-xs text-muted-foreground p-3 border rounded-md">
+                      Selecione um evento primeiro.
+                    </p>
+                  ) : !stages.length ? (
+                    <p className="text-xs text-muted-foreground p-3 border rounded-md">
+                      Nenhuma etapa cadastrada para este evento.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 border rounded-md p-3 max-h-64 overflow-y-auto">
+                      {stages.map((s) => {
+                        const checked = selectedStageIds?.includes(s.id);
+                        const sede = s.host_name || s.host_city;
+                        return (
+                          <label
+                            key={s.id}
+                            className="flex items-start gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(c) => toggleStage(s.id, c === true)}
+                              className="mt-0.5"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-medium">{s.name}</span>
+                                {s.status === "active" && (
+                                  <Badge variant="default" className="text-[10px]">ATIVA</Badge>
+                                )}
+                              </div>
+                              {sede ? (
+                                <p className="text-xs text-muted-foreground">
+                                  Sede: {sede}{s.host_name && s.host_city ? ` — ${s.host_city}` : ""}
+                                </p>
+                              ) : (
+                                <p className="text-xs text-muted-foreground italic">
+                                  Sede não informada
+                                </p>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {(selectedStageIds?.length ?? 0) > 0 && (
+                    <p className="text-xs text-primary">
+                      ✓ {selectedStageIds.length} etapa(s) selecionada(s).
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
             <FormField
@@ -234,7 +291,7 @@ export default function VenueFormDialog({
                 name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cidade</FormLabel>
+                    <FormLabel>Cidade do local</FormLabel>
                     <FormControl><Input placeholder="São Paulo" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>

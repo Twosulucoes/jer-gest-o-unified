@@ -28,14 +28,18 @@ const VENUE_TYPE_MAP: Record<string, string> = {
 const STAGE_FILTER_ALL = "__all__";
 const STAGE_FILTER_NONE = "__none__";
 
-type VenueRow = Tables<"venues"> & { event_stage_id: string | null };
+type VenueRow = Tables<"venues">;
+type StageRow = {
+  id: string; name: string; status: string; sort_order: number;
+  host_name: string | null; host_city: string | null;
+};
 
 export default function LocaisPage() {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
   const activeEventId = useActiveEventId();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingVenue, setEditingVenue] = useState<VenueRow | null>(null);
+  const [editingVenue, setEditingVenue] = useState<(VenueRow & { event_stage_ids?: string[] }) | null>(null);
   const [stageFilter, setStageFilter] = useState<string>(STAGE_FILTER_ALL);
 
   const canWrite = hasRole("admin") || hasRole("secretaria");
@@ -50,16 +54,16 @@ export default function LocaisPage() {
   });
 
   const { data: stages = [] } = useQuery({
-    queryKey: ["event_stages", activeEventId],
+    queryKey: ["event_stages_with_host", activeEventId],
     enabled: !!activeEventId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("event_stages")
-        .select("id, name, status, sort_order")
+        .select("id, name, status, sort_order, host_name, host_city")
         .eq("event_id", activeEventId)
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as StageRow[];
     },
   });
 
@@ -77,51 +81,110 @@ export default function LocaisPage() {
     },
   });
 
+  // Vínculos N:N venue × stage
+  const { data: links = [] } = useQuery({
+    queryKey: ["venue_event_stages", activeEventId, (venues ?? []).map((v) => v.id).join(",")],
+    enabled: !!venues && venues.length > 0,
+    queryFn: async () => {
+      const venueIds = (venues ?? []).map((v) => v.id);
+      const { data, error } = await (supabase as any)
+        .from("venue_event_stages")
+        .select("venue_id, event_stage_id")
+        .in("venue_id", venueIds);
+      if (error) throw error;
+      return (data ?? []) as Array<{ venue_id: string; event_stage_id: string }>;
+    },
+  });
+
   const stagesMap = useMemo(() => new Map(stages.map((s) => [s.id, s])), [stages]);
 
-  const filtered = useMemo(() => {
-    if (!venues) return [] as VenueRow[];
-    if (stageFilter === STAGE_FILTER_ALL) return venues;
-    if (stageFilter === STAGE_FILTER_NONE) return venues.filter((v) => !v.event_stage_id);
-    return venues.filter((v) => v.event_stage_id === stageFilter);
-  }, [venues, stageFilter]);
-
-  const grouped = useMemo(() => {
-    const map = new Map<string, VenueRow[]>();
-    for (const v of filtered) {
-      const key = v.event_stage_id ?? STAGE_FILTER_NONE;
-      const arr = map.get(key) ?? [];
-      arr.push(v);
-      map.set(key, arr);
+  // venueId -> [stageId]
+  const linksByVenue = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const l of links) {
+      const arr = m.get(l.venue_id) ?? [];
+      arr.push(l.event_stage_id);
+      m.set(l.venue_id, arr);
     }
-    // Order: by stage sort_order, then "sem etapa" last
-    const ordered = Array.from(map.entries()).sort(([a], [b]) => {
+    return m;
+  }, [links]);
+
+  // stageId -> [venue]
+  const venuesByStage = useMemo(() => {
+    const m = new Map<string, VenueRow[]>();
+    const orphans: VenueRow[] = [];
+    for (const v of venues ?? []) {
+      const stageIds = linksByVenue.get(v.id) ?? [];
+      if (stageIds.length === 0) {
+        orphans.push(v);
+        continue;
+      }
+      for (const sid of stageIds) {
+        const arr = m.get(sid) ?? [];
+        arr.push(v);
+        m.set(sid, arr);
+      }
+    }
+    if (orphans.length > 0) m.set(STAGE_FILTER_NONE, orphans);
+    return m;
+  }, [venues, linksByVenue]);
+
+  const orphanCount = (venues ?? []).filter((v) => (linksByVenue.get(v.id) ?? []).length === 0).length;
+
+  const groupsToShow = useMemo(() => {
+    const entries = Array.from(venuesByStage.entries());
+    let filtered = entries;
+    if (stageFilter !== STAGE_FILTER_ALL) {
+      filtered = entries.filter(([key]) => key === stageFilter);
+    }
+    return filtered.sort(([a], [b]) => {
       if (a === STAGE_FILTER_NONE) return 1;
       if (b === STAGE_FILTER_NONE) return -1;
       const sa = stagesMap.get(a)?.sort_order ?? 999;
       const sb = stagesMap.get(b)?.sort_order ?? 999;
       return sa - sb;
     });
-    return ordered;
-  }, [filtered, stagesMap]);
+  }, [venuesByStage, stageFilter, stagesMap]);
 
-  const toPayload = (values: VenueFormValues) => ({
+  const venuePayload = (values: VenueFormValues) => ({
     event_id: values.event_id,
-    event_stage_id: values.event_stage_id,
     name: values.name,
     venue_type: values.venue_type,
     city: values.city || null,
     address: values.address || null,
     is_active: values.is_active,
+    // mantém event_stage_id (legado) apontando para a primeira etapa, se houver — para compatibilidade
+    event_stage_id: values.event_stage_ids[0] ?? null,
   });
+
+  const syncStages = async (venueId: string, stageIds: string[]) => {
+    // Estratégia simples: apaga tudo e reinsere (pequeno volume)
+    const { error: delErr } = await (supabase as any)
+      .from("venue_event_stages")
+      .delete()
+      .eq("venue_id", venueId);
+    if (delErr) throw delErr;
+    if (stageIds.length === 0) return;
+    const rows = stageIds.map((sid) => ({ venue_id: venueId, event_stage_id: sid }));
+    const { error: insErr } = await (supabase as any)
+      .from("venue_event_stages")
+      .insert(rows);
+    if (insErr) throw insErr;
+  };
 
   const createMutation = useMutation({
     mutationFn: async (values: VenueFormValues) => {
-      const { error } = await supabase.from("venues").insert(toPayload(values));
+      const { data, error } = await supabase
+        .from("venues")
+        .insert(venuePayload(values) as any)
+        .select("id")
+        .single();
       if (error) throw error;
+      await syncStages(data.id, values.event_stage_ids);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["venues"] });
+      queryClient.invalidateQueries({ queryKey: ["venue_event_stages"] });
       toast.success("Local criado com sucesso");
       setDialogOpen(false);
     },
@@ -130,12 +193,14 @@ export default function LocaisPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...values }: VenueFormValues & { id: string }) => {
-      const { event_id: _, ...payload } = toPayload(values);
-      const { error } = await supabase.from("venues").update(payload).eq("id", id);
+      const { event_id: _, ...payload } = venuePayload(values);
+      const { error } = await supabase.from("venues").update(payload as any).eq("id", id);
       if (error) throw error;
+      await syncStages(id, values.event_stage_ids);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["venues"] });
+      queryClient.invalidateQueries({ queryKey: ["venue_event_stages"] });
       toast.success("Local atualizado com sucesso");
       setDialogOpen(false);
       setEditingVenue(null);
@@ -151,7 +216,10 @@ export default function LocaisPage() {
     }
   };
 
-  const orphanCount = (venues ?? []).filter((v) => !v.event_stage_id).length;
+  const openEdit = (v: VenueRow) => {
+    setEditingVenue({ ...v, event_stage_ids: linksByVenue.get(v.id) ?? [] });
+    setDialogOpen(true);
+  };
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -159,7 +227,7 @@ export default function LocaisPage() {
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Locais de competição</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Cada local pertence a uma etapa do evento. Use o filtro abaixo para visualizar por etapa.
+            Um local pode atender várias etapas. Cada etapa tem uma sede definida no cadastro de etapas.
           </p>
         </div>
         {canWrite && (
@@ -188,11 +256,14 @@ export default function LocaisPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={STAGE_FILTER_ALL}>Todas as etapas</SelectItem>
-              {stages.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name}{s.status === "active" ? " (ativa)" : ""}
-                </SelectItem>
-              ))}
+              {stages.map((s) => {
+                const sede = s.host_name || s.host_city;
+                return (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}{sede ? ` — ${sede}` : ""}{s.status === "active" ? " (ativa)" : ""}
+                  </SelectItem>
+                );
+              })}
               {orphanCount > 0 && (
                 <SelectItem value={STAGE_FILTER_NONE}>
                   Sem etapa vinculada ({orphanCount})
@@ -202,7 +273,7 @@ export default function LocaisPage() {
           </Select>
           {orphanCount > 0 && (
             <p className="text-xs text-warning mt-2">
-              ⚠ {orphanCount} local(is) sem etapa vinculada — edite para corrigir.
+              ⚠ {orphanCount} local(is) sem nenhuma etapa vinculada — edite para corrigir.
             </p>
           )}
         </CardContent>
@@ -214,7 +285,7 @@ export default function LocaisPage() {
             <Skeleton key={i} className="h-14 w-full rounded-md" />
           ))}
         </div>
-      ) : !filtered.length ? (
+      ) : groupsToShow.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <MapPin className="h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground font-medium">Nenhum local encontrado</p>
@@ -226,16 +297,22 @@ export default function LocaisPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {grouped.map(([stageKey, items]) => {
+          {groupsToShow.map(([stageKey, items]) => {
             const stage = stageKey === STAGE_FILTER_NONE ? null : stagesMap.get(stageKey);
+            const sede = stage ? (stage.host_name || stage.host_city) : null;
             return (
               <div key={stageKey} className="rounded-lg border bg-card overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b flex-wrap gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Layers className="h-4 w-4 text-muted-foreground" />
                     <h2 className="text-sm font-semibold">
                       {stage?.name ?? "Sem etapa vinculada"}
                     </h2>
+                    {sede && (
+                      <Badge variant="outline" className="text-[10px]">
+                        Sede: {sede}
+                      </Badge>
+                    )}
                     {stage?.status === "active" && (
                       <Badge variant="default" className="text-[10px]">ATIVA</Badge>
                     )}
@@ -251,34 +328,55 @@ export default function LocaisPage() {
                       <TableHead>Nome</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Cidade</TableHead>
+                      <TableHead>Outras etapas</TableHead>
                       <TableHead>Status</TableHead>
                       {canWrite && <TableHead className="w-[60px]" />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {items.map((venue) => (
-                      <TableRow key={venue.id}>
-                        <TableCell className="font-medium">{venue.name}</TableCell>
-                        <TableCell>{VENUE_TYPE_MAP[venue.venue_type] ?? venue.venue_type}</TableCell>
-                        <TableCell>{venue.city || "—"}</TableCell>
-                        <TableCell>
-                          <Badge variant={venue.is_active ? "default" : "secondary"}>
-                            {venue.is_active ? "Ativo" : "Inativo"}
-                          </Badge>
-                        </TableCell>
-                        {canWrite && (
+                    {items.map((venue) => {
+                      const allStageIds = linksByVenue.get(venue.id) ?? [];
+                      const otherStages = allStageIds
+                        .filter((sid) => sid !== stageKey)
+                        .map((sid) => stagesMap.get(sid)?.name)
+                        .filter(Boolean) as string[];
+                      return (
+                        <TableRow key={`${stageKey}-${venue.id}`}>
+                          <TableCell className="font-medium">{venue.name}</TableCell>
+                          <TableCell>{VENUE_TYPE_MAP[venue.venue_type] ?? venue.venue_type}</TableCell>
+                          <TableCell>{venue.city || "—"}</TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => { setEditingVenue(venue); setDialogOpen(true); }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            {otherStages.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {otherStages.map((n) => (
+                                  <Badge key={n} variant="secondary" className="text-[10px]">
+                                    {n}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
                           </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
+                          <TableCell>
+                            <Badge variant={venue.is_active ? "default" : "secondary"}>
+                              {venue.is_active ? "Ativo" : "Inativo"}
+                            </Badge>
+                          </TableCell>
+                          {canWrite && (
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEdit(venue)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
