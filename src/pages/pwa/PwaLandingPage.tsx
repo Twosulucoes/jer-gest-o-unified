@@ -6,6 +6,7 @@ import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, B
 import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VersionBadge } from "@/components/VersionBadge";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 interface UserProfile {
   full_name: string | null;
