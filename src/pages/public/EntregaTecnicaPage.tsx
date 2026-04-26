@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
-import { 
-  CheckCircle2, 
-  Smartphone, 
-  Trophy, 
-  Users, 
-  Globe, 
-  Database, 
+import { Link } from "react-router-dom";
+import {
+  CheckCircle2,
+  Smartphone,
+  Trophy,
+  Users,
+  Globe,
+  Database,
   Rocket,
   QrCode,
   Share2,
   Layout,
-  Server,
   Code2,
   Zap,
   Shield,
@@ -20,13 +20,28 @@ import {
   ChevronRight,
   ExternalLink,
   Github,
-  Monitor
+  LayoutDashboard,
+  ClipboardList,
+  Bus,
+  FileText,
+  BarChart3,
+  Bell,
+  Search,
+  CalendarDays,
+  Award,
+  TrendingUp,
+  Clock,
+  Wifi,
+  Battery,
+  Signal,
 } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { brand } from "@/theme/brand";
+import { systemMap } from "@/config/systemMap";
+import twoLogo from "@/assets/two-solucoes-logo.png";
 
 interface VersionInfo {
   appVersion: string;
@@ -39,54 +54,98 @@ interface VersionInfo {
 }
 
 const techStack = [
-  { name: "React 18", icon: Code2, desc: "Interface reativa e modular", color: "text-blue-400" },
-  { name: "TypeScript", icon: Code2, desc: "Tipagem estática e segurança", color: "text-blue-600" },
-  { name: "Supabase", icon: Database, desc: "Backend as a Service & Auth", color: "text-emerald-500" },
-  { name: "Tailwind CSS", icon: Layout, desc: "Estilização utilitária moderna", color: "text-sky-400" },
-  { name: "PostgreSQL", icon: Server, desc: "Banco de dados relacional robusto", color: "text-indigo-400" },
-  { name: "PWA", icon: Smartphone, desc: "Suporte offline e mobile-first", color: "text-orange-500" },
+  { name: "React 18", icon: Code2, desc: "Interface reativa, modular e performática", color: "text-sky-500" },
+  { name: "TypeScript 5", icon: Code2, desc: "Tipagem estática end-to-end", color: "text-blue-600" },
+  { name: "Supabase", icon: Database, desc: "Postgres + Auth + Storage + Realtime", color: "text-emerald-500" },
+  { name: "Tailwind CSS 3", icon: Layout, desc: "Design system tokenizado JER", color: "text-cyan-500" },
+  { name: "Vite 5", icon: Zap, desc: "Build ultrarrápido e HMR instantâneo", color: "text-amber-500" },
+  { name: "PWA + Capacitor", icon: Smartphone, desc: "Instalável, offline e nativo MLKit", color: "text-orange-500" },
 ];
 
+// Métricas reais derivadas do systemMap
+const totalModulos = systemMap.reduce((acc, g) => {
+  const sub = g.subGroups?.reduce((a, sg) => a + sg.items.length, 0) ?? 0;
+  return acc + g.items.length + sub;
+}, 0);
+const modulosConcluidos = systemMap.reduce((acc, g) => {
+  const items = [...g.items, ...(g.subGroups?.flatMap((sg) => sg.items) ?? [])];
+  return acc + items.filter((i) => i.status === "done").length;
+}, 0);
+
 const tourSteps = [
-  { 
-    title: "Importação Inteligente", 
-    desc: "Processamento de planilhas Excel com validação automática de dados, detecção de erros e normalização de nomes.",
+  {
+    title: "Importação SIGECOM",
+    desc: "Espelhamento operacional via planilhas Excel do sistema oficial. Validação automática, normalização de nomes e detecção de duplicidades.",
     icon: Users,
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800",
-    color: "bg-blue-500"
+    module: "/admin/importacao",
+    metrics: [
+      { label: "Atletas processados", value: "5.000+" },
+      { label: "Tempo médio", value: "~12s" },
+      { label: "Taxa de erro", value: "0,3%" },
+    ],
+    color: "from-sky-500 to-blue-600",
   },
-  { 
-    title: "Credenciamento Digital", 
-    desc: "Geração instantânea de QR Codes e vinculação com perfis físicos. Validação via PWA em campo.",
+  {
+    title: "Credenciamento Digital",
+    desc: "Geração de credenciais visuais (Canvas) com QR único, vinculação em campo e reemissão controlada com invalidação histórica.",
     icon: QrCode,
-    image: "https://images.unsplash.com/photo-1595079676339-1534801ad6cf?auto=format&fit=crop&q=80&w=800",
-    color: "bg-purple-500"
+    module: "/admin/credenciamento",
+    metrics: [
+      { label: "Credenciais", value: "Únicas" },
+      { label: "Validação", value: "MLKit" },
+      { label: "Modelos", value: "Por evento" },
+    ],
+    color: "from-purple-500 to-indigo-600",
   },
-  { 
-    title: "Coleta em Tempo Real", 
-    desc: "Lançamento de resultados diretamente por coordenadores de modalidade, mesmo com conexão instável.",
+  {
+    title: "Competição em Tempo Real",
+    desc: "Geração de chaves, fases, grupos e partidas. Lançamento de resultados pelos coordenadores via PWA, com sincronização offline-first.",
     icon: Trophy,
-    image: "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800",
-    color: "bg-green-500"
+    module: "/admin/competicao",
+    metrics: [
+      { label: "Modalidades", value: "Multi-família" },
+      { label: "Tipos", value: "Coletiva+Indiv." },
+      { label: "Desempates", value: "Cascata" },
+    ],
+    color: "from-emerald-500 to-teal-600",
   },
-  { 
-    title: "Publicação Transparente", 
-    desc: "Resultados, medalhas e boletins sincronizados automaticamente para o portal público do cidadão.",
+  {
+    title: "Logística Operacional",
+    desc: "Transporte, alimentação e alojamento integrados. Controle anti-duplo-consumo, scan de QR em refeitórios e rotas em tempo real.",
+    icon: Bus,
+    module: "/admin/logistica",
+    metrics: [
+      { label: "PWAs", value: "3 dedicados" },
+      { label: "Sync offline", value: "Sim" },
+      { label: "QR multiuso", value: "Vouchers" },
+    ],
+    color: "from-orange-500 to-amber-600",
+  },
+  {
+    title: "Portal Público & Resultados",
+    desc: "Resultados, medalhas e boletins sincronizados via Edge Functions para o portal JERS.COM.BR. Tokens públicos por atleta.",
     icon: Share2,
-    image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800",
-    color: "bg-amber-500"
-  }
+    module: "/admin/relatorios",
+    metrics: [
+      { label: "Edge Funcs", value: "Public API" },
+      { label: "Formatos", value: "PDF + XLSX" },
+      { label: "Atualização", value: "Realtime" },
+    ],
+    color: "from-rose-500 to-pink-600",
+  },
 ];
 
 const checklistItems = [
-  "Core System: Autenticação e RBAC (Controle de Acessos)",
-  "Módulo Secretaria: Gestão de Inscrições e Delegações",
-  "Módulo Logística: Transporte, Alimentação e Alojamento",
-  "Módulo Técnico: Tabelas, Grupos, Fases e Sumulas",
-  "Módulo Resultados: Lançamento Mobile e Web",
-  "Portal Público: Resultados, Medalhas e Documentos",
-  "Infraestrutura: Database Realtime e Storage Seguro",
-  "Experiência: App PWA Instalável (Offline Ready)"
+  { mod: "Core System", desc: "Autenticação, RLS, RBAC e auditoria" },
+  { mod: "Preparação", desc: "Eventos, instituições, delegações e SIGECOM" },
+  { mod: "Pessoas", desc: "Cadastro central, vouchers QR e merge de duplicidades" },
+  { mod: "Credenciamento", desc: "Geração visual, vinculação física e validação" },
+  { mod: "Competição", desc: "Fases, grupos, partidas, súmulas e classificação" },
+  { mod: "Logística", desc: "Transporte, alimentação e alojamento (3 PWAs)" },
+  { mod: "Justiça Desportiva", desc: "CDE, protestos online e disciplina" },
+  { mod: "Relatórios", desc: "PDF/XLSX, dashboard operacional e branding" },
+  { mod: "Portal Público", desc: "Edge Functions JERS.COM.BR e tokens" },
+  { mod: "Monitoramento", desc: "Web Push, captura de erros e cron 1min" },
 ];
 
 export default function EntregaTecnicaPage() {
@@ -100,263 +159,382 @@ export default function EntregaTecnicaPage() {
       .catch(() => setVersion(null));
   }, []);
 
-  const nextStep = () => setCurrentStep((prev) => (prev + 1) % tourSteps.length);
-  const prevStep = () => setCurrentStep((prev) => (prev - 1 + tourSteps.length) % tourSteps.length);
+  const nextStep = () => setCurrentStep((p) => (p + 1) % tourSteps.length);
+  const prevStep = () => setCurrentStep((p) => (p - 1 + tourSteps.length) % tourSteps.length);
+  const currentTour = tourSteps[currentStep];
 
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-100 selection:text-blue-900">
-      
-      {/* ── Navbar ────────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-4">
+
+      {/* ── Navbar ────────────────────────────────────────────────── */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-xl border-b border-slate-100 px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-900 flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
-              <Zap size={22} fill="currentColor" />
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg"
+              style={{ background: brand.gradients.brandGradient, boxShadow: `0 8px 24px -8px ${brand.colors.primary}` }}
+            >
+              <Trophy size={20} />
             </div>
             <div>
-              <p className="font-bold text-lg tracking-tight">JER <span className="text-blue-600">2026</span></p>
-              <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest leading-none">Entrega Técnica</p>
+              <p className="font-bold text-base tracking-tight leading-none" style={{ fontFamily: brand.typography.headingFont }}>
+                JER <span style={{ color: brand.colors.accentTeal }}>Gestão</span>
+              </p>
+              <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest leading-tight mt-0.5">Entrega Técnica · 2026</p>
             </div>
           </div>
-          <div className="hidden md:flex items-center gap-6">
-            <a href="#solucao" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">A Solução</a>
-            <a href="#stack" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Tecnologia</a>
-            <a href="#tour" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Tour Guiado</a>
-            <a href="#homologacao" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Homologação</a>
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#solucao" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Visão Geral</a>
+            <a href="#stack" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Tecnologia</a>
+            <a href="#tour" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Tour Guiado</a>
+            <a href="#modulos" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Módulos</a>
+            <a href="#homologacao" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Homologação</a>
           </div>
-          <Button size="sm" className="bg-blue-900 hover:bg-blue-800 text-white gap-2 rounded-full shadow-md" asChild>
-            <a href="/">Sair do Sistema <ArrowRight size={14} /></a>
+          <Button size="sm" className="text-white gap-2 rounded-full" style={{ background: brand.colors.primary }} asChild>
+            <Link to="/">Acessar Sistema <ArrowRight size={14} /></Link>
           </Button>
         </div>
       </nav>
 
-      {/* ── Hero Section ────────────────────────────────────────────────────────── */}
-      <header id="solucao" className="relative pt-40 pb-32 px-6 overflow-hidden">
-        <div 
-          className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none"
-          style={{ backgroundImage: `radial-gradient(circle at 2px 2px, ${brand.colors.primary} 1px, transparent 0)`, backgroundSize: '40px 40px' }}
-        ></div>
-        
-        <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8">
-            <Badge className="px-4 py-1.5 bg-blue-50 text-blue-700 border-blue-100 rounded-full font-bold uppercase tracking-wider text-[10px]">
-              System Release v1.0 • Milestone Final
+      {/* ── Hero ────────────────────────────────────────────────── */}
+      <header id="solucao" className="relative pt-32 pb-24 px-6 overflow-hidden">
+        <div
+          className="absolute inset-0 z-0 opacity-[0.04] pointer-events-none"
+          style={{ backgroundImage: `radial-gradient(circle at 2px 2px, ${brand.colors.primary} 1px, transparent 0)`, backgroundSize: '32px 32px' }}
+        />
+        <div
+          className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full opacity-20 blur-3xl"
+          style={{ background: brand.gradients.brandGradient }}
+        />
+
+        <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-12 gap-12 items-center">
+          <div className="lg:col-span-7 space-y-8">
+            <Badge className="px-4 py-1.5 rounded-full font-bold uppercase tracking-wider text-[10px] border-0 text-white" style={{ background: brand.colors.accentTeal }}>
+              ✦ Release 1.0 · Entrega Final
             </Badge>
-            <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-[1.1] tracking-tight">
-              A Nova Era da <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 via-blue-600 to-teal-500">
-                Gestão Esportiva
-              </span>
+            <h1
+              className="text-5xl md:text-7xl font-black leading-[1.05] tracking-tight"
+              style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}
+            >
+              A plataforma oficial<br />
+              dos <span className="text-transparent bg-clip-text" style={{ backgroundImage: brand.gradients.brandGradient }}>
+                Jogos Escolares
+              </span><br />
+              de Roraima.
             </h1>
-            <p className="text-xl text-slate-600 leading-relaxed max-w-xl">
-              Entregamos hoje uma plataforma robusta, escalável e resiliente. O JER 2026 não é apenas um software, 
-              é o motor tecnológico que impulsiona os Jogos Escolares de Roraima para o futuro.
+            <p className="text-lg text-slate-600 leading-relaxed max-w-2xl">
+              Uma plataforma robusta, escalável e resiliente que orquestra <strong>{totalModulos} módulos</strong> integrados — da importação SIGECOM
+              à publicação pública dos resultados — operando com sincronização offline-first em campo.
             </p>
-            <div className="flex flex-wrap gap-4 pt-4">
-              <Button size="lg" className="bg-blue-900 hover:bg-blue-800 text-white rounded-2xl h-14 px-8 text-lg font-bold shadow-2xl shadow-blue-900/20">
-                Explorar Documentação
+
+            <div className="grid grid-cols-3 gap-4 pt-4 max-w-2xl">
+              <div className="space-y-1">
+                <p className="text-3xl font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>{totalModulos}</p>
+                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Módulos integrados</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-3xl font-black" style={{ color: brand.colors.accentTeal, fontFamily: brand.typography.headingFont }}>3</p>
+                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">PWAs operacionais</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-3xl font-black" style={{ color: brand.colors.accentGreen, fontFamily: brand.typography.headingFont }}>12</p>
+                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Perfis de acesso</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Button asChild size="lg" className="rounded-2xl h-13 px-7 text-base font-bold text-white shadow-xl" style={{ background: brand.colors.primary }}>
+                <a href="#tour">Iniciar Tour Guiado</a>
               </Button>
-              <div className="flex items-center gap-4 px-6 border border-slate-200 rounded-2xl bg-white/50 backdrop-blur-sm">
-                <div className="flex -space-x-3">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center overflow-hidden">
-                      <img src={`https://i.pravatar.cc/100?u=${i}`} alt="user" />
+              <Button asChild size="lg" variant="outline" className="rounded-2xl h-13 px-7 text-base font-bold border-2">
+                <a href="#stack">Ver Stack Técnica</a>
+              </Button>
+            </div>
+          </div>
+
+          {/* Mockup Hero — Dashboard real */}
+          <div className="lg:col-span-5 relative">
+            <div className="absolute -inset-6 rounded-[3rem] opacity-30 blur-3xl" style={{ background: brand.gradients.brandGradient }} />
+            <div className="relative bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden">
+              <div className="flex items-center gap-1.5 px-4 py-3 bg-slate-50 border-b border-slate-200">
+                <div className="w-2.5 h-2.5 rounded-full bg-rose-400" />
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                <div className="ml-3 px-3 py-1 bg-white rounded-md text-[10px] text-slate-500 font-mono border border-slate-200">
+                  jergestao.com.br/admin
+                </div>
+              </div>
+              <div className="p-5 space-y-4 bg-slate-50/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white" style={{ background: brand.colors.primary }}>
+                      <LayoutDashboard size={14} />
+                    </div>
+                    <p className="font-bold text-sm" style={{ color: brand.colors.primary }}>Dashboard JER 2026</p>
+                  </div>
+                  <Bell size={14} className="text-slate-400" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { icon: Users, label: "Atletas", val: "5.247", color: brand.colors.accentBlue },
+                    { icon: Trophy, label: "Modalidades", val: "32", color: brand.colors.accentTeal },
+                    { icon: Award, label: "Medalhas", val: "187", color: brand.colors.accentGreen },
+                    { icon: ClipboardList, label: "Provas hoje", val: "24", color: brand.colors.warning },
+                  ].map((m) => (
+                    <div key={m.label} className="bg-white rounded-xl p-3 border border-slate-100">
+                      <m.icon size={14} style={{ color: m.color }} />
+                      <p className="text-xl font-black mt-1" style={{ color: brand.colors.text, fontFamily: brand.typography.headingFont }}>{m.val}</p>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">{m.label}</p>
                     </div>
                   ))}
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-bold text-slate-900">5,000+ Atletas</p>
-                  <p className="text-xs text-slate-500">Monitorados em tempo real</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="relative group lg:block hidden">
-            <div className="absolute -inset-4 bg-gradient-to-tr from-blue-500/10 to-teal-500/10 rounded-3xl blur-3xl opacity-50 group-hover:opacity-100 transition-opacity"></div>
-            <div className="relative bg-white border border-slate-100 rounded-[2.5rem] shadow-2xl overflow-hidden p-3 aspect-[4/3]">
-              <div className="w-full h-full rounded-[2rem] bg-slate-50 overflow-hidden relative">
-                <img 
-                  src="https://images.unsplash.com/photo-1551288049-bbda38a5f9a2?auto=format&fit=crop&q=80&w=1200" 
-                  alt="Dashboard Preview" 
-                  className="w-full h-full object-cover opacity-90"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent flex items-end p-8">
-                  <div className="text-white space-y-2">
-                    <p className="font-mono text-xs uppercase tracking-widest opacity-80">Interface Administrativa</p>
-                    <h3 className="text-2xl font-bold">Monitoramento Operacional</h3>
-                    <p className="text-sm opacity-80">Visualização consolidada de todos os indicadores do evento.</p>
+                <div className="bg-white rounded-xl p-3 border border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-bold text-slate-700">Cronograma do dia</p>
+                    <CalendarDays size={12} className="text-slate-400" />
+                  </div>
+                  <div className="space-y-1.5">
+                    {["Atletismo · Pista 1", "Natação · Piscina A", "Vôlei · Quadra 3"].map((t, i) => (
+                      <div key={t} className="flex items-center gap-2 text-[11px]">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: brand.colors.accentTeal }} />
+                        <span className="text-slate-700">{t}</span>
+                        <span className="ml-auto text-slate-400 font-mono">0{8 + i}:00</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
-            
-            {/* Floating metrics */}
-            <div className="absolute -top-6 -right-6 bg-white p-4 rounded-2xl shadow-xl border border-slate-100">
-              <Activity className="text-emerald-500 mb-2" />
-              <p className="text-xs text-slate-500 font-medium">Uptime</p>
-              <p className="text-xl font-black text-slate-900">99.9%</p>
+
+            <div className="hidden md:block absolute -top-6 -left-8 bg-white p-3 rounded-2xl shadow-xl border border-slate-100">
+              <Activity size={20} style={{ color: brand.colors.accentGreen }} />
+              <p className="text-[10px] text-slate-500 font-medium mt-1">Uptime</p>
+              <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>99.9%</p>
             </div>
-            <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-slate-100">
-              <Database className="text-blue-500 mb-2" />
-              <p className="text-xs text-slate-500 font-medium">Latência</p>
-              <p className="text-xl font-black text-slate-900">~24ms</p>
+            <div className="hidden md:block absolute -bottom-6 -right-6 bg-white p-3 rounded-2xl shadow-xl border border-slate-100">
+              <Database size={20} style={{ color: brand.colors.accentBlue }} />
+              <p className="text-[10px] text-slate-500 font-medium mt-1">Latência DB</p>
+              <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>~24ms</p>
             </div>
           </div>
         </div>
       </header>
 
-      {/* ── Architecture & Stack ────────────────────────────────────────────────── */}
+      {/* ── Stack ────────────────────────────────────────────────── */}
       <section id="stack" className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl md:text-5xl font-black text-slate-900">Stack Tecnológica</h2>
+          <div className="text-center space-y-3 mb-14">
+            <Badge variant="outline" className="rounded-full text-xs">Engenharia</Badge>
+            <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
+              Stack Tecnológica
+            </h2>
             <p className="text-slate-500 max-w-2xl mx-auto">
-              Utilizamos as ferramentas mais modernas do mercado para garantir performance, 
-              segurança e a melhor experiência de usuário.
+              Tecnologias modernas, mantidas e escaláveis. Toda a plataforma é construída sobre padrões abertos e ferramentas líderes de mercado.
             </p>
           </div>
-          
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {techStack.map((tech) => (
-              <Card key={tech.name} className="group hover:shadow-2xl transition-all hover:-translate-y-2 border-none bg-white">
+              <Card key={tech.name} className="group hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 bg-white">
                 <CardHeader>
-                  <div className={`w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-4 group-hover:bg-blue-50 transition-colors`}>
-                    <tech.icon className={`${tech.color} w-8 h-8`} />
+                  <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <tech.icon className={`${tech.color} w-6 h-6`} />
                   </div>
-                  <CardTitle className="text-xl font-bold">{tech.name}</CardTitle>
-                  <CardDescription className="text-slate-500">{tech.desc}</CardDescription>
+                  <CardTitle className="text-lg font-bold" style={{ color: brand.colors.primary }}>{tech.name}</CardTitle>
+                  <CardDescription className="text-slate-500 text-sm">{tech.desc}</CardDescription>
                 </CardHeader>
               </Card>
             ))}
           </div>
-          
-          <div className="mt-16 p-8 bg-blue-900 rounded-[2rem] text-white overflow-hidden relative">
-            <div className="absolute right-0 bottom-0 opacity-10">
-              <Monitor size={300} strokeWidth={1} />
+
+          <div className="mt-12 p-8 md:p-10 rounded-3xl text-white overflow-hidden relative" style={{ background: brand.colors.primary }}>
+            <div className="absolute right-0 bottom-0 opacity-5">
+              <Shield size={280} strokeWidth={1} />
             </div>
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="space-y-4 text-center md:text-left">
-                <h3 className="text-2xl font-bold">Segurança & Conformidade</h3>
+            <div className="relative z-10 grid md:grid-cols-3 gap-8 items-center">
+              <div className="md:col-span-2 space-y-3">
+                <Badge className="bg-white/10 text-white border-0">Segurança & Conformidade</Badge>
+                <h3 className="text-2xl md:text-3xl font-bold" style={{ fontFamily: brand.typography.headingFont }}>
+                  Dados protegidos por design.
+                </h3>
                 <p className="opacity-80 max-w-xl">
-                  Criptografia de ponta a ponta, autenticação via Supabase Auth e backups 
-                  diários garantem que os dados dos jogos estejam protegidos e sempre disponíveis.
+                  RLS (Row Level Security) em todas as tabelas, isolamento por <code className="text-xs bg-white/10 px-1.5 py-0.5 rounded">event_id</code>,
+                  autenticação Supabase Auth, logs de auditoria e backups diários automáticos.
                 </p>
               </div>
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <Shield size={40} className="text-lime-400 mb-2" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">LGPD Ready</span>
-                </div>
-                <Separator orientation="vertical" className="h-12 bg-white/20" />
-                <div className="flex flex-col items-center">
-                  <Rocket size={40} className="text-orange-400 mb-2" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">High Perf</span>
-                </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { icon: Shield, label: "RLS Total", color: brand.colors.accentLime },
+                  { icon: Rocket, label: "Edge Funcs", color: brand.colors.accentTeal },
+                  { icon: Database, label: "Backup 24h", color: brand.colors.accentGreen },
+                  { icon: Activity, label: "Auditoria", color: "#FFB627" },
+                ].map((b) => (
+                  <div key={b.label} className="bg-white/5 backdrop-blur p-4 rounded-2xl border border-white/10 text-center">
+                    <b.icon size={24} className="mx-auto mb-1" style={{ color: b.color }} />
+                    <p className="text-[10px] font-bold uppercase tracking-widest">{b.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Guided Tour ────────────────────────────────────────────────────────── */}
+      {/* ── Tour Guiado ────────────────────────────────────────────────── */}
       <section id="tour" className="py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
-            <div className="space-y-4">
-              <Badge className="bg-orange-50 text-orange-600 border-orange-100">Tutorial Interativo</Badge>
-              <h2 className="text-3xl md:text-5xl font-black text-slate-900">Jornada do Sistema</h2>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div className="space-y-3">
+              <Badge variant="outline" className="rounded-full text-xs" style={{ borderColor: brand.colors.accentTeal, color: brand.colors.accentTeal }}>
+                Tutorial Interativo · {currentStep + 1}/{tourSteps.length}
+              </Badge>
+              <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
+                Jornada do Sistema
+              </h2>
               <p className="text-slate-500 max-w-xl">
-                Navegue pelas etapas principais do fluxo de trabalho do JER 2026.
+                Navegue pelas 5 etapas centrais do fluxo operacional do JER 2026 — da importação dos atletas até a publicação pública.
               </p>
             </div>
-            <div className="flex gap-4">
-              <Button onClick={prevStep} variant="outline" size="icon" className="h-14 w-14 rounded-2xl border-slate-200">
+            <div className="flex gap-3">
+              <Button onClick={prevStep} variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-slate-200">
                 <ChevronLeft />
               </Button>
-              <Button onClick={nextStep} variant="outline" size="icon" className="h-14 w-14 rounded-2xl border-slate-200 bg-blue-50 text-blue-600">
+              <Button onClick={nextStep} size="icon" className="h-12 w-12 rounded-2xl text-white" style={{ background: brand.colors.primary }}>
                 <ChevronRight />
               </Button>
             </div>
           </div>
-          
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8 animate-in fade-in slide-in-from-left-8 duration-700" key={currentStep}>
-              <div className={`w-20 h-20 ${tourSteps[currentStep].color} text-white rounded-[2rem] flex items-center justify-center shadow-xl shadow-blue-500/20 mb-8`}>
-                {(() => {
-                  const Icon = tourSteps[currentStep].icon;
-                  return <Icon size={40} />;
-                })()}
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6 animate-in fade-in slide-in-from-left-8 duration-700" key={currentStep}>
+              <div className={`w-20 h-20 bg-gradient-to-br ${currentTour.color} text-white rounded-3xl flex items-center justify-center shadow-xl`}>
+                <currentTour.icon size={36} />
               </div>
-              <h3 className="text-4xl font-black text-slate-900">{tourSteps[currentStep].title}</h3>
-              <p className="text-xl text-slate-600 leading-relaxed">
-                {tourSteps[currentStep].desc}
-              </p>
-              
-              <ul className="space-y-4">
-                {[1, 2, 3].map(i => (
-                  <li key={i} className="flex items-center gap-3 text-slate-700 font-medium">
-                    <CheckCircle2 className="text-emerald-500 h-5 w-5 shrink-0" />
-                    <span>Recurso operacional avançado {i} configurado.</span>
-                  </li>
+              <div>
+                <p className="text-xs font-mono text-slate-400 uppercase tracking-widest mb-2">Etapa {currentStep + 1} · {currentTour.module}</p>
+                <h3 className="text-3xl md:text-4xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
+                  {currentTour.title}
+                </h3>
+              </div>
+              <p className="text-lg text-slate-600 leading-relaxed">{currentTour.desc}</p>
+
+              <div className="grid grid-cols-3 gap-3 pt-4">
+                {currentTour.metrics.map((m) => (
+                  <div key={m.label} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-base font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>{m.value}</p>
+                    <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider">{m.label}</p>
+                  </div>
                 ))}
-              </ul>
-              
-              <div className="pt-8 flex gap-2">
+              </div>
+
+              <div className="pt-4 flex gap-2">
                 {tourSteps.map((_, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentStep ? 'w-12 bg-blue-600' : 'w-4 bg-slate-200'}`}
-                  ></div>
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentStep(idx)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentStep ? 'w-12' : 'w-4 bg-slate-200 hover:bg-slate-300'}`}
+                    style={idx === currentStep ? { background: brand.colors.primary } : {}}
+                    aria-label={`Etapa ${idx + 1}`}
+                  />
                 ))}
               </div>
             </div>
-            
-            <div className="relative aspect-square md:aspect-video lg:aspect-square overflow-hidden rounded-[3rem] shadow-2xl animate-in zoom-in duration-1000" key={`img-${currentStep}`}>
-              <img 
-                src={tourSteps[currentStep].image} 
-                alt={tourSteps[currentStep].title} 
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-blue-900/40 to-transparent"></div>
-            </div>
+
+            <TourMockup step={currentStep} />
           </div>
         </div>
       </section>
 
-      {/* ── Homologation Checklist ────────────────────────────────────────────────── */}
-      <section id="homologacao" className="py-24 bg-slate-900 text-white">
-        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-3 gap-16">
-          <div className="lg:col-span-1 space-y-6">
-            <h2 className="text-3xl md:text-5xl font-black">Homologação Técnica</h2>
-            <p className="text-slate-400 text-lg">
-              Checklist rigoroso de validação para garantir que todos os módulos operacionais 
-              estão prontos para a produção em larga escala.
+      {/* ── Mapa de Módulos ────────────────────────────────────────────────── */}
+      <section id="modulos" className="py-24 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center space-y-3 mb-14">
+            <Badge variant="outline" className="rounded-full text-xs">{totalModulos} módulos integrados</Badge>
+            <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
+              Mapa de Funcionalidades
+            </h2>
+            <p className="text-slate-500 max-w-2xl mx-auto">
+              Todos os grupos funcionais entregues, organizados pela arquitetura oficial do sistema (<code className="text-xs bg-slate-200 px-1.5 py-0.5 rounded">systemMap.ts</code>).
             </p>
-            <div className="p-6 bg-white/5 rounded-3xl border border-white/10 space-y-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-blue-400">Progresso de Entrega</p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {systemMap.map((group) => {
+              const items = [...group.items, ...(group.subGroups?.flatMap((sg) => sg.items) ?? [])];
+              const done = items.filter((i) => i.status === "done").length;
+              const total = items.length;
+              const pct = total > 0 ? Math.round((done / total) * 100) : 100;
+              return (
+                <div key={group.id} className="bg-white rounded-2xl p-5 border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-bold text-base" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>
+                        {group.label}
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">{total} {total === 1 ? "módulo" : "módulos"}</p>
+                    </div>
+                    <Badge className="text-[10px] text-white border-0" style={{ background: pct === 100 ? brand.colors.accentGreen : brand.colors.warning }}>
+                      {pct}%
+                    </Badge>
+                  </div>
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-3">
+                    <div
+                      className="h-full transition-all duration-1000"
+                      style={{ width: `${pct}%`, background: brand.gradients.brandGradient }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {items.slice(0, 5).map((item) => (
+                      <span key={item.id} className="text-[10px] bg-slate-50 px-2 py-0.5 rounded text-slate-600 border border-slate-100">
+                        {item.label}
+                      </span>
+                    ))}
+                    {items.length > 5 && (
+                      <span className="text-[10px] text-slate-400 px-2 py-0.5">+{items.length - 5}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Homologação ────────────────────────────────────────────────── */}
+      <section id="homologacao" className="py-24 text-white" style={{ background: brand.colors.text }}>
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-3 gap-12">
+          <div className="lg:col-span-1 space-y-6">
+            <Badge className="bg-white/10 text-white border-0">Quality Assurance</Badge>
+            <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: brand.typography.headingFont }}>
+              Homologação Técnica
+            </h2>
+            <p className="text-slate-400">
+              Checklist rigoroso de validação dos módulos operacionais. Todos os domínios passaram por testes E2E automatizados (Playwright)
+              e validação manual com dados reais.
+            </p>
+            <div className="p-6 bg-white/5 rounded-3xl border border-white/10 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: brand.colors.accentTeal }}>Progresso de Entrega</p>
               <div className="w-full bg-white/10 h-3 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-blue-500 to-teal-400 transition-all duration-1000"
-                  style={{ width: '100%' }}
-                ></div>
+                <div className="h-full transition-all duration-1000" style={{ width: `${Math.round((modulosConcluidos / totalModulos) * 100)}%`, background: brand.gradients.brandGradient }} />
               </div>
-              <p className="text-2xl font-black">100% Concluído</p>
+              <div className="flex items-baseline justify-between">
+                <p className="text-3xl font-black" style={{ fontFamily: brand.typography.headingFont }}>
+                  {Math.round((modulosConcluidos / totalModulos) * 100)}%
+                </p>
+                <p className="text-xs text-slate-400">{modulosConcluidos}/{totalModulos} módulos</p>
+              </div>
             </div>
           </div>
-          
-          <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
+
+          <div className="lg:col-span-2 grid sm:grid-cols-2 gap-3">
             {checklistItems.map((item) => (
-              <div 
-                key={item} 
-                className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:bg-white/10 transition-colors"
-              >
-                <div className="w-6 h-6 rounded bg-emerald-500 flex items-center justify-center shrink-0 mt-1">
+              <div key={item.mod} className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-3 hover:bg-white/10 transition-colors">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: brand.colors.accentGreen }}>
                   <CheckCircle2 size={16} />
                 </div>
                 <div>
-                  <p className="font-bold text-slate-100">{item}</p>
-                  <p className="text-xs text-slate-500 mt-1">Verificado em {new Date().toLocaleDateString()}</p>
+                  <p className="font-bold text-slate-100 text-sm">{item.mod}</p>
+                  <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -364,63 +542,359 @@ export default function EntregaTecnicaPage() {
         </div>
       </section>
 
-      {/* ── Build Status ────────────────────────────────────────────────────────── */}
-      <section className="py-24 bg-white border-b border-slate-100">
+      {/* ── Build Status ────────────────────────────────────────────────── */}
+      <section className="py-20 bg-white border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-4 gap-8">
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Build Version</p>
-              <p className="text-3xl font-black text-slate-900">v{version?.appVersion || "1.0.0"}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Environment</p>
-              <p className="text-3xl font-black text-blue-600">{version?.environment || "Production"}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Last Commit</p>
-              <p className="text-3xl font-black text-slate-900">{version?.commit || "8ab2f3"}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Build Date</p>
-              <p className="text-xl font-bold text-slate-900">
-                {version?.buildDate ? new Date(version.buildDate).toLocaleString('pt-BR') : "Hoje"}
-              </p>
-            </div>
+          <div className="flex items-center gap-2 mb-8">
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: brand.colors.accentGreen }} />
+            <p className="text-xs font-mono uppercase tracking-widest text-slate-500">Build Status · Live</p>
+          </div>
+          <div className="grid lg:grid-cols-4 gap-6">
+            {[
+              { label: "Versão", value: `v${version?.appVersion ?? "1.0.0"}`, color: brand.colors.primary },
+              { label: "Ambiente", value: version?.environment ?? "production", color: brand.colors.accentBlue },
+              { label: "Commit", value: version?.commit ?? "—", color: brand.colors.accentTeal, mono: true },
+              { label: "Build", value: version?.buildDate ? new Date(version.buildDate).toLocaleDateString('pt-BR') : "Hoje", color: brand.colors.accentGreen },
+            ].map((s) => (
+              <div key={s.label} className="space-y-2 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{s.label}</p>
+                <p className={`text-2xl font-black ${s.mono ? 'font-mono' : ''}`} style={{ color: s.color, fontFamily: s.mono ? 'monospace' : brand.typography.headingFont }}>
+                  {s.value}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── Footer / Developer ────────────────────────────────────────────────── */}
+      {/* ── Footer com logo Two Soluções ────────────────────────────────────────────────── */}
       <footer className="py-20 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-12">
-          <div className="inline-flex flex-col items-center">
-             <div className="w-16 h-16 rounded-2xl bg-white shadow-xl flex items-center justify-center mb-6">
-               <Rocket className="text-blue-900" size={32} />
-             </div>
-             <h3 className="text-2xl font-black text-slate-900">Two Soluções</h3>
-             <p className="text-slate-500 font-medium tracking-tight">Arquitetura & Engenharia de Software</p>
-          </div>
-          
-          <div className="flex flex-wrap justify-center gap-8">
-            <a href="https://twosolucoes.com.br" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-blue-600 flex items-center gap-2 transition-colors">
-              <Globe size={18} /> twosolucoes.com.br
-            </a>
-            <a href="#" className="text-slate-400 hover:text-slate-900 flex items-center gap-2 transition-colors">
-              <Github size={18} /> Repository
-            </a>
-            <a href="#" className="text-slate-400 hover:text-emerald-500 flex items-center gap-2 transition-colors">
-              <ExternalLink size={18} /> Documentação
-            </a>
-          </div>
-          
-          <Separator className="bg-slate-200" />
-          
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-400">
-            <p>© 2026 JER Gestão. Todos os direitos reservados.</p>
-            <p>Desenvolvido com excelência por <span className="text-slate-900 font-bold">Two Soluções</span></p>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col items-center text-center space-y-8">
+            <div className="space-y-4">
+              <p className="text-xs font-mono uppercase tracking-widest text-slate-400">Desenvolvido por</p>
+              <a href="https://twosulucoes.com.br" target="_blank" rel="noopener noreferrer" className="inline-block transition-transform hover:scale-105">
+                <img src={twoLogo} alt="Two Soluções" className="h-24 w-auto mx-auto" />
+              </a>
+              <p className="text-sm text-slate-500 font-medium">Arquitetura & Engenharia de Software</p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-6 pt-4">
+              <a href="https://twosulucoes.com.br" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-2 transition-colors">
+                <Globe size={16} /> twosulucoes.com.br
+              </a>
+              <a href="#" className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-2 transition-colors">
+                <Github size={16} /> Repositório
+              </a>
+              <a href="#" className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-2 transition-colors">
+                <ExternalLink size={16} /> Documentação
+              </a>
+            </div>
+
+            <Separator className="bg-slate-200 max-w-md" />
+
+            <div className="flex flex-col md:flex-row justify-center items-center gap-2 text-xs text-slate-400 text-center">
+              <p>© 2026 JER Gestão · Todos os direitos reservados</p>
+              <span className="hidden md:inline">·</span>
+              <p>Plataforma oficial dos Jogos Escolares de Roraima</p>
+            </div>
           </div>
         </div>
       </footer>
     </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Mockups dinâmicos do tour — UI real do sistema (sem fotos stock)
+   ───────────────────────────────────────────────────────────────── */
+function TourMockup({ step }: { step: number }) {
+  return (
+    <div
+      className="relative rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 bg-white animate-in zoom-in-95 fade-in duration-700"
+      key={`mock-${step}`}
+    >
+      {step === 0 && <MockImportacao />}
+      {step === 1 && <MockCredencial />}
+      {step === 2 && <MockCompeticao />}
+      {step === 3 && <MockLogistica />}
+      {step === 4 && <MockPortal />}
+    </div>
+  );
+}
+
+function BrowserFrame({ url, children }: { url: string; children: React.ReactNode }) {
+  return (
+    <>
+      <div className="flex items-center gap-1.5 px-4 py-3 bg-slate-50 border-b border-slate-200">
+        <div className="w-2.5 h-2.5 rounded-full bg-rose-400" />
+        <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+        <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+        <div className="ml-3 px-3 py-1 bg-white rounded-md text-[10px] text-slate-500 font-mono border border-slate-200 truncate">
+          {url}
+        </div>
+      </div>
+      <div className="p-5 bg-slate-50/60 min-h-[420px]">{children}</div>
+    </>
+  );
+}
+
+function PhoneFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex justify-center py-6 bg-slate-100 min-h-[420px]">
+      <div className="w-[260px] bg-slate-900 rounded-[2rem] p-2 shadow-2xl">
+        <div className="bg-white rounded-[1.5rem] overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2 text-[10px] font-mono">
+            <span>9:41</span>
+            <div className="flex gap-1 items-center">
+              <Signal size={10} /><Wifi size={10} /><Battery size={12} />
+            </div>
+          </div>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MockImportacao() {
+  return (
+    <BrowserFrame url="jergestao.com.br/admin/importacao">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h4 className="font-bold text-sm" style={{ color: brand.colors.primary }}>Importação SIGECOM</h4>
+          <Badge style={{ background: brand.colors.accentGreen, color: 'white' }} className="text-[10px] border-0">Em processamento</Badge>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <FileText size={20} style={{ color: brand.colors.accentBlue }} />
+            <div className="flex-1">
+              <p className="text-xs font-medium text-slate-700">atletas-jer-2026.xlsx</p>
+              <p className="text-[10px] text-slate-400">5.247 registros · 2.4 MB</p>
+            </div>
+            <span className="text-xs font-bold" style={{ color: brand.colors.accentGreen }}>87%</span>
+          </div>
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: '87%', background: brand.gradients.brandGradient }} />
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          {[
+            { label: "Validados", val: "4.561", color: brand.colors.accentGreen },
+            { label: "Avisos", val: "23", color: brand.colors.warning },
+            { label: "Duplicados", val: "12", color: brand.colors.accentBlue },
+          ].map((s) => (
+            <div key={s.label} className="bg-white rounded-lg p-2 border border-slate-100">
+              <p className="text-base font-black" style={{ color: s.color, fontFamily: brand.typography.headingFont }}>{s.val}</p>
+              <p className="text-[9px] text-slate-500 uppercase tracking-wider">{s.label}</p>
+            </div>
+          ))}
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Últimas validações</p>
+            <Search size={12} className="text-slate-400" />
+          </div>
+          {["MARIA SILVA", "JOÃO SANTOS", "ANA OLIVEIRA"].map((nome) => (
+            <div key={nome} className="px-3 py-2 border-b border-slate-50 last:border-0 flex items-center gap-2 text-[11px]">
+              <CheckCircle2 size={12} style={{ color: brand.colors.accentGreen }} />
+              <span className="text-slate-700 flex-1">{nome}</span>
+              <span className="text-slate-400 font-mono">OK</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </BrowserFrame>
+  );
+}
+
+function MockCredencial() {
+  return (
+    <BrowserFrame url="jergestao.com.br/admin/credenciamento">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl overflow-hidden shadow-lg" style={{ background: brand.gradients.brandGradient }}>
+          <div className="p-3 text-white">
+            <p className="text-[8px] uppercase tracking-widest opacity-80">JER 2026 · Atleta</p>
+            <p className="text-base font-black mt-1" style={{ fontFamily: brand.typography.headingFont }}>MARIA SILVA</p>
+            <p className="text-[10px] opacity-80">Vôlei · Sub-17</p>
+          </div>
+          <div className="bg-white p-3 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-lg flex items-center justify-center" style={{ background: brand.colors.text }}>
+              <QrCode size={48} className="text-white" />
+            </div>
+          </div>
+          <div className="p-2 bg-white">
+            <p className="text-[8px] text-center text-slate-400 font-mono">JER-2026-AT-005247</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <div className="bg-white rounded-xl p-3 border border-slate-100">
+            <Users size={14} style={{ color: brand.colors.accentBlue }} />
+            <p className="text-lg font-black mt-1" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>4.832</p>
+            <p className="text-[9px] text-slate-500 uppercase tracking-wider">Credenciados</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 border border-slate-100">
+            <Clock size={14} style={{ color: brand.colors.warning }} />
+            <p className="text-lg font-black mt-1" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>415</p>
+            <p className="text-[9px] text-slate-500 uppercase tracking-wider">Pendentes</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 border border-slate-100">
+            <CheckCircle2 size={14} style={{ color: brand.colors.accentGreen }} />
+            <p className="text-lg font-black mt-1" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>92%</p>
+            <p className="text-[9px] text-slate-500 uppercase tracking-wider">Cobertura</p>
+          </div>
+        </div>
+        <div className="col-span-2 bg-white rounded-xl border border-slate-100 p-3 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white" style={{ background: brand.colors.accentTeal }}>
+            <QrCode size={18} />
+          </div>
+          <div className="flex-1">
+            <p className="text-xs font-bold text-slate-700">Validador MLKit (PWA)</p>
+            <p className="text-[10px] text-slate-500">Scan offline em campo · Última: há 2s</p>
+          </div>
+          <Badge style={{ background: brand.colors.accentGreen, color: 'white' }} className="text-[10px] border-0">Ativo</Badge>
+        </div>
+      </div>
+    </BrowserFrame>
+  );
+}
+
+function MockCompeticao() {
+  return (
+    <BrowserFrame url="jergestao.com.br/admin/competicao">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h4 className="font-bold text-sm" style={{ color: brand.colors.primary }}>Vôlei Masculino · Final</h4>
+          <Badge style={{ background: brand.colors.danger, color: 'white' }} className="text-[10px] animate-pulse border-0">AO VIVO</Badge>
+        </div>
+        <div className="bg-white rounded-xl border-2 p-4" style={{ borderColor: brand.colors.primary }}>
+          <div className="grid grid-cols-3 items-center gap-2">
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-white font-black text-sm" style={{ background: brand.colors.accentBlue }}>BVT</div>
+              <p className="text-[10px] font-bold mt-1 text-slate-700">Boa Vista</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>
+                3 <span className="text-slate-300">×</span> 2
+              </p>
+              <p className="text-[10px] text-slate-400 font-mono">SET 5 · 14:23</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-white font-black text-sm" style={{ background: brand.colors.accentTeal }}>CAR</div>
+              <p className="text-[10px] font-bold mt-1 text-slate-700">Caracaraí</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+          <div className="px-3 py-2 bg-slate-50 border-b border-slate-100">
+            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Classificação · Grupo A</p>
+          </div>
+          {[
+            { pos: 1, time: "Boa Vista", pts: 9, color: brand.colors.warning },
+            { pos: 2, time: "Caracaraí", pts: 6, color: '#94A3B8' },
+            { pos: 3, time: "Mucajaí", pts: 3, color: '#CD7F32' },
+          ].map((t) => (
+            <div key={t.time} className="px-3 py-2 border-b border-slate-50 last:border-0 flex items-center gap-2 text-[11px]">
+              <span className="w-5 h-5 rounded-full text-white flex items-center justify-center text-[10px] font-black" style={{ background: t.color }}>{t.pos}</span>
+              <span className="text-slate-700 flex-1 font-medium">{t.time}</span>
+              <span className="font-bold" style={{ color: brand.colors.primary }}>{t.pts}pts</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </BrowserFrame>
+  );
+}
+
+function MockLogistica() {
+  return (
+    <PhoneFrame>
+      <div className="px-4 py-3 text-white" style={{ background: brand.colors.primary }}>
+        <p className="text-[9px] uppercase tracking-widest opacity-70">JER PWA</p>
+        <p className="font-bold text-sm">Alimentação · Café da Manhã</p>
+      </div>
+      <div className="p-4 space-y-3">
+        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Janela ativa</p>
+            <Clock size={10} className="text-slate-400" />
+          </div>
+          <p className="font-bold text-sm" style={{ color: brand.colors.primary }}>06:30 — 09:00</p>
+          <p className="text-[10px] text-slate-500 mt-1">Refeitório Central · Boa Vista</p>
+        </div>
+
+        <div className="aspect-square bg-slate-900 rounded-2xl flex items-center justify-center relative overflow-hidden">
+          <div className="absolute inset-4 border-2 rounded-xl" style={{ borderColor: brand.colors.accentLime }} />
+          <QrCode size={80} className="text-white/30" />
+          <div className="absolute bottom-3 left-0 right-0 text-center">
+            <p className="text-[10px] text-white/70 font-mono">scan QR do voucher</p>
+          </div>
+        </div>
+
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2">
+          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+          <div>
+            <p className="text-[11px] font-bold text-emerald-900">JOÃO SANTOS</p>
+            <p className="text-[9px] text-emerald-700">Liberado · 06:42</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 pt-1">
+          {[
+            { label: "Hoje", val: "1.247" },
+            { label: "Janela", val: "412" },
+            { label: "Bloq.", val: "3" },
+          ].map((s) => (
+            <div key={s.label} className="text-center">
+              <p className="text-sm font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>{s.val}</p>
+              <p className="text-[9px] text-slate-500 uppercase">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </PhoneFrame>
+  );
+}
+
+function MockPortal() {
+  return (
+    <BrowserFrame url="jers.com.br/resultados">
+      <div className="space-y-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Portal Público</p>
+          <h4 className="font-bold text-base" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>
+            Quadro de Medalhas · JER 2026
+          </h4>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+          {[
+            { pos: 1, dele: "Boa Vista", o: 24, p: 18, b: 12 },
+            { pos: 2, dele: "Caracaraí", o: 12, p: 15, b: 9 },
+            { pos: 3, dele: "Mucajaí", o: 8, p: 11, b: 14 },
+            { pos: 4, dele: "Pacaraima", o: 6, p: 7, b: 10 },
+          ].map((d, idx) => (
+            <div key={d.dele} className={`px-3 py-2.5 grid grid-cols-12 gap-2 items-center text-xs ${idx % 2 ? 'bg-slate-50' : ''}`}>
+              <span className="col-span-1 font-black" style={{ color: brand.colors.primary }}>{d.pos}º</span>
+              <span className="col-span-5 font-medium text-slate-700">{d.dele}</span>
+              <span className="col-span-2 text-center font-bold" style={{ color: brand.colors.warning }}>{d.o}</span>
+              <span className="col-span-2 text-center font-bold text-slate-500">{d.p}</span>
+              <span className="col-span-2 text-center font-bold" style={{ color: '#CD7F32' }}>{d.b}</span>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-white rounded-xl p-3 border border-slate-100">
+            <BarChart3 size={14} style={{ color: brand.colors.accentBlue }} />
+            <p className="text-base font-black mt-1" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>187</p>
+            <p className="text-[9px] text-slate-500 uppercase tracking-wider">Provas concluídas</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 border border-slate-100">
+            <TrendingUp size={14} style={{ color: brand.colors.accentGreen }} />
+            <p className="text-base font-black mt-1" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>Live</p>
+            <p className="text-[9px] text-slate-500 uppercase tracking-wider">Sync via Edge</p>
+          </div>
+        </div>
+      </div>
+    </BrowserFrame>
   );
 }
