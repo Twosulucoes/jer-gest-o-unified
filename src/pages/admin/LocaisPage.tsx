@@ -201,6 +201,23 @@ export default function LocaisPage() {
     onError: (err: Error) => toast.error("Erro ao atualizar local: " + err.message),
   });
 
+  // P2: toggle ativo/inativo inline
+  const toggleActiveMutation = useMutation({
+    mutationFn: async (v: VenueRow) => {
+      const { error } = await supabase
+        .from("venues")
+        .update({ is_active: !v.is_active } as any)
+        .eq("id", v.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: ["locais-bootstrap"] });
+      queryClient.invalidateQueries({ queryKey: ["venues-by-stage"] });
+      toast.success(v.is_active ? "Local desativado" : "Local ativado");
+    },
+    onError: (err: Error) => toast.error("Erro ao alterar status: " + err.message),
+  });
+
   const handleSubmit = (values: VenueFormValues) => {
     if (editingVenue) {
       updateMutation.mutate({ id: editingVenue.id, ...values });
@@ -212,6 +229,18 @@ export default function LocaisPage() {
   const openEdit = (v: VenueRow) => {
     setEditingVenue({ ...v, event_stage_ids: linksByVenue.get(v.id) ?? [] });
     setDialogOpen(true);
+  };
+
+  // P2: filtragem por termo de busca (nome, cidade, endereço)
+  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const matchesSearch = (v: VenueRow) => {
+    if (!searchTerm.trim()) return true;
+    const t = norm(searchTerm.trim());
+    return (
+      norm(v.name).includes(t) ||
+      norm(v.city ?? "").includes(t) ||
+      norm(v.address ?? "").includes(t)
+    );
   };
 
   return (
