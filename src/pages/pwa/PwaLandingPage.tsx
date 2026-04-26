@@ -36,7 +36,7 @@ export default function PwaLandingPage() {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate("/pwa/login", { replace: true });
+        navigate("/login", { replace: true });
         return;
       }
 
@@ -59,8 +59,6 @@ export default function PwaLandingPage() {
         return;
       }
 
-      // Se for apenas admin/secretaria e não tiver módulos específicos, pode ir pro desktop
-      // Mas vamos deixar o usuário escolher se estiver no /pwa
       const opCards = MODULE_CARDS.filter((c) => roles.includes(c.role) || (c.role === "secretaria" && roles.includes("admin")));
       if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria")) {
         navigate(opCards[0].to, { replace: true });
@@ -73,7 +71,7 @@ export default function PwaLandingPage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate("/pwa/login", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   if (loading) {
@@ -100,7 +98,6 @@ export default function PwaLandingPage() {
 
   if (!profile) return null;
 
-  // Only show modules the user has access to
   const visibleCards = MODULE_CARDS.filter((c) => 
     profile.roles.includes(c.role) || (c.role === "secretaria" && profile.roles.includes("admin"))
   );
@@ -108,43 +105,47 @@ export default function PwaLandingPage() {
   return (
     <div className="tactical-cockpit min-h-screen bg-background">
       <div
-        className="px-5 pt-6 pb-5"
+        className="px-5 pt-10 pb-12"
         style={{
           background:
             "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(212 84% 36%) 40%, hsl(174 87% 34%) 70%, hsl(133 55% 45%) 100%)",
         }}
       >
         <div className="flex items-center justify-between max-w-md mx-auto">
-          <div className="flex items-center gap-3">
-            <img src="/brand/monogram.png" alt="" className="h-10 w-10 rounded-lg object-cover shadow-lg" />
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30">
+              <img src="/brand/monogram.png" alt="" className="h-10 w-10 object-contain" />
+            </div>
             <div>
-              <h1 className="text-lg font-heading font-bold text-primary-foreground">JER's Gestão</h1>
-              <p className="text-sm text-primary-foreground/85">
-                Olá, {profile.full_name || "Usuário"}
+              <h1 className="text-xl font-heading font-extrabold text-white tracking-tight">JER's Gestão</h1>
+              <p className="text-sm text-white/80 font-medium">
+                Olá, {profile.full_name?.split(' ')[0] || "Usuário"}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <PwaRefreshButton />
-            <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-primary-foreground/85 hover:text-primary-foreground hover:bg-primary-foreground/15">
-              <LogOut className="h-5 w-5" />
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-11 w-11 text-white/80 hover:text-white hover:bg-white/10 rounded-full">
+              <LogOut className="h-6 w-6" />
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="p-4 max-w-md mx-auto space-y-4 -mt-3">
+      <div className="p-4 max-w-md mx-auto space-y-5 -mt-8">
         {/* Seletor de Etapa */}
         {stages.length > 1 && (
-          <div className="bg-card rounded-xl border shadow-app-md p-4 space-y-3">
+          <div className="bg-card/95 backdrop-blur-sm rounded-3xl border border-white/20 shadow-xl p-5 space-y-4">
             <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-primary" />
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Layers className="h-5 w-5" />
+              </div>
+              <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
                 Etapa de Trabalho
               </h2>
             </div>
             <Select value={activeStageId || ""} onValueChange={setActiveStageId}>
-              <SelectTrigger className="h-12 rounded-xl">
+              <SelectTrigger className="h-14 rounded-2xl border-muted-foreground/20 bg-background/50 focus:ring-primary/20">
                 <SelectValue placeholder="Selecione a etapa..." />
               </SelectTrigger>
               <SelectContent>
@@ -156,37 +157,61 @@ export default function PwaLandingPage() {
               </SelectContent>
             </Select>
             {!activeStageId && (
-              <p className="text-[11px] text-amber-600 font-medium">
-                ⚠️ Selecione uma etapa para filtrar os dados corretamente.
-              </p>
+              <div className="flex items-center gap-2 px-1">
+                <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <p className="text-[11px] text-amber-600 font-semibold uppercase tracking-tight">
+                  Selecione uma etapa para continuar
+                </p>
+              </div>
             )}
           </div>
         )}
 
-        <div className="bg-card rounded-xl border shadow-app-md p-4 space-y-3">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Seus módulos
-          </h2>
+        <div className="bg-card rounded-3xl border shadow-app-lg p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">
+              Seus módulos
+            </h2>
+            <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full font-bold text-muted-foreground">
+              {visibleCards.length} DISPONÍVEIS
+            </span>
+          </div>
+          
           {visibleCards.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground text-sm">
-              Nenhum módulo atribuído à sua conta.
+            <div className="text-center py-10 space-y-3 bg-muted/30 rounded-2xl border border-dashed">
+              <Shield className="h-10 w-10 mx-auto text-muted-foreground/40" />
+              <p className="text-sm font-medium text-muted-foreground">
+                Nenhum módulo atribuído.
+              </p>
             </div>
           ) : (
-            <div className="grid gap-3">
+            <div className="grid gap-4">
               {visibleCards.map((card) => (
                 <button
                   key={card.role}
                   onClick={() => navigate(card.to)}
-                  className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:shadow-app-md transition-all text-left active:scale-[0.98]"
+                  className="group relative flex items-center gap-4 p-4 rounded-2xl border bg-card hover:bg-muted/5 hover:border-primary/30 transition-all text-left active:scale-[0.98] shadow-sm hover:shadow-md"
                 >
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} text-white shadow-app-sm`}>
-                    <card.icon className="h-6 w-6" />
+                  <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${card.gradient} text-white shadow-lg group-hover:scale-110 transition-transform`}>
+                    <card.icon className="h-7 w-7" />
                   </div>
-                  <span className="text-base font-medium text-foreground">{card.label}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-lg font-bold text-foreground block tracking-tight">{card.label}</span>
+                    <span className="text-xs text-muted-foreground font-medium uppercase tracking-tighter opacity-70 group-hover:opacity-100 transition-opacity">Acessar painel operacional</span>
+                  </div>
+                  <div className="h-8 w-8 rounded-full bg-muted/50 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                    <Layers className="h-4 w-4" />
+                  </div>
                 </button>
               ))}
             </div>
           )}
+        </div>
+
+        <div className="text-center pt-2">
+            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest opacity-40">
+                JER Gestão Operacional • PWA v2.0
+            </p>
         </div>
       </div>
       <VersionBadge />
