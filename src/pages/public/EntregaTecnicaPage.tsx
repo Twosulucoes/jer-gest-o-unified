@@ -418,7 +418,7 @@ export default function EntregaTecnicaPage() {
                   { icon: Shield, label: "RLS Total", color: brand.colors.accentLime },
                   { icon: Rocket, label: "Edge Funcs", color: brand.colors.accentTeal },
                   { icon: Database, label: "Backup 24h", color: brand.colors.accentGreen },
-                  { icon: Activity, label: "Auditoria", color: "#FFB627" },
+                  { icon: Activity, label: "Auditoria", color: "#D97706" },
                 ].map((b) => (
                   <div key={b.label} className="bg-white/5 backdrop-blur p-4 rounded-2xl border border-white/10 text-center">
                     <b.icon size={24} className="mx-auto mb-1" style={{ color: b.color }} />
