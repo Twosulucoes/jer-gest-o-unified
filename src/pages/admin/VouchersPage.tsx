@@ -432,6 +432,9 @@ function IssueVoucherDialog({
   onIssued: (v: VoucherRow) => void;
 }) {
   const queryClient = useQueryClient();
+  const [voucherType, setVoucherType] = useState<"aggregate" | "nominal">("aggregate");
+  const [aggregateLabel, setAggregateLabel] = useState("");
+  const [aggregateBatchSize, setAggregateBatchSize] = useState("1");
   const [participantSearch, setParticipantSearch] = useState("");
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [scopeTransport, setScopeTransport] = useState(true);
@@ -444,6 +447,9 @@ function IssueVoucherDialog({
   // Reset on close
   useEffect(() => {
     if (!open) {
+      setVoucherType("aggregate");
+      setAggregateLabel("");
+      setAggregateBatchSize("1");
       setParticipantSearch("");
       setParticipantId(null);
       setScopeTransport(true);
