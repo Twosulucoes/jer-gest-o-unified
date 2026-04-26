@@ -32,7 +32,8 @@
 ### Competição
 | Módulo | Rota | Status |
 |--------|------|--------|
-| Painel de Controle | `/admin/competicao/painel` | ✅ Feito |
+| Painel da Competição | `/admin/competicao/painel` | ✅ Feito |
+| Painel Score (Modalidade) | `/admin/competicao/painel-score/:id` | ✅ Feito |
 | Pré-validação | `/admin/competicao/pre-validacao` | ✅ Feito |
 | Central da Competição | `/admin/competicao/central` | ✅ Feito |
 | Modalidades | `/admin/modalidades` | ✅ Feito |
