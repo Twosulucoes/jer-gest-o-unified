@@ -123,7 +123,31 @@ FLUXO SCORE/SETS:
      - Cartões: registro individual por atleta com tipo e minuto
      - Pênaltis: em caso de empate em eliminatórias, registra cobranças individuais
      - Auditoria: snapshot completo do payload gravado no histórico a cada salvamento
-     - Vencedor: identificado automaticamente pela RPC com base no placar consolidado
+      - Vencedor: identificado automaticamente pela RPC com base no placar consolidado
+      - Homologação: após lançamento, coordenador valida com senha → status "Validado"
+```
+
+### 7.2 Homologação e Publicação (Governança)
+```
+Resultado Lançado (Mesário/Coordenador)
+  → Tela de Lançamento (/admin/competicao/painel-score/.../resultado)
+  → Coordenador clica "Homologar Resultado"
+  → Diálogo de confirmação → Digita senha do coordenador
+  → RPC rpc_homologate_match_result → Status: "resultado_validado"
+  → Bloqueia edição para todos exceto Admin
+
+Publicação (Secretaria)
+  → Central de Publicação (/admin/competicao/publicacao)
+  → Filtra resultados em status "Aguardando Publicação" (Validados)
+  → Seleciona uma ou mais partidas → "Publicar Selecionados"
+  → RPC rpc_publish_match_result → Status: "publicado"
+  → Resultado visível instantaneamente no Portal Público
+
+Reversão (Admin - Exceção)
+  → Admin acessa tela de lançamento ou central de publicação
+  → Clica em "Reverter Status" → Digita justificativa obrigatória
+  → RPC rpc_revert_match_result_status → Volta para status anterior
+  → Registra auditoria completa do motivo da reversão
 ```
 
 ### 7.2 Outras Famílias (Central Legada)
