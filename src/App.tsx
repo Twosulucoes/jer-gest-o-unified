@@ -202,6 +202,7 @@ import { AppStatePreserver } from "./components/pwa/AppStatePreserver";
 import { VersionValidator } from "./components/pwa/VersionValidator";
 
 import PwaAcessoNegadoPage from "./pages/pwa/PwaAcessoNegadoPage";
+import AccessDeniedPage from "./pages/AccessDeniedPage";
 import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
 import PublicResultsPage from "./pages/public/PublicResultsPage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
