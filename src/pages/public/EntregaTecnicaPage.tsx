@@ -451,7 +451,7 @@ export default function EntregaTecnicaPage() {
               const total = items.length;
               const pct = total > 0 ? Math.round((done / total) * 100) : 100;
               return (
-                <div key={group.id} className="bg-white rounded-2xl p-5 border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                <div key={group.id} id={`modulo-${group.id}`} className="bg-white rounded-2xl p-5 border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all scroll-mt-24">
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-bold text-base" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>
