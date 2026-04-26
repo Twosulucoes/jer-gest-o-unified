@@ -443,6 +443,7 @@ export default function ResultadosPartidaFormPage() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <Skeleton className="h-4 w-32" />
+          <div className="ml-auto"><PwaRefreshButton /></div>
         </header>
         <main className="p-4 space-y-4">
           <Skeleton className="h-24 w-full rounded-xl" />
