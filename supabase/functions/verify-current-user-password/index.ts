@@ -66,12 +66,17 @@ Deno.serve(async (req: Request) => {
 
     if (signInError) {
       // Log failed attempt for audit
-      await serviceClient.from("audit_logs").insert({
-        user_id: user.id,
-        action: "password_verification_failed",
-        payload: { email: user.email, error: signInError.message },
-        severity: "warning"
-      }).select().single();
+      try {
+        await serviceClient.from("audit_events").insert({
+          created_by: user.id,
+          action: "password_verification_failed",
+          table_name: "auth",
+          record_id: user.id,
+          payload: { email: user.email, error: signInError.message }
+        });
+      } catch (logError) {
+        console.error("Failed to log audit event:", logError);
+      }
 
       return jsonResponse({ valid: false, message: "Senha incorreta" }, 200);
     }
