@@ -67,7 +67,7 @@ export function AthletesWeighingTab({ sportEventId }: AthletesWeighingTabProps) 
         weighing_status: status,
         weighed_at: new Date().toISOString(),
         weighed_by: user?.id
-      })
+      } as any)
       .eq("id", id);
 
     setSavingId(null);
