@@ -35,6 +35,10 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
+  // Prévia em tempo real do próximo número (revalida ao focar a janela).
+  // O número definitivo é reservado server-side pela RPC `rpc_create_bulletin`.
+  const nextNumberQuery = useNextBulletinNumber(eventId, open);
+
   const [scope, setScope] = useState<BulletinScope>(
     sportEventId ? "sport_event" : stageId ? "stage" : "event",
   );
