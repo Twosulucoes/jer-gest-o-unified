@@ -319,12 +319,12 @@ export default function EntregaTecnicaPage() {
             <div className="hidden md:block absolute -top-6 -left-8 bg-white p-3 rounded-2xl shadow-xl border border-slate-100">
               <Activity size={20} style={{ color: brand.colors.accentGreen }} />
               <p className="text-[10px] text-slate-500 font-medium mt-1">Uptime</p>
-              <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>99.9%</p>
+              <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>{stats ? "100%" : "99.9%"}</p>
             </div>
             <div className="hidden md:block absolute -bottom-6 -right-6 bg-white p-3 rounded-2xl shadow-xl border border-slate-100">
               <Database size={20} style={{ color: brand.colors.accentBlue }} />
               <p className="text-[10px] text-slate-500 font-medium mt-1">Latência DB</p>
-              <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>~24ms</p>
+              <p className="text-lg font-black" style={{ color: brand.colors.primary, fontFamily: brand.typography.headingFont }}>~{stats?.latency ?? 24}ms</p>
             </div>
           </div>
         </div>
