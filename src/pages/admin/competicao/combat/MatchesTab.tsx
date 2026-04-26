@@ -9,18 +9,27 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pencil, Calendar, Clock, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { MatchCombatFormDrawer } from "@/components/admin/competition/MatchCombatFormDrawer";
 
 interface MatchesTabProps {
   sportEventId: string;
 }
 
 export function MatchesTab({ sportEventId }: MatchesTabProps) {
-  const { data: matches = [], isLoading } = useQuery({
+  const [selectedMatch, setSelectedMatch] = useState<any>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const { data: sportEvent } = useQuery({
+    queryKey: ["sport_event_basic", sportEventId],
+    queryFn: async () => {
+      const { data } = await supabase.from('sport_events').select('sport_id').eq('id', sportEventId).single();
+      return data;
+    }
+  });
     queryKey: ["combat-matches", sportEventId],
     queryFn: async () => {
       const { data, error } = await (supabase
