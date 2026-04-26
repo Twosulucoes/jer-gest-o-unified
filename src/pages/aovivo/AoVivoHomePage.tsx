@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isFuture, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PwaStatusBadge, type PwaStatusTone } from "@/components/pwa/PwaStatusBadge";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 const STATUS_MAP: Record<string, { label: string; tone: PwaStatusTone }> = {
   scheduled: { label: "Agendada", tone: "scheduled" },
