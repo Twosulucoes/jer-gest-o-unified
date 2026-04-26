@@ -269,6 +269,16 @@ export default function VouchersPage() {
               <SelectItem value="lodging">Alojamento</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos tipos</SelectItem>
+              <SelectItem value="aggregate">Agregado (acompanhantes)</SelectItem>
+              <SelectItem value="nominal">Nominal (contingência)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </Card>
 
