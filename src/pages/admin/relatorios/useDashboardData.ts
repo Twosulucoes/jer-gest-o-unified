@@ -51,6 +51,8 @@ export interface DashboardData {
     transport_trips: number;
     transport_passengers: number;
     transport_vehicles: number;
+    referees_total: number;
+    referees_assigned: number;
   };
   credenciamento: {
     daily: DailyPoint[];
@@ -77,7 +79,8 @@ export function useDashboardData(eventId?: string | null) {
       matches_total: 0, matches_done: 0, matches_published: 0,
       meals_total: 0, meals_today: 0,
       lodging_capacity: 0, lodging_occupied: 0,
-      transport_trips: 0, transport_passengers: 0, transport_vehicles: 0
+      transport_trips: 0, transport_passengers: 0, transport_vehicles: 0,
+      referees_total: 0, referees_assigned: 0,
     },
     credenciamento: { daily: [], by_delegation: [] },
     alimentacao: { daily: [], meal_types: [], by_delegation: [] },
@@ -323,6 +326,33 @@ export function useDashboardData(eventId?: string | null) {
           return data ?? [];
         }, [] as { match_id: string; result_status: string }[]),
       },
+      // 3: árbitros cadastrados (people kind=arbitro)
+      {
+        queryKey: ["dash3", "referees_total"],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const { count } = await (supabase.from("people") as any)
+            .select("id", { count: "exact", head: true })
+            .eq("kind", "arbitro")
+            .eq("is_active", true);
+          return count ?? 0;
+        }, 0),
+      },
+      // 4: árbitros designados no evento ativo
+      {
+        queryKey: ["dash3", "referees_assigned", eventId],
+        enabled: enabled && !!eventId,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          if (!eventId) return 0;
+          const { data } = await supabase.from("referee_event_assignments" as any)
+            .select("person_id")
+            .eq("event_id", eventId);
+          const set = new Set((data ?? []).map((r: any) => r.person_id));
+          return set.size;
+        }, 0),
+      },
     ],
   });
 
@@ -331,6 +361,8 @@ export function useDashboardData(eventId?: string | null) {
   const consumptionsTotal = consumptionsRes.totalCount;
   const passengers = (dependent[1].data ?? 0) as number;
   const results = (dependent[2].data ?? []) as { match_id: string; result_status: string }[];
+  const refereesTotal = (dependent[3]?.data ?? 0) as number;
+  const refereesAssigned = (dependent[4]?.data ?? 0) as number;
 
 
   const isLoadingAll = isLoading || dependent.some((q) => q.isLoading);
@@ -474,6 +506,8 @@ export function useDashboardData(eventId?: string | null) {
       transport_trips: TR_total || TR.length,
       transport_passengers: passengers,
       transport_vehicles: VE,
+      referees_total: refereesTotal,
+      referees_assigned: refereesAssigned,
     },
 
     credenciamento: { daily: credDaily, by_delegation: byDelegation },
