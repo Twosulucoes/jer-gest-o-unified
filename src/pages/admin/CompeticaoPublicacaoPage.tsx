@@ -49,7 +49,7 @@ import {
   SheetTitle, 
   SheetDescription 
 } from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
+
 
 export default function CompeticaoPublicacaoPage() {
   const eventId = useActiveEventId();
