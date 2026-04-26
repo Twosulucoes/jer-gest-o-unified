@@ -178,6 +178,58 @@ export default function CompeticaoLancamentoSetsPage() {
 
   const isFinished = totalSetsA >= setsToWin || totalSetsB >= setsToWin;
 
+  const applyWithdrawal = () => {
+    if (!withdrawalTeamId || withdrawalSetIndex === null) return;
+    
+    const isAWithdrawing = withdrawalTeamId === schoolA?.id;
+    const winnerSide = isAWithdrawing ? 'b' : 'a';
+    const loserSide = isAWithdrawing ? 'a' : 'b';
+    
+    let newSets = [...sets];
+    
+    // 1. Current set: winner reaches target points
+    const currentSet = newSets[withdrawalSetIndex] || { a: "0", b: "0" };
+    const isTieBreak = withdrawalSetIndex === bestOf - 1;
+    const target = isTieBreak ? tiebreakPoints : setPoints;
+    
+    const winnerPoints = Math.max(target, (parseInt(currentSet[winnerSide]) || 0) + 2);
+    const loserPoints = parseInt(currentSet[loserSide]) || 0;
+    
+    newSets[withdrawalSetIndex] = {
+      [winnerSide]: winnerPoints.toString(),
+      [loserSide]: loserPoints.toString()
+    } as any;
+    
+    // 2. Subsequent sets: winner wins 25-0 or 15-0 until match ends
+    let setsB = 0;
+    let setsA = 0;
+    
+    // Count current sets won
+    newSets.forEach((s, i) => {
+        if (i > withdrawalSetIndex) return;
+        if (parseInt(s.a) > parseInt(s.b)) setsA++;
+        else if (parseInt(s.b) > parseInt(s.a)) setsB++;
+    });
+
+    let currentIdx = withdrawalSetIndex + 1;
+    while (setsA < setsToWin && setsB < setsToWin && currentIdx < bestOf) {
+        const isNextTieBreak = currentIdx === bestOf - 1;
+        const nextTarget = isNextTieBreak ? tiebreakPoints : setPoints;
+        
+        newSets[currentIdx] = {
+            [winnerSide]: nextTarget.toString(),
+            [loserSide]: "0"
+        } as any;
+        
+        if (winnerSide === 'a') setsA++; else setsB++;
+        currentIdx++;
+    }
+    
+    // Truncate sets if needed
+    setSets(newSets.slice(0, currentIdx));
+    toast.success("Placar de desistência calculado.");
+  };
+
   const handleAddSet = () => {
     if (isFinished) return;
     setSets([...sets, { a: "", b: "" }]);
