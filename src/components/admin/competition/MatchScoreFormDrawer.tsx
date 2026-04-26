@@ -36,8 +36,10 @@ import {
   useModalitySchools, 
   useModalityReferees 
 } from "@/hooks/useScoreMatches";
-import { X, Info } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useSportEventRules } from "@/hooks/useSportEventRules";
+import { X, Info, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useActiveEventId } from "@/contexts/EventContext";
 
 const schema = z.object({
   phase_id: z.string().min(1, "Selecione a fase"),
