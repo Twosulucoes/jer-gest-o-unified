@@ -27,14 +27,12 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Search, 
-  Trophy,
   History,
   AlertTriangle,
   ExternalLink,
   CheckCircle2,
   Calendar,
-  Clock,
-  Eye
+  Clock
 } from "lucide-react";
 import { 
   Dialog, 
@@ -51,6 +49,7 @@ import {
   SheetTitle, 
   SheetDescription 
 } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function CompeticaoPublicacaoPage() {
   const eventId = useActiveEventId();
@@ -100,8 +99,8 @@ export default function CompeticaoPublicacaoPage() {
       if (error) throw error;
       
       // Filter matches that have results in validado or publicado
-      return data.filter(m => 
-        m.competition_match_results.some(r => 
+      return (data || []).filter((m: any) => 
+        m.competition_match_results.some((r: any) => 
           statusFilter === "all" || r.result_status === statusFilter
         )
       );
@@ -147,13 +146,14 @@ export default function CompeticaoPublicacaoPage() {
   });
 
   const filteredMatches = useMemo(() => {
-    return matches.filter(m => {
+    return matches.filter((m: any) => {
       if (search) {
         const s = search.toLowerCase();
         const schoolA = m.competition_match_entries?.[0]?.teams?.name?.toLowerCase() || "";
         const schoolB = m.competition_match_entries?.[1]?.teams?.name?.toLowerCase() || "";
         const modality = m.sport_events?.name?.toLowerCase() || "";
-        if (!schoolA.includes(s) && !schoolB.includes(s) && !modality.includes(s)) return false;
+        const sport = (m.sport_events as any)?.sports?.name?.toLowerCase() || "";
+        if (!schoolA.includes(s) && !schoolB.includes(s) && !modality.includes(s) && !sport.includes(s)) return false;
       }
       return true;
     });
@@ -167,10 +167,10 @@ export default function CompeticaoPublicacaoPage() {
 
   const handleSelectAll = () => {
     const validatableIds = filteredMatches
-      .filter(m => m.competition_match_results[0]?.result_status === "validado")
-      .map(m => m.id);
+      .filter((m: any) => m.competition_match_results[0]?.result_status === "validado")
+      .map((m: any) => m.id);
     
-    if (selectedMatches.length === validatableIds.length) {
+    if (selectedMatches.length === validatableIds.length && validatableIds.length > 0) {
       setSelectedMatches([]);
     } else {
       setSelectedMatches(validatableIds);
@@ -190,11 +190,11 @@ export default function CompeticaoPublicacaoPage() {
     queryKey: ["match-history", historyMatchId],
     enabled: !!historyMatchId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("match_results_history")
         .select(`
           *,
-          changed_by_profile:profiles(full_name)
+          profiles(full_name)
         `)
         .eq("match_id", historyMatchId!)
         .order("changed_at", { ascending: false });
@@ -207,7 +207,6 @@ export default function CompeticaoPublicacaoPage() {
     <div className="space-y-6">
       <ModuleHeader 
         title="Central de Publicação de Resultados"
-        description="Homologue resultados validados para o portal público."
       />
 
       <div className="flex flex-col md:flex-row gap-4 bg-muted/30 p-4 rounded-lg border">
@@ -233,7 +232,7 @@ export default function CompeticaoPublicacaoPage() {
           </Select>
 
           {selectedMatches.length > 0 && (
-            <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={handleBatchPublish}>
+            <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleBatchPublish}>
               <CheckCircle2 className="h-4 w-4" />
               Publicar Selecionados ({selectedMatches.length})
             </Button>
@@ -247,7 +246,7 @@ export default function CompeticaoPublicacaoPage() {
             <TableRow className="bg-muted/50">
               <TableHead className="w-[40px]">
                 <Checkbox 
-                  checked={selectedMatches.length > 0 && selectedMatches.length === filteredMatches.filter(m => m.competition_match_results[0]?.result_status === "validado").length}
+                  checked={selectedMatches.length > 0 && selectedMatches.length === filteredMatches.filter((m: any) => m.competition_match_results[0]?.result_status === "validado").length}
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
@@ -273,13 +272,11 @@ export default function CompeticaoPublicacaoPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredMatches.map((m) => {
+              filteredMatches.map((m: any) => {
                 const res = m.competition_match_results[0];
                 const schoolA = m.competition_match_entries?.[0]?.teams?.name || "—";
                 const schoolB = m.competition_match_entries?.[1]?.teams?.name || "—";
-                const scoreA = m.competition_match_results.find(r => r.id === m.competition_match_entries?.[0]?.id)?.score || "0";
-                const scoreB = m.competition_match_results.find(r => r.id === m.competition_match_entries?.[1]?.id)?.score || "0";
-
+                
                 return (
                   <TableRow key={m.id}>
                     <TableCell>
@@ -291,8 +288,8 @@ export default function CompeticaoPublicacaoPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium text-sm">{m.sport_events?.sports?.name}</div>
-                      <div className="text-xs text-muted-foreground">{m.sport_events?.categories?.name} • {m.competition_phases?.name}</div>
+                      <div className="font-medium text-sm">{(m.sport_events as any)?.sports?.name}</div>
+                      <div className="text-xs text-muted-foreground">{(m.sport_events as any)?.categories?.name} • {m.competition_phases?.name}</div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm font-medium">{schoolA} × {schoolB}</div>
@@ -303,12 +300,12 @@ export default function CompeticaoPublicacaoPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="font-mono text-sm">
-                        {m.competition_match_results?.[0]?.score} × {m.competition_match_results?.[1]?.score}
+                        {m.competition_match_results?.[0]?.score || "0"} × {m.competition_match_results?.[1]?.score || "0"}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       {res?.result_status === "publicado" ? (
-                        <Badge className="bg-emerald-600 border-none">Publicado</Badge>
+                        <Badge className="bg-emerald-600 border-none text-white">Publicado</Badge>
                       ) : (
                         <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100 animate-pulse">Aguardando</Badge>
                       )}
@@ -391,7 +388,7 @@ export default function CompeticaoPublicacaoPage() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowConfirmBatch(false)}>Cancelar</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => publishMut.mutate(selectedMatches)}>
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => publishMut.mutate(selectedMatches)}>
               Confirmar Publicação
             </Button>
           </DialogFooter>
@@ -401,7 +398,7 @@ export default function CompeticaoPublicacaoPage() {
       <Sheet open={!!historyMatchId} onOpenChange={(open) => !open && setHistoryMatchId(null)}>
         <SheetContent className="sm:max-w-lg overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
+            <SheetTitle className="flex items-center gap-2 font-heading">
               <History className="h-5 w-5" />
               Histórico do Resultado
             </SheetTitle>
@@ -416,8 +413,8 @@ export default function CompeticaoPublicacaoPage() {
                 Nenhum registro de histórico encontrado.
               </div>
             ) : (
-              <div className="relative pl-6 border-l-2 border-muted space-y-8">
-                {history.map((h, i) => (
+              <div className="relative pl-6 border-l-2 border-muted space-y-8 ml-2">
+                {history.map((h: any) => (
                   <div key={h.id} className="relative">
                     <div className={`absolute -left-[31px] mt-1.5 h-4 w-4 rounded-full border-2 border-background ${
                       h.action_type === 'published' ? 'bg-emerald-500' :
@@ -437,7 +434,7 @@ export default function CompeticaoPublicacaoPage() {
                         </span>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        Por: {(h as any).changed_by_profile?.full_name || 'Usuário do Sistema'}
+                        Por: {h.profiles?.full_name || 'Usuário do Sistema'}
                       </div>
                       {h.payload?.reason && (
                         <div className="mt-2 p-2 bg-destructive/10 text-destructive text-[10px] rounded italic">
