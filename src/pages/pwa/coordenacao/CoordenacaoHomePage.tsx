@@ -28,7 +28,7 @@ export default function CoordenacaoHomePage() {
   const navigate = useNavigate();
   const { activeEventId } = useEventContext();
   const [loading, setLoading] = useState(true);
-  const [kpis, setKpis] = useState({ partidasHoje: 0, emAndamento: 0, finalizadas: 0, totalPartidas: 0 });
+  const [kpis, setKpis] = useState({ partidasHoje: 0, emAndamento: 0, finalizadas: 0, totalPartidas: 0, pendingIncidents: 0 });
   const [agenda, setAgenda] = useState<MatchRow[]>([]);
 
   usePwaAudit("coordenacao-tecnica");
@@ -43,11 +43,12 @@ export default function CoordenacaoHomePage() {
 
       const today = new Date().toISOString().slice(0, 10);
 
-      const [todayRes, andamentoRes, pendentesRes, totalRes, agendaRes] = await Promise.all([
+      const [todayRes, andamentoRes, pendentesRes, totalRes, incidentsRes, agendaRes] = await Promise.all([
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("match_date", today),
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "em_andamento"),
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "finalizada"),
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
+        supabase.from("operational_incidents").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("incident_status", "pending"),
         supabase
           .from("competition_matches")
           .select("id, match_date, start_time, status, sport_event_id, venue_id, venue:venues(name)")
@@ -62,11 +63,12 @@ export default function CoordenacaoHomePage() {
         emAndamento: andamentoRes.count || 0,
         finalizadas: pendentesRes.count || 0,
         totalPartidas: totalRes.count || 0,
+        pendingIncidents: incidentsRes.count || 0,
       });
       setAgenda((agendaRes.data as any) || []);
       setLoading(false);
     })();
-  }, [navigate]);
+  }, [navigate, activeEventId]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -99,14 +101,17 @@ export default function CoordenacaoHomePage() {
           ]}
         />
 
-        {kpis.emAndamento > 0 && (
-          <div className="op-card border-destructive/40 bg-destructive/10 p-3 flex items-center gap-3">
+        {kpis.pendingIncidents > 0 && (
+          <button 
+            onClick={() => navigate("/pwa/coordenacao-tecnica/incidentes")}
+            className="op-card w-full border-destructive/40 bg-destructive/10 p-3 flex items-center gap-3 text-left transition-all active:scale-[0.98]"
+          >
             <AlertOctagon className="h-5 w-5 shrink-0 text-destructive" />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold text-destructive uppercase tracking-wider">Alertas ativos</p>
-              <p className="text-sm font-semibold text-foreground">{kpis.emAndamento} partida(s) em andamento</p>
+              <p className="text-sm font-semibold text-foreground">{kpis.pendingIncidents} ocorrência(s) pendente(s)</p>
             </div>
-          </div>
+          </button>
         )}
 
         {agenda.length > 0 && (
