@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
-import { LogOut, RefreshCw, Radio, Eye, Info, X, Loader2 } from "lucide-react";
+import { LogOut, Radio, Eye, Info, X, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isFuture, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -36,7 +36,7 @@ export default function AoVivoHomePage() {
     if (!authLoading && !user) navigate("/aovivo/login");
   }, [authLoading, user, navigate]);
 
-  const { data: matches = [], isLoading, refetch, isRefetching } = useQuery({
+  const { data: matches = [], isLoading } = useQuery({
     queryKey: ["aovivo_matches", user?.id, activeEvent?.id],
     queryFn: async () => {
       if (!user?.id || !activeEvent?.id) return [];
@@ -147,8 +147,6 @@ export default function AoVivoHomePage() {
     return da.getTime() - db.getTime();
   });
 
-  const handleRefresh = useCallback(() => { refetch(); }, [refetch]);
-
   if (authLoading) {
     return (
       <div className="op-screen flex min-h-[100dvh] items-center justify-center">
@@ -175,9 +173,7 @@ export default function AoVivoHomePage() {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={handleRefresh} className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground">
-              <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
-            </button>
+            <PwaRefreshButton />
             <button onClick={signOut} className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground">
               <LogOut className="h-4 w-4" />
             </button>
