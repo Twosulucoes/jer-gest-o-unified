@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfDay, endOfDay } from "date-fns";
 import {
@@ -23,14 +24,37 @@ const ACTIONS_LABELS: Record<string, string> = {
   invite_resent: "Reenvio de Convite",
   password_reset: "Reset de Senha",
   sessions_revoked: "Revogação de Sessões",
+  // Generic actions
+  insert: "Inserção",
+  update: "Atualização",
+  delete: "Exclusão",
 };
 
+const TABLE_OPTIONS = [
+  { value: "users", label: "Usuários / Perfis" },
+  { value: "public_content", label: "Links / Páginas Públicas" },
+  { value: "pwa_access", label: "Acessos PWA" },
+];
+
 export default function AuditoriaPage() {
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("search") || "");
   const [userId, setUserId] = useState("all");
+  const [tableName, setTableName] = useState(searchParams.get("table") || "users");
   const [actionFilter, setActionFilter] = useState("all");
   const [startDate, setStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+
+  useEffect(() => {
+    const tableParam = searchParams.get("table");
+    if (tableParam && tableParam !== tableName) {
+      setTableName(tableParam);
+    }
+    const searchParam = searchParams.get("search");
+    if (searchParam && searchParam !== search) {
+      setSearch(searchParam);
+    }
+  }, [searchParams]);
 
   // Fetch users for filter
   const { data: users = [] } = useQuery({
@@ -46,7 +70,7 @@ export default function AuditoriaPage() {
   });
 
   const { data: logs = [], isLoading } = useQuery({
-    queryKey: ["audit-events-logs", startDate, endDate, userId, actionFilter],
+    queryKey: ["audit-events-logs", startDate, endDate, userId, actionFilter, tableName],
     queryFn: async () => {
       let query = supabase
         .from("audit_events")
@@ -59,7 +83,7 @@ export default function AuditoriaPage() {
           created_by,
           profiles:created_by (full_name)
         `)
-        .eq("table_name", "users")
+        .eq("table_name", tableName)
         .gte("created_at", startOfDay(new Date(startDate)).toISOString())
         .lte("created_at", endOfDay(new Date(endDate)).toISOString())
         .order("created_at", { ascending: false });
@@ -83,19 +107,36 @@ export default function AuditoriaPage() {
     return Array.from(new Set(logs.map(log => log.record_id)));
   }, [logs]);
 
-  const { data: targetProfiles = {} } = useQuery({
-    queryKey: ["audit-target-profiles", targetIds],
+  const { data: targetNames = {} } = useQuery({
+    queryKey: ["audit-target-names", targetIds, tableName],
     queryFn: async () => {
       if (targetIds.length === 0) return {};
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", targetIds);
-      if (error) throw error;
-      return (data || []).reduce((acc: any, p: any) => {
-        acc[p.id] = p.full_name;
-        return acc;
-      }, {});
+      
+      if (tableName === "users" || tableName === "profiles") {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", targetIds);
+        if (error) throw error;
+        return (data || []).reduce((acc: any, p: any) => {
+          acc[p.id] = p.full_name;
+          return acc;
+        }, {});
+      }
+
+      if (tableName === "public_content") {
+        const { data, error } = await supabase
+          .from("public_content")
+          .select("id, title")
+          .in("id", targetIds);
+        if (error) throw error;
+        return (data || []).reduce((acc: any, p: any) => {
+          acc[p.id] = p.title;
+          return acc;
+        }, {});
+      }
+
+      return {};
     },
     enabled: targetIds.length > 0,
   });
@@ -105,11 +146,11 @@ export default function AuditoriaPage() {
     const q = search.toLowerCase();
     return logs.filter((log: any) => {
       const userName = (log.profiles?.full_name || "").toLowerCase();
-      const targetName = (targetProfiles[log.record_id] || "").toLowerCase();
+      const targetName = (targetNames[log.record_id] || "").toLowerCase();
       const actionName = (ACTIONS_LABELS[log.action] || log.action).toLowerCase();
       return userName.includes(q) || targetName.includes(q) || actionName.includes(q);
     });
-  }, [logs, search, targetProfiles]);
+  }, [logs, search, targetNames]);
 
   const handleExportCSV = () => {
     if (filteredLogs.length === 0) {
@@ -124,7 +165,7 @@ export default function AuditoriaPage() {
         format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss"),
         `"${ACTIONS_LABELS[log.action] || log.action}"`,
         `"${log.profiles?.full_name || "—"}"`,
-        `"${targetProfiles[log.record_id] || log.record_id || "—"}"`,
+        `"${targetNames[log.record_id] || log.record_id || "—"}"`,
         `"${JSON.stringify(log.payload || {}).replace(/"/g, '""')}"`,
       ].join(",")),
     ].join("\n");
@@ -156,7 +197,21 @@ export default function AuditoriaPage() {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-card p-4 rounded-lg border">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 bg-card p-4 rounded-lg border">
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">Entidade/Tabela</label>
+          <Select value={tableName} onValueChange={setTableName}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione..." />
+            </SelectTrigger>
+            <SelectContent>
+              {TABLE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground">Buscar</label>
           <div className="relative">
@@ -275,7 +330,7 @@ export default function AuditoriaPage() {
                       <div className="flex items-center gap-2">
                         <Target className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-mono text-xs">
-                          {targetProfiles[log.record_id] || log.record_id || "—"}
+                          {targetNames[log.record_id] || log.record_id || "—"}
                         </span>
                       </div>
                     </TableCell>

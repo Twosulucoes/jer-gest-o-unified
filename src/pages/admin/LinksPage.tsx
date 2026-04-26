@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Plus, Copy, Download, Search, Loader2, Link2, ExternalLink, Trash2,
   QrCode, Info, Pencil, Bus, UtensilsCrossed, Building, Trophy, Users, Radio, Sparkles, Send, MessageSquare,
-  ShieldCheck, Gavel, IdCard, Award
+  ShieldCheck, Gavel, IdCard, Award, History
 } from "lucide-react";
 
 const BASE_URL = window.location.origin;
@@ -228,6 +228,9 @@ export default function LinksPage() {
           >
             {autoGenerateLinks.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             Gerar Links Padrão
+          </Button>
+          <Button variant="outline" onClick={() => navigate("/admin/auditoria?table=public_content")} className="gap-2">
+            <History className="h-4 w-4" /> Auditoria
           </Button>
           <Button onClick={() => setShowCreate(true)} className="gap-2">
             <Plus className="h-4 w-4" /> Novo Link
