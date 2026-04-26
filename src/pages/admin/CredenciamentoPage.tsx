@@ -635,7 +635,6 @@ export default function CredenciamentoPage() {
 
   // --- Stats ---
   const confirmedCount = (participants ?? []).filter((p) => p.status === "confirmed").length;
-  const credentialsEmittedCount = activeCredentials.length;
 
 
   const handleOpenPreview = (participantId: string) => {
@@ -895,23 +894,29 @@ export default function CredenciamentoPage() {
             tone: "default",
           },
           {
-            label: "Confirmados",
-            value: confirmedCount,
+            label: "Aguardando presença",
+            value: stats.awaiting,
             icon: <Clock className="h-3.5 w-3.5" />,
-            tone: "warning",
+            tone: stats.awaiting > 0 ? "warning" : "default",
           },
           {
-            label: "Sem credencial",
-            value: stats.pendingEmission,
-            icon: <AlertCircle className="h-3.5 w-3.5" />,
-            tone: stats.pendingEmission > 0 ? "warning" : "default",
+            label: "Prontos p/ emitir",
+            value: stats.ready,
+            icon: <CreditCard className="h-3.5 w-3.5" />,
+            tone: stats.ready > 0 ? "warning" : "default",
           },
           {
-            label: "Emitidas",
+            label: "Credenciados",
             value: stats.emitted,
             icon: <ShieldCheck className="h-3.5 w-3.5" />,
             tone: "success",
           },
+          ...(stats.blocked > 0 ? [{
+            label: "Irregulares",
+            value: stats.blocked,
+            icon: <ShieldAlert className="h-3.5 w-3.5" />,
+            tone: "destructive" as const,
+          }] : []),
         ]}
       />
       <div className="animate-fade-in space-y-5">
