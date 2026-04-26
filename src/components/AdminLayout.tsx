@@ -112,6 +112,7 @@ const navGroups: NavGroup[] = [
           { label: "Alojamento", to: "/pwa/alojamento", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
           { label: "Coord. Técnica", to: "/pwa/coordenacao-tecnica", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
           { label: "Delegação", to: "/pwa/delegacao", icon: <Users className="h-4 w-4" />, roles: ADMIN_ROLES },
+          { label: "JER Ao Vivo", to: "/aovivo", icon: <Radio className="h-4 w-4" />, roles: ADMIN_ROLES },
         ]
       }
     ]
