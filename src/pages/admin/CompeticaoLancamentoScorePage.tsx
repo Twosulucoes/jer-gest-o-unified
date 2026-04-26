@@ -496,6 +496,264 @@ export default function CompeticaoLancamentoScorePage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Gols/Pontos (Gaps Stage 4) */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" /> 
+                  {rules?.scoring?.score_type === 'goals' ? 'Gols' : 'Pontos'} 
+                  Detalhados
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={() => {
+                    const newGoal: GoalPoint = {
+                        match_entry_id: schoolA?.id || "",
+                        period: 1,
+                        minute: 0,
+                        value: 1
+                    };
+                    setGoals([...goals, newGoal]);
+                }}>
+                    <Plus className="h-4 w-4 mr-1" /> Adicionar {rules?.scoring?.score_type === 'goals' ? 'Gol' : 'Ponto'}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {goals.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum registro detalhado.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="border rounded-md">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Escola</TableHead>
+                              <TableHead>Atleta (Opcional)</TableHead>
+                              <TableHead className="w-[80px]">Min</TableHead>
+                              <TableHead className="w-[80px]">Valor</TableHead>
+                              <TableHead className="w-[50px]"></TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {goals.map((goal, idx) => (
+                              <TableRow key={idx}>
+                                <TableCell>
+                                  <Select value={goal.match_entry_id} onValueChange={(val) => {
+                                      const newGoals = [...goals];
+                                      newGoals[idx].match_entry_id = val;
+                                      newGoals[idx].participant_id = "";
+                                      setGoals(newGoals);
+                                  }}>
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {match?.entries.map((e: any) => (
+                                        <SelectItem key={e.id} value={e.id}>{e.teams?.name}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                                <TableCell>
+                                  <Select value={goal.participant_id} onValueChange={(val) => {
+                                      const newGoals = [...goals];
+                                      newGoals[idx].participant_id = val;
+                                      setGoals(newGoals);
+                                  }}>
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {lineups.filter(l => l.match_entry_id === goal.match_entry_id).map((l: any) => (
+                                        <SelectItem key={l.participant_id} value={l.participant_id}>
+                                          {l.jersey_number ? `#${l.jersey_number} ` : ""}{l.participant?.person?.full_name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                                <TableCell>
+                                  <Input 
+                                    type="number" 
+                                    className="h-8" 
+                                    value={goal.minute} 
+                                    onChange={(e) => {
+                                      const newGoals = [...goals];
+                                      newGoals[idx].minute = parseInt(e.target.value);
+                                      setGoals(newGoals);
+                                    }} 
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Input 
+                                    type="number" 
+                                    className="h-8" 
+                                    value={goal.value} 
+                                    onChange={(e) => {
+                                      const newGoals = [...goals];
+                                      newGoals[idx].value = parseInt(e.target.value);
+                                      setGoals(newGoals);
+                                    }} 
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => {
+                                      const newGoals = goals.filter((_, i) => i !== idx);
+                                      setGoals(newGoals);
+                                  }}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+
+                      {/* Divergence Alert */}
+                      {(() => {
+                        const sumA = goals.filter(g => g.match_entry_id === schoolA?.id).reduce((acc, g) => acc + g.value, 0);
+                        const sumB = goals.filter(g => g.match_entry_id === schoolB?.id).reduce((acc, g) => acc + g.value, 0);
+                        const diverged = sumA !== totalScoreA || sumB !== totalScoreB;
+                        
+                        if (diverged) {
+                          return (
+                            <Alert variant="destructive" className="bg-amber-50 border-amber-200 text-amber-800">
+                              <AlertTriangle className="h-4 w-4 text-amber-600" />
+                              <AlertTitle>Divergência de Placar</AlertTitle>
+                              <AlertDescription className="text-xs">
+                                A soma dos {rules?.scoring?.score_type === 'goals' ? 'gols' : 'pontos'} detalhados ({sumA}x{sumB}) não coincide com o placar por períodos ({totalScoreA}x{totalScoreB}).
+                              </AlertDescription>
+                            </Alert>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pênaltis Individuais (Step 5) */}
+            {match?.phase?.phase_type === 'knockout' && totalScoreA === totalScoreB && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-amber-500" /> Disputa de Pênaltis
+                  </CardTitle>
+                  <Button variant="outline" size="sm" onClick={() => {
+                      const newPenalty: PenaltyShot = {
+                          match_entry_id: schoolA?.id || "",
+                          team_side: 'A',
+                          ordem: penalties.length + 1,
+                          participant_id: "",
+                          convertido: false
+                      };
+                      setPenalties([...penalties, newPenalty]);
+                  }}>
+                      <Plus className="h-4 w-4 mr-1" /> Registrar Cobrança
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {penalties.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">Nenhuma cobrança registrada.</p>
+                    ) : (
+                      <div className="border rounded-md">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[60px]">Nº</TableHead>
+                              <TableHead>Escola</TableHead>
+                              <TableHead>Batedor</TableHead>
+                              <TableHead className="w-[120px]">Resultado</TableHead>
+                              <TableHead className="w-[50px]"></TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {penalties.map((p, idx) => (
+                              <TableRow key={idx}>
+                                <TableCell className="font-mono text-xs">{p.ordem}</TableCell>
+                                <TableCell>
+                                  <Select value={p.match_entry_id} onValueChange={(val) => {
+                                      const newPenalties = [...penalties];
+                                      newPenalties[idx].match_entry_id = val;
+                                      newPenalties[idx].team_side = val === schoolA?.id ? 'A' : 'B';
+                                      newPenalties[idx].participant_id = "";
+                                      setPenalties(newPenalties);
+                                  }}>
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value={schoolA?.id}>{schoolAName}</SelectItem>
+                                      <SelectItem value={schoolB?.id}>{schoolBName}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                                <TableCell>
+                                  <Select value={p.participant_id} onValueChange={(val) => {
+                                      const newPenalties = [...penalties];
+                                      newPenalties[idx].participant_id = val;
+                                      setPenalties(newPenalties);
+                                  }}>
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {lineups.filter(l => l.match_entry_id === p.match_entry_id).map((l: any) => (
+                                        <SelectItem key={l.participant_id} value={l.participant_id}>
+                                          {l.jersey_number ? `#${l.jersey_number} ` : ""}{l.participant?.person?.full_name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Badge 
+                                        variant={p.convertido ? "default" : "outline"}
+                                        className={`cursor-pointer ${p.convertido ? "bg-green-600" : ""}`}
+                                        onClick={() => {
+                                            const newPenalties = [...penalties];
+                                            newPenalties[idx].convertido = true;
+                                            setPenalties(newPenalties);
+                                        }}
+                                    >
+                                        GOL
+                                    </Badge>
+                                    <Badge 
+                                        variant={!p.convertido ? "destructive" : "outline"}
+                                        className="cursor-pointer"
+                                        onClick={() => {
+                                            const newPenalties = [...penalties];
+                                            newPenalties[idx].convertido = false;
+                                            setPenalties(newPenalties);
+                                        }}
+                                    >
+                                        ERRO
+                                    </Badge>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => {
+                                      const newPenalties = penalties.filter((_, i) => i !== idx);
+                                      setPenalties(newPenalties);
+                                  }}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div className="space-y-6">
