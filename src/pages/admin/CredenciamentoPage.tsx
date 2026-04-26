@@ -32,7 +32,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
-import { cn } from "@/lib/utils";
+
 import {
   Dialog,
   DialogContent,
@@ -329,7 +329,7 @@ export default function CredenciamentoPage() {
 
   // --- Active credentials ---
   // Quando há filtro de etapa, busca somente credenciais cujos participant_id estejam na etapa.
-  const { data: activeCredentials = [], error: credentialsError } = useQuery({
+  const { data: activeCredentials = [], error: credentialsError, isLoading: isCredsLoading } = useQuery({
     queryKey: ["credenciamento-credentials", selectedEventId, stageId, effectiveStageFilter?.length ?? -1],
     queryFn: async () => {
       if (!selectedEventId) return [];
@@ -615,11 +615,9 @@ export default function CredenciamentoPage() {
   };
 
   // --- Stats ---
-  const pendingCount = (participants ?? []).filter((p) => p.status === "pending").length;
   const confirmedCount = (participants ?? []).filter((p) => p.status === "confirmed").length;
-  const credentialedCount = (participants ?? []).filter((p) => p.status === "credentialed").length;
   const credentialsEmittedCount = activeCredentials.length;
-  const pendingEmission = confirmedCount - credentialsEmittedCount;
+
 
   const handleOpenPreview = (participantId: string) => {
     const tmpl = eventTemplate ?? createDefaultTemplateMutation.data;
@@ -1029,17 +1027,27 @@ export default function CredenciamentoPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-          <XCircle className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhum participante encontrado</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {hasActiveFilters
-              ? "Nenhum resultado para os filtros aplicados. Tente ajustar os filtros."
-              : "Nenhum participante importado para este evento."}
-          </p>
-          {hasActiveFilters && (
-            <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }}>
-              Limpar filtros
-            </Button>
+          {isCredsLoading && searchTerm ? (
+            <>
+              <Loader2 className="h-10 w-10 text-primary mb-3 animate-spin" />
+              <p className="text-foreground font-medium">Buscando por código da credencial...</p>
+              <p className="text-sm text-muted-foreground mt-1">Isso pode levar alguns segundos enquanto carregamos os dados da etapa.</p>
+            </>
+          ) : (
+            <>
+              <XCircle className="h-10 w-10 text-muted-foreground mb-3" />
+              <p className="text-muted-foreground font-medium">Nenhum participante encontrado</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {hasActiveFilters
+                  ? "Nenhum resultado para os filtros aplicados. Tente ajustar os filtros."
+                  : "Nenhum participante importado para este evento."}
+              </p>
+              {hasActiveFilters && (
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }}>
+                  Limpar filtros
+                </Button>
+              )}
+            </>
           )}
         </div>
       ) : (
