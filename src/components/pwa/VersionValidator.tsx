@@ -12,6 +12,7 @@ export function VersionValidator({ children }: { children: React.ReactNode }) {
   const [isSyncing, setIsSyncing] = useState(true);
   const [versionMismatch, setVersionMismatch] = useState(false);
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
     // Exponha a versão para depuração
@@ -49,6 +50,17 @@ export function VersionValidator({ children }: { children: React.ReactNode }) {
 
     checkSync();
   }, []);
+
+  useEffect(() => {
+    if (versionMismatch && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (versionMismatch && countdown === 0) {
+      handleUpdateVersion();
+    }
+  }, [versionMismatch, countdown]);
 
   const handleUpdateVersion = () => {
     localStorage.setItem(VERSION_KEY, APP_VERSION);
@@ -90,13 +102,18 @@ export function VersionValidator({ children }: { children: React.ReactNode }) {
               Detectada: {localStorage.getItem(VERSION_KEY)}
             </div>
           </div>
-          <Button 
-            onClick={handleUpdateVersion} 
-            className="w-full gap-2 h-11 shadow-lg shadow-primary/20"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Sincronizar e Recarregar
-          </Button>
+          <div className="w-full space-y-3">
+            <Button 
+              onClick={handleUpdateVersion} 
+              className="w-full gap-2 h-11 shadow-lg shadow-primary/20"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Atualizar agora
+            </Button>
+            <p className="text-[10px] text-muted-foreground">
+              Recarregando automaticamente em {countdown} segundos...
+            </p>
+          </div>
         </div>
       </div>
     );
