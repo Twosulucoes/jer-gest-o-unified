@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Gavel, FileText, Paperclip } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -48,6 +49,7 @@ export default function DelegacaoProtestoDetalhePage() {
         </button>
         <Gavel className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">{protest.protocol_number}</span>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-3">

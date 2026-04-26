@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Calendar } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 interface MatchItem {
   id: string;
@@ -44,6 +45,7 @@ export default function DelegacaoAgendaPage() {
         </button>
         <Calendar className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">Agenda</span>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-3">

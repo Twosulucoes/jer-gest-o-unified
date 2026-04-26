@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Bus, UtensilsCrossed, Building } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 export default function DelegacaoLogisticaPage() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function DelegacaoLogisticaPage() {
         </button>
         <Bus className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">Logística</span>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-3">

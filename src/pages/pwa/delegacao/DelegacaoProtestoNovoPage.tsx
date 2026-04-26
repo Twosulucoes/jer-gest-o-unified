@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Gavel, AlertTriangle, Clock, Upload, X, CheckCircle2 } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 import { toast } from "@/hooks/use-toast";
 import { format, differenceInMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -143,6 +144,7 @@ export default function DelegacaoProtestoNovoPage() {
         </button>
         <Gavel className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">Novo Protesto</span>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-4">
