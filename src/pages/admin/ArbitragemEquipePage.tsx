@@ -128,16 +128,16 @@ export default function ArbitragemEquipePage() {
     },
   });
 
-  // Partidas elegíveis para escala em lote (evento + filtros etapa/modalidade)
+  // Partidas elegíveis para escala em lote (evento + filtro de modalidade)
   const { data: eligibleMatches = [], isLoading: loadingEligible } = useQuery({
-    queryKey: ["arb-eligible-matches", activeEventId, stageFilter, sportFilter],
+    queryKey: ["arb-eligible-matches", activeEventId, sportFilter],
     enabled: !!activeEventId && activeTab === "lote",
     queryFn: async () => {
       let q = supabase
         .from("competition_matches")
         .select(`
           id, match_number, match_date, start_time, status,
-          event_stage_id, sport_event_id,
+          event_id, sport_event_id,
           venues(name),
           competition_phases(name),
           sport_events!inner(
@@ -146,11 +146,10 @@ export default function ArbitragemEquipePage() {
             categories(name)
           )
         `)
-        .eq("sport_events.event_id", activeEventId!)
+        .eq("event_id", activeEventId!)
         .order("match_date", { ascending: true, nullsFirst: false })
         .order("start_time", { ascending: true, nullsFirst: false })
         .limit(500);
-      if (stageFilter !== "all") q = q.eq("event_stage_id", stageFilter);
       if (sportFilter !== "all") q = q.eq("sport_events.sports.id", sportFilter);
       const { data, error } = await q;
       if (error) throw error;
