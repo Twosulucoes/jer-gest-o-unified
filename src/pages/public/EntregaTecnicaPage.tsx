@@ -454,58 +454,84 @@ export default function EntregaTecnicaPage() {
             </div>
 
             {/* Preview Responsivo */}
-            <div className="relative">
-              {/* Desktop Mockup */}
-              <div className="relative bg-white rounded-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden transform lg:scale-110 lg:translate-x-12">
-                <div className="h-6 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5 px-3">
+            <div className="relative group/preview">
+              {/* Desktop Mockup / Capture */}
+              <div className="relative bg-white rounded-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden transform lg:scale-110 lg:translate-x-12 transition-all duration-700">
+                <div className="h-6 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5 px-3 z-10 relative">
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                  <div className="ml-2 text-[8px] font-mono text-slate-400 uppercase tracking-widest">jergestao.com.br/admin</div>
                 </div>
-                <div className="p-4 bg-slate-50/30">
-                  <div className="flex gap-4">
-                    <div className="w-48 space-y-3 hidden sm:block">
-                      <div className="h-8 bg-slate-100 rounded-lg w-3/4" />
-                      <div className="space-y-2">
-                        {[1, 2, 3, 4].map(i => (
-                          <div key={i} className="h-4 bg-slate-50 rounded-md w-full" />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex-1 space-y-4">
-                      <div className="grid grid-cols-3 gap-3">
-                        {[1, 2, 3].map(i => (
-                          <div key={i} className="h-20 bg-white rounded-xl border border-slate-100 p-3">
-                            <div className="w-6 h-6 rounded bg-slate-50 mb-2" />
-                            <div className="h-2 bg-slate-100 rounded w-full" />
+                
+                <div className="relative aspect-video bg-slate-50">
+                  <img 
+                    src="/screenshots/desktop.png" 
+                    alt="Sistema Desktop"
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${desktopCaptureLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    onLoad={() => setDesktopCaptureLoaded(true)}
+                    onError={() => setDesktopCaptureLoaded(false)}
+                  />
+                  
+                  {!desktopCaptureLoaded && (
+                    <div className="p-4 bg-slate-50/30 h-full">
+                      <div className="flex gap-4 h-full">
+                        <div className="w-48 space-y-3 hidden sm:block">
+                          <div className="h-8 bg-slate-100 rounded-lg w-3/4" />
+                          <div className="space-y-2">
+                            {[1, 2, 3, 4].map(i => (
+                              <div key={i} className="h-4 bg-slate-50 rounded-md w-full" />
+                            ))}
                           </div>
-                        ))}
+                        </div>
+                        <div className="flex-1 space-y-4">
+                          <div className="grid grid-cols-3 gap-3">
+                            {[1, 2, 3].map(i => (
+                              <div key={i} className="h-20 bg-white rounded-xl border border-slate-100 p-3">
+                                <div className="w-6 h-6 rounded bg-slate-50 mb-2" />
+                                <div className="h-2 bg-slate-100 rounded w-full" />
+                              </div>
+                            ))}
+                          </div>
+                          <div className="h-40 bg-white rounded-2xl border border-slate-100" />
+                        </div>
                       </div>
-                      <div className="h-40 bg-white rounded-2xl border border-slate-100" />
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
-              {/* Mobile Mockup */}
-              <div className="absolute -bottom-10 -left-6 md:left-0 w-36 md:w-48 bg-white rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] border-[6px] border-slate-900 overflow-hidden aspect-[9/19.5]">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-slate-900 rounded-b-xl z-20" />
-                <div className="p-4 pt-8 space-y-4 h-full bg-slate-50">
-                  <div className="flex justify-between items-center">
-                    <div className="w-8 h-8 rounded-lg" style={{ background: brand.colors.primary }} />
-                    <div className="w-8 h-2 bg-slate-200 rounded-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-slate-200 rounded w-3/4" />
-                    <div className="h-2 bg-slate-100 rounded w-full" />
-                    <div className="h-2 bg-slate-100 rounded w-5/6" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="h-12 bg-white rounded-lg border border-slate-100" />
-                    ))}
-                  </div>
-                  <div className="h-32 bg-white rounded-xl border border-slate-100" />
+              {/* Mobile Mockup / Capture */}
+              <div className="absolute -bottom-10 -left-6 md:left-0 w-36 md:w-48 bg-white rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] border-[6px] border-slate-900 overflow-hidden aspect-[9/19.5] z-20 group-hover/preview:scale-105 transition-transform duration-500">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-slate-900 rounded-b-xl z-30" />
+                <div className="relative h-full bg-slate-50">
+                  <img 
+                    src="/screenshots/mobile.png" 
+                    alt="Sistema Mobile"
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${mobileCaptureLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    onLoad={() => setMobileCaptureLoaded(true)}
+                    onError={() => setMobileCaptureLoaded(false)}
+                  />
+
+                  {!mobileCaptureLoaded && (
+                    <div className="p-4 pt-8 space-y-4 h-full bg-slate-50">
+                      <div className="flex justify-between items-center">
+                        <div className="w-8 h-8 rounded-lg" style={{ background: brand.colors.primary }} />
+                        <div className="w-8 h-2 bg-slate-200 rounded-full" />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="h-3 bg-slate-200 rounded w-3/4" />
+                        <div className="h-2 bg-slate-100 rounded w-full" />
+                        <div className="h-2 bg-slate-100 rounded w-5/6" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[1, 2, 3, 4].map(i => (
+                          <div key={i} className="h-12 bg-white rounded-lg border border-slate-100" />
+                        ))}
+                      </div>
+                      <div className="h-32 bg-white rounded-xl border border-slate-100" />
+                    </div>
+                  )}
                 </div>
               </div>
 
