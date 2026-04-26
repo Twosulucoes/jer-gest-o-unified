@@ -188,6 +188,15 @@ export default function EntregaTecnicaPage() {
       .then((res) => res.json())
       .then((data) => setVersion(data))
       .catch(() => setVersion(null));
+
+    // Pre-check if images are already cached to avoid skeleton flicker
+    const desktopImg = new Image();
+    desktopImg.src = "/screenshots/desktop.png";
+    if (desktopImg.complete) setDesktopCaptureLoaded(true);
+
+    const mobileImg = new Image();
+    mobileImg.src = "/screenshots/mobile.png";
+    if (mobileImg.complete) setMobileCaptureLoaded(true);
   }, []);
 
   const nextStep = () => setCurrentStep((p) => (p + 1) % tourSteps.length);
