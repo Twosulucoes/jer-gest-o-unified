@@ -40,7 +40,7 @@ const pages = ROOTS.flatMap((r) => walk(join(REPO, r))).map((abs) => {
     rel,
     hasRefreshButton: /PwaRefreshButton/.test(src),
     hasPwaHeader: /\bPwaHeader\b/.test(src),
-    exception: isException(rel),
+    exception: isPwaRefreshException(rel),
   };
 });
 
