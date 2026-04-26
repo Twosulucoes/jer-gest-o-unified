@@ -214,7 +214,7 @@ export default function TransporteEmbarquePage() {
             await supabase.from("operational_incidents").insert({
               event_id: (tripData as any).event_id,
               event_stage_id: eventStageId,
-              module: "transporte" as any,
+              module: "transporte" as IncidentModule,
               reference_id: tripId!,
               reference_label: label,
               reported_by_user_id: userId,
