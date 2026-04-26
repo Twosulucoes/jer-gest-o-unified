@@ -310,6 +310,8 @@ Deno.serve(async (req) => {
         const { error } = await adminClient.auth.admin.signOut(user_id);
         if (error) return jsonResponse({ error: error.message }, 500);
 
+        await logAudit(adminClient, "sessions_revoked", user_id, caller.id);
+
         return jsonResponse({ success: true });
       }
 

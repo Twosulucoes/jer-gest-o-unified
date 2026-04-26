@@ -130,6 +130,7 @@ import PesquisaEventosPage from "./pages/admin/PesquisaEventosPage";
 import PesquisaFormEditorPage from "./pages/admin/PesquisaFormEditorPage";
 import PesquisaPesquisadoresPage from "./pages/admin/PesquisaPesquisadoresPage";
 import DatabaseMonitoringPage from "./pages/admin/DatabaseMonitoringPage";
+import AuditoriaPage from "./pages/admin/AuditoriaPage";
 
 // PWA pages
 import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
@@ -333,6 +334,8 @@ const App = () => (
               <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
               <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
               <Route path="acessos/pwa" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosPwaAuditPage /></ProtectedRoute>} />
+              <Route path="auditoria" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AuditoriaPage /></ProtectedRoute>} />
+
               {/* Parâmetros e Regras — consolidados em /admin/regras */}
               <Route path="parametros-evento" element={<Navigate to="/admin/regras" replace />} />
               <Route path="regras-evento" element={<Navigate to="/admin/regras" replace />} />
