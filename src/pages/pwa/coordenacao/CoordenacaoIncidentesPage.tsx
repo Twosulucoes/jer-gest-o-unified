@@ -36,20 +36,35 @@ export default function CoordenacaoIncidentesPage() {
   const { activeEventId } = useEventContext();
   const [incidents, setIncidents] = useState<IncidentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!activeEventId) return;
+    if (!activeEventId) {
+      setIncidents([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     
     (async () => {
-      const { data } = await supabase
-        .from("operational_incidents")
-        .select("id, incident_description, incident_status, module, created_at")
-        .eq("event_id", activeEventId)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      
-      setIncidents((data as any) || []);
-      setLoading(false);
+      try {
+        setError(null);
+        const { data, error: fetchError } = await supabase
+          .from("operational_incidents")
+          .select("id, incident_description, incident_status, module, created_at")
+          .eq("event_id", activeEventId)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        
+        if (fetchError) throw fetchError;
+        
+        setIncidents((data as any) || []);
+      } catch (err: any) {
+        console.error("Erro ao carregar ocorrências:", err);
+        setError("Não foi possível carregar a lista de ocorrências. Tente novamente mais tarde.");
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [activeEventId]);
 
@@ -71,10 +86,33 @@ export default function CoordenacaoIncidentesPage() {
       <main className="relative mx-auto max-w-md space-y-3 p-4">
         {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
 
-        {!loading && incidents.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground bg-card/50 rounded-2xl border border-dashed">
-            <AlertTriangle className="h-10 w-10 mx-auto mb-2 opacity-20" />
-            <p className="text-sm">Nenhuma ocorrência registrada</p>
+        {!loading && !activeEventId && (
+          <div className="text-center py-12 px-6 text-muted-foreground bg-card/50 rounded-2xl border border-dashed border-border/60">
+            <AlertTriangle className="h-10 w-10 mx-auto mb-3 opacity-30 text-yellow-500" />
+            <h3 className="text-foreground font-semibold mb-1">Nenhum evento selecionado</h3>
+            <p className="text-sm">Por favor, selecione um evento ativo no menu principal para visualizar as ocorrências.</p>
+          </div>
+        )}
+
+        {!loading && activeEventId && error && (
+          <div className="text-center py-12 px-6 text-muted-foreground bg-destructive/5 rounded-2xl border border-dashed border-destructive/30">
+            <AlertTriangle className="h-10 w-10 mx-auto mb-3 text-destructive opacity-80" />
+            <h3 className="text-foreground font-semibold mb-1">Erro de conexão</h3>
+            <p className="text-sm mb-4">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="text-xs font-bold uppercase tracking-wider text-primary px-4 py-2 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {!loading && activeEventId && !error && incidents.length === 0 && (
+          <div className="text-center py-12 px-6 text-muted-foreground bg-card/50 rounded-2xl border border-dashed border-border/60">
+            <ClipboardList className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <h3 className="text-foreground font-semibold mb-1">Tudo em ordem por aqui</h3>
+            <p className="text-sm">Nenhuma ocorrência operacional registrada para este evento até o momento.</p>
           </div>
         )}
 
