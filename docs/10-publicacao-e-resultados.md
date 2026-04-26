@@ -95,6 +95,12 @@ Componente: `CombatResultForm` (renderizado quando `family='combat'`)
 - `audit_events`: registra ações relevantes de governança.
 - `match_results_history`: registra snapshots completos do payload a cada salvamento em modalidades Score.
 
+## Segurança e Autenticação
+
+- **Validação Real de Senha**: A homologação não utiliza apenas um campo de texto; a senha é conferida contra o hash real do usuário no Supabase Auth através da Edge Function `verify-current-user-password`.
+- **Auditoria de Falhas**: Tentativas de homologação com senha incorreta são registradas na tabela `audit_events` com ação `password_verification_failed`.
+- **Isolamento de Senha**: A senha nunca é passada para a RPC SQL, permanecendo apenas no contexto da Edge Function durante a verificação.
+
 ## Dados Reais (2026-04-14)
 
 - 17 resultados lançados
