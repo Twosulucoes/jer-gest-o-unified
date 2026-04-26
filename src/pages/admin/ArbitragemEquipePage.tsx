@@ -302,6 +302,84 @@ export default function ArbitragemEquipePage() {
     }
   };
 
+  // Linhas para exportação (respeita filtros aplicados)
+  const exportRows: EscalaExportRow[] = useMemo(() => {
+    return filteredAssignments
+      .map((a) => {
+        const m = matchMap.get(a.match_id);
+        const profile = profileMap.get(a.user_id);
+        const stageName = m?.event_stage_id ? stageMap.get(m.event_stage_id) ?? "" : "";
+        return {
+          official_name: profile?.full_name ?? "Usuário",
+          role_label: ROLE_LABELS[a.role] ?? a.role,
+          stage: stageName,
+          match_number: m?.match_number != null ? String(m.match_number) : "—",
+          sport: m?.sport_events?.sports?.name ?? "—",
+          category: m?.sport_events?.categories?.name ?? "",
+          phase: m?.competition_phases?.name ?? "",
+          match_date: m?.match_date
+            ? (() => {
+                try {
+                  return format(parse(m.match_date, "yyyy-MM-dd", new Date()), "dd/MM/yyyy");
+                } catch {
+                  return m.match_date ?? "";
+                }
+              })()
+            : "",
+          start_time: m?.start_time ? m.start_time.slice(0, 5) : "",
+          venue: m?.venues?.name ?? "",
+        };
+      })
+      .sort((a, b) => {
+        const k = a.stage.localeCompare(b.stage);
+        if (k !== 0) return k;
+        const k2 = a.sport.localeCompare(b.sport);
+        if (k2 !== 0) return k2;
+        const k3 = a.match_date.localeCompare(b.match_date);
+        if (k3 !== 0) return k3;
+        return a.official_name.localeCompare(b.official_name);
+      });
+  }, [filteredAssignments, matchMap, profileMap, stageMap]);
+
+  const exportFilenameBase = useMemo(() => {
+    const parts = ["escalas-arbitragem"];
+    if (stageFilter !== "all") {
+      const s = stages.find((x) => x.id === stageFilter)?.name;
+      if (s) parts.push(s.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+    }
+    parts.push(format(new Date(), "yyyyMMdd-HHmm"));
+    return parts.join("_");
+  }, [stageFilter, stages]);
+
+  const handleExportCsv = () => {
+    if (exportRows.length === 0) {
+      toast.info("Nenhuma escala para exportar com os filtros atuais.");
+      return;
+    }
+    downloadCsv(exportRows, `${exportFilenameBase}.csv`);
+    toast.success(`CSV exportado (${exportRows.length} linha(s)).`);
+  };
+
+  const handleExportPdf = async () => {
+    if (exportRows.length === 0) {
+      toast.info("Nenhuma escala para exportar com os filtros atuais.");
+      return;
+    }
+    try {
+      const stageName =
+        stageFilter !== "all" ? stages.find((x) => x.id === stageFilter)?.name : undefined;
+      await downloadPdf(exportRows, `${exportFilenameBase}.pdf`, {
+        eventName: activeEvent?.name,
+        stageName,
+        activeEventId,
+        userId: user?.id ?? null,
+      });
+      toast.success(`PDF gerado (${exportRows.length} linha(s)).`);
+    } catch (e) {
+      toast.error("Falha ao gerar PDF: " + (e as Error).message);
+    }
+  };
+
   if (!activeEventId) {
     return (
       <Card>
