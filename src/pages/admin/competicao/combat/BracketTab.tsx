@@ -36,7 +36,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
   });
 
   // Fetch current phases and matches
-  const { data: phases = [], isLoading: loadingPhases } = useQuery({
+  const { data: phases = [], isLoading: loadingPhases } = useQuery<any>({
     queryKey: ["bracket-phases", sportEventId],
     queryFn: async () => {
       const { data, error } = await supabase
