@@ -128,6 +128,8 @@ import PesquisaDashboardPage from "./pages/admin/PesquisaDashboardPage";
 import PesquisaEventosPage from "./pages/admin/PesquisaEventosPage";
 import PesquisaFormEditorPage from "./pages/admin/PesquisaFormEditorPage";
 import PesquisaPesquisadoresPage from "./pages/admin/PesquisaPesquisadoresPage";
+import DatabaseMonitoringPage from "./pages/admin/DatabaseMonitoringPage";
+
 // PWA pages
 import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
 import PesquisaHomePage from "./pages/pwa/PesquisaHomePage";
@@ -342,7 +344,9 @@ const App = () => (
               <Route path="mapa" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
               <Route path="diagnostico-competicao" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
               <Route path="sistema/diagnostico" element={<ProtectedRoute allowedRoles={["super_admin"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
-              <Route path="sistema/diagnostico/kpi" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><SistemaDiagnosticoKpiPage /></ProtectedRoute>} />
+               <Route path="sistema/diagnostico/kpi" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><SistemaDiagnosticoKpiPage /></ProtectedRoute>} />
+               <Route path="monitoramento-db" element={<ProtectedRoute allowedRoles={["super_admin", "admin"]}><DatabaseMonitoringPage /></ProtectedRoute>} />
+
               <Route path="dados" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralDadosPage /></ProtectedRoute>} />
               <Route path="boletins" element={<Navigate to="/admin/relatorios/boletins" replace />} />
               <Route path="relatorios/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />

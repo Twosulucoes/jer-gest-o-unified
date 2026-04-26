@@ -17,6 +17,8 @@ import {
   ScanLine, Search, Building, AlertTriangle, Wifi, WifiOff, Users, LogOut
 } from "lucide-react";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { dbTelemetry } from "@/lib/monitoring/dbTelemetry";
+
 
 interface Facility {
   id: string;
@@ -58,8 +60,18 @@ export default function AlojamentoHomePage() {
         query = query.eq("event_stage_id", stageId);
       }
 
-      const { data, error } = await query.order("name");
+      const { data, error, status } = await query.order("name");
       
+      dbTelemetry.log({
+        moduleName: 'alojamento',
+        tableName: 'lodging_locations',
+        operation: 'SELECT',
+        eventId: eventId,
+        isSuccess: !error,
+        errorCode: error?.code,
+        rowsAffected: data?.length || 0
+      });
+
       if (!error) {
         const list = (data || []) as Facility[];
         setFacilities(list);
@@ -69,6 +81,7 @@ export default function AlojamentoHomePage() {
         }
       }
       setLoading(false);
+
     })();
   }, [eventId, stageId]);
 
@@ -77,7 +90,17 @@ export default function AlojamentoHomePage() {
     setSelectedFacility(facilityId);
     (async () => {
       // For now, continue using the KPI RPC, but it might need to be replaced if it doesn't support the new schema
-      const { data } = await supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId });
+      const { data, error } = await supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId });
+      
+      dbTelemetry.log({
+        moduleName: 'alojamento',
+        tableName: 'RPC:get_alojamento_kpis',
+        operation: 'SELECT',
+        eventId: eventId,
+        isSuccess: !error,
+        errorCode: error?.code
+      });
+
       if (data) {
         const kpi = data as any;
         const total = kpi.total_beds || 0;
