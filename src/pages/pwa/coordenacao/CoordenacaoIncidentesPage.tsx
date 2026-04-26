@@ -38,6 +38,7 @@ export default function CoordenacaoIncidentesPage() {
   // Filters and Pagination
   const [filterModule, setFilterModule] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 15;
