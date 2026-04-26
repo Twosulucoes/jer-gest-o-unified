@@ -38,6 +38,8 @@ export default function LocaisPage() {
   const [editingVenue, setEditingVenue] = useState<(VenueRow & { event_stage_ids?: string[] }) | null>(null);
   const [stageFilter, setStageFilter] = useState<string>(STAGE_FILTER_ALL);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState<VenueRow | null>(null);
 
   const canWrite =
     hasRole("admin") ||
