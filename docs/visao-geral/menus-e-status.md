@@ -34,6 +34,7 @@
 |--------|------|--------|
 | Painel da Competição | `/admin/competicao/painel` | ✅ Feito |
 | Painel Score (Modalidade) | `/admin/competicao/painel-score/:id` | ✅ Feito |
+| Painel Sets (Modalidade) | `/admin/competicao/painel-sets/:id` | ✅ Feito |
 | Pré-validação | `/admin/competicao/pre-validacao` | ✅ Feito |
 | Central da Competição | `/admin/competicao/central` | ✅ Feito |
 | Modalidades | `/admin/modalidades` | ✅ Feito |
