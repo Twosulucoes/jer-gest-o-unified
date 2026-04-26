@@ -1,0 +1,72 @@
+name: CI/CD Pipeline
+
+on: [push]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Generate Version Info
+        run: |
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          COMMIT_FULL=$(git rev-parse HEAD)
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          # Use VERSION file for app version
+          APP_VERSION=$(cat VERSION)
+          
+          # Create public/version.json
+          echo "{" > public/version.json
+          echo "  \"appVersion\": \"$APP_VERSION\"," >> public/version.json
+          echo "  \"environment\": \"$BRANCH_NAME\"," >> public/version.json
+          echo "  \"branch\": \"$BRANCH_NAME\"," >> public/version.json
+          echo "  \"commit\": \"$COMMIT_HASH\"," >> public/version.json
+          echo "  \"commitFull\": \"$COMMIT_FULL\"," >> public/version.json
+          echo "  \"buildDate\": \"$BUILD_DATE\"," >> public/version.json
+          echo "  \"supabaseProjectRef\": \"${{ secrets.SUPABASE_PROJECT_REF }}\"" >> public/version.json
+          echo "}" >> public/version.json
+          
+          echo "Version Info Generated:"
+          cat public/version.json
+
+      - name: Run Build
+        run: bun run build
+        env:
+          VITE_APP_VERSION: ${{ github.sha }}
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
+          working-directory: .
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "### Build Status 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** $(git rev-parse --short HEAD)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${GITHUB_REF#refs/heads/}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** ${GITHUB_REF#refs/heads/}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ${{ job.status }} ${{ job.status == 'success' && '✅' || '❌' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployment:** Vercel" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** $(cat VERSION)" >> $GITHUB_STEP_SUMMARY
