@@ -266,7 +266,6 @@ export default function PesquisaNovaPage() {
             <PwaRefreshButton />
           </div>
         </div>
-      )}
 
       <div className="max-w-lg mx-auto p-4 space-y-6">
         {/* STEP 1: Profile */}
