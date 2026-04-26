@@ -248,14 +248,13 @@ export default function TransporteEmbarquePage() {
       if (isVoucherQr(rawValue)) {
         const voucher = await tryRedeemVoucher(rawValue, "transport", tripId);
         if (!voucher || !voucher.ok) {
-          toast.error(getVoucherMessage(voucher?.reason, lang));
+          toast.error(voucherErrorMessage(voucher?.reason, lang).text);
           return;
         }
 
         // Voucher AGREGADO: apenas confirma; não há FK para participant_id
         if (voucher.voucher_type === "aggregate" || !voucher.participant_id) {
-          const displayLabel = voucher.label || voucher.person_name || "Acompanhante";
-          toast.success(`🎫 Voucher agregado validado — ${displayLabel}`);
+          toast.success(voucherSuccessMessage(voucher, "transport", lang).text);
           if (navigator.vibrate) navigator.vibrate(200);
           return;
         }
