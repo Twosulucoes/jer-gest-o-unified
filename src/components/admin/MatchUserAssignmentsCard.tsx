@@ -123,6 +123,11 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
 
   const addMut = useMutation({
     mutationFn: async () => {
+      if (!canManageAssignments) {
+        throw new Error(
+          "Seu perfil não tem permissão para designar oficiais. Apenas Admin, Coordenação Técnica e Coordenador de Modalidade podem realizar essa ação.",
+        );
+      }
       if (!selectedUserId || !selectedRole) throw new Error("Selecione usuário e função");
 
       // Fetch the target match and validate status / scheduling
