@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
+import { clearPersistedFilters } from "@/hooks/usePersistedState";
 
 const STORAGE_KEY = "jer_active_event_id";
 
