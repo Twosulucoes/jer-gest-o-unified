@@ -1283,3 +1283,318 @@ function UsageHistoryDialog({ voucher, onClose }: { voucher: VoucherRow | null; 
     </Dialog>
   );
 }
+
+// -------- Bulk Issue by Delegation --------
+function BulkIssueByDelegationDialog({
+  open,
+  onOpenChange,
+  eventId,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  eventId: string;
+}) {
+  const queryClient = useQueryClient();
+  const [delegationId, setDelegationId] = useState<string>("");
+  const [participantTypeFilter, setParticipantTypeFilter] = useState<string>("all");
+  const [scopeTransport, setScopeTransport] = useState(true);
+  const [scopeMeals, setScopeMeals] = useState(true);
+  const [scopeLodging, setScopeLodging] = useState(false);
+  const [maxUses, setMaxUses] = useState<string>("");
+  const [validUntil, setValidUntil] = useState<string>("");
+  const [notes, setNotes] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!open) {
+      setDelegationId("");
+      setParticipantTypeFilter("all");
+      setScopeTransport(true);
+      setScopeMeals(true);
+      setScopeLodging(false);
+      setMaxUses("");
+      setValidUntil("");
+      setNotes("");
+      setSelectedIds(new Set());
+    }
+  }, [open]);
+
+  // Delegações do evento
+  const { data: delegations = [] } = useQuery({
+    queryKey: ["bulk-vouchers-delegations", eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("delegations")
+        .select("id, name")
+        .eq("event_id", eventId)
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string }>;
+    },
+    enabled: open && !!eventId,
+  });
+
+  // Participantes da delegação selecionada
+  const { data: participants = [], isLoading: loadingParts } = useQuery({
+    queryKey: ["bulk-vouchers-participants", eventId, delegationId],
+    queryFn: async () => {
+      if (!delegationId) return [];
+      const { data, error } = await supabase
+        .from("participants")
+        .select("id, participant_type, status, person:people(id, full_name, cpf)")
+        .eq("event_id", eventId)
+        .eq("delegation_id", delegationId)
+        .neq("status", "removed")
+        .order("participant_type", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        participant_type: string;
+        status: string;
+        person: { id: string; full_name: string; cpf: string | null } | null;
+      }>;
+    },
+    enabled: open && !!delegationId,
+  });
+
+  const filteredParticipants = useMemo(() => {
+    if (participantTypeFilter === "all") return participants;
+    return participants.filter((p) => p.participant_type === participantTypeFilter);
+  }, [participants, participantTypeFilter]);
+
+  const participantTypes = useMemo(
+    () => Array.from(new Set(participants.map((p) => p.participant_type))).sort(),
+    [participants],
+  );
+
+  const allFilteredSelected =
+    filteredParticipants.length > 0 &&
+    filteredParticipants.every((p) => selectedIds.has(p.id));
+
+  const toggleAllFiltered = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) {
+        filteredParticipants.forEach((p) => next.delete(p.id));
+      } else {
+        filteredParticipants.forEach((p) => next.add(p.id));
+      }
+      return next;
+    });
+  };
+
+  const toggleOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const scopeCount = [scopeTransport, scopeMeals, scopeLodging].filter(Boolean).length;
+
+  const bulkMutation = useMutation({
+    mutationFn: async () => {
+      if (selectedIds.size === 0) throw new Error("Selecione ao menos um participante");
+      if (scopeCount === 0) throw new Error("Selecione ao menos um escopo");
+      const max = maxUses.trim() ? parseInt(maxUses.trim(), 10) : null;
+      if (maxUses.trim() && (Number.isNaN(max) || max! < 1)) throw new Error("Máximo de usos inválido");
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const rows = Array.from(selectedIds).map((pid) => ({
+        event_id: eventId,
+        participant_id: pid,
+        voucher_type: "nominal",
+        is_contingency: true,
+        qr_code_value: genQrValue(),
+        scope_transport: scopeTransport,
+        scope_meals: scopeMeals,
+        scope_lodging: scopeLodging,
+        max_uses: max,
+        valid_until: validUntil ? new Date(validUntil).toISOString() : null,
+        notes: notes.trim() || null,
+        issued_by: user?.id ?? null,
+      }));
+
+      const { data, error } = await (supabase.from("service_vouchers") as any)
+        .insert(rows)
+        .select("id");
+      if (error) throw error;
+      return (data as Array<{ id: string }>).length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["vouchers"] });
+      toast.success(`${count} voucher(s) emitido(s)`);
+      onOpenChange(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Emissão em Lote por Delegação</DialogTitle>
+          <DialogDescription>
+            Selecione uma delegação, escolha os participantes e emita vouchers nominais
+            (contingência) em lote com os mesmos escopos.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Delegação */}
+          <div className="space-y-2">
+            <Label>Delegação *</Label>
+            <Select value={delegationId} onValueChange={setDelegationId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma delegação..." />
+              </SelectTrigger>
+              <SelectContent>
+                {delegations.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Lista de participantes */}
+          {delegationId && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label>Participantes ({selectedIds.size} selecionados)</Label>
+                <Select value={participantTypeFilter} onValueChange={setParticipantTypeFilter}>
+                  <SelectTrigger className="w-[180px] h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os tipos</SelectItem>
+                    {participantTypes.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Card className="max-h-72 overflow-auto">
+                {loadingParts ? (
+                  <div className="p-6 flex items-center justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  </div>
+                ) : filteredParticipants.length === 0 ? (
+                  <div className="p-6 text-center text-sm text-muted-foreground">
+                    Nenhum participante encontrado para esta delegação.
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3 px-3 py-2 border-b border-border bg-muted/40 sticky top-0">
+                      <Checkbox
+                        checked={allFilteredSelected}
+                        onCheckedChange={toggleAllFiltered}
+                      />
+                      <span className="text-xs font-medium">
+                        Selecionar todos ({filteredParticipants.length})
+                      </span>
+                    </div>
+                    <ul className="divide-y divide-border">
+                      {filteredParticipants.map((p) => (
+                        <li key={p.id} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/30">
+                          <Checkbox
+                            checked={selectedIds.has(p.id)}
+                            onCheckedChange={() => toggleOne(p.id)}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {p.person?.full_name ?? "—"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {p.participant_type}
+                              {p.person?.cpf ? ` · ${p.person.cpf}` : ""}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">{p.status}</Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </Card>
+            </div>
+          )}
+
+          {/* Escopos & limites */}
+          {delegationId && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Escopos *</Label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 cursor-pointer rounded-md border border-border p-2">
+                    <Switch checked={scopeTransport} onCheckedChange={setScopeTransport} />
+                    <Bus className="h-4 w-4" /> <span className="text-sm">Transporte</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer rounded-md border border-border p-2">
+                    <Switch checked={scopeMeals} onCheckedChange={setScopeMeals} />
+                    <UtensilsCrossed className="h-4 w-4" /> <span className="text-sm">Alimentação</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer rounded-md border border-border p-2">
+                    <Switch checked={scopeLodging} onCheckedChange={setScopeLodging} />
+                    <BedDouble className="h-4 w-4" /> <span className="text-sm">Alojamento</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Máx. usos</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="Ilimitado"
+                    value={maxUses}
+                    onChange={(e) => setMaxUses(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Válido até</Label>
+                  <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Observações</Label>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Opcional"
+                    rows={2}
+                    maxLength={500}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => bulkMutation.mutate()}
+            disabled={
+              bulkMutation.isPending ||
+              selectedIds.size === 0 ||
+              scopeCount === 0
+            }
+          >
+            {bulkMutation.isPending
+              ? "Emitindo..."
+              : `Emitir ${selectedIds.size} voucher(s)`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
