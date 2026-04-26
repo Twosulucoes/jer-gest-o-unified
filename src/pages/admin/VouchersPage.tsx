@@ -49,7 +49,21 @@ import {
   Bus,
   UtensilsCrossed,
   BedDouble,
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Download } from "lucide-react";
+import {
+  exportVouchersCsv,
+  exportVouchersPdf,
+  type VoucherExportRow,
+} from "@/lib/voucherExport";
 
 // -------- Types --------
 interface VoucherRow {
