@@ -75,6 +75,8 @@ export default function EventFormDialog({
       status: "draft",
       start_date: "",
       end_date: "",
+      is_public: false,
+      public_agenda_published: false,
     },
   });
 
@@ -87,6 +89,8 @@ export default function EventFormDialog({
         status: event.status,
         start_date: event.start_date ?? "",
         end_date: event.end_date ?? "",
+        is_public: event.is_public ?? false,
+        public_agenda_published: event.public_agenda_published ?? false,
       });
     } else {
       form.reset({
@@ -96,6 +100,8 @@ export default function EventFormDialog({
         status: "draft",
         start_date: "",
         end_date: "",
+        is_public: false,
+        public_agenda_published: false,
       });
     }
   }, [event, form]);
