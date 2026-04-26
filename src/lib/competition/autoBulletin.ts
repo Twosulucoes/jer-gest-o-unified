@@ -201,7 +201,7 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
   lines.push("", "---", "", "*Boletim gerado automaticamente. Revise antes de publicar.*");
 
   const matchIds = matches.map((m) => m.id);
-  const sportEventIds = Array.from(
+  const usedSportEventIds = Array.from(
     new Set(matches.map((m) => m.sport_event_id).filter((id): id is string => !!id)),
   );
 
