@@ -78,7 +78,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
         .from("participant_sport_events")
         .select("id")
         .eq("sport_event_id", sportEventId)
-        .eq("weighing_status", "confirmed");
+        .eq("weighing_status" as any, "confirmed");
 
       if (athError) throw athError;
       if (athletes.length < 2) {
