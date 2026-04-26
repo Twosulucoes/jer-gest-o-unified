@@ -57,7 +57,7 @@ export default function AuditoriaPage() {
   });
 
   const { data: logs = [], isLoading } = useQuery({
-    queryKey: ["audit-events-logs", startDate, endDate, userId, actionFilter],
+    queryKey: ["audit-events-logs", startDate, endDate, userId, actionFilter, tableName],
     queryFn: async () => {
       let query = supabase
         .from("audit_events")
@@ -70,7 +70,7 @@ export default function AuditoriaPage() {
           created_by,
           profiles:created_by (full_name)
         `)
-        .eq("table_name", "users")
+        .eq("table_name", tableName)
         .gte("created_at", startOfDay(new Date(startDate)).toISOString())
         .lte("created_at", endOfDay(new Date(endDate)).toISOString())
         .order("created_at", { ascending: false });
