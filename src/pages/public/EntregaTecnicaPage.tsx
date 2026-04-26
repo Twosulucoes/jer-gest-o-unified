@@ -595,17 +595,46 @@ export default function EntregaTecnicaPage() {
    Mockups dinâmicos do tour — UI real do sistema (sem fotos stock)
    ───────────────────────────────────────────────────────────────── */
 function TourMockup({ step }: { step: number }) {
+  const currentTour = tourSteps[step];
+  
   return (
     <div
       className="relative rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 bg-white animate-in zoom-in-95 fade-in duration-700"
       key={`mock-${step}`}
     >
-      {step === 0 && <MockImportacao />}
-      {step === 1 && <MockCredencial />}
-      {step === 2 && <MockCompeticao />}
-      {step === 3 && <MockLogistica />}
-      {step === 4 && <MockPortal />}
+      {currentTour.id === "preparacao" && <MockImportacao />}
+      {currentTour.id === "credenciamento" && <MockCredencial />}
+      {currentTour.id === "competicao" && <MockCompeticao />}
+      {currentTour.id === "logistica" && <MockLogistica />}
+      {currentTour.id === "relatorios" && <MockPortal />}
+      {!["preparacao", "credenciamento", "competicao", "logistica", "relatorios"].includes(currentTour.id) && (
+        <MockGenerico tour={currentTour} />
+      )}
     </div>
+  );
+}
+
+function MockGenerico({ tour }: { tour: any }) {
+  return (
+    <BrowserFrame url={`jergestao.com.br${tour.module}`}>
+      <div className="flex flex-col items-center justify-center h-[350px] text-center space-y-6">
+        <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${tour.color} flex items-center justify-center text-white shadow-2xl`}>
+          <tour.icon size={48} />
+        </div>
+        <div className="space-y-2">
+          <h4 className="text-2xl font-black" style={{ color: brand.colors.primary }}>{tour.title}</h4>
+          <p className="text-slate-500 max-w-sm mx-auto">{tour.desc}</p>
+        </div>
+        <div className="flex gap-2">
+          {tour.metrics.map((m: any) => (
+            <div key={m.label} className="px-4 py-2 bg-white rounded-xl border border-slate-100 shadow-sm">
+              <p className="text-xs font-bold text-slate-400 uppercase">{m.label}</p>
+              <p className="text-lg font-black" style={{ color: brand.colors.primary }}>{m.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </BrowserFrame>
   );
 }
 
