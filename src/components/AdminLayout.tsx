@@ -183,9 +183,10 @@ function getRoleLabel(role: AppRole): string {
 }
 
 function getAllGroupRoutes(group: NavGroup): string[] {
-  const routes = group.items.map((i) => i.to);
+  const strip = (u: string) => u.split("?")[0];
+  const routes = group.items.map((i) => strip(i.to));
   if (group.subGroups) {
-    group.subGroups.forEach((sg) => sg.items.forEach((i) => routes.push(i.to)));
+    group.subGroups.forEach((sg) => sg.items.forEach((i) => routes.push(strip(i.to))));
   }
   return routes;
 }
