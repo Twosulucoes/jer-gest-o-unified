@@ -15,7 +15,7 @@ export interface EscalaExportRow {
   [key: string]: string;
 }
 
-const COLUMNS: ReportDefinition<EscalaExportRow>["columns"] = [
+export const ESCALA_COLUMNS: ReportDefinition<EscalaExportRow>["columns"] = [
   { key: "official_name", label: "Oficial", width: 18, visibleByDefault: true },
   { key: "role_label", label: "Função", width: 12, visibleByDefault: true },
   { key: "stage", label: "Etapa", width: 10, visibleByDefault: true },
@@ -28,9 +28,25 @@ const COLUMNS: ReportDefinition<EscalaExportRow>["columns"] = [
   { key: "venue", label: "Local", width: 15, visibleByDefault: true },
 ];
 
-export function downloadCsv(rows: EscalaExportRow[], filename: string) {
-  const headers = COLUMNS.map((c) => c.label);
-  const keys = COLUMNS.map((c) => c.key);
+export type EscalaColumnKey = (typeof ESCALA_COLUMNS)[number]["key"];
+
+const REQUIRED_KEYS: EscalaColumnKey[] = ["official_name", "role_label"];
+
+function pickColumns(selected?: EscalaColumnKey[]) {
+  if (!selected || selected.length === 0) return ESCALA_COLUMNS;
+  // Keep the canonical order, ensure required keys are always present.
+  const set = new Set<string>([...REQUIRED_KEYS, ...selected]);
+  return ESCALA_COLUMNS.filter((c) => set.has(c.key));
+}
+
+export function downloadCsv(
+  rows: EscalaExportRow[],
+  filename: string,
+  selectedColumns?: EscalaColumnKey[],
+) {
+  const cols = pickColumns(selectedColumns);
+  const headers = cols.map((c) => c.label);
+  const keys = cols.map((c) => c.key);
   const escape = (v: string) => {
     if (v == null) return "";
     const s = String(v);
@@ -58,8 +74,10 @@ export async function downloadPdf(
     stageName?: string;
     activeEventId: string | null;
     userId: string | null;
+    selectedColumns?: EscalaColumnKey[];
   },
 ) {
+  const cols = pickColumns(opts.selectedColumns);
   const def: ReportDefinition<EscalaExportRow> = {
     id: "escalas-arbitragem",
     name: `Escalas da Arbitragem${opts.stageName ? ` — ${opts.stageName}` : ""}`,
@@ -68,7 +86,7 @@ export async function downloadPdf(
     scope: "event",
     formats: ["pdf"],
     filters: [],
-    columns: COLUMNS,
+    columns: cols,
     datasource: {
       type: "custom",
       customLoader: async () => rows,
