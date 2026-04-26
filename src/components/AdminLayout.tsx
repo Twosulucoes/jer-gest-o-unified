@@ -125,6 +125,7 @@ const navGroups: NavGroup[] = [
       { label: "Auditoria de Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
       { label: "Monitoramento DB", to: "/admin/monitoramento-db", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["super_admin", "admin"] as AppRole[] },
 
+      { label: "Arbitragem (Escalas)", to: "/aovivo", icon: <Radio className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem", "mesario"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde", "super_admin"] as AppRole[] },
     ],
   },
