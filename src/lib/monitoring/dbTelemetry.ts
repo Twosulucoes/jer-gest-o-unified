@@ -33,13 +33,14 @@ export const dbTelemetry = {
       const userId = session.user.id;
       
       // Get user role if possible
-      const { data: roleData } = await supabase
+      const { data: roleData } = await (supabase
         .from('user_roles' as any)
         .select('role')
         .eq('user_id', userId)
-        .maybeSingle();
+        .maybeSingle() as any);
 
-      const userRole = roleData?.role as AppRole;
+      const userRole = roleData?.role;
+
 
       await (supabase.from('db_operation_logs' as any) as any).insert({
         user_id: userId,
