@@ -72,7 +72,8 @@ export function usePersistedState<T>(key: string, defaultValue: T, ttl?: number)
             return parsed.value;
           } else {
             // TTL expired
-            logger.info(`TTL expired for localStorage key "${storageKey}". Clearing.`);
+            logger.info(`TTL expired for localStorage key "${storageKey}" (${category}). Clearing.`);
+            incrementExpirationStat(category);
             localStorage.removeItem(storageKey);
             return defaultValue;
           }
