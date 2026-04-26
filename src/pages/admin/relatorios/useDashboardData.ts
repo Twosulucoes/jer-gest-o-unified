@@ -221,10 +221,16 @@ export function useDashboardData(eventId?: string | null) {
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("sport_events")
-            .select("id, name, sports(name)");
+            .select("id, name, gender, sports(name), categories(name)");
           if (eventId) query.eq("event_id", eventId);
           const { data } = await query;
-          return (data ?? []) as Array<{ id: string; name: string | null; sports: { name: string } | null }>;
+          return (data ?? []) as Array<{
+            id: string;
+            name: string | null;
+            gender: string | null;
+            sports: { name: string } | null;
+            categories: { name: string } | null;
+          }>;
         }, []),
       },
       // 10: competition_matches
