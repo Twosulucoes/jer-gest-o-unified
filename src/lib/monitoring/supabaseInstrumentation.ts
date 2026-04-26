@@ -1,9 +1,11 @@
+import { SupabaseClient } from "@supabase/supabase-js";
+import { Database } from "@/integrations/supabase/types";
 import { dbTelemetry, DbOp } from "./dbTelemetry";
 
 /**
  * Instruments a Supabase client to automatically log SELECT, INSERT, UPDATE, and DELETE operations.
  */
-export function instrumentSupabaseClient(client: any) {
+export function instrumentSupabaseClient<T extends SupabaseClient<any>>(client: T): T {
   const originalFrom = client.from;
 
   client.from = function (tableName: string) {
@@ -15,12 +17,14 @@ export function instrumentSupabaseClient(client: any) {
     }
 
     const wrapMethod = (originalMethod: any, operation: DbOp) => {
-      return function (...args: any[]) {
+      if (typeof originalMethod !== 'function') return originalMethod;
+      
+      return function (this: any, ...args: any[]) {
         const resultBuilder = originalMethod.apply(this, args);
 
         // Intercept the execution of the query (which is thenable)
         const originalThen = resultBuilder.then;
-        resultBuilder.then = function (onfulfilled: any, onrejected: any) {
+        resultBuilder.then = function (this: any, onfulfilled: any, onrejected: any) {
           return originalThen.call(this, async (result: any) => {
             // Log the operation
             try {
@@ -36,7 +40,8 @@ export function instrumentSupabaseClient(client: any) {
                 rowsAffected = result.count;
               }
 
-              await dbTelemetry.log({
+              // Run telemetry asynchronously without blocking the main response
+              dbTelemetry.log({
                 moduleName: 'PWA_AUTO_INSTRUMENTATION',
                 tableName,
                 operation,
@@ -44,13 +49,12 @@ export function instrumentSupabaseClient(client: any) {
                 errorCode: result.error?.code,
                 rowsAffected,
                 metadata: {
-                  // We avoid logging full data to save space/privacy
                   timestamp: new Date().toISOString(),
-                  url: resultBuilder.url?.toString(),
+                  // Avoid logging full URL or sensitive data if possible
                 }
-              });
+              }).catch(err => console.error('[Telemetry] Error logging:', err));
             } catch (telemetryError) {
-              console.error('[Telemetry] Failed to log database operation:', telemetryError);
+              console.error('[Telemetry] Failed to process database operation for logging:', telemetryError);
             }
 
             if (onfulfilled) return onfulfilled(result);
@@ -63,18 +67,23 @@ export function instrumentSupabaseClient(client: any) {
     };
 
     // Override the main operation methods
-    const originalSelect = builder.select;
-    const originalInsert = builder.insert;
-    const originalUpdate = builder.update;
-    const originalDelete = builder.delete;
+    // We use property descriptors to keep types and avoid making them non-configurable if possible
+    const methods: { name: keyof typeof builder, op: DbOp }[] = [
+      { name: 'select', op: 'SELECT' },
+      { name: 'insert', op: 'INSERT' },
+      { name: 'update', op: 'UPDATE' },
+      { name: 'delete', op: 'DELETE' }
+    ];
 
-    if (typeof originalSelect === 'function') builder.select = wrapMethod(originalSelect, 'SELECT');
-    if (typeof originalInsert === 'function') builder.insert = wrapMethod(originalInsert, 'INSERT');
-    if (typeof originalUpdate === 'function') builder.update = wrapMethod(originalUpdate, 'UPDATE');
-    if (typeof originalDelete === 'function') builder.delete = wrapMethod(originalDelete, 'DELETE');
+    methods.forEach(({ name, op }) => {
+      const originalMethod = (builder as any)[name];
+      if (originalMethod) {
+        (builder as any)[name] = wrapMethod(originalMethod, op);
+      }
+    });
 
     return builder;
-  };
+  } as any;
 
   return client;
 }
