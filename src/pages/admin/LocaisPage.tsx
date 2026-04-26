@@ -153,23 +153,16 @@ export default function LocaisPage() {
     city: values.city || null,
     address: values.address || null,
     is_active: values.is_active,
-    // mantém event_stage_id (legado) apontando para a primeira etapa, se houver — para compatibilidade
-    event_stage_id: values.event_stage_ids[0] ?? null,
+    // event_stage_id (legado) é mantido pela RPC rpc_sync_venue_stages
   });
 
   const syncStages = async (venueId: string, stageIds: string[]) => {
-    // Estratégia simples: apaga tudo e reinsere (pequeno volume)
-    const { error: delErr } = await (supabase as any)
-      .from("venue_event_stages")
-      .delete()
-      .eq("venue_id", venueId);
-    if (delErr) throw delErr;
-    if (stageIds.length === 0) return;
-    const rows = stageIds.map((sid) => ({ venue_id: venueId, event_stage_id: sid }));
-    const { error: insErr } = await (supabase as any)
-      .from("venue_event_stages")
-      .insert(rows);
-    if (insErr) throw insErr;
+    // P0: usa RPC transacional com auditoria (audit_events) e validação de escopo do evento
+    const { error } = await (supabase as any).rpc("rpc_sync_venue_stages", {
+      p_venue_id: venueId,
+      p_stage_ids: stageIds,
+    });
+    if (error) throw error;
   };
 
   const createMutation = useMutation({
