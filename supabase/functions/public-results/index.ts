@@ -161,6 +161,12 @@ Deno.serve(async (req) => {
     console.warn(`[${requestId}] Consistency warning: Found ${stageCount} stages but 0 results for event ${eventId}`);
   }
 
+  // Check for suspicious entries (e.g. missing crucial fields)
+  const suspiciousCount = items.filter(i => !i.sport_name || !i.display_name).length;
+  if (suspiciousCount > 0) {
+    console.error(`[${requestId}] Consistency error: ${suspiciousCount} items missing sport_name or display_name`);
+  }
+
   // Check if all items belong to the requested event (sanity check)
   const inconsistentEvents = items.filter(i => i.event_id !== eventId);
   if (inconsistentEvents.length > 0) {
