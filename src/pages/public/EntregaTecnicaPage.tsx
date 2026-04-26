@@ -11,7 +11,6 @@ import {
   Database,
   Rocket,
   QrCode,
-  Share2,
   Layout,
   Code2,
   Zap,
