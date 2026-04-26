@@ -283,17 +283,31 @@ export default function CompeticaoPainelSetsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-0.5">
+                      <div className="flex justify-end gap-1">
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           className="h-7 w-7" 
                           asChild
+                          title="Ver Detalhes"
                         >
                           <Link to={`/admin/competicao/partida/${m.id}`}>
                             <Info className="h-3.5 w-3.5" />
                           </Link>
                         </Button>
+                        {m.match_entries?.length === 2 && (status.label === "Agendado" || status.label === "Em andamento" || status.label === "Resultado Lançado") && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
+                            asChild
+                            title="Lançar Resultado"
+                          >
+                            <Link to={`/admin/competicao/painel-sets/${sportEventId}/confronto/${m.id}/resultado`}>
+                              <Trophy className="h-3.5 w-3.5" />
+                            </Link>
+                          </Button>
+                        )}
                         {(canEdit || canEditAgenda) && (
                           <Button 
                             variant="ghost" 
