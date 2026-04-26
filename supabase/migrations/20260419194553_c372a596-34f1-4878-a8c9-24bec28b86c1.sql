@@ -70,7 +70,7 @@ INSERT INTO public.event_role_catalog (code, name, description, sort_order) VALU
   ('terceiro','Terceiro','Prestador de serviÃƒÂ§o externo',140)
 ON CONFLICT (code) DO NOTHING;
 
-CREATE TRIGGER trg_role_catalog_touch
+DROP TRIGGER IF EXISTS trg_role_catalog_touch ON public.event_role_catalog; CREATE TRIGGER trg_role_catalog_touch
   BEFORE UPDATE ON public.event_role_catalog
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
@@ -120,7 +120,7 @@ CREATE POLICY "vouchers_write_admin"
   USING (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'secretaria') OR public.has_role(auth.uid(),'super_admin'))
   WITH CHECK (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'secretaria') OR public.has_role(auth.uid(),'super_admin'));
 
-CREATE TRIGGER trg_service_vouchers_touch
+DROP TRIGGER IF EXISTS trg_service_vouchers_touch ON public.service_vouchers; CREATE TRIGGER trg_service_vouchers_touch
   BEFORE UPDATE ON public.service_vouchers
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
