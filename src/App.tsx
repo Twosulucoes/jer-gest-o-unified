@@ -98,6 +98,7 @@ import BoletinsPorModalidadePage from "./pages/admin/relatorios/BoletinsPorModal
 import DashboardOperacionalPage from "./pages/admin/relatorios/DashboardOperacionalPage";
 import QuadroMedalhasPage from "./pages/admin/relatorios/QuadroMedalhasPage";
 import PrestacaoContasOscPage from "./pages/admin/relatorios/PrestacaoContasOscPage";
+import CompeticaoPublicacaoPage from "./pages/admin/CompeticaoPublicacaoPage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 // RegrasEventoPage removed — consolidated into RegrasPage
