@@ -571,54 +571,98 @@ function IssueVoucherDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Emitir Voucher QR</DialogTitle>
-          <DialogDescription>Gere um novo voucher de serviço vinculado a um participante.</DialogDescription>
+          <DialogDescription>
+            <strong>Agregado</strong> é o padrão para acompanhantes/pais (sem nome).{" "}
+            <strong>Nominal</strong> é apenas contingência para credenciados sem credencial.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Participante *</Label>
-            {selected ? (
-              <Card className="p-3 flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{selected.full_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {selected.participant_type} {selected.cpf ? `· CPF ${selected.cpf}` : ""}
-                  </p>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setParticipantId(null)}>
-                  Trocar
-                </Button>
-              </Card>
-            ) : (
-              <>
+          <Tabs value={voucherType} onValueChange={(v) => setVoucherType(v as "aggregate" | "nominal")}>
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="aggregate">Agregado (padrão)</TabsTrigger>
+              <TabsTrigger value="nominal">Nominal (contingência)</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="aggregate" className="space-y-3 pt-3">
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                Voucher sem identificação de pessoa. Use para pais, acompanhantes ou público externo.
+              </div>
+              <div className="space-y-2">
+                <Label>Identificador (label) *</Label>
                 <Input
-                  placeholder="Buscar por nome ou CPF (mín. 2 caracteres)"
-                  value={participantSearch}
-                  onChange={(e) => setParticipantSearch(e.target.value)}
+                  placeholder="Ex.: Acompanhante - Delegação RR"
+                  value={aggregateLabel}
+                  onChange={(e) => setAggregateLabel(e.target.value)}
+                  maxLength={120}
                 />
-                {participantOptions.length > 0 && (
-                  <Card className="max-h-48 overflow-auto divide-y divide-border">
-                    {participantOptions.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setParticipantId(p.id)}
-                        className="w-full text-left p-2 hover:bg-accent transition-colors"
-                      >
-                        <p className="text-sm font-medium">{p.full_name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {p.participant_type} {p.cpf ? `· ${p.cpf}` : ""}
-                        </p>
-                      </button>
-                    ))}
+              </div>
+              <div className="space-y-2">
+                <Label>Quantidade (lote)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={aggregateBatchSize}
+                  onChange={(e) => setAggregateBatchSize(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Quando &gt; 1, será adicionado sufixo numérico ao label (#01, #02, ...).
+                </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="nominal" className="space-y-3 pt-3">
+              <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
+                <strong>Atenção:</strong> Vouchers nominais são marcados como <strong>contingência</strong>.
+                O fluxo padrão para credenciados é a <strong>credencial</strong>.
+              </div>
+              <div className="space-y-2">
+                <Label>Participante *</Label>
+                {selected ? (
+                  <Card className="p-3 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{selected.full_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {selected.participant_type} {selected.cpf ? `· CPF ${selected.cpf}` : ""}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setParticipantId(null)}>
+                      Trocar
+                    </Button>
                   </Card>
+                ) : (
+                  <>
+                    <Input
+                      placeholder="Buscar por nome ou CPF (mín. 2 caracteres)"
+                      value={participantSearch}
+                      onChange={(e) => setParticipantSearch(e.target.value)}
+                    />
+                    {participantOptions.length > 0 && (
+                      <Card className="max-h-48 overflow-auto divide-y divide-border">
+                        {participantOptions.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setParticipantId(p.id)}
+                            className="w-full text-left p-2 hover:bg-accent transition-colors"
+                          >
+                            <p className="text-sm font-medium">{p.full_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {p.participant_type} {p.cpf ? `· ${p.cpf}` : ""}
+                            </p>
+                          </button>
+                        ))}
+                      </Card>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </div>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <div className="space-y-2">
             <Label>Escopos *</Label>
@@ -679,7 +723,11 @@ function IssueVoucherDialog({
           </Button>
           <Button
             onClick={() => issueMutation.mutate()}
-            disabled={!participantId || issueMutation.isPending}
+            disabled={
+              issueMutation.isPending ||
+              (voucherType === "nominal" && !participantId) ||
+              (voucherType === "aggregate" && !aggregateLabel.trim())
+            }
           >
             {issueMutation.isPending ? "Emitindo..." : "Emitir"}
           </Button>
