@@ -5,20 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { 
-  ArrowLeft, 
   Trophy, 
   Save, 
-  AlertTriangle, 
-  Calendar, 
-  Clock, 
-  MapPin, 
   Plus, 
   Trash2, 
   Pencil,
   PlusCircle,
   XCircle,
-  CheckCircle2,
   AlertCircle,
+  History,
   RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +41,34 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { BackButton } from "@/components/navigation/BackButton";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useSportEventRules } from "@/hooks/useSportEventRules";
+
+interface PenaltyShot {
+  id?: string;
+  match_entry_id: string;
+  team_side: 'A' | 'B';
+  ordem: number;
+  participant_id: string;
+  convertido: boolean;
+}
+
+interface MatchCard {
+  id?: string;
+  match_entry_id: string;
+  participant_id: string;
+  card_type: 'yellow' | 'red' | 'red_2yellows' | 'technical' | 'unsportsmanlike';
+  period: number;
+  minute: number;
+}
+
+interface GoalPoint {
+  id?: string;
+  match_entry_id: string;
+  participant_id?: string;
+  period: number;
+  minute: number;
+  value: number;
+}
 
 export default function CompeticaoLancamentoScorePage() {
   const { matchId, sportEventId } = useParams();
@@ -54,7 +77,7 @@ export default function CompeticaoLancamentoScorePage() {
   const qc = useQueryClient();
   const { hasRole, user } = useAuth();
   
-  const canWrite = hasRole("admin") || hasRole("coordenacao_tecnica");
+  const canWrite = hasRole("admin") || hasRole("coordenacao_tecnica") || hasRole("mesario");
 
   // Fetch match details
   const { data: match, isLoading: loadingMatch } = useQuery({
@@ -64,7 +87,7 @@ export default function CompeticaoLancamentoScorePage() {
         .from("competition_matches")
         .select(`
           *,
-          phase:competition_phases(id, name, type),
+          phase:competition_phases(id, name, phase_type),
           group:competition_groups(id, name),
           venue:venues(id, name),
           entries:competition_match_entries(
@@ -72,7 +95,7 @@ export default function CompeticaoLancamentoScorePage() {
             teams(id, name, delegations(id, institutions(id, name)))
           )
         `)
-        .eq("id", matchId!)
+        .eq("id", matchId)
         .single();
       if (error) throw error;
       return data;
@@ -80,25 +103,9 @@ export default function CompeticaoLancamentoScorePage() {
     enabled: !!matchId,
   });
 
-  // Fetch modality rules
-  const { data: rules, isLoading: loadingRules } = useQuery({
-    queryKey: ["modality-rules", sportEventId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sport_events")
-        .select(`
-          id, sport_id, match_config, 
-          sport:sports(id, name, slug, is_collective)
-        `)
-        .eq("id", sportEventId!)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!sportEventId,
-  });
+  const { rules, isLoading: loadingRules } = useSportEventRules(eventId, sportEventId || null);
 
-  // Fetch lineups (only for collective sports)
+  // Fetch lineups
   const { data: lineups = [], isLoading: loadingLineups } = useQuery({
     queryKey: ["match-lineups", matchId],
     queryFn: async () => {
@@ -108,89 +115,99 @@ export default function CompeticaoLancamentoScorePage() {
           id, match_entry_id, participant_id, jersey_number, status,
           participant:participants(id, person:people(id, full_name))
         `)
-        .eq("match_id", matchId!)
+        .eq("match_id", matchId)
         .in("status", ["active", "bench"]);
       if (error) throw error;
       return data;
     },
-    enabled: !!matchId && rules?.sport?.is_collective,
+    enabled: !!matchId,
   });
 
-  // Fetch existing results
-  const { data: results = [], isLoading: loadingResults } = useQuery({
-    queryKey: ["match-results", matchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("competition_match_results")
-        .select("*")
-        .eq("match_id", matchId!);
+  // State for forms
+  const [periodScores, setPeriodScores] = useState<Record<string, Record<string, string>>>({});
+  const [isWO, setIsWO] = useState(false);
+  const [woWinnerId, setWoWinnerId] = useState("");
+  const [cards, setCards] = useState<MatchCard[]>([]);
+  const [goals, setGoals] = useState<GoalPoint[]>([]);
+  const [penalties, setPenalties] = useState<PenaltyShot[]>([]);
+  const [numPeriods, setNumPeriods] = useState(2);
+  const [hasOvertime, setHasOvertime] = useState(false);
+
+  // Initialize state from existing data (simulated for now, would fetch from results)
+  useEffect(() => {
+    if (match && rules) {
+      const p = (rules as any)?.periods || 2;
+      setNumPeriods(p);
+      
+      const initialScores: Record<string, Record<string, string>> = {};
+      match.entries.forEach((e: any) => {
+        initialScores[e.id] = {};
+        for (let i = 1; i <= p; i++) {
+          initialScores[e.id][`p${i}`] = "";
+        }
+      });
+      setPeriodScores(initialScores);
+    }
+  }, [match, rules]);
+
+  const schoolA = match?.entries?.[0];
+  const schoolB = match?.entries?.[1];
+
+  const totalScoreA = useMemo(() => {
+    if (!schoolA) return 0;
+    let sum = 0;
+    Object.values(periodScores[schoolA.id] || {}).forEach(v => {
+      sum += parseInt(v) || 0;
+    });
+    return sum;
+  }, [periodScores, schoolA]);
+
+  const totalScoreB = useMemo(() => {
+    if (!schoolB) return 0;
+    let sum = 0;
+    Object.values(periodScores[schoolB.id] || {}).forEach(v => {
+      sum += parseInt(v) || 0;
+    });
+    return sum;
+  }, [periodScores, schoolB]);
+
+  const launchMut = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        is_wo: isWO,
+        wo_winner_id: woWinnerId,
+        entries: match.entries.map((e: any) => ({
+          match_entry_id: e.id,
+          score: e.id === schoolA?.id ? totalScoreA.toString() : totalScoreB.toString(),
+          outcome: isWO ? (e.id === woWinnerId ? 'wo_win' : 'wo_loss') : (
+            (e.id === schoolA?.id ? totalScoreA : totalScoreB) > (e.id === schoolA?.id ? totalScoreB : totalScoreA) ? 'win' : 
+            (totalScoreA === totalScoreB ? 'draw' : 'loss')
+          ),
+          score_detail: {
+            periods: periodScores[e.id],
+            is_wo: isWO && e.id === woWinnerId
+          }
+        })),
+        penalty_shots: penalties
+      };
+      
+      const { data, error } = await supabase.rpc("rpc_launch_match_result", {
+        p_event_id: eventId,
+        p_match_id: matchId,
+        p_payload: payload
+      });
       if (error) throw error;
       return data;
     },
-    enabled: !!matchId,
-  });
-
-  // Fetch match events (goals/cards)
-  const { data: events = [], isLoading: loadingEvents } = useQuery({
-    queryKey: ["match-events", matchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("match_events" as any)
-        .select("*")
-        .eq("match_id", matchId!)
-        .order("period")
-        .order("minute");
-      if (error) throw error;
-      return data as any[];
-    },
-    enabled: !!matchId,
-  });
-
-  // Fetch penalty shots
-  const { data: penaltyShots = [], isLoading: loadingPenalties } = useQuery({
-    queryKey: ["match-penalty-shots", matchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("match_penalty_shots" as any)
-        .select("*")
-        .eq("match_id", matchId!)
-        .order("ordem");
-      if (error) throw error;
-      return data as any[];
-    },
-    enabled: !!matchId,
-  });
-
-  const [periods, setPeriods] = useState<Record<string, Record<string, string>>>({});
-  const [wo, setWo] = useState<{ enabled: boolean; winnerId: string | null }>({ enabled: false, winnerId: null });
-
-  useEffect(() => {
-    if (results.length > 0) {
-      // Initialize state from existing results
-    }
-  }, [results]);
-
-  const handleSave = async () => {
-    try {
-      const { data, error } = await supabase.rpc("rpc_launch_match_result", {
-        p_event_id: eventId!,
-        p_match_id: matchId!,
-        p_payload: {
-          periods,
-          wo,
-          updated_by: user?.id
-        }
-      });
-      if (error) throw error;
-      toast.success("Resultado salvo com sucesso!");
-      qc.invalidateQueries({ queryKey: ["match-results", matchId] });
+    onSuccess: () => {
+      toast.success("Resultado lançado com sucesso!");
+      qc.invalidateQueries({ queryKey: ["score-matches"] });
       navigate(-1);
-    } catch (err: any) {
-      toast.error("Erro ao salvar: " + err.message);
-    }
-  };
+    },
+    onError: (e: any) => toast.error("Erro ao salvar: " + e.message)
+  });
 
-  if (loadingMatch || loadingRules || loadingLineups || loadingResults || loadingEvents || loadingPenalties) {
+  if (loadingMatch || loadingRules || loadingLineups) {
     return (
       <div className="p-8 space-y-4">
         <Skeleton className="h-12 w-1/4" />
@@ -200,103 +217,220 @@ export default function CompeticaoLancamentoScorePage() {
     );
   }
 
+  const schoolAName = schoolA?.teams?.name || "Escola A";
+  const schoolBName = schoolB?.teams?.name || "Escola B";
+
   return (
-    <div className="flex flex-col min-h-screen bg-background pb-20">
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+    <div className="flex flex-col min-h-screen bg-muted/30 pb-20">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="container py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <BackButton />
             <div>
               <h1 className="text-xl font-bold flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-primary" />
-                Lançamento de Resultado
+                Lançar Resultado
               </h1>
-              <p className="text-sm text-muted-foreground">
-                {rules?.sport?.name} - {match?.phase?.name} {match?.group?.name ? `(${match?.group?.name})` : ""}
+              <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
+                {rules?.sport?.name} • {match?.phase?.name} {match?.group?.name ? `(${match?.group?.name})` : ""}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate(-1)}>Cancelar</Button>
-            <Button className="gap-2" onClick={handleSave}>
-              <Save className="h-4 w-4" /> Salvar Resultado
+            <Button className="gap-2" onClick={() => launchMut.mutate()} disabled={launchMut.isPending}>
+              <Save className="h-4 w-4" /> 
+              {launchMut.isPending ? "Salvando..." : "Salvar Resultado"}
             </Button>
           </div>
         </div>
       </div>
 
       <div className="container py-6 space-y-6">
-        {/* Cabeçalho de Placar */}
-        <Card className="bg-muted/20">
-          <CardContent className="py-6">
-            <div className="flex items-center justify-between text-center">
-              <div className="flex-1">
-                <p className="font-bold text-lg">{match?.entries?.[0]?.teams?.name || "Escola A"}</p>
+        {/* Placar Principal */}
+        <Card className="overflow-hidden border-none shadow-lg">
+          <CardContent className="p-0">
+            <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-8 flex items-center justify-between">
+              <div className="flex-1 text-center">
+                <h3 className="text-xl font-bold mb-1">{schoolAName}</h3>
+                <p className="text-xs opacity-80">{schoolA?.teams?.delegations?.institutions?.name}</p>
               </div>
-              <div className="px-6 text-3xl font-black font-mono">
-                {Object.values(periods).reduce((acc, p) => acc + (parseInt(p.home) || 0), 0)} 
-                <span className="text-muted-foreground mx-2">×</span>
-                {Object.values(periods).reduce((acc, p) => acc + (parseInt(p.away) || 0), 0)}
+              <div className="flex flex-col items-center px-12">
+                <div className="flex items-center gap-8 text-6xl font-black">
+                  <span>{totalScoreA}</span>
+                  <span className="text-3xl opacity-50">×</span>
+                  <span>{totalScoreB}</span>
+                </div>
+                {isWO && (
+                  <Badge variant="secondary" className="mt-4 bg-white text-primary font-bold">
+                    VENCIDO POR W.O.
+                  </Badge>
+                )}
               </div>
-              <div className="flex-1">
-                <p className="font-bold text-lg">{match?.entries?.[1]?.teams?.name || "Escola B"}</p>
+              <div className="flex-1 text-center">
+                <h3 className="text-xl font-bold mb-1">{schoolBName}</h3>
+                <p className="text-xs opacity-80">{schoolB?.teams?.delegations?.institutions?.name}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Blocos de Lançamento */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader><CardTitle>Placar por Período</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              {/* Períodos dinâmicos */}
-              <div className="space-y-2">
-                <div className="grid grid-cols-3 gap-2 text-xs font-bold text-muted-foreground px-2">
-                  <span>Período</span>
-                  <span className="text-center">Escola A</span>
-                  <span className="text-center">Escola B</span>
-                </div>
-                {[1, 2].map((p) => (
-                  <div key={p} className="grid grid-cols-3 gap-2 items-center">
-                    <Badge variant="outline" className="justify-center">{p}º Tempo</Badge>
-                    <Input 
-                      type="number" 
-                      value={periods[p]?.home || ""} 
-                      onChange={(e) => setPeriods({...periods, [p]: {...periods[p], home: e.target.value}})}
-                    />
-                    <Input 
-                      type="number" 
-                      value={periods[p]?.away || ""} 
-                      onChange={(e) => setPeriods({...periods, [p]: {...periods[p], away: e.target.value}})}
-                    />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {/* Placar por Período */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <RotateCcw className="h-4 w-4" /> Placar por Período
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!isWO ? (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {match?.entries.map((entry: any) => (
+                        <div key={entry.id} className="space-y-4">
+                          <h4 className="font-semibold text-sm flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-primary" />
+                            {entry.teams?.name}
+                          </h4>
+                          <div className="grid grid-cols-4 gap-3">
+                            {Array.from({ length: numPeriods }).map((_, i) => (
+                              <div key={i} className="space-y-1.5">
+                                <Label className="text-[10px] text-muted-foreground uppercase">T{i+1}</Label>
+                                <Input 
+                                  type="number" 
+                                  placeholder="0"
+                                  className="h-10 text-center font-bold"
+                                  value={periodScores[entry.id]?.[`p${i+1}`] || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setPeriodScores(prev => ({
+                                      ...prev,
+                                      [entry.id]: { ...prev[entry.id], [`p${i+1}`]: val }
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            ))}
+                            {hasOvertime && (
+                              <div className="space-y-1.5">
+                                <Label className="text-[10px] text-primary uppercase font-bold">PR</Label>
+                                <Input 
+                                  type="number" 
+                                  placeholder="0"
+                                  className="h-10 text-center font-bold border-primary"
+                                  value={periodScores[entry.id]?.overtime || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setPeriodScores(prev => ({
+                                      ...prev,
+                                      [entry.id]: { ...prev[entry.id], overtime: val }
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {match?.phase?.phase_type === 'knockout' && totalScoreA === totalScoreB && !hasOvertime && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full dashed border-2 border-dashed gap-2"
+                        onClick={() => {
+                          setHasOvertime(true);
+                          match.entries.forEach((e: any) => {
+                            setPeriodScores(prev => ({
+                              ...prev,
+                              [e.id]: { ...prev[e.id], overtime: "" }
+                            }));
+                          });
+                        }}
+                      >
+                        <PlusCircle className="h-4 w-4" /> Adicionar Prorrogação
+                      </Button>
+                    )}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                ) : (
+                  <div className="p-8 text-center text-muted-foreground italic border-2 border-dashed rounded-lg">
+                    Bloco desabilitado devido ao W.O.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader><CardTitle>W.O. e Penalidades</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Ativar W.O.</Label>
-                <Switch checked={wo.enabled} onCheckedChange={(v) => setWo({ ...wo, enabled: v })} />
-              </div>
-              {wo.enabled && (
-                <Select value={wo.winnerId || ""} onValueChange={(v) => setWo({ ...wo, winnerId: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o vencedor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {match?.entries?.map((e: any) => (
-                      <SelectItem key={e.id} value={e.team_id}>{e.teams?.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </CardContent>
-          </Card>
+            {/* W.O. */}
+            <Card className={isWO ? "border-primary bg-primary/5" : ""}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <XCircle className="h-4 w-4" /> Registro de W.O.
+                </CardTitle>
+                <Switch 
+                  checked={isWO} 
+                  onCheckedChange={(val) => {
+                    setIsWO(val);
+                    if (!val) setWoWinnerId("");
+                  }} 
+                />
+              </CardHeader>
+              <CardContent>
+                {isWO && (
+                  <div className="space-y-4 pt-2">
+                    <Label className="text-sm">Selecione a escola vencedora por W.O.</Label>
+                    <Select value={woWinnerId} onValueChange={setWoWinnerId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a vencedora" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {match?.entries.map((e: any) => (
+                          <SelectItem key={e.id} value={e.id}>{e.teams?.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Alert className="bg-primary/10 border-primary/20 text-primary">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Ao confirmar o W.O., o placar oficial das regras será aplicado automaticamente.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            {/* Info do Confronto */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Dados do Confronto</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span>{match?.match_date ? new Date(match.match_date + "T00:00:00").toLocaleDateString("pt-BR") : "Data não definida"}</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span>{match?.start_time?.slice(0, 5) || "Hora não definida"}</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span>{match?.venue?.name || "Local não definido"}</span>
+                </div>
+                <div className="pt-4 border-t">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground uppercase font-bold">Status Atual:</span>
+                    <Badge variant="outline">{match?.status}</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
