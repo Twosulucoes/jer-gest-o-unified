@@ -190,6 +190,7 @@ import NotFound from "./pages/NotFound";
 import PwaRouteGuard from "./components/pwa/PwaRouteGuard";
 import { PwaUpdateNotice } from "./components/pwa/PwaUpdateNotice";
 import { AppStatePreserver } from "./components/pwa/AppStatePreserver";
+import { VersionValidator } from "./components/pwa/VersionValidator";
 
 import PwaAcessoNegadoPage from "./pages/pwa/PwaAcessoNegadoPage";
 import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
@@ -217,10 +218,11 @@ const App = () => (
         <PwaUpdateNotice />
 
         <AuthProvider>
-          <EventProvider>
-            <StageProvider>
-              <CompetitionProvider>
-                <Routes>
+          <VersionValidator>
+            <EventProvider>
+              <StageProvider>
+                <CompetitionProvider>
+                  <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
@@ -527,11 +529,12 @@ const App = () => (
             <Route path="/a/:token" element={<AtletaPublicProfilePage />} />
             {/* Evento Rules Center routes removed — consolidated into /admin/regras-evento */}
             <Route path="*" element={<NotFound />} />
-            </Routes>
+                </Routes>
               </CompetitionProvider>
             </StageProvider>
           </EventProvider>
-        </AuthProvider>
+        </VersionValidator>
+      </AuthProvider>
       </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
