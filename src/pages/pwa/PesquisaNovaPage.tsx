@@ -5,6 +5,7 @@ import { getSession, clearSession, addToQueue, saveDraft, clearDraft, getDraft }
 import { usePesquisaSync } from '@/hooks/usePesquisaSync';
 import ScaleInput from '@/components/pesquisa/ScaleInput';
 import OfflineBadge from '@/components/pesquisa/OfflineBadge';
+import { PwaRefreshButton } from '@/components/pwa/PwaRefreshButton';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
@@ -260,7 +261,10 @@ export default function PesquisaNovaPage() {
           }}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
-          <OfflineBadge isOnline={isOnline} pendingCount={pendingCount} />
+          <div className="flex items-center gap-2">
+            <OfflineBadge isOnline={isOnline} pendingCount={pendingCount} />
+            <PwaRefreshButton />
+          </div>
         </div>
       )}
 

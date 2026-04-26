@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 interface MatchItem {
   id: string;
@@ -79,6 +80,7 @@ export default function CoordenacaoAgendaPage() {
           <span className="font-semibold leading-tight text-foreground">Agenda de hoje</span>
           <span className="text-[11px] text-muted-foreground">Painel técnico do evento</span>
         </div>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="relative mx-auto max-w-md space-y-3 p-4">

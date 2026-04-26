@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, BarChart3 } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 export default function CoordenacaoEstatisticasPage() {
   const navigate = useNavigate();
@@ -46,6 +47,7 @@ export default function CoordenacaoEstatisticasPage() {
         </button>
         <BarChart3 className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">Estatísticas</span>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-3">

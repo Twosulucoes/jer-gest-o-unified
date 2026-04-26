@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { type IncidentModule } from "@/types/incidents";
 
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 import { TripInfoCard } from "@/components/pwa/transporte/TripInfoCard";
 import { FinishTripDialog } from "@/components/pwa/transporte/FinishTripDialog";
 import { ManualBoardingDialog } from "@/components/pwa/transporte/ManualBoardingDialog";
@@ -359,11 +360,14 @@ export default function TransporteEmbarquePage() {
             </button>
             <span className="font-heading font-semibold tracking-tight text-sm">{getPwaMessage("EMBARQUE", lang)}</span>
           </div>
-          <div className="flex items-center gap-1 text-xs bg-[hsl(var(--module-accent)/0.16)] rounded-full px-2.5 py-1">
-            <Users className="h-3.5 w-3.5" />
-            <span className="font-bold">{boardedCount}</span>
-            <span className="opacity-70">/</span>
-            <span>{passengers.length}</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-xs bg-[hsl(var(--module-accent)/0.16)] rounded-full px-2.5 py-1">
+              <Users className="h-3.5 w-3.5" />
+              <span className="font-bold">{boardedCount}</span>
+              <span className="opacity-70">/</span>
+              <span>{passengers.length}</span>
+            </div>
+            <PwaRefreshButton />
           </div>
         </div>
         <div className="flex items-center gap-2 mt-2">

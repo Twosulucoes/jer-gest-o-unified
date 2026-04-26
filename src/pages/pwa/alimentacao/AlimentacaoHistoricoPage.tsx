@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 interface ConsumptionItem {
   id: string;
@@ -41,6 +42,7 @@ export default function AlimentacaoHistoricoPage() {
         </button>
         <BarChart3 className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">Histórico de Hoje</span>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-3">
