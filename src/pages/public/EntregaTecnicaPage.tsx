@@ -122,6 +122,8 @@ const checklistItems = [
 export default function EntregaTecnicaPage() {
   const [version, setVersion] = useState<VersionInfo | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const [desktopCaptureLoaded, setDesktopCaptureLoaded] = useState(false);
+  const [mobileCaptureLoaded, setMobileCaptureLoaded] = useState(false);
 
   const { data: stats } = useQuery({
     queryKey: ["entrega-tecnica-stats"],
