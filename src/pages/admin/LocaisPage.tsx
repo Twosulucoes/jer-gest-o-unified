@@ -201,7 +201,7 @@ export default function LocaisPage() {
             </SelectContent>
           </Select>
           {orphanCount > 0 && (
-            <p className="text-xs text-amber-600 mt-2">
+            <p className="text-xs text-warning mt-2">
               ⚠ {orphanCount} local(is) sem etapa vinculada — edite para corrigir.
             </p>
           )}
