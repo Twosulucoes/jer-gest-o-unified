@@ -21,6 +21,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { useStageScope } from "@/hooks/useStageScope";
+import { useProvaStatus } from "@/hooks/useProvaStatus";
+import { isAtLeast, PROVA_STATUS } from "@/lib/competition/provaStatus";
 
 export default function CompeticaoCentralPage() {
   const eventId = useActiveEventId();
@@ -134,19 +136,21 @@ export default function CompeticaoCentralPage() {
   const visibleSteps = steps.filter((s) => !s.hidden);
   const currentIdx = visibleSteps.findIndex((s) => s.key === currentStep);
 
+  // Estado da prova: derivado do hook único (single source of truth)
+  const { status: provaStatus } = useProvaStatus(eventId, sportEventId);
   const completedSteps = useMemo(() => {
     const completed: string[] = [];
-    if (!summary) return completed;
-    if ((summary.enrolled_count > 0) || (summary.teams_count > 0)) completed.push("participants");
-    if (summary.matches_count > 0) completed.push("builder");
-    if (summary.matches_count > 0) completed.push("agenda");
-    if (summary.matches_count > 0) completed.push("arbitragem");
-    if (summary.matches_count > 0) completed.push("matches");
-    if (summary.matches_count > 0 && summary.matches_no_result === 0) {
-      completed.push("results");
-    }
+    const has = (target: import("@/lib/competition/provaStatus").ProvaStatus) =>
+      isAtLeast(provaStatus, target);
+    if (has(PROVA_STATUS.ENROLLED)) completed.push("participants");
+    if (has(PROVA_STATUS.BUILT)) completed.push("builder");
+    if (has(PROVA_STATUS.SCHEDULED)) completed.push("agenda");
+    if (has(PROVA_STATUS.OFFICIATED)) completed.push("arbitragem");
+    if (has(PROVA_STATUS.IN_PROGRESS)) completed.push("matches");
+    if (has(PROVA_STATUS.FINISHED)) completed.push("results");
+    if (has(PROVA_STATUS.PUBLISHED)) completed.push("publish");
     return completed;
-  }, [summary]);
+  }, [provaStatus]);
 
   const handleStepClick = (key: string) => {
     setCurrentStep(key);
