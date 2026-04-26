@@ -212,6 +212,6 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
     suggestedTitle,
     suggestedNumber: nextNumber,
     matchIds,
-    sportEventIds,
+    sportEventIds: usedSportEventIds,
   };
 }
