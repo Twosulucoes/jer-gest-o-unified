@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { PwaSectionLabel } from "@/components/pwa/PwaDashboardPrimitives";
 import { ArrowLeft, ClipboardList, Search } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 import { cn } from "@/lib/utils";
 
 interface Participant {
@@ -82,6 +83,7 @@ export default function DelegacaoParticipantesPage() {
         </button>
         <ClipboardList className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">Participantes</span>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="relative max-w-md mx-auto space-y-4 p-4">

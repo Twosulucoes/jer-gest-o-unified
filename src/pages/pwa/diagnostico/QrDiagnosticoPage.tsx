@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { isNativeApp } from "@/lib/runtime";
 import QrScanner from "@/components/QrScanner";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 import {
   ArrowLeft,
   ShieldCheck,
@@ -130,6 +131,7 @@ export default function QrDiagnosticoPage() {
         </button>
         <ShieldCheck className="h-5 w-5 text-[hsl(var(--module-accent))]" />
         <span className="font-semibold text-foreground">Diagnóstico QR</span>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-4">

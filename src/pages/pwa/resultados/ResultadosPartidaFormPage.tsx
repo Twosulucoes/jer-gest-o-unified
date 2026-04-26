@@ -11,6 +11,7 @@ import {
   ArrowLeft, Trophy, Users, Paperclip, Send,
   Trash2, Plus, Upload, FileText, Image, CheckCircle2,
 } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 import {
   usePartidaDetalhe,
   useArbitrosPartida,
@@ -442,6 +443,7 @@ export default function ResultadosPartidaFormPage() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <Skeleton className="h-4 w-32" />
+          <div className="ml-auto"><PwaRefreshButton /></div>
         </header>
         <main className="p-4 space-y-4">
           <Skeleton className="h-24 w-full rounded-xl" />
@@ -482,6 +484,7 @@ export default function ResultadosPartidaFormPage() {
         <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${STATUS_COLORS[match.status] ?? "bg-slate-100 text-slate-700"}`}>
           {STATUS_LABELS[match.status] ?? match.status}
         </span>
+        <PwaRefreshButton />
       </header>
 
       {/* Card resumo */}
