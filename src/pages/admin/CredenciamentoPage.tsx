@@ -193,12 +193,13 @@ export default function CredenciamentoPage() {
     if (filterType !== "all") next.set("type", filterType); else next.delete("type");
     if (filterState !== "all") next.set("status", filterState); else next.delete("status");
     if (filterInstitution !== "all") next.set("inst", filterInstitution); else next.delete("inst");
+    if (sortBy !== "priority") next.set("sort", sortBy); else next.delete("sort");
     if (currentPage > 1) next.set("page", String(currentPage)); else next.delete("page");
     
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true });
     }
-  }, [searchTerm, filterType, filterState, filterInstitution, currentPage, searchParams, setSearchParams]);
+  }, [searchTerm, filterType, filterState, filterInstitution, sortBy, currentPage, searchParams, setSearchParams]);
 
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution]);
