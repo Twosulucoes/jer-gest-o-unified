@@ -21,14 +21,15 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("participant_sport_events")
-        .select("id, weighing_status")
+        .select("id, weighing_status" as any)
         .eq("sport_event_id", sportEventId);
       
       if (error) throw error;
       
-      const total = data.length;
-      const pending = data.filter(a => a.weighing_status === "pending").length;
-      const confirmed = data.filter(a => a.weighing_status === "confirmed").length;
+      const list = (data || []) as any[];
+      const total = list.length;
+      const pending = list.filter(a => a.weighing_status === "pending").length;
+      const confirmed = list.filter(a => a.weighing_status === "confirmed").length;
       
       return { total, pending, confirmed };
     },
