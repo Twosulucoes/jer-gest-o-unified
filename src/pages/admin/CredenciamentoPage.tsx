@@ -93,7 +93,7 @@ const TYPE_LABELS: Record<string, string> = {
   commission: "Comissão",
 };
 
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 250;
 const FILTER_CHUNK_SIZE = 150;
 
 const chunkArray = <T,>(items: T[], size: number) =>
