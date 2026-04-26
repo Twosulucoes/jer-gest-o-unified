@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import { usePersistedState } from "@/hooks/usePersistedState";
+
 import { supabase } from "@/integrations/supabase/client";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useActiveEventId } from "@/contexts/EventContext";
