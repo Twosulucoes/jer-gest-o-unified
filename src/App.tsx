@@ -241,6 +241,7 @@ const App = () => (
             <Route path="/status" element={<StatusPage />} />
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
             <Route path="/selecionar-modulo" element={<ModuleSelectorPage />} />
+            <Route path="/acesso-negado" element={<AccessDeniedPage />} />
             {/* Super Admin routes */}
             <Route
               path="/super"
