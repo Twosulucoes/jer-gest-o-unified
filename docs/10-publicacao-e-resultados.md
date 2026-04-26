@@ -51,10 +51,11 @@ CREATE POLICY "Public can read published results"
 | Campo | Descrição |
 |-------|-----------|
 | `recorded_at` / `recorded_by` | Quem lançou o resultado |
+| `updated_at` / `updated_by` | Quem alterou por último |
 | `validated_at` / `validated_by` | Quem validou |
 | `published_at` / `published_by` | Quem publicou |
 | `published_bulletin_id` | Boletim oficial vinculado |
-| `combat_detail` | JSONB com detalhes de combate (judô, karatê, etc.) |
+| `combat_detail` | JSONB com detalhes (incluindo placar por períodos e shootout) |
 
 ## Fluxos de Lançamento
 
