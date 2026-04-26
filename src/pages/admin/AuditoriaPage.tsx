@@ -94,19 +94,36 @@ export default function AuditoriaPage() {
     return Array.from(new Set(logs.map(log => log.record_id)));
   }, [logs]);
 
-  const { data: targetProfiles = {} } = useQuery({
-    queryKey: ["audit-target-profiles", targetIds],
+  const { data: targetNames = {} } = useQuery({
+    queryKey: ["audit-target-names", targetIds, tableName],
     queryFn: async () => {
       if (targetIds.length === 0) return {};
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", targetIds);
-      if (error) throw error;
-      return (data || []).reduce((acc: any, p: any) => {
-        acc[p.id] = p.full_name;
-        return acc;
-      }, {});
+      
+      if (tableName === "users" || tableName === "profiles") {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", targetIds);
+        if (error) throw error;
+        return (data || []).reduce((acc: any, p: any) => {
+          acc[p.id] = p.full_name;
+          return acc;
+        }, {});
+      }
+
+      if (tableName === "public_content") {
+        const { data, error } = await supabase
+          .from("public_content")
+          .select("id, title")
+          .in("id", targetIds);
+        if (error) throw error;
+        return (data || []).reduce((acc: any, p: any) => {
+          acc[p.id] = p.title;
+          return acc;
+        }, {});
+      }
+
+      return {};
     },
     enabled: targetIds.length > 0,
   });
