@@ -49,7 +49,8 @@ import {
   SheetTitle, 
   SheetDescription 
 } from "@/components/ui/sheet";
-
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 export default function CompeticaoPublicacaoPage() {
   const eventId = useActiveEventId();
