@@ -36,20 +36,33 @@ export default function CoordenacaoIncidentesPage() {
   const { activeEventId } = useEventContext();
   const [incidents, setIncidents] = useState<IncidentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!activeEventId) return;
+    if (!activeEventId) {
+      setLoading(false);
+      return;
+    }
     
     (async () => {
-      const { data } = await supabase
-        .from("operational_incidents")
-        .select("id, incident_description, incident_status, module, created_at")
-        .eq("event_id", activeEventId)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      
-      setIncidents((data as any) || []);
-      setLoading(false);
+      try {
+        setError(null);
+        const { data, error: fetchError } = await supabase
+          .from("operational_incidents")
+          .select("id, incident_description, incident_status, module, created_at")
+          .eq("event_id", activeEventId)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        
+        if (fetchError) throw fetchError;
+        
+        setIncidents((data as any) || []);
+      } catch (err: any) {
+        console.error("Erro ao carregar ocorrências:", err);
+        setError("Não foi possível carregar a lista de ocorrências. Tente novamente mais tarde.");
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [activeEventId]);
 
