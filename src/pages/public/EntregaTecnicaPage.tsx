@@ -785,6 +785,66 @@ export default function EntregaTecnicaPage() {
         </div>
       </section>
 
+      {/* ── FAQ ────────────────────────────────────────────────── */}
+      <section id="faq" className="py-24 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center space-y-3 mb-14">
+            <Badge variant="outline" className="rounded-full text-xs">Dúvidas Frequentes</Badge>
+            <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: brand.typography.headingFont, color: brand.colors.primary }}>
+              Perguntas Técnicas
+            </h2>
+            <p className="text-slate-600 max-w-2xl mx-auto">
+              Principais dúvidas sobre a operação e integração das áreas do sistema.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              {
+                id: "eventos",
+                q: "Como gerenciar os eventos e etapas?",
+                a: "O sistema centraliza a gestão de múltiplos eventos simultâneos, permitindo configurar etapas regionais e estaduais com calendários independentes.",
+                link: "#modulo-preparacao"
+              },
+              {
+                id: "documentos",
+                q: "Onde ficam os regulamentos e documentos?",
+                a: "Todos os arquivos oficiais, regulamentos por modalidade e boletins técnicos são gerenciados no módulo de cadastros e disponibilizados no portal público.",
+                link: "#modulo-cadastros"
+              },
+              {
+                id: "credenciais",
+                q: "Como funciona a validação das credenciais?",
+                a: "Cada participante possui um QR Code único vinculado fisicamente à sua credencial. A validação é feita via PWA com suporte a operação offline em campo.",
+                link: "#modulo-credenciamento"
+              },
+              {
+                id: "resultados",
+                q: "Como os resultados são publicados?",
+                a: "Os resultados são lançados via súmula digital pelos coordenadores e sincronizados instantaneamente com o portal público via Edge Functions.",
+                link: "#modulo-competicao"
+              }
+            ].map((item) => (
+              <div key={item.id} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+                <h3 className="font-bold text-lg mb-3" style={{ color: brand.colors.primary }}>{item.q}</h3>
+                <p className="text-slate-600 text-sm leading-relaxed mb-4">{item.a}</p>
+                <a 
+                  href={item.link} 
+                  className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors"
+                  style={{ color: brand.colors.accentTeal }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById(item.link.substring(1))?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Ver Módulo Relacionado <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Footer com logo Two Soluções ────────────────────────────────────────────────── */}
       <footer className="py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6">
