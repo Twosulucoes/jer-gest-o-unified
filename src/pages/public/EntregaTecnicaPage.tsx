@@ -72,68 +72,38 @@ const modulosConcluidos = systemMap.reduce((acc, g) => {
   return acc + items.filter((i) => i.status === "done").length;
 }, 0);
 
-const tourSteps = [
-  {
-    title: "Importação SIGECOM",
-    desc: "Espelhamento operacional via planilhas Excel do sistema oficial. Validação automática, normalização de nomes e detecção de duplicidades.",
-    icon: Users,
-    module: "/admin/importacao",
+const groupMeta: Record<string, { icon: any, color: string }> = {
+  dashboard: { icon: LayoutDashboard, color: "from-blue-500 to-indigo-600" },
+  preparacao: { icon: Users, color: "from-sky-500 to-blue-600" },
+  credenciamento: { icon: QrCode, color: "from-purple-500 to-indigo-600" },
+  competicao: { icon: Trophy, color: "from-emerald-500 to-teal-600" },
+  logistica: { icon: Bus, color: "from-orange-500 to-amber-600" },
+  cadastros: { icon: Database, color: "from-slate-500 to-slate-700" },
+  acessos: { icon: Shield, color: "from-rose-500 to-pink-600" },
+  configuracoes: { icon: Zap, color: "from-amber-400 to-orange-500" },
+  ajuda: { icon: Bell, color: "from-cyan-500 to-blue-500" },
+};
+
+const tourSteps = systemMap.map(group => {
+  const mainItem = group.items[0] || (group.subGroups?.[0]?.items[0]);
+  const meta = groupMeta[group.id] || { icon: Activity, color: "from-slate-400 to-slate-500" };
+  const items = [...group.items, ...(group.subGroups?.flatMap(sg => sg.items) ?? [])];
+  const doneCount = items.filter(i => i.status === "done").length;
+  
+  return {
+    id: group.id,
+    title: group.label,
+    desc: mainItem?.description || `Gestão completa do módulo de ${group.label}.`,
+    icon: meta.icon,
+    module: mainItem?.route || "#",
     metrics: [
-      { label: "Atletas processados", value: "5.000+" },
-      { label: "Tempo médio", value: "~12s" },
-      { label: "Taxa de erro", value: "0,3%" },
+      { label: "Submódulos", value: items.length.toString() },
+      { label: "Finalizados", value: doneCount.toString() },
+      { label: "Progresso", value: `${Math.round((doneCount / (items.length || 1)) * 100)}%` },
     ],
-    color: "from-sky-500 to-blue-600",
-  },
-  {
-    title: "Credenciamento Digital",
-    desc: "Geração de credenciais visuais (Canvas) com QR único, vinculação em campo e reemissão controlada com invalidação histórica.",
-    icon: QrCode,
-    module: "/admin/credenciamento",
-    metrics: [
-      { label: "Credenciais", value: "Únicas" },
-      { label: "Validação", value: "MLKit" },
-      { label: "Modelos", value: "Por evento" },
-    ],
-    color: "from-purple-500 to-indigo-600",
-  },
-  {
-    title: "Competição em Tempo Real",
-    desc: "Geração de chaves, fases, grupos e partidas. Lançamento de resultados pelos coordenadores via PWA, com sincronização offline-first.",
-    icon: Trophy,
-    module: "/admin/competicao",
-    metrics: [
-      { label: "Modalidades", value: "Multi-família" },
-      { label: "Tipos", value: "Coletiva+Indiv." },
-      { label: "Desempates", value: "Cascata" },
-    ],
-    color: "from-emerald-500 to-teal-600",
-  },
-  {
-    title: "Logística Operacional",
-    desc: "Transporte, alimentação e alojamento integrados. Controle anti-duplo-consumo, scan de QR em refeitórios e rotas em tempo real.",
-    icon: Bus,
-    module: "/admin/logistica",
-    metrics: [
-      { label: "PWAs", value: "3 dedicados" },
-      { label: "Sync offline", value: "Sim" },
-      { label: "QR multiuso", value: "Vouchers" },
-    ],
-    color: "from-orange-500 to-amber-600",
-  },
-  {
-    title: "Portal Público & Resultados",
-    desc: "Resultados, medalhas e boletins sincronizados via Edge Functions para o portal JERS.COM.BR. Tokens públicos por atleta.",
-    icon: Share2,
-    module: "/admin/relatorios",
-    metrics: [
-      { label: "Edge Funcs", value: "Public API" },
-      { label: "Formatos", value: "PDF + XLSX" },
-      { label: "Atualização", value: "Realtime" },
-    ],
-    color: "from-rose-500 to-pink-600",
-  },
-];
+    color: meta.color,
+  };
+});
 
 const checklistItems = [
   { mod: "Core System", desc: "Autenticação, RLS, RBAC e auditoria" },
