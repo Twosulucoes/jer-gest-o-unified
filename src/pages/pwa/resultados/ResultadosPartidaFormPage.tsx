@@ -67,6 +67,7 @@ function TabPlacar({ matchId, entries }: { matchId: string; entries: EntradaPart
       entryId: e.id,
       scoreFinal: scores[e.id]?.scoreFinal ?? "",
       outcome: scores[e.id]?.outcome ?? "",
+      shootoutScore: scores[e.id]?.shootoutScore ?? "",
     }));
     salvar.mutate(payload);
   };
