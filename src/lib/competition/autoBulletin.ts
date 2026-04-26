@@ -32,6 +32,7 @@ interface MatchRow {
   match_date: string | null;
   start_time: string | null;
   sport_event_id: string | null;
+  phase_id: string | null;
   venues: { name: string | null } | null;
   competition_phases: { name: string | null } | null;
   sport_events: {
