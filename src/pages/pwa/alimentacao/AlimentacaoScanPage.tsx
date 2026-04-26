@@ -14,6 +14,7 @@ import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "
 import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
+import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
 import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAuth } from "@/hooks/useAuth";
 import {
