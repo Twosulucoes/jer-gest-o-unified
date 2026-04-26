@@ -43,6 +43,16 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { BackButton } from "@/components/navigation/BackButton";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useSportEventRules } from "@/hooks/useSportEventRules";
@@ -84,7 +94,7 @@ export default function CompeticaoLancamentoScorePage() {
   const canWrite = hasRole("admin") || hasRole("coordenacao_tecnica") || hasRole("mesario");
 
   // Fetch match details
-  const { data: match, isLoading: loadingMatch } = useQuery({
+  const { data: match, isLoading: loadingMatch, refetch: refetchMatch } = useQuery({
     queryKey: ["match-detail", matchId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -96,7 +106,8 @@ export default function CompeticaoLancamentoScorePage() {
           venue:venues(id, name),
           entries:competition_match_entries(
             id, side, team_id, participant_sport_event_id,
-            teams(id, name, delegations(id, institutions(id, name)))
+            teams(id, name, delegations(id, institutions(id, name))),
+            results:competition_match_results(*)
           )
         `)
         .eq("id", matchId)
@@ -136,6 +147,14 @@ export default function CompeticaoLancamentoScorePage() {
   const [penalties, setPenalties] = useState<PenaltyShot[]>([]);
   const [numPeriods, setNumPeriods] = useState(2);
   const [hasOvertime, setHasOvertime] = useState(false);
+  const [showHomologateDialog, setShowHomologateDialog] = useState(false);
+  const [homologatePassword, setHomologatePassword] = useState("");
+  const [homologateObservation, setHomologateObservation] = useState("");
+
+  const resultStatus = match?.entries?.[0]?.results?.[0]?.result_status || "agendado";
+  const isLocked = (resultStatus === "resultado_validado" || resultStatus === "publicado") && !hasRole("admin");
+  const isAlreadyPublished = resultStatus === "publicado";
+  const canHomologate = (hasRole("admin") || hasRole("coordenacao_tecnica")) && resultStatus === "resultado_lancado";
 
   // Modality name from rulesData
   const modalityName = (rulesData as any)?.sport_name || "Modalidade";
@@ -268,6 +287,47 @@ export default function CompeticaoLancamentoScorePage() {
     }
   });
 
+  const homologateMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("rpc_homologate_match_result", {
+        p_match_id: matchId,
+        p_password: homologatePassword,
+        p_observation: homologateObservation
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Resultado homologado com sucesso!");
+      setShowHomologateDialog(false);
+      setHomologatePassword("");
+      setHomologateObservation("");
+      refetchMatch();
+    },
+    onError: (e: any) => {
+      toast.error("Erro ao homologar: " + e.message);
+    }
+  });
+
+  const revertMut = useMutation({
+    mutationFn: async ({ targetStatus, reason }: { targetStatus: string, reason: string }) => {
+      const { data, error } = await (supabase.rpc as any)("rpc_revert_match_result_status", {
+        p_match_id: matchId,
+        p_target_status: targetStatus,
+        p_reason: reason
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Status revertido com sucesso!");
+      refetchMatch();
+    },
+    onError: (e: any) => {
+      toast.error("Erro ao reverter: " + e.message);
+    }
+  });
+
   if (loadingMatch || loadingRules || loadingLineups) {
     return (
       <div className="p-8 space-y-4">
@@ -299,7 +359,21 @@ export default function CompeticaoLancamentoScorePage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate(-1)}>Cancelar</Button>
-            <Button className="gap-2" onClick={() => launchMut.mutate()} disabled={launchMut.isPending || !canWrite}>
+            {canHomologate && (
+              <Button 
+                variant="secondary" 
+                className="gap-2 bg-amber-500 hover:bg-amber-600 text-white border-none"
+                onClick={() => setShowHomologateDialog(true)}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Homologar Resultado
+              </Button>
+            )}
+            <Button 
+              className="gap-2" 
+              onClick={() => launchMut.mutate()} 
+              disabled={launchMut.isPending || !canWrite || isLocked}
+            >
               <Save className="h-4 w-4" /> 
               {launchMut.isPending ? "Salvando..." : "Salvar Resultado"}
             </Button>
@@ -370,6 +444,7 @@ export default function CompeticaoLancamentoScorePage() {
                                   type="number" 
                                   placeholder="0"
                                   className="h-10 text-center font-bold"
+                                  disabled={isLocked}
                                   value={periodScores[entry.id]?.[`p${i+1}`] || ""}
                                   onChange={(e) => {
                                     const val = e.target.value;
@@ -862,6 +937,7 @@ export default function CompeticaoLancamentoScorePage() {
                 </CardTitle>
                 <Switch 
                   checked={isWO} 
+                  disabled={isLocked}
                   onCheckedChange={(val) => {
                     setIsWO(val);
                     if (!val) setWoWinnerId("");
@@ -872,7 +948,7 @@ export default function CompeticaoLancamentoScorePage() {
                 {isWO ? (
                   <div className="space-y-4 pt-2">
                     <Label className="text-sm">Vencedora por W.O.</Label>
-                    <Select value={woWinnerId} onValueChange={setWoWinnerId}>
+                    <Select value={woWinnerId} onValueChange={setWoWinnerId} disabled={isLocked}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
@@ -912,9 +988,108 @@ export default function CompeticaoLancamentoScorePage() {
                 </p>
               </CardContent>
             </Card>
+
+            {hasRole("admin") && isLocked && (
+              <Card className="border-destructive/20 bg-destructive/5">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold uppercase tracking-wider text-destructive flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" /> Ações de Administrador
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-xs text-muted-foreground">
+                    Como administrador, você pode reverter o status deste resultado para permitir edições ou correções.
+                  </p>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => {
+                      const reason = prompt("Justificativa para reversão:");
+                      if (reason) {
+                        revertMut.mutate({ targetStatus: "resultado_lancado", reason });
+                      }
+                    }}
+                  >
+                    Reverter para "Lançado"
+                  </Button>
+                  {resultStatus === "publicado" && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full text-destructive border-destructive/20 hover:bg-destructive/10"
+                      onClick={() => {
+                        const reason = prompt("Justificativa para reversão:");
+                        if (reason) {
+                          revertMut.mutate({ targetStatus: "validado", reason });
+                        }
+                      }}
+                    >
+                      Reverter para "Validado" (Despublicar)
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
+
+      <Dialog open={showHomologateDialog} onOpenChange={setShowHomologateDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Homologar Resultado</DialogTitle>
+            <DialogDescription>
+              Confirme os dados antes de homologar. Após esta ação, o resultado não poderá mais ser editado pela coordenação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-muted rounded-lg border flex items-center justify-between font-bold">
+              <div className="text-center flex-1">
+                <div className="text-xs text-muted-foreground mb-1">{schoolAName}</div>
+                <div className="text-2xl">{totalScoreA}</div>
+              </div>
+              <div className="px-4 text-muted-foreground">×</div>
+              <div className="text-center flex-1">
+                <div className="text-xs text-muted-foreground mb-1">{schoolBName}</div>
+                <div className="text-2xl">{totalScoreB}</div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Senha do Coordenador</Label>
+              <Input 
+                type="password" 
+                placeholder="Digite sua senha para confirmar" 
+                value={homologatePassword}
+                onChange={(e) => setHomologatePassword(e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Observações (opcional)</Label>
+              <Textarea 
+                placeholder="Registro de eventual observação da homologação" 
+                value={homologateObservation}
+                onChange={(e) => setHomologateObservation(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowHomologateDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-amber-500 hover:bg-amber-600 text-white" 
+              onClick={() => homologateMut.mutate()}
+              disabled={homologateMut.isPending || !homologatePassword}
+            >
+              {homologateMut.isPending ? "Confirmando..." : "Confirmar Homologação"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

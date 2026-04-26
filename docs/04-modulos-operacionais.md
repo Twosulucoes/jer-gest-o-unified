@@ -90,15 +90,16 @@
 - **Permissões**: admin (total), coordenacao_tecnica (editar + seed missing_only), secretaria (somente visualização)
 - **Dados reais**: 79 regras cadastradas (100% das provas)
 
-## 9. Resultados e Governança (🟡 Parcial)
+## 9. Resultados e Governança (✅ Pronto)
 - **Ciclo**: `resultado_lancado` → `resultado_validado` → `publicado`
-- **RPCs**: `rpc_launch_match_result`, `rpc_validate_results_for_sport_event`, `rpc_publish_results_for_sport_event`
-- **Frontend**: LaunchResultDialog (wizard), ResultGovernancePanel (validar/publicar em lote), CentralResultsTab, **MatchResultInlineCard** (inline no montador), **WinnerProgressionPanel** (drag-and-drop para próxima fase), **HomologarClassificadoCard** (classificação direta de único apto)
-- **Publicação**: exige boletim oficial publicado
-- **RLS anon**: `result_status = 'publicado'` permite SELECT para público
-- **Strings canônicas**: `src/lib/resultStatus.ts` — fonte de verdade
-- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento dedicado Score Page (placar por período, pênaltis, W.O. automático) | ✅ Lançamento inline por confronto | ✅ Progressão manual de vencedores | ✅ Validação em lote | ✅ Publicação com boletim | ✅ Auto-finish da partida | ✅ Auditoria completa (tabela history + updated_by) | ✅ Homologação de classificado direto (único apto)
-- **Gaps**: ❌ Sem portal público para consulta externa | ❌ Sem geração de boletins em PDF | ✅ CombatResultForm integrado e funcional (Etapa 4 gaps fechados)
+- **RPCs**: `rpc_launch_match_result`, `rpc_homologate_match_result`, `rpc_publish_match_result`, `rpc_revert_match_result_status`
+- **Frontend**: 
+  - ✅ **Central de Publicação** (`/admin/competicao/publicacao`): Tela operacional para secretaria com publicação individual/lote e auditoria.
+  - ✅ **Homologação Dedicada**: Botão com senha do coordenador na tela de lançamento.
+  - ✅ **Indicadores de Ciclo**: Pulse visual no Painel Score para resultados validados aguardando publicação.
+  - ✅ **Reversão Admin**: Fluxo de exceção para administradores corrigirem status com justificativa obrigatória.
+- **RLS**: funcional para anon (SELECT WHERE `result_status = 'publicado'`)
+- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento dedicado Score Page | ✅ Homologação com senha | ✅ Publicação Centralizada | ✅ Reversão de status | ✅ Auditoria completa (tabela history)
 
 ## 10. Boletins Oficiais (🟡 Parcial)
 - **Página**: `/admin/boletins`

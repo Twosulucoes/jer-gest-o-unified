@@ -98,6 +98,7 @@ import BoletinsPorModalidadePage from "./pages/admin/relatorios/BoletinsPorModal
 import DashboardOperacionalPage from "./pages/admin/relatorios/DashboardOperacionalPage";
 import QuadroMedalhasPage from "./pages/admin/relatorios/QuadroMedalhasPage";
 import PrestacaoContasOscPage from "./pages/admin/relatorios/PrestacaoContasOscPage";
+import CompeticaoPublicacaoPage from "./pages/admin/CompeticaoPublicacaoPage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 // RegrasEventoPage removed — consolidated into RegrasPage
@@ -428,6 +429,7 @@ const App = () => (
               {/* Competição */}
               <Route path="competicao" element={<Navigate to="painel" replace />} />
               <Route path="competicao/painel" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelPage /></ProtectedRoute>} />
+              <Route path="competicao/publicacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><CompeticaoPublicacaoPage /></ProtectedRoute>} />
               <Route path="competicao/painel-score/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelScorePage /></ProtectedRoute>} />
               <Route path="competicao/painel-sets/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelSetsPage /></ProtectedRoute>} />
               <Route path="competicao/painel-combat/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelCombatPage /></ProtectedRoute>} />

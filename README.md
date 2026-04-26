@@ -8,6 +8,7 @@ Gerencia toda a operação do evento **após a fase de inscrição**: credenciam
 > **Tipos de Participantes ✅ Delegação vs Organização** — Separação clara entre participantes de delegações (Atleta/Staff) e participantes da organização (Coordenação/Apoio), com campos administrativos específicos e regras rígidas de privacidade e exclusividade de CPF (2026-04-21)
 > **Navegação ✅ Refatorada Global vs Etapa** — Separação total entre contexto Global e contexto de Etapa (2026-04-17)
 > **Refatoração Competição ✅ Painel Score, Sets & Combat** — Nova experiência de operação para modalidades de placar (Futsal, Futebol, etc), sets (Vôlei, Tênis de Mesa, etc) e combate (Judô, Karatê, etc) com pesagem oficial, montagem de chave e grade densa (2026-04-23)
+> **Governança de Resultados ✅ Homologação e Publicação** — Ciclo de vida completo do resultado (Lançado → Validado → Publicado) com central de publicação para secretaria, homologação com senha para coordenação e auditoria completa (2026-04-24)
 
 ---
 

@@ -105,13 +105,14 @@ export default function CompeticaoPainelScorePage() {
 
   const getMatchStatus = (m: any) => {
     const hasResults = (m.match_results?.length || 0) > 0;
-    const validated = m.match_results?.every((r: any) => r.result_status === "resultado_validado" || r.result_status === "publicado");
-    const published = m.match_results?.some((r: any) => r.result_status === "publicado");
+    const allValidated = hasResults && m.match_results?.every((r: any) => r.result_status === "resultado_validado" || r.result_status === "publicado");
+    const allPublished = hasResults && m.match_results?.every((r: any) => r.result_status === "publicado");
+    const someLaunched = hasResults && m.match_results?.some((r: any) => r.result_status === "resultado_lancado");
 
-    if (published) return { label: "Publicado", variant: "default" as const, color: "bg-blue-500" };
-    if (validated) return { label: "Homologado", variant: "default" as const, color: "bg-green-600" };
-    if (hasResults) return { label: "Resultado Lançado", variant: "default" as const, color: "bg-amber-500" };
-    if (m.status === "in_progress") return { label: "Em andamento", variant: "default" as const, color: "bg-orange-500" };
+    if (allPublished) return { label: "Publicado", variant: "default" as const, color: "bg-emerald-600 hover:bg-emerald-700" };
+    if (allValidated) return { label: "Validado", variant: "default" as const, color: "bg-blue-600 hover:bg-blue-700 animate-pulse" };
+    if (someLaunched) return { label: "Resultado Lançado", variant: "default" as const, color: "bg-amber-500 hover:bg-amber-600" };
+    if (m.status === "in_progress") return { label: "Em Andamento", variant: "default" as const, color: "bg-orange-500 hover:bg-orange-600" };
     return { label: "Agendado", variant: "outline" as const, color: "text-muted-foreground" };
   };
 

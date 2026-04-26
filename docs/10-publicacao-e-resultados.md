@@ -11,8 +11,8 @@ resultado_lancado → resultado_validado → publicado
 | Status | Visível para | Quem pode alterar |
 |--------|-------------|-------------------|
 | `resultado_lancado` | admin, secretaria, coord_tecnica | coord_tecnica, secretaria, mesário |
-| `resultado_validado` | admin, secretaria, coord_tecnica | admin, secretaria, coordenacao_tecnica |
-| `publicado` | **todos** (incluindo público anon) | admin |
+| `resultado_validado` | admin, secretaria, coord_tecnica | admin (reverter), coordenacao_tecnica (homologar) |
+| `publicado` | **todos** (incluindo público anon) | admin (reverter), secretaria (publicar) |
 
 ## Strings Canônicas (Fonte de Verdade)
 
@@ -33,8 +33,9 @@ Todas as RPCs, filtros de frontend e RLS policies usam estas strings.
 | RPC | Permissão | Descrição |
 |-----|-----------|-----------|
 | `rpc_launch_match_result` | authenticated | Grava resultados com status `resultado_lancado`, marca partida como `finished` |
-| `rpc_validate_results_for_sport_event` | admin, secretaria, coordenacao_tecnica | Transiciona `resultado_lancado` → `resultado_validado` |
-| `rpc_publish_results_for_sport_event` | admin | Transiciona `resultado_validado` → `publicado`, exige boletim publicado |
+| `rpc_homologate_match_result` | admin, coord_tecnica | Homologa resultado lançado (exige senha), status → `resultado_validado` |
+| `rpc_publish_match_result` | admin, secretaria | Publica resultado validado (individual ou lote), status → `publicado` |
+| `rpc_revert_match_result_status` | admin | Reverte status de resultado (justificativa obrigatória) |
 | `rpc_sync_match_scores_to_results` | authenticated | Sincroniza match_scores → competition_match_results |
 
 ## RLS para Público
