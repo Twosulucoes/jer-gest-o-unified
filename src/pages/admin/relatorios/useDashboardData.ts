@@ -506,6 +506,8 @@ export function useDashboardData(eventId?: string | null) {
       transport_trips: TR_total || TR.length,
       transport_passengers: passengers,
       transport_vehicles: VE,
+      referees_total: refereesTotal,
+      referees_assigned: refereesAssigned,
     },
 
     credenciamento: { daily: credDaily, by_delegation: byDelegation },
