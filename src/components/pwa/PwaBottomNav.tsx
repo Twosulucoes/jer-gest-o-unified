@@ -13,7 +13,7 @@ export function PwaBottomNav() {
   const location = useLocation();
   const path = location.pathname;
 
-  const getModuleConfig = (): { items: NavItem[]; colorClass: string } => {
+  const getModuleConfig = (): { items: NavItem[] } => {
     if (path.startsWith("/pwa/transporte")) {
       return {
         items: [
@@ -22,7 +22,6 @@ export function PwaBottomNav() {
           { label: "Scan", icon: Scan, path: "/pwa/transporte/scan" },
           { label: "Rotas", icon: ClipboardList, path: "/pwa/transporte/rotas" },
         ],
-        colorClass: "text-blue-600",
       };
     }
     if (path.startsWith("/pwa/alimentacao")) {
@@ -33,7 +32,6 @@ export function PwaBottomNav() {
           { label: "Buscar", icon: Search, path: "/pwa/alimentacao/buscar" },
           { label: "Histórico", icon: History, path: "/pwa/alimentacao/historico" },
         ],
-        colorClass: "text-teal-600",
       };
     }
     if (path.startsWith("/pwa/alojamento")) {
@@ -44,7 +42,6 @@ export function PwaBottomNav() {
           { label: "Buscar", icon: Search, path: "/pwa/alojamento/buscar" },
           { label: "Incidentes", icon: ClipboardList, path: "/pwa/alojamento/incidentes" },
         ],
-        colorClass: "text-emerald-600",
       };
     }
     if (path.startsWith("/pwa/coordenacao-tecnica")) {
@@ -55,7 +52,6 @@ export function PwaBottomNav() {
           { label: "Resultados", icon: Trophy, path: "/pwa/coordenacao-tecnica/resultados" },
           { label: "Incidentes", icon: ClipboardList, path: "/pwa/coordenacao-tecnica/incidentes" },
         ],
-        colorClass: "text-indigo-600",
       };
     }
     if (path.startsWith("/pwa/delegacao")) {
@@ -66,7 +62,6 @@ export function PwaBottomNav() {
           { label: "Membros", icon: Users, path: "/pwa/delegacao/participantes" },
           { label: "Logística", icon: Bus, path: "/pwa/delegacao/logistica" },
         ],
-        colorClass: "text-cyan-600",
       };
     }
     if (path.startsWith("/pwa/credenciamento")) {
@@ -76,21 +71,19 @@ export function PwaBottomNav() {
           { label: "Vincular", icon: Scan, path: "/pwa/credenciamento/vincular" },
           { label: "Busca", icon: Search, path: "/pwa/credenciamento/busca" },
         ],
-        colorClass: "text-slate-600",
       };
     }
 
-    // Default or Landing Page
     return {
       items: [
         { label: "Módulos", icon: LayoutDashboard, path: "/pwa" },
         { label: "Admin", icon: Trophy, path: "/admin" },
       ],
-      colorClass: "text-primary",
     };
   };
 
-  const { items, colorClass } = getModuleConfig();
+  const { items } = getModuleConfig();
+
 
   // Don't show on specific pages if needed (like scanner full screen)
   if (path.includes("/scan") && items.length > 1) {
