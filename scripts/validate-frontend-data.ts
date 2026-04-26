@@ -15,45 +15,41 @@ async function runValidation() {
     {
       name: 'Relacionamento Participants -> People (person_id)',
       test: async () => {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('participants')
           .select('id, person_id, people(id, full_name)')
           .limit(1);
         if (error) throw error;
-        return true;
       }
     },
     {
       name: 'Relacionamento Delegations -> Institutions (institution_id)',
       test: async () => {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('delegations')
           .select('id, institution_id, institutions(id, name)')
           .limit(1);
         if (error) throw error;
-        return true;
       }
     },
     {
-      name: 'Colunas críticas em Participants',
+      name: 'Colunas críticas em Participants (status, type, active)',
       test: async () => {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('participants')
           .select('id, status, participant_type, is_active')
           .limit(1);
         if (error) throw error;
-        return true;
       }
     },
     {
-      name: 'Colunas críticas em Delegations',
+      name: 'Colunas críticas em Delegations (school_name, status, event_id)',
       test: async () => {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('delegations')
           .select('id, school_name, status, event_id')
           .limit(1);
         if (error) throw error;
-        return true;
       }
     }
   ];
