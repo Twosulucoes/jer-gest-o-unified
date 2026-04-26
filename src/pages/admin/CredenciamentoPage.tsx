@@ -1195,6 +1195,18 @@ export default function CredenciamentoPage() {
                       {canCredential && (
                         <TableCell className="py-3 text-right">
                           <div className="flex justify-end gap-1.5 flex-wrap items-center">
+                            {state === "pending_import" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 text-[11px] font-bold border-orange-600 text-orange-600 hover:bg-orange-50"
+                                onClick={() => confirmParticipantMutation.mutate(p.id)}
+                                disabled={confirmParticipantMutation.isPending}
+                              >
+                                <Check className="h-3.5 w-3.5 mr-1.5" /> Confirmar
+                              </Button>
+                            )}
+
                             {state === "awaiting" && (
                               <Button
                                 size="sm"
