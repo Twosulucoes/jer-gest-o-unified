@@ -20,6 +20,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import VenueFormDialog, { type VenueFormValues } from "@/components/admin/VenueFormDialog";
 import { VenueTableRow, VenueCard } from "@/components/admin/locais/VenueRowItem";
+import ArchiveVenueDialog from "@/components/admin/locais/ArchiveVenueDialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const STAGE_FILTER_ALL = "__all__";
 const STAGE_FILTER_NONE = "__none__";
@@ -38,6 +41,8 @@ export default function LocaisPage() {
   const [editingVenue, setEditingVenue] = useState<(VenueRow & { event_stage_ids?: string[] }) | null>(null);
   const [stageFilter, setStageFilter] = useState<string>(STAGE_FILTER_ALL);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState<VenueRow | null>(null);
 
   const canWrite =
     hasRole("admin") ||
@@ -54,9 +59,9 @@ export default function LocaisPage() {
     },
   });
 
-  // P1: bootstrap único — paraleliza stages + venues, e em seguida busca links em uma única query
+  // P1+P3: bootstrap único — paraleliza stages + venues + dependências
   const { data: bootstrap, isLoading } = useQuery({
-    queryKey: ["locais-bootstrap", activeEventId],
+    queryKey: ["locais-bootstrap", activeEventId, showArchived],
     enabled: !!activeEventId,
     queryFn: async () => {
       const [stagesRes, venuesRes] = await Promise.all([
@@ -65,11 +70,11 @@ export default function LocaisPage() {
           .select("id, name, status, sort_order, host_name, host_city")
           .eq("event_id", activeEventId)
           .order("sort_order", { ascending: true }),
-        supabase
-          .from("venues")
-          .select("*")
-          .eq("event_id", activeEventId)
-          .order("name"),
+        // P3: traz arquivados se o filtro estiver ativo (RLS controla visibilidade)
+        (showArchived
+          ? (supabase as any).from("venues").select("*").eq("event_id", activeEventId).not("deleted_at", "is", null).order("name")
+          : (supabase as any).from("venues").select("*").eq("event_id", activeEventId).is("deleted_at", null).order("name")
+        ),
       ]);
       if (stagesRes.error) throw stagesRes.error;
       if (venuesRes.error) throw venuesRes.error;
@@ -78,23 +83,39 @@ export default function LocaisPage() {
       const venues = (venuesRes.data ?? []) as VenueRow[];
 
       let links: Array<{ venue_id: string; event_stage_id: string }> = [];
+      let deps: Record<string, { matches_total: number; matches_future: number }> = {};
+
       if (venues.length > 0) {
         const venueIds = venues.map((v) => v.id);
-        const linksRes = await (supabase as any)
-          .from("venue_event_stages")
-          .select("venue_id, event_stage_id")
-          .in("venue_id", venueIds);
+        const [linksRes, depsRes] = await Promise.all([
+          (supabase as any)
+            .from("venue_event_stages")
+            .select("venue_id, event_stage_id")
+            .in("venue_id", venueIds),
+          // P3: view de dependências; tolera ausência (antes do SQL aplicado)
+          (supabase as any)
+            .from("v_venue_dependencies")
+            .select("venue_id, matches_total, matches_future")
+            .in("venue_id", venueIds),
+        ]);
         if (linksRes.error) throw linksRes.error;
         links = (linksRes.data ?? []) as Array<{ venue_id: string; event_stage_id: string }>;
+
+        if (!depsRes.error && Array.isArray(depsRes.data)) {
+          for (const d of depsRes.data as Array<{ venue_id: string; matches_total: number; matches_future: number }>) {
+            deps[d.venue_id] = { matches_total: d.matches_total ?? 0, matches_future: d.matches_future ?? 0 };
+          }
+        }
       }
 
-      return { stages, venues, links };
+      return { stages, venues, links, deps };
     },
   });
 
   const stages = bootstrap?.stages ?? [];
   const venues = bootstrap?.venues;
   const links = bootstrap?.links ?? [];
+  const deps = bootstrap?.deps ?? {};
 
   const stagesMap = useMemo(() => new Map(stages.map((s) => [s.id, s])), [stages]);
 
@@ -218,6 +239,44 @@ export default function LocaisPage() {
     onError: (err: Error) => toast.error("Erro ao alterar status: " + err.message),
   });
 
+  // P3: arquivar (soft-delete) com checagem de partidas futuras
+  const archiveMutation = useMutation({
+    mutationFn: async ({ venueId, force, reason }: { venueId: string; force: boolean; reason: string }) => {
+      const { data, error } = await (supabase as any).rpc("rpc_archive_venue", {
+        p_venue_id: venueId,
+        p_force: force,
+        p_reason: reason || null,
+      });
+      if (error) throw error;
+      return data as { matches_future: number };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["locais-bootstrap"] });
+      queryClient.invalidateQueries({ queryKey: ["venues-by-stage"] });
+      toast.success(
+        data?.matches_future
+          ? `Local arquivado (${data.matches_future} partida(s) futura(s) afetada(s))`
+          : "Local arquivado"
+      );
+      setArchiveTarget(null);
+    },
+    onError: (err: Error) => toast.error("Erro ao arquivar: " + err.message),
+  });
+
+  // P3: restaurar venue arquivado
+  const restoreMutation = useMutation({
+    mutationFn: async (venueId: string) => {
+      const { error } = await (supabase as any).rpc("rpc_restore_venue", { p_venue_id: venueId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["locais-bootstrap"] });
+      queryClient.invalidateQueries({ queryKey: ["venues-by-stage"] });
+      toast.success("Local restaurado");
+    },
+    onError: (err: Error) => toast.error("Erro ao restaurar: " + err.message),
+  });
+
   const handleSubmit = (values: VenueFormValues) => {
     if (editingVenue) {
       updateMutation.mutate({ id: editingVenue.id, ...values });
@@ -305,11 +364,25 @@ export default function LocaisPage() {
               />
             </div>
           </div>
-          {orphanCount > 0 && (
-            <p className="text-xs text-warning">
-              ⚠ {orphanCount} local(is) sem nenhuma etapa vinculada — edite para corrigir.
-            </p>
-          )}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            {orphanCount > 0 ? (
+              <p className="text-xs text-warning">
+                ⚠ {orphanCount} local(is) sem nenhuma etapa vinculada — edite para corrigir.
+              </p>
+            ) : <span />}
+            {canWrite && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="show-archived"
+                  checked={showArchived}
+                  onCheckedChange={setShowArchived}
+                />
+                <Label htmlFor="show-archived" className="text-xs cursor-pointer">
+                  Mostrar arquivados
+                </Label>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -397,6 +470,7 @@ export default function LocaisPage() {
                               venue={venue}
                               stageKey={stageKey}
                               otherStages={otherStages}
+                              dependency={deps[venue.id]}
                               canWrite={canWrite}
                               isToggling={
                                 toggleActiveMutation.isPending &&
@@ -404,6 +478,8 @@ export default function LocaisPage() {
                               }
                               onEdit={openEdit}
                               onToggleActive={(v) => toggleActiveMutation.mutate(v)}
+                              onArchive={(v) => setArchiveTarget(v)}
+                              onRestore={(v) => restoreMutation.mutate(v.id)}
                             />
                           );
                         })}
@@ -424,6 +500,7 @@ export default function LocaisPage() {
                           key={`m-${stageKey}-${venue.id}`}
                           venue={venue}
                           otherStages={otherStages}
+                          dependency={deps[venue.id]}
                           canWrite={canWrite}
                           isToggling={
                             toggleActiveMutation.isPending &&
@@ -431,6 +508,8 @@ export default function LocaisPage() {
                           }
                           onEdit={openEdit}
                           onToggleActive={(v) => toggleActiveMutation.mutate(v)}
+                          onArchive={(v) => setArchiveTarget(v)}
+                          onRestore={(v) => restoreMutation.mutate(v.id)}
                         />
                       );
                     })}
@@ -449,6 +528,16 @@ export default function LocaisPage() {
         events={events}
         onSubmit={handleSubmit}
         isPending={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <ArchiveVenueDialog
+        open={!!archiveTarget}
+        onOpenChange={(o) => { if (!o) setArchiveTarget(null); }}
+        venue={archiveTarget}
+        isPending={archiveMutation.isPending}
+        onConfirm={({ force, reason }) =>
+          archiveTarget && archiveMutation.mutate({ venueId: archiveTarget.id, force, reason })
+        }
       />
     </div>
   );
