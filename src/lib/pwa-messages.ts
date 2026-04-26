@@ -1,3 +1,4 @@
+import { voucherErrorMessage } from "./voucherMessages";
 
 export type PwaMessageCode =
   | "ERR_NOT_FOUND"
