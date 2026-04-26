@@ -32,6 +32,17 @@ interface Props {
 
 export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }: Props) {
   const qc = useQueryClient();
+  const { hasRole } = useAuth();
+  // RLS de match_user_assignments só permite INSERT/UPDATE/DELETE para
+  // admin, coordenacao_tecnica e coordenador_modalidade. Secretaria tem
+  // apenas leitura, então o botão Designar precisa ficar oculto pra ela
+  // mesmo que `canWrite` (escopo geral da partida) seja verdadeiro.
+  const canManageAssignments =
+    canWrite &&
+    (hasRole("admin") ||
+      hasRole("coordenacao_tecnica") ||
+      hasRole("coordenador_modalidade"));
+
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
