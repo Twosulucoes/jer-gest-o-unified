@@ -11,27 +11,21 @@ import { useEventContext } from "@/contexts/EventContext";
 import { AlertTriangle, ClipboardList, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { 
+  INCIDENT_MODULES, 
+  INCIDENT_STATUSES, 
+  type IncidentModule, 
+  type IncidentStatus 
+} from "@/types/incidents";
 
 interface IncidentItem {
   id: string;
   incident_description: string;
-  incident_status: string;
-  module: string;
+  incident_status: IncidentStatus;
+  module: IncidentModule;
   created_at: string;
 }
 
-const MODULE_LABELS: Record<string, string> = {
-  transporte: "Transporte",
-  alimentacao: "Alimentação",
-  alojamento: "Alojamento",
-  outro: "Geral",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Pendente",
-  in_progress: "Em análise",
-  resolved: "Resolvida",
-};
 
 export default function CoordenacaoIncidentesPage() {
   const navigate = useNavigate();
