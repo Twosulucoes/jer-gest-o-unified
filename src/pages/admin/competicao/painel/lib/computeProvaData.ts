@@ -36,6 +36,8 @@ export interface ProvaRow {
   progress: number;
   firstIncompleteStep: string;
   family?: string | null;
+  category_count?: number;
+  is_grouped_combat?: boolean;
 }
 
 export function computeProvaData(row: any, family?: string | null): ProvaRow {
