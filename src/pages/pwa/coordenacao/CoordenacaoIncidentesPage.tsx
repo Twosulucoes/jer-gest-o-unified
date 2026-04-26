@@ -93,7 +93,7 @@ export default function CoordenacaoIncidentesPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [activeEventId, filterModule, filterStatus, page]);
+  }, [activeEventId, filterModule, filterStatus, sortOrder, page]);
 
   useEffect(() => {
     fetchIncidents();
