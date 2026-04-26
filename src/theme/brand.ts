@@ -15,7 +15,7 @@ export const brand = {
     background: '#F6F8FC',
     surface: '#FFFFFF',
     success: '#33B249',
-    warning: '#F2B705',
+    warning: '#92400E', // Darker amber for better contrast
     danger: '#E11D48',
     info: '#0F5AA6',
   },
