@@ -266,6 +266,11 @@ export default function LinkFormPage() {
               <Eye className="h-4 w-4" /> Preview
             </Button>
           )}
+          {!isNew && (
+            <Button variant="outline" onClick={() => navigate(`/admin/auditoria?table=public_content&search=${id}`)} className="gap-2">
+              <History className="h-4 w-4" /> Histórico
+            </Button>
+          )}
         </div>
 
         {!isNew && (
