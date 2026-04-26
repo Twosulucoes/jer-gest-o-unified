@@ -103,6 +103,7 @@ export default function VouchersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const [issueOpen, setIssueOpen] = useState(false);
   const [printVoucher, setPrintVoucher] = useState<VoucherRow | null>(null);
@@ -112,12 +113,12 @@ export default function VouchersPage() {
 
   // -------- Vouchers query --------
   const { data: vouchers = [], isLoading } = useQuery({
-    queryKey: ["vouchers", eventId, statusFilter, scopeFilter],
+    queryKey: ["vouchers", eventId, statusFilter, scopeFilter, typeFilter],
     queryFn: async () => {
       let q = supabase
         .from("service_vouchers")
         .select(
-          "id, participant_id, qr_code_value, status, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
+          "id, participant_id, qr_code_value, status, voucher_type, label, is_contingency, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
         )
         .eq("event_id", eventId)
         .order("created_at", { ascending: false })
@@ -126,6 +127,7 @@ export default function VouchersPage() {
       if (scopeFilter === "transport") q = q.eq("scope_transport", true);
       if (scopeFilter === "meals") q = q.eq("scope_meals", true);
       if (scopeFilter === "lodging") q = q.eq("scope_lodging", true);
+      if (typeFilter !== "all") q = q.eq("voucher_type", typeFilter);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as VoucherRow[];
