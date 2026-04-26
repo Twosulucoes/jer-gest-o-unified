@@ -39,23 +39,87 @@ export function useScoreMatches(sportEventId: string | undefined) {
   });
 }
 
-export function useModalityDetails(sportEventId: string | undefined) {
+export function useModalityPhases(sportEventId: string | undefined) {
   return useQuery({
-    queryKey: ["sport-event-details", sportEventId],
+    queryKey: ["modality-phases", sportEventId],
     enabled: !!sportEventId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("sport_events")
+        .from("competition_phases")
+        .select("*")
+        .eq("sport_event_id", sportEventId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useModalityGroups(sportEventId: string | undefined) {
+  return useQuery({
+    queryKey: ["modality-groups", sportEventId],
+    enabled: !!sportEventId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("competition_groups")
+        .select("*")
+        .eq("event_id", (await supabase.from("sport_events").select("event_id").eq("id", sportEventId!).single()).data?.event_id as string)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useModalitySchools(sportEventId: string | undefined) {
+  return useQuery({
+    queryKey: ["modality-schools", sportEventId],
+    enabled: !!sportEventId,
+    queryFn: async () => {
+      // Get delegations that have participants in this sport event
+      const { data, error } = await supabase
+        .from("delegations")
         .select(`
-          *,
-          sports (id, name, slug),
-          categories (name)
+          id,
+          name,
+          institution_id
         `)
-        .eq("id", sportEventId!)
-        .single();
+        .in("id", (
+          await supabase
+            .from("participants")
+            .select("delegation_id")
+            .in("id", (
+              await supabase
+                .from("participant_sport_events")
+                .select("participant_id")
+                .eq("sport_event_id", sportEventId!)
+            ).data?.map(p => p.participant_id) || [])
+        ).data?.map(p => p.delegation_id) || []);
 
       if (error) throw error;
       return data;
     },
   });
 }
+
+export function useModalityReferees(sportId: string | undefined) {
+  return useQuery({
+    queryKey: ["modality-referees", sportId],
+    enabled: !!sportId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", (
+          await supabase
+            .from("user_sport_links")
+            .select("user_id")
+            .eq("sport_id", sportId!)
+        ).data?.map(l => l.user_id) || []);
+
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
