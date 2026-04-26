@@ -46,6 +46,7 @@ import { brand } from "@/theme/brand";
 import { systemMap } from "@/config/systemMap";
 import twoLogo from "@/assets/two-solucoes-logo.png";
 import { exportEntregaTecnicaPdf } from "@/components/public/EntregaTecnicaPdfExporter";
+import { VisualIdentity } from "@/components/public/VisualIdentity";
 
 interface VersionInfo {
   appVersion: string;
