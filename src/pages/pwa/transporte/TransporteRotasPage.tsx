@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, MapPin } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 interface RouteItem {
   id: string;
@@ -33,6 +34,7 @@ export default function TransporteRotasPage() {
         </button>
         <MapPin className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">Rotas</span>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-3">

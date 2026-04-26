@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ArrowLeft, Wifi, WifiOff, Undo2, Play, Pause, RotateCcw, Lock, AlertTriangle } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 import type { MatchConfig, EventTypeConfig } from "@/components/admin/MatchConfigEditor";
 
 interface PendingEvent {
@@ -346,6 +347,7 @@ export default function AoVivoMatchPage() {
           ) : (
             <span className="flex items-center gap-1 text-[10px] text-amber-400"><WifiOff className="h-3 w-3" />Offline</span>
           )}
+          <PwaRefreshButton />
         </div>
       </header>
 

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { rpcSearchPerson, getSelectedFacility } from "@/hooks/useAlojamento";
 import { ArrowLeft, Search, Loader2 } from "lucide-react";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 interface PersonResult {
   participant_id: string;
@@ -49,6 +50,7 @@ export default function AlojamentoBuscarPage() {
         </button>
         <Search className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">Buscar Pessoa</span>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-4">

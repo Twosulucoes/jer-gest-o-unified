@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Clock, MapPin, Bus } from "lucide-react";
 import { format } from "date-fns";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 interface Trip {
   id: string;
@@ -69,6 +70,7 @@ export default function TransporteViagensPage() {
         </button>
         <Clock className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">Viagens de Hoje</span>
+        <div className="ml-auto"><PwaRefreshButton /></div>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-3">

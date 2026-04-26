@@ -17,6 +17,7 @@ import { TripInfoCard } from "@/components/pwa/transporte/TripInfoCard";
 import { DelegationAlertBanner } from "@/components/pwa/transporte/DelegationAlertBanner";
 import { ArrowLeft, Download, Search, Phone, X, ShieldAlert, Loader2, ScanLine } from "lucide-react";
 import { toast } from "sonner";
+import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 
 interface PassengerRow {
   id: string;
@@ -246,6 +247,7 @@ export default function TransportePassageirosPage() {
             <span className="font-heading font-semibold tracking-tight text-sm">Passageiros da Viagem</span>
           </div>
           <div className="flex items-center gap-2 text-xs">
+            <PwaRefreshButton />
             <span className="bg-[hsl(var(--module-accent)/0.16)] rounded-full px-2 py-1">
               <span className="font-bold text-green-300">{boardedCount}</span>
               <span className="opacity-70"> emb</span>
