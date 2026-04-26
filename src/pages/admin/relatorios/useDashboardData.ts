@@ -361,6 +361,8 @@ export function useDashboardData(eventId?: string | null) {
   const consumptionsTotal = consumptionsRes.totalCount;
   const passengers = (dependent[1].data ?? 0) as number;
   const results = (dependent[2].data ?? []) as { match_id: string; result_status: string }[];
+  const refereesTotal = (dependent[3]?.data ?? 0) as number;
+  const refereesAssigned = (dependent[4]?.data ?? 0) as number;
 
 
   const isLoadingAll = isLoading || dependent.some((q) => q.isLoading);
