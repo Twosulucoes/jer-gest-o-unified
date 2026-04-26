@@ -38,6 +38,7 @@ import ImportacaoPendenciasPage from "./pages/admin/ImportacaoPendenciasPage";
 // ImportacaoCatalogoPage removed — consolidated into RegrasPage
 import CredenciamentoPage from "./pages/admin/CredenciamentoPage";
 import CredenciamentoExternoPage from "./pages/admin/CredenciamentoExternoPage";
+import CredenciamentoSeguroPage from "./pages/admin/CredenciamentoSeguroPage";
 import ValidacaoQRPage from "./pages/admin/ValidacaoQRPage";
 import TransporteHubPage from "./pages/admin/TransporteHubPage";
 import TransporteVeiculosPage from "./pages/admin/TransporteVeiculosPage";

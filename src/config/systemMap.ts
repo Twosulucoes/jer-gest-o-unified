@@ -196,6 +196,18 @@ export const systemMap: SystemMapGroup[] = [
         nextActions: [],
       },
       {
+        id: "credenciamento-seguro",
+        label: "Credenciamento (Seguro)",
+        route: "/admin/credenciamento/seguro",
+        pageFile: "src/pages/admin/CredenciamentoSeguroPage.tsx",
+        description: "Fluxo guiado e validador: pre-flight de RPC/log, checagem de documentação aprovada e irregularidades antes de emitir. Mensagens de erro acionáveis para diagnóstico.",
+        roles: ["admin", "secretaria", "coordenacao_tecnica"],
+        status: ModuleStatus.DONE,
+        dataSources: ["participant_credentials", "participants", "participant_documents", "participation_irregularities"],
+        gaps: [],
+        nextActions: [],
+      },
+      {
         id: "credenciais-modelos",
         label: "Modelos de Credencial",
         route: "/admin/credenciais/modelos",
