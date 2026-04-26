@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PWA Refresh Button Whitelist",
+  "description": "Schema da whitelist de exceções da invariante PwaRefreshButton.",
+  "type": "object",
+  "required": ["routes"],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": { "type": "string" },
+    "description": { "type": "string" },
+    "categories": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "category", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "Caminho relativo ao repo, com '/' como separador.",
+            "pattern": "^src/pages/(pwa|aovivo)/.+\\.(tsx|jsx)$"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["auth", "utility"]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
+    }
+  }
+}

@@ -13,7 +13,12 @@
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { PWA_ROOTS, isPwaRefreshException } from "./pwa-refresh-exceptions";
+import {
+  PWA_ROOTS,
+  isPwaRefreshException,
+  findOrphanWhitelistEntries,
+  WHITELIST_ROUTES,
+} from "./pwa-refresh-exceptions";
 
 const ROOTS = PWA_ROOTS;
 const REPO = process.cwd();
@@ -58,10 +63,23 @@ const rows: Row[] = files.map((abs) => {
 }).sort((a, b) => a.file.localeCompare(b.file));
 
 const missing = rows.filter((r) => !r.ok);
+const orphans = findOrphanWhitelistEntries(rows.map((r) => r.file));
 
 if (asJson) {
-  console.log(JSON.stringify({ total: rows.length, missing: missing.length, rows: showAll ? rows : missing }, null, 2));
-  process.exit(missing.length ? 1 : 0);
+  console.log(
+    JSON.stringify(
+      {
+        total: rows.length,
+        missing: missing.length,
+        orphans,
+        whitelist: WHITELIST_ROUTES,
+        rows: showAll ? rows : missing,
+      },
+      null,
+      2
+    )
+  );
+  process.exit(missing.length || orphans.length ? 1 : 0);
 }
 
 const RESET = "\x1b[0m";
@@ -87,14 +105,20 @@ if (showAll) {
   console.log("");
 }
 
-if (missing.length === 0) {
-  console.log(`${GREEN}✅ Todas as páginas PWA possuem PwaRefreshButton (direto ou via PwaHeader).${RESET}`);
+if (orphans.length) {
+  console.log(`${RED}${BOLD}⚠️  ${orphans.length} entrada(s) órfã(s) na whitelist (arquivo não existe):${RESET}`);
+  for (const f of orphans) console.log(`  ${RED}•${RESET} ${f}`);
+  console.log(`${DIM}Edite scripts/pwa-refresh-whitelist.json para remover.${RESET}\n`);
+}
+
+if (missing.length === 0 && orphans.length === 0) {
+  console.log(`${GREEN}✅ Todas as páginas PWA possuem PwaRefreshButton (direto ou via PwaHeader) e a whitelist está consistente.${RESET}`);
   process.exit(0);
 }
 
-console.log(`${RED}${BOLD}⚠️  ${missing.length} página(s) sem PwaRefreshButton:${RESET}`);
-for (const r of missing) {
-  console.log(`  ${RED}•${RESET} ${r.file}`);
+if (missing.length) {
+  console.log(`${RED}${BOLD}⚠️  ${missing.length} página(s) sem PwaRefreshButton:${RESET}`);
+  for (const r of missing) console.log(`  ${RED}•${RESET} ${r.file}`);
+  console.log(`\n${DIM}Dica: importe \`PwaHeader\` (que já embute o refresh) ou adicione \`<PwaRefreshButton />\` diretamente no header da página. Se for tela auth/utility, adicione em scripts/pwa-refresh-whitelist.json.${RESET}`);
 }
-console.log(`\n${DIM}Dica: importe \`PwaHeader\` (que já embute o refresh) ou adicione \`<PwaRefreshButton />\` diretamente no header da página.${RESET}`);
 process.exit(1);

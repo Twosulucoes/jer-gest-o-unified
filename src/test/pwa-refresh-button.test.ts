@@ -16,6 +16,8 @@ import { join, relative, resolve } from "node:path";
 import {
   PWA_ROOTS,
   isPwaRefreshException,
+  findOrphanWhitelistEntries,
+  WHITELIST_ROUTES,
 } from "../../scripts/pwa-refresh-exceptions";
 
 const REPO = resolve(__dirname, "../..");
@@ -60,13 +62,24 @@ describe("PWA: PwaRefreshButton invariant", () => {
     const inconsistentes = pages.filter(
       (p) => p.exception && (p.hasRefreshButton || p.hasPwaHeader)
     );
-    // Apenas avisa via mensagem se houver — não falha (telas podem evoluir).
     if (inconsistentes.length) {
       console.warn(
-        "[audit] Páginas marcadas como exceção mas que já têm refresh — considere remover da lista de exceções:",
+        "[audit] Páginas marcadas como exceção mas que já têm refresh — considere remover da whitelist:",
         inconsistentes.map((p) => p.rel)
       );
     }
     expect(true).toBe(true);
+  });
+
+  it("whitelist não tem entradas órfãs (arquivo inexistente)", () => {
+    const orphans = findOrphanWhitelistEntries(pages.map((p) => p.rel));
+    expect(orphans).toEqual([]);
+  });
+
+  it("toda entrada da whitelist tem categoria e justificativa", () => {
+    for (const r of WHITELIST_ROUTES) {
+      expect(["auth", "utility"]).toContain(r.category);
+      expect(r.reason.length).toBeGreaterThanOrEqual(3);
+    }
   });
 });
