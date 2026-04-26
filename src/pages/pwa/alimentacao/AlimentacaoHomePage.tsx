@@ -121,7 +121,9 @@ export default function AlimentacaoHomePage() {
       />
 
       <PwaContainer>
+        <OfflineSyncStatus />
         <AlimentacaoDuplicateAlert />
+
 
         <PwaStatTriplet
           loading={loading}
