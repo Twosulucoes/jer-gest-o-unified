@@ -397,13 +397,16 @@ export default function ArbitragemEquipePage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <Tabs defaultValue="officials">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="officials" className="gap-2">
               <Users className="h-4 w-4" />Por oficial
             </TabsTrigger>
             <TabsTrigger value="sports" className="gap-2">
               <Radio className="h-4 w-4" />Por modalidade
+            </TabsTrigger>
+            <TabsTrigger value="lote" className="gap-2">
+              <ListChecks className="h-4 w-4" />Escala em lote
             </TabsTrigger>
           </TabsList>
 
