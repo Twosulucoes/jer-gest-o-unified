@@ -73,7 +73,10 @@ export function MatchScoreFormDrawer({
   groups 
 }: Props) {
   const qc = useQueryClient();
+  const eventId = useActiveEventId();
   const isEditing = !!match;
+  
+  const { rules, isLoading: loadingRules } = useSportEventRules(eventId, sportEventId || null);
   
   const { data: schools = [] } = useModalitySchools(sportEventId);
   const { data: referees = [] } = useModalityReferees(sportId);
