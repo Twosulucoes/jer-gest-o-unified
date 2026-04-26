@@ -129,6 +129,16 @@ const navGroups: NavGroup[] = [
       { label: "Status do PWA", to: "/admin/pwa-status", icon: <Cloud className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
 
       { label: "Resultados (Coord. Modalidade)", to: "/pwa/resultados", icon: <Trophy className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as AppRole[] },
+    ],
+  },
+  {
+    id: "arbitragem", label: "Arbitragem", description: "Equipe, escalas e operação ao vivo.",
+    icon: <Gavel className="h-4 w-4" />,
+    items: [
+      { label: "Equipe de Arbitragem", to: "/admin/competicao/arbitragem?tab=officials", icon: <Users className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem"] as AppRole[] },
+      { label: "Escalas por etapa", to: "/admin/competicao/arbitragem?tab=sports", icon: <ListTree className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem"] as AppRole[] },
+      { label: "Escala em Lote", to: "/admin/competicao/arbitragem?tab=lote", icon: <ClipboardList className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem"] as AppRole[] },
+      { label: "AOVivo (PWA)", to: "/aovivo", icon: <Radio className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "arbitragem", "mesario"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde", "super_admin"] as AppRole[] },
     ],
   },
