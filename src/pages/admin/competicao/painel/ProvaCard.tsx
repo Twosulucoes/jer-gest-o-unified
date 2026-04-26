@@ -88,7 +88,8 @@ export function ProvaCard({ prova, onAction }: ProvaCardProps) {
             className="gap-2 font-semibold"
             onClick={() => onAction(prova)}
           >
-            Abrir Painel Score
+            {prova.family === "combat" ? "Abrir Painel Combat" : 
+             prova.family === "sets" ? "Abrir Painel Sets" : "Abrir Painel Score"}
           </Button>
         </div>
       </CardContent>
