@@ -20,6 +20,10 @@ export interface AutoBulletinResult {
   matchesCount: number;
   suggestedTitle: string;
   suggestedNumber: number;
+  /** IDs das partidas (competition_matches) cujos resultados entraram no boletim. */
+  matchIds: string[];
+  /** IDs das provas (sport_events) representadas no boletim. */
+  sportEventIds: string[];
 }
 
 interface MatchRow {
@@ -196,11 +200,18 @@ export async function buildAutoBulletinContent(filters: AutoBulletinFilters): Pr
 
   lines.push("", "---", "", "*Boletim gerado automaticamente. Revise antes de publicar.*");
 
+  const matchIds = matches.map((m) => m.id);
+  const usedSportEventIds = Array.from(
+    new Set(matches.map((m) => m.sport_event_id).filter((id): id is string => !!id)),
+  );
+
   return {
     contentMd: lines.join("\n"),
     itemsCount,
     matchesCount: matches.length,
     suggestedTitle,
     suggestedNumber: nextNumber,
+    matchIds,
+    sportEventIds: usedSportEventIds,
   };
 }
