@@ -1,12 +1,11 @@
-import { SupabaseClient } from "@supabase/supabase-js";
 import { dbTelemetry, DbOp } from "./dbTelemetry";
 
 /**
  * Instruments a Supabase client to automatically log SELECT, INSERT, UPDATE, and DELETE operations.
- * Uses Proxies to maintain type integrity and intercept method calls.
+ * Uses Proxies to intercept calls while preserving original types.
  */
-export function instrumentSupabaseClient<T extends SupabaseClient<any>>(client: T): T {
-  return new Proxy(client, {
+export function instrumentSupabaseClient<T extends any>(client: T): T {
+  return new Proxy(client as any, {
     get(target, prop, receiver) {
       const originalValue = Reflect.get(target, prop, receiver);
 
@@ -26,7 +25,7 @@ export function instrumentSupabaseClient<T extends SupabaseClient<any>>(client: 
 
       return typeof originalValue === 'function' ? originalValue.bind(target) : originalValue;
     }
-  });
+  }) as T;
 }
 
 function instrumentQueryBuilder(builder: any, tableName: string) {
@@ -44,7 +43,7 @@ function instrumentQueryBuilder(builder: any, tableName: string) {
       if (typeof prop === 'string' && methods[prop] && typeof originalValue === 'function') {
         return (...args: any[]) => {
           const result = originalValue.apply(target, args);
-          return instrumentThenable(result, tableName, methods[prop as string]);
+          return instrumentThenable(result, tableName, methods[prop]);
         };
       }
 
@@ -54,32 +53,33 @@ function instrumentQueryBuilder(builder: any, tableName: string) {
 }
 
 function instrumentThenable(thenable: any, tableName: string, operation: DbOp) {
-  // PostgrestFilterBuilder and others are thenable. 
-  // We wrap the then method to intercept the result.
   const originalThen = thenable.then;
 
+  // We must preserve the 'this' context and avoid breaking the promise chain
   thenable.then = function(onfulfilled?: any, onrejected?: any) {
     return originalThen.call(this, async (result: any) => {
       try {
-        let rowsAffected = 0;
-        if (result.data) {
-          rowsAffected = Array.isArray(result.data) ? result.data.length : 1;
-        } else if (result.count !== null && result.count !== undefined) {
-          rowsAffected = result.count;
-        }
-
-        // Fire and forget telemetry
-        dbTelemetry.log({
-          moduleName: 'PWA_AUTO',
-          tableName,
-          operation,
-          isSuccess: !result.error,
-          errorCode: result.error?.code,
-          rowsAffected,
-          metadata: {
-            timestamp: new Date().toISOString(),
+        if (result && typeof result === 'object') {
+          let rowsAffected = 0;
+          if (result.data) {
+            rowsAffected = Array.isArray(result.data) ? result.data.length : 1;
+          } else if (result.count !== null && result.count !== undefined) {
+            rowsAffected = result.count;
           }
-        }).catch(err => console.error('[Telemetry] Error:', err));
+
+          // Fire and forget telemetry
+          dbTelemetry.log({
+            moduleName: 'PWA_AUTO',
+            tableName,
+            operation,
+            isSuccess: !result.error,
+            errorCode: result.error?.code,
+            rowsAffected,
+            metadata: {
+              timestamp: new Date().toISOString(),
+            }
+          }).catch(err => console.error('[Telemetry] Error:', err));
+        }
       } catch (e) {
         console.error('[Telemetry] Processing error:', e);
       }
