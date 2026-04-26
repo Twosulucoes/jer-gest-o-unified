@@ -265,10 +265,24 @@ export default function CompeticaoPainelScorePage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        {(m.status === "scheduled" || m.status === "in_progress" || hasResults) && !validated && !published && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                            title="Lançar Resultado"
+                            asChild
+                          >
+                            <Link to={`confronto/${m.id}/resultado`}>
+                              <Trophy className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-8 w-8" 
+                          className="h-8 w-8 text-muted-foreground" 
+                          title="Informações"
                           asChild
                         >
                           <Link to={`/admin/competicao/partida/${m.id}`}>
