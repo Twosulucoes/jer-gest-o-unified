@@ -189,8 +189,14 @@ export default function CompeticaoPainelPage() {
 
   // Action handler — "concluida" goes to a read-only results route.
   function handleAction(prova: ProvaRow) {
+    const baseNav = stageId ? `/admin/etapa/${stageId}/competicao` : "/admin/competicao";
+
     if (prova.family === "score") {
-      navigate(`/admin/competicao/painel-score/${prova.id}`);
+      navigate(`${baseNav}/painel-score/${prova.id}`);
+      return;
+    }
+    if (prova.family === "sets") {
+      navigate(`${baseNav}/painel-sets/${prova.id}`);
       return;
     }
     if (prova.family === "sets") {
