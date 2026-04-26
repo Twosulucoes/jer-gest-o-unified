@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import type { AppRole } from "@/config/accessControl";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PwaBottomNav } from "./PwaBottomNav";
+import { VersionBadge } from "../VersionBadge";
 
 interface PwaRouteGuardProps {
   children: React.ReactNode;
@@ -116,8 +118,10 @@ export default function PwaRouteGuard({ children, allowedRoles }: PwaRouteGuardP
   }
 
   return (
-    <div className="tactical-cockpit min-h-screen">
+    <div className="tactical-cockpit min-h-screen pb-20">
       {children}
+      <PwaBottomNav />
+      <VersionBadge />
     </div>
   );
 }

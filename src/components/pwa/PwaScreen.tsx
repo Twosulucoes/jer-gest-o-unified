@@ -15,7 +15,7 @@ export function PwaScreen({
 }) {
   return (
     <div className={cn("op-screen relative flex flex-col", className)}>
-      <div className={cn("relative flex-1", !noPadding && "pb-24")}>{children}</div>
+      <div className={cn("relative flex-1", !noPadding && "pb-32")}>{children}</div>
     </div>
   );
 }
@@ -59,10 +59,9 @@ export function PwaBottomBar({ children, className }: { children: React.ReactNod
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-30 border-t border-border/70 bg-background/90 px-4 py-3 backdrop-blur-md",
+        "fixed bottom-16 left-0 right-0 z-30 border-t border-border/70 bg-background/90 px-4 py-3 backdrop-blur-md transition-all",
         className,
       )}
-      style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto w-full max-w-md">{children}</div>
     </div>
