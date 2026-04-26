@@ -792,9 +792,15 @@ function PrintVoucherDialog({
           <DialogTitle>QR do Voucher</DialogTitle>
         </DialogHeader>
         <div ref={printRef} className="text-center py-4">
-          <h1 className="text-base font-bold">{participant?.full_name ?? "—"}</h1>
+          <h1 className="text-base font-bold">
+            {voucher.voucher_type === "aggregate"
+              ? (voucher.label ?? "Voucher agregado")
+              : (participant?.full_name ?? "—")}
+          </h1>
           <p className="text-xs text-muted-foreground">
-            {participant?.participant_type} {participant?.cpf ? `· CPF ${participant.cpf}` : ""}
+            {voucher.voucher_type === "aggregate"
+              ? "Acompanhante / agregado"
+              : `${participant?.participant_type ?? ""}${participant?.cpf ? ` · CPF ${participant.cpf}` : ""}`}
           </p>
           {dataUrl ? (
             <img src={dataUrl} alt="QR Code" className="mx-auto my-4" />
