@@ -113,6 +113,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
     onSuccess: (data: any) => {
       toast.success(`${data.validated_count} resultado(s) validado(s).`);
       queryClient.invalidateQueries({ queryKey: ["governance-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["prova-status"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -131,6 +132,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
       toast.success(`${data.published_count} resultado(s) publicado(s).`);
       setSelectedBulletinId("");
       queryClient.invalidateQueries({ queryKey: ["governance-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["prova-status"] });
       queryClient.invalidateQueries({ queryKey: ["published-results-bulletin"] });
       queryClient.invalidateQueries({ queryKey: ["competition_phases"] });
       if (sportEventId) {
@@ -168,6 +170,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
       }
       setUnpublishReason("");
       queryClient.invalidateQueries({ queryKey: ["governance-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["prova-status"] });
       queryClient.invalidateQueries({ queryKey: ["published-results-bulletin"] });
       queryClient.invalidateQueries({ queryKey: ["public-results"] });
     },
