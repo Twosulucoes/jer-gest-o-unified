@@ -62,7 +62,8 @@ type MatchRow = {
 };
 
 export default function ArbitragemEquipePage() {
-  const { activeEventId } = useEventContext();
+  const { activeEventId, activeEvent } = useEventContext();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [sportFilter, setSportFilter] = useState<string>("all");
