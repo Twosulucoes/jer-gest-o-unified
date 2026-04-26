@@ -44,83 +44,35 @@ export function ProvaCard({ prova, onAction }: ProvaCardProps) {
             </div>
           </div>
 
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {prova.sport_name} · {prova.category_name}
           </p>
 
-          <div className="flex gap-4 text-xs text-muted-foreground">
-            {prova.is_collective ? (
-              <>
-                <span>
-                  <Users className="inline h-3 w-3 mr-0.5" />
-                  {prova.team_count} equipes
-                </span>
-                <span>{prova.match_count} partidas</span>
-                <span>{prova.matches_with_result} resultados</span>
-              </>
-            ) : (
-              <>
-                <span>
-                  <Users className="inline h-3 w-3 mr-0.5" />
-                  {prova.enrolled_count} inscritos
-                </span>
-                <span>{prova.match_count} partidas</span>
-                <span>{prova.matches_with_result} resultados</span>
-              </>
-            )}
-          </div>
-
-          {/* Progress steps */}
-          <div className="flex items-center gap-1 mt-1">
-            {prova.steps.map((step, i) => (
-              <div key={step.key} className="flex items-center gap-1">
-                <div
-                  className={`h-2.5 w-2.5 rounded-full ${STEP_COLORS[step.state]}`}
-                  role="img"
-                  aria-label={`${step.label}: ${
-                    step.state === "done"
-                      ? "Concluído"
-                      : step.state === "active"
-                      ? "Em andamento"
-                      : "Pendente"
-                  }`}
-                  title={`${step.label}: ${
-                    step.state === "done"
-                      ? "Concluído"
-                      : step.state === "active"
-                      ? "Em andamento"
-                      : "Pendente"
-                  }`}
-                />
-                <span className="text-[10px] text-muted-foreground hidden sm:inline">
-                  {step.label}
-                </span>
-                {i < prova.steps.length - 1 && (
-                  <span className="text-muted-foreground/30 text-[8px] hidden sm:inline">
-                    →
-                  </span>
-                )}
-              </div>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase text-muted-foreground font-semibold">Registrados</span>
+              <span className="text-lg font-bold">{prova.match_count}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase text-muted-foreground font-semibold">Pendentes</span>
+              <span className="text-lg font-bold text-amber-600">{prova.match_count - prova.results_validated}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase text-muted-foreground font-semibold">Homologados</span>
+              <span className="text-lg font-bold text-green-600">{prova.results_validated}</span>
+            </div>
           </div>
         </div>
 
-        {/* Right: Progress + Action */}
+        {/* Right: Action */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-20 space-y-1">
-            <Progress value={prova.progress} className="h-1.5" />
-            <p className="text-[10px] text-muted-foreground text-center">
-              {prova.progress}%
-            </p>
-          </div>
           <Button
-            size="sm"
-            variant={prova.status === "concluida" ? "outline" : "default"}
-            className="gap-1.5 whitespace-nowrap"
+            size="lg"
+            variant="default"
+            className="gap-2 font-semibold"
             onClick={() => onAction(prova)}
           >
-            {getActionIcon(prova.status as ProvaStatus)}
-            {getActionLabel(prova.status as ProvaStatus)}
+            Abrir Painel Score
           </Button>
         </div>
       </CardContent>

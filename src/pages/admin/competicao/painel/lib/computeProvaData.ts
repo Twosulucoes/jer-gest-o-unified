@@ -35,6 +35,7 @@ export interface ProvaRow {
   steps: StepStatus[];
   progress: number;
   firstIncompleteStep: string;
+  family?: string | null;
 }
 
 export function computeProvaData(row: any): ProvaRow {

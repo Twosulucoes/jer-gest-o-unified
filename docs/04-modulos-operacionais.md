@@ -55,32 +55,24 @@
 - **Gaps**: ❌ Sem controle temporal de permanência
 - **Dados reais**: 0 ocupações
 
-## 7. Competição (✅ Pronto — core funcional)
+## 7. Competição (✅ Pronto — Refatoração Etapa 1: Painel Score)
 - **Tabelas**: 15 tabelas (phases, groups, matches, entries, results, scores, lineups, events, penalties, officials, attachments, attempts, player_stats, discipline, match_user_assignments)
-- **Páginas admin**: fases, grupos, equipes, partidas, detalhe da partida, agenda, resultados, central, painel, pré-validação, regras, regras em lote, diagnóstico, sincronizar equipes
-- **Features implementadas**:
-  - ✅ Wizard de 8 passos (coletivas) / 7 passos (individuais time/mark) — inclui aba Auditoria
+- **Páginas admin**: painel (entry point), painel-score (novo), fases, grupos, equipes, partidas, detalhe da partida, agenda, resultados, central, pré-validação, regras, regras em lote, diagnóstico, sincronizar equipes
+- **Painel Score (Novo)**:
+  - ✅ Lista modalidades da família "score" (Futsal, Futebol, Handebol, Basquete)
+  - ✅ Cards operacionais com contagem de confrontos: registrados, pendentes, homologados
+  - ✅ Grade densa (estilo planilha) com filtros por fase, grupo e status
+  - ✅ Formulário lateral (Drawer) para criação/edição rápida de confrontos
+  - ✅ Seleção de escolas com escalação automática de equipes (sem cadastro manual)
+  - ✅ Designação de arbitragem vinculada à modalidade
+- **Features legadas (reaproveitadas)**:
+  - ✅ Wizard de 8 passos (coletivas) / 7 passos (individuais time/mark)
   - ✅ Estrutura automática de grupos com sugestão
   - ✅ Baterias/séries para individuais (distribuição automática)
   - ✅ Geração de partidas round-robin por grupo
   - ✅ Agendamento individual e em lote com detecção de conflitos
-  - ✅ Lineup de jogadores
-  - ✅ Eventos de jogo (gols, cartões, faltas)
-  - ✅ Placar por período (match_scores)
-  - ✅ Tentativas para atletismo (match_attempts)
-  - ✅ Estatísticas individuais (match_player_stats)
-  - ✅ Disciplina (match_discipline)
-  - ✅ Oficiais e designação (match_officials, match_user_assignments)
-  - ✅ Anexos de partida (match_attachments)
-  - ✅ Ranking individual por bateria (IndividualRankingCard)
-  - ✅ Ranking cross-heat consolidado (CrossHeatRankingCard/Tab)
-  - ✅ Standings de grupo (GroupStandingsTable)
-  - ✅ Painel de controle com status automático por prova
-  - ✅ Pré-validação de quórum
-  - ✅ **Transição automática de fases**: quando todos os resultados de uma fase são publicados, a fase muda para `finished` e a próxima inicia automaticamente.
-  - ✅ **Resultado inline por confronto**: `MatchResultInlineCard` permite lançar resultado, placar e vencedor diretamente no montador de disputas, com status: agendado, em andamento, encerrado, homologado, cancelado.
-  - ✅ **Progressão manual de vencedores**: `WinnerProgressionPanel` exibe vencedores de fases anteriores como itens arrastáveis para slots da próxima fase (drag and drop via @dnd-kit). Trilha de origem visível.
-  - ✅ **Aba Auditoria**: `CentralAuditTab` — linha do tempo de ações por modalidade com filtros por tipo (montagem, resultado, publicação, homologação, progressão, agenda) e período. Exibe autor, data/hora e resumo legível. Exportável em CSV.
+  - ✅ Lineup de jogadores, eventos de jogo, placar por período
+  - ✅ Auditoria de ações por modalidade (`CentralAuditTab`)
 - **Perfis**: admin, secretaria, coordenacao_tecnica, coordenador_modalidade, mesario
 - **Dados reais**: 79 provas, 26 partidas, 17 resultados, 40 equipes
 

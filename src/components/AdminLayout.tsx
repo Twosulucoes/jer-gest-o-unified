@@ -132,6 +132,16 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    id: "competicao", label: "Competição", description: "Operação das modalidades e confrontos.",
+    icon: <Trophy className="h-4 w-4" />,
+    items: [
+      { label: "Painel da Competição", to: "/admin/competicao/painel", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Central da Competição", to: "/admin/competicao/central", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Regras por Prova", to: "/admin/competicao/regras", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
+    ],
+  },
+  {
     id: "arbitragem", label: "Arbitragem", description: "Equipe, escalas e operação ao vivo.",
     icon: <Gavel className="h-4 w-4" />,
     items: [

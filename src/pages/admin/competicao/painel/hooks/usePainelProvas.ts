@@ -42,30 +42,47 @@ export function usePainelProvas({
     staleTime: 30_000,
     gcTime: 5 * 60_000,
     queryFn: async () => {
-      let query;
+      // 1. Fetch the summaries
+      let summaryQuery;
       if (stageId) {
-        query = supabase
+        summaryQuery = supabase
           .from("vw_stage_sport_event_summary" as any)
           .select("*")
           .eq("event_stage_id", stageId);
       } else {
-        query = supabase
+        summaryQuery = supabase
           .from("vw_sport_event_summary" as any)
           .select("*")
           .eq("event_id", eventId!);
       }
 
-      query = query.eq("is_active", true).order("sport_name").order("name");
+      summaryQuery = summaryQuery.eq("is_active", true).order("sport_name").order("name");
 
       if (mySportIds && mySportIds.length > 0) {
-        query = query.in("sport_id", mySportIds);
+        summaryQuery = summaryQuery.in("sport_id", mySportIds);
       } else if (isCoordModalidade && mySportIds && mySportIds.length === 0) {
-        return [] as ProvaRow[];
+        return [] as (ProvaRow & { family: string | null })[];
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data ?? []).map((row: any) => computeProvaData(row));
+      const { data: summaryData, error: summaryError } = await summaryQuery;
+      if (summaryError) throw summaryError;
+
+      // 2. Fetch rules to filter by family "score"
+      const { data: rulesData, error: rulesError } = await supabase
+        .from("sport_event_rules")
+        .select("sport_event_id, rules")
+        .eq("is_active", true);
+      
+      if (rulesError) throw rulesError;
+
+      const rulesMap = new Map(rulesData.map(r => [r.sport_event_id, (r.rules as any)?.family]));
+
+      return (summaryData ?? [])
+        .map((row: any) => ({
+          ...computeProvaData(row),
+          family: rulesMap.get(row.sport_event_id) || null
+        }))
+        .filter(p => p.family === "score");
     },
   });
 
