@@ -195,8 +195,8 @@ export default function LocaisPage() {
       await syncStages(id, values.event_stage_ids);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["venues"] });
-      queryClient.invalidateQueries({ queryKey: ["venue_event_stages"] });
+      queryClient.invalidateQueries({ queryKey: ["locais-bootstrap"] });
+      queryClient.invalidateQueries({ queryKey: ["venues-by-stage"] });
       toast.success("Local atualizado com sucesso");
       setDialogOpen(false);
       setEditingVenue(null);
