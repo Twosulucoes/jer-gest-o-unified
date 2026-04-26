@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -14,8 +16,9 @@ import {
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin } from "lucide-react";
+import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks } from "lucide-react";
 import { format, parse } from "date-fns";
+import { EscalaLoteDialog, formatMatchLabel } from "@/components/admin/arbitragem/EscalaLoteDialog";
 
 const ROLE_LABELS: Record<string, string> = {
   mesario: "Mesário",
@@ -58,6 +61,9 @@ export default function ArbitragemEquipePage() {
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [sportFilter, setSportFilter] = useState<string>("all");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<string>("officials");
+  const [selectedMatchIds, setSelectedMatchIds] = useState<Set<string>>(new Set());
+  const [escalaOpen, setEscalaOpen] = useState(false);
 
   // Etapas do evento (para filtro)
   const { data: stages = [] } = useQuery({
@@ -122,7 +128,34 @@ export default function ArbitragemEquipePage() {
     },
   });
 
-  // Perfis dos usuários designados
+  // Partidas elegíveis para escala em lote (evento + filtro de modalidade)
+  const { data: eligibleMatches = [], isLoading: loadingEligible } = useQuery({
+    queryKey: ["arb-eligible-matches", activeEventId, sportFilter],
+    enabled: !!activeEventId && activeTab === "lote",
+    queryFn: async () => {
+      let q = supabase
+        .from("competition_matches")
+        .select(`
+          id, match_number, match_date, start_time, status,
+          event_id, sport_event_id,
+          venues(name),
+          competition_phases(name),
+          sport_events!inner(
+            id, event_id, gender,
+            sports(id, name),
+            categories(name)
+          )
+        `)
+        .eq("event_id", activeEventId!)
+        .order("match_date", { ascending: true, nullsFirst: false })
+        .order("start_time", { ascending: true, nullsFirst: false })
+        .limit(500);
+      if (sportFilter !== "all") q = q.eq("sport_events.sports.id", sportFilter);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as unknown as MatchRow[];
+    },
+  });
   const { data: profiles = [] } = useQuery({
     queryKey: ["arb-profiles", userIds.length, userIds.slice(0, 5).join(",")],
     enabled: userIds.length > 0,
@@ -364,13 +397,16 @@ export default function ArbitragemEquipePage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <Tabs defaultValue="officials">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="officials" className="gap-2">
               <Users className="h-4 w-4" />Por oficial
             </TabsTrigger>
             <TabsTrigger value="sports" className="gap-2">
               <Radio className="h-4 w-4" />Por modalidade
+            </TabsTrigger>
+            <TabsTrigger value="lote" className="gap-2">
+              <ListChecks className="h-4 w-4" />Escala em lote
             </TabsTrigger>
           </TabsList>
 
@@ -488,8 +524,141 @@ export default function ArbitragemEquipePage() {
               </Accordion>
             )}
           </TabsContent>
+
+          {/* Escala em Lote */}
+          <TabsContent value="lote" className="mt-4 space-y-3">
+            <Card>
+              <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-sm">
+                  <p className="font-medium">
+                    {selectedMatchIds.size} partida(s) selecionada(s)
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Use os filtros acima (modalidade) para refinar. Limite de 500 partidas listadas.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const allIds = eligibleMatches.map((m) => m.id);
+                      const next = new Set(selectedMatchIds);
+                      const allSelected = allIds.every((id) => next.has(id));
+                      if (allSelected) allIds.forEach((id) => next.delete(id));
+                      else allIds.forEach((id) => next.add(id));
+                      setSelectedMatchIds(next);
+                    }}
+                    disabled={eligibleMatches.length === 0}
+                  >
+                    {eligibleMatches.length > 0 &&
+                    eligibleMatches.every((m) => selectedMatchIds.has(m.id))
+                      ? "Limpar seleção"
+                      : "Selecionar todas (visíveis)"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={selectedMatchIds.size === 0}
+                    onClick={() => setEscalaOpen(true)}
+                  >
+                    <UserPlus className="mr-1 h-4 w-4" />
+                    Escalar oficiais
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {loadingEligible ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : eligibleMatches.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  Nenhuma partida encontrada para os filtros atuais.
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-0">
+                  <ScrollArea className="max-h-[600px]">
+                    <ul className="divide-y">
+                      {eligibleMatches.map((m) => {
+                        const checked = selectedMatchIds.has(m.id);
+                        return (
+                          <li
+                            key={m.id}
+                            className="flex items-center gap-3 px-3 py-2 hover:bg-muted/40"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(v) => {
+                                const next = new Set(selectedMatchIds);
+                                if (v) next.add(m.id);
+                                else next.delete(m.id);
+                                setSelectedMatchIds(next);
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-medium text-sm">
+                                  #{m.match_number ?? "—"}
+                                </span>
+                                {m.sport_events?.sports?.name && (
+                                  <Badge variant="outline" className="text-[10px]">
+                                    {m.sport_events.sports.name}
+                                    {m.sport_events.categories?.name
+                                      ? ` · ${m.sport_events.categories.name}`
+                                      : ""}
+                                  </Badge>
+                                )}
+                                {m.competition_phases?.name && (
+                                  <Badge variant="secondary" className="text-[10px]">
+                                    {m.competition_phases.name}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-0.5">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {formatMatchDate(m.match_date ?? null, m.start_time ?? null)}
+                                </span>
+                                {m.venues?.name && (
+                                  <span className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {m.venues.name}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <Button asChild size="icon" variant="ghost" className="h-7 w-7">
+                              <Link to={`/admin/competicao/partida/${m.id}`}>
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </Link>
+                            </Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
         </Tabs>
       )}
+
+      <EscalaLoteDialog
+        open={escalaOpen}
+        onOpenChange={setEscalaOpen}
+        matches={Array.from(selectedMatchIds)
+          .map((id) => {
+            const m = eligibleMatches.find((x) => x.id === id);
+            return m ? { id: m.id, label: formatMatchLabel(m) } : null;
+          })
+          .filter((x): x is { id: string; label: string } => x !== null)}
+        onSuccess={() => setSelectedMatchIds(new Set())}
+      />
     </div>
   );
 }
