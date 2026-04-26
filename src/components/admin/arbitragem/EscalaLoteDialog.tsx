@@ -381,6 +381,48 @@ export function EscalaLoteDialog({ open, onOpenChange, matches, onSuccess }: Pro
                 />
               </div>
             </div>
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => setShowSuggested((v) => !v)}
+              >
+                <Users className="mr-1 h-3.5 w-3.5" />
+                {showSuggested ? "Ocultar sugestões" : "Sugerir do cadastro (árbitros, mesários)"}
+              </Button>
+              {showSuggested && (
+                <span className="text-[11px] text-muted-foreground">
+                  {isLoadingSuggested ? "Carregando..." : `${suggestedOfficials.length} disponíveis`}
+                </span>
+              )}
+            </div>
+            {showSuggested && (
+              <div className="border rounded-md max-h-[180px] overflow-y-auto divide-y bg-muted/20">
+                {isLoadingSuggested ? (
+                  <div className="p-3 text-sm text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Carregando sugestões...
+                  </div>
+                ) : suggestedOfficials.length === 0 ? (
+                  <div className="p-3 text-sm text-muted-foreground">
+                    Nenhum usuário com perfil de arbitragem cadastrado.
+                  </div>
+                ) : (
+                  suggestedOfficials.map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => addPick(u.id, u.full_name ?? "Sem nome")}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors flex items-center justify-between"
+                    >
+                      <span>{u.full_name ?? "Sem nome"}</span>
+                      <Badge variant="outline" className="text-[10px]">cadastro</Badge>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
             {search.trim().length >= 2 && (
               <div className="border rounded-md max-h-[180px] overflow-y-auto divide-y">
                 {isSearching ? (
