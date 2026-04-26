@@ -109,8 +109,8 @@ export default function CompeticaoLancamentoSetsPage() {
 
   const modalityName = (rulesData as any)?.sport_name || "Modalidade";
   
-  const schoolA = match?.entries?.[0];
-  const schoolB = match?.entries?.[1];
+  const schoolA = match?.entries?.find((e: any) => e.side === 'A' || e.side === 'left');
+  const schoolB = match?.entries?.find((e: any) => e.side === 'B' || e.side === 'right');
 
   // Config from rules
   const bestOf = (rules as any)?.scoring?.best_of || 3;
