@@ -14,6 +14,8 @@ import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
 
 import { toast } from "sonner";
+import { type IncidentModule } from "@/types/incidents";
+
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { TripInfoCard } from "@/components/pwa/transporte/TripInfoCard";
 import { FinishTripDialog } from "@/components/pwa/transporte/FinishTripDialog";
