@@ -94,6 +94,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, pending_import: 2, complete: 3 };
+const WORKFLOW_PRIORITY: Record<string, number> = { pending_import: 0, awaiting: 1, ready_to_emit: 2, complete: 3 };
 
 const PAGE_SIZE = 250;
 const FILTER_CHUNK_SIZE = 150;
@@ -157,6 +158,7 @@ export default function CredenciamentoPage() {
   const [filterType, setFilterType] = useState(searchParams.get("type") || "all");
   const [filterState, setFilterState] = useState(searchParams.get("status") || "all");
   const [filterInstitution, setFilterInstitution] = useState(searchParams.get("inst") || "all");
+  const [sortBy, setSortBy] = useState(searchParams.get("sort") || "priority");
   const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
   const [previewParticipantId, setPreviewParticipantId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
@@ -192,16 +194,17 @@ export default function CredenciamentoPage() {
     if (filterType !== "all") next.set("type", filterType); else next.delete("type");
     if (filterState !== "all") next.set("status", filterState); else next.delete("status");
     if (filterInstitution !== "all") next.set("inst", filterInstitution); else next.delete("inst");
+    if (sortBy !== "priority") next.set("sort", sortBy); else next.delete("sort");
     if (currentPage > 1) next.set("page", String(currentPage)); else next.delete("page");
     
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true });
     }
-  }, [searchTerm, filterType, filterState, filterInstitution, currentPage, searchParams, setSearchParams]);
+  }, [searchTerm, filterType, filterState, filterInstitution, sortBy, currentPage, searchParams, setSearchParams]);
 
   // Reset page on filter change
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution]);
-  useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }, [selectedEventId]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterType, filterState, filterInstitution, sortBy]);
+  useEffect(() => { setCurrentPage(1); setSelectedIds(new Set()); setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSortBy("priority"); }, [selectedEventId]);
 
 
   // --- Blocked participants ---
@@ -432,14 +435,24 @@ export default function CredenciamentoPage() {
       .sort((a, b) => {
         const stateA = getParticipantState(a);
         const stateB = getParticipantState(b);
-        const prioA = STATE_PRIORITY[stateA] ?? 9;
-        const prioB = STATE_PRIORITY[stateB] ?? 9;
+        
+        let prioA = 9;
+        let prioB = 9;
+
+        if (sortBy === "workflow") {
+          prioA = WORKFLOW_PRIORITY[stateA] ?? 9;
+          prioB = WORKFLOW_PRIORITY[stateB] ?? 9;
+        } else if (sortBy === "priority") {
+          prioA = STATE_PRIORITY[stateA] ?? 9;
+          prioB = STATE_PRIORITY[stateB] ?? 9;
+        }
+
         if (prioA !== prioB) return prioA - prioB;
         const nameA = a.person?.full_name ?? "";
         const nameB = b.person?.full_name ?? "";
         return nameA.localeCompare(nameB);
       });
-  }, [participants, searchTerm, filterType, filterState, filterInstitution, blockedParticipantIds, getParticipantState, getInstitutionId, activeCredMap]);
+  }, [participants, searchTerm, filterType, filterState, filterInstitution, sortBy, blockedParticipantIds, getParticipantState, getInstitutionId, activeCredMap]);
 
   // --- Pagination ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -819,7 +832,7 @@ export default function CredenciamentoPage() {
     }
   };
 
-  const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "";
+  const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "" || sortBy !== "priority";
 
   const stats = {
     total: participants.length,
@@ -967,6 +980,16 @@ export default function CredenciamentoPage() {
                   )}
                 </SelectContent>
               </Select>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[160px] h-11 bg-background">
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="priority">Prioridade</SelectItem>
+                  <SelectItem value="workflow">Workflow</SelectItem>
+                  <SelectItem value="name">Nome (A-Z)</SelectItem>
+                </SelectContent>
+              </Select>
               <SearchableSelect
                 value={filterInstitution}
                 onChange={setFilterInstitution}
@@ -981,7 +1004,7 @@ export default function CredenciamentoPage() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSearchTerm(""); }}
+                  onClick={() => { setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSearchTerm(""); setSortBy("priority"); }}
                   className="h-11 w-11 text-muted-foreground hover:text-foreground"
                   title="Limpar filtros"
                 >
@@ -1043,7 +1066,7 @@ export default function CredenciamentoPage() {
                   : "Nenhum participante importado para este evento."}
               </p>
               {hasActiveFilters && (
-                <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); }}>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSearchTerm(""); setFilterType("all"); setFilterState("all"); setFilterInstitution("all"); setSortBy("priority"); }}>
                   Limpar filtros
                 </Button>
               )}
