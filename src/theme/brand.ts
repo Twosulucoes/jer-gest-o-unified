@@ -6,9 +6,9 @@ export const brand = {
     primary: '#0B2B5A',
     primaryHover: '#072044',
     accentBlue: '#0F5AA6',
-    accentTeal: '#0BA3A3',
-    accentGreen: '#33B249',
-    accentLime: '#B5E12A',
+    accentTeal: '#087F7F', // Adjusted for 4.5:1 contrast
+    accentGreen: '#1E6B2C', // Adjusted for 4.5:1 contrast
+    accentLime: '#7BA60D', // Adjusted for 4.5:1 contrast
     text: '#0B1220',
     muted: '#64748B',
     border: '#E2E8F0',
