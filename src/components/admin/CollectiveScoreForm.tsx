@@ -136,6 +136,14 @@ export default function CollectiveScoreForm({
                   />
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-xs">Pênaltis (shootout)</Label>
+                  <Input
+                    placeholder="Ex: 5"
+                    value={s.shootout}
+                    onChange={(e) => updateScore(entry.id, "shootout", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs">Desfecho</Label>
                   <Select value={s.outcome || "__none__"} onValueChange={(v) => updateScore(entry.id, "outcome", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
