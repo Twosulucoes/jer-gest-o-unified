@@ -313,7 +313,10 @@ export default function CompeticaoPainelScorePage() {
                                   size="icon" 
                                   className="h-8 w-8 text-destructive hover:text-destructive"
                                   title="Excluir"
-                                  onClick={() => handleDelete(m.id)}
+                                  onClick={() => {
+                                    setMatchToDelete(m.id);
+                                    setShowDeleteConfirm(true);
+                                  }}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
