@@ -61,6 +61,10 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
   } | null>(null);
   const [generating, setGenerating] = useState(false);
 
+  // Modo "separar por fase": além do agregado em rascunho, gera 1 boletim por fase.
+  const [splitByPhase, setSplitByPhase] = useState(false);
+  const [phasesPreview, setPhasesPreview] = useState<PhaseBulletin[]>([]);
+
   // Reset ao abrir
   useEffect(() => {
     if (!open) return;
