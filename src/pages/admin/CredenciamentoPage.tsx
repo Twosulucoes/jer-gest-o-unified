@@ -395,7 +395,6 @@ export default function CredenciamentoPage() {
   }, [activeCredMap]);
 
   // --- Filter & Sort ---
-  const STATE_PRIORITY: Record<string, number> = { ready_to_emit: 0, awaiting: 1, pending_import: 2, complete: 3 };
 
   const filtered = useMemo(() => {
     const normalizedTerm = searchTerm.trim().toLowerCase();
