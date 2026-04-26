@@ -35,6 +35,8 @@ import {
   Wifi,
   Battery,
   Signal,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +45,7 @@ import { Button } from "@/components/ui/button";
 import { brand } from "@/theme/brand";
 import { systemMap } from "@/config/systemMap";
 import twoLogo from "@/assets/two-solucoes-logo.png";
+import { exportEntregaTecnicaPdf } from "@/components/public/EntregaTecnicaPdfExporter";
 
 interface VersionInfo {
   appVersion: string;
