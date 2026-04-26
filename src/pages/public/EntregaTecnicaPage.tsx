@@ -1,252 +1,370 @@
-import { CheckCircle2, Smartphone, Trophy, Users, Paperclip, Send, LogIn, Mail, MessageCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { 
+  CheckCircle2, 
+  Smartphone, 
+  Trophy, 
+  Users, 
+  Mail, 
+  ExternalLink, 
+  ShieldCheck, 
+  LayoutDashboard, 
+  FileJson, 
+  Globe, 
+  Database, 
+  Github, 
+  Rocket,
+  CheckSquare,
+  FileSearch,
+  UserPlus,
+  Link,
+  QrCode,
+  TrendingUp,
+  Share2
+} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+
+interface VersionInfo {
+  appVersion: string;
+  environment: string;
+  branch: string;
+  commit: string;
+  commitFull: string;
+  buildDate: string;
+  supabaseProjectRef: string;
+}
 
 const PRIMARY = "#0B2B5A";
 const BLUE = "#0F5AA6";
-const TEAL = "#0BA3A3";
-const GREEN = "#33B249";
-const LIME = "#B5E12A";
 
-const SYSTEM_URL = typeof window !== "undefined" ? window.location.origin : "";
-
-const features = [
-  {
-    icon: Trophy,
-    color: BLUE,
-    title: "Lançamento de Resultados",
-    description:
-      "Lance placar e resultado de cada partida por modalidade. Suporte a esportes coletivos e individuais.",
-    badge: "Novo",
-    badgeColor: GREEN,
-  },
-  {
-    icon: Users,
-    color: TEAL,
-    title: "Equipe de Arbitragem",
-    description:
-      "Registre árbitros, mesários, delegados e cronometristas vinculados a cada partida.",
-  },
-  {
-    icon: Paperclip,
-    color: "#8B5CF6",
-    title: "Súmulas e Fotos",
-    description:
-      "Anexe súmulas em PDF e fotos da partida diretamente no sistema, organizadas por jogo.",
-  },
-  {
-    icon: Send,
-    color: "#F59E0B",
-    title: "Publicação no Portal",
-    description:
-      "Com um toque, publique os resultados no portal público e inclua no Boletim do Dia.",
-  },
+const environments = [
+  { name: "Teste (Staging)", url: "https://teste.jers.com.br", icon: ShieldCheck, status: "Ativo", color: "text-blue-500" },
+  { name: "Produção", url: "https://gestao.jers.com.br", icon: Rocket, status: "Aguardando", color: "text-green-500" },
+  { name: "GitHub Repo", url: "#", icon: Github, status: "Privado", color: "text-gray-700" },
+  { name: "Vercel Hosting", url: "#", icon: Globe, status: "Ativo", color: "text-black" },
+  { name: "Supabase DB", url: "#", icon: Database, status: "Ativo", color: "text-emerald-500" },
 ];
 
-const steps = [
-  { number: "01", text: "Acesse o link do sistema no seu celular ou computador." },
-  { number: "02", text: "Entre com as credenciais fornecidas pela equipe técnica." },
-  { number: "03", text: "Selecione a modalidade que você coordena." },
-  { number: "04", text: "Abra a partida e lance o resultado em segundos." },
+const modules = [
+  { name: "Admin", desc: "Gestão central de eventos e etapas", icon: LayoutDashboard },
+  { name: "Importação", desc: "Processamento de planilhas de inscritos", icon: FileJson },
+  { name: "Credenciamento", desc: "Geração e validação de QR Codes", icon: QrCode },
+  { name: "PWA Operacional", desc: "Uso em campo para logística e suporte", icon: Smartphone },
+  { name: "Resultados", desc: "Lançamento em tempo real por coordenadores", icon: Trophy },
+  { name: "Portal Público", desc: "Divulgação de boletins e classificações", icon: Globe },
+];
+
+const roles = [
+  { id: "super_admin", name: "Super Admin", scope: "Acesso total ao sistema e infraestrutura" },
+  { id: "admin", name: "Administrador", scope: "Gestão completa do evento e usuários" },
+  { id: "secretaria", name: "Secretaria", scope: "Gestão de inscrições e credenciamento" },
+  { id: "delegação", name: "Delegado", scope: "Gestão de sua própria delegação (PWA)" },
+  { id: "coordenador_modalidade", name: "Coordenador", scope: "Lançamento de resultados de sua modalidade" },
+  { id: "operacionais", name: "Operacionais", scope: "Transporte, Alimentação e Alojamento" },
+];
+
+const tutorials = [
+  { title: "Importar inscrições", icon: FileJson, color: "bg-blue-500" },
+  { title: "Corrigir pendências", icon: FileSearch, color: "bg-orange-500" },
+  { title: "Cadastrar usuários", icon: UserPlus, color: "bg-teal-500" },
+  { title: "Vincular perfis", icon: Link, color: "bg-purple-500" },
+  { title: "Validar credencial", icon: QrCode, color: "bg-pink-500" },
+  { title: "Lançar resultados", icon: TrendingUp, color: "bg-green-500" },
+  { title: "Publicar resultados", icon: Share2, color: "bg-blue-600" },
+];
+
+const checklistItems = [
+  "Acesso ao sistema com autenticação segura",
+  "Importação de dados de teste (planilhas Excel)",
+  "Tratamento de duplicidades e pendências",
+  "Geração de QR Code para participantes",
+  "Lançamento de resultados (coletivos e individuais)",
+  "Publicação de boletins no portal público",
+  "Visualização de relatórios consolidados",
+  "Sincronização offline-first básica no PWA",
 ];
 
 export default function EntregaTecnicaPage() {
+  const [version, setVersion] = useState<VersionInfo | null>(null);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    fetch("/version.json", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => setVersion(data))
+      .catch(() => setVersion(null));
+  }, []);
+
+  const toggleCheck = (item: string) => {
+    setCheckedItems(prev => ({ ...prev, [item]: !prev[item] }));
+  };
+
   return (
-    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: "#F6F8FC", minHeight: "100vh", color: "#0B1220" }}>
-
-      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <header style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, ${BLUE} 55%, ${TEAL} 100%)`, padding: "0 1rem" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "2.5rem 0 3rem" }}>
-          {/* Logo row */}
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
-            <img
-              src="/brand/logo.png"
-              alt="JER Gestão"
-              style={{ height: 48, objectFit: "contain", filter: "brightness(0) invert(1)" }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-            <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.3)" }} />
-            <div>
-              <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", margin: 0 }}>
-                53º Jogos Escolares de Roraima
-              </p>
-              <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, margin: 0 }}>IDJUV · Instituto Acolher</p>
-            </div>
-          </div>
-
-          {/* Badge */}
-          <span style={{
-            display: "inline-block", background: LIME, color: PRIMARY,
-            fontSize: 11, fontWeight: 800, letterSpacing: "0.06em",
-            textTransform: "uppercase", padding: "4px 12px", borderRadius: 99, marginBottom: "1rem",
-          }}>
-            Módulo entregue ✓
-          </span>
-
-          <h1 style={{ color: "#fff", fontSize: "clamp(1.6rem, 5vw, 2.4rem)", fontWeight: 800, margin: "0 0 0.75rem", lineHeight: 1.2, fontFamily: "'Montserrat', sans-serif" }}>
-            Sistema de Gestão de<br />Resultados — JERs 2026
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 pb-20">
+      
+      {/* ── Capa / Hero ────────────────────────────────────────────────────────── */}
+      <header 
+        className="relative overflow-hidden text-white pt-20 pb-24 px-6 text-center"
+        style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, ${BLUE} 100%)` }}
+      >
+        <div className="max-w-4xl mx-auto relative z-10">
+          <Badge className="mb-4 bg-lime-400 text-slate-900 font-bold hover:bg-lime-500 transition-colors uppercase tracking-wider">
+            Entrega Técnica — 2026
+          </Badge>
+          <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
+            Sistema JER 2026
           </h1>
-          <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "1rem", margin: "0 0 2rem", maxWidth: 500, lineHeight: 1.6 }}>
-            O módulo de lançamento de resultados está pronto para uso nos 53ºJERs.
-            Acesse pelo celular, registre os dados e publique em tempo real.
+          <p className="text-xl opacity-90 max-w-2xl mx-auto leading-relaxed">
+            Plataforma integrada para gestão total dos 53º Jogos Escolares de Roraima.
+            Ambientes, módulos e processos consolidados.
           </p>
-
-          <a
-            href="/pwa/login"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "#fff", color: PRIMARY,
-              fontWeight: 700, fontSize: "0.95rem",
-              padding: "0.8rem 1.8rem", borderRadius: 10, textDecoration: "none",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-            }}
-          >
-            <LogIn size={18} />
-            Acessar o sistema
-          </a>
         </div>
+        
+        {/* Decorative element */}
+        <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+        <div className="absolute -top-12 -left-12 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl"></div>
       </header>
 
-      {/* ── Funcionalidades ───────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: 720, margin: "0 auto", padding: "3rem 1rem 2rem" }}>
-        <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: PRIMARY, marginBottom: "0.4rem", fontFamily: "'Montserrat', sans-serif" }}>
-          O que está disponível
-        </h2>
-        <p style={{ color: "#64748B", marginBottom: "1.5rem", fontSize: "0.95rem" }}>
-          Quatro funcionalidades integradas, todas acessíveis pelo celular.
-        </p>
+      <main className="max-w-6xl mx-auto px-6 -mt-10">
+        
+        {/* ── Visão Geral ─────────────────────────────────────────────────────── */}
+        <section className="mb-12">
+          <Card className="border-none shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <ShieldCheck className="text-blue-600" />
+                Visão Geral do Sistema
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-slate-600 leading-relaxed text-lg">
+              <p>
+                O Sistema JER 2026 foi desenvolvido para modernizar a gestão esportiva de Roraima, 
+                eliminando o uso extensivo de papel e centralizando informações de inscrições, 
+                logística e resultados em tempo real. Com foco em mobilidade, o sistema atende 
+                desde a coordenação central até os técnicos em quadra.
+              </p>
+            </CardContent>
+          </Card>
+        </section>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-          {features.map((f) => {
-            const Icon = f.icon;
-            return (
-              <div key={f.title} style={{
-                background: "#fff", borderRadius: 14, padding: "1.25rem",
-                border: "1px solid #E2E8F0", position: "relative", overflow: "hidden",
-              }}>
-                {f.badge && (
-                  <span style={{
-                    position: "absolute", top: 12, right: 12,
-                    background: f.badgeColor, color: "#fff",
-                    fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 99,
-                  }}>{f.badge}</span>
-                )}
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10, marginBottom: "0.75rem",
-                  background: `${f.color}18`, display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <Icon size={20} color={f.color} />
-                </div>
-                <h3 style={{ fontWeight: 700, fontSize: "0.95rem", margin: "0 0 0.4rem", color: "#0B1220" }}>{f.title}</h3>
-                <p style={{ color: "#64748B", fontSize: "0.85rem", margin: 0, lineHeight: 1.5 }}>{f.description}</p>
+        <div className="grid md:grid-cols-3 gap-8">
+          
+          {/* ── Coluna Esquerda ────────────────────────────────────────────────── */}
+          <div className="md:col-span-2 space-y-12">
+            
+            {/* Ambientes */}
+            <section>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <Globe className="text-blue-500" /> Ambientes
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {environments.map((env) => (
+                  <Card key={env.name} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className={`p-2 rounded-lg bg-slate-100 ${env.color}`}>
+                        <env.icon size={24} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold text-sm">{env.name}</p>
+                          <Badge variant="outline" className="text-[10px] uppercase font-bold px-1.5 h-4">
+                            {env.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-slate-500 truncate">{env.url}</p>
+                      </div>
+                      <ExternalLink size={14} className="text-slate-300" />
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            );
-          })}
-        </div>
-      </section>
+            </section>
 
-      {/* ── Acesso pelo celular ───────────────────────────────────────────────── */}
-      <section style={{ background: "#fff", borderTop: "1px solid #E2E8F0", borderBottom: "1px solid #E2E8F0" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "2.5rem 1rem", display: "grid", gridTemplateColumns: "auto 1fr", gap: "2rem", alignItems: "center" }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: 20,
-            background: `linear-gradient(135deg, ${PRIMARY}, ${TEAL})`,
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-          }}>
-            <Smartphone size={36} color="#fff" />
+            {/* Módulos Entregues */}
+            <section>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <CheckCircle2 className="text-green-500" /> Módulos Entregues
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-6">
+                {modules.map((mod) => (
+                  <div key={mod.name} className="flex gap-4 p-4 bg-white rounded-xl shadow-sm border border-slate-100">
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                      <mod.icon size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-800">{mod.name}</h3>
+                      <p className="text-sm text-slate-500 leading-tight">{mod.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Perfis de Acesso */}
+            <section>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <Users className="text-purple-500" /> Perfis de Acesso
+              </h2>
+              <Card>
+                <div className="divide-y divide-slate-100">
+                  {roles.map((role) => (
+                    <div key={role.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-slate-50 transition-colors">
+                      <span className="font-mono text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                        {role.id}
+                      </span>
+                      <span className="font-semibold text-slate-700">{role.name}</span>
+                      <span className="text-xs text-slate-500 sm:w-1/2 sm:text-right">{role.scope}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </section>
+
+            {/* Tutoriais Rápidos */}
+            <section>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <Smartphone className="text-orange-500" /> Tutoriais Rápidos
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {tutorials.map((tut) => (
+                  <Card key={tut.title} className="group hover:border-blue-200 cursor-pointer transition-all hover:-translate-y-1">
+                    <CardContent className="p-4 flex flex-col items-center text-center">
+                      <div className={`w-10 h-10 ${tut.color} text-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                        <tut.icon size={20} />
+                      </div>
+                      <p className="text-xs font-bold text-slate-700">{tut.title}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </section>
+
           </div>
-          <div>
-            <h2 style={{ fontWeight: 800, fontSize: "1.15rem", margin: "0 0 0.4rem", color: PRIMARY, fontFamily: "'Montserrat', sans-serif" }}>
-              100% mobile — funciona no celular
-            </h2>
-            <p style={{ color: "#64748B", fontSize: "0.9rem", margin: "0 0 1rem", lineHeight: 1.6 }}>
-              Desenvolvido para uso na beira da quadra. Abra pelo navegador do seu celular, sem precisar instalar nada.
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-              {["Seletor de modalidade", "Placar por toque", "Upload de súmula", "Publicação imediata"].map((tag) => (
-                <span key={tag} style={{
-                  background: "#F1F5F9", color: "#475569", fontSize: 12,
-                  fontWeight: 600, padding: "3px 10px", borderRadius: 99,
-                }}>{tag}</span>
-              ))}
-            </div>
+
+          {/* ── Coluna Direita ─────────────────────────────────────────────────── */}
+          <div className="space-y-12">
+            
+            {/* Checklist de Homologação */}
+            <section>
+              <Card className="sticky top-6 border-blue-100">
+                <CardHeader className="bg-blue-50/50">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <CheckSquare className="text-blue-600" />
+                    Checklist de Homologação
+                  </CardTitle>
+                  <CardDescription>
+                    Critérios aceitos para entrega oficial
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  {checklistItems.map((item) => (
+                    <div key={item} className="flex items-start space-x-3 group">
+                      <Checkbox 
+                        id={item} 
+                        checked={checkedItems[item]} 
+                        onCheckedChange={() => toggleCheck(item)}
+                        className="mt-1 border-slate-300 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                      />
+                      <label 
+                        htmlFor={item} 
+                        className={`text-sm leading-tight cursor-pointer transition-colors ${checkedItems[item] ? 'text-slate-400 line-through' : 'text-slate-700 group-hover:text-blue-600'}`}
+                      >
+                        {item}
+                      </label>
+                    </div>
+                  ))}
+                  
+                  <Separator className="my-6" />
+                  
+                  <div className="text-center">
+                    <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">Progresso</p>
+                    <div className="w-full bg-slate-100 rounded-full h-2 mb-2">
+                      <div 
+                        className="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                        style={{ width: `${(Object.values(checkedItems).filter(Boolean).length / checklistItems.length) * 100}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs font-bold text-slate-600">
+                      {Object.values(checkedItems).filter(Boolean).length} de {checklistItems.length} itens validados
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* Bloco de Versão */}
+            <section>
+              <Card className="bg-slate-900 text-slate-300 border-none">
+                <CardHeader>
+                  <CardTitle className="text-white text-sm flex items-center gap-2">
+                    <Database size={16} /> Status do Build
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-xs font-mono">
+                  {version ? (
+                    <>
+                      <div className="flex justify-between border-b border-white/10 pb-2">
+                        <span>Versão</span>
+                        <span className="text-lime-400">v{version.appVersion}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-white/10 pb-2">
+                        <span>Ambiente</span>
+                        <span className="text-blue-400">{version.environment}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-white/10 pb-2">
+                        <span>Commit</span>
+                        <span className="text-white">{version.commit}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Build Data</span>
+                        <span className="text-slate-400">{new Date(version.buildDate).toLocaleString('pt-BR')}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-slate-500 italic">Carregando informações do build...</p>
+                  )}
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* Suporte e Próximos Passos */}
+            <section>
+              <h3 className="text-lg font-bold mb-4">Próximos Passos</h3>
+              <ul className="space-y-4">
+                <li className="flex gap-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">1</div>
+                  <p className="text-sm text-slate-600">Treinamento intensivo com coordenadores de modalidade.</p>
+                </li>
+                <li className="flex gap-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">2</div>
+                  <p className="text-sm text-slate-600">Migração final dos dados de produção e limpeza de testes.</p>
+                </li>
+                <li className="flex gap-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">3</div>
+                  <p className="text-sm text-slate-600">Acompanhamento presencial durante a abertura dos jogos.</p>
+                </li>
+              </ul>
+              
+              <div className="mt-8 p-6 bg-blue-600 rounded-2xl text-white">
+                <p className="font-bold mb-2">Suporte Técnico 24/7</p>
+                <p className="text-sm opacity-80 mb-4">Estamos disponíveis para resolver qualquer intercorrência durante o evento.</p>
+                <Button variant="secondary" className="w-full bg-white text-blue-600 hover:bg-slate-100" asChild>
+                  <a href="mailto:suporte@twosolucoes.com.br">
+                    <Mail className="mr-2" size={16} /> Falar com suporte
+                  </a>
+                </Button>
+              </div>
+            </section>
+
           </div>
         </div>
-      </section>
+      </main>
 
-      {/* ── Como usar ─────────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: 720, margin: "0 auto", padding: "2.5rem 1rem" }}>
-        <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: PRIMARY, marginBottom: "1.5rem", fontFamily: "'Montserrat', sans-serif" }}>
-          Como acessar
-        </h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {steps.map((s) => (
-            <div key={s.number} style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 10, background: PRIMARY,
-                color: LIME, fontSize: 12, fontWeight: 900,
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}>{s.number}</div>
-              <div style={{ paddingTop: 8, color: "#334155", fontSize: "0.92rem", lineHeight: 1.5 }}>{s.text}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{
-          marginTop: "2rem", background: `${PRIMARY}08`, border: `1.5px solid ${PRIMARY}20`,
-          borderRadius: 12, padding: "1.25rem",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-            <CheckCircle2 size={16} color={GREEN} />
-            <span style={{ fontWeight: 700, fontSize: "0.9rem", color: PRIMARY }}>Link de acesso</span>
-          </div>
-          <a
-            href="/pwa/login"
-            style={{ color: BLUE, fontWeight: 600, fontSize: "0.95rem", wordBreak: "break-all" }}
-          >
-            {SYSTEM_URL || "https://tecnica.jers.com.br"}/pwa/login
-          </a>
-          <p style={{ color: "#64748B", fontSize: "0.82rem", margin: "0.5rem 0 0" }}>
-            As credenciais de acesso foram enviadas separadamente por e-mail.
-          </p>
-        </div>
-      </section>
-
-      {/* ── Suporte ───────────────────────────────────────────────────────────── */}
-      <section style={{ background: PRIMARY, padding: "0 1rem" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "2.5rem 0" }}>
-          <h2 style={{ color: "#fff", fontWeight: 800, fontSize: "1.15rem", margin: "0 0 0.5rem", fontFamily: "'Montserrat', sans-serif" }}>
-            Precisa de ajuda?
-          </h2>
-          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem", margin: "0 0 1.5rem" }}>
-            Nossa equipe está disponível durante todo o evento.
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
-            <a href="mailto:institutoacolherr@gmail.com" style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "rgba(255,255,255,0.12)", color: "#fff",
-              padding: "0.6rem 1.2rem", borderRadius: 8, textDecoration: "none", fontSize: "0.85rem", fontWeight: 600,
-            }}>
-              <Mail size={15} />
-              institutoacolherr@gmail.com
-            </a>
-            <a href="mailto:caiocorrea.ctb@gmail.com" style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "rgba(255,255,255,0.12)", color: "#fff",
-              padding: "0.6rem 1.2rem", borderRadius: 8, textDecoration: "none", fontSize: "0.85rem", fontWeight: 600,
-            }}>
-              <Mail size={15} />
-              caiocorrea.ctb@gmail.com
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Footer ───────────────────────────────────────────────────────────── */}
-      <footer style={{ background: "#0A1F40", padding: "1.5rem 1rem", textAlign: "center" }}>
-        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.78rem", margin: 0 }}>
-          53º Jogos Escolares de Roraima · IDJUV · Instituto Acolher
-          <br />
-          <span style={{ fontSize: "0.72rem" }}>Plataforma desenvolvida por Two Soluções · twosulucoes.com.br</span>
-        </p>
+      <footer className="mt-20 py-10 text-center text-slate-400 text-xs border-t border-slate-200">
+        <p>© 2026 JER - Jogos Escolares de Roraima. Desenvolvido por Two Soluções.</p>
       </footer>
 
     </div>
