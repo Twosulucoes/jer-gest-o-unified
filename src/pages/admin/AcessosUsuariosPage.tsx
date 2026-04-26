@@ -41,18 +41,78 @@ import SportLinksDialog from "@/components/admin/SportLinksDialog";
 import StageLinksDialog from "@/components/admin/StageLinksDialog";
 
 const ROLES = [
-  { value: "super_admin", label: "Super Admin" },
-  { value: "admin", label: "Administrador" },
-  { value: "secretaria", label: "Secretaria" },
-  { value: "coordenacao_tecnica", label: "Coord. Técnica" },
-  { value: "coordenador_modalidade", label: "Coord. Modalidade" },
-  { value: "transporte", label: "Transporte (PWA)" },
-  { value: "alimentacao", label: "Alimentação (PWA)" },
-  { value: "alojamento", label: "Alojamento (PWA)" },
-  { value: "delegacao", label: "Delegação (PWA)" },
-  { value: "arbitragem", label: "Arbitragem (PWA)" },
-  { value: "mesario", label: "Mesário / Ao Vivo (PWA)" },
-  { value: "cde", label: "CDE (Protestos)" },
+  { 
+    value: "super_admin", 
+    label: "Super Admin", 
+    description: "Acesso total e irrestrito a todas as funções, configurações e logs do sistema.",
+    areas: ["Global", "Sistema", "Admin", "PWA"]
+  },
+  { 
+    value: "admin", 
+    label: "Administrador", 
+    description: "Gestão completa do evento, participantes, delegações e usuários.",
+    areas: ["Admin Global", "Etapas", "Relatórios"]
+  },
+  { 
+    value: "secretaria", 
+    label: "Secretaria", 
+    description: "Operação de cadastros, inscrições, documentos e suporte aos usuários.",
+    areas: ["Cadastro", "Participantes", "Documentos"]
+  },
+  { 
+    value: "coordenacao_tecnica", 
+    label: "Coord. Técnica", 
+    description: "Gestão técnica de competições, chaves, resultados e classificação.",
+    areas: ["Competição", "Resultados", "Técnica"]
+  },
+  { 
+    value: "coordenador_modalidade", 
+    label: "Coord. Modalidade", 
+    description: "Gestão específica de uma modalidade e suas provas vinculadas.",
+    areas: ["Modalidade", "Súmulas", "Resultados"]
+  },
+  { 
+    value: "transporte", 
+    label: "Transporte (PWA)", 
+    description: "Gestão operacional de frotas, rotas e horários via aplicativo.",
+    areas: ["Logística", "Transporte App"]
+  },
+  { 
+    value: "alimentacao", 
+    label: "Alimentação (PWA)", 
+    description: "Controle de acesso a refeitórios e consumo de refeições via QR Code.",
+    areas: ["Refeitório", "Consumo App"]
+  },
+  { 
+    value: "alojamento", 
+    label: "Alojamento (PWA)", 
+    description: "Gestão de ocupação, check-in e check-out em unidades de alojamento.",
+    areas: ["Alojamento App", "Ocupação"]
+  },
+  { 
+    value: "delegacao", 
+    label: "Delegação (PWA)", 
+    description: "Consulta de inscritos e documentos da delegação pelo aplicativo.",
+    areas: ["Delegado App", "Inscrições"]
+  },
+  { 
+    value: "arbitragem", 
+    label: "Arbitragem (PWA)", 
+    description: "Registro de ocorrências e súmulas simplificadas em tempo real.",
+    areas: ["Súmula App", "Arbitragem"]
+  },
+  { 
+    value: "mesario", 
+    label: "Mesário / Ao Vivo (PWA)", 
+    description: "Controle de placar, tempo e estatísticas das partidas ao vivo.",
+    areas: ["Live Streaming", "Placar App"]
+  },
+  { 
+    value: "cde", 
+    label: "CDE (Protestos)", 
+    description: "Análise e parecer técnico sobre protestos e irregularidades.",
+    areas: ["Jurídico", "Protestos"]
+  },
 ];
 
 const OPERATIONAL_ROLES = ROLES.filter((r) => !["super_admin", "admin", "secretaria"].includes(r.value));
