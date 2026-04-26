@@ -33,32 +33,6 @@ const MODULE_OPTIONS = [
   { value: "/aovivo", label: "Módulo Ao Vivo / Mesário", icon: Radio, slug: "aovivo", title: "Ao Vivo" },
 ];
 
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 40);
-}
-
-function QrCodeCanvas({ value, size = 120 }: { value: string; size?: number }) {
-  // Simple QR placeholder using a data URL approach
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div
-        className="rounded-lg border bg-white p-2 flex items-center justify-center"
-        style={{ width: size + 16, height: size + 16 }}
-      >
-        <div className="flex flex-col items-center justify-center text-muted-foreground" style={{ width: size, height: size }}>
-          <QrCode className="h-12 w-12 text-primary/60" />
-          <span className="text-[10px] mt-1 text-center break-all leading-tight max-w-[100px]">{value}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function LinksPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
