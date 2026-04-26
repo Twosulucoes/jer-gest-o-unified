@@ -64,8 +64,8 @@ export default function PublicResultsPage() {
             teams(name),
             participant_sport_events(participants(people(full_name)))
           ),
-          competition_matches(
-            match_number, match_date, status,
+          competition_matches!inner(
+            match_number, match_date, status, sport_event_id,
             competition_phases(name),
             competition_groups(name)
           )
