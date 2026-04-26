@@ -28,7 +28,7 @@ export default function CoordenacaoHomePage() {
   const navigate = useNavigate();
   const { activeEventId } = useEventContext();
   const [loading, setLoading] = useState(true);
-  const [kpis, setKpis] = useState({ partidasHoje: 0, emAndamento: 0, finalizadas: 0, totalPartidas: 0 });
+  const [kpis, setKpis] = useState({ partidasHoje: 0, emAndamento: 0, finalizadas: 0, totalPartidas: 0, pendingIncidents: 0 });
   const [agenda, setAgenda] = useState<MatchRow[]>([]);
 
   usePwaAudit("coordenacao-tecnica");
@@ -68,7 +68,7 @@ export default function CoordenacaoHomePage() {
       setAgenda((agendaRes.data as any) || []);
       setLoading(false);
     })();
-  }, [navigate]);
+  }, [navigate, activeEventId]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -101,14 +101,17 @@ export default function CoordenacaoHomePage() {
           ]}
         />
 
-        {kpis.emAndamento > 0 && (
-          <div className="op-card border-destructive/40 bg-destructive/10 p-3 flex items-center gap-3">
+        {kpis.pendingIncidents > 0 && (
+          <button 
+            onClick={() => navigate("/pwa/coordenacao-tecnica/incidentes")}
+            className="op-card w-full border-destructive/40 bg-destructive/10 p-3 flex items-center gap-3 text-left transition-all active:scale-[0.98]"
+          >
             <AlertOctagon className="h-5 w-5 shrink-0 text-destructive" />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold text-destructive uppercase tracking-wider">Alertas ativos</p>
-              <p className="text-sm font-semibold text-foreground">{kpis.emAndamento} partida(s) em andamento</p>
+              <p className="text-sm font-semibold text-foreground">{kpis.pendingIncidents} ocorrência(s) pendente(s)</p>
             </div>
-          </div>
+          </button>
         )}
 
         {agenda.length > 0 && (
