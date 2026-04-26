@@ -66,7 +66,7 @@ export default function PublicResultsPage() {
       const { data, error } = await supabase
         .from("competition_match_results")
         .select(`
-          id, outcome, score, time_ms, distance_cm, points, position, result_status,
+          id, outcome, score, time_ms, distance_cm, points, position, result_status, combat_detail,
           published_at,
           competition_match_entries(
             side,
