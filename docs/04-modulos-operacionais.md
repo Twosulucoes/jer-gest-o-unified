@@ -67,6 +67,7 @@
   - ✅ Aba Lutas: grade densa (estilo planilha) com filtros por fase e status
   - ✅ Formulário lateral (Drawer) para edição de lutas com designação de arbitragem por modalidade
   - ✅ Progressão automática de vencedor no bracket após homologação (Etapa 3 concluída)
+  - ✅ **Lançamento Sets (Etapa 6 concluída)**: Rota dedicada, placar dinâmico por sets, cômputo automático de W.O. e Desistência, cálculo de average de sets/pontos para desempate.
 - **Features legadas (reaproveitadas)**:
   - ✅ Wizard de 8 passos (coletivas) / 7 passos (individuais time/mark)
   - ✅ Estrutura automática de grupos com sugestão
