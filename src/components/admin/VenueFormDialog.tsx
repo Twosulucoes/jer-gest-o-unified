@@ -481,7 +481,7 @@ export default function VenueFormDialog({
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || hasBlockingConflict}>
                 {isPending ? "Salvando..." : isEditing ? "Salvar" : "Criar"}
               </Button>
             </DialogFooter>
