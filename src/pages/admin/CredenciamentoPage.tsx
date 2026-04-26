@@ -443,23 +443,19 @@ export default function CredenciamentoPage() {
         return true;
       })
       .sort((a, b) => {
-        const stateA = getParticipantState(a);
-        const stateB = getParticipantState(b);
-        
-        let prioA = 9;
-        let prioB = 9;
-
-        if (sortBy === "workflow") {
-          prioA = WORKFLOW_PRIORITY[stateA] ?? 9;
-          prioB = WORKFLOW_PRIORITY[stateB] ?? 9;
-        } else if (sortBy === "priority") {
-          prioA = STATE_PRIORITY[stateA] ?? 9;
-          prioB = STATE_PRIORITY[stateB] ?? 9;
-        }
-
-        if (prioA !== prioB) return prioA - prioB;
         const nameA = a.person?.full_name ?? "";
         const nameB = b.person?.full_name ?? "";
+
+        if (sortBy === "name") {
+          return nameA.localeCompare(nameB);
+        }
+
+        const stateA = getParticipantState(a);
+        const stateB = getParticipantState(b);
+        const map = sortBy === "priority" ? STATE_PRIORITY : WORKFLOW_PRIORITY;
+        const prioA = map[stateA] ?? 9;
+        const prioB = map[stateB] ?? 9;
+        if (prioA !== prioB) return prioA - prioB;
         return nameA.localeCompare(nameB);
       });
   }, [participants, searchTerm, filterType, filterState, filterInstitution, sortBy, blockedParticipantIds, getParticipantState, getInstitutionId, activeCredMap]);
@@ -638,8 +634,6 @@ export default function CredenciamentoPage() {
   };
 
   // --- Stats ---
-  const confirmedCount = (participants ?? []).filter((p) => p.status === "confirmed").length;
-  const credentialsEmittedCount = activeCredentials.length;
 
 
   const handleOpenPreview = (participantId: string) => {
@@ -763,18 +757,13 @@ export default function CredenciamentoPage() {
   };
 
   const handleStartCredenciamento = (p: CredentialParticipantRow) => {
+    // Workflow simplificado: vai direto para o modal de emissão (sistema vs externa).
+    // Edição de dados pessoais e responsável fica acessível via botão Editar (lápis) na linha.
     setSelectedForCred(p);
-    setIsWorkflowActive(true);
-    setEditingParticipantId(p.id);
-    setEditDialogOpen(true);
-    
-    // We prepare the guardian data for the next step
-    setTempGuardianData({
-      name: p.guardian_name || "",
-      phone: p.guardian_phone || "",
-      relationship: p.coach_name || "",
-    });
-    
+    setIsWorkflowActive(false); // não dispara o fluxo guiado de edição+responsável
+    setEditingParticipantId(null);
+    setEditDialogOpen(false);
+    setGuardianConfirmOpen(false);
     setIsLinkingExternal(false);
     setManualCode("");
     setScannerOpen(false);
@@ -842,15 +831,30 @@ export default function CredenciamentoPage() {
     }
   };
 
-  const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "" || sortBy !== "priority";
+  const hasActiveFilters = filterType !== "all" || filterState !== "all" || filterInstitution !== "all" || searchTerm !== "" || sortBy !== "workflow";
 
-  const stats = {
-    total: participants.length,
-    ready: filtered.filter(p => getParticipantState(p) === "ready_to_emit").length,
-    awaiting: filtered.filter(p => getParticipantState(p) === "awaiting").length,
-    emitted: credentialsEmittedCount,
-    pendingEmission: Math.max(0, confirmedCount - credentialsEmittedCount)
-  };
+  // KPIs derivados do estado real de cada participante (escopados pelo evento/etapa)
+  const stats = useMemo(() => {
+    let pending = 0, awaiting = 0, ready = 0, complete = 0;
+    for (const p of participants) {
+      const st = getParticipantState(p);
+      if (st === "pending_import") pending++;
+      else if (st === "awaiting") awaiting++;
+      else if (st === "ready_to_emit") ready++;
+      else if (st === "complete") complete++;
+    }
+    return {
+      total: participants.length,
+      pending,
+      awaiting,
+      ready,
+      complete,
+      blocked: blockedParticipantIds.size,
+      // pendentes de emissão = aguardando presença + prontos
+      pendingEmission: awaiting + ready,
+      emitted: complete,
+    };
+  }, [participants, getParticipantState, blockedParticipantIds]);
 
   return (
     <div className="space-y-4">
@@ -884,23 +888,29 @@ export default function CredenciamentoPage() {
             tone: "default",
           },
           {
-            label: "Confirmados",
-            value: confirmedCount,
+            label: "Aguardando presença",
+            value: stats.awaiting,
             icon: <Clock className="h-3.5 w-3.5" />,
-            tone: "warning",
+            tone: stats.awaiting > 0 ? "warning" : "default",
           },
           {
-            label: "Sem credencial",
-            value: stats.pendingEmission,
-            icon: <AlertCircle className="h-3.5 w-3.5" />,
-            tone: stats.pendingEmission > 0 ? "warning" : "default",
+            label: "Prontos p/ emitir",
+            value: stats.ready,
+            icon: <CreditCard className="h-3.5 w-3.5" />,
+            tone: stats.ready > 0 ? "warning" : "default",
           },
           {
-            label: "Emitidas",
+            label: "Credenciados",
             value: stats.emitted,
             icon: <ShieldCheck className="h-3.5 w-3.5" />,
             tone: "success",
           },
+          ...(stats.blocked > 0 ? [{
+            label: "Irregulares",
+            value: stats.blocked,
+            icon: <ShieldAlert className="h-3.5 w-3.5" />,
+            tone: "danger" as const,
+          }] : []),
         ]}
       />
       <div className="animate-fade-in space-y-5">
