@@ -271,30 +271,42 @@ export default function LocaisPage() {
             Filtrar por etapa
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0 pb-3">
-          <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger className="w-full max-w-md">
-              <SelectValue placeholder="Selecione a etapa" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={STAGE_FILTER_ALL}>Todas as etapas</SelectItem>
-              {stages.map((s) => {
-                const sede = s.host_name || s.host_city;
-                return (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}{sede ? ` — ${sede}` : ""}{s.status === "active" ? " (ativa)" : ""}
+        <CardContent className="pt-0 pb-3 space-y-3">
+          <div className="grid sm:grid-cols-2 gap-2">
+            <Select value={stageFilter} onValueChange={setStageFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a etapa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={STAGE_FILTER_ALL}>Todas as etapas</SelectItem>
+                {stages.map((s) => {
+                  const sede = s.host_name || s.host_city;
+                  return (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}{sede ? ` — ${sede}` : ""}{s.status === "active" ? " (ativa)" : ""}
+                    </SelectItem>
+                  );
+                })}
+                {orphanCount > 0 && (
+                  <SelectItem value={STAGE_FILTER_NONE}>
+                    Sem etapa vinculada ({orphanCount})
                   </SelectItem>
-                );
-              })}
-              {orphanCount > 0 && (
-                <SelectItem value={STAGE_FILTER_NONE}>
-                  Sem etapa vinculada ({orphanCount})
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+                )}
+              </SelectContent>
+            </Select>
+
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar por nome, cidade ou endereço…"
+                className="pl-8"
+              />
+            </div>
+          </div>
           {orphanCount > 0 && (
-            <p className="text-xs text-warning mt-2">
+            <p className="text-xs text-warning">
               ⚠ {orphanCount} local(is) sem nenhuma etapa vinculada — edite para corrigir.
             </p>
           )}
@@ -307,55 +319,100 @@ export default function LocaisPage() {
             <Skeleton key={i} className="h-14 w-full rounded-md" />
           ))}
         </div>
-      ) : groupsToShow.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-          <MapPin className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhum local encontrado</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {stageFilter === STAGE_FILTER_ALL
-              ? "Crie o primeiro local para começar."
-              : "Nenhum local nesta etapa."}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {groupsToShow.map(([stageKey, items]) => {
-            const stage = stageKey === STAGE_FILTER_NONE ? null : stagesMap.get(stageKey);
-            const sede = stage ? (stage.host_name || stage.host_city) : null;
-            return (
-              <div key={stageKey} className="rounded-lg border bg-card overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b flex-wrap gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Layers className="h-4 w-4 text-muted-foreground" />
-                    <h2 className="text-sm font-semibold">
-                      {stage?.name ?? "Sem etapa vinculada"}
-                    </h2>
-                    {sede && (
-                      <Badge variant="outline" className="text-[10px]">
-                        Sede: {sede}
-                      </Badge>
-                    )}
-                    {stage?.status === "active" && (
-                      <Badge variant="default" className="text-[10px]">ATIVA</Badge>
-                    )}
-                    {!stage && (
-                      <Badge variant="destructive" className="text-[10px]">⚠ Órfão</Badge>
-                    )}
+      ) : (() => {
+        // Aplica busca textual em cima dos grupos já filtrados por etapa
+        const filteredGroups = groupsToShow
+          .map(([k, items]) => [k, items.filter(matchesSearch)] as [string, VenueRow[]])
+          .filter(([, items]) => items.length > 0);
+
+        if (filteredGroups.length === 0) {
+          return (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
+              <MapPin className="h-10 w-10 text-muted-foreground mb-3" />
+              <p className="text-muted-foreground font-medium">Nenhum local encontrado</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {searchTerm
+                  ? `Nenhum resultado para "${searchTerm}".`
+                  : stageFilter === STAGE_FILTER_ALL
+                  ? "Crie o primeiro local para começar."
+                  : "Nenhum local nesta etapa."}
+              </p>
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-6">
+            {filteredGroups.map(([stageKey, items]) => {
+              const stage = stageKey === STAGE_FILTER_NONE ? null : stagesMap.get(stageKey);
+              const sede = stage ? (stage.host_name || stage.host_city) : null;
+              return (
+                <div key={stageKey} className="rounded-lg border bg-card overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b flex-wrap gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Layers className="h-4 w-4 text-muted-foreground" />
+                      <h2 className="text-sm font-semibold">
+                        {stage?.name ?? "Sem etapa vinculada"}
+                      </h2>
+                      {sede && (
+                        <Badge variant="outline" className="text-[10px]">
+                          Sede: {sede}
+                        </Badge>
+                      )}
+                      {stage?.status === "active" && (
+                        <Badge variant="default" className="text-[10px]">ATIVA</Badge>
+                      )}
+                      {!stage && (
+                        <Badge variant="outline" className="text-[10px] border-warning text-warning">
+                          ⚠ Sem vínculo
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">{items.length} local(is)</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{items.length} local(is)</span>
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Cidade</TableHead>
-                      <TableHead>Outras etapas</TableHead>
-                      <TableHead>Status</TableHead>
-                      {canWrite && <TableHead className="w-[60px]" />}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+
+                  {/* Desktop: tabela */}
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Cidade</TableHead>
+                          <TableHead>Outras etapas</TableHead>
+                          <TableHead>Status</TableHead>
+                          {canWrite && <TableHead className="w-[60px]" />}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {items.map((venue) => {
+                          const allStageIds = linksByVenue.get(venue.id) ?? [];
+                          const otherStages = allStageIds
+                            .filter((sid) => sid !== stageKey)
+                            .map((sid) => stagesMap.get(sid)?.name)
+                            .filter(Boolean) as string[];
+                          return (
+                            <VenueTableRow
+                              key={`${stageKey}-${venue.id}`}
+                              venue={venue}
+                              stageKey={stageKey}
+                              otherStages={otherStages}
+                              canWrite={canWrite}
+                              isToggling={
+                                toggleActiveMutation.isPending &&
+                                toggleActiveMutation.variables?.id === venue.id
+                              }
+                              onEdit={openEdit}
+                              onToggleActive={(v) => toggleActiveMutation.mutate(v)}
+                            />
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile: cards */}
+                  <div className="md:hidden p-3 space-y-2">
                     {items.map((venue) => {
                       const allStageIds = linksByVenue.get(venue.id) ?? [];
                       const otherStages = allStageIds
@@ -363,49 +420,27 @@ export default function LocaisPage() {
                         .map((sid) => stagesMap.get(sid)?.name)
                         .filter(Boolean) as string[];
                       return (
-                        <TableRow key={`${stageKey}-${venue.id}`}>
-                          <TableCell className="font-medium">{venue.name}</TableCell>
-                          <TableCell>{VENUE_TYPE_MAP[venue.venue_type] ?? venue.venue_type}</TableCell>
-                          <TableCell>{venue.city || "—"}</TableCell>
-                          <TableCell>
-                            {otherStages.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
-                                {otherStages.map((n) => (
-                                  <Badge key={n} variant="secondary" className="text-[10px]">
-                                    {n}
-                                  </Badge>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={venue.is_active ? "default" : "secondary"}>
-                              {venue.is_active ? "Ativo" : "Inativo"}
-                            </Badge>
-                          </TableCell>
-                          {canWrite && (
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openEdit(venue)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          )}
-                        </TableRow>
+                        <VenueCard
+                          key={`m-${stageKey}-${venue.id}`}
+                          venue={venue}
+                          otherStages={otherStages}
+                          canWrite={canWrite}
+                          isToggling={
+                            toggleActiveMutation.isPending &&
+                            toggleActiveMutation.variables?.id === venue.id
+                          }
+                          onEdit={openEdit}
+                          onToggleActive={(v) => toggleActiveMutation.mutate(v)}
+                        />
                       );
                     })}
-                  </TableBody>
-                </Table>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       <VenueFormDialog
         open={dialogOpen}
