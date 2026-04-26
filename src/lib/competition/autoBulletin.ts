@@ -20,6 +20,10 @@ export interface AutoBulletinResult {
   matchesCount: number;
   suggestedTitle: string;
   suggestedNumber: number;
+  /** IDs das partidas (competition_matches) cujos resultados entraram no boletim. */
+  matchIds: string[];
+  /** IDs das provas (sport_events) representadas no boletim. */
+  sportEventIds: string[];
 }
 
 interface MatchRow {
