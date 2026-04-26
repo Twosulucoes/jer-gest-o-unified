@@ -61,6 +61,10 @@ export default function CompeticaoPublicacaoPage() {
   const [selectedMatches, setSelectedMatches] = useState<string[]>([]);
   const [showConfirmBatch, setShowConfirmBatch] = useState(false);
   const [historyMatchId, setHistoryMatchId] = useState<string | null>(null);
+  const [showRevertDialog, setShowRevertDialog] = useState(false);
+  const [revertMatchId, setRevertMatchId] = useState<string | null>(null);
+  const [revertReason, setRevertReason] = useState("");
+  const [revertTargetStatus, setRevertTargetStatus] = useState("resultado_lancado");
 
   // Fetch results that are validated or published
   const { data: matches = [], isLoading } = useQuery({
