@@ -59,7 +59,7 @@ export default function CollectiveScoreForm({
 
   const existingMap = new Map(existingScores.map((s) => [s.match_entry_id, s]));
 
-  const [scores, setScores] = useState<Record<string, { final: string; detail: Record<string, string>; outcome: string }>>({});
+  const [scores, setScores] = useState<Record<string, StateScore>>({});
   const [notes, setNotes] = useState(initialNotes);
 
   useEffect(() => {
@@ -76,6 +76,7 @@ export default function CollectiveScoreForm({
         final: existing?.score_final ?? "",
         detail,
         outcome: existing?.outcome ?? "",
+        shootout: existing?.score_detail?.shootout ?? "",
       };
     });
     setScores(init);
