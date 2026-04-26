@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, ScanLine, Users, ShieldAlert, UserPlus } from "lucide-react";
+import { ArrowLeft, ScanLine, Users, ShieldAlert, UserPlus, CloudOff } from "lucide-react";
+import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
+import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
+
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { TripInfoCard } from "@/components/pwa/transporte/TripInfoCard";
@@ -264,6 +267,36 @@ export default function TransporteEmbarquePage() {
       const passenger = passengers.find((p) => p.participant_id === participantId);
       const { data: { session: boardSession } } = await supabase.auth.getSession();
 
+      const boardingData = {
+        trip_id: tripId,
+        participant_id: participantId,
+        status: "boarded",
+        boarded_at: new Date().toISOString(),
+        boarded_by: boardSession?.user.id ?? null,
+        is_manual: false,
+      };
+
+      if (!isOnline()) {
+        addToOfflineQueue("transporte", boardingData, name);
+        toast.info("Registrado offline. Sincronize quando houver internet.");
+        if (navigator.vibrate) navigator.vibrate(200);
+        // Optimistically update UI if we have the passenger in state
+        if (passenger) {
+          setPassengers(prev => prev.map(p => p.id === passenger.id ? { ...p, boarded: true, boarded_at: boardingData.boarded_at } : p));
+        } else {
+          // If not in pre-registered list, we'd need to add them locally too to show them
+          setPassengers(prev => [...prev, {
+            id: crypto.randomUUID(), // temp id
+            full_name: name,
+            boarded: true,
+            boarded_at: boardingData.boarded_at,
+            participant_id: participantId,
+            is_manual: false
+          }]);
+        }
+        return;
+      }
+
       if (passenger) {
         if (passenger.boarded) {
           toast.info(`${name} ${getPwaMessage("ALREADY_BOARDED", lang)}`);
@@ -271,23 +304,16 @@ export default function TransporteEmbarquePage() {
         }
         const { error } = await supabase
           .from("transport_passengers")
-          .update({ status: "boarded", boarded_at: new Date().toISOString(), boarded_by: boardSession?.user.id ?? null })
+          .update({ status: "boarded", boarded_at: boardingData.boarded_at, boarded_by: boardingData.boarded_by })
           .eq("id", passenger.id);
         if (error) throw error;
       } else {
-        // Participant has a valid credential but wasn't pre-registered — add on the spot
         const { error } = await supabase
           .from("transport_passengers")
-          .insert({
-            trip_id: tripId,
-            participant_id: participantId,
-            status: "boarded",
-            boarded_at: new Date().toISOString(),
-            boarded_by: boardSession?.user.id ?? null,
-            is_manual: false,
-          } as any);
+          .insert(boardingData as any);
         if (error) throw error;
       }
+
 
       toast.success(`${viaVoucher ? "🎫 " : ""}${name} ${getPwaMessage("SUCCESS_BOARDING", lang)}`);
       if (navigator.vibrate) navigator.vibrate(200);
@@ -346,6 +372,8 @@ export default function TransporteEmbarquePage() {
       </header>
 
       <main className="p-3 max-w-4xl mx-auto space-y-3">
+        <OfflineSyncStatus />
+
         {!loading && <DelegationAlertBanner delegationCounts={delegationCounts} />}
 
         {tripId && !loading && (

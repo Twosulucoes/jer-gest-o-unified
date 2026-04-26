@@ -13,6 +13,8 @@ import { Camera, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
+import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
+
 
 interface ManualBoardingDialogProps {
   open: boolean;
@@ -56,9 +58,13 @@ export function ManualBoardingDialog({
     }
     setSaving(true);
     try {
+      if (!isOnline() && photo) {
+        toast.warning("A foto do documento não será salva no modo offline.");
+      }
+
       let photoUrl: string | null = null;
 
-      if (photo) {
+      if (photo && isOnline()) {
         const ext = photo.name.split(".").pop() || "jpg";
         const path = `${tripId}/${crypto.randomUUID()}.${ext}`;
         const { error: upErr } = await supabase.storage
@@ -74,7 +80,7 @@ export function ManualBoardingDialog({
 
       const { data: { session } } = await supabase.auth.getSession();
 
-      const { error } = await supabase.from("transport_passengers").insert({
+      const boardingData = {
         trip_id: tripId,
         participant_id: null,
         status: "boarded",
@@ -84,9 +90,22 @@ export function ManualBoardingDialog({
         manual_name: name.trim(),
         manual_cpf: cpf.trim() || null,
         identity_photo_url: photoUrl,
-      } as any);
+      };
+
+      if (!isOnline()) {
+        addToOfflineQueue("transporte", boardingData, name.trim());
+        toast.info("Registrado offline. Sincronize quando houver internet.");
+        if (navigator.vibrate) navigator.vibrate(200);
+        reset();
+        onOpenChange(false);
+        onSuccess();
+        return;
+      }
+
+      const { error } = await supabase.from("transport_passengers").insert(boardingData as any);
 
       if (error) throw error;
+
 
       toast.success(`${name.trim()} ${getPwaMessage("SUCCESS_BOARDING", lang)} (${getPwaMessage("MANUAL_SEARCH", lang)})`);
       if (navigator.vibrate) navigator.vibrate(200);
