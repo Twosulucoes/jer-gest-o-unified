@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { VisualIdentity } from "@/components/public/VisualIdentity";
 
 // Simple markdown-to-HTML (headings, bold, italic, links, lists, paragraphs)
 function renderMarkdown(md: string): string {
