@@ -16,6 +16,8 @@ import { PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
 import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
+
 
 interface TripRow {
   id: string;
