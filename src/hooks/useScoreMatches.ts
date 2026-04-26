@@ -21,7 +21,11 @@ export function useScoreMatches(sportEventId: string | undefined) {
               id,
               name,
               delegation_id,
-              delegations (name)
+              delegations (
+                institutions (
+                  name
+                )
+              )
             )
           ),
           match_results: competition_match_results (
