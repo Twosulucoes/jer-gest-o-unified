@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
-import ModuleHeader from "@/components/admin/ModuleHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { AlertTriangle, Search, Phone, Calendar } from "lucide-react";
+import { AlertTriangle, Search, Phone, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -51,7 +50,7 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
 
 export default function OcorrenciasPage() {
   const { activeEvent } = useEventContext();
-  const { isStageScoped, stageId, stage, error: stageError } = useStageScope();
+  const { isStageScoped, stageId } = useStageScope();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -62,31 +61,67 @@ export default function OcorrenciasPage() {
   const [editStatus, setEditStatus] = useState("");
   const [editResponse, setEditResponse] = useState("");
   const [saving, setSaving] = useState(false);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 15;
 
   const fetchIncidents = useCallback(async () => {
     if (!activeEvent) return;
     setLoading(true);
-    let query = supabase
-      .from("operational_incidents")
-      .select("*")
-      .eq("event_id", activeEvent.id)
-      .order("created_at", { ascending: false });
+    
+    try {
+      let query = supabase
+        .from("operational_incidents")
+        .select("*", { count: "exact" })
+        .eq("event_id", activeEvent.id);
 
-    if (isStageScoped && stageId) {
-      query = query.eq("event_stage_id", stageId);
+      if (isStageScoped && stageId) {
+        query = query.eq("event_stage_id", stageId);
+      }
+
+      if (filterModule !== "all") {
+        query = query.eq("module", filterModule as any);
+      }
+      
+      if (filterStatus !== "all") {
+        query = query.eq("incident_status", filterStatus as any);
+      }
+
+      if (search) {
+        // Simple search across multiple columns
+        query = query.or(`reporter_name.ilike.%${search}%,reference_label.ilike.%${search}%,incident_description.ilike.%${search}%`);
+      }
+
+      // Pagination
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await query
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+      
+      setIncidents((data as any) || []);
+      setTotalCount(count || 0);
+    } catch (err: any) {
+      console.error("Error fetching incidents:", err);
+      toast.error("Erro ao carregar ocorrências");
+    } finally {
+      setLoading(false);
     }
+  }, [activeEvent, filterModule, filterStatus, isStageScoped, stageId, currentPage, search]);
 
+  useEffect(() => {
+    fetchIncidents();
+  }, [fetchIncidents]);
 
-    if (filterModule !== "all") query = query.eq("module", filterModule as any);
-    if (filterStatus !== "all") query = query.eq("incident_status", filterStatus as any);
-
-    const { data, error } = await query;
-    if (error) console.error(error);
-    setIncidents((data as any) || []);
-    setLoading(false);
-  }, [activeEvent, filterModule, filterStatus, isStageScoped, stageId]);
-
-  useEffect(() => { fetchIncidents(); }, [fetchIncidents]);
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterModule, filterStatus, search]);
 
   const openDrawer = (incident: Incident) => {
     setSelected(incident);
@@ -121,15 +156,7 @@ export default function OcorrenciasPage() {
     }
   };
 
-  const filtered = incidents.filter((i) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      i.reporter_name?.toLowerCase().includes(q) ||
-      i.reference_label?.toLowerCase().includes(q) ||
-      i.incident_description.toLowerCase().includes(q)
-    );
-  });
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="space-y-6">
@@ -191,7 +218,7 @@ export default function OcorrenciasPage() {
         <div className="space-y-2">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : incidents.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -199,67 +226,122 @@ export default function OcorrenciasPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">Módulo</TableHead>
-                  <TableHead>Referência</TableHead>
-                  <TableHead>Reportado por</TableHead>
-                  <TableHead className="max-w-[300px]">Descrição</TableHead>
-                  <TableHead className="w-[100px]">Status</TableHead>
-                  <TableHead className="w-[120px]">Data</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((incident) => {
-                  const mod = MODULE_LABELS[incident.module] || MODULE_LABELS.outro;
-                  const status = STATUS_LABELS[incident.incident_status] || STATUS_LABELS.pending;
-                  return (
-                    <TableRow
-                      key={incident.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => openDrawer(incident)}
-                    >
-                      <TableCell>
-                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${mod.color}`}>
-                          {mod.label}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-sm">{incident.reference_label || "—"}</TableCell>
-                      <TableCell>
-                        <div className="text-sm">{incident.reporter_name || "—"}</div>
-                        {incident.reporter_phone && (
-                          <a
-                            href={`tel:${incident.reporter_phone}`}
-                            className="text-xs text-primary flex items-center gap-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Phone className="h-3 w-3" />{incident.reporter_phone}
-                          </a>
-                        )}
-                      </TableCell>
-                      <TableCell className="max-w-[300px]">
-                        <p className="text-sm truncate">
-                          {incident.incident_description.length > 80
-                            ? incident.incident_description.slice(0, 80) + "..."
-                            : incident.incident_description}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={status.variant}>{status.label}</Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {format(new Date(incident.created_at), "dd/MM HH:mm", { locale: ptBR })}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Módulo</TableHead>
+                    <TableHead>Referência</TableHead>
+                    <TableHead>Reportado por</TableHead>
+                    <TableHead className="max-w-[300px]">Descrição</TableHead>
+                    <TableHead className="w-[100px]">Status</TableHead>
+                    <TableHead className="w-[120px]">Data</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {incidents.map((incident) => {
+                    const mod = MODULE_LABELS[incident.module] || MODULE_LABELS.outro;
+                    const status = STATUS_LABELS[incident.incident_status] || STATUS_LABELS.pending;
+                    return (
+                      <TableRow
+                        key={incident.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => openDrawer(incident)}
+                      >
+                        <TableCell>
+                          <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${mod.color}`}>
+                            {mod.label}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-sm">{incident.reference_label || "—"}</TableCell>
+                        <TableCell>
+                          <div className="text-sm">{incident.reporter_name || "—"}</div>
+                          {incident.reporter_phone && (
+                            <a
+                              href={`tel:${incident.reporter_phone}`}
+                              className="text-xs text-primary flex items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Phone className="h-3 w-3" />{incident.reporter_phone}
+                            </a>
+                          )}
+                        </TableCell>
+                        <TableCell className="max-w-[300px]">
+                          <p className="text-sm truncate">
+                            {incident.incident_description.length > 80
+                              ? incident.incident_description.slice(0, 80) + "..."
+                              : incident.incident_description}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={status.variant}>{status.label}</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {format(new Date(incident.created_at), "dd/MM HH:mm", { locale: ptBR })}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-2 py-4">
+              <p className="text-sm text-muted-foreground">
+                Mostrando <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> a{" "}
+                <span className="font-medium">
+                  {Math.min(currentPage * pageSize, totalCount)}
+                </span>{" "}
+                de <span className="font-medium">{totalCount}</span> resultados
+              </p>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    // Logic to show a window of pages around current
+                    let pageNum = currentPage;
+                    if (totalPages <= 5) pageNum = i + 1;
+                    else if (currentPage <= 3) pageNum = i + 1;
+                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                    else pageNum = currentPage - 2 + i;
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Detail Drawer */}
