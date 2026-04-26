@@ -124,6 +124,44 @@ export default function CoordenacaoIncidentesPage() {
       />
 
       <main className="relative mx-auto max-w-md space-y-3 p-4">
+        {activeEventId && (
+          <div className="flex gap-2 mb-2">
+            <div className="flex-1">
+              <Select value={filterModule} onValueChange={setFilterModule}>
+                <SelectTrigger className="h-9 bg-card/50 border-border/40 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <Filter className="h-3 w-3 opacity-50" />
+                    <SelectValue placeholder="Módulo" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Módulos</SelectItem>
+                  <SelectItem value="transporte">Transporte</SelectItem>
+                  <SelectItem value="alimentacao">Alimentação</SelectItem>
+                  <SelectItem value="alojamento">Alojamento</SelectItem>
+                  <SelectItem value="outro">Geral</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="h-9 bg-card/50 border-border/40 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <ClipboardList className="h-3 w-3 opacity-50" />
+                    <SelectValue placeholder="Status" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Status</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="in_progress">Em análise</SelectItem>
+                  <SelectItem value="resolved">Resolvida</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
         {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
 
         {!loading && !activeEventId && (
@@ -139,12 +177,13 @@ export default function CoordenacaoIncidentesPage() {
             <AlertTriangle className="h-10 w-10 mx-auto mb-3 text-destructive opacity-80" />
             <h3 className="text-foreground font-semibold mb-1">Erro de conexão</h3>
             <p className="text-sm mb-4">{error}</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="text-xs font-bold uppercase tracking-wider text-primary px-4 py-2 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+            <Button 
+              variant="outline"
+              onClick={() => fetchIncidents()}
+              className="text-xs font-bold uppercase tracking-wider"
             >
               Tentar novamente
-            </button>
+            </Button>
           </div>
         )}
 
@@ -152,7 +191,7 @@ export default function CoordenacaoIncidentesPage() {
           <div className="text-center py-12 px-6 text-muted-foreground bg-card/50 rounded-2xl border border-dashed border-border/60">
             <ClipboardList className="h-10 w-10 mx-auto mb-3 opacity-30" />
             <h3 className="text-foreground font-semibold mb-1">Tudo em ordem por aqui</h3>
-            <p className="text-sm">Nenhuma ocorrência operacional registrada para este evento até o momento.</p>
+            <p className="text-sm">Nenhuma ocorrência operacional registrada com estes filtros.</p>
           </div>
         )}
 
