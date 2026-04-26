@@ -123,11 +123,23 @@ export default function SuperPermissionsPage() {
                     <TableHeader>
                       <TableRow className="bg-muted/30">
                         <TableHead className="min-w-[150px]">Página / Rota</TableHead>
-                        {ROLES.map(role => (
-                          <TableHead key={role} className="text-center text-[10px] uppercase font-bold px-1 py-3 whitespace-nowrap min-w-[70px]">
-                            {role.replace('_', ' ')}
-                          </TableHead>
-                        ))}
+                        <TooltipProvider>
+                          {ROLES.map(role => (
+                            <Tooltip key={role}>
+                              <TooltipTrigger asChild>
+                                <TableHead className="text-center text-[10px] uppercase font-bold px-1 py-3 whitespace-nowrap min-w-[70px] cursor-help">
+                                  {role.replace('_', ' ')}
+                                </TableHead>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="space-y-1">
+                                  <p className="font-bold text-xs">{ROLE_INFO[role].label}</p>
+                                  <p className="text-[10px] max-w-[150px] leading-tight">{ROLE_INFO[role].description}</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </TooltipProvider>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
