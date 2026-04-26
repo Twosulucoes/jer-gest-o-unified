@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { 
   CheckCircle2, 
   Smartphone, 
@@ -7,14 +7,8 @@ import {
   Globe, 
   Database, 
   Rocket,
-  CheckSquare,
-  FileSearch,
-  UserPlus,
-  Link,
   QrCode,
-  TrendingUp,
   Share2,
-  Copy,
   Layout,
   Server,
   Code2,
@@ -28,15 +22,11 @@ import {
   Github,
   Monitor
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
 import { brand } from "@/theme/brand";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 interface VersionInfo {
   appVersion: string;
@@ -101,25 +91,14 @@ const checklistItems = [
 
 export default function EntregaTecnicaPage() {
   const [version, setVersion] = useState<VersionInfo | null>(null);
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [currentStep, setCurrentStep] = useState(0);
-  const tourRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/version.json", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setVersion(data))
       .catch(() => setVersion(null));
-    
-    // Auto-check items for visual effect
-    const initialChecked: Record<string, boolean> = {};
-    checklistItems.forEach(item => initialChecked[item] = true);
-    setCheckedItems(initialChecked);
   }, []);
-
-  const toggleCheck = (item: string) => {
-    setCheckedItems(prev => ({ ...prev, [item]: !prev[item] }));
-  };
 
   const nextStep = () => setCurrentStep((prev) => (prev + 1) % tourSteps.length);
   const prevStep = () => setCurrentStep((prev) => (prev - 1 + tourSteps.length) % tourSteps.length);
@@ -145,14 +124,14 @@ export default function EntregaTecnicaPage() {
             <a href="#tour" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Tour Guiado</a>
             <a href="#homologacao" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Homologação</a>
           </div>
-          <Button size="sm" className="bg-blue-900 hover:bg-blue-800 text-white gap-2 rounded-full shadow-md">
-            Sair do Sistema <ArrowRight size={14} />
+          <Button size="sm" className="bg-blue-900 hover:bg-blue-800 text-white gap-2 rounded-full shadow-md" asChild>
+            <a href="/">Sair do Sistema <ArrowRight size={14} /></a>
           </Button>
         </div>
       </nav>
 
       {/* ── Hero Section ────────────────────────────────────────────────────────── */}
-      <header className="relative pt-40 pb-32 px-6 overflow-hidden">
+      <header id="solucao" className="relative pt-40 pb-32 px-6 overflow-hidden">
         <div 
           className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none"
           style={{ backgroundImage: `radial-gradient(circle at 2px 2px, ${brand.colors.primary} 1px, transparent 0)`, backgroundSize: '40px 40px' }}
@@ -160,7 +139,7 @@ export default function EntregaTecnicaPage() {
         
         <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8">
-            <Badge className="px-4 py-1.5 bg-blue-50 text-blue-700 border-blue-100 rounded-full font-bold uppercase tracking-wider text-[10px] animate-pulse">
+            <Badge className="px-4 py-1.5 bg-blue-50 text-blue-700 border-blue-100 rounded-full font-bold uppercase tracking-wider text-[10px]">
               System Release v1.0 • Milestone Final
             </Badge>
             <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-[1.1] tracking-tight">
@@ -213,12 +192,12 @@ export default function EntregaTecnicaPage() {
             </div>
             
             {/* Floating metrics */}
-            <div className="absolute -top-6 -right-6 bg-white p-4 rounded-2xl shadow-xl border border-slate-100 animate-bounce">
+            <div className="absolute -top-6 -right-6 bg-white p-4 rounded-2xl shadow-xl border border-slate-100">
               <Activity className="text-emerald-500 mb-2" />
               <p className="text-xs text-slate-500 font-medium">Uptime</p>
               <p className="text-xl font-black text-slate-900">99.9%</p>
             </div>
-            <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-slate-100 animate-pulse">
+            <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-slate-100">
               <Database className="text-blue-500 mb-2" />
               <p className="text-xs text-slate-500 font-medium">Latência</p>
               <p className="text-xl font-black text-slate-900">~24ms</p>
@@ -367,7 +346,7 @@ export default function EntregaTecnicaPage() {
           </div>
           
           <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
-            {checklistItems.map((item, idx) => (
+            {checklistItems.map((item) => (
               <div 
                 key={item} 
                 className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:bg-white/10 transition-colors"
@@ -423,7 +402,7 @@ export default function EntregaTecnicaPage() {
           </div>
           
           <div className="flex flex-wrap justify-center gap-8">
-            <a href="https://twosolucoes.com.br" className="text-slate-400 hover:text-blue-600 flex items-center gap-2 transition-colors">
+            <a href="https://twosolucoes.com.br" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-blue-600 flex items-center gap-2 transition-colors">
               <Globe size={18} /> twosolucoes.com.br
             </a>
             <a href="#" className="text-slate-400 hover:text-slate-900 flex items-center gap-2 transition-colors">
