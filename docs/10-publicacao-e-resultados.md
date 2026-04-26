@@ -33,7 +33,7 @@ Todas as RPCs, filtros de frontend e RLS policies usam estas strings.
 | RPC | Permissão | Descrição |
 |-----|-----------|-----------|
 | `rpc_launch_match_result` | authenticated | Grava resultados com status `resultado_lancado`, marca partida como `finished` |
-| `rpc_homologate_match_result` | admin, coord_tecnica | Homologa resultado lançado (exige senha), status → `resultado_validado` |
+| `rpc_homologate_match_result` | admin, coord_tecnica | Homologa resultado lançado (exige verificação prévia de senha via Edge Function), status → `resultado_validado` |
 | `rpc_publish_match_result` | admin, secretaria | Publica resultado validado (individual ou lote), status → `publicado` |
 | `rpc_revert_match_result_status` | admin | Reverte status de resultado (justificativa obrigatória) |
 | `rpc_sync_match_scores_to_results` | authenticated | Sincroniza match_scores → competition_match_results |
