@@ -1,6 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Trophy } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { BracketData, BracketMatch, BracketEntry } from "@/hooks/useKnockoutBracket";
 
 interface Props {
@@ -16,47 +18,83 @@ function getRoundLabel(roundNum: number, totalRounds: number): string {
   return `Rodada ${roundNum}`;
 }
 
-function EntryLabel({ entry, side }: { entry?: BracketEntry; side: string }) {
+function EntryLabel({ entry, side, isWinner, isFinished, isBye }: { 
+  entry?: BracketEntry; 
+  side: string; 
+  isWinner: boolean;
+  isFinished: boolean;
+  isBye: boolean;
+}) {
   if (!entry) {
+    if (isBye) return <span className="text-xs text-muted-foreground italic opacity-50">BYE</span>;
     return <span className="text-xs text-muted-foreground italic">A definir</span>;
   }
-  const label = entry.team_name || entry.participant_name || "BYE";
+  
+  const label = entry.participant_name || entry.team_name || "—";
+  const isLoser = isFinished && !isWinner && !isBye;
+
   return (
-    <div className="flex items-center gap-1.5 min-w-0">
+    <div className={cn(
+      "flex items-center gap-1.5 min-w-0 transition-all",
+      isWinner && "font-bold text-primary",
+      isLoser && "line-through opacity-50 text-muted-foreground"
+    )}>
       {entry.seed && (
         <span className="text-[10px] font-bold text-muted-foreground shrink-0">[{entry.seed}]</span>
       )}
-      <span className="text-xs font-medium truncate">{label}</span>
+      <span className="text-xs truncate">{label}</span>
+      {isWinner && <Trophy className="h-3 w-3 text-amber-500 shrink-0" />}
     </div>
   );
 }
 
 function MatchCard({ match, totalRounds }: { match: BracketMatch; totalRounds: number }) {
   const entries = match.entries ?? [];
-  const sideA = entries.find((e) => e.side === "home");
-  const sideB = entries.find((e) => e.side === "away");
+  const sideA = entries.find((e) => e.side === "home" || e.side === "A");
+  const sideB = entries.find((e) => e.side === "away" || e.side === "B");
 
   const isBye = match.status === "finished" && entries.length < 2;
   const isFinished = match.status === "finished" && !isBye;
 
   return (
-    <Card className={`p-2 w-[200px] border ${isBye ? "border-dashed opacity-60" : ""}`}>
-      <div className="flex items-center justify-between mb-1">
+    <Card className={cn(
+      "p-2 w-[220px] border shadow-sm transition-all",
+      isBye ? "border-dashed opacity-60 bg-muted/20" : "bg-card",
+      isFinished && "border-primary/20"
+    )}>
+      <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] text-muted-foreground font-mono">#{match.match_number}</span>
         <Badge
           variant={isFinished ? "default" : isBye ? "secondary" : "outline"}
           className="text-[10px] h-4 px-1"
         >
-          {isBye ? "BYE" : match.status}
+          {isBye ? "BYE" : match.status === "finished" ? "Encerrada" : match.status}
         </Badge>
       </div>
-      <div className="space-y-1">
-        <div className="p-1 rounded bg-muted/50">
-          <EntryLabel entry={sideA} side="A" />
+      <div className="space-y-1.5">
+        <div className={cn(
+          "p-1.5 rounded-md transition-colors",
+          sideA?.is_winner ? "bg-primary/5 ring-1 ring-primary/20" : "bg-muted/30"
+        )}>
+          <EntryLabel 
+            entry={sideA} 
+            side="A" 
+            isWinner={sideA?.is_winner || false} 
+            isFinished={isFinished}
+            isBye={isBye && !sideA}
+          />
         </div>
-        <div className="text-center text-[10px] text-muted-foreground">vs</div>
-        <div className="p-1 rounded bg-muted/50">
-          <EntryLabel entry={sideB} side="B" />
+        <div className={cn(
+          "p-1.5 rounded-md transition-colors",
+          sideB?.is_winner ? "bg-primary/5 ring-1 ring-primary/20" : "bg-muted/30"
+        )}>
+          <EntryLabel 
+            entry={sideB} 
+            side="B" 
+            isWinner={sideB?.is_winner || false} 
+            isFinished={isFinished}
+            isBye={isBye && !sideB}
+          />
         </div>
       </div>
       {match.match_date && (

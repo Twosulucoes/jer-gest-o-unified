@@ -155,6 +155,9 @@ export default function LaunchResultDialog({ open, onOpenChange, match, eventId,
       qc.invalidateQueries({ queryKey: ["central-results"] });
       qc.invalidateQueries({ queryKey: ["central-matches"] });
       qc.invalidateQueries({ queryKey: ["competition-summary"] });
+      qc.invalidateQueries({ queryKey: ["knockout-bracket"] });
+      qc.invalidateQueries({ queryKey: ["bracket-phases"] });
+      qc.invalidateQueries({ queryKey: ["combat-matches"] });
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
