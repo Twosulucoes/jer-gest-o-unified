@@ -197,10 +197,11 @@ export default function OcorrenciasPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="in_progress">Em análise</SelectItem>
-                  <SelectItem value="resolved">Resolvida</SelectItem>
+                  {(Object.entries(INCIDENT_STATUSES) as [IncidentStatus, any][]).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  ))}
                 </SelectContent>
+
               </Select>
             </div>
           </div>
