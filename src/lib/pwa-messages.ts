@@ -272,15 +272,11 @@ export function getPwaMessage(code: PwaMessageCode, lang?: PwaLang): string {
   return MESSAGES[code][l] || MESSAGES[code]["pt"];
 }
 
+/**
+ * @deprecated Prefira `voucherErrorMessage` de `@/lib/voucherMessages`
+ * (dicionário único). Mantido como fachada para compatibilidade.
+ */
+import { voucherErrorMessage } from "./voucherMessages";
 export function getVoucherMessage(reason: string | undefined, lang?: PwaLang): string {
-  const l = lang || getPwaLang();
-  switch (reason) {
-    case "not_found": return getPwaMessage("VOUCHER_NOT_FOUND", l);
-    case "inactive": return getPwaMessage("VOUCHER_INACTIVE", l);
-    case "expired": return getPwaMessage("VOUCHER_EXPIRED", l);
-    case "not_yet_valid": return getPwaMessage("VOUCHER_NOT_YET_VALID", l);
-    case "scope_denied": return getPwaMessage("VOUCHER_SCOPE_DENIED", l);
-    case "max_uses_reached": return getPwaMessage("VOUCHER_MAX_USES", l);
-    default: return reason || getPwaMessage("ERR_UNKNOWN", l);
-  }
+  return voucherErrorMessage(reason, lang).text;
 }
