@@ -640,15 +640,34 @@ export default function AcessosUsuariosPage() {
             <div className="space-y-2">
               <Label className="font-semibold">Perfis de Acesso *</Label>
               <p className="text-xs text-muted-foreground">Selecione todos os módulos que este usuário pode acessar</p>
-              <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                 {availableRoles.map((r) => (
-                  <label key={r.value} className="flex items-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-muted/50 transition-colors">
-                    <Checkbox
-                      checked={inviteRoles.includes(r.value)}
-                      onCheckedChange={() => toggleInviteRole(r.value)}
-                    />
-                    <span className="text-sm">{r.label}</span>
-                  </label>
+                  <TooltipProvider key={r.value}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <label className="flex items-start gap-2 cursor-pointer rounded-md border p-2 hover:bg-muted/50 transition-colors">
+                          <Checkbox
+                            checked={inviteRoles.includes(r.value)}
+                            onCheckedChange={() => toggleInviteRole(r.value)}
+                            className="mt-0.5"
+                          />
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-medium leading-none">{r.label}</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {r.areas.map((area) => (
+                                <span key={area} className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                  {area}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </label>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-[200px]">
+                        <p className="text-xs">{r.description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 ))}
               </div>
               {inviteRoles.length === 0 && (
