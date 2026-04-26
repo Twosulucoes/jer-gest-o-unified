@@ -20,6 +20,14 @@ interface ModuleOption {
 
 const MODULE_OPTIONS: ModuleOption[] = [
   {
+    roles: ["super_admin"],
+    label: "Super Admin",
+    description: "Painel de controle mestre",
+    icon: Shield,
+    path: "/super",
+    gradient: "from-[hsl(262,83%,58%)] to-[hsl(262,80%,40%)]",
+  },
+  {
     roles: ["admin", "secretaria", "coordenacao_tecnica"],
     label: "Administração",
     description: "Gestão completa do evento",
@@ -34,6 +42,14 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: Trophy,
     path: "/admin/coordenador-modalidade",
     gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]",
+  },
+  {
+    roles: ["coordenacao_tecnica"],
+    label: "Coord. Técnica",
+    description: "Operação técnica PWA",
+    icon: Clipboard,
+    path: "/pwa/coordenacao",
+    gradient: "from-[hsl(174,87%,34%)] to-[hsl(212,84%,36%)]",
   },
   {
     roles: ["transporte"],
@@ -69,6 +85,14 @@ const MODULE_OPTIONS: ModuleOption[] = [
   },
   {
     roles: ["mesario"],
+    label: "Lançamento de Resultados",
+    description: "PWA de Resultados",
+    icon: ScanLine,
+    path: "/pwa/resultados",
+    gradient: "from-[hsl(214,78%,21%)] to-[hsl(212,84%,36%)]",
+  },
+  {
+    roles: ["mesario", "arbitragem"],
     label: "Ao Vivo",
     description: "Registro de partidas",
     icon: ScanLine,
@@ -99,6 +123,22 @@ const MODULE_OPTIONS: ModuleOption[] = [
     path: "/pwa/credenciamento",
     gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]",
   },
+  {
+    roles: ["pesquisador", "coordenador_pesquisa"],
+    label: "Pesquisa",
+    description: "Coleta de dados em campo",
+    icon: Search,
+    path: "/pwa/pesquisa",
+    gradient: "from-[hsl(25,95%,53%)] to-[hsl(15,90%,40%)]",
+  },
+  {
+    roles: ["admin", "secretaria", "coordenacao_tecnica", "super_admin"],
+    label: "Diagnóstico QR",
+    description: "Verificar integridade de credenciais",
+    icon: Search,
+    path: "/pwa/diagnostico",
+    gradient: "from-[hsl(174,87%,34%)] to-[hsl(212,84%,36%)]",
+  },
 ];
 
 export default function ModuleSelectorPage() {
@@ -125,9 +165,11 @@ export default function ModuleSelectorPage() {
       setUserRoles(roles);
       setUserName(profileRes.data?.full_name || session.user.email || "");
 
-      // If single role, redirect directly
-      const available = MODULE_OPTIONS.filter(m => m.roles.some(r => roles.includes(r)));
-      if (available.length <= 1) {
+      // If super_admin or single role, redirect or allow selection
+      const isSuperAdmin = roles.includes("super_admin");
+      const available = isSuperAdmin ? MODULE_OPTIONS : MODULE_OPTIONS.filter(m => m.roles.some(r => roles.includes(r)));
+      
+      if (!isSuperAdmin && available.length <= 1) {
         const target = available.length === 1 ? available[0].path : "/pwa";
         navigate(target, { replace: true });
         return;
@@ -142,7 +184,8 @@ export default function ModuleSelectorPage() {
     navigate("/login", { replace: true });
   };
 
-  const availableModules = MODULE_OPTIONS.filter(m => m.roles.some(r => userRoles.includes(r)));
+  const isSuperAdmin = userRoles.includes("super_admin");
+  const availableModules = isSuperAdmin ? MODULE_OPTIONS : MODULE_OPTIONS.filter(m => m.roles.some(r => userRoles.includes(r)));
   const filteredModules = availableModules.filter(m => 
     m.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
     m.description.toLowerCase().includes(searchTerm.toLowerCase())
