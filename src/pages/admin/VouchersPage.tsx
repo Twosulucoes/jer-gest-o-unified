@@ -120,6 +120,7 @@ export default function VouchersPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const [issueOpen, setIssueOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [printVoucher, setPrintVoucher] = useState<VoucherRow | null>(null);
   const [historyVoucher, setHistoryVoucher] = useState<VoucherRow | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<VoucherRow | null>(null);
