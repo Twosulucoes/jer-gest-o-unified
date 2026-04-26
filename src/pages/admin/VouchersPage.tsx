@@ -295,18 +295,31 @@ export default function VouchersPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredVouchers.map((v) => {
-            const p = participantsMap.get(v.participant_id);
+            const p = v.participant_id ? participantsMap.get(v.participant_id) : null;
             const status = STATUS_LABEL[v.status] ?? { label: v.status, variant: "outline" as const };
+            const isAggregate = v.voucher_type === "aggregate";
             return (
-              <Card key={v.id} className="p-4 space-y-3">
+              <Card
+                key={v.id}
+                className={`p-4 space-y-3 ${v.is_contingency ? "border-warning/50 bg-warning/5" : ""}`}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{p?.full_name ?? "—"}</p>
+                    <p className="font-medium truncate">
+                      {isAggregate ? (v.label ?? "Voucher agregado") : (p?.full_name ?? "—")}
+                    </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {p?.participant_type ?? "—"} {p?.cpf ? `· CPF ${p.cpf}` : ""}
+                      {isAggregate ? "Acompanhante / agregado" : `${p?.participant_type ?? "—"}${p?.cpf ? ` · CPF ${p.cpf}` : ""}`}
                     </p>
                   </div>
-                  <Badge variant={status.variant}>{status.label}</Badge>
+                  <div className="flex flex-col gap-1 items-end shrink-0">
+                    <Badge variant={status.variant}>{status.label}</Badge>
+                    {isAggregate ? (
+                      <Badge variant="secondary" className="text-[10px]">Agregado</Badge>
+                    ) : v.is_contingency ? (
+                      <Badge variant="outline" className="text-[10px] border-warning text-warning-foreground">Contingência</Badge>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
