@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { PwaSectionLabel } from "@/components/pwa/PwaDashboardPrimitives";
-import { ArrowLeft, ClipboardList, Search } from "lucide-react";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { ClipboardList, Search } from "lucide-react";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { cn } from "@/lib/utils";
 
 interface Participant {
@@ -77,14 +77,7 @@ export default function DelegacaoParticipantesPage() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
-      <header className="relative flex h-14 items-center gap-2 border-b border-border/80 bg-card/95 px-4 shadow-app-sm backdrop-blur-sm">
-        <button type="button" onClick={() => navigate("/pwa/delegacao")} className="text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <ClipboardList className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Participantes</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Participantes" icon={ClipboardList} backTo="/pwa/delegacao" />
 
       <main className="relative max-w-md mx-auto space-y-4 p-4">
         <div className="relative">
