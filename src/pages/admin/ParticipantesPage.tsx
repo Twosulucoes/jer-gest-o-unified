@@ -667,7 +667,7 @@ export default function ParticipantesPage() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Categoria</label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -676,7 +676,7 @@ export default function ParticipantesPage() {
                   {Object.entries(CATEGORY_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Tipo</label>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
