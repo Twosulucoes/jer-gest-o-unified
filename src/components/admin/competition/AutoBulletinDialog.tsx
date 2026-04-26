@@ -147,77 +147,105 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
     }
   };
 
+  /**
+   * Cria um único boletim com vínculos automáticos.
+   * - Reserva o número via RPC `rpc_create_bulletin` (atômico server-side).
+   * - Aplica `status` desejado (rascunho ou publicado) e registra `updated_by`.
+   * - Persiste vínculos n:n com sport_events / matches (defensivo).
+   */
+  const createOneBulletin = async (params: {
+    titleText: string;
+    contentMd: string;
+    matchIds: string[];
+    sportEventIds: string[];
+    status: typeof BULLETIN_STATUS[keyof typeof BULLETIN_STATUS];
+  }): Promise<{ id: string; number: number; linkWarn: string }> => {
+    const { data: rpcData, error: rpcErr } = await supabase.rpc("rpc_create_bulletin", {
+      p_event_id: eventId,
+      p_title: params.titleText,
+      p_content_md: params.contentMd,
+    });
+    if (rpcErr) throw rpcErr;
+
+    const reserved = rpcData as { id: string; number: number };
+    const bulletinId = reserved.id;
+
+    const updates: Record<string, unknown> = {
+      status: params.status,
+      updated_by: user?.id ?? null,
+    };
+    if (params.status === BULLETIN_STATUS.PUBLICADO) {
+      updates.published_at = new Date().toISOString();
+      updates.published_by = user?.id ?? null;
+    }
+
+    const { error: updErr } = await supabase
+      .from("official_bulletins")
+      .update(updates)
+      .eq("id", bulletinId);
+    if (updErr) throw updErr;
+
+    let linkWarn = "";
+    if (params.sportEventIds.length > 0) {
+      const rows = params.sportEventIds.map((sport_event_id) => ({
+        bulletin_id: bulletinId, sport_event_id,
+      }));
+      const { error } = await (supabase as any).from("bulletin_sport_events").insert(rows);
+      if (error) { console.warn("[AutoBulletin] vínculo sport_events:", error.message); linkWarn = error.message; }
+    }
+    if (params.matchIds.length > 0) {
+      const rows = params.matchIds.map((match_id) => ({ bulletin_id: bulletinId, match_id }));
+      const { error } = await (supabase as any).from("bulletin_matches").insert(rows);
+      if (error) { console.warn("[AutoBulletin] vínculo matches:", error.message); linkWarn = error.message; }
+    }
+
+    return { id: bulletinId, number: reserved.number, linkWarn };
+  };
+
   const saveDraft = useMutation({
     mutationFn: async () => {
       if (!title.trim()) throw new Error("Informe um título.");
       if (!content.trim()) throw new Error("Gere o conteúdo antes de salvar.");
       if (!previewMeta) throw new Error("Pré-visualize o conteúdo antes de salvar.");
 
-      // 1) Reserva atômica do número via RPC (server-side, evita duplicidade
-      //    quando dois usuários criam boletins simultaneamente).
-      const { data: rpcData, error: rpcErr } = await supabase.rpc("rpc_create_bulletin", {
-        p_event_id: eventId,
-        p_title: title.trim(),
-        p_content_md: content,
+      // 1) Boletim agregado (sempre como RASCUNHO)
+      const aggregate = await createOneBulletin({
+        titleText: title.trim(),
+        contentMd: content,
+        matchIds: previewMeta.matchIds,
+        sportEventIds: previewMeta.sportEventIds,
+        status: BULLETIN_STATUS.RASCUNHO,
       });
-      if (rpcErr) throw rpcErr;
 
-      const reserved = rpcData as { id: string; number: number };
-      const bulletinId = reserved.id;
-      const reservedNumber = reserved.number;
-
-      // 2) Garante status `rascunho` e rastreia updated_by (RPC cria com defaults).
-      const { error: updErr } = await supabase
-        .from("official_bulletins")
-        .update({
-          status: BULLETIN_STATUS.RASCUNHO,
-          updated_by: user?.id ?? null,
-        })
-        .eq("id", bulletinId);
-      if (updErr) throw updErr;
-
-      const data = { id: bulletinId, number: reservedNumber };
-
-      let linkWarn = "";
-      if (previewMeta.sportEventIds.length > 0) {
-        const rows = previewMeta.sportEventIds.map((sport_event_id) => ({
-          bulletin_id: bulletinId,
-          sport_event_id,
-        }));
-        const { error: linkErr } = await (supabase as any)
-          .from("bulletin_sport_events")
-          .insert(rows);
-        if (linkErr) {
-          console.warn("[AutoBulletin] vínculo sport_events falhou:", linkErr.message);
-          linkWarn = linkErr.message;
-        }
-      }
-      if (previewMeta.matchIds.length > 0) {
-        const rows = previewMeta.matchIds.map((match_id) => ({
-          bulletin_id: bulletinId,
-          match_id,
-        }));
-        const { error: linkErr } = await (supabase as any)
-          .from("bulletin_matches")
-          .insert(rows);
-        if (linkErr) {
-          console.warn("[AutoBulletin] vínculo matches falhou:", linkErr.message);
-          linkWarn = linkErr.message;
+      // 2) Boletins por fase (PUBLICADOS) — sequencial para preservar a ordem dos números
+      const phaseResults: Array<{ phaseName: string; number: number; linkWarn: string }> = [];
+      if (splitByPhase) {
+        for (const ph of phasesPreview) {
+          const created = await createOneBulletin({
+            titleText: ph.result.suggestedTitle,
+            contentMd: ph.result.contentMd,
+            matchIds: ph.result.matchIds,
+            sportEventIds: ph.result.sportEventIds,
+            status: BULLETIN_STATUS.PUBLICADO,
+          });
+          phaseResults.push({ phaseName: ph.phaseName, number: created.number, linkWarn: created.linkWarn });
         }
       }
 
-      return { ...data, linkWarn };
+      return { aggregate, phaseResults };
     },
-    onSuccess: (data: any) => {
+    onSuccess: ({ aggregate, phaseResults }) => {
       const previewN = previewMeta?.number;
-      const reservedN = data.number;
-      const numberShifted = previewN != null && previewN !== reservedN;
-      toast.success(`Boletim #${reservedN} criado em rascunho`, {
+      const numberShifted = previewN != null && previewN !== aggregate.number;
+      const phaseSummary = phaseResults.length > 0
+        ? `${phaseResults.length} boletim(ns) por fase publicado(s).`
+        : `${previewMeta?.matchIds.length ?? 0} partida(s) e ${previewMeta?.sportEventIds.length ?? 0} prova(s) vinculadas.`;
+
+      toast.success(`Agregado #${aggregate.number} em rascunho`, {
         description: [
-          numberShifted ? `Número reajustado (prévia era #${previewN}, outro usuário gerou primeiro).` : null,
-          data.linkWarn
-            ? `Vínculos não persistidos: ${data.linkWarn}`
-            : `${previewMeta?.matchIds.length ?? 0} partida(s) e ${previewMeta?.sportEventIds.length ?? 0} prova(s) vinculadas.`,
+          numberShifted ? `Número reajustado (prévia era #${previewN}).` : null,
+          phaseSummary,
+          aggregate.linkWarn ? `Vínculos do agregado: ${aggregate.linkWarn}` : null,
         ].filter(Boolean).join(" "),
       });
       queryClient.invalidateQueries({ queryKey: ["bulletins-all"] });
