@@ -488,6 +488,7 @@ const App = () => (
             <Route path="/pwa/coordenacao-tecnica/resultados" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoResultadosPwaPage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/estatisticas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoEstatisticasPage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/consulta" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoConsultaPage /></PwaRouteGuard>} />
+            <Route path="/pwa/coordenacao-tecnica/incidentes" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoIncidentesPage /></PwaRouteGuard>} />
             <Route path="/pwa/coordenacao-tecnica/incidente/:incidentId" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]}><CoordenacaoIncidentePage /></PwaRouteGuard>} />
 
             {/* PWA Resultados — perfil coordenador_modalidade */}
