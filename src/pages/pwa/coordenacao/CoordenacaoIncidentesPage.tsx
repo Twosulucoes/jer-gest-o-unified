@@ -227,6 +227,19 @@ export default function CoordenacaoIncidentesPage() {
             </CardContent>
           </Card>
         ))}
+
+        {hasMore && (
+          <div className="pt-2 pb-8">
+            <Button 
+              variant="outline" 
+              className="w-full h-12 rounded-xl text-xs font-bold uppercase tracking-widest border-border/60"
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? "Carregando..." : "Carregar mais ocorrências"}
+            </Button>
+          </div>
+        )}
       </main>
     </div>
   );
