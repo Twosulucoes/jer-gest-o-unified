@@ -17,6 +17,8 @@ import { FoodIncidentDialog } from "@/components/pwa/alimentacao/FoodIncidentDia
 import { AlimentacaoDuplicateAlert } from "@/components/pwa/alimentacao/AlimentacaoDuplicateAlert";
 import { format } from "date-fns";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
+
 
 interface OpenWindowState {
   id: string;
