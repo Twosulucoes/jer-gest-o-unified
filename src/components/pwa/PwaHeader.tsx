@@ -8,7 +8,13 @@ import { useStageContext } from "@/contexts/StageContext";
 import { PwaRefreshButton } from "./PwaRefreshButton";
 
 interface PwaHeaderProps {
-...
+  title: string;
+  subtitle?: string;
+  icon?: React.ElementType;
+  backTo?: string;
+  onSignOut?: () => void;
+  rightSlot?: React.ReactNode;
+}
 
 interface PwaHeaderProps {
   title: string;
