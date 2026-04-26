@@ -107,6 +107,15 @@ export default function VenueFormDialog({
     }
   }, [venue, events, form]);
 
+  // Pré-seleciona a etapa ativa ao criar (não sobrescreve edição nem escolha manual)
+  useEffect(() => {
+    if (isEditing) return;
+    if (!stages.length) return;
+    if (form.getValues("event_stage_id")) return;
+    const active = stages.find((s) => s.status === "active");
+    if (active) form.setValue("event_stage_id", active.id, { shouldValidate: true });
+  }, [stages, isEditing, form]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -150,27 +159,40 @@ export default function VenueFormDialog({
             <FormField
               control={form.control}
               name="event_stage_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Etapa do evento</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={!selectedEventId || !stages.length}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={!selectedEventId ? "Selecione um evento primeiro" : !stages.length ? "Nenhuma etapa cadastrada" : "Selecione a etapa"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {stages.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.name}{s.status === "active" ? " (ativa)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>Cada local pertence a uma única etapa.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const activeStage = stages.find((s) => s.status === "active");
+                return (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1">
+                      Etapa do evento
+                      <span className="text-destructive" aria-label="obrigatório">*</span>
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!selectedEventId || !stages.length}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={!selectedEventId ? "Selecione um evento primeiro" : !stages.length ? "Nenhuma etapa cadastrada" : "Selecione a etapa"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {stages.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name}{s.status === "active" ? " (ativa)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Campo obrigatório — cada local pertence a uma única etapa.
+                      {!isEditing && activeStage && field.value === activeStage.id && (
+                        <span className="block text-primary mt-1">
+                          ✓ Etapa ativa "{activeStage.name}" pré-selecionada.
+                        </span>
+                      )}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
