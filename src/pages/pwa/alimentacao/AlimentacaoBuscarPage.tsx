@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Search, Loader2 } from "lucide-react";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { Search, Loader2 } from "lucide-react";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 
 interface PersonResult {
   id: string;
@@ -17,7 +16,6 @@ interface PersonResult {
 }
 
 export default function AlimentacaoBuscarPage() {
-  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PersonResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -43,14 +41,7 @@ export default function AlimentacaoBuscarPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b bg-card px-4 h-14">
-        <button onClick={() => navigate("/pwa/alimentacao")} className="text-muted-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <Search className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Buscar Pessoa</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Buscar Pessoa" icon={Search} backTo="/pwa/alimentacao" />
 
       <main className="p-4 max-w-md mx-auto space-y-4">
         <div className="flex gap-2">
