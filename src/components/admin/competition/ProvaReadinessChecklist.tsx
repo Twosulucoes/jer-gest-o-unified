@@ -1,10 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, AlertCircle, XCircle, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { RESULT_STATUS } from "@/lib/resultStatus";
+import { useProvaStatus } from "@/hooks/useProvaStatus";
+import { isAtLeast, PROVA_STATUS, PROVA_STATUS_LABEL, type ProvaStatus } from "@/lib/competition/provaStatus";
 
 type ChecklistState = "ok" | "warn" | "missing";
 
@@ -23,120 +22,95 @@ interface Props {
   onJumpTo: (stepKey: string) => void;
 }
 
-export default function ProvaReadinessChecklist({ eventId, sportEventId, stageId, onJumpTo }: Props) {
-  const { data, isLoading } = useQuery({
-    queryKey: ["prova-readiness", eventId, sportEventId, stageId],
-    enabled: !!eventId && !!sportEventId,
-    queryFn: async () => {
-      // Inscritos
-      const { count: enrolled } = await supabase
-        .from("participant_sport_events")
-        .select("id", { count: "exact", head: true })
-        .eq("sport_event_id", sportEventId);
+function stateForStep(stepKey: string, status: ProvaStatus, hasMatches: boolean): ChecklistState {
+  if (!hasMatches && stepKey !== "participants") return "missing";
+  const minimums: Record<string, ProvaStatus> = {
+    participants: PROVA_STATUS.ENROLLED,
+    builder: PROVA_STATUS.BUILT,
+    agenda: PROVA_STATUS.SCHEDULED,
+    arbitragem: PROVA_STATUS.OFFICIATED,
+    results: PROVA_STATUS.FINISHED,
+    publish: PROVA_STATUS.PUBLISHED,
+  };
+  const min = minimums[stepKey];
+  if (!min) return "warn";
+  if (isAtLeast(status, min)) return "ok";
+  // Etapas intermediárias parciais → warn; ausência total → missing
+  if (stepKey === "agenda" || stepKey === "arbitragem" || stepKey === "results" || stepKey === "publish") {
+    return "warn";
+  }
+  return "missing";
+}
 
-      // Partidas (escopo por sport_event_id; stage está implícito na prova)
-      const { data: matches = [], count: matchesCount } = await supabase
-        .from("competition_matches")
-        .select("id, status, match_date, start_time, venue_id", { count: "exact" })
-        .eq("event_id", eventId)
-        .eq("sport_event_id", sportEventId);
+export default function ProvaReadinessChecklist({ eventId, sportEventId, onJumpTo }: Props) {
+  const { status, signals, isLoading } = useProvaStatus(eventId, sportEventId);
 
-      const matchIds = (matches ?? []).map((m: any) => m.id);
-      const scheduled = (matches ?? []).filter((m: any) => m.match_date && m.start_time && m.venue_id).length;
-      const finished = (matches ?? []).filter((m: any) => m.status === "finished").length;
-
-      // Árbitros
-      let officialsCount = 0;
-      if (matchIds.length > 0) {
-        const { count } = await supabase
-          .from("match_user_assignments")
-          .select("id", { count: "exact", head: true })
-          .in("match_id", matchIds);
-        officialsCount = count ?? 0;
-      }
-
-      // Resultados publicados
-      let publishedCount = 0;
-      if (matchIds.length > 0) {
-        const { count } = await supabase
-          .from("competition_match_results")
-          .select("id", { count: "exact", head: true })
-          .in("match_id", matchIds)
-          .eq("result_status", RESULT_STATUS.PUBLISHED);
-        publishedCount = count ?? 0;
-      }
-
-      return {
-        enrolled: enrolled ?? 0,
-        matchesCount: matchesCount ?? 0,
-        scheduled,
-        finished,
-        officialsCount,
-        publishedCount,
-      };
-    },
-  });
-
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <Card><CardContent className="pt-4 text-xs text-muted-foreground">Carregando checklist...</CardContent></Card>
     );
   }
 
-  const { enrolled, matchesCount, scheduled, finished, officialsCount, publishedCount } = data;
+  const { enrolled, matchesCount, scheduled, finished, officialsCount, resultsPublished } = signals;
+  const hasMatches = matchesCount > 0;
 
   const items: ChecklistItem[] = [
     {
       key: "participants",
       label: "Inscritos",
-      state: enrolled > 0 ? "ok" : "missing",
+      state: stateForStep("participants", status, hasMatches),
       hint: enrolled > 0 ? `${enrolled} confirmados` : "Sem inscritos",
       goTo: "participants",
     },
     {
       key: "builder",
       label: "Disputas montadas",
-      state: matchesCount > 0 ? "ok" : "missing",
+      state: stateForStep("builder", status, hasMatches),
       hint: matchesCount > 0 ? `${matchesCount} partida(s)` : "Sem partidas",
       goTo: "builder",
     },
     {
       key: "agenda",
       label: "Agenda completa",
-      state: matchesCount === 0 ? "missing" : scheduled === matchesCount ? "ok" : "warn",
-      hint: matchesCount === 0 ? "—" : `${scheduled}/${matchesCount} com data, hora e local`,
+      state: !hasMatches ? "missing" : scheduled === matchesCount ? "ok" : "warn",
+      hint: !hasMatches ? "—" : `${scheduled}/${matchesCount} com data, hora e local`,
       goTo: "agenda",
     },
     {
       key: "arbitragem",
       label: "Arbitragem escalada",
-      state: matchesCount === 0 ? "missing" : officialsCount > 0 ? "ok" : "warn",
-      hint: matchesCount === 0 ? "—" : `${officialsCount} designação(ões)`,
+      state: !hasMatches ? "missing" : officialsCount > 0 ? "ok" : "warn",
+      hint: !hasMatches ? "—" : `${officialsCount} designação(ões)`,
       goTo: "arbitragem",
     },
     {
       key: "results",
       label: "Resultados lançados",
-      state: matchesCount === 0 ? "missing" : finished === matchesCount ? "ok" : "warn",
-      hint: matchesCount === 0 ? "—" : `${finished}/${matchesCount} finalizadas`,
+      state: !hasMatches ? "missing" : finished === matchesCount ? "ok" : "warn",
+      hint: !hasMatches ? "—" : `${finished}/${matchesCount} finalizadas`,
       goTo: "results",
     },
     {
       key: "publish",
       label: "Publicado no portal",
-      state: finished === 0 ? "missing" : publishedCount > 0 ? "ok" : "warn",
-      hint: publishedCount > 0 ? `${publishedCount} publicado(s)` : "Aguardando publicação",
+      state: finished === 0 ? "missing" : resultsPublished > 0 ? "ok" : "warn",
+      hint: resultsPublished > 0 ? `${resultsPublished} publicado(s)` : "Aguardando publicação",
       goTo: "publish",
     },
   ];
 
-  const allOk = items.every((i) => i.state === "ok");
+  const allOk = status === PROVA_STATUS.PUBLISHED;
 
   return (
     <Card className={cn(allOk && "border-success/40 bg-success/5")}>
       <CardContent className="pt-4">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold">Prontidão da Prova</h4>
+          <div>
+            <h4 className="text-sm font-semibold">Prontidão da Prova</h4>
+            <p className="text-[11px] text-muted-foreground">
+              Estado atual: <strong>{PROVA_STATUS_LABEL[status]}</strong>
+            </p>
+          </div>
           {allOk && <Badge variant="outline" className="border-success/50 text-success">Tudo pronto</Badge>}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">

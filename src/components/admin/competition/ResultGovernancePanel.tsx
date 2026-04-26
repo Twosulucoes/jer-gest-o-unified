@@ -12,9 +12,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle, Send, Loader2, FileText, Plus, ArrowRight, Undo2, User, Calendar } from "lucide-react";
+import { CheckCircle, Send, Loader2, FileText, Plus, ArrowRight, Undo2, User, Calendar, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useProvaStatus } from "@/hooks/useProvaStatus";
+import { canTransition, PROVA_STATUS_LABEL } from "@/lib/competition/provaStatus";
 
 interface Props {
   sportEventId: string | null;
@@ -26,6 +28,11 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
   const [selectedBulletinId, setSelectedBulletinId] = useState<string>("");
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+
+  // Single source of truth do estado da prova
+  const { status: provaStatus } = useProvaStatus(eventId, sportEventId);
+  const canValidate = canTransition(provaStatus, "validate");
+  const canPublish = canTransition(provaStatus, "publish");
 
   // Counts of results by status for this sport_event
   const { data: counts } = useQuery({
@@ -106,6 +113,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
     onSuccess: (data: any) => {
       toast.success(`${data.validated_count} resultado(s) validado(s).`);
       queryClient.invalidateQueries({ queryKey: ["governance-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["prova-status"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -124,6 +132,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
       toast.success(`${data.published_count} resultado(s) publicado(s).`);
       setSelectedBulletinId("");
       queryClient.invalidateQueries({ queryKey: ["governance-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["prova-status"] });
       queryClient.invalidateQueries({ queryKey: ["published-results-bulletin"] });
       queryClient.invalidateQueries({ queryKey: ["competition_phases"] });
       if (sportEventId) {
@@ -161,6 +170,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
       }
       setUnpublishReason("");
       queryClient.invalidateQueries({ queryKey: ["governance-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["prova-status"] });
       queryClient.invalidateQueries({ queryKey: ["published-results-bulletin"] });
       queryClient.invalidateQueries({ queryKey: ["public-results"] });
     },
@@ -203,6 +213,20 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Estado canônico da prova (single source of truth) */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 text-sm">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <span className="font-medium">Estado da prova:</span>
+            <Badge variant="secondary">{PROVA_STATUS_LABEL[provaStatus]}</Badge>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Botões de Validar/Publicar ficam habilitados conforme as transições permitidas pelo estado.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Visual step guide */}
       <Card className="bg-muted/30">
         <CardContent className="pt-4">
@@ -250,7 +274,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
           </p>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button size="sm" disabled={!counts?.launched || validateResults.isPending}>
+              <Button size="sm" disabled={!canValidate || !counts?.launched || validateResults.isPending} title={!canValidate ? "Aguardando todas as partidas terminarem" : undefined}>
                 {validateResults.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
                 Validar {counts?.launched || 0} resultado(s)
               </Button>
@@ -340,7 +364,7 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" disabled={!counts?.validated || !selectedBulletinId || publishResults.isPending}>
+                <Button size="sm" disabled={!canPublish || !counts?.validated || !selectedBulletinId || publishResults.isPending} title={!canPublish ? "A prova precisa estar com todos os resultados validados e ter um boletim publicado disponível" : undefined}>
                   {publishResults.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
                   Publicar {counts?.validated || 0}
                 </Button>
