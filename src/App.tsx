@@ -142,6 +142,7 @@ import PesquisaConfirmacaoPage from "./pages/pwa/PesquisaConfirmacaoPage";
 import PwaSetPasswordPage from "./pages/pwa/PwaSetPasswordPage";
 import PwaLandingPage from "./pages/pwa/PwaLandingPage";
 import PwaModulePage from "./pages/pwa/PwaModulePage";
+import PwaInstallPage from "./pages/pwa/PwaInstallPage";
 // PWA Alojamento pages
 import AlojamentoHomePage from "./pages/pwa/alojamento/AlojamentoHomePage";
 import AlojamentoScanPage from "./pages/pwa/alojamento/AlojamentoScanPage";
@@ -196,6 +197,7 @@ import PwaDebugPage from "./pages/pwa/PwaDebugPage";
 import NotFound from "./pages/NotFound";
 import PwaRouteGuard from "./components/pwa/PwaRouteGuard";
 import { PwaUpdateNotice } from "./components/pwa/PwaUpdateNotice";
+import { PwaInstallNotice } from "./components/pwa/PwaInstallNotice";
 import { AppStatePreserver } from "./components/pwa/AppStatePreserver";
 import { VersionValidator } from "./components/pwa/VersionValidator";
 
@@ -225,6 +227,7 @@ const App = () => (
         <ScrollToTop />
         <AppStatePreserver />
         <PwaUpdateNotice />
+        <PwaInstallNotice />
 
         <AuthProvider>
           <VersionValidator>
@@ -529,6 +532,7 @@ const App = () => (
             <Route path="/pwa/pesquisa/home" element={<PesquisaHomePage />} />
             <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
             <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
+            <Route path="/pwa/install" element={<PwaInstallPage />} />
             {/* PWA Acesso Negado */}
             <Route path="/pwa/acesso-negado" element={<PwaAcessoNegadoPage />} />
             <Route path="/pwa/debug" element={<PwaDebugPage />} />
