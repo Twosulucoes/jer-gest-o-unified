@@ -9,10 +9,7 @@ export default function CompeticaoPainelScorePage() {
       <ModuleHeader 
         route="/admin/competicao/painel" 
         title="Painel Score"
-        breadcrumb={[
-          { label: "Competição", path: "/admin/competicao/painel" },
-          { label: "Painel Score" }
-        ]}
+        backFallbackTo="/admin/competicao/painel"
       />
       <div className="p-8 text-center border-2 border-dashed rounded-lg">
         Painel para a modalidade {sportEventId} em desenvolvimento...
