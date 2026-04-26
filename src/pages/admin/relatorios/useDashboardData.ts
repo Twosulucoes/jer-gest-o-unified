@@ -263,7 +263,7 @@ export function useDashboardData(eventId?: string | null) {
       number,
       { list: any[]; totalCount: number },
       number,
-      Array<{ id: string; name: string | null; sports: { name: string } | null }>,
+      Array<{ id: string; name: string | null; sports: { name: string } | null; categories: { name: string } | null }>,
       { list: any[]; totalCount: number },
     ];
 
