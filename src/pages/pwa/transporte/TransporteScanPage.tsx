@@ -104,6 +104,26 @@ export default function TransporteScanPage() {
         data: { session },
       } = await supabase.auth.getSession();
 
+      const boardingData = {
+        trip_id: tripId,
+        participant_id: participantId,
+        status: "boarded",
+        boarded_at: new Date().toISOString(),
+        boarded_by: session?.user.id ?? null,
+        is_manual: source === "manual",
+      };
+
+      if (!isOnline()) {
+        addToOfflineQueue("transporte", boardingData, name);
+        const successMsg = `Embarque registrado (Offline): ${name}`;
+        setResult({ ok: true, source, message: successMsg });
+        toast.info("Registrado offline. Sincronize quando houver internet.");
+        recordOutcome("ok");
+        if (navigator.vibrate) navigator.vibrate(200);
+        reopenIfContinuous();
+        return;
+      }
+
       const { data: existing } = await supabase
         .from("transport_passengers")
         .select("id, status")
@@ -122,20 +142,18 @@ export default function TransporteScanPage() {
         }
         const { error } = await supabase
           .from("transport_passengers")
-          .update({ status: "boarded", boarded_at: new Date().toISOString(), boarded_by: session?.user.id ?? null })
+          .update({ 
+            status: "boarded", 
+            boarded_at: boardingData.boarded_at, 
+            boarded_by: boardingData.boarded_by 
+          })
           .eq("id", existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("transport_passengers").insert({
-          trip_id: tripId,
-          participant_id: participantId,
-          status: "boarded",
-          boarded_at: new Date().toISOString(),
-          boarded_by: session?.user.id ?? null,
-          is_manual: source === "manual",
-        });
+        const { error } = await supabase.from("transport_passengers").insert(boardingData);
         if (error) throw error;
       }
+
     }
 
     const successMsg = `Embarque registrado: ${name}`;
