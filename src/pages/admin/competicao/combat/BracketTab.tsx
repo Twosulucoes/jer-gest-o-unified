@@ -61,7 +61,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
               )
             )
           )
-        `)
+        ` as any)
         .eq("sport_event_id", sportEventId)
         .order("sort_order");
       
