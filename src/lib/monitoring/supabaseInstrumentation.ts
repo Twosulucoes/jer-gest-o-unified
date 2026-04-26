@@ -87,7 +87,7 @@ async function handleRestTelemetry(url: string, init: RequestInit | undefined, r
         timestamp: new Date().toISOString(),
       }
     });
-  } catch (error) {
+  } catch (_error) {
     // Fail silently to not impact app performance
   }
 }
