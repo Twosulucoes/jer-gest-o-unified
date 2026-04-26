@@ -8,10 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  ArrowLeft, Trophy, Users, Paperclip, Send,
+  Trophy, Users, Paperclip, Send,
   Trash2, Plus, Upload, FileText, Image, CheckCircle2,
 } from "lucide-react";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import {
   usePartidaDetalhe,
   useArbitrosPartida,
@@ -438,13 +438,7 @@ export default function ResultadosPartidaFormPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <header className="flex items-center gap-3 border-b bg-card px-4 h-14 shrink-0">
-          <button onClick={() => navigate(-1)} className="text-muted-foreground p-1 -ml-1">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <Skeleton className="h-4 w-32" />
-          <div className="ml-auto"><PwaRefreshButton /></div>
-        </header>
+        <PwaHeader title="Partida" icon={Trophy} onBack={() => navigate(-1)} />
         <main className="p-4 space-y-4">
           <Skeleton className="h-24 w-full rounded-xl" />
           <Skeleton className="h-48 w-full rounded-xl" />
@@ -469,23 +463,16 @@ export default function ResultadosPartidaFormPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="flex items-center gap-3 border-b bg-card px-4 h-14 shrink-0">
-        <button
-          onClick={() => navigate(-1)}
-          className="text-muted-foreground p-1 -ml-1 active:opacity-60"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <Trophy className="h-5 w-5 text-primary shrink-0" />
-        <span className="font-semibold text-foreground truncate">
-          {match.match_number ? `Jogo ${match.match_number}` : "Partida"}
-        </span>
-        <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${STATUS_COLORS[match.status] ?? "bg-slate-100 text-slate-700"}`}>
-          {STATUS_LABELS[match.status] ?? match.status}
-        </span>
-        <PwaRefreshButton />
-      </header>
+      <PwaHeader
+        title={match.match_number ? `Jogo ${match.match_number}` : "Partida"}
+        icon={Trophy}
+        onBack={() => navigate(-1)}
+        rightSlot={
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${STATUS_COLORS[match.status] ?? "bg-slate-100 text-slate-700"}`}>
+            {STATUS_LABELS[match.status] ?? match.status}
+          </span>
+        }
+      />
 
       {/* Card resumo */}
       <div className="bg-card border-b px-4 py-3 flex flex-col gap-1">

@@ -1,8 +1,8 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ClipboardList, ChevronRight, Calendar } from "lucide-react";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { ClipboardList, ChevronRight, Calendar } from "lucide-react";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { format, parseISO, isToday, isTomorrow, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { usePartidasModalidade, type PartidaItem } from "@/hooks/useLancamentoResultados";
@@ -47,18 +47,7 @@ export default function ResultadosPartidasPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="flex items-center gap-3 border-b bg-card px-4 h-14 shrink-0">
-        <button
-          onClick={() => navigate("/pwa/resultados")}
-          className="text-muted-foreground p-1 -ml-1 active:opacity-60"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <ClipboardList className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-foreground">Partidas</span>
-        <div className="ml-auto"><PwaRefreshButton /></div>
-      </header>
+      <PwaHeader title="Partidas" icon={ClipboardList} backTo="/pwa/resultados" />
 
       <main className="flex-1 p-4 max-w-md mx-auto w-full space-y-5">
         {isLoading && (

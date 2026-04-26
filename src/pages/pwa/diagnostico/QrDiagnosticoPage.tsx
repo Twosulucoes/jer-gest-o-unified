@@ -1,14 +1,12 @@
 import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { isNativeApp } from "@/lib/runtime";
 import QrScanner from "@/components/QrScanner";
-import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { PwaHeader } from "@/components/pwa/PwaHeader";
 import {
-  ArrowLeft,
   ShieldCheck,
   Camera,
   Wifi,
@@ -31,7 +29,6 @@ interface DiagCheck {
 type TestModule = "alojamento" | "transporte" | "alimentacao" | null;
 
 export default function QrDiagnosticoPage() {
-  const navigate = useNavigate();
   const [checks, setChecks] = useState<DiagCheck[]>([]);
   const [cameraStatus, setCameraStatus] = useState<CheckStatus>("pending");
   const [testModule, setTestModule] = useState<TestModule>(null);
