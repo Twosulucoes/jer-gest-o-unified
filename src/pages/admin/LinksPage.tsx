@@ -84,19 +84,19 @@ export default function LinksPage() {
   });
 
   const copyLink = (slug: string) => {
-    navigator.clipboard.writeText(`${BASE_URL}/go/${slug}`);
+    navigator.clipboard.writeText(`${getBaseUrl()}/go/${slug}`);
     toast.success("Link copiado!");
   };
 
   const handleCreate = async () => {
     if (!wizModule || !wizTitle) return;
     setWizCreating(true);
-    const slug = wizSlug || generateSlug(wizTitle);
+    const slug = wizSlug || slugify(wizTitle);
     const { error } = await supabase.from("public_content").insert({
       title: wizTitle,
       slug,
       kind: "redirect",
-      destination_url: `${BASE_URL}${wizModule}`,
+      destination_url: wizModule,
       active: true,
       visibility: "public",
       open_in_new_tab: false,
@@ -106,7 +106,7 @@ export default function LinksPage() {
       toast.error(error.message.includes("unique") ? "Slug já existe. Escolha outro." : "Erro ao criar link.");
       return;
     }
-    setWizCreated({ slug, url: `${BASE_URL}/go/${slug}` });
+    setWizCreated({ slug, url: `${getBaseUrl()}/go/${slug}` });
     queryClient.invalidateQueries({ queryKey: ["public_content"] });
   };
 
@@ -125,7 +125,7 @@ export default function LinksPage() {
           title: opt.title,
           slug: opt.slug,
           kind: "redirect",
-          destination_url: `${BASE_URL}${opt.value}`,
+          destination_url: opt.value,
           active: true,
           visibility: "public",
           open_in_new_tab: false,
@@ -154,7 +154,7 @@ export default function LinksPage() {
   };
 
   const copyInstructions = (title: string, slug: string) => {
-    const url = `${BASE_URL}/go/${slug}`;
+    const url = `${getBaseUrl()}/go/${slug}`;
     const text = `*Instruções de Acesso - ${title}*\n\nOlá! Para acessar o sistema operacional, utilize o link abaixo:\n\n🔗 ${url}\n\nO acesso é automático após o login. Recomenda-se salvar este link nos seus favoritos.`;
     navigator.clipboard.writeText(text);
     toast.success("Instruções copiadas para a área de transferência!");
@@ -239,7 +239,7 @@ export default function LinksPage() {
                 />
               </div>
 
-              <QrCodeCanvas value={`/go/${item.slug}`} size={100} />
+              <QrCodePreview value={`/go/${item.slug}`} size={100} />
 
               <div className="flex items-center gap-1 pt-1 border-t">
                 <Button variant="ghost" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => copyLink(item.slug)}>
@@ -280,7 +280,7 @@ export default function LinksPage() {
 
           {wizCreated ? (
             <div className="space-y-4 py-2">
-              <QrCodeCanvas value={wizCreated.url} size={140} />
+              <QrCodePreview value={wizCreated.url} size={140} />
               <div className="text-center space-y-1">
                 <p className="text-sm font-mono text-muted-foreground break-all">{wizCreated.url}</p>
               </div>
@@ -320,7 +320,7 @@ export default function LinksPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">/go/</span>
                   <Input
-                    placeholder={wizTitle ? generateSlug(wizTitle) : "ex: motoristas"}
+                    placeholder={wizTitle ? slugify(wizTitle) : "ex: motoristas"}
                     value={wizSlug}
                     onChange={(e) => setWizSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
                   />
