@@ -13,6 +13,33 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_ATTEMPTS = 5;
+const attempts = new Map<string, { count: number; lastAttempt: number }>();
+
+function isRateLimited(email: string): boolean {
+  const now = Date.now();
+  const userAttempts = attempts.get(email);
+
+  if (!userAttempts) return false;
+
+  if (now - userAttempts.lastAttempt > RATE_LIMIT_WINDOW) {
+    attempts.delete(email);
+    return false;
+  }
+
+  return userAttempts.count >= MAX_ATTEMPTS;
+}
+
+function recordAttempt(email: string) {
+  const now = Date.now();
+  const userAttempts = attempts.get(email) || { count: 0, lastAttempt: now };
+  
+  userAttempts.count++;
+  userAttempts.lastAttempt = now;
+  attempts.set(email, userAttempts);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
