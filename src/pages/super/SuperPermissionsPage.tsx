@@ -1,13 +1,29 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check, X, Shield, Lock, Globe, Smartphone, UserCog, Database } from "lucide-react";
+import { Check, X, Shield, Lock, Globe, Smartphone, UserCog, Database, Info } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ROLES = [
   "super_admin", "admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", 
   "transporte", "alimentacao", "alojamento", "delegacao", "mesario", "arbitragem", "cde"
 ] as const;
+
+const ROLE_INFO: Record<string, { label: string, description: string }> = {
+  super_admin: { label: "Super Admin", description: "Acesso total e irrestrito a todas as funções, configurações e logs do sistema." },
+  admin: { label: "Administrador", description: "Gestão completa do evento, participantes, delegações e usuários." },
+  secretaria: { label: "Secretaria", description: "Operação de cadastros, inscrições, documentos e suporte aos usuários." },
+  coordenacao_tecnica: { label: "Coord. Técnica", description: "Gestão técnica de competições, chaves, resultados e classificação." },
+  coordenador_modalidade: { label: "Coord. Modalidade", description: "Gestão específica de uma modalidade e suas provas vinculadas." },
+  transporte: { label: "Transporte", description: "Gestão operacional de frotas, rotas e horários via aplicativo." },
+  alimentacao: { label: "Alimentação", description: "Controle de acesso a refeitórios e consumo de refeições via QR Code." },
+  alojamento: { label: "Alojamento", description: "Gestão de ocupação, check-in e check-out em unidades de alojamento." },
+  delegacao: { label: "Delegação", description: "Consulta de inscritos e documentos da delegação pelo aplicativo." },
+  mesario: { label: "Mesário", description: "Controle de placar, tempo e estatísticas das partidas ao vivo." },
+  arbitragem: { label: "Arbitragem", description: "Registro de ocorrências e súmulas simplificadas em tempo real." },
+  cde: { label: "CDE", description: "Análise e parecer técnico sobre protestos e irregularidades." }
+};
 
 type Role = typeof ROLES[number];
 
@@ -107,11 +123,23 @@ export default function SuperPermissionsPage() {
                     <TableHeader>
                       <TableRow className="bg-muted/30">
                         <TableHead className="min-w-[150px]">Página / Rota</TableHead>
-                        {ROLES.map(role => (
-                          <TableHead key={role} className="text-center text-[10px] uppercase font-bold px-1 py-3 whitespace-nowrap min-w-[70px]">
-                            {role.replace('_', ' ')}
-                          </TableHead>
-                        ))}
+                        <TooltipProvider>
+                          {ROLES.map(role => (
+                            <Tooltip key={role}>
+                              <TooltipTrigger asChild>
+                                <TableHead className="text-center text-[10px] uppercase font-bold px-1 py-3 whitespace-nowrap min-w-[70px] cursor-help">
+                                  {role.replace('_', ' ')}
+                                </TableHead>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="space-y-1">
+                                  <p className="font-bold text-xs">{ROLE_INFO[role].label}</p>
+                                  <p className="text-[10px] max-w-[150px] leading-tight">{ROLE_INFO[role].description}</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </TooltipProvider>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

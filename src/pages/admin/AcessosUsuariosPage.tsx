@@ -41,18 +41,78 @@ import SportLinksDialog from "@/components/admin/SportLinksDialog";
 import StageLinksDialog from "@/components/admin/StageLinksDialog";
 
 const ROLES = [
-  { value: "super_admin", label: "Super Admin" },
-  { value: "admin", label: "Administrador" },
-  { value: "secretaria", label: "Secretaria" },
-  { value: "coordenacao_tecnica", label: "Coord. Técnica" },
-  { value: "coordenador_modalidade", label: "Coord. Modalidade" },
-  { value: "transporte", label: "Transporte (PWA)" },
-  { value: "alimentacao", label: "Alimentação (PWA)" },
-  { value: "alojamento", label: "Alojamento (PWA)" },
-  { value: "delegacao", label: "Delegação (PWA)" },
-  { value: "arbitragem", label: "Arbitragem (PWA)" },
-  { value: "mesario", label: "Mesário / Ao Vivo (PWA)" },
-  { value: "cde", label: "CDE (Protestos)" },
+  { 
+    value: "super_admin", 
+    label: "Super Admin", 
+    description: "Acesso total e irrestrito a todas as funções, configurações e logs do sistema.",
+    areas: ["Global", "Sistema", "Admin", "PWA"]
+  },
+  { 
+    value: "admin", 
+    label: "Administrador", 
+    description: "Gestão completa do evento, participantes, delegações e usuários.",
+    areas: ["Admin Global", "Etapas", "Relatórios"]
+  },
+  { 
+    value: "secretaria", 
+    label: "Secretaria", 
+    description: "Operação de cadastros, inscrições, documentos e suporte aos usuários.",
+    areas: ["Cadastro", "Participantes", "Documentos"]
+  },
+  { 
+    value: "coordenacao_tecnica", 
+    label: "Coord. Técnica", 
+    description: "Gestão técnica de competições, chaves, resultados e classificação.",
+    areas: ["Competição", "Resultados", "Técnica"]
+  },
+  { 
+    value: "coordenador_modalidade", 
+    label: "Coord. Modalidade", 
+    description: "Gestão específica de uma modalidade e suas provas vinculadas.",
+    areas: ["Modalidade", "Súmulas", "Resultados"]
+  },
+  { 
+    value: "transporte", 
+    label: "Transporte (PWA)", 
+    description: "Gestão operacional de frotas, rotas e horários via aplicativo.",
+    areas: ["Logística", "Transporte App"]
+  },
+  { 
+    value: "alimentacao", 
+    label: "Alimentação (PWA)", 
+    description: "Controle de acesso a refeitórios e consumo de refeições via QR Code.",
+    areas: ["Refeitório", "Consumo App"]
+  },
+  { 
+    value: "alojamento", 
+    label: "Alojamento (PWA)", 
+    description: "Gestão de ocupação, check-in e check-out em unidades de alojamento.",
+    areas: ["Alojamento App", "Ocupação"]
+  },
+  { 
+    value: "delegacao", 
+    label: "Delegação (PWA)", 
+    description: "Consulta de inscritos e documentos da delegação pelo aplicativo.",
+    areas: ["Delegado App", "Inscrições"]
+  },
+  { 
+    value: "arbitragem", 
+    label: "Arbitragem (PWA)", 
+    description: "Registro de ocorrências e súmulas simplificadas em tempo real.",
+    areas: ["Súmula App", "Arbitragem"]
+  },
+  { 
+    value: "mesario", 
+    label: "Mesário / Ao Vivo (PWA)", 
+    description: "Controle de placar, tempo e estatísticas das partidas ao vivo.",
+    areas: ["Live Streaming", "Placar App"]
+  },
+  { 
+    value: "cde", 
+    label: "CDE (Protestos)", 
+    description: "Análise e parecer técnico sobre protestos e irregularidades.",
+    areas: ["Jurídico", "Protestos"]
+  },
 ];
 
 const OPERATIONAL_ROLES = ROLES.filter((r) => !["super_admin", "admin", "secretaria"].includes(r.value));
@@ -450,14 +510,23 @@ export default function AcessosUsuariosPage() {
                         {userRoles.length === 0 ? (
                           <span className="text-muted-foreground text-xs">Sem perfil</span>
                         ) : userRoles.length === 1 ? (
-                          <Badge variant={roleBadgeVariant(userRoles[0])}>
-                            <RoleLabel value={userRoles[0]} />
-                          </Badge>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant={roleBadgeVariant(userRoles[0])} className="cursor-help">
+                                  <RoleLabel value={userRoles[0]} />
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">{ROLES.find(r => r.value === userRoles[0])?.description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         ) : (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 cursor-help">
                                   <Badge variant={roleBadgeVariant(userRoles[0])}>
                                     <RoleLabel value={userRoles[0]} />
                                   </Badge>
@@ -467,10 +536,18 @@ export default function AcessosUsuariosPage() {
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <div className="space-y-0.5">
-                                  {userRoles.map((r: string) => (
-                                    <div key={r} className="text-xs"><RoleLabel value={r} /></div>
-                                  ))}
+                                <div className="space-y-2 p-1">
+                                  {userRoles.map((r: string) => {
+                                    const roleData = ROLES.find(rd => rd.value === r);
+                                    return (
+                                      <div key={r} className="space-y-0.5">
+                                        <div className="text-xs font-bold">{roleData?.label || r}</div>
+                                        <div className="text-[10px] text-muted-foreground leading-tight max-w-[180px]">
+                                          {roleData?.description}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </TooltipContent>
                             </Tooltip>
@@ -580,15 +657,34 @@ export default function AcessosUsuariosPage() {
             <div className="space-y-2">
               <Label className="font-semibold">Perfis de Acesso *</Label>
               <p className="text-xs text-muted-foreground">Selecione todos os módulos que este usuário pode acessar</p>
-              <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                 {availableRoles.map((r) => (
-                  <label key={r.value} className="flex items-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-muted/50 transition-colors">
-                    <Checkbox
-                      checked={inviteRoles.includes(r.value)}
-                      onCheckedChange={() => toggleInviteRole(r.value)}
-                    />
-                    <span className="text-sm">{r.label}</span>
-                  </label>
+                  <TooltipProvider key={r.value}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <label className="flex items-start gap-2 cursor-pointer rounded-md border p-2 hover:bg-muted/50 transition-colors">
+                          <Checkbox
+                            checked={inviteRoles.includes(r.value)}
+                            onCheckedChange={() => toggleInviteRole(r.value)}
+                            className="mt-0.5"
+                          />
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-medium leading-none">{r.label}</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {r.areas.map((area) => (
+                                <span key={area} className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                  {area}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </label>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-[200px]">
+                        <p className="text-xs">{r.description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 ))}
               </div>
               {inviteRoles.length === 0 && (
@@ -692,17 +788,36 @@ export default function AcessosUsuariosPage() {
                   <Label className="font-semibold text-base">Perfis de Acesso</Label>
                   <p className="text-xs text-muted-foreground mt-0.5">Selecione todos os módulos que este usuário pode acessar</p>
                 </div>
-                <div className="space-y-1.5">
-                  {availableRoles.map((r) => (
-                    <label key={r.value} className="flex items-center gap-2 cursor-pointer rounded-md border p-2.5 hover:bg-muted/50 transition-colors">
-                      <Checkbox
-                        checked={drawerRoles.includes(r.value)}
-                        onCheckedChange={() => toggleDrawerRole(r.value)}
-                      />
-                      <span className="text-sm">{r.label}</span>
-                    </label>
-                  ))}
-                </div>
+                  <div className="space-y-1.5">
+                    {availableRoles.map((r) => (
+                      <TooltipProvider key={r.value}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <label className="flex items-start gap-2 cursor-pointer rounded-md border p-2.5 hover:bg-muted/50 transition-colors">
+                              <Checkbox
+                                checked={drawerRoles.includes(r.value)}
+                                onCheckedChange={() => toggleDrawerRole(r.value)}
+                                className="mt-0.5"
+                              />
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-sm font-medium leading-none">{r.label}</span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {r.areas.map((area) => (
+                                    <span key={area} className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                      {area}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </label>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="max-w-[200px]">
+                            <p className="text-xs">{r.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
+                  </div>
                 {drawerRoles.length === 0 && (
                   <p className="text-xs text-destructive">Selecione pelo menos um perfil</p>
                 )}
