@@ -137,11 +137,47 @@ export default function AutoBulletinDialog({ eventId, sportEventId, stageId }: P
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Persiste vínculos automáticos (n:n) com sport_events e partidas-fonte.
+      // Defensivo: se as tabelas ainda não existirem, apenas avisa em console
+      // sem bloquear a criação do boletim.
+      const bulletinId = data.id as string;
+
+      let linkWarn = "";
+      if (previewMeta.sportEventIds.length > 0) {
+        const rows = previewMeta.sportEventIds.map((sport_event_id) => ({
+          bulletin_id: bulletinId,
+          sport_event_id,
+        }));
+        const { error: linkErr } = await (supabase as any)
+          .from("bulletin_sport_events")
+          .insert(rows);
+        if (linkErr) {
+          console.warn("[AutoBulletin] vínculo sport_events falhou:", linkErr.message);
+          linkWarn = linkErr.message;
+        }
+      }
+      if (previewMeta.matchIds.length > 0) {
+        const rows = previewMeta.matchIds.map((match_id) => ({
+          bulletin_id: bulletinId,
+          match_id,
+        }));
+        const { error: linkErr } = await (supabase as any)
+          .from("bulletin_matches")
+          .insert(rows);
+        if (linkErr) {
+          console.warn("[AutoBulletin] vínculo matches falhou:", linkErr.message);
+          linkWarn = linkErr.message;
+        }
+      }
+
+      return { ...data, linkWarn };
     },
     onSuccess: (data: any) => {
       toast.success(`Boletim #${data.number} criado em rascunho`, {
-        description: "Pronto para revisão e publicação.",
+        description: data.linkWarn
+          ? `Vínculos não persistidos: ${data.linkWarn}`
+          : `${previewMeta?.matchIds.length ?? 0} partida(s) e ${previewMeta?.sportEventIds.length ?? 0} prova(s) vinculadas.`,
       });
       queryClient.invalidateQueries({ queryKey: ["bulletins-all"] });
       setOpen(false);
