@@ -486,6 +486,7 @@ export default function LocaisPage() {
                           key={`m-${stageKey}-${venue.id}`}
                           venue={venue}
                           otherStages={otherStages}
+                          dependency={deps[venue.id]}
                           canWrite={canWrite}
                           isToggling={
                             toggleActiveMutation.isPending &&
@@ -493,6 +494,8 @@ export default function LocaisPage() {
                           }
                           onEdit={openEdit}
                           onToggleActive={(v) => toggleActiveMutation.mutate(v)}
+                          onArchive={(v) => setArchiveTarget(v)}
+                          onRestore={(v) => restoreMutation.mutate(v.id)}
                         />
                       );
                     })}
