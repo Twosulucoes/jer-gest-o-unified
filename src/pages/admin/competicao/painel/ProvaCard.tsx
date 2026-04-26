@@ -45,20 +45,36 @@ export function ProvaCard({ prova, onAction }: ProvaCardProps) {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            {prova.sport_name} · {prova.category_name}
+            {prova.is_grouped_combat ? "Múltiplas Categorias" : `${prova.sport_name} · ${prova.category_name}`}
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
+            {prova.is_grouped_combat && (
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase text-muted-foreground font-semibold">Categorias</span>
+                <span className="text-lg font-bold">{prova.category_count}</span>
+              </div>
+            )}
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase text-muted-foreground font-semibold">Registrados</span>
+              <span className="text-[10px] uppercase text-muted-foreground font-semibold">
+                {prova.is_grouped_combat ? "Atletas" : "Lutas"}
+              </span>
+              <span className="text-lg font-bold">
+                {prova.is_grouped_combat ? prova.enrolled_count : prova.match_count}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase text-muted-foreground font-semibold">Registradas</span>
               <span className="text-lg font-bold">{prova.match_count}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] uppercase text-muted-foreground font-semibold">Pendentes</span>
-              <span className="text-lg font-bold text-amber-600">{prova.match_count - prova.results_validated}</span>
+              <span className="text-lg font-bold text-amber-600">
+                {prova.match_count - prova.results_validated}
+              </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase text-muted-foreground font-semibold">Homologados</span>
+              <span className="text-[10px] uppercase text-muted-foreground font-semibold">Homologadas</span>
               <span className="text-lg font-bold text-green-600">{prova.results_validated}</span>
             </div>
           </div>
