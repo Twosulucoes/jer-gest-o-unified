@@ -1100,9 +1100,47 @@ export default function CompeticaoLancamentoScorePage() {
             <Button 
               className="bg-amber-500 hover:bg-amber-600 text-white" 
               onClick={() => homologateMut.mutate()}
-              disabled={homologateMut.isPending || !homologatePassword}
+              disabled={homologateMut.isPending || isVerifyingPassword || !homologatePassword}
             >
-              {homologateMut.isPending ? "Confirmando..." : "Confirmar Homologação"}
+              {isVerifyingPassword ? "Verificando senha..." : 
+               homologateMut.isPending ? "Confirmando..." : "Confirmar Homologação"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRevertDialog} onOpenChange={setShowRevertDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reverter Status do Resultado</DialogTitle>
+            <DialogDescription>
+              Esta ação é registrada no histórico e deve ser devidamente justificada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Justificativa para Reversão</Label>
+              <Textarea 
+                placeholder="Explique o motivo da reversão (mínimo 5 caracteres)" 
+                value={revertReason}
+                onChange={(e) => setRevertReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowRevertDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                revertMut.mutate({ targetStatus: revertTargetStatus, reason: revertReason });
+                setShowRevertDialog(false);
+              }}
+              disabled={revertMut.isPending || revertReason.trim().length < 5}
+            >
+              {revertMut.isPending ? "Revertendo..." : "Confirmar Reversão"}
             </Button>
           </DialogFooter>
         </DialogContent>
