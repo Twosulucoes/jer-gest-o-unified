@@ -114,10 +114,14 @@ Deno.serve(async (req) => {
   }
 
   // Prepare main query
+  // SECURITY: filtro redundante por result_status='publicado'.
+  // A view já filtra, mas reforçamos aqui para defesa em profundidade,
+  // já que a edge function usa service_role e bypassa RLS.
   let query = supabase
     .from("public_results_view")
     .select("*")
     .eq("event_id", eventId)
+    .eq("result_status", "publicado")
     .order("sport_name", { ascending: true })
     .order("sport_event_name", { ascending: true })
     .order("position", { ascending: true, nullsFirst: false })
