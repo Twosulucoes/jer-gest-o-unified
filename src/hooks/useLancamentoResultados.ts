@@ -288,8 +288,16 @@ export function useSalvarPlacar(matchId: string) {
       scores: Array<{ entryId: string; scoreFinal: string; outcome: string; shootoutScore?: string }>
     ) => {
       for (const s of scores) {
+        const scoreDetail = s.shootoutScore ? { shootout: s.shootoutScore } : null;
+        
         const { error: scoreErr } = await supabase.from("match_scores").upsert(
-          { match_id: matchId, match_entry_id: s.entryId, score_final: s.scoreFinal, outcome: s.outcome },
+          { 
+            match_id: matchId, 
+            match_entry_id: s.entryId, 
+            score_final: s.scoreFinal, 
+            outcome: s.outcome,
+            score_detail: scoreDetail as any
+          },
           { onConflict: "match_entry_id" }
         );
         if (scoreErr) throw scoreErr;
@@ -301,9 +309,11 @@ export function useSalvarPlacar(matchId: string) {
               match_entry_id: s.entryId,
               score: s.scoreFinal,
               outcome: s.outcome,
+              combat_detail: scoreDetail as any,
               result_status: "resultado_lancado",
               recorded_by: user.id,
             },
+
             { onConflict: "match_entry_id" }
           );
           if (resultErr) throw resultErr;
