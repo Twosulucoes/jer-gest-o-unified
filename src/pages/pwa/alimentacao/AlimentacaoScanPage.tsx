@@ -144,19 +144,21 @@ export default function AlimentacaoScanPage() {
       return;
     }
 
-    const { count } = await supabase
-      .from("meal_consumptions")
-      .select("id", { count: "exact", head: true })
-      .eq("participant_id", participantId)
-      .eq("meal_window_id", windowId);
+    if (isOnline()) {
+      const { count } = await supabase
+        .from("meal_consumptions")
+        .select("id", { count: "exact", head: true })
+        .eq("participant_id", participantId)
+        .eq("meal_window_id", windowId);
 
-    if ((count || 0) > 0) {
-      const errorMsg = getPwaMessage("ERR_ALREADY_REGISTERED", lang);
-      setResult({ ok: false, message: errorMsg, source: resultSource });
-      toast.error(errorMsg);
-      recordOutcome("error");
-      reopenIfContinuous();
-      return;
+      if ((count || 0) > 0) {
+        const errorMsg = getPwaMessage("ERR_ALREADY_REGISTERED", lang);
+        setResult({ ok: false, message: errorMsg, source: resultSource });
+        toast.error(errorMsg);
+        recordOutcome("error");
+        reopenIfContinuous();
+        return;
+      }
     }
 
     const {
@@ -169,12 +171,30 @@ export default function AlimentacaoScanPage() {
       return;
     }
 
-    const { error } = await supabase.from("meal_consumptions").insert({
+    const consumptionData = {
       participant_id: participantId,
       meal_window_id: windowId,
       method,
       registered_by: session.user.id,
-    });
+    };
+
+    if (!isOnline()) {
+      addToOfflineQueue("alimentacao", consumptionData, participantName || undefined);
+      const successMsg = `${getPwaMessage("SUCCESS_REGISTERED", lang)} (Offline): ${participantName || ""}`;
+      setResult({
+        ok: true,
+        source: resultSource,
+        message: successMsg,
+        restrictions: foodRestrictions || undefined,
+      });
+      toast.info("Registrado offline. Sincronize quando houver internet.");
+      recordOutcome("ok");
+      if (navigator.vibrate) navigator.vibrate(200);
+      reopenIfContinuous();
+      return;
+    }
+
+    const { error } = await supabase.from("meal_consumptions").insert(consumptionData);
 
     if (error) throw error;
 
@@ -192,6 +212,7 @@ export default function AlimentacaoScanPage() {
     recordOutcome("ok");
     if (navigator.vibrate) navigator.vibrate(200);
     reopenIfContinuous();
+
   }
 
   const handleScan = async (rawValue: string) => {
