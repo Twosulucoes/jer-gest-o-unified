@@ -54,9 +54,12 @@ import {
 // -------- Types --------
 interface VoucherRow {
   id: string;
-  participant_id: string;
+  participant_id: string | null;
   qr_code_value: string;
   status: string;
+  voucher_type: "nominal" | "aggregate";
+  label: string | null;
+  is_contingency: boolean;
   scope_transport: boolean;
   scope_meals: boolean;
   scope_lodging: boolean;
@@ -86,11 +89,11 @@ const STATUS_LABEL: Record<string, { label: string; variant: "default" | "second
 };
 
 function genQrValue() {
-  // 16 bytes, base32-like (sem confusões)
+  // Prefixo `voucher:` é obrigatório para detecção pelo PWA (isVoucherQr).
   const alpha = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "VCH-";
-  for (let i = 0; i < 20; i++) out += alpha[Math.floor(Math.random() * alpha.length)];
-  return out;
+  let suffix = "";
+  for (let i = 0; i < 20; i++) suffix += alpha[Math.floor(Math.random() * alpha.length)];
+  return `voucher:${Date.now().toString(36).toUpperCase()}-${suffix}`;
 }
 
 // -------- Page --------
@@ -100,6 +103,7 @@ export default function VouchersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const [issueOpen, setIssueOpen] = useState(false);
   const [printVoucher, setPrintVoucher] = useState<VoucherRow | null>(null);
@@ -109,12 +113,11 @@ export default function VouchersPage() {
 
   // -------- Vouchers query --------
   const { data: vouchers = [], isLoading } = useQuery({
-    queryKey: ["vouchers", eventId, statusFilter, scopeFilter],
+    queryKey: ["vouchers", eventId, statusFilter, scopeFilter, typeFilter],
     queryFn: async () => {
-      let q = supabase
-        .from("service_vouchers")
+      let q = (supabase.from("service_vouchers") as any)
         .select(
-          "id, participant_id, qr_code_value, status, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
+          "id, participant_id, qr_code_value, status, voucher_type, label, is_contingency, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
         )
         .eq("event_id", eventId)
         .order("created_at", { ascending: false })
@@ -123,6 +126,7 @@ export default function VouchersPage() {
       if (scopeFilter === "transport") q = q.eq("scope_transport", true);
       if (scopeFilter === "meals") q = q.eq("scope_meals", true);
       if (scopeFilter === "lodging") q = q.eq("scope_lodging", true);
+      if (typeFilter !== "all") q = q.eq("voucher_type", typeFilter);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as VoucherRow[];
@@ -130,8 +134,11 @@ export default function VouchersPage() {
     enabled: !!eventId,
   });
 
-  // -------- People for vouchers --------
-  const participantIds = useMemo(() => [...new Set(vouchers.map((v) => v.participant_id))], [vouchers]);
+  // -------- People for vouchers (only nominal) --------
+  const participantIds = useMemo(
+    () => [...new Set(vouchers.filter((v) => v.participant_id).map((v) => v.participant_id as string))],
+    [vouchers]
+  );
 
   const { data: participantsMap = new Map<string, ParticipantOption>() } = useQuery({
     queryKey: ["vouchers-participants", participantIds],
@@ -169,7 +176,13 @@ export default function VouchersPage() {
     if (!search.trim()) return vouchers;
     const term = search.toLowerCase();
     return vouchers.filter((v) => {
-      const p = participantsMap.get(v.participant_id);
+      if (v.voucher_type === "aggregate") {
+        return (
+          (v.label ?? "").toLowerCase().includes(term) ||
+          v.qr_code_value.toLowerCase().includes(term)
+        );
+      }
+      const p = v.participant_id ? participantsMap.get(v.participant_id) : null;
       if (!p) return v.qr_code_value.toLowerCase().includes(term);
       return (
         p.full_name.toLowerCase().includes(term) ||
@@ -256,6 +269,16 @@ export default function VouchersPage() {
               <SelectItem value="lodging">Alojamento</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos tipos</SelectItem>
+              <SelectItem value="aggregate">Agregado (acompanhantes)</SelectItem>
+              <SelectItem value="nominal">Nominal (contingência)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </Card>
 
@@ -272,18 +295,31 @@ export default function VouchersPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredVouchers.map((v) => {
-            const p = participantsMap.get(v.participant_id);
+            const p = v.participant_id ? participantsMap.get(v.participant_id) : null;
             const status = STATUS_LABEL[v.status] ?? { label: v.status, variant: "outline" as const };
+            const isAggregate = v.voucher_type === "aggregate";
             return (
-              <Card key={v.id} className="p-4 space-y-3">
+              <Card
+                key={v.id}
+                className={`p-4 space-y-3 ${v.is_contingency ? "border-warning/50 bg-warning/5" : ""}`}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{p?.full_name ?? "—"}</p>
+                    <p className="font-medium truncate">
+                      {isAggregate ? (v.label ?? "Voucher agregado") : (p?.full_name ?? "—")}
+                    </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {p?.participant_type ?? "—"} {p?.cpf ? `· CPF ${p.cpf}` : ""}
+                      {isAggregate ? "Acompanhante / agregado" : `${p?.participant_type ?? "—"}${p?.cpf ? ` · CPF ${p.cpf}` : ""}`}
                     </p>
                   </div>
-                  <Badge variant={status.variant}>{status.label}</Badge>
+                  <div className="flex flex-col gap-1 items-end shrink-0">
+                    <Badge variant={status.variant}>{status.label}</Badge>
+                    {isAggregate ? (
+                      <Badge variant="secondary" className="text-[10px]">Agregado</Badge>
+                    ) : v.is_contingency ? (
+                      <Badge variant="outline" className="text-[10px] border-warning text-warning-foreground">Contingência</Badge>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
@@ -340,7 +376,7 @@ export default function VouchersPage() {
       {/* Print/QR Dialog */}
       <PrintVoucherDialog
         voucher={printVoucher}
-        participant={printVoucher ? participantsMap.get(printVoucher.participant_id) ?? null : null}
+        participant={printVoucher && printVoucher.participant_id ? participantsMap.get(printVoucher.participant_id) ?? null : null}
         onClose={() => setPrintVoucher(null)}
       />
 
@@ -396,6 +432,9 @@ function IssueVoucherDialog({
   onIssued: (v: VoucherRow) => void;
 }) {
   const queryClient = useQueryClient();
+  const [voucherType, setVoucherType] = useState<"aggregate" | "nominal">("aggregate");
+  const [aggregateLabel, setAggregateLabel] = useState("");
+  const [aggregateBatchSize, setAggregateBatchSize] = useState("1");
   const [participantSearch, setParticipantSearch] = useState("");
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [scopeTransport, setScopeTransport] = useState(true);
@@ -408,6 +447,9 @@ function IssueVoucherDialog({
   // Reset on close
   useEffect(() => {
     if (!open) {
+      setVoucherType("aggregate");
+      setAggregateLabel("");
+      setAggregateBatchSize("1");
       setParticipantSearch("");
       setParticipantId(null);
       setScopeTransport(true);
@@ -455,37 +497,70 @@ function IssueVoucherDialog({
 
   const issueMutation = useMutation({
     mutationFn: async () => {
-      if (!participantId) throw new Error("Selecione um participante");
       if (!scopeTransport && !scopeMeals && !scopeLodging) throw new Error("Selecione ao menos um escopo");
       const max = maxUses.trim() ? parseInt(maxUses.trim(), 10) : null;
       if (maxUses.trim() && (Number.isNaN(max) || max! < 1)) throw new Error("Máximo de usos inválido");
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      const { data, error } = await supabase
-        .from("service_vouchers")
-        .insert({
-          event_id: eventId,
-          participant_id: participantId,
-          qr_code_value: genQrValue(),
-          scope_transport: scopeTransport,
-          scope_meals: scopeMeals,
-          scope_lodging: scopeLodging,
-          max_uses: max,
-          valid_until: validUntil ? new Date(validUntil).toISOString() : null,
-          notes: notes.trim() || null,
-          issued_by: user?.id ?? null,
-        })
+
+      if (voucherType === "nominal") {
+        if (!participantId) throw new Error("Selecione um participante");
+        const { data, error } = await (supabase.from("service_vouchers") as any)
+          .insert({
+            event_id: eventId,
+            participant_id: participantId,
+            voucher_type: "nominal",
+            is_contingency: true,
+            qr_code_value: genQrValue(),
+            scope_transport: scopeTransport,
+            scope_meals: scopeMeals,
+            scope_lodging: scopeLodging,
+            max_uses: max,
+            valid_until: validUntil ? new Date(validUntil).toISOString() : null,
+            notes: notes.trim() || null,
+            issued_by: user?.id ?? null,
+          })
+          .select(
+            "id, participant_id, qr_code_value, status, voucher_type, label, is_contingency, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
+          )
+          .single();
+        if (error) throw error;
+        return data as VoucherRow;
+      }
+
+      // Aggregate (with optional batch)
+      const labelBase = aggregateLabel.trim();
+      if (!labelBase) throw new Error("Informe um identificador (label) para o voucher agregado");
+      const batch = Math.max(1, parseInt(aggregateBatchSize || "1", 10) || 1);
+      const rows = Array.from({ length: batch }, (_, i) => ({
+        event_id: eventId,
+        participant_id: null,
+        voucher_type: "aggregate",
+        label: batch > 1 ? `${labelBase} #${String(i + 1).padStart(2, "0")}` : labelBase,
+        is_contingency: false,
+        qr_code_value: genQrValue(),
+        scope_transport: scopeTransport,
+        scope_meals: scopeMeals,
+        scope_lodging: scopeLodging,
+        max_uses: max,
+        valid_until: validUntil ? new Date(validUntil).toISOString() : null,
+        notes: notes.trim() || null,
+        issued_by: user?.id ?? null,
+      }));
+      const { data, error } = await (supabase.from("service_vouchers") as any)
+        .insert(rows)
         .select(
-          "id, participant_id, qr_code_value, status, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
-        )
-        .single();
+          "id, participant_id, qr_code_value, status, voucher_type, label, is_contingency, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
+        );
       if (error) throw error;
-      return data as VoucherRow;
+      return (data as VoucherRow[])[0];
     },
     onSuccess: (v) => {
       queryClient.invalidateQueries({ queryKey: ["vouchers"] });
-      toast.success("Voucher emitido");
+      toast.success(voucherType === "aggregate" && parseInt(aggregateBatchSize, 10) > 1
+        ? `${aggregateBatchSize} vouchers emitidos`
+        : "Voucher emitido");
       onOpenChange(false);
       onIssued(v);
     },
@@ -496,54 +571,98 @@ function IssueVoucherDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Emitir Voucher QR</DialogTitle>
-          <DialogDescription>Gere um novo voucher de serviço vinculado a um participante.</DialogDescription>
+          <DialogDescription>
+            <strong>Agregado</strong> é o padrão para acompanhantes/pais (sem nome).{" "}
+            <strong>Nominal</strong> é apenas contingência para credenciados sem credencial.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Participante *</Label>
-            {selected ? (
-              <Card className="p-3 flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{selected.full_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {selected.participant_type} {selected.cpf ? `· CPF ${selected.cpf}` : ""}
-                  </p>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setParticipantId(null)}>
-                  Trocar
-                </Button>
-              </Card>
-            ) : (
-              <>
+          <Tabs value={voucherType} onValueChange={(v) => setVoucherType(v as "aggregate" | "nominal")}>
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="aggregate">Agregado (padrão)</TabsTrigger>
+              <TabsTrigger value="nominal">Nominal (contingência)</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="aggregate" className="space-y-3 pt-3">
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                Voucher sem identificação de pessoa. Use para pais, acompanhantes ou público externo.
+              </div>
+              <div className="space-y-2">
+                <Label>Identificador (label) *</Label>
                 <Input
-                  placeholder="Buscar por nome ou CPF (mín. 2 caracteres)"
-                  value={participantSearch}
-                  onChange={(e) => setParticipantSearch(e.target.value)}
+                  placeholder="Ex.: Acompanhante - Delegação RR"
+                  value={aggregateLabel}
+                  onChange={(e) => setAggregateLabel(e.target.value)}
+                  maxLength={120}
                 />
-                {participantOptions.length > 0 && (
-                  <Card className="max-h-48 overflow-auto divide-y divide-border">
-                    {participantOptions.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setParticipantId(p.id)}
-                        className="w-full text-left p-2 hover:bg-accent transition-colors"
-                      >
-                        <p className="text-sm font-medium">{p.full_name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {p.participant_type} {p.cpf ? `· ${p.cpf}` : ""}
-                        </p>
-                      </button>
-                    ))}
+              </div>
+              <div className="space-y-2">
+                <Label>Quantidade (lote)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={aggregateBatchSize}
+                  onChange={(e) => setAggregateBatchSize(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Quando &gt; 1, será adicionado sufixo numérico ao label (#01, #02, ...).
+                </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="nominal" className="space-y-3 pt-3">
+              <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
+                <strong>Atenção:</strong> Vouchers nominais são marcados como <strong>contingência</strong>.
+                O fluxo padrão para credenciados é a <strong>credencial</strong>.
+              </div>
+              <div className="space-y-2">
+                <Label>Participante *</Label>
+                {selected ? (
+                  <Card className="p-3 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{selected.full_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {selected.participant_type} {selected.cpf ? `· CPF ${selected.cpf}` : ""}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setParticipantId(null)}>
+                      Trocar
+                    </Button>
                   </Card>
+                ) : (
+                  <>
+                    <Input
+                      placeholder="Buscar por nome ou CPF (mín. 2 caracteres)"
+                      value={participantSearch}
+                      onChange={(e) => setParticipantSearch(e.target.value)}
+                    />
+                    {participantOptions.length > 0 && (
+                      <Card className="max-h-48 overflow-auto divide-y divide-border">
+                        {participantOptions.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setParticipantId(p.id)}
+                            className="w-full text-left p-2 hover:bg-accent transition-colors"
+                          >
+                            <p className="text-sm font-medium">{p.full_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {p.participant_type} {p.cpf ? `· ${p.cpf}` : ""}
+                            </p>
+                          </button>
+                        ))}
+                      </Card>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </div>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <div className="space-y-2">
             <Label>Escopos *</Label>
@@ -604,7 +723,11 @@ function IssueVoucherDialog({
           </Button>
           <Button
             onClick={() => issueMutation.mutate()}
-            disabled={!participantId || issueMutation.isPending}
+            disabled={
+              issueMutation.isPending ||
+              (voucherType === "nominal" && !participantId) ||
+              (voucherType === "aggregate" && !aggregateLabel.trim())
+            }
           >
             {issueMutation.isPending ? "Emitindo..." : "Emitir"}
           </Button>
@@ -669,9 +792,15 @@ function PrintVoucherDialog({
           <DialogTitle>QR do Voucher</DialogTitle>
         </DialogHeader>
         <div ref={printRef} className="text-center py-4">
-          <h1 className="text-base font-bold">{participant?.full_name ?? "—"}</h1>
+          <h1 className="text-base font-bold">
+            {voucher.voucher_type === "aggregate"
+              ? (voucher.label ?? "Voucher agregado")
+              : (participant?.full_name ?? "—")}
+          </h1>
           <p className="text-xs text-muted-foreground">
-            {participant?.participant_type} {participant?.cpf ? `· CPF ${participant.cpf}` : ""}
+            {voucher.voucher_type === "aggregate"
+              ? "Acompanhante / agregado"
+              : `${participant?.participant_type ?? ""}${participant?.cpf ? ` · CPF ${participant.cpf}` : ""}`}
           </p>
           {dataUrl ? (
             <img src={dataUrl} alt="QR Code" className="mx-auto my-4" />

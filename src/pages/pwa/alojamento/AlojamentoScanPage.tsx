@@ -88,14 +88,17 @@ export default function AlojamentoScanPage() {
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         return;
       }
+      const displayName = voucher.voucher_type === "aggregate"
+        ? (voucher.label || voucher.person_name || "Acompanhante")
+        : (voucher.person_name ?? "");
       setResult({
         ok: true,
-        full_name: voucher.person_name,
-        participant_type: "Voucher",
+        full_name: displayName,
+        participant_type: voucher.voucher_type === "aggregate" ? "Voucher agregado" : "Voucher",
         person_id: null,
         message: `Voucher validado · ${voucher.remaining_uses ?? "∞"} usos restantes`,
       });
-      toast.success(`🎫 Voucher validado — ${voucher.person_name ?? ""}`);
+      toast.success(`🎫 Voucher validado — ${displayName}`);
       recordOutcome("ok");
       if (navigator.vibrate) navigator.vibrate(200);
       reopenIfContinuous();

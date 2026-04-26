@@ -2,11 +2,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type ServiceKind = "transport" | "meals" | "lodging";
 
+export type VoucherType = "nominal" | "aggregate";
+
 export interface VoucherRedeemResult {
   ok: boolean;
   reason?: string;
-  participant_id?: string;
-  person_name?: string;
+  voucher_type?: VoucherType;
+  participant_id?: string | null;
+  person_name?: string | null;
+  label?: string | null;
+  is_contingency?: boolean;
   remaining_uses?: number | null;
 }
 
