@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check, X, Shield, Lock, Globe, Smartphone, UserCog, Database } from "lucide-react";
+import { Check, X, Shield, Lock, Globe, Smartphone, UserCog, Database, Info } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ROLES = [
   "super_admin", "admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", 
