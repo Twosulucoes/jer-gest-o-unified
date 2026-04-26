@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
@@ -136,117 +136,132 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="relative flex min-h-[100dvh] flex-col overflow-hidden"
-      style={{
-        background:
-          "linear-gradient(165deg, rgba(11,43,90,0.07) 0%, rgba(15,90,166,0.05) 40%, rgba(11,163,163,0.04) 72%, rgba(51,178,73,0.03) 100%), hsl(var(--background))",
-      }}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-grid opacity-[0.05] dark:opacity-[0.08]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,hsla(222,72%,36%,0.14),transparent_50%)] dark:bg-[radial-gradient(ellipse_120%_80%_at_50%_-15%,hsla(41,100%,47%,0.12),transparent_52%)]" />
+    <div className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-[#0B1220] selection:bg-primary/30 selection:text-white">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div 
+          className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full blur-[120px] opacity-20"
+          style={{ background: brand.colors.accentBlue }}
+        />
+        <div 
+          className="absolute -bottom-[10%] -right-[10%] w-[45%] h-[45%] rounded-full blur-[120px] opacity-15"
+          style={{ background: brand.colors.accentTeal }}
+        />
+        <div 
+          className="absolute top-[20%] right-[5%] w-[30%] h-[30%] rounded-full blur-[100px] opacity-10"
+          style={{ background: brand.colors.accentGreen }}
+        />
+        <div className="absolute inset-0 bg-grid opacity-[0.03]" />
+      </div>
 
-      <div className="relative z-10 flex min-h-[100dvh] flex-1 flex-col px-5 sm:px-6">
-        <div
-          className="mx-auto flex w-full max-w-[380px] flex-1 flex-col pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in"
-        >
-          {/* Topo: só a marca — sem caixa nem repetir o nome */}
-          <header className="shrink-0 pb-5 text-center sm:pb-6">
-            <h1 className="sr-only">JER Gestão</h1>
-            <div className="mx-auto flex max-w-[320px] justify-center sm:max-w-[400px]">
+      <div className="relative z-10 flex min-h-[100dvh] flex-col px-6">
+        <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-12 animate-in fade-in zoom-in-95 duration-700">
+          
+          {/* Brand Header */}
+          <header className="mb-10 text-center space-y-6">
+            <div className="inline-flex items-center justify-center p-4 rounded-[2rem] bg-white/5 backdrop-blur-xl ring-1 ring-white/10 shadow-2xl">
               <img
                 src="/brand/logo.png"
                 alt="JER Gestão"
-                className="h-32 w-auto max-w-full object-contain object-center dark:hidden sm:h-40"
+                className="h-24 w-auto object-contain dark:hidden"
               />
               <img
                 src="/brand/logo-dark.png"
                 alt="JER Gestão"
-                className="hidden h-32 w-auto max-w-full object-contain object-center dark:block sm:h-40"
+                className="hidden h-24 w-auto object-contain dark:block"
               />
             </div>
-            <p className="mx-auto mt-4 max-w-[320px] text-base leading-snug text-muted-foreground/90 font-medium">
-              Entre com o e-mail e a senha da sua instituição.
-            </p>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+                JER <span className="text-primary">Gestão</span>
+              </h1>
+              <p className="text-sm font-medium text-slate-400 max-w-[280px] mx-auto leading-relaxed">
+                Entre com as credenciais da sua instituição para acessar a plataforma.
+              </p>
+            </div>
           </header>
 
-          {/* Formulário: corpo principal */}
-          <main className="flex min-h-0 flex-1 flex-col justify-center py-2">
-            <Card className="border-0 bg-card/95 shadow-app-xl ring-1 ring-border/50 backdrop-blur-md dark:bg-card/90 dark:ring-border/40 sm:rounded-2xl sm:border sm:border-border/70">
-              <CardHeader className="px-5 pb-0 pt-5 sm:px-6 sm:pt-6">
-                <h2 className="font-heading text-lg font-semibold tracking-tight text-card-foreground">
-                  Entrar
-                </h2>
-              </CardHeader>
-              <CardContent className="px-5 pb-6 pt-5 sm:px-6 sm:pb-7 sm:pt-6">
-                <form onSubmit={handleLogin} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                      E-mail
+          {/* Login Card */}
+          <main className="relative group">
+            {/* Card Glow Effect */}
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-accentTeal to-accentGreen rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000"></div>
+            
+            <Card className="relative glass-panel-strong border-0 shadow-2xl rounded-3xl overflow-hidden">
+              <CardContent className="p-8 sm:p-10">
+                <form onSubmit={handleLogin} className="space-y-6">
+                  <div className="space-y-2.5">
+                    <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">
+                      Identificação
                     </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      inputMode="email"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      placeholder="nome@instituicao.gov.br"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      autoComplete="email"
-                      className="h-12 rounded-xl border-border/80 bg-background/80 text-base shadow-none dark:bg-background/40 sm:h-11 sm:text-sm"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="email"
+                        type="email"
+                        inputMode="email"
+                        placeholder="nome@instituicao.gov.br"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="h-14 rounded-2xl border-white/10 bg-white/5 px-5 text-white placeholder:text-slate-500 focus:ring-primary/50 focus:border-primary/50 transition-all"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                      Senha
-                    </Label>
+
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between ml-1">
+                      <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                        Senha de Acesso
+                      </Label>
+                    </div>
                     <div className="relative">
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Sua senha"
+                        placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        autoComplete="current-password"
-                        className="h-12 rounded-xl border-border/80 bg-background/80 pr-11 text-base shadow-none dark:bg-background/40 sm:h-11 sm:text-sm"
+                        className="h-14 rounded-2xl border-white/10 bg-white/5 px-5 text-white placeholder:text-slate-500 focus:ring-primary/50 focus:border-primary/50 transition-all"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-0 top-0 flex h-12 w-11 items-center justify-center rounded-r-xl text-muted-foreground transition-colors hover:text-foreground active:bg-muted/50 sm:h-11"
+                        className="absolute right-0 top-0 flex h-14 w-14 items-center justify-center text-slate-400 hover:text-white transition-colors"
                         tabIndex={-1}
-                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                       >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
                   </div>
 
-                  {error ? (
-                    <div className="rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
+                  {error && (
+                    <div className="animate-in fade-in slide-in-from-top-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400 flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
                       {error}
                     </div>
-                  ) : null}
+                  )}
 
-                  <div className="space-y-3 pt-1">
+                  <div className="space-y-4 pt-2">
                     <Button
                       type="submit"
-                      size="lg"
-                      className="h-14 w-full rounded-2xl text-lg font-bold shadow-app-md sm:h-12 sm:text-base transition-all active:scale-[0.98]"
                       disabled={loading}
+                      className="h-14 w-full rounded-2xl bg-primary text-white font-bold text-lg shadow-[0_8px_30px_rgb(var(--primary-rgb),0.3)] hover:shadow-[0_8px_30px_rgb(var(--primary-rgb),0.5)] transition-all active:scale-[0.98] btn-shine"
+                      style={{ background: brand.gradients.brandGradient }}
                     >
-                      {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : null}
-                      Entrar
+                      {loading ? (
+                        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                      ) : (
+                        "Entrar no Sistema"
+                      )}
                     </Button>
+                    
                     <button
                       type="button"
                       onClick={() => setRecoverOpen(true)}
-                      className="flex w-full min-h-[44px] items-center justify-center rounded-xl text-sm font-medium text-primary transition-colors hover:bg-primary/5 hover:text-primary/90 active:bg-primary/10"
+                      className="group flex w-full items-center justify-center py-2 text-sm font-semibold text-slate-400 transition-colors hover:text-white"
                     >
-                      Esqueci minha senha
+                      <span>Esqueceu sua senha?</span>
+                      <div className="ml-2 h-px w-0 bg-white transition-all group-hover:w-8" />
                     </button>
                   </div>
                 </form>
@@ -254,22 +269,22 @@ export default function LoginPage() {
             </Card>
           </main>
 
-          {/* Rodapé: fixo no fim da viewport em telas curtas */}
-          <footer className="mt-auto shrink-0 space-y-4 border-t border-border/40 pt-6 text-center dark:border-border/30">
-            <p className="mx-auto max-w-[320px] text-[13px] leading-relaxed text-muted-foreground/85 font-medium">
-              Acesso restrito a usuários autorizados pela secretaria ou coordenação do evento.
+          {/* Footer Info */}
+          <footer className="mt-12 text-center space-y-6">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest leading-relaxed max-w-[300px] mx-auto">
+              Acesso restrito e monitorado • Sistema de Gestão Esportiva
             </p>
-            <p className="text-xs text-muted-foreground/60 font-medium pb-2">
-              Desenvolvido por{" "}
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">Desenvolvido por</span>
               <a
                 href={brand.developer.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline decoration-border/60 underline-offset-2 transition-colors hover:text-muted-foreground"
+                className="opacity-50 hover:opacity-100 transition-opacity"
               >
-                {brand.developer.name}
+                <img src="/brand/logo.png" alt="Two Soluções" className="h-6 grayscale invert" />
               </a>
-            </p>
+            </div>
           </footer>
         </div>
       </div>
