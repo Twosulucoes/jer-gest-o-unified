@@ -4,30 +4,29 @@ import {
   Smartphone, 
   Trophy, 
   Users, 
-  Mail, 
-  ExternalLink, 
-  ShieldCheck, 
-  LayoutDashboard, 
-  FileJson, 
   Globe, 
   Database, 
-  Github, 
   Rocket,
-  CheckSquare,
-  FileSearch,
-  UserPlus,
-  Link,
   QrCode,
-  TrendingUp,
   Share2,
-  Copy
+  Layout,
+  Server,
+  Code2,
+  Zap,
+  Shield,
+  Activity,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Github,
+  Monitor
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { brand } from "@/theme/brand";
 
 interface VersionInfo {
   appVersion: string;
@@ -39,59 +38,60 @@ interface VersionInfo {
   supabaseProjectRef: string;
 }
 
-const PRIMARY = "#0B2B5A";
-const BLUE = "#0F5AA6";
-
-const environments = [
-  { name: "Teste (Staging)", url: "https://teste.jers.com.br", icon: ShieldCheck, status: "Ativo", color: "text-blue-500" },
-  { name: "Produção", url: "https://gestao.jers.com.br", icon: Rocket, status: "Aguardando", color: "text-green-500" },
-  { name: "GitHub Repo", url: "#", icon: Github, status: "Privado", color: "text-gray-700" },
-  { name: "Vercel Hosting", url: "#", icon: Globe, status: "Ativo", color: "text-black" },
-  { name: "Supabase DB", url: "#", icon: Database, status: "Ativo", color: "text-emerald-500" },
+const techStack = [
+  { name: "React 18", icon: Code2, desc: "Interface reativa e modular", color: "text-blue-400" },
+  { name: "TypeScript", icon: Code2, desc: "Tipagem estática e segurança", color: "text-blue-600" },
+  { name: "Supabase", icon: Database, desc: "Backend as a Service & Auth", color: "text-emerald-500" },
+  { name: "Tailwind CSS", icon: Layout, desc: "Estilização utilitária moderna", color: "text-sky-400" },
+  { name: "PostgreSQL", icon: Server, desc: "Banco de dados relacional robusto", color: "text-indigo-400" },
+  { name: "PWA", icon: Smartphone, desc: "Suporte offline e mobile-first", color: "text-orange-500" },
 ];
 
-const modules = [
-  { name: "Admin", desc: "Gestão central de eventos e etapas", icon: LayoutDashboard },
-  { name: "Importação", desc: "Processamento de planilhas de inscritos", icon: FileJson },
-  { name: "Credenciamento", desc: "Geração e validação de QR Codes", icon: QrCode },
-  { name: "PWA Operacional", desc: "Uso em campo para logística e suporte", icon: Smartphone },
-  { name: "Resultados", desc: "Lançamento em tempo real por coordenadores", icon: Trophy },
-  { name: "Portal Público", desc: "Divulgação de boletins e classificações", icon: Globe },
-];
-
-const roles = [
-  { id: "super_admin", name: "Super Admin", scope: "Acesso total ao sistema e infraestrutura" },
-  { id: "admin", name: "Administrador", scope: "Gestão completa do evento e usuários" },
-  { id: "secretaria", name: "Secretaria", scope: "Gestão de inscrições e credenciamento" },
-  { id: "delegação", name: "Delegado", scope: "Gestão de sua própria delegação (PWA)" },
-  { id: "coordenador_modalidade", name: "Coordenador", scope: "Lançamento de resultados de sua modalidade" },
-  { id: "operacionais", name: "Operacionais", scope: "Transporte, Alimentação e Alojamento" },
-];
-
-const tutorials = [
-  { title: "Importar inscrições", icon: FileJson, color: "bg-blue-500" },
-  { title: "Corrigir pendências", icon: FileSearch, color: "bg-orange-500" },
-  { title: "Cadastrar usuários", icon: UserPlus, color: "bg-teal-500" },
-  { title: "Vincular perfis", icon: Link, color: "bg-purple-500" },
-  { title: "Validar credencial", icon: QrCode, color: "bg-pink-500" },
-  { title: "Lançar resultados", icon: TrendingUp, color: "bg-green-500" },
-  { title: "Publicar resultados", icon: Share2, color: "bg-blue-600" },
+const tourSteps = [
+  { 
+    title: "Importação Inteligente", 
+    desc: "Processamento de planilhas Excel com validação automática de dados, detecção de erros e normalização de nomes.",
+    icon: Users,
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800",
+    color: "bg-blue-500"
+  },
+  { 
+    title: "Credenciamento Digital", 
+    desc: "Geração instantânea de QR Codes e vinculação com perfis físicos. Validação via PWA em campo.",
+    icon: QrCode,
+    image: "https://images.unsplash.com/photo-1595079676339-1534801ad6cf?auto=format&fit=crop&q=80&w=800",
+    color: "bg-purple-500"
+  },
+  { 
+    title: "Coleta em Tempo Real", 
+    desc: "Lançamento de resultados diretamente por coordenadores de modalidade, mesmo com conexão instável.",
+    icon: Trophy,
+    image: "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800",
+    color: "bg-green-500"
+  },
+  { 
+    title: "Publicação Transparente", 
+    desc: "Resultados, medalhas e boletins sincronizados automaticamente para o portal público do cidadão.",
+    icon: Share2,
+    image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800",
+    color: "bg-amber-500"
+  }
 ];
 
 const checklistItems = [
-  "Acesso ao sistema com autenticação segura",
-  "Importação de dados de teste (planilhas Excel)",
-  "Tratamento de duplicidades e pendências",
-  "Geração de QR Code para participantes",
-  "Lançamento de resultados (coletivos e individuais)",
-  "Publicação de boletins no portal público",
-  "Visualização de relatórios consolidados",
-  "Sincronização offline-first básica no PWA",
+  "Core System: Autenticação e RBAC (Controle de Acessos)",
+  "Módulo Secretaria: Gestão de Inscrições e Delegações",
+  "Módulo Logística: Transporte, Alimentação e Alojamento",
+  "Módulo Técnico: Tabelas, Grupos, Fases e Sumulas",
+  "Módulo Resultados: Lançamento Mobile e Web",
+  "Portal Público: Resultados, Medalhas e Documentos",
+  "Infraestrutura: Database Realtime e Storage Seguro",
+  "Experiência: App PWA Instalável (Offline Ready)"
 ];
 
 export default function EntregaTecnicaPage() {
   const [version, setVersion] = useState<VersionInfo | null>(null);
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+  const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
     fetch("/version.json", { cache: "no-store" })
@@ -100,308 +100,327 @@ export default function EntregaTecnicaPage() {
       .catch(() => setVersion(null));
   }, []);
 
-  const toggleCheck = (item: string) => {
-    setCheckedItems(prev => ({ ...prev, [item]: !prev[item] }));
-  };
-
-  const copyToClipboard = (text: string) => {
-    if (text === "#") return;
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copiado!",
-      description: "Link copiado para a área de transferência.",
-    });
-  };
+  const nextStep = () => setCurrentStep((prev) => (prev + 1) % tourSteps.length);
+  const prevStep = () => setCurrentStep((prev) => (prev - 1 + tourSteps.length) % tourSteps.length);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 pb-20">
+    <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-100 selection:text-blue-900">
       
-      {/* ── Capa / Hero ────────────────────────────────────────────────────────── */}
-      <header 
-        className="relative overflow-hidden text-white pt-20 pb-24 px-6 text-center"
-        style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, ${BLUE} 100%)` }}
-      >
-        <div className="max-w-4xl mx-auto relative z-10">
-          <Badge className="mb-4 bg-lime-400 text-slate-900 font-bold hover:bg-lime-500 transition-colors uppercase tracking-wider">
-            Entrega Técnica — 2026
-          </Badge>
-          <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
-            Sistema JER 2026
-          </h1>
-          <p className="text-xl opacity-90 max-w-2xl mx-auto leading-relaxed">
-            Plataforma integrada para gestão total dos 53º Jogos Escolares de Roraima.
-            Ambientes, módulos e processos consolidados.
-          </p>
+      {/* ── Navbar ────────────────────────────────────────────────────────── */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-900 flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
+              <Zap size={22} fill="currentColor" />
+            </div>
+            <div>
+              <p className="font-bold text-lg tracking-tight">JER <span className="text-blue-600">2026</span></p>
+              <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest leading-none">Entrega Técnica</p>
+            </div>
+          </div>
+          <div className="hidden md:flex items-center gap-6">
+            <a href="#solucao" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">A Solução</a>
+            <a href="#stack" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Tecnologia</a>
+            <a href="#tour" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Tour Guiado</a>
+            <a href="#homologacao" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Homologação</a>
+          </div>
+          <Button size="sm" className="bg-blue-900 hover:bg-blue-800 text-white gap-2 rounded-full shadow-md" asChild>
+            <a href="/">Sair do Sistema <ArrowRight size={14} /></a>
+          </Button>
         </div>
+      </nav>
+
+      {/* ── Hero Section ────────────────────────────────────────────────────────── */}
+      <header id="solucao" className="relative pt-40 pb-32 px-6 overflow-hidden">
+        <div 
+          className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none"
+          style={{ backgroundImage: `radial-gradient(circle at 2px 2px, ${brand.colors.primary} 1px, transparent 0)`, backgroundSize: '40px 40px' }}
+        ></div>
         
-        {/* Decorative element */}
-        <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-        <div className="absolute -top-12 -left-12 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl"></div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-6 -mt-10">
-        
-        {/* ── Visão Geral ─────────────────────────────────────────────────────── */}
-        <section className="mb-12">
-          <Card className="border-none shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <ShieldCheck className="text-blue-600" />
-                Visão Geral do Sistema
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-slate-600 leading-relaxed text-lg">
-              <p>
-                O Sistema JER 2026 foi desenvolvido para modernizar a gestão esportiva de Roraima, 
-                eliminando o uso extensivo de papel e centralizando informações de inscrições, 
-                logística e resultados em tempo real. Com foco em mobilidade, o sistema atende 
-                desde a coordenação central até os técnicos em quadra.
-              </p>
-            </CardContent>
-          </Card>
-        </section>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          
-          {/* ── Coluna Esquerda ────────────────────────────────────────────────── */}
-          <div className="md:col-span-2 space-y-12">
-            
-            {/* Ambientes */}
-            <section>
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <Globe className="text-blue-500" /> Ambientes
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {environments.map((env) => (
-                  <Card key={env.name} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4 flex items-center gap-4">
-                      <div className={`p-2 rounded-lg bg-slate-100 ${env.color}`}>
-                        <env.icon size={24} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="font-semibold text-sm">{env.name}</p>
-                          <Badge variant="outline" className="text-[10px] uppercase font-bold px-1.5 h-4">
-                            {env.status}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-slate-500 truncate">{env.url}</p>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          className="h-8 w-8 text-slate-400 hover:text-blue-600 shrink-0"
-                          onClick={() => copyToClipboard(env.url)}
-                          disabled={env.url === "#"}
-                          title="Copiar URL"
-                        >
-                          <Copy size={14} />
-                        </Button>
-                        {env.url !== "#" && (
-                          <Button 
-                            size="icon" 
-                            variant="ghost" 
-                            className="h-8 w-8 text-slate-400 hover:text-blue-600 shrink-0"
-                            asChild
-                            title="Abrir link"
-                          >
-                            <a href={env.url} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink size={14} />
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </section>
-
-            {/* Módulos Entregues */}
-            <section>
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <CheckCircle2 className="text-green-500" /> Módulos Entregues
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-6">
-                {modules.map((mod) => (
-                  <div key={mod.name} className="flex gap-4 p-4 bg-white rounded-xl shadow-sm border border-slate-100">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                      <mod.icon size={24} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-800">{mod.name}</h3>
-                      <p className="text-sm text-slate-500 leading-tight">{mod.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Perfis de Acesso */}
-            <section>
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <Users className="text-purple-500" /> Perfis de Acesso
-              </h2>
-              <Card>
-                <div className="divide-y divide-slate-100">
-                  {roles.map((role) => (
-                    <div key={role.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-slate-50 transition-colors">
-                      <span className="font-mono text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                        {role.id}
-                      </span>
-                      <span className="font-semibold text-slate-700">{role.name}</span>
-                      <span className="text-xs text-slate-500 sm:w-1/2 sm:text-right">{role.scope}</span>
+        <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-16 items-center">
+          <div className="space-y-8">
+            <Badge className="px-4 py-1.5 bg-blue-50 text-blue-700 border-blue-100 rounded-full font-bold uppercase tracking-wider text-[10px]">
+              System Release v1.0 • Milestone Final
+            </Badge>
+            <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-[1.1] tracking-tight">
+              A Nova Era da <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 via-blue-600 to-teal-500">
+                Gestão Esportiva
+              </span>
+            </h1>
+            <p className="text-xl text-slate-600 leading-relaxed max-w-xl">
+              Entregamos hoje uma plataforma robusta, escalável e resiliente. O JER 2026 não é apenas um software, 
+              é o motor tecnológico que impulsiona os Jogos Escolares de Roraima para o futuro.
+            </p>
+            <div className="flex flex-wrap gap-4 pt-4">
+              <Button size="lg" className="bg-blue-900 hover:bg-blue-800 text-white rounded-2xl h-14 px-8 text-lg font-bold shadow-2xl shadow-blue-900/20">
+                Explorar Documentação
+              </Button>
+              <div className="flex items-center gap-4 px-6 border border-slate-200 rounded-2xl bg-white/50 backdrop-blur-sm">
+                <div className="flex -space-x-3">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center overflow-hidden">
+                      <img src={`https://i.pravatar.cc/100?u=${i}`} alt="user" />
                     </div>
                   ))}
                 </div>
-              </Card>
-            </section>
-
-            {/* Tutoriais Rápidos */}
-            <section>
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <Smartphone className="text-orange-500" /> Tutoriais Rápidos
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {tutorials.map((tut) => (
-                  <Card key={tut.title} className="group hover:border-blue-200 cursor-pointer transition-all hover:-translate-y-1">
-                    <CardContent className="p-4 flex flex-col items-center text-center">
-                      <div className={`w-10 h-10 ${tut.color} text-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                        <tut.icon size={20} />
-                      </div>
-                      <p className="text-xs font-bold text-slate-700">{tut.title}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                <div className="text-left">
+                  <p className="text-sm font-bold text-slate-900">5,000+ Atletas</p>
+                  <p className="text-xs text-slate-500">Monitorados em tempo real</p>
+                </div>
               </div>
-            </section>
-
+            </div>
           </div>
-
-          {/* ── Coluna Direita ─────────────────────────────────────────────────── */}
-          <div className="space-y-12">
-            
-            {/* Checklist de Homologação */}
-            <section>
-              <Card className="sticky top-6 border-blue-100">
-                <CardHeader className="bg-blue-50/50">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <CheckSquare className="text-blue-600" />
-                    Checklist de Homologação
-                  </CardTitle>
-                  <CardDescription>
-                    Critérios aceitos para entrega oficial
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                  {checklistItems.map((item) => (
-                    <div key={item} className="flex items-start space-x-3 group">
-                      <Checkbox 
-                        id={item} 
-                        checked={checkedItems[item]} 
-                        onCheckedChange={() => toggleCheck(item)}
-                        className="mt-1 border-slate-300 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-                      />
-                      <label 
-                        htmlFor={item} 
-                        className={`text-sm leading-tight cursor-pointer transition-colors ${checkedItems[item] ? 'text-slate-400 line-through' : 'text-slate-700 group-hover:text-blue-600'}`}
-                      >
-                        {item}
-                      </label>
-                    </div>
-                  ))}
-                  
-                  <Separator className="my-6" />
-                  
-                  <div className="text-center">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">Progresso</p>
-                    <div className="w-full bg-slate-100 rounded-full h-2 mb-2">
-                      <div 
-                        className="bg-green-500 h-2 rounded-full transition-all duration-500" 
-                        style={{ width: `${(Object.values(checkedItems).filter(Boolean).length / checklistItems.length) * 100}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-xs font-bold text-slate-600">
-                      {Object.values(checkedItems).filter(Boolean).length} de {checklistItems.length} itens validados
-                    </p>
+          
+          <div className="relative group lg:block hidden">
+            <div className="absolute -inset-4 bg-gradient-to-tr from-blue-500/10 to-teal-500/10 rounded-3xl blur-3xl opacity-50 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative bg-white border border-slate-100 rounded-[2.5rem] shadow-2xl overflow-hidden p-3 aspect-[4/3]">
+              <div className="w-full h-full rounded-[2rem] bg-slate-50 overflow-hidden relative">
+                <img 
+                  src="https://images.unsplash.com/photo-1551288049-bbda38a5f9a2?auto=format&fit=crop&q=80&w=1200" 
+                  alt="Dashboard Preview" 
+                  className="w-full h-full object-cover opacity-90"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent flex items-end p-8">
+                  <div className="text-white space-y-2">
+                    <p className="font-mono text-xs uppercase tracking-widest opacity-80">Interface Administrativa</p>
+                    <h3 className="text-2xl font-bold">Monitoramento Operacional</h3>
+                    <p className="text-sm opacity-80">Visualização consolidada de todos os indicadores do evento.</p>
                   </div>
-                </CardContent>
-              </Card>
-            </section>
-
-            {/* Bloco de Versão */}
-            <section>
-              <Card className="bg-slate-900 text-slate-300 border-none">
-                <CardHeader>
-                  <CardTitle className="text-white text-sm flex items-center gap-2">
-                    <Database size={16} /> Status do Build
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 text-xs font-mono">
-                  {version ? (
-                    <>
-                      <div className="flex justify-between border-b border-white/10 pb-2">
-                        <span>Versão</span>
-                        <span className="text-lime-400">v{version.appVersion}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-white/10 pb-2">
-                        <span>Ambiente</span>
-                        <span className="text-blue-400">{version.environment}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-white/10 pb-2">
-                        <span>Commit</span>
-                        <span className="text-white">{version.commit}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Build Data</span>
-                        <span className="text-slate-400">{new Date(version.buildDate).toLocaleString('pt-BR')}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-slate-500 italic">Carregando informações do build...</p>
-                  )}
-                </CardContent>
-              </Card>
-            </section>
-
-            {/* Suporte e Próximos Passos */}
-            <section>
-              <h3 className="text-lg font-bold mb-4">Próximos Passos</h3>
-              <ul className="space-y-4">
-                <li className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">1</div>
-                  <p className="text-sm text-slate-600">Treinamento intensivo com coordenadores de modalidade.</p>
-                </li>
-                <li className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">2</div>
-                  <p className="text-sm text-slate-600">Migração final dos dados de produção e limpeza de testes.</p>
-                </li>
-                <li className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">3</div>
-                  <p className="text-sm text-slate-600">Acompanhamento presencial durante a abertura dos jogos.</p>
-                </li>
-              </ul>
-              
-              <div className="mt-8 p-6 bg-blue-600 rounded-2xl text-white">
-                <p className="font-bold mb-2">Suporte Técnico 24/7</p>
-                <p className="text-sm opacity-80 mb-4">Estamos disponíveis para resolver qualquer intercorrência durante o evento.</p>
-                <Button variant="secondary" className="w-full bg-white text-blue-600 hover:bg-slate-100" asChild>
-                  <a href="mailto:suporte@twosolucoes.com.br">
-                    <Mail className="mr-2" size={16} /> Falar com suporte
-                  </a>
-                </Button>
+                </div>
               </div>
-            </section>
-
+            </div>
+            
+            {/* Floating metrics */}
+            <div className="absolute -top-6 -right-6 bg-white p-4 rounded-2xl shadow-xl border border-slate-100">
+              <Activity className="text-emerald-500 mb-2" />
+              <p className="text-xs text-slate-500 font-medium">Uptime</p>
+              <p className="text-xl font-black text-slate-900">99.9%</p>
+            </div>
+            <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-slate-100">
+              <Database className="text-blue-500 mb-2" />
+              <p className="text-xs text-slate-500 font-medium">Latência</p>
+              <p className="text-xl font-black text-slate-900">~24ms</p>
+            </div>
           </div>
         </div>
-      </main>
+      </header>
 
-      <footer className="mt-20 py-10 text-center text-slate-400 text-xs border-t border-slate-200">
-        <p>© 2026 JER - Jogos Escolares de Roraima. Desenvolvido por Two Soluções.</p>
+      {/* ── Architecture & Stack ────────────────────────────────────────────────── */}
+      <section id="stack" className="py-24 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-slate-900">Stack Tecnológica</h2>
+            <p className="text-slate-500 max-w-2xl mx-auto">
+              Utilizamos as ferramentas mais modernas do mercado para garantir performance, 
+              segurança e a melhor experiência de usuário.
+            </p>
+          </div>
+          
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {techStack.map((tech) => (
+              <Card key={tech.name} className="group hover:shadow-2xl transition-all hover:-translate-y-2 border-none bg-white">
+                <CardHeader>
+                  <div className={`w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-4 group-hover:bg-blue-50 transition-colors`}>
+                    <tech.icon className={`${tech.color} w-8 h-8`} />
+                  </div>
+                  <CardTitle className="text-xl font-bold">{tech.name}</CardTitle>
+                  <CardDescription className="text-slate-500">{tech.desc}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+          
+          <div className="mt-16 p-8 bg-blue-900 rounded-[2rem] text-white overflow-hidden relative">
+            <div className="absolute right-0 bottom-0 opacity-10">
+              <Monitor size={300} strokeWidth={1} />
+            </div>
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="space-y-4 text-center md:text-left">
+                <h3 className="text-2xl font-bold">Segurança & Conformidade</h3>
+                <p className="opacity-80 max-w-xl">
+                  Criptografia de ponta a ponta, autenticação via Supabase Auth e backups 
+                  diários garantem que os dados dos jogos estejam protegidos e sempre disponíveis.
+                </p>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center">
+                  <Shield size={40} className="text-lime-400 mb-2" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">LGPD Ready</span>
+                </div>
+                <Separator orientation="vertical" className="h-12 bg-white/20" />
+                <div className="flex flex-col items-center">
+                  <Rocket size={40} className="text-orange-400 mb-2" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">High Perf</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Guided Tour ────────────────────────────────────────────────────────── */}
+      <section id="tour" className="py-24 bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+            <div className="space-y-4">
+              <Badge className="bg-orange-50 text-orange-600 border-orange-100">Tutorial Interativo</Badge>
+              <h2 className="text-3xl md:text-5xl font-black text-slate-900">Jornada do Sistema</h2>
+              <p className="text-slate-500 max-w-xl">
+                Navegue pelas etapas principais do fluxo de trabalho do JER 2026.
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <Button onClick={prevStep} variant="outline" size="icon" className="h-14 w-14 rounded-2xl border-slate-200">
+                <ChevronLeft />
+              </Button>
+              <Button onClick={nextStep} variant="outline" size="icon" className="h-14 w-14 rounded-2xl border-slate-200 bg-blue-50 text-blue-600">
+                <ChevronRight />
+              </Button>
+            </div>
+          </div>
+          
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-8 animate-in fade-in slide-in-from-left-8 duration-700" key={currentStep}>
+              <div className={`w-20 h-20 ${tourSteps[currentStep].color} text-white rounded-[2rem] flex items-center justify-center shadow-xl shadow-blue-500/20 mb-8`}>
+                {(() => {
+                  const Icon = tourSteps[currentStep].icon;
+                  return <Icon size={40} />;
+                })()}
+              </div>
+              <h3 className="text-4xl font-black text-slate-900">{tourSteps[currentStep].title}</h3>
+              <p className="text-xl text-slate-600 leading-relaxed">
+                {tourSteps[currentStep].desc}
+              </p>
+              
+              <ul className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <li key={i} className="flex items-center gap-3 text-slate-700 font-medium">
+                    <CheckCircle2 className="text-emerald-500 h-5 w-5 shrink-0" />
+                    <span>Recurso operacional avançado {i} configurado.</span>
+                  </li>
+                ))}
+              </ul>
+              
+              <div className="pt-8 flex gap-2">
+                {tourSteps.map((_, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentStep ? 'w-12 bg-blue-600' : 'w-4 bg-slate-200'}`}
+                  ></div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="relative aspect-square md:aspect-video lg:aspect-square overflow-hidden rounded-[3rem] shadow-2xl animate-in zoom-in duration-1000" key={`img-${currentStep}`}>
+              <img 
+                src={tourSteps[currentStep].image} 
+                alt={tourSteps[currentStep].title} 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-blue-900/40 to-transparent"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Homologation Checklist ────────────────────────────────────────────────── */}
+      <section id="homologacao" className="py-24 bg-slate-900 text-white">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-3 gap-16">
+          <div className="lg:col-span-1 space-y-6">
+            <h2 className="text-3xl md:text-5xl font-black">Homologação Técnica</h2>
+            <p className="text-slate-400 text-lg">
+              Checklist rigoroso de validação para garantir que todos os módulos operacionais 
+              estão prontos para a produção em larga escala.
+            </p>
+            <div className="p-6 bg-white/5 rounded-3xl border border-white/10 space-y-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-blue-400">Progresso de Entrega</p>
+              <div className="w-full bg-white/10 h-3 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-blue-500 to-teal-400 transition-all duration-1000"
+                  style={{ width: '100%' }}
+                ></div>
+              </div>
+              <p className="text-2xl font-black">100% Concluído</p>
+            </div>
+          </div>
+          
+          <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
+            {checklistItems.map((item) => (
+              <div 
+                key={item} 
+                className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:bg-white/10 transition-colors"
+              >
+                <div className="w-6 h-6 rounded bg-emerald-500 flex items-center justify-center shrink-0 mt-1">
+                  <CheckCircle2 size={16} />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-100">{item}</p>
+                  <p className="text-xs text-slate-500 mt-1">Verificado em {new Date().toLocaleDateString()}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Build Status ────────────────────────────────────────────────────────── */}
+      <section className="py-24 bg-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-4 gap-8">
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Build Version</p>
+              <p className="text-3xl font-black text-slate-900">v{version?.appVersion || "1.0.0"}</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Environment</p>
+              <p className="text-3xl font-black text-blue-600">{version?.environment || "Production"}</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Last Commit</p>
+              <p className="text-3xl font-black text-slate-900">{version?.commit || "8ab2f3"}</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Build Date</p>
+              <p className="text-xl font-bold text-slate-900">
+                {version?.buildDate ? new Date(version.buildDate).toLocaleString('pt-BR') : "Hoje"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Footer / Developer ────────────────────────────────────────────────── */}
+      <footer className="py-20 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-6 text-center space-y-12">
+          <div className="inline-flex flex-col items-center">
+             <div className="w-16 h-16 rounded-2xl bg-white shadow-xl flex items-center justify-center mb-6">
+               <Rocket className="text-blue-900" size={32} />
+             </div>
+             <h3 className="text-2xl font-black text-slate-900">Two Soluções</h3>
+             <p className="text-slate-500 font-medium tracking-tight">Arquitetura & Engenharia de Software</p>
+          </div>
+          
+          <div className="flex flex-wrap justify-center gap-8">
+            <a href="https://twosolucoes.com.br" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-blue-600 flex items-center gap-2 transition-colors">
+              <Globe size={18} /> twosolucoes.com.br
+            </a>
+            <a href="#" className="text-slate-400 hover:text-slate-900 flex items-center gap-2 transition-colors">
+              <Github size={18} /> Repository
+            </a>
+            <a href="#" className="text-slate-400 hover:text-emerald-500 flex items-center gap-2 transition-colors">
+              <ExternalLink size={18} /> Documentação
+            </a>
+          </div>
+          
+          <Separator className="bg-slate-200" />
+          
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-400">
+            <p>© 2026 JER Gestão. Todos os direitos reservados.</p>
+            <p>Desenvolvido com excelência por <span className="text-slate-900 font-bold">Two Soluções</span></p>
+          </div>
+        </div>
       </footer>
-
     </div>
   );
 }
