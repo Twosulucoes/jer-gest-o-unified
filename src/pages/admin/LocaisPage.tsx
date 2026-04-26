@@ -364,11 +364,25 @@ export default function LocaisPage() {
               />
             </div>
           </div>
-          {orphanCount > 0 && (
-            <p className="text-xs text-warning">
-              ⚠ {orphanCount} local(is) sem nenhuma etapa vinculada — edite para corrigir.
-            </p>
-          )}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            {orphanCount > 0 ? (
+              <p className="text-xs text-warning">
+                ⚠ {orphanCount} local(is) sem nenhuma etapa vinculada — edite para corrigir.
+              </p>
+            ) : <span />}
+            {canWrite && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="show-archived"
+                  checked={showArchived}
+                  onCheckedChange={setShowArchived}
+                />
+                <Label htmlFor="show-archived" className="text-xs cursor-pointer">
+                  Mostrar arquivados
+                </Label>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
