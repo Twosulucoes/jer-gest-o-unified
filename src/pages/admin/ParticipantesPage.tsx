@@ -238,7 +238,7 @@ export default function ParticipantesPage() {
 
       q = q.eq("event_id", selectedEventId!);
 
-      if (categoryFilter !== "all") q = q.eq("category", categoryFilter);
+      // if (categoryFilter !== "all") q = q.eq("category", categoryFilter);
       if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
       if (isSearching && matchingPersonIds && matchingPersonIds.length > 0) {
