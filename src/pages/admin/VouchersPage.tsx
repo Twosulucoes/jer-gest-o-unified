@@ -376,7 +376,7 @@ export default function VouchersPage() {
       {/* Print/QR Dialog */}
       <PrintVoucherDialog
         voucher={printVoucher}
-        participant={printVoucher ? participantsMap.get(printVoucher.participant_id) ?? null : null}
+        participant={printVoucher && printVoucher.participant_id ? participantsMap.get(printVoucher.participant_id) ?? null : null}
         onClose={() => setPrintVoucher(null)}
       />
 
