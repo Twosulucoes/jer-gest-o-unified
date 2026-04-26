@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Users, Plus, Trash2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,17 @@ interface Props {
 
 export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }: Props) {
   const qc = useQueryClient();
+  const { hasRole } = useAuth();
+  // RLS de match_user_assignments só permite INSERT/UPDATE/DELETE para
+  // admin, coordenacao_tecnica e coordenador_modalidade. Secretaria tem
+  // apenas leitura, então o botão Designar precisa ficar oculto pra ela
+  // mesmo que `canWrite` (escopo geral da partida) seja verdadeiro.
+  const canManageAssignments =
+    canWrite &&
+    (hasRole("admin") ||
+      hasRole("coordenacao_tecnica") ||
+      hasRole("coordenador_modalidade"));
+
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
@@ -111,6 +123,11 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
 
   const addMut = useMutation({
     mutationFn: async () => {
+      if (!canManageAssignments) {
+        throw new Error(
+          "Seu perfil não tem permissão para designar oficiais. Apenas Admin, Coordenação Técnica e Coordenador de Modalidade podem realizar essa ação.",
+        );
+      }
       if (!selectedUserId || !selectedRole) throw new Error("Selecione usuário e função");
 
       // Fetch the target match and validate status / scheduling
@@ -185,6 +202,11 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
 
   const removeMut = useMutation({
     mutationFn: async (id: string) => {
+      if (!canManageAssignments) {
+        throw new Error(
+          "Seu perfil não tem permissão para remover designações.",
+        );
+      }
       const { error } = await supabase.from("match_user_assignments" as any).delete().eq("id", id);
       if (error) throw error;
     },
@@ -204,7 +226,7 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
           <CardTitle className="text-base flex items-center gap-2">
             <Users className="h-4 w-4" />Designações de Oficiais
           </CardTitle>
-          {canWrite && (
+          {canManageAssignments && (
             <Button size="sm" variant="outline" onClick={() => { setSearch(""); setSelectedUserId(""); setSelectedRole(""); setAddOpen(true); }}>
               <Plus className="mr-1 h-3.5 w-3.5" />Designar
             </Button>
@@ -227,7 +249,7 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
                         <Badge variant="outline" className="text-[10px]">{count} partidas no evento</Badge>
                       )}
                     </div>
-                    {canWrite && (
+                    {canManageAssignments && (
                       <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setRemoveId(a.id)}>
                         <Trash2 className="h-3 w-3 text-destructive" />
                       </Button>
