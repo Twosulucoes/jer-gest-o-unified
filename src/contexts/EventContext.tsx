@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { clearPersistedFilters } from "@/hooks/usePersistedState";
+import { handleContextChange } from "@/lib/context-manager";
 
 const STORAGE_KEY = "jer_active_event_id";
 
