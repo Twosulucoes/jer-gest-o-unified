@@ -39,9 +39,6 @@ interface VersionInfo {
 
 const PRIMARY = "#0B2B5A";
 const BLUE = "#0F5AA6";
-const TEAL = "#0BA3A3";
-const GREEN = "#33B249";
-const LIME = "#B5E12A";
 
 const environments = [
   { name: "Teste (Staging)", url: "https://teste.jers.com.br", icon: ShieldCheck, status: "Ativo", color: "text-blue-500" },
