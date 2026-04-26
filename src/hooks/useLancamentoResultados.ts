@@ -102,6 +102,7 @@ export function useMinhasModalidades() {
 
 export function usePartidasModalidade(sportEventId: string | null) {
   const eventId = useActiveEventId();
+  usePwaAudit("resultados/partidas", eventId);
 
   return useQuery({
     queryKey: ["partidas-modalidade", sportEventId, eventId],
