@@ -13,25 +13,13 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
+import {
+  PWA_ROOTS,
+  isPwaRefreshException,
+} from "../../scripts/pwa-refresh-exceptions";
 
 const REPO = resolve(__dirname, "../..");
-const ROOTS = ["src/pages/pwa", "src/pages/aovivo"];
-
-// Manter em sincronia com scripts/audit-pwa-refresh.ts
-const EXCEPTION_PATTERNS: RegExp[] = [
-  /Login(Page)?\.tsx$/,        // pré-sessão
-  /RecoverPage\.tsx$/,
-  /SetPasswordPage\.tsx$/,
-  /AcessoNegadoPage\.tsx$/,    // utilitárias / status
-  /DebugPage\.tsx$/,
-  /ConfirmacaoPage\.tsx$/,
-];
-const EXCEPTIONS = new Set<string>([]);
-
-function isException(rel: string): boolean {
-  if (EXCEPTIONS.has(rel)) return true;
-  return EXCEPTION_PATTERNS.some((re) => re.test(rel));
-}
+const ROOTS = PWA_ROOTS;
 
 function walk(dir: string, out: string[] = []): string[] {
   let entries: string[];
@@ -52,7 +40,7 @@ const pages = ROOTS.flatMap((r) => walk(join(REPO, r))).map((abs) => {
     rel,
     hasRefreshButton: /PwaRefreshButton/.test(src),
     hasPwaHeader: /\bPwaHeader\b/.test(src),
-    exception: isException(rel),
+    exception: isPwaRefreshException(rel),
   };
 });
 

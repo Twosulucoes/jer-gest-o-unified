@@ -13,44 +13,10 @@
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { PWA_ROOTS, isPwaRefreshException } from "./pwa-refresh-exceptions";
 
-const ROOTS = ["src/pages/pwa", "src/pages/aovivo"];
+const ROOTS = PWA_ROOTS;
 const REPO = process.cwd();
-
-/**
- * REGRA DE NEGÓCIO — Telas isentas de PwaRefreshButton
- * ----------------------------------------------------
- * O botão de refresh só faz sentido em telas operacionais autenticadas que
- * exibem dados sincronizáveis. Estão isentas, por design:
- *
- *  1. Telas de autenticação / pré-sessão
- *     (Login, Recover, SetPassword) — não há dados a recarregar.
- *  2. Telas utilitárias / status fixo
- *     (AcessoNegado, Debug, Confirmação pós-ação) — conteúdo estático.
- *
- * Para marcar uma nova tela como isenta:
- *   - Adicione o caminho relativo abaixo, OU
- *   - Renomeie para um padrão coberto pelos regex EXCEPTION_PATTERNS.
- */
-const EXCEPTION_PATTERNS: RegExp[] = [
-  // Autenticação / pré-sessão
-  /Login(Page)?\.tsx$/,
-  /RecoverPage\.tsx$/,
-  /SetPasswordPage\.tsx$/,
-  // Utilitárias / status
-  /AcessoNegadoPage\.tsx$/,
-  /DebugPage\.tsx$/,
-  /ConfirmacaoPage\.tsx$/,
-];
-
-const EXCEPTIONS = new Set<string>([
-  // Adicione aqui exceções pontuais que não casam com os padrões acima.
-]);
-
-function isException(rel: string): boolean {
-  if (EXCEPTIONS.has(rel)) return true;
-  return EXCEPTION_PATTERNS.some((re) => re.test(rel));
-}
 
 const args = new Set(process.argv.slice(2));
 const asJson = args.has("--json");
@@ -86,7 +52,7 @@ const rows: Row[] = files.map((abs) => {
   const src = readFileSync(abs, "utf8");
   const hasRefreshButton = /PwaRefreshButton/.test(src);
   const hasPwaHeader = /\bPwaHeader\b/.test(src);
-  const exception = isException(rel);
+  const exception = isPwaRefreshException(rel);
   const ok = exception || hasRefreshButton || hasPwaHeader;
   return { file: rel, hasRefreshButton, hasPwaHeader, ok, exception };
 }).sort((a, b) => a.file.localeCompare(b.file));
