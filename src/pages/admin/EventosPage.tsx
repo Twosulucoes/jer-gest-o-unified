@@ -223,8 +223,8 @@ export default function EventosPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {event.is_public && <Badge variant="default" className="bg-blue-500 hover:bg-blue-600">Público</Badge>}
-                        {event.public_agenda_published && <Badge variant="outline" className="text-blue-500 border-blue-500">Agenda</Badge>}
+                        {event.is_public && <Badge className="bg-primary hover:bg-primary/90">Público</Badge>}
+                        {event.public_agenda_published && <Badge variant="outline" className="text-primary border-primary">Agenda</Badge>}
                         {!event.is_public && !event.public_agenda_published && <span className="text-muted-foreground text-xs">Privado</span>}
                       </div>
                     </TableCell>
