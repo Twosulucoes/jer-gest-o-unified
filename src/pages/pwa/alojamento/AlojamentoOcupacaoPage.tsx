@@ -46,6 +46,7 @@ interface PersonResult {
 export default function AlojamentoOcupacaoPage() {
   const navigate = useNavigate();
   const { activeEventId } = useEventContext();
+  usePwaAudit("alojamento/ocupacao", activeEventId);
   const [blocks, setBlocks] = useState<BlockInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
