@@ -411,6 +411,21 @@ export default function CompeticaoLancamentoSetsPage() {
     );
   }
 
+  if (!schoolA || !schoolB) {
+    return (
+      <div className="container py-12">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Confronto incompleto</AlertTitle>
+          <AlertDescription>
+            Este confronto não possui duas equipes/escolas vinculadas para o lançamento de resultado.
+          </AlertDescription>
+        </Alert>
+        <Button variant="outline" className="mt-4" onClick={() => navigate(-1)}>Voltar</Button>
+      </div>
+    );
+  }
+
   const schoolAName = schoolA?.teams?.name || "Escola A";
   const schoolBName = schoolB?.teams?.name || "Escola B";
   const partialsText = sets.filter(s => s.a !== "" && s.b !== "").map(s => `${s.a}-${s.b}`).join(" / ");
