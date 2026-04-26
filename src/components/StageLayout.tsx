@@ -27,6 +27,7 @@ import { useMobileBackGuard } from "@/hooks/useMobileBackGuard";
 import { EtapaSwitcher } from "@/components/navigation/EtapaSwitcher";
 import { BackButton } from "@/components/navigation/BackButton";
 import { LAST_ACTIVE_STAGE_STORAGE_KEY } from "@/lib/activeStageStorage";
+import { VersionBadge } from "@/components/VersionBadge";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -344,6 +345,7 @@ export default function StageLayout() {
             </main>
           </div>
         </div>
+        <VersionBadge />
       </TooltipProvider>
     </StageProvider>
   );

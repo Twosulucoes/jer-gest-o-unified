@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GlobalRefreshButton } from "@/components/admin/GlobalRefreshButton";
+import { VersionBadge } from "@/components/VersionBadge";
 
 interface NavItem {
   label: string;
@@ -241,6 +242,7 @@ export default function SuperAdminLayout() {
           </main>
         </div>
       </div>
+      <VersionBadge />
     </TooltipProvider>
   );
 }
