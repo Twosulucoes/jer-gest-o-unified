@@ -132,38 +132,33 @@ export default function LinksPage() {
 
   const autoGenerateLinks = useMutation({
     mutationFn: async () => {
-      const existingSlugs = new Set((items || []).map(i => i.slug));
-      const toCreate = MODULE_OPTIONS.filter(opt => !existingSlugs.has(opt.slug));
-      
-      if (toCreate.length === 0) {
-        toast.info("Todos os links padrão já existem");
-        return;
-      }
-
-      const { error } = await supabase.from("public_content").insert(
-        toCreate.map(opt => ({
-          title: opt.title,
-          slug: opt.slug,
-          kind: "redirect",
-          destination_url: opt.value,
-          active: true,
-          visibility: "public",
-          open_in_new_tab: false,
-        }))
-      );
+      // Upsert idempotente: cria os que faltam sem quebrar em colisão de slug.
+      const payload = MODULE_OPTIONS.map((opt) => ({
+        title: opt.title,
+        slug: opt.slug,
+        kind: "redirect",
+        destination_url: opt.value,
+        active: true,
+        visibility: "public",
+        open_in_new_tab: false,
+      }));
+      const { data, error } = await supabase
+        .from("public_content")
+        .upsert(payload, { onConflict: "kind,slug", ignoreDuplicates: true })
+        .select("id");
       if (error) throw error;
-      return toCreate.length;
+      return data?.length ?? 0;
     },
     onSuccess: (count) => {
-      if (count) {
-        queryClient.invalidateQueries({ queryKey: ["public_content"] });
-        toast.success(`${count} links gerados com sucesso!`);
-      }
+      queryClient.invalidateQueries({ queryKey: ["public_content"] });
+      if (count > 0) toast.success(`${count} link(s) gerados com sucesso!`);
+      else toast.info("Todos os links padrão já existem");
     },
     onError: (err: any) => {
       toast.error("Erro ao gerar links: " + err.message);
     }
   });
+
 
   const resetWizard = () => {
     setWizModule("");
