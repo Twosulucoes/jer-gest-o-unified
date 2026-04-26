@@ -403,7 +403,14 @@ export default function CredenciamentoPage() {
         if (normalizedTerm) {
           const fullName = p.person?.full_name?.toLowerCase() ?? "";
           const cpf = p.person?.cpf ?? "";
-          if (!fullName.includes(normalizedTerm) && !cpf.includes(normalizedTerm)) return false;
+          const activeCred = activeCredMap.get(p.id);
+          const credCode = activeCred?.credential_code?.toLowerCase() ?? "";
+          
+          if (
+            !fullName.includes(normalizedTerm) && 
+            !cpf.includes(normalizedTerm) && 
+            !credCode.includes(normalizedTerm)
+          ) return false;
         }
         // Type filter
         if (filterType !== "all" && p.participant_type !== filterType) return false;
@@ -431,7 +438,7 @@ export default function CredenciamentoPage() {
         const nameB = b.person?.full_name ?? "";
         return nameA.localeCompare(nameB);
       });
-  }, [participants, searchTerm, filterType, filterState, filterInstitution, blockedParticipantIds, getParticipantState, getInstitutionId]);
+  }, [participants, searchTerm, filterType, filterState, filterInstitution, blockedParticipantIds, getParticipantState, getInstitutionId, activeCredMap]);
 
   // --- Pagination ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
