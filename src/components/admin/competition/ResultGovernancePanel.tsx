@@ -12,9 +12,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle, Send, Loader2, FileText, Plus, ArrowRight, Undo2, User, Calendar } from "lucide-react";
+import { CheckCircle, Send, Loader2, FileText, Plus, ArrowRight, Undo2, User, Calendar, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useProvaStatus } from "@/hooks/useProvaStatus";
+import { canTransition, PROVA_STATUS_LABEL } from "@/lib/competition/provaStatus";
 
 interface Props {
   sportEventId: string | null;
@@ -26,6 +28,11 @@ export default function ResultGovernancePanel({ sportEventId }: Props) {
   const [selectedBulletinId, setSelectedBulletinId] = useState<string>("");
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+
+  // Single source of truth do estado da prova
+  const { status: provaStatus } = useProvaStatus(eventId, sportEventId);
+  const canValidate = canTransition(provaStatus, "validate");
+  const canPublish = canTransition(provaStatus, "publish");
 
   // Counts of results by status for this sport_event
   const { data: counts } = useQuery({
