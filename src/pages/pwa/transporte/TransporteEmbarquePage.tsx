@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
+import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
 import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -247,14 +248,13 @@ export default function TransporteEmbarquePage() {
       if (isVoucherQr(rawValue)) {
         const voucher = await tryRedeemVoucher(rawValue, "transport", tripId);
         if (!voucher || !voucher.ok) {
-          toast.error(getVoucherMessage(voucher?.reason, lang));
+          toast.error(voucherErrorMessage(voucher?.reason, lang).text);
           return;
         }
 
         // Voucher AGREGADO: apenas confirma; não há FK para participant_id
         if (voucher.voucher_type === "aggregate" || !voucher.participant_id) {
-          const displayLabel = voucher.label || voucher.person_name || "Acompanhante";
-          toast.success(`🎫 Voucher agregado validado — ${displayLabel}`);
+          toast.success(voucherSuccessMessage(voucher, "transport", lang).text);
           if (navigator.vibrate) navigator.vibrate(200);
           return;
         }

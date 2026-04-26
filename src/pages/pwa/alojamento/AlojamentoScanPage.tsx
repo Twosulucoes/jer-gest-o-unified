@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { rpcResolveQr, rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
 import { extractQrToken } from "@/lib/resolveQrCredential";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
-import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
+import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
+import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { useAuth } from "@/hooks/useAuth";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
@@ -84,21 +85,24 @@ export default function AlojamentoScanPage() {
       setResult(null);
       const voucher = await tryRedeemVoucher(rawValue, "lodging", facilityId);
       if (!voucher || !voucher.ok) {
-        toast.error(getVoucherMessage(voucher?.reason, lang));
+        const msg = voucherErrorMessage(voucher?.reason, lang);
+        toast.error(msg.text);
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         return;
       }
-      const displayName = voucher.voucher_type === "aggregate"
-        ? (voucher.label || voucher.person_name || "Acompanhante")
-        : (voucher.person_name ?? "");
+      const successMsg = voucherSuccessMessage(voucher, "lodging", lang);
+      const displayName =
+        voucher.voucher_type === "aggregate"
+          ? voucher.label || voucher.person_name || "Acompanhante"
+          : voucher.person_name ?? "";
       setResult({
         ok: true,
         full_name: displayName,
         participant_type: voucher.voucher_type === "aggregate" ? "Voucher agregado" : "Voucher",
         person_id: null,
-        message: `Voucher validado · ${voucher.remaining_uses ?? "∞"} usos restantes`,
+        message: successMsg.text,
       });
-      toast.success(`🎫 Voucher validado — ${displayName}`);
+      toast.success(successMsg.text);
       recordOutcome("ok");
       if (navigator.vibrate) navigator.vibrate(200);
       reopenIfContinuous();

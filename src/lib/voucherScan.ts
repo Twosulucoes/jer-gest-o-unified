@@ -15,24 +15,18 @@ export interface VoucherRedeemResult {
   remaining_uses?: number | null;
 }
 
-const REASONS: Record<string, string> = {
-  not_found: "Voucher não encontrado",
-  inactive: "Voucher revogado ou inativo",
-  expired: "Voucher expirado",
-  not_yet_valid: "Voucher ainda não está válido",
-  scope_denied: "Voucher não cobre este serviço",
-  max_uses_reached: "Limite de usos do voucher atingido",
-};
+// Mensagens centralizadas no dicionário único `voucherMessages.ts`.
+// Mantemos `voucherReasonLabel` como wrapper para compatibilidade.
+import { voucherErrorMessage } from "./voucherMessages";
+
+/** Mensagem amigável para uma `reason` retornada pela RPC. */
+export function voucherReasonLabel(reason?: string): string {
+  return voucherErrorMessage(reason).text;
+}
 
 /** Detecta se o QR escaneado é um voucher (prefixo `voucher:`). */
 export function isVoucherQr(rawValue: string): boolean {
   return rawValue.trim().toLowerCase().startsWith("voucher:");
-}
-
-/** Mensagem amigável para uma `reason` retornada pela RPC. */
-export function voucherReasonLabel(reason?: string): string {
-  if (!reason) return "Voucher inválido";
-  return REASONS[reason] ?? reason;
 }
 
 /**

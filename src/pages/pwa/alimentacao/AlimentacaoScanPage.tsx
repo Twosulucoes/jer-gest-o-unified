@@ -14,7 +14,8 @@ import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "
 import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
-import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
+import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
+import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAuth } from "@/hooks/useAuth";
 import {
   loadScanPreferences,
@@ -233,9 +234,9 @@ export default function AlimentacaoScanPage() {
       if (isVoucherQr(rawValue)) {
         const voucher = await tryRedeemVoucher(rawValue, "meals", windowId);
         if (!voucher || !voucher.ok) {
-          const errorMsg = getVoucherMessage(voucher?.reason, lang);
-          setResult({ ok: false, message: errorMsg, source: "qr" });
-          toast.error(errorMsg);
+          const msg = voucherErrorMessage(voucher?.reason, lang);
+          setResult({ ok: false, message: msg.text, source: "qr" });
+          toast.error(msg.text);
           recordOutcome("error");
           reopenIfContinuous();
           return;
@@ -243,10 +244,9 @@ export default function AlimentacaoScanPage() {
 
         // Voucher AGREGADO: não tem participant_id, registra apenas o uso (já feito pela RPC)
         if (voucher.voucher_type === "aggregate" || !voucher.participant_id) {
-          const displayLabel = voucher.label || voucher.person_name || "Acompanhante";
-          const successMsg = `Voucher agregado · ${displayLabel}`;
-          setResult({ ok: true, source: "qr", message: successMsg });
-          toast.success(successMsg);
+          const msg = voucherSuccessMessage(voucher, "meals", lang);
+          setResult({ ok: true, source: "qr", message: msg.text });
+          toast.success(msg.text);
           recordOutcome("ok");
           if (navigator.vibrate) navigator.vibrate(200);
           reopenIfContinuous();
