@@ -55,9 +55,10 @@ export default function TransportePassageirosPage() {
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [tripInfo, setTripInfo] = useState<TripInfo>({});
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [delegationFilter, setDelegationFilter] = useState("all");
+  const [search, setSearch] = usePersistedState("transporte_passageiros_search", "");
+  const [statusFilter, setStatusFilter] = usePersistedState("transporte_passageiros_status", "all");
+  const [delegationFilter, setDelegationFilter] = usePersistedState("transporte_passageiros_delegation", "all");
+
 
   const [confirmNoShow, setConfirmNoShow] = useState<PassengerRow | null>(null);
   const [contactModal, setContactModal] = useState<PassengerRow | null>(null);
