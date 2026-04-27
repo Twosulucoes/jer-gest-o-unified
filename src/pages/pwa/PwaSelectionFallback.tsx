@@ -29,20 +29,20 @@ const PwaSelectionFallback = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-start gap-3 p-3 bg-white dark:bg-zinc-900 rounded-lg border shadow-sm">
-            <Calendar className={`w-5 h-5 mt-0.5 ${activeEventId ? "text-green-500" : "text-zinc-400"}`} />
+            <Calendar className={`w-5 h-5 mt-0.5 ${activeEventId ? "text-green-500" : "text-red-500"}`} />
             <div>
               <p className="text-sm font-medium">Evento</p>
               <p className="text-xs text-muted-foreground">
-                {activeEventId ? "Selecionado" : "Nenhum evento ativo selecionado"}
+                {activeEventId ? "Selecionado" : "Nenhum evento ativo selecionado (Obrigatório)"}
               </p>
             </div>
           </div>
           <div className="flex items-start gap-3 p-3 bg-white dark:bg-zinc-900 rounded-lg border shadow-sm">
-            <MapPin className={`w-5 h-5 mt-0.5 ${activeStageId ? "text-green-500" : "text-zinc-400"}`} />
+            <MapPin className={`w-5 h-5 mt-0.5 ${activeStageId ? "text-green-500" : "text-amber-500"}`} />
             <div>
               <p className="text-sm font-medium">Etapa</p>
               <p className="text-xs text-muted-foreground">
-                {activeStageId ? "Selecionada" : "Nenhuma etapa ativa selecionada"}
+                {activeStageId ? "Selecionada" : "Nenhuma etapa ativa selecionada (Obrigatório para módulos)"}
               </p>
             </div>
           </div>
