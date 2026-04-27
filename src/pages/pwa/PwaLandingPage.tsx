@@ -63,7 +63,7 @@ export default function PwaLandingPage() {
 
       const opCards = MODULE_CARDS.filter((c) => roles.includes(c.role) || (c.role === "secretaria" && roles.includes("admin")));
       
-      if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria") && activeStageId) {
+      if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria") && activeEventId && activeStageId) {
         navigate(opCards[0].to, { replace: true });
         return;
       }
