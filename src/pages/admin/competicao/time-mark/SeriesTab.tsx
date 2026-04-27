@@ -44,7 +44,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface SeriesTabProps {
+import { formatTimeMs, formatDistanceCm } from "@/lib/competition-formatters";
   sportEventId: string;
 }
 
