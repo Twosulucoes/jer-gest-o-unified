@@ -86,6 +86,7 @@ import DuplicidadesPessoasPage from "./pages/admin/DuplicidadesPessoasPage";
 import PessoasPage from "./pages/admin/PessoasPage";
 import EventuaisPage from "./pages/admin/EventuaisPage";
 import VouchersPage from "./pages/admin/VouchersPage";
+import VoucherAuditoriaPage from "./pages/admin/VoucherAuditoriaPage";
 import LogisticaConsolidadaPage from "./pages/admin/LogisticaConsolidadaPage";
 import ParticipanteHistoricoPage from "./pages/admin/ParticipanteHistoricoPage";
 import HistoricoBuscaPage from "./pages/admin/HistoricoBuscaPage.tsx";
