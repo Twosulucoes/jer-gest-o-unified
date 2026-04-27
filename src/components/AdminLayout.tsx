@@ -67,6 +67,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Eventos", to: "/admin/eventos", icon: <Calendar className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Pessoas Eventuais", to: "/admin/pessoas/eventuais", icon: <Users className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Duplicidades de Pessoas", to: "/admin/participantes/duplicidades", icon: <Users className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
       { label: "Histórico do Participante", to: "/admin/participantes/historico", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },

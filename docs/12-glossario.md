@@ -13,11 +13,13 @@
 | **Participante Delegação** | Atletas e Staff vinculados a uma Instituição de ensino |
 | **Participante Organização** | Pessoas da equipe de coordenação e apoio (Saúde, TI, Arbitragem, etc) |
 | **Pessoa (People)** | Cadastro base de pessoa física (pode participar de múltiplos eventos) |
+| **Pessoa Eventual** | Pessoa sem credencial oficial que recebe voucher (prestador, visitante, etc) |
 | **Modalidade (Sport)** | Esporte praticado (futsal, atletismo, natação...) |
 | **Categoria** | Divisão por idade/gênero (sub-14 masculino, livre feminino...) |
 | **Prova (Sport Event)** | Combinação modalidade + categoria (Futsal Sub-14 Masc) |
 | **Credencial** | Documento oficial do participante no evento, com QR Code |
 | **Credential Code** | Código alfanumérico da credencial. Formato: `JER-{timestamp_base36}-{random}` |
+| **Voucher** | Instrumento de acesso temporário para um serviço específico, exclusivo para eventuais |
 | **QR Code Value** | Valor codificado no QR. Formato: `jer:{event_id}:{participant_id}:{credential_code}` |
 | **Check-in / Registrar presença** | Confirmar a chegada do participante ao evento |
 | **Emitir credencial** | Gerar os códigos (credential_code + qr_code_value) e ativar a credencial |
