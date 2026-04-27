@@ -181,7 +181,7 @@ export function voucherContingencyNotice(l?: PwaLang): VoucherMessage {
 /** Helper conveniente: dado o resultado da RPC, devolve a mensagem certa. */
 export function voucherMessageFromResult(
   result: VoucherRedeemResult | null | undefined,
-  serviceKind: ServiceKind,
+  serviceKind: string,
   l?: PwaLang,
 ): VoucherMessage {
   if (!result || !result.ok) return voucherErrorMessage(result?.reason, l);
