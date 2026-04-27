@@ -559,11 +559,11 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
       if (bErr) throw bErr;
 
       // 2. Criar vouchers anônimos em massa
-      const vouchers = Array.from({ length: quantity }).map(() => ({
+      const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
         event_id: eventId,
         batch_id: batch.id,
         participant_id: null,
-        voucher_type: "aggregate",
+        voucher_type: "aggregate" as const,
         is_nominal: false,
         qr_code_value: genQrValue(),
         status: "active",
@@ -575,7 +575,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
         target_facility_id: serviceType === "lodging" ? instanceId : null,
       }));
 
-      const { error: vErr } = await supabase.from("service_vouchers").insert(vouchers);
+      const { error: vErr } = await supabase.from("service_vouchers").insert(vouchersToInsert as any);
       if (vErr) throw vErr;
     },
     onSuccess: () => {
