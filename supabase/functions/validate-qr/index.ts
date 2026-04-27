@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,35 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+/**
+ * Valida a assinatura HMAC de um QR v2
+ */
+async function validateHMAC(payload: string, hmacShort: string): Promise<boolean> {
+  const secret = Deno.env.get("HMAC_SECRET");
+  if (!secret) {
+    console.error("HMAC_SECRET not configured");
+    return false;
+  }
+
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const messageData = encoder.encode(payload);
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign("HMAC", key, messageData);
+  const hashArray = Array.from(new Uint8Array(signature));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return hashHex.substring(0, 16) === hmacShort;
 }
 
 /**
@@ -103,6 +133,29 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "qr_code_value contains invalid characters" }, 400);
     }
 
+    // Logica de assinatura HMAC
+    let isLegacy = false;
+    let qrPayload = qrStr;
+    
+    if (qrStr.startsWith("jer:v2:")) {
+      const parts = qrStr.split(":");
+      if (parts.length === 6) {
+        // jer:v2:event_id:participant_id:credential_code:hmac_short
+        const [,, eid, pid, ccode, hmac] = parts;
+        const payload = eid + pid + ccode;
+        const isValid = await validateHMAC(payload, hmac);
+        if (!isValid) {
+          return jsonResponse({ error: "Assinatura do QR Code inválida (Possível fraude)" }, 403);
+        }
+        // Se válido, o qr_code_value para busca no banco é o formato v1 ou apenas o code
+        qrPayload = `jer:${eid}:${pid}:${ccode}`;
+      } else {
+        return jsonResponse({ error: "Formato de QR Code v2 inválido" }, 400);
+      }
+    } else if (qrStr.startsWith("jer:")) {
+      isLegacy = true;
+    }
+
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -127,7 +180,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "Forbidden" }, 403);
     }
 
-    const { values: candidates, cpfDigits } = extractCandidates(qrStr);
+    const { values: candidates, cpfDigits } = extractCandidates(qrPayload);
 
     // Drop any candidate that still contains unsafe characters.
     const safeCandidates = candidates.filter(
@@ -361,6 +414,7 @@ Deno.serve(async (req: Request) => {
           scan_point: scan_point || "general",
           scan_result: scanResult,
           notes: scanNotes,
+          legacy_format: isLegacy
         });
       }
     }
