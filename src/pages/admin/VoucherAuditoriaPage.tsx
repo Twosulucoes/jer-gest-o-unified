@@ -51,8 +51,8 @@ export default function VoucherAuditoriaPage() {
         details: a.reason ? `Recusa: ${a.reason}` : 'Sucesso',
         identifier: (a as any).voucher?.eventual_person?.full_name || (a as any).voucher?.qr_code_value || a.qr_value,
         operator: (a as any).operator?.display_name || 'Sistema',
-        is_offline: a.is_offline,
-        offline_at: a.offline_at,
+        is_offline: (a as any).is_offline,
+        offline_at: (a as any).offline_at,
         tone: a.outcome === 'success' ? 'success' : 'destructive'
       }));
     },
