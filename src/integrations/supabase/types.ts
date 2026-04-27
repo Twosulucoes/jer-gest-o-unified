@@ -5571,6 +5571,53 @@ export type Database = {
           },
         ]
       }
+      service_eventual_people: {
+        Row: {
+          authorized_by: string | null
+          created_at: string
+          document_id: string | null
+          event_id: string
+          full_name: string
+          id: string
+          involvement_type: string
+          notes: string | null
+          organization: string | null
+          updated_at: string
+        }
+        Insert: {
+          authorized_by?: string | null
+          created_at?: string
+          document_id?: string | null
+          event_id: string
+          full_name: string
+          id?: string
+          involvement_type: string
+          notes?: string | null
+          organization?: string | null
+          updated_at?: string
+        }
+        Update: {
+          authorized_by?: string | null
+          created_at?: string
+          document_id?: string | null
+          event_id?: string
+          full_name?: string
+          id?: string
+          involvement_type?: string
+          notes?: string | null
+          organization?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_eventual_people_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_voucher_uses: {
         Row: {
           context_id: string | null
@@ -5611,10 +5658,13 @@ export type Database = {
       }
       service_vouchers: {
         Row: {
+          batch_id: string | null
           created_at: string
           current_uses: number
           event_id: string
+          eventual_person_id: string | null
           id: string
+          is_nominal: boolean
           issued_by: string | null
           max_uses: number | null
           notes: string | null
@@ -5627,15 +5677,22 @@ export type Database = {
           scope_meals: boolean
           scope_transport: boolean
           status: string
+          target_date: string | null
+          target_facility_id: string | null
+          target_meal_window_id: string | null
+          target_trip_id: string | null
           updated_at: string
           valid_from: string
           valid_until: string | null
         }
         Insert: {
+          batch_id?: string | null
           created_at?: string
           current_uses?: number
           event_id: string
+          eventual_person_id?: string | null
           id?: string
+          is_nominal?: boolean
           issued_by?: string | null
           max_uses?: number | null
           notes?: string | null
@@ -5648,15 +5705,22 @@ export type Database = {
           scope_meals?: boolean
           scope_transport?: boolean
           status?: string
+          target_date?: string | null
+          target_facility_id?: string | null
+          target_meal_window_id?: string | null
+          target_trip_id?: string | null
           updated_at?: string
           valid_from?: string
           valid_until?: string | null
         }
         Update: {
+          batch_id?: string | null
           created_at?: string
           current_uses?: number
           event_id?: string
+          eventual_person_id?: string | null
           id?: string
+          is_nominal?: boolean
           issued_by?: string | null
           max_uses?: number | null
           notes?: string | null
@@ -5669,6 +5733,10 @@ export type Database = {
           scope_meals?: boolean
           scope_transport?: boolean
           status?: string
+          target_date?: string | null
+          target_facility_id?: string | null
+          target_meal_window_id?: string | null
+          target_trip_id?: string | null
           updated_at?: string
           valid_from?: string
           valid_until?: string | null
@@ -5679,6 +5747,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_eventual_person_id_fkey"
+            columns: ["eventual_person_id"]
+            isOneToOne: false
+            referencedRelation: "service_eventual_people"
             referencedColumns: ["id"]
           },
           {
@@ -5694,6 +5769,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_person_logistics_consumption"
             referencedColumns: ["participant_id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_target_facility_id_fkey"
+            columns: ["target_facility_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_target_meal_window_id_fkey"
+            columns: ["target_meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "meal_windows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_target_trip_id_fkey"
+            columns: ["target_trip_id"]
+            isOneToOne: false
+            referencedRelation: "transport_trips"
+            referencedColumns: ["id"]
           },
         ]
       }
