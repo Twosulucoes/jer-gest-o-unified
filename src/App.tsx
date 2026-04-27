@@ -316,7 +316,7 @@ const App = () => (
               <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
               <Route path="credenciamento" element={<RedirectToEtapas />} />
               <Route path="credenciamento-externo" element={<RedirectToEtapas />} />
-              <Route path="validacao-qr" element={<RedirectToEtapas />} />
+              <Route path="vouchers/validar-manual" element={<RedirectToEtapas />} />
               {/* Transporte — operacional, redireciona para Etapa */}
               <Route path="transporte" element={<RedirectToEtapas />} />
               <Route path="transporte/veiculos" element={<RedirectToEtapas />} />
@@ -446,7 +446,7 @@ const App = () => (
               {/* Participantes e Delegações no contexto da etapa */}
               <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipantesPage /></ProtectedRoute>} />
               <Route path="delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacoesPage /></ProtectedRoute>} />
-              <Route path="voucher/validar" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento"]}><VoucherValidarPage /></ProtectedRoute>} />
+              <Route path="voucher/validar" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><VoucherValidarPage /></ProtectedRoute>} />
               <Route path="pessoas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PessoasPage /></ProtectedRoute>} />
                <Route path="pessoas/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
                <Route path="pessoas/eventuais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><EventuaisPage /></ProtectedRoute>} />

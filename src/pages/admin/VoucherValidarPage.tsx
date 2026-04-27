@@ -79,8 +79,7 @@ export default function VoucherValidarPage() {
     redeem(value);
   };
 
-  const canValidate = hasRole("admin") || hasRole("secretaria") || hasRole("super_admin")
-    || hasRole("transporte") || hasRole("alimentacao") || hasRole("alojamento");
+  const canValidate = hasRole("admin") || hasRole("secretaria") || hasRole("super_admin");
 
   if (!canValidate) {
     return (
