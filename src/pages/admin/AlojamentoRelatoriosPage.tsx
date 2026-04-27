@@ -5,15 +5,19 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
-import { Download, Building2, AlertCircle, ArrowLeft } from "lucide-react";
+import { Download, Building2, AlertCircle, ArrowLeft, FileText, Table as TableIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 export default function AlojamentoRelatoriosPage() {
   const eventId = useActiveEventId();
@@ -22,6 +26,8 @@ export default function AlojamentoRelatoriosPage() {
   const canExport = hasRole("admin") || hasRole("secretaria") || hasRole("alojamento");
   const [locationFilter, setLocationFilter] = useState("all");
   const [delegationFilter, setDelegationFilter] = useState("all");
+  const [signature, setSignature] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: locations = [] } = useQuery({
     queryKey: ["lodging-locations", eventId],
@@ -115,6 +121,114 @@ export default function AlojamentoRelatoriosPage() {
     toast.success("CSV exportado com sucesso");
   };
 
+  const exportXlsx = () => {
+    if (!occupancies?.length) return;
+    setIsExporting(true);
+    try {
+      const detailData = occupancies.map(o => ({
+        "Participante": o.participants?.person?.full_name || "",
+        "Delegação": o.participants?.delegations?.institutions?.name || "",
+        "Local": o.lodging_units?.lodging_locations?.name || "",
+        "Unidade": o.lodging_units?.name || "",
+        "Status": statusLabel(o.status),
+        "Check-in": o.checked_in_at ? format(new Date(o.checked_in_at), "dd/MM/yyyy HH:mm") : "",
+        "Check-out": o.checked_out_at ? format(new Date(o.checked_out_at), "dd/MM/yyyy HH:mm") : ""
+      }));
+
+      const summaryData = chartData.map(d => ({
+        "Local": d.name,
+        "Capacidade": d.capacidade,
+        "Ocupado": d.ocupado,
+        "Ocupação %": d.capacidade > 0 ? ((d.ocupado / d.capacidade) * 100).toFixed(1) + "%" : "0%"
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+      const wsDetail = XLSX.utils.json_to_sheet(detailData);
+
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo");
+      XLSX.utils.book_append_sheet(wb, wsDetail, "Detalhe");
+
+      const filename = `relatorio_alojamento_${signature ? signature : "geral"}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      toast.success("XLSX exportado com sucesso");
+    } catch (e) {
+      toast.error("Erro ao exportar XLSX");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const exportPdf = () => {
+    if (!occupancies?.length) return;
+    setIsExporting(true);
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      doc.setFontSize(18);
+      doc.text("Relatório de Alojamento", pageWidth / 2, 20, { align: "center" });
+      doc.setFontSize(10);
+      doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth / 2, 28, { align: "center" });
+
+      doc.setFontSize(12);
+      doc.text("Resumo de Ocupação", 14, 45);
+      const summaryTable = chartData.map(d => [
+        d.name,
+        d.capacidade.toString(),
+        d.ocupado.toString(),
+        d.capacidade > 0 ? ((d.ocupado / d.capacidade) * 100).toFixed(1) + "%" : "0%"
+      ]);
+      autoTable(doc, {
+        startY: 50,
+        head: [["Local", "Capacidade", "Ocupado", "Ocupação %"]],
+        body: summaryTable,
+        theme: "striped",
+        headStyles: { fillColor: [39, 174, 96] }
+      });
+
+      doc.text("Detalhamento", 14, (doc as any).lastAutoTable.finalY + 10);
+      const detailsTable = occupancies.map(o => [
+        o.participants?.person?.full_name || "",
+        o.participants?.delegations?.institutions?.name || "",
+        o.lodging_units?.lodging_locations?.name || "",
+        o.lodging_units?.name || "",
+        statusLabel(o.status),
+        o.checked_in_at ? format(new Date(o.checked_in_at), "dd/MM HH:mm") : ""
+      ]);
+
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 15,
+        head: [["Participante", "Delegação", "Local", "Unidade", "Status", "Check-in"]],
+        body: detailsTable,
+        styles: { fontSize: 7 },
+        headStyles: { fillColor: [39, 174, 96] }
+      });
+
+      const finalY = (doc as any).lastAutoTable.finalY + 20;
+      if (signature) {
+        doc.setFontSize(10);
+        doc.text("__________________________________________", pageWidth / 2, finalY, { align: "center" });
+        doc.text(`Responsável: ${signature}`, pageWidth / 2, finalY + 7, { align: "center" });
+      }
+
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(`Página ${i} de ${pageCount}`, pageWidth - 20, doc.internal.pageSize.getHeight() - 10);
+      }
+
+      const filename = `relatorio_alojamento_${signature ? signature : "geral"}.pdf`;
+      doc.save(filename);
+      toast.success("PDF exportado com sucesso");
+    } catch (e) {
+      toast.error("Erro ao exportar PDF");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -127,9 +241,17 @@ export default function AlojamentoRelatoriosPage() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
           </Button>
           {canExport && (
-            <Button size="sm" onClick={exportCsv} disabled={!occupancies?.length}>
-              <Download className="mr-2 h-4 w-4" />Exportar CSV
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={exportCsv} disabled={!occupancies?.length || isExporting}>
+                <Download className="mr-2 h-4 w-4" /> CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportXlsx} disabled={!occupancies?.length || isExporting}>
+                <TableIcon className="mr-2 h-4 w-4" /> XLSX
+              </Button>
+              <Button size="sm" onClick={exportPdf} disabled={!occupancies?.length || isExporting}>
+                <FileText className="mr-2 h-4 w-4" /> PDF
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -156,6 +278,14 @@ export default function AlojamentoRelatoriosPage() {
                 {delegations.map((d: any) => <SelectItem key={d.id} value={d.id}>{d.institutions?.name || d.id}</SelectItem>)}
               </SelectContent>
             </Select>
+          </div>
+          <div className="w-52">
+            <label className="text-xs font-medium mb-1 block">Assinatura (Relatório)</label>
+            <Input 
+              placeholder="Nome do responsável" 
+              value={signature} 
+              onChange={(e) => setSignature(e.target.value)} 
+            />
           </div>
         </CardContent>
       </Card>
