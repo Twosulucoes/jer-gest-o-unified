@@ -508,8 +508,8 @@ export default function VouchersPage() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handlePrintBatch(b.id)}><Printer className="h-3.5 w-3.5 mr-1" /> Imprimir Lote</Button>
-                  <Button size="sm" variant="ghost" className="text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                  <Button size="sm" variant="outline" onClick={() => handlePrintBatch(b.id)}><Printer className="h-3.5 w-3.5 mr-1" /> Imprimir</Button>
+                  <Button size="sm" variant="ghost" title="Revogar Lote" className="text-destructive" onClick={() => setRevokeBatchTarget(b)}><Ban className="h-3.5 w-3.5" /></Button>
                 </div>
               </Card>
             ))}
