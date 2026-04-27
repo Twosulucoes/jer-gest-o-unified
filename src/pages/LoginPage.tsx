@@ -72,13 +72,31 @@ export default function LoginPage() {
 
   // If already authenticated, redirect immediately
   const { user: currentUser, roles: currentRoles, loading: authLoading } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
     if (!authLoading && currentUser && currentRoles.length > 0) {
+      // Priority 1: state.from (if reason is not missing_stage or if context exists)
+      const from = (location.state as any)?.from?.pathname;
+      const reason = (location.state as any)?.reason;
+      const activeEventId = localStorage.getItem("jer_active_event_id");
+      const activeStageId = localStorage.getItem("jer_active_stage_id");
+      const hasPwaContext = !!activeEventId && !!activeStageId;
+
+      if (from && from !== "/login") {
+        // If coming from PWA but missing stage, must go to config unless context was recovered
+        if (from.startsWith("/pwa") && from !== "/pwa/configuracao" && !hasPwaContext) {
+          navigate("/pwa/configuracao", { replace: true, state: { from: (location.state as any)?.from, reason: "missing_stage" } });
+        } else {
+          navigate(from, { replace: true });
+        }
+        return;
+      }
+
       const target = resolveRedirect(currentRoles);
       navigate(target, { replace: true });
     }
-  }, [authLoading, currentUser, currentRoles, navigate]);
+  }, [authLoading, currentUser, currentRoles, navigate, location]);
 
   // Recovery modal
   const [recoverOpen, setRecoverOpen] = useState(false);
