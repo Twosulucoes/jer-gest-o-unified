@@ -31,6 +31,11 @@ const ROLE_REDIRECT_MAP: Record<string, string> = {
 const ADMIN_ROLES = ["admin", "super_admin", "secretaria", "coordenacao_tecnica", "cde"];
 
 function resolveRedirect(roles: string[]): string {
+  // Check for active event/stage in localStorage
+  const activeEventId = localStorage.getItem("jer_active_event_id");
+  const activeStageId = localStorage.getItem("jer_active_stage_id");
+  const hasPwaContext = !!activeEventId && !!activeStageId;
+
   // If only coordenador_modalidade, redirect to their dashboard
   if (roles.includes("coordenador_modalidade") && roles.length === 1) {
     return "/admin/coordenador-modalidade";
@@ -41,12 +46,20 @@ function resolveRedirect(roles: string[]): string {
 
   // Single operational role → direct
   const opRoles = roles.filter(r => ROLE_REDIRECT_MAP[r]);
-  if (opRoles.length === 1) return ROLE_REDIRECT_MAP[opRoles[0]];
+  if (opRoles.length === 1) {
+    const target = ROLE_REDIRECT_MAP[opRoles[0]];
+    // If operational role is a PWA role, check context
+    if (target.startsWith("/pwa") && !hasPwaContext && target !== "/pwa/configuracao") {
+      return "/pwa/configuracao";
+    }
+    return target;
+  }
 
   // Multiple operational roles → module selector
   if (opRoles.length > 1) return "/selecionar-modulo";
 
-  return "/pwa";
+  // Default fallback for PWA users
+  return hasPwaContext ? "/pwa" : "/pwa/configuracao";
 }
 
 export default function LoginPage() {
