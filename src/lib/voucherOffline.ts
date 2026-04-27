@@ -11,16 +11,19 @@ export interface VoucherOfflineItem {
   person_name?: string;
   status: "pending" | "synced" | "conflict";
   conflict_reason?: string;
+  resolved_at?: string;
 }
 
 const STORAGE_KEY = "pwa_voucher_offline_queue";
 
 export const getVoucherQueue = (): VoucherOfflineItem[] => {
+  if (typeof window === 'undefined') return [];
   const stored = localStorage.getItem(STORAGE_KEY);
   return stored ? JSON.parse(stored) : [];
 };
 
 export const saveVoucherQueue = (queue: VoucherOfflineItem[]) => {
+  if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
 };
 
@@ -47,6 +50,20 @@ export const addToVoucherQueue = (
   return newItem;
 };
 
+export const resolveVoucherConflict = (itemId: string, action: "resolved" | "discard") => {
+  const queue = getVoucherQueue();
+  const idx = queue.findIndex(i => i.id === itemId);
+  if (idx === -1) return;
+
+  if (action === "discard") {
+    queue.splice(idx, 1);
+  } else {
+    queue[idx].status = "synced"; // Marcamos como sincronizado/resolvido para sair da lista de conflitos
+    queue[idx].resolved_at = new Date().toISOString();
+  }
+  saveVoucherQueue(queue);
+};
+
 export const syncVoucherQueue = async () => {
   const queue = getVoucherQueue();
   const pending = queue.filter(i => i.status === "pending");
@@ -62,7 +79,7 @@ export const syncVoucherQueue = async () => {
         p_qr_value: item.qr_value,
         p_service_kind: item.service_kind,
         p_context_id: item.context_id,
-        p_is_offline: true, // Adicionado para auditoria saber a origem
+        p_is_offline: true,
         p_offline_at: item.attempted_at
       });
 
@@ -82,7 +99,7 @@ export const syncVoucherQueue = async () => {
     }
   }
 
-  // Mantém apenas conflitos na fila local para resolução, ou remove se preferir histórico
+  // Mantém conflitos para resolução manual no PWA
   saveVoucherQueue(updatedQueue.filter(i => i.status !== "synced"));
   return { count: syncedCount, conflicts: conflictCount };
 };
