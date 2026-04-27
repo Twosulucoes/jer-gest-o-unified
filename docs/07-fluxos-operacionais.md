@@ -213,13 +213,28 @@ Coordenação publica resultados de partidas (result_status = 'publicado')
   → Exporta PDF (selo OFICIAL/PARCIAL) ou XLSX
 ```
 
-## 9. Registro de Evidências OSC
+## 9. Alocação em Lote (Alojamento)
 
 ```
-Operação em campo (Alimentação, Transporte, etc.)
-  → Operador tira foto (ex: buffet pronto) no PWA ou Admin
-  → Upload para bucket operational-evidence (pasta específica por módulo/mês)
-  → Registro na tabela operational_evidence vinculado ao contexto (evento, módulo, referência)
+Secretaria/Alojamento acessa /admin/alojamento/alocacao-lote
+  → Passo 1: Seleciona Delegação (Escola)
+  → Passo 2: Revisa participantes (separados por gênero e status de alocação)
+  → Passo 3: Seleciona locais e unidades de destino (vê capacidade disponível)
+  → Executar Alocação:
+    - Sistema distribui participantes automaticamente respeitando gênero e capacidade
+    - Executa inserts em lodging_occupancies
+    - Trigger trg_validate_lodging_gender garante integridade
+  → Tela Final: Exibe relatório de sucesso e falhas (bloqueios por capacidade/gênero)
+```
+
+## 10. Registro de Evidências OSC
+
+```
+Operação em campo ou Admin (Alimentação, Transporte, etc.)
+  → Operador tira foto ou anexa documento no PWA ou na rota /admin/evidencias-osc
+  → Upload para bucket operational-evidence (pasta: event_id/module/filename)
+  → Registro na tabela operational_evidence vinculado ao contexto (evento, módulo, descrição)
   → Secretaria visualiza evidências centralizadas para prestação de contas
-  → Status: pendente → aprovado (contabilizado para OSC)
+  → Fluxo de Revisão: admin/secretaria avalia evidência (Aprovar / Rejeitar com motivo)
+  → Auditoria: registra reviewed_by e reviewed_at para transparência
 ```
