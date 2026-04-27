@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getPwaLang, setPwaLang } from "@/lib/pwa-messages";
 import { useStageContext } from "@/contexts/StageContext";
+import { useEventContext } from "@/contexts/EventContext";
 import { PwaRefreshButton } from "./PwaRefreshButton";
 
 interface PwaHeaderProps {
@@ -22,12 +23,25 @@ interface PwaHeaderProps {
 export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignOut, rightSlot, actionsBar }: PwaHeaderProps) {
   const navigate = useNavigate();
   const { roles } = useAuth();
-  const { activeStage } = useStageContext();
+  const { activeStage, activeStageId } = useStageContext();
+  const { activeEventId } = useEventContext();
   const showSwitcher = roles.length >= 2;
 
   const handleBack = () => {
     if (onBack) onBack();
-    else if (backTo) navigate(backTo);
+    else if (backTo) {
+      // Se backTo for um módulo operacional e não tivermos palco/evento, redirecionamos para config
+      if (backTo.startsWith("/pwa/") && 
+          backTo !== "/pwa/configuracao" && 
+          backTo !== "/pwa/install" && 
+          (!activeStageId || !activeEventId)) {
+        navigate("/pwa/configuracao", { 
+          state: { from: { pathname: backTo }, reason: "missing_stage" } 
+        });
+      } else {
+        navigate(backTo);
+      }
+    }
     else navigate(-1);
   };
 
@@ -94,9 +108,9 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/selecionar-modulo")}
+              onClick={() => navigate("/pwa")}
               className="h-9 w-9 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-              title="Trocar módulo"
+              title="Ir para o Início"
             >
               <ArrowLeftRight className="h-5 w-5" />
             </Button>
