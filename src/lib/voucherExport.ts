@@ -1,4 +1,4 @@
-import { pdf, Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { pdf, Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import { createElement } from "react";
 
 export interface VoucherExportRow {
@@ -9,11 +9,14 @@ export interface VoucherExportRow {
   participant_type: string | null;
   cpf: string | null;
   qr_code_value: string;
+  qr_data_url?: string; // Para impressão de etiquetas
   status: string;
   is_contingency: boolean;
   scope_transport: boolean;
   scope_meals: boolean;
   scope_lodging: boolean;
+  service_info?: string; // Ex: "Almoço - 12/06 - Refeitório Central"
+  batch_label?: string;
   max_uses: number | null;
   current_uses: number;
   valid_until: string | null;
@@ -193,6 +196,100 @@ export async function exportVouchersPdf(
         )
       ),
       createElement(Text, { style: pdfStyles.footer }, "JER Gestão • Vouchers de Serviço")
+    )
+  );
+
+  const blob = await pdf(doc as any).toBlob();
+  const ts = new Date().toISOString().slice(0, 10);
+  downloadBlob(blob, `${filenamePrefix}-${ts}.pdf`);
+}
+
+const labelStyles = StyleSheet.create({
+  page: { 
+    padding: 10, 
+    flexDirection: 'row', 
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start'
+  },
+  labelContainer: {
+    width: '48%', // Aprox 2 colunas por linha
+    height: 140,
+    margin: '1%',
+    padding: 8,
+    border: 1,
+    borderColor: '#000',
+    borderStyle: 'dashed',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  qrCode: {
+    width: 90,
+    height: 90,
+  },
+  infoContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  serviceTitle: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  holderName: {
+    fontSize: 9,
+    marginBottom: 2,
+  },
+  details: {
+    fontSize: 8,
+    color: '#444',
+  },
+  batchLabel: {
+    fontSize: 7,
+    marginTop: 4,
+    fontStyle: 'italic',
+    color: '#666',
+  },
+  systemLogo: {
+    fontSize: 6,
+    position: 'absolute',
+    bottom: 4,
+    right: 8,
+    color: '#aaa',
+  }
+});
+
+export async function printVoucherLabelsPdf(
+  rows: VoucherExportRow[],
+  filenamePrefix = "etiquetas-vouchers"
+) {
+  const doc = createElement(
+    Document,
+    {},
+    createElement(
+      Page,
+      { size: "A4", style: labelStyles.page },
+      ...rows.map((r) =>
+        createElement(
+          View,
+          { style: labelStyles.labelContainer, key: r.id },
+          r.qr_data_url && createElement(Image, { style: labelStyles.qrCode, src: r.qr_data_url }),
+          createElement(
+            View,
+            { style: labelStyles.infoContainer },
+            createElement(Text, { style: labelStyles.serviceTitle }, r.service_info || "Serviço JER"),
+            createElement(
+              Text, 
+              { style: labelStyles.holderName }, 
+              r.voucher_type === "nominal" ? (r.participant_name || "Portador Nominal") : (r.label || "Voucher Anônimo")
+            ),
+            createElement(Text, { style: labelStyles.details }, `Validade: ${r.valid_until ? new Date(r.valid_until).toLocaleDateString("pt-BR") : "S/ data"}`),
+            createElement(Text, { style: labelStyles.details }, `Usos: ${r.max_uses ?? "Ilimitado"}`),
+            r.batch_label && createElement(Text, { style: labelStyles.batchLabel }, `Lote: ${r.batch_label}`),
+            createElement(Text, { style: labelStyles.systemLogo }, "JER Gestão • Vouchers")
+          )
+        )
+      )
     )
   );
 

@@ -5618,6 +5618,80 @@ export type Database = {
           },
         ]
       }
+      service_voucher_batches: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          label: string | null
+          quantity: number
+          service_type: string
+          target_date: string | null
+          target_facility_id: string | null
+          target_meal_window_id: string | null
+          target_trip_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          label?: string | null
+          quantity?: number
+          service_type: string
+          target_date?: string | null
+          target_facility_id?: string | null
+          target_meal_window_id?: string | null
+          target_trip_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          label?: string | null
+          quantity?: number
+          service_type?: string
+          target_date?: string | null
+          target_facility_id?: string | null
+          target_meal_window_id?: string | null
+          target_trip_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_voucher_batches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_target_facility_id_fkey"
+            columns: ["target_facility_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_target_meal_window_id_fkey"
+            columns: ["target_meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "meal_windows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_target_trip_id_fkey"
+            columns: ["target_trip_id"]
+            isOneToOne: false
+            referencedRelation: "transport_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_voucher_uses: {
         Row: {
           context_id: string | null
@@ -5742,6 +5816,13 @@ export type Database = {
           valid_until?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_voucher_batch"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "service_voucher_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "service_vouchers_event_id_fkey"
             columns: ["event_id"]
