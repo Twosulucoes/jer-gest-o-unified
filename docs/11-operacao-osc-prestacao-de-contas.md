@@ -30,7 +30,7 @@ O JER é financiado via recursos públicos e requer prestação de contas formal
 1. **Transporte**: Relatórios de viagem e fotos de embarque vinculados ao módulo.
 2. **Alimentação**: Listas de presença e fotos de buffet vinculadas à janela de serviço via `reference_id`.
 3. **Alojamento**: Fotos de vistorias e ocupação.
-4. **Competição**: Súmulas assinadas e quadros de resultados.
+4. **Competição**: Súmulas assinadas e boletins oficiais gerados automaticamente (vínculo com `bulletin_documents`).
 5. **Geral**: Documentos administrativos do evento.
 
 ## Gestão de Evidências (✅ Pronto)
