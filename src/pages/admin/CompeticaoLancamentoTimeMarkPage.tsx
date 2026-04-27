@@ -101,6 +101,8 @@ export default function CompeticaoLancamentoTimeMarkPage() {
   const [homologatePassword, setHomologatePassword] = useState("");
   const [homologateObservation, setHomologateObservation] = useState("");
   const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateEntriesInfo, setDuplicateEntriesInfo] = useState<{pos: number, names: string[]}[]>([]);
 
   // Initialize state from match data
   useEffect(() => {
@@ -175,7 +177,7 @@ export default function CompeticaoLancamentoTimeMarkPage() {
 
     const validEntries = entries.filter(e => e.outcome === 'active');
     
-    let sorted;
+    let sorted: any[] = [];
     if (mode === 'A') {
       // Lower time is better
       sorted = [...validEntries].sort((a, b) => {
@@ -185,7 +187,6 @@ export default function CompeticaoLancamentoTimeMarkPage() {
       });
     } else {
       // Mode B: Higher distance is better
-      // First find best mark for each entry
       const withBest = entries.map(e => {
         const validAttempts = e.attempts.filter((a: any) => a.is_valid && a.value_cm !== null);
         const best = validAttempts.length > 0 ? Math.max(...validAttempts.map((a: any) => a.value_cm)) : null;
@@ -197,76 +198,112 @@ export default function CompeticaoLancamentoTimeMarkPage() {
         if (b.best_mark === null) return -1;
         return b.best_mark - a.best_mark;
       });
-      
+
       return entries.map(e => {
-        const idx = sorted.findIndex(s => s.match_entry_id === e.match_entry_id);
         const entryWithBest = withBest.find(wb => wb.match_entry_id === e.match_entry_id);
+        if (e.outcome !== 'active' || (entryWithBest && entryWithBest.best_mark === null)) {
+          return { ...e, rank: null, best_mark: entryWithBest?.best_mark };
+        }
+        
+        // Correction 4: Tie handling (1, 1, 3)
+        const betterCount = sorted.filter(s => s.best_mark > (entryWithBest?.best_mark || 0)).length;
         return { 
           ...e, 
-          rank: e.outcome === 'active' && entryWithBest?.best_mark !== null ? idx + 1 : null,
+          rank: betterCount + 1,
           best_mark: entryWithBest?.best_mark
         };
       });
     }
 
     return entries.map(e => {
-      const idx = sorted.findIndex(s => s.match_entry_id === e.match_entry_id);
+      if (e.outcome !== 'active' || e.time_ms === null) return { ...e, rank: null };
+      
+      // Correction 4: Tie handling (1, 1, 3)
+      const betterCount = sorted.filter(s => s.time_ms !== null && s.time_ms < e.time_ms!).length;
       return { 
         ...e, 
-        rank: e.outcome === 'active' && (mode === 'A' ? e.time_ms !== null : true) ? idx + 1 : null 
+        rank: betterCount + 1 
       };
     });
   }, [entries, mode]);
 
+  const saveResults = async () => {
+    // Validate
+    const hasAnyData = calculatedEntries.some(e => 
+      (mode === 'A' && (e.time_ms !== null || e.outcome !== 'active')) ||
+      (mode === 'B' && (e.attempts.some((a: any) => a.value_cm !== null) || e.outcome !== 'active')) ||
+      (mode === 'C' && (e.rank !== null || e.outcome !== 'active'))
+    );
+
+    if (!hasAnyData) {
+      toast.error("Preencha pelo menos um resultado ou altere o status de um atleta");
+      throw new Error("Empty results");
+    }
+
+    const payload = {
+      entries: calculatedEntries.map(e => ({
+        match_entry_id: e.match_entry_id,
+        participant_id: e.participant_id,
+        outcome: e.outcome === 'active' ? (e.rank === 1 ? 'win' : 'loss') : e.outcome,
+        score: mode === 'A' ? formatTimeMs(e.time_ms || 0) : (mode === 'B' ? formatDistanceCm(e.best_mark || 0) : e.rank?.toString()),
+        time_ms: e.time_ms,
+        distance_cm: mode === 'B' ? e.best_mark : (mode === 'A' ? null : null),
+        position: e.rank,
+        points: null,
+        score_detail: {
+          rank: e.rank,
+          notes: e.notes
+        }
+      })),
+      attempts: mode === 'B' ? calculatedEntries.flatMap(e => 
+        e.attempts.map((a: any) => ({
+          match_entry_id: e.match_entry_id,
+          participant_id: e.participant_id,
+          attempt_number: a.attempt_number,
+          value_cm: a.value_cm,
+          is_valid: a.is_valid,
+          notes: a.notes
+        }))
+      ) : undefined,
+      observations
+    };
+
+    const { data, error } = await supabase.rpc("rpc_launch_match_result", {
+      p_event_id: eventId,
+      p_match_id: matchId,
+      p_payload: payload as any
+    });
+    if (error) throw error;
+    return data;
+  };
+
   const launchMut = useMutation({
     mutationFn: async () => {
-      // Validate
-      const hasAnyData = calculatedEntries.some(e => 
-        (mode === 'A' && (e.time_ms !== null || e.outcome !== 'active')) ||
-        (mode === 'B' && (e.attempts.some((a: any) => a.value_cm !== null) || e.outcome !== 'active')) ||
-        (mode === 'C' && (e.rank !== null || e.outcome !== 'active'))
-      );
+      // Correction 5: Validate duplicate positions in Mode C
+      if (mode === 'C') {
+        const activeEntries = calculatedEntries.filter(e => e.outcome === 'active' && e.rank !== null);
+        const positionCounts: Record<number, string[]> = {};
+        activeEntries.forEach(e => {
+          if (!positionCounts[e.rank!]) positionCounts[e.rank!] = [];
+          positionCounts[e.rank!].push(e.name);
+        });
 
-      if (!hasAnyData) {
-        toast.error("Preencha pelo menos um resultado ou altere o status de um atleta");
-        throw new Error("Empty results");
+        const duplicates = Object.entries(positionCounts)
+          .filter(([_, names]) => names.length > 1)
+          .map(([pos, names]) => ({ pos: parseInt(pos), names }));
+
+        if (duplicates.length > 0) {
+          setDuplicateEntriesInfo(duplicates);
+          setShowDuplicateDialog(true);
+          // Return a special flag or just don't proceed
+          return { needsConfirmation: true };
+        }
       }
 
-      const payload = {
-        entries: calculatedEntries.map(e => ({
-          match_entry_id: e.match_entry_id,
-          outcome: e.outcome === 'active' ? (e.rank === 1 ? 'win' : 'loss') : e.outcome,
-          score: mode === 'A' ? formatTimeMs(e.time_ms || 0) : (mode === 'B' ? formatDistanceCm(e.best_mark || 0) : e.rank?.toString()),
-          time_ms: e.time_ms,
-          distance_cm: e.best_mark || null,
-          points: null,
-          score_detail: {
-            rank: e.rank,
-            notes: e.notes
-          }
-        })),
-        attempts: mode === 'B' ? calculatedEntries.flatMap(e => 
-          e.attempts.map((a: any) => ({
-            match_entry_id: e.match_entry_id,
-            participant_id: e.participant_id,
-            attempt_number: a.attempt_number,
-            value_cm: a.value_cm,
-            is_valid: a.is_valid,
-            notes: a.notes
-          }))
-        ) : undefined,
-        observations
-      };
-
-      const { data, error } = await supabase.rpc("rpc_launch_match_result", {
-        p_event_id: eventId,
-        p_match_id: matchId,
-        p_payload: payload as any
-      });
-      if (error) throw error;
-      return data;
+      return await saveResults();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      if (data?.needsConfirmation) return;
       toast.success("Resultados salvos com sucesso!");
       qc.invalidateQueries({ queryKey: ["competition_phases"] });
       navigate(-1);
@@ -597,6 +634,47 @@ export default function CompeticaoLancamentoTimeMarkPage() {
             <Button variant="outline" onClick={() => setShowHomologateDialog(false)}>Cancelar</Button>
             <Button onClick={() => homologateMut.mutate()} disabled={isVerifyingPassword || !homologatePassword}>
               {isVerifyingPassword ? "Verificando..." : "Confirmar Homologação"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Correction 5: Duplicate Position Confirmation Dialog */}
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Posições Duplicadas Detectadas</DialogTitle>
+            <DialogDescription>
+              Existem atletas com a mesma posição definida. Deseja confirmar como empate ou corrigir antes de salvar?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            {duplicateEntriesInfo.map(info => (
+              <div key={info.pos} className="text-sm p-3 bg-muted rounded-md border border-yellow-500/30">
+                <p className="font-bold text-yellow-600 mb-1">Posição {info.pos}º:</p>
+                <ul className="list-disc list-inside">
+                  {info.names.map(name => <li key={name}>{name}</li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowDuplicateDialog(false)}>Corrigir</Button>
+            <Button 
+              className="gap-2"
+              onClick={async () => {
+                setShowDuplicateDialog(false);
+                try {
+                  await saveResults();
+                  toast.success("Resultados salvos com sucesso (empate confirmado)!");
+                  qc.invalidateQueries({ queryKey: ["competition_phases"] });
+                  navigate(-1);
+                } catch (e: any) {
+                  toast.error("Erro ao salvar: " + e.message);
+                }
+              }}
+            >
+              Confirmar como empate
             </Button>
           </DialogFooter>
         </DialogContent>

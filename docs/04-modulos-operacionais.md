@@ -63,8 +63,8 @@
   - ✅ Cards operacionais com contagem adaptada (Categorias, Atletas, Lutas, Séries)
   - ✅ Painel Combat dedicado com seletor de categoria de peso e pesagem oficial
   - ✅ Painel Time/Mark dedicado com gestão de séries, raias e distribuição automática
-  - ✅ **Lançamento Time/Mark (Etapa 9 concluída)**: Rota dedicada, 3 modos de lançamento (Pista/Piscina, Campo/Tentativas, Prova Única/Ranking), cálculo automático de posição por melhor marca, suporte a marcas especiais (DNS/DNF/DSQ/Nula), registro de múltiplas tentativas em provas de campo.
-  - ✅ **Propagação Time/Mark (Etapa 9 concluída)**: Tela de classificação consolidada da fase com sugestão dos melhores que avançam; propagação manual para a fase seguinte.
+  - ✅ **Lançamento Time/Mark (Correções Críticas Etapa 9)**: Rota dedicada, 3 modos de lançamento (Pista/Piscina, Campo/Tentativas, Prova Única/Ranking), cálculo automático de posição por melhor marca com tratamento de empate (1, 1, 3), persistência real de múltiplas tentativas em `match_attempts`, validação de payload por modo e prevenção de duplicidades manuais no Modo C.
+  - ✅ **Propagação Time/Mark (Correções Críticas Etapa 9)**: Tela de classificação consolidada da fase com sugestão automática; propagação manual via RPC `rpc_propagate_classification_time_mark` com distribuição em "serpentina" nas séries da fase seguinte e registro de histórico de classificação.
   - ✅ **Lançamento Combat (Etapa 7 concluída)**: Rota dedicada, placar dinâmico, prorrogação, métodos de vitória, propagação automática no bracket.
   - ✅ **Lançamento Sets (Etapa 6 concluída)**: Rota dedicada, placar dinâmico por sets, cômputo automático de W.O. e Desistência.
 - **Features legadas (reaproveitadas)**:

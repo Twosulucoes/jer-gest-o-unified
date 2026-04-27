@@ -36,6 +36,7 @@
 | Painel Score (Modalidade) | `/admin/competicao/painel-score/:id` | ✅ Feito |
 | Painel Sets (Modalidade) | `/admin/competicao/painel-sets/:id` | ✅ Feito |
 | Painel Combat (Modalidade) | `/admin/competicao/painel-combat/:id` | ✅ Feito |
+| Painel Time/Mark (Modalidade) | `/admin/competicao/painel-time-mark/:id` | ✅ Feito |
 | Pré-validação | `/admin/competicao/pre-validacao` | ✅ Feito |
 | Central da Competição | `/admin/competicao/central` | ✅ Feito |
 | Modalidades | `/admin/modalidades` | ✅ Feito |

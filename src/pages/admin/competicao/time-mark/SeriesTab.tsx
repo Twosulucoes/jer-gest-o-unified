@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+// Removed duplicate import
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +58,8 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
   const [distributionType, setDistributionType] = useState("random");
   const [showClassificationModal, setShowClassificationModal] = useState(false);
   const [selectedPhaseForClassification, setSelectedPhaseForClassification] = useState<any>(null);
+  const [showRepropagateConfirm, setShowRepropagateConfirm] = useState(false);
+  const qc = useQueryClient();
 
 
   // Fetch event rules to determine format
@@ -115,6 +119,53 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
       setSelectedAtletaIds(new Set(top8));
     }
   }, [classifiedAtletas]);
+  
+  const { mutate: propagate, isPending: propagating } = useMutation({
+    mutationFn: async () => {
+      const nextPhase = phases.find(p => p.sort_order > selectedPhaseForClassification.sort_order);
+      if (!nextPhase) throw new Error("Fase de destino não encontrada");
+
+      const selectedAtletas = classifiedAtletas.filter(a => selectedAtletaIds.has(a.id));
+      
+      const payload = selectedAtletas.map(a => ({
+        participant_sport_event_id: a.participant_sport_event_id,
+        score: rules?.family === 'time' ? formatTimeMs(a.results?.[0]?.time_ms) : formatDistanceCm(a.results?.[0]?.distance_cm),
+        best_value: rules?.family === 'time' ? a.results?.[0]?.time_ms : a.results?.[0]?.distance_cm
+      }));
+
+      const { data, error } = await (supabase.rpc as any)("rpc_propagate_classification_time_mark", {
+        p_sport_event_id: sportEventId,
+        p_from_phase_id: selectedPhaseForClassification.id,
+        p_to_phase_id: nextPhase.id,
+        p_classified_entries: payload
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(`Sucesso: ${data.allocated_count} atletas distribuídos.`);
+      qc.invalidateQueries({ queryKey: ["competition_phases", sportEventId] });
+      setShowClassificationModal(false);
+      setShowRepropagateConfirm(false);
+    },
+    onError: (e: any) => {
+      toast.error("Erro na propagação: " + e.message);
+    }
+  });
+
+  const handlePropagateClick = () => {
+    const nextPhase = phases.find(p => p.sort_order > selectedPhaseForClassification.sort_order);
+    const hasExisting = nextPhase?.competition_groups?.some((g: any) => 
+      g.competition_matches?.some((m: any) => m.competition_match_entries?.length > 0)
+    );
+
+    if (hasExisting) {
+      setShowRepropagateConfirm(true);
+    } else {
+      propagate();
+    }
+  };
 
 
   // Fetch existing phases and groups (heats)
@@ -443,12 +494,34 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
             <Button variant="outline" onClick={() => setShowClassificationModal(false)}>Cancelar</Button>
             <Button 
               className="gap-2"
-              onClick={() => {
-                // Placeholder for propagation logic
-                setShowClassificationModal(false);
-              }}
+              onClick={handlePropagateClick}
+              disabled={propagating || selectedAtletaIds.size === 0}
             >
-              Confirmar e Propagar
+              <Trophy className="h-4 w-4" />
+              {propagating ? "Propagando..." : "Confirmar e Propagar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Re-propagation Confirmation Dialog */}
+      <Dialog open={showRepropagateConfirm} onOpenChange={setShowRepropagateConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Já existe uma classificação</DialogTitle>
+            <DialogDescription>
+              A fase de destino já possui atletas alocados. Se você continuar, a alocação atual será excluída e substituída por esta nova classificação. Deseja prosseguir?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRepropagateConfirm(false)}>Cancelar</Button>
+            <Button 
+              variant="destructive"
+              className="gap-2"
+              onClick={() => propagate()}
+              disabled={propagating}
+            >
+              {propagating ? "Processando..." : "Sim, sobrescrever e propagar"}
             </Button>
           </DialogFooter>
         </DialogContent>
