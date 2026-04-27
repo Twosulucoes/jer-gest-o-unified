@@ -144,6 +144,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
 
 export default function ModuleSelectorPage() {
   const navigate = useNavigate();
+  const { activeEventId } = useEventContext();
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
