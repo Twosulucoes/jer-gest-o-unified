@@ -167,6 +167,20 @@ export default function VoucherAuditoriaPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
+                        {op.is_offline ? (
+                          <div className="flex flex-col gap-0.5">
+                            <Badge variant="outline" className="text-[9px] border-amber-500 text-amber-700 bg-amber-50 w-fit">OFFLINE</Badge>
+                            {op.offline_at && (
+                              <span className="text-[9px] text-muted-foreground italic">
+                                Lido: {format(new Date(op.offline_at), "dd/MM HH:mm")}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-[9px] border-blue-500 text-blue-700 bg-blue-50 w-fit">ONLINE</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <Badge variant="secondary" className="text-[10px] uppercase">{op.service}</Badge>
                       </TableCell>
                       <TableCell className="text-sm font-medium">{op.identifier}</TableCell>
