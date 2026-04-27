@@ -47,6 +47,7 @@ import TransporteViagensPage from "./pages/admin/TransporteViagensPage";
 import TransporteEmbarquePage from "./pages/admin/TransporteEmbarquePage";
 import AlimentacaoHubPage from "./pages/admin/AlimentacaoHubPage";
 import AlimentacaoTiposPage from "./pages/admin/AlimentacaoTiposPage";
+import AlimentacaoLocaisPage from "./pages/admin/AlimentacaoLocaisPage";
 import AlimentacaoJanelasPage from "./pages/admin/AlimentacaoJanelasPage";
 import AlimentacaoConsumoPage from "./pages/admin/AlimentacaoConsumoPage";
 import AlimentacaoDashboardPage from "./pages/admin/AlimentacaoDashboardPage";
@@ -476,6 +477,7 @@ const App = () => (
               {/* Alimentação */}
               <Route path="alimentacao" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoHubPage /></ProtectedRoute>} />
               <Route path="alimentacao/tipos" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoTiposPage /></ProtectedRoute>} />
+              <Route path="alimentacao/locais" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoLocaisPage /></ProtectedRoute>} />
               <Route path="alimentacao/janelas" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoJanelasPage /></ProtectedRoute>} />
               <Route path="alimentacao/consumo" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoConsumoPage /></ProtectedRoute>} />
               <Route path="alimentacao/dashboard" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoDashboardPage /></ProtectedRoute>} />
