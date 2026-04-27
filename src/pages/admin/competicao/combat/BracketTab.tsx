@@ -8,6 +8,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import BracketView from "@/components/admin/competition/BracketView";
 import { useKnockoutBracket } from "@/hooks/useKnockoutBracket";
+import { useGenerateKnockout } from "@/hooks/useGenerateKnockout";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface BracketTabProps {
   sportEventId: string;
