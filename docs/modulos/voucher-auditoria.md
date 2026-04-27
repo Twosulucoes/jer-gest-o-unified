@@ -1,103 +1,117 @@
-# Auditoria Pós-Reformulação do Módulo de Voucher
+# Auditoria de Fechamento — Módulo de Voucher JER Gestão
 
-> **Data da Auditoria Final:** 2026-04-28.
-> **Estado:** Concluído (Fases 1-4 + Melhorias UX Offline integradas).
+> **Data da Auditoria de Fechamento:** 2026-04-27.
+> **Estado:** NÃO FECHADO (Bloqueios técnicos identificados).
 
----
-
-## 1. Inventário de Implementação
-
-### 1.1 Páginas e Rotas Administrativas
-| Rota | Arquivo | Finalidade | Perfis | Estado |
-|---|---|---|---|---|
-| `/admin/vouchers` | `VouchersPage.tsx` | Gestão central: listagem, lotes, emissão, revogação, reemissão. | `admin`, `secretaria` | ✅ Funcional |
-| `/admin/vouchers/auditoria` | `VoucherAuditoriaPage.tsx` | Central de auditoria consolidada com filtros e exportação. | `admin`, `secretaria` | ✅ Novo |
-| `/admin/pessoas/eventuais` | `EventuaisPage.tsx` | Cadastro de portadores sem credencial oficial. | `admin`, `secretaria` | ✅ Novo |
-| `/admin/voucher/validar` | `VoucherValidarPage.tsx` | Validação manual por instância de serviço. | Vários (admin/ops) | ✅ Atualizado |
-
-### 1.2 Modelo de Dados (Evolução)
-- **`service_eventual_people`**: Tabela base para portadores eventuais (exclusivo).
-- **`service_voucher_batches`**: Agrupamento lógico de emissões em massa.
-- **`service_voucher_attempts`**: Registro de auditoria para tentativas (sucesso/recusa).
-- **`service_vouchers`**: Colunas adicionais `replaces_voucher_id`, `eventual_person_id`, `batch_id`, `target_*_id`.
-
-### 1.3 Funções Core
-- **RPC `redeem_voucher`**: Lógica de validação estrita (instância, duplo consumo, validade).
-- **`voucherExport.ts`**: PDF em formato grade de etiquetas e CSV de auditoria.
+Esta é uma análise consolidada da aderência do módulo de Voucher aos requisitos de negócio reformulados, cobrindo desde o diagnóstico inicial até as melhorias de UX offline.
 
 ---
 
-## 2. Plano de Inspeção Executado
-1. **Modelo de Dados**: Verificação de constraints e integridade referencial.
-2. **Fluxos de Emissão**: Teste de vínculo obrigatório com instâncias.
-3. **Validação**: Verificação da proteção contra duplo consumo na RPC.
-4. **Governança**: Inspeção da Central de Auditoria e exportação.
-5. **Permissões**: Conferência de `ProtectedRoute` e `has_role`.
+## 1. Levantamento Consolidado do Estado Atual
+
+### 1.1 Web Administrativo
+- **Rotas e Telas**: 
+    - `/admin/vouchers`: Gestão central de vouchers e lotes.
+    - `/admin/vouchers/auditoria`: Central unificada de rastreabilidade.
+    - `/admin/pessoas/eventuais`: Cadastro de portadores não credenciados.
+    - `/admin/voucher/validar`: Validação manual administrativa.
+- **Perfis**: `admin` e `secretaria` com acesso pleno. `/admin/voucher/validar` restrito corretamente via `App.tsx`.
+- **Fluxos**: Emissão individual/lote amarrada a instância, reemissão com vínculo (`replaces_voucher_id`), revogação com motivo.
+- **Exportação**: CSV e PDF (etiquetas) operacionais em `voucherExport.ts`.
+- **Documentação**: `README.md` e `docs/modulos/voucher.md` atualizados.
+
+### 1.2 PWAs Operacionais
+- **Alimentação**: Scan online, fila offline, sincronização e central de conflitos (`VoucherConflictCentral`).
+- **Alojamento**: Scan online, fila offline, sincronização e central de conflitos.
+- **Transporte**: Scan online, fila offline e sincronização. **Lacuna**: Central de conflitos não integrada na tela de embarque.
+- **Mensagens**: Dicionário compartilhado `voucherMessages.ts` e `pwa-messages.ts` com padronização total.
+- **Módulo Offline**: `voucherOffline.ts` gerencia fila persistente (`localStorage`) e sync automático.
+
+---
+
+## 2. Plano de Inspeção
+A auditoria seguiu a ordem: 
+1. **Modelo de Dados**: Verificação de colunas e constraints via `information_schema`.
+2. **Lógica de Negócio**: Inspeção da RPC `redeem_voucher` e bibliotecas `lib/voucher*`.
+3. **Interfaces PWA**: Verificação de importação de componentes de UX e tratamento de estados.
+4. **Governança**: Conferência da Central de Auditoria e permissões de rotas.
+**Metodologia de Regressão**: Comparação do schema real vs. expectativas do código frontend e RPCs.
 
 ---
 
 ## 3. Relatório de Aderência por Frente
 
-### 3.1 Cadastro de Pessoa Eventual
-- **Classificação**: ✅ CONFORME
-- **Evidência**: Tabela `service_eventual_people` criada com campos completos. Rota `/admin/pessoas/eventuais` integrada ao menu. Bloqueio de exclusão em `EventuaisPage.tsx` via `vouchers_count`.
-
-### 3.2 Modelo de Voucher
-- **Classificação**: ✅ CONFORME
-- **Evidência**: Suporte a `target_meal_window_id`, `target_trip_id` e `target_facility_id`. Colunas `replaces_voucher_id` e `reissued_at` adicionadas na Fase 4.
-
-### 3.3 Desativação de Fluxos Legados
-- **Classificação**: ✅ CONFORME
-- **Evidência**: Aba de vouchers em `ParticipanteDetalhePage.tsx` comentada/desativada. Botão de "Lote por Delegação" removido. Mensagens de contingência atualizadas para foco em "eventual".
-
-### 3.4 Emissão (Individual e Lote)
-- **Classificação**: ✅ CONFORME
-- **Evidência**: Wizards em `VouchersPage.tsx` exigem seleção de instância de serviço. Lotes agrupados por `batch_id` com registro em `service_voucher_batches`.
-
-### 3.5 Impressão e Layout
-- **Classificação**: ✅ CONFORME
-- **Evidência**: `printVoucherLabelsPdf` implementado com grade de etiquetas, incluindo info do serviço e lote.
-
-### 3.6 Validação e Proteção
-- **Classificação**: ✅ CONFORME
-- **Evidência**: RPC `redeem_voucher` bloqueia se `target_id <> p_context_id`. Unique check em `service_voucher_uses` para impedir re-validação na mesma instância.
-
-### 3.7 Central de Auditoria
-- **Classificação**: ✅ CONFORME
-- **Evidência**: Rota `/admin/vouchers/auditoria` exibe consumos e recusas (tentativas) com filtros de data e operador. Exportação CSV funcional.
+| Frente | Classificação | Evidência Objetiva |
+|---|---|---|
+| **Cadastro de Eventual** | ✅ Conforme | Tabela `service_eventual_people` funcional com campos de vínculo e proteção contra exclusão. |
+| **Modelo de Voucher** | ✅ Conforme | Colunas `target_*_id`, `batch_id` e `replaces_voucher_id` presentes e utilizadas. |
+| **Desativação Legada** | ✅ Conforme | Aba na ficha de participante desativada; "Lote por Delegação" removido. |
+| **Emissão Admin** | ✅ Conforme | Wizards exigem instância; agrupamento por lote com rótulos opcional. |
+| **Impressão Etiqueta** | ✅ Conforme | PDF gerado com grade de etiquetas, QR e identificação do serviço. |
+| **Validação Online** | ✅ Conforme | RPC confere instância exata e bloqueia duplo consumo na mesma instância. |
+| **Fila Offline PWA** | ⚠️ Parcial | Fila funcional no front, mas ignora instante real da leitura no BD/RPC. |
+| **Central de Conflitos**| ⚠️ Parcial | UX rica em Alimentação/Alojamento; **Ausente** no PWA de Transporte. |
+| **Padronização Msg** | ✅ Conforme | Dicionário único `voucherMessages.ts` garante a mesma língua em todo o sistema. |
+| **Reemissão c/ Vínculo**| ✅ Conforme | Preserva histórico e imprime nova etiqueta imediatamente. |
+| **Auditoria Admin** | ⚠️ Parcial | Página funcional, mas exibe campos vazios para origem offline por falta de colunas no BD. |
+| **Permissões** | ✅ Conforme | `/admin/voucher/validar` e `/admin/vouchers` protegidos por perfis corretos. |
 
 ---
 
-## 4. Comparativo com Diagnóstico Inicial (2026-04-27)
+## 4. Verificação de Regressão Entre Etapas
 
-| Lacuna Original | Impacto | Estado Atual | Justificativa |
+- **UX Offline**: A última entrega introduziu o uso de `metadata`, `is_offline` e `offline_at` no frontend (`VoucherAuditoriaPage.tsx`), mas **não aplicou** as colunas correspondentes na tabela `service_voucher_attempts`.
+- **PWA Transporte**: Durante a refatoração para paridade offline, o componente `VoucherConflictCentral` não foi adicionado ao arquivo `TransporteEmbarquePage.tsx`, criando uma regressão de paridade funcional com os outros PWAs.
+
+---
+
+## 5. Comparativo Acumulado (Auditorias Anteriores)
+
+| Lacuna Apontada | Origem | Estado Atual | Justificativa |
 |---|---|---|---|
-| **Sem vínculo com serviço específico** | 🔴 Alto | **RESOLVIDO** | Vouchers agora possuem FK obrigatória para instâncias de serviço. |
-| **Sem cadastro de pessoa eventual** | 🔴 Alto | **RESOLVIDO** | Entidade `service_eventual_people` criada e operacional. |
-| **Duplo consumo na mesma instância** | 🔴 Alto | **RESOLVIDO** | Proteção adicionada na RPC `redeem_voucher`. |
-| **Voucher para credenciados** | 🔴 Alto | **RESOLVIDO** | Fluxos em ficha de participante e delegação desativados. |
-| **Sem reemissão com vínculo** | 🟠 Médio | **RESOLVIDO** | Fluxo de reemissão preserva link via `replaces_voucher_id`. |
-| **Sem batch_id para lotes** | 🟠 Médio | **RESOLVIDO** | Tabela de lotes e vínculo em voucher implementados. |
-| **Impressão individual apenas** | 🟡 Baixo | **RESOLVIDO** | Geração de grade de etiquetas PDF em lote e individual. |
+| Sem vínculo com serviço | Inicial | **RESOLVIDO** | FKs obrigatórias implementadas. |
+| Duplo consumo permitido | Inicial | **RESOLVIDO** | Bloqueio lógico na RPC `redeem_voucher`. |
+| Perfis indevidos /validar | Pós Fase 4 | **RESOLVIDO** | Rota restrita a admin/secretaria em `App.tsx`. |
+| Ausência de fila offline | Pós Fase 4 | **PARCIAL** | Fila existe no front; Pendente persistência de metadados no BD. |
+| Detalhe pobre em conflitos| Pós Fase 4 | **PARCIAL** | UX implementada; Depende de schema para dados reais. |
 
 ---
 
-## 5. Lacunas Remanescentes e Riscos
-- **Offline para Vouchers**: ✅ RESOLVIDO (2026-04-28). Integrada fila offline resiliente `voucherOffline.ts` nos 3 PWAs operacionais com paridade à fila de credenciais e central de conflitos local. Evoluído em 2026-04-28 com detalhamento de motivos de conflito e padronização total de mensagens.
-- **Consolidação de "People"**: Existem duas tabelas de pessoas (`people` e `service_eventual_people`). No futuro, uma view unificada pode facilitar relatórios globais de consumo.
+## 6. Lacunas Remanescentes
+
+### 6.1 Bloqueantes (Uso em Campo)
+1. **Schema Mismatch (Auditoria)**: A tabela `service_voucher_attempts` não possui colunas `metadata`, `is_offline` e `offline_at`. Impacto: Auditoria administrativa não diferencia origem online/offline e não mostra detalhes ricos de conflito.
+2. **Ignorância do Tempo Real (RPC)**: A RPC `redeem_voucher` não aceita `p_offline_at`. Impacto: Vouchers escaneados offline dentro da validade podem ser rejeitados se sincronizados após a expiração.
+3. **Transporte sem Conflitos**: Operador de transporte não vê a central de conflitos. Impacto: Vouchers recusados no sync offline ficam "invisíveis" para o motorista/fiscal.
+
+### 6.2 Melhorias Opcionais
+1. **Constraint de Unicidade**: Adicionar `UNIQUE` em `service_voucher_uses` (reforço de segurança).
+2. **Filtro de Lote na Auditoria**: Facilitar investigação de erros em emissões massivas.
 
 ---
 
-## 6. Veredito Final
-**ESTADO: PRONTO PARA OPERAÇÃO.**
-A reformulação cumpriu 100% dos requisitos de negócio. O módulo está isolado dos participantes credenciados, amarrado tecnicamente às instâncias de serviço e dotado de ferramentas de auditoria robustas.
+## 7. Veredito Final de Fechamento
+
+**ESTADO: NÃO FECHADO.**
+
+O módulo apresenta excelente evolução em UX e regras de negócio, mas possui uma **desconexão crítica entre a camada de persistência (BD/RPC) e as novas funcionalidades de paridade offline**. O sistema está "pronto no front" mas "incompleto no back" para os requisitos de operação sob internet instável.
+
+**Procedimento de Mitigação**: Exige uma nova entrega técnica focada exclusivamente em atualização de schema e atualização da assinatura da RPC `redeem_voucher`.
 
 ---
 
-## 7. Próximos Passos Sugeridos
-1. **Melhoria**: Adicionar indicador visual de "Voucher Reemitido" na listagem (badge de status).
-2. **Relatório**: Criar gráfico de "Previsão vs Realizado" específico para vouchers na Central de Auditoria.
+## 8. Recomendações Priorizadas
+
+1. **Alta**: Aplicar migração para adicionar `is_offline`, `offline_at` e `metadata` (JSONB) em `service_voucher_attempts`.
+2. **Alta**: Atualizar `redeem_voucher` para receber metadados offline e usá-los na validação temporal.
+3. **Alta**: Integrar `VoucherConflictCentral` no `TransporteEmbarquePage.tsx`.
+4. **Média**: Implementar índice de unicidade em `service_voucher_uses` como redundância à lógica da RPC.
 
 ---
-## Histórico (Auditoria 2026-04-27 10:00)
-[Conteúdo da auditoria anterior preservado aqui...]
+## Histórico de Auditorias
+
+### Auditoria Pós Fase 4 (2026-04-27 18:00)
+[Conteúdo preservado: Fila offline resiliente recomendada; Correção de perfis em /admin/voucher/validar apontada.]
+
+### Auditoria Inicial (2026-04-27 10:00)
+[Conteúdo preservado: Diagnóstico de ausência de vínculo com serviço e cadastro de eventuais.]
