@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import QRCode from "qrcode";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -52,6 +54,11 @@ import {
   FileSpreadsheet,
   FileText,
   Users,
+  Check,
+  ChevronRight,
+  UserPlus,
+  Layers,
+  ArrowRight,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -60,10 +67,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 import {
   exportVouchersCsv,
   exportVouchersPdf,
+  printVoucherLabelsPdf,
   type VoucherExportRow,
 } from "@/lib/voucherExport";
 
