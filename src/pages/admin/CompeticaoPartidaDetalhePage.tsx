@@ -785,6 +785,7 @@ export default function CompeticaoPartidaDetalhePage() {
               existingScores={matchScores}
               onSubmit={(scores, notes) => saveCollectiveScoreMut.mutate({ scores, notes })}
               isPending={saveCollectiveScoreMut.isPending}
+              phaseType={phase?.phase_type}
             />
           </DialogContent>
         </Dialog>

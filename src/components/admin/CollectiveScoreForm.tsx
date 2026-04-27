@@ -43,6 +43,7 @@ interface CollectiveScoreFormProps {
   onSubmit: (scores: ScoreEntry[], notes: string) => void;
   isPending: boolean;
   notes?: string;
+  phaseType?: string;
 }
 
 export default function CollectiveScoreForm({
@@ -52,6 +53,7 @@ export default function CollectiveScoreForm({
   onSubmit,
   isPending,
   notes: initialNotes = "",
+  phaseType,
 }: CollectiveScoreFormProps) {
   const scoreType = matchConfig.score_type || "simple";
   const periods = matchConfig.periods ?? 2;
@@ -100,6 +102,16 @@ export default function CollectiveScoreForm({
   };
 
   const handleSubmit = () => {
+    // CORREÇÃO 2: Validação de empate em KO
+    const isKnockout = phaseType === 'knockout';
+    const hasDraw = Object.values(scores).some(s => s.outcome === 'draw');
+    const hasWinnerDefined = Object.values(scores).some(s => (s.shootout && parseInt(s.shootout) > 0));
+
+    if (isKnockout && hasDraw && !hasWinnerDefined) {
+      alert("Esta partida é de fase eliminatória e exige um vencedor. Registre a prorrogação ou a disputa de pênaltis para definir a equipe vencedora.");
+      return;
+    }
+
     const result: ScoreEntry[] = entries.map((entry) => {
       const s = scores[entry.id];
       return {

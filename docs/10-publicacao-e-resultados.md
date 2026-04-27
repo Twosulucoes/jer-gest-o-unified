@@ -1,6 +1,6 @@
 # 10 — Publicação e Resultados
 
-> Auditoria atualizada em 2026-04-14
+> Auditoria atualizada em 2026-04-28 — Correções críticas pós-auditoria implementadas.
 
 ## Ciclo de Vida do Resultado
 
@@ -12,7 +12,7 @@ resultado_lancado → resultado_validado → publicado
 |--------|-------------|-------------------|
 | `resultado_lancado` | admin, secretaria, coord_tecnica | coord_tecnica, secretaria, mesário |
 | `resultado_validado` | admin, secretaria, coord_tecnica | admin (reverter), coordenacao_tecnica (homologar) |
-| `publicado` | **todos** (incluindo público anon) | admin (reverter), secretaria (publicar) |
+| `publicado` | **todos** (incluindo público anon via Select restrito) | admin (reverter), secretaria (publicar) |
 
 ## Strings Canônicas (Fonte de Verdade)
 
@@ -40,12 +40,16 @@ Todas as RPCs, filtros de frontend e RLS policies usam estas strings.
 
 ## RLS para Público
 
+A política de segurança restringe o acesso anônimo exclusivamente aos resultados que já atingiram o estágio final de governança.
+
 ```sql
-CREATE POLICY "Public can read published results"
+CREATE POLICY "Public can read published results only"
   ON public.competition_match_results
-  FOR SELECT TO anon
+  FOR SELECT
   USING (result_status = 'publicado');
 ```
+
+> **Nota**: Anteriormente, a política permitia leitura de resultados `resultado_validado`, o que causava vazamento de informação antes da publicação oficial. Foi corrigido em 2026-04-28.
 
 ## Campos de Rastreabilidade
 

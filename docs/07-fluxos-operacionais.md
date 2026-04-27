@@ -101,11 +101,13 @@ FLUXO COMBAT:
   → Seleciona Categoria de Peso no topo do painel
   → Aba Pesagem: Registra peso oficial e marca status (Conferido / Fora do Peso)
   → Aba Chave: Quando pesagem concluída, clica em "Montar Chave"
-  → Sistema gera bracket eliminatório (BYE automático) e confrontos da 1ª fase
+  → Sistema gera bracket eliminatório (BYE automático com propagação imediata para 2ª fase) e confrontos da 1ª fase.
+  → Possibilidade de incluir disputa de 3º lugar (Bronze) através de toggle na montagem.
   → Aba Lutas: Visualiza grade densa com agenda e status das lutas
   → Editar Luta (Drawer): Define data/hora/local e designa arbitragem por modalidade
   → Pós-Luta: Lança resultado na rota dedicada (vencedor, método, tempo de luta, placar dinâmico)
-  → Homologação: Coordenador valida com senha → status "Validado" → Sistema propaga vencedor automaticamente para o próximo nó da chave.
+  → Homologação: Coordenador valida com senha → status "Validado" → Sistema propaga vencedor automaticamente para o próximo nó da chave (e perdedor da semifinal para disputa de bronze, se houver).
+  → Reversão: Admin pode reverter para status "Lançado", limpando automaticamente a propagação no bracket (bloqueado se a luta posterior já tiver resultado).
 
 FLUXO SCORE/SETS:
   → Grade de confrontos: filtra por fase/grupo/status

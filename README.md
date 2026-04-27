@@ -149,7 +149,7 @@ O cliente distribui acessos para operadores através de **links curtos** com QR 
 
 ---
 
-## Status dos Módulos (Auditoria 2026-04-27 — Etapa 7)
+## Status dos Módulos (Auditoria 2026-04-28 — Correções Críticas)
 
 | Módulo | Status | Completude |
 |--------|--------|-----------|

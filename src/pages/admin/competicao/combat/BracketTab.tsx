@@ -8,20 +8,26 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import BracketView from "@/components/admin/competition/BracketView";
 import { useKnockoutBracket } from "@/hooks/useKnockoutBracket";
+import { useGenerateKnockout } from "@/hooks/useGenerateKnockout";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface BracketTabProps {
   sportEventId: string;
 }
 
 export function BracketTab({ sportEventId }: BracketTabProps) {
+  const sb = supabase as any;
   const qc = useQueryClient();
   const [isMounting, setIsMounting] = useState(false);
+  const [withBronze, setWithBronze] = useState(true);
+  const generateKnockout = useGenerateKnockout();
 
   // Check if all athletes are weighed
   const { data: weighingStats } = useQuery({
     queryKey: ["weighing-stats", sportEventId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from("participant_sport_events")
         .select("id, weighing_status" as any)
         .eq("sport_event_id", sportEventId);
@@ -30,57 +36,62 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
       
       const list = (data || []) as any[];
       const total = list.length;
-      const pending = list.filter(a => a.weighing_status === "pending").length;
-      const confirmed = list.filter(a => a.weighing_status === "confirmed").length;
+      const pending = list.filter((a: any) => a.weighing_status === "pending").length;
+      const confirmed = list.filter((a: any) => a.weighing_status === "confirmed").length;
       
       return { total, pending, confirmed };
     },
   });
 
   // Fetch current phases and matches
-  const { data: phases = [], isLoading: loadingPhases } = useQuery<any>({
+  const { data: phases = [], isLoading: loadingPhases } = useQuery<any[]>({
     queryKey: ["bracket-phases", sportEventId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from("competition_phases")
-        .select(`
-          id,
-          name,
-          phase_type,
-          matches:competition_matches(
-            id,
-            match_number,
-            round_number,
-            status,
-            entries:competition_match_entries(
-              id,
-              side,
-              participant:participant_sport_events(
-                id,
-                participant:participants(
-                  persons(name)
-                )
-              )
-            )
-          )
-        ` as any)
-        .eq("sport_event_id", sportEventId)
+        .select(`id, name, phase_type`)
+        .eq("sport_event_id", sportEventId!)
         .order("sort_order");
       
       if (error) throw error;
-      return data;
+      
+      // Fetch matches separately to avoid deep type instantiation
+      const phaseIds = data.map((p: any) => p.id);
+      if (phaseIds.length === 0) return data;
+
+      const { data: matches, error: mError } = await (sb
+        .from("competition_matches") as any)
+        .select(`
+          id, phase_id, match_number, round_number, status,
+          entries:competition_match_entries(
+            id, side, participant:participant_sport_event_id
+          )
+        `)
+        .in("phase_id", phaseIds);
+
+      if (mError) throw mError;
+
+      return data.map((p: any) => ({
+        ...p,
+        matches: matches.filter((m: any) => m.phase_id === p.id)
+      }));
     },
   });
 
   const mountBracket = async (automatic: boolean) => {
+    if (!automatic) {
+      toast.info("A montagem manual deve ser feita na aba 'Inscritos' ou 'Lutas'.");
+      return;
+    }
+
     setIsMounting(true);
     try {
       // 1. Get confirmed athletes
-      const { data: athletes, error: athError } = await (supabase
-        .from("participant_sport_events") as any)
+      const { data: athletes, error: athError } = await sb
+        .from("participant_sport_events")
         .select("id")
         .eq("sport_event_id", sportEventId)
-        .eq("weighing_status", "confirmed");
+        .eq("weighing_status" as any, "confirmed");
 
       if (athError) throw athError;
       if (athletes.length < 2) {
@@ -88,61 +99,62 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
         return;
       }
 
-      // 2. Call RPC to generate bracket
-      // Note: We need a function to handle this logic on backend or we do it here.
-      // For now, let's assume we have an RPC or we use the logic from migration e518000a
-      // If we don't have an RPC, we would need to implement the logic here.
-      
-      // MOCK implementation for now - creating a phase and matches
-      const { data: event } = await supabase.from('sport_events').select('event_id').eq('id', sportEventId).single();
-
-      const { data: phase, error: pError } = await supabase
-        .from("competition_phases")
-        .insert({
-          sport_event_id: sportEventId,
-          event_id: event?.event_id,
-          name: "Chave Eliminatória",
-          phase_type: "knockout",
-          sort_order: 1
-        })
-        .select()
+      // 2. Get event info
+      const { data: sportEvent } = await sb
+        .from('sport_events')
+        .select('event_id')
+        .eq('id', sportEventId)
         .single();
 
-      if (pError) throw pError;
+      // 3. Create or find the phase
+      let phaseId: string;
+      const { data: existingPhase } = await sb
+        .from("competition_phases")
+        .select("id")
+        .eq("sport_event_id", sportEventId)
+        .eq("phase_type", "knockout")
+        .maybeSingle();
 
-      // Logic to generate pairings (simplified for now)
-      const pairs = [];
-      const shuffled = [...athletes].sort(() => Math.random() - 0.5);
-      for (let i = 0; i < shuffled.length; i += 2) {
-        pairs.push([shuffled[i], shuffled[i+1] || null]);
-      }
-
-      for (let i = 0; i < pairs.length; i++) {
-        const [a, b] = pairs[i];
-        const { data: match, error: mError } = await supabase
-          .from("competition_matches")
+      if (existingPhase) {
+        phaseId = existingPhase.id;
+      } else {
+        const { data: newPhase, error: pError } = await sb
+          .from("competition_phases")
           .insert({
-            event_id: event?.event_id,
             sport_event_id: sportEventId,
-            phase_id: phase.id,
-            match_number: i + 1,
-            round_number: 1,
-            status: "scheduled"
+            event_id: sportEvent?.event_id,
+            name: "Chave Eliminatória",
+            phase_type: "knockout",
+            sort_order: 1
           })
           .select()
           .single();
-        
-        if (mError) throw mError;
-
-        await supabase.from("competition_match_entries").insert([
-          { match_id: match.id, side: "A", participant_sport_event_id: a.id },
-          { match_id: match.id, side: "B", participant_sport_event_id: b?.id || null }
-        ]);
+        if (pError) throw pError;
+        phaseId = newPhase.id;
       }
 
-      toast.success("Chave montada com sucesso!");
+      // 4. Prepare participants for RPC
+      const participants = athletes.map((a: any, idx: number) => ({
+        participant_id: a.id,
+        seed: idx + 1,
+        label: `Atleta ${idx + 1}`,
+        participant_type: "participant" as const
+      }));
+
+      // 5. Call RPC via hook
+      await generateKnockout.mutateAsync({
+        eventId: sportEvent?.event_id ?? "",
+        sportEventId,
+        phaseId,
+        participants,
+        seedingMode: "automatic",
+        force: true,
+        withBronzeMatch: withBronze
+      });
+
       qc.invalidateQueries({ queryKey: ["bracket-phases", sportEventId] });
-      qc.invalidateQueries({ queryKey: ["sport_categories"] });
+      qc.invalidateQueries({ queryKey: ["knockout-bracket", phaseId] });
+      
     } catch (error: any) {
       toast.error("Erro ao montar chave: " + error.message);
     } finally {
@@ -158,30 +170,42 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h4 className="text-lg font-semibold">Chave de Competição</h4>
           <p className="text-sm text-muted-foreground">Visualize a progressão dos atletas no bracket.</p>
         </div>
         
         {!firstKnockoutPhase && (
-          <div className="flex gap-2">
-            <Button 
-              disabled={isWeighingIncomplete || isMounting} 
-              onClick={() => mountBracket(true)}
-              className="gap-2"
-            >
-              <RefreshCw className={cn("h-4 w-4", isMounting && "animate-spin")} />
-              Montagem Automática
-            </Button>
-            <Button 
-              variant="outline" 
-              disabled={isWeighingIncomplete || isMounting}
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Montagem Manual
-            </Button>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="bronze-toggle" 
+                checked={withBronze} 
+                onCheckedChange={setWithBronze} 
+              />
+              <Label htmlFor="bronze-toggle" className="text-sm cursor-pointer">Incluir disputa de 3º lugar</Label>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                disabled={isWeighingIncomplete || isMounting} 
+                onClick={() => mountBracket(true)}
+                className="gap-2"
+              >
+                <RefreshCw className={cn("h-4 w-4", isMounting && "animate-spin")} />
+                Montagem Automática
+              </Button>
+              <Button 
+                variant="outline" 
+                disabled={isWeighingIncomplete || isMounting}
+                onClick={() => mountBracket(false)}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Montagem Manual
+              </Button>
+            </div>
           </div>
         )}
       </div>
