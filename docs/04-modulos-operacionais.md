@@ -58,11 +58,13 @@
 ## 7. Competição (✅ Pronto — Refatoração Etapa 3: Painel Combat)
 - **Tabelas**: 15 tabelas (phases, groups, matches, entries, results, scores, lineups, events, penalties, officials, attachments, attempts, player_stats, discipline, match_user_assignments)
 - **Páginas admin**: painel (entry point), painel-score, painel-sets, painel-combat, painel-time-mark (novo), fases, grupos, equipes, partidas, detalhe da partida, agenda, resultados, central, pré-validação, regras, regras em lote, diagnóstico, sincronizar equipes
-- **Painel Score, Sets, Combat & Time/Mark (Novos)**:
-  - ✅ Lista modalidades das famílias "score", "sets", "combat", "time" e "mark"
-  - ✅ Cards operacionais com contagem adaptada (Categorias, Atletas, Lutas, Séries)
+- **Painel Score, Sets, Combat, Time/Mark & Ranking (Pronto)**:
+  - ✅ Lista modalidades das famílias "score", "sets", "combat", "time", "mark" e "ranking"
+  - ✅ Cards operacionais com contagem adaptada (Categorias, Atletas, Lutas, Séries, Provas)
   - ✅ Painel Combat dedicado com seletor de categoria de peso e pesagem oficial
   - ✅ Painel Time/Mark dedicado com gestão de séries, raias e distribuição automática
+  - ✅ Painel Ranking dedicado para Kata, Ginástica Rítmica e Xadrez com grade Spreadsheet
+  - ✅ **Lançamento Ranking (Etapa 10 concluída)**: Rota dedicada, grade de lançamento de pontuação final por participante, cálculo automático de classificação (1-1-3), suporte a status DNS/DSQ e homologação integrada.
   - ✅ **Lançamento Time/Mark (Correções Críticas Etapa 9)**: Rota dedicada, 3 modos de lançamento (Pista/Piscina, Campo/Tentativas, Prova Única/Ranking), cálculo automático de posição por melhor marca com tratamento de empate (1, 1, 3), persistência real de múltiplas tentativas em `match_attempts`, validação de payload por modo e prevenção de duplicidades manuais no Modo C.
   - ✅ **Propagação Time/Mark (Correções Críticas Etapa 9)**: Tela de classificação consolidada da fase com sugestão automática; propagação manual via RPC `rpc_propagate_classification_time_mark` com distribuição em "serpentina" nas séries da fase seguinte e registro de histórico de classificação.
   - ✅ **Lançamento Combat (Etapa 7 concluída)**: Rota dedicada, placar dinâmico, prorrogação, métodos de vitória, propagação automática no bracket.
