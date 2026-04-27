@@ -21,7 +21,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks, Download, FileText, FileSpreadsheet, Settings } from "lucide-react";
 import { format, parse } from "date-fns";
 import { EscalaLoteDialog, formatMatchLabel } from "@/components/admin/arbitragem/EscalaLoteDialog";
 import { downloadCsv, downloadPdf, type EscalaExportRow, type EscalaColumnKey } from "@/components/admin/arbitragem/escalaExport";
