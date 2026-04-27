@@ -470,7 +470,9 @@ const App = () => (
               <Route path="alojamento/locais" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoLocaisPage /></ProtectedRoute>} />
               <Route path="alojamento/unidades" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoUnidadesPage /></ProtectedRoute>} />
               <Route path="alojamento/ocupacao" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoOcupacaoPage /></ProtectedRoute>} />
+              <Route path="alojamento/alocacao-lote" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlocacaoLotePage /></ProtectedRoute>} />
               <Route path="alojamento/relatorios" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoRelatoriosPage /></ProtectedRoute>} />
+              <Route path="evidencias-osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao", "alojamento", "transporte", "coordenacao_tecnica"]}><EvidenciasOSCPage /></ProtectedRoute>} />
               {/* Alimentação */}
               <Route path="alimentacao" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoHubPage /></ProtectedRoute>} />
               <Route path="alimentacao/tipos" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoTiposPage /></ProtectedRoute>} />
