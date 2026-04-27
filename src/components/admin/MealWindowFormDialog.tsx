@@ -26,6 +26,7 @@ const windowSchema = z.object({
   start_time: z.string().min(1, "Hora início obrigatória"),
   end_time: z.string().min(1, "Hora fim obrigatória"),
   location: z.string().optional().or(z.literal("")),
+  meal_window_location_id: z.string().optional().nullable(),
   is_active: z.boolean(),
   restrict_eligibility: z.boolean(),
 });
@@ -101,6 +102,7 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
         start_time: mealWindow.start_time?.slice(0, 5) ?? "",
         end_time: mealWindow.end_time?.slice(0, 5) ?? "",
         location: mealWindow.location ?? "",
+        meal_window_location_id: mealWindow.meal_window_location_id ?? null,
         is_active: mealWindow.is_active,
         restrict_eligibility: false,
       });
