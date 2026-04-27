@@ -1,6 +1,6 @@
 # 10 — Publicação e Resultados
 
-> Auditoria atualizada em 2026-04-14
+> Auditoria atualizada em 2026-04-28 — Correções críticas pós-auditoria implementadas.
 
 ## Ciclo de Vida do Resultado
 
