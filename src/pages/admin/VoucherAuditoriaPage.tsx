@@ -51,6 +51,8 @@ export default function VoucherAuditoriaPage() {
         details: a.reason ? `Recusa: ${a.reason}` : 'Sucesso',
         identifier: (a as any).voucher?.eventual_person?.full_name || (a as any).voucher?.qr_code_value || a.qr_value,
         operator: (a as any).operator?.display_name || 'Sistema',
+        is_offline: (a as any).is_offline,
+        offline_at: (a as any).offline_at,
         tone: a.outcome === 'success' ? 'success' : 'destructive'
       }));
     },
@@ -148,6 +150,7 @@ export default function VoucherAuditoriaPage() {
                   <TableRow>
                     <TableHead>Data/Hora</TableHead>
                     <TableHead>Operação</TableHead>
+                    <TableHead>Origem</TableHead>
                     <TableHead>Serviço</TableHead>
                     <TableHead>Identificador</TableHead>
                     <TableHead>Detalhes</TableHead>
@@ -162,6 +165,20 @@ export default function VoucherAuditoriaPage() {
                         <Badge variant="outline" className={`text-[10px] uppercase ${op.tone === 'success' ? 'border-green-500 text-green-700 bg-green-50' : 'border-destructive text-destructive'}`}>
                           {op.type}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {op.is_offline ? (
+                          <div className="flex flex-col gap-0.5">
+                            <Badge variant="outline" className="text-[9px] border-amber-500 text-amber-700 bg-amber-50 w-fit">OFFLINE</Badge>
+                            {op.offline_at && (
+                              <span className="text-[9px] text-muted-foreground italic">
+                                Lido: {format(new Date(op.offline_at), "dd/MM HH:mm")}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-[9px] border-blue-500 text-blue-700 bg-blue-50 w-fit">ONLINE</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="text-[10px] uppercase">{op.service}</Badge>

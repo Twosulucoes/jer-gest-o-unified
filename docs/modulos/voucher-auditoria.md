@@ -83,7 +83,7 @@
 ---
 
 ## 5. Lacunas Remanescentes e Riscos
-- **Offline para Vouchers**: O consumo de voucher depende da RPC `redeem_voucher` (online). Em cenários de queda de internet, o registro falha (diferente da credencial que tem fila offline). *Risco: Baixo (vouchers são exceção, não regra).*
+- **Offline para Vouchers**: ✅ RESOLVIDO (2026-04-28). Integrada fila offline resiliente `voucherOffline.ts` nos 3 PWAs operacionais com paridade à fila de credenciais e central de conflitos local.
 - **Consolidação de "People"**: Existem duas tabelas de pessoas (`people` e `service_eventual_people`). No futuro, uma view unificada pode facilitar relatórios globais de consumo.
 
 ---

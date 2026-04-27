@@ -26,6 +26,10 @@ import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
+import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
+import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
+import { addToVoucherQueue } from "@/lib/voucherOffline";
+import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
 
 
 const MODULE = "transporte" as const;
@@ -169,6 +173,42 @@ export default function TransporteScanPage() {
     if (!rawValue.trim()) return;
 
     try {
+      if (isVoucherQr(rawValue)) {
+        if (!tripId) {
+          toast.error("Selecione uma viagem primeiro");
+          return;
+        }
+
+        if (!isOnline()) {
+          addToVoucherQueue(rawValue, "transport", tripId, userId || "", "Portador de Voucher");
+          const successMsg = `Voucher registrado offline: ${rawValue.replace("voucher:", "")}`;
+          setResult({ ok: true, source: "qr", message: successMsg });
+          toast.info("Voucher registrado offline. Sincronize quando houver internet.");
+          recordOutcome("ok");
+          if (navigator.vibrate) navigator.vibrate(200);
+          reopenIfContinuous();
+          return;
+        }
+
+        const voucher = await tryRedeemVoucher(rawValue, "transport", tripId);
+        if (!voucher || !voucher.ok) {
+          const msg = voucherErrorMessage(voucher?.reason, lang);
+          setResult({ ok: false, message: msg.text, source: "qr" });
+          toast.error(msg.text);
+          recordOutcome("error");
+          reopenIfContinuous();
+          return;
+        }
+
+        const msg = voucherSuccessMessage(voucher, "transport", lang);
+        setResult({ ok: true, source: "qr", message: msg.text });
+        toast.success(msg.text);
+        recordOutcome("ok");
+        if (navigator.vibrate) navigator.vibrate(200);
+        reopenIfContinuous();
+        return;
+      }
+
       const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
       if (!resolved) {
         const errorMsg = "Credencial não encontrada ou inativa";
@@ -208,6 +248,7 @@ export default function TransporteScanPage() {
 
       <main className="relative mx-auto max-w-md space-y-4 p-4">
         <OfflineSyncStatus />
+        <VoucherConflictCentral />
 
         <p className="text-center text-sm text-muted-foreground">Credencial ou voucher</p>
 

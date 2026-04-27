@@ -31,6 +31,8 @@ import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
+import { addToVoucherQueue } from "@/lib/voucherOffline";
+import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
 
 
 
@@ -233,6 +235,21 @@ export default function AlimentacaoScanPage() {
       let method: "qr_scan" | "voucher" = "qr_scan";
 
       if (isVoucherQr(rawValue)) {
+        if (!isOnline()) {
+          addToVoucherQueue(rawValue, "meals", windowId, userId || "", "Portador de Voucher");
+          const successMsg = `Voucher registrado offline: ${rawValue.replace("voucher:", "")}`;
+          setResult({ 
+            ok: true, 
+            source: "qr", 
+            message: successMsg,
+          } as any);
+          toast.info("Voucher registrado offline. Sincronize quando houver internet.");
+          recordOutcome("ok");
+          if (navigator.vibrate) navigator.vibrate(200);
+          reopenIfContinuous();
+          return;
+        }
+
         const voucher = await tryRedeemVoucher(rawValue, "meals", windowId);
         if (!voucher || !voucher.ok) {
           const msg = voucherErrorMessage(voucher?.reason, lang);
@@ -310,6 +327,7 @@ export default function AlimentacaoScanPage() {
 
       <main className="relative mx-auto max-w-md space-y-4 p-4">
         <OfflineSyncStatus />
+        <VoucherConflictCentral />
 
         <ScanPreferencesPanel
           prefs={prefs}

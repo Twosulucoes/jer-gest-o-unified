@@ -13,6 +13,9 @@ import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessage
 import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { useAuth } from "@/hooks/useAuth";
+import { addToVoucherQueue } from "@/lib/voucherOffline";
+import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
+import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
@@ -84,6 +87,22 @@ export default function AlojamentoScanPage() {
         return;
       }
       setResult(null);
+      if (!isOnline) {
+        addToVoucherQueue(rawValue, "lodging", facilityId, userId || "", "Portador de Voucher");
+        const successMsg = `Voucher registrado offline: ${rawValue.replace("voucher:", "")}`;
+        setResult({
+          ok: true,
+          full_name: "Portador de Voucher",
+          participant_type: "Voucher",
+          message: successMsg,
+        });
+        toast.info("Voucher registrado offline. Sincronize quando houver internet.");
+        recordOutcome("ok");
+        if (navigator.vibrate) navigator.vibrate(200);
+        reopenIfContinuous();
+        return;
+      }
+
       const voucher = await tryRedeemVoucher(rawValue, "lodging", facilityId);
       if (!voucher || !voucher.ok) {
         const msg = voucherErrorMessage(voucher?.reason, lang);
@@ -220,6 +239,8 @@ export default function AlojamentoScanPage() {
       />
 
       <main className="p-4 max-w-md mx-auto space-y-4 pb-20">
+        <OfflineSyncStatus />
+        <VoucherConflictCentral />
         <ScanPreferencesPanel
           prefs={prefs}
           telemetry={telemetry}
