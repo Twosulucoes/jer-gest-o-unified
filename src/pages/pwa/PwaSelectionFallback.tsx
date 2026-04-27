@@ -16,16 +16,24 @@ const PwaSelectionFallback = () => {
     navigate("/pwa");
   };
 
+  const isMissingStageOnly = activeEventId && !activeStageId;
+  const isMissingEvent = !activeEventId;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md border-orange-200 bg-orange-50/30 dark:bg-orange-950/10">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mb-4 text-orange-600 dark:text-orange-400">
-            <AlertCircle className="w-8 h-8" />
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-in fade-in duration-500">
+      <Card className="w-full max-w-md border-orange-200 bg-orange-50/30 dark:bg-orange-950/10 shadow-xl overflow-hidden">
+        <div className="bg-orange-500 h-1.5 w-full" />
+        <CardHeader className="text-center pt-8">
+          <div className="mx-auto w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mb-6 text-orange-600 dark:text-orange-400 ring-4 ring-orange-50 dark:ring-orange-900/10">
+            <AlertCircle className="w-10 h-10" />
           </div>
-          <CardTitle className="text-xl font-bold">Configuração Necessária</CardTitle>
-          <CardDescription>
-            Para acessar os módulos operacionais, você precisa selecionar um evento e uma etapa ativa.
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            {isMissingStageOnly ? "Selecione uma Etapa" : "Configuração Necessária"}
+          </CardTitle>
+          <CardDescription className="text-base px-2">
+            {isMissingStageOnly 
+              ? "Você selecionou o evento, mas este módulo exige uma etapa de trabalho ativa para funcionar."
+              : "Para acessar os módulos operacionais do PWA, você precisa definir o contexto de trabalho atual."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
