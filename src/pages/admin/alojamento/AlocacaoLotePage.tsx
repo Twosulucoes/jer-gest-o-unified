@@ -17,7 +17,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
 
 export default function AlocacaoLotePage() {
   const qc = useQueryClient();
@@ -31,8 +30,6 @@ export default function AlocacaoLotePage() {
   const [autoDistribute, setAutoDistribute] = useState(true);
   const [allocationReport, setAllocationReport] = useState<any>(null);
 
-  const canWrite = hasRole("admin") || hasRole("alojamento");
-
   // Step 1: List delegations
   const { data: delegations = [], isLoading: loadingDelegations } = useQuery({
     queryKey: ["delegations", selectedEventId],
@@ -40,9 +37,9 @@ export default function AlocacaoLotePage() {
       if (!selectedEventId) return [];
       const { data, error } = await supabase
         .from("delegations")
-        .select("id, name, institutions(name)")
+        .select("id, school_name, institutions(name)")
         .eq("event_id", selectedEventId)
-        .order("name");
+        .order("school_name");
       if (error) throw error;
       return data;
     },
