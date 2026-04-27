@@ -14,7 +14,7 @@ export default function ResultadosHomePage() {
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) navigate("/pwa/login", { replace: true });
+      if (!session) navigate("/login", { replace: true });
     })();
   }, [navigate]);
 
@@ -27,7 +27,7 @@ export default function ResultadosHomePage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate("/pwa/login", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   return (

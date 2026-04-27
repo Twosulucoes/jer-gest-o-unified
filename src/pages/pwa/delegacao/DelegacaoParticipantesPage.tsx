@@ -41,7 +41,7 @@ export default function DelegacaoParticipantesPage() {
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/pwa/login", { replace: true }); return; }
+      if (!session) { navigate("/login", { replace: true }); return; }
 
       const { data: userDelegation } = await supabase
         .from("user_delegations")

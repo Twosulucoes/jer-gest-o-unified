@@ -54,7 +54,7 @@ export default function TransporteHomePage() {
 
   const fetchTrips = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { navigate("/pwa/login", { replace: true }); return; }
+    if (!session) { navigate("/login", { replace: true }); return; }
     setUserId(session.user.id);
 
     const { data, error } = await supabase
@@ -73,7 +73,7 @@ export default function TransporteHomePage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate("/pwa/login", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   const handleCheckIn = async (tripId: string) => {

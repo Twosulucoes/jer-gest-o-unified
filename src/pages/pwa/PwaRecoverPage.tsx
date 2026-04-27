@@ -43,7 +43,7 @@ export default function PwaRecoverPage() {
             </div>
             <h2 className="text-xl font-heading font-bold">Email enviado!</h2>
             <p className="text-muted-foreground">Verifique sua caixa de entrada para redefinir sua senha.</p>
-            <Button variant="outline" onClick={() => navigate("/pwa/login")} className="h-12">
+            <Button variant="outline" onClick={() => navigate("/login")} className="h-12">
               Voltar ao login
             </Button>
           </CardContent>
@@ -67,7 +67,7 @@ export default function PwaRecoverPage() {
 
       <div className="relative flex flex-1 items-start justify-center px-4 pt-6">
         <div className="w-full max-w-sm space-y-4">
-          <button onClick={() => navigate("/pwa/login")} className="flex items-center gap-1 text-sm text-muted-foreground">
+          <button onClick={() => navigate("/login")} className="flex items-center gap-1 text-sm text-muted-foreground">
             <ArrowLeft className="h-4 w-4" /> Voltar
           </button>
           <Card className="border-border/80 bg-card/95 shadow-app-xl backdrop-blur-sm">

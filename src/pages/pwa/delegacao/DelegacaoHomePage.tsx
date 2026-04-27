@@ -40,7 +40,7 @@ export default function DelegacaoHomePage() {
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/pwa/login", { replace: true }); return; }
+      if (!session) { navigate("/login", { replace: true }); return; }
 
       const { data: profile } = await supabase.from("profiles").select("active").eq("id", session.user.id).single();
       if (!(profile as any)?.active) { navigate("/pwa", { replace: true }); return; }
@@ -87,7 +87,7 @@ export default function DelegacaoHomePage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate("/pwa/login", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   const initials = (name: string | null) => (name || "?").split(" ").map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();

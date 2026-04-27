@@ -78,7 +78,7 @@ export default function TransporteEmbarquePage() {
       }
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate("/pwa/login", { replace: true });
+        navigate("/login", { replace: true });
         return;
       }
 

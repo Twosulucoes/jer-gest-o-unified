@@ -73,7 +73,7 @@ export default function TransportePassageirosPage() {
     (async () => {
       if (!tripId) { setAuthorized(false); setLoading(false); return; }
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/pwa/login", { replace: true }); return; }
+      if (!session) { navigate("/login", { replace: true }); return; }
 
       const { data: trip } = await supabase
         .from("transport_trips")
