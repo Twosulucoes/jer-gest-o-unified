@@ -112,7 +112,7 @@ export default function AlocacaoLotePage() {
       const unitsToUse = units.filter(u => selectedUnitIds.includes(u.id));
       
       const results: { success: any[], failed: any[] } = { success: [], failed: [] };
-      const newOccupancies: any[] = [];
+      const rpcAllocations: { participant_id: string; unit_id: string }[] = [];
       
       if (autoDistribute) {
         // Distribution logic by gender and capacity
@@ -122,19 +122,24 @@ export default function AlocacaoLotePage() {
           mixed: unitsToUse.filter(u => u.gender_restriction === 'mixed')
         };
         
+        // Cópia das ocupações atuais para controle local da distribuição
+        const currentUnits = unitsToUse.map(u => ({ ...u }));
+
         for (const p of unallocatedParticipants) {
           const gender = p.people?.gender || 'male'; // Fallback
-          const availableUnits = unitsByGender[gender as keyof typeof unitsByGender]
-            .filter(u => (u.capacity - u.occupied_count) > 0);
+          const availableUnits = currentUnits
+            .filter(u => {
+              const matchesGender = (gender === 'male' && (u.gender_restriction === 'male' || u.gender_restriction === 'mixed')) ||
+                                   (gender === 'female' && (u.gender_restriction === 'female' || u.gender_restriction === 'mixed')) ||
+                                   (u.gender_restriction === 'mixed');
+              return matchesGender && (u.capacity - u.occupied_count) > 0;
+            });
           
           if (availableUnits.length > 0) {
             const unit = availableUnits[0];
-            newOccupancies.push({
-              event_id: selectedEventId,
-              event_stage_id: stageId,
+            rpcAllocations.push({
               participant_id: p.id,
-              unit_id: unit.id,
-              status: 'allocated'
+              unit_id: unit.id
             });
             unit.occupied_count++;
             results.success.push({ participant: p.people?.full_name, unit: unit.name });
@@ -144,9 +149,19 @@ export default function AlocacaoLotePage() {
         }
       }
 
-      if (newOccupancies.length > 0) {
-        const { error } = await supabase.from("lodging_occupancies").insert(newOccupancies);
+      if (rpcAllocations.length > 0) {
+        const { data, error } = await supabase.rpc("rpc_allocate_lodging_batch", {
+          p_event_id: selectedEventId,
+          p_delegation_id: selectedDelegationId,
+          p_allocations: rpcAllocations
+        });
+
         if (error) throw error;
+        
+        const response = data as any;
+        if (response.status === 'failed') {
+          throw new Error(response.error_message || "Falha na alocação em lote");
+        }
       }
       
       return results;
