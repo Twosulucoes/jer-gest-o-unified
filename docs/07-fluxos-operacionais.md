@@ -13,30 +13,30 @@ Planilha CSV (sistema externo)
 
 **Cenário real**: A secretaria recebe a planilha oficial da SEDUC-RR, faz upload, e o sistema cria automaticamente toda a estrutura necessária.
 
-## 2. Credenciamento
+## 2. Credenciamento com QR Code Assinado (v2)
 
 ```
 Participante chega ao evento
-  → Operador busca na /admin/credenciamento (por nome, CPF, delegação)
+  → Operador busca na /admin/credenciamento ou /admin/credenciamento/seguro
   → Verifica status (confirmed ✓ / pending ⚠)
-  → "Registrar presença" (check-in) — marca credentialed_at
-  → "Emitir credencial" — gera credential_code + qr_code_value
-  → Preview da credencial visual (Canvas)
+  → "Emitir credencial"
+  → Frontend chama Edge Function generate-credential-qr (assina payload com HMAC-SHA256)
+  → Sistema gera QR Code no formato jer:v2:{event_id}:{participant_id}:{credential_code}:{hmac_short}
   → Imprime etiqueta / credencial
 ```
 
 **Cenário real**: Atleta da escola X chega, operador busca pelo nome, registra presença e emite credencial com QR Code.
 
-## 3. Validação de QR Code
+## 3. Validação de QR Code e Integridade
 
 ```
-Participante apresenta credencial em ponto operacional
-  → Operador usa /admin/validacao-qr (câmera do dispositivo)
-  → QR Code lido → Edge Function validate-qr
-  → Busca credential por qr_code_value
-  → Valida: status ativo? mesmo evento? não revogada?
-  → Retorna dados do participante (nome, foto, instituição, tipo)
-  → Registra scan em credential_scans
+Participante apresenta credencial
+  → Operador usa scanner PWA (Edge Function validate-qr)
+  → Sistema detecta versão do QR (v2 ou legado)
+  → Se v2: Valida assinatura HMAC usando segredo de ambiente (HMAC_SECRET)
+  → Se assinatura inválida: Bloqueia acesso (Alerta de Fraude)
+  → Se legado: Aceita (retrocompatibilidade) e marca legacy_format=true em credential_scans
+  → Retorna dados do participante e autoriza entrada
 ```
 
 **Cenário real**: Participante vai almoçar, apresenta credencial, operador valida QR e confirma identidade.
@@ -52,15 +52,17 @@ Credencial perdida/danificada
   → Preview e impressão da nova credencial
 ```
 
-## 5. Registro de Refeição
+## 5. Registro de Refeição e Elegibilidade
 
 ```
 Janela de serviço aberta (ex: Almoço 11h-13h)
   → Participante apresenta credencial
   → Operador valida QR
-  → Sistema verifica: já consumiu nesta janela?
-  → Se não → registra meal_consumption
-  → Se sim → bloqueia (anti-duplicidade)
+  → Trigger trg_validate_meal_consumption_eligibility verifica regras de elegibilidade:
+    - Se a janela tem restrições (ex: apenas Delegação X): verifica se participante pertence a X.
+    - Se não houver restrições: permite consumo para qualquer credencial ativa.
+  → Se autorizado: registra meal_consumption.
+  → Se não: retorna erro "Participante não autorizado nesta janela".
 ```
 
 ## 6. Configuração de Regras por Prova
@@ -209,4 +211,15 @@ Coordenação publica resultados de partidas (result_status = 'publicado')
   → Aba "Classificação Geral": Art. 108 (1º=10..8º=1 pts) separando coletivas/individuais
   → Banner amarelo aparece se houver SE com partidas concluídas mas sem publicação
   → Exporta PDF (selo OFICIAL/PARCIAL) ou XLSX
+```
+
+## 9. Registro de Evidências OSC
+
+```
+Operação em campo (Alimentação, Transporte, etc.)
+  → Operador tira foto (ex: buffet pronto) no PWA ou Admin
+  → Upload para bucket operational-evidence (pasta específica por módulo/mês)
+  → Registro na tabela operational_evidence vinculado ao contexto (evento, módulo, referência)
+  → Secretaria visualiza evidências centralizadas para prestação de contas
+  → Status: pendente → aprovado (contabilizado para OSC)
 ```

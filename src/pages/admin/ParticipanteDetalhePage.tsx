@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
-import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
+import { generateCredentialCode, generateSignedQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, User, IdCard, Bus, Trophy, CheckCircle, Tag, ArrowLeft, Eye, RefreshCw, Activity, QrCode, Edit } from "lucide-react";
@@ -53,17 +53,13 @@ export default function ParticipanteDetalhePage() {
   const { data: participant, isLoading: loadingParticipant, error: participantError } = useQuery({
     queryKey: ["participant_full", participantId],
     queryFn: async () => {
-      console.log("Fetching participant:", participantId);
       const { data, error } = await (supabase
         .from("participants") as any)
         .select("id, participant_type, person_id, delegation_id, event_id, status, is_active, notes, created_at")
         .eq("id", participantId!)
         .maybeSingle();
       
-      if (error) {
-        console.error("Error fetching participant:", error);
-        throw error;
-      }
+      if (error) throw error;
       return data as any;
     },
     enabled: !!participantId,
@@ -146,7 +142,7 @@ export default function ParticipanteDetalhePage() {
     mutationFn: async () => {
       if (!participant || !user) throw new Error("Dados insuficientes");
       const credentialCode = generateCredentialCode();
-      const qrCodeValue = generateQrCodeValue(participant.event_id, participant.id, credentialCode);
+      const qrCodeValue = await generateSignedQrCodeValue(participant.event_id, participant.id, credentialCode);
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: participant.id,
         event_id: participant.event_id,
@@ -186,7 +182,7 @@ export default function ParticipanteDetalhePage() {
         .update({ status: "reissued", is_active: false, revoked_at: new Date().toISOString() })
         .eq("id", activeCredential.id);
       const credentialCode = generateCredentialCode();
-      const qrCodeValue = generateQrCodeValue(participant.event_id, participant.id, credentialCode);
+      const qrCodeValue = await generateSignedQrCodeValue(participant.event_id, participant.id, credentialCode);
       const { error } = await supabase.from("participant_credentials").insert({
         participant_id: participant.id,
         event_id: participant.event_id,

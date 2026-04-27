@@ -1,194 +1,119 @@
 /**
  * Tela de credenciamento "seguro" — fluxo enxuto e validador.
- *
- * Diferente da tela cheia (`CredenciamentoPage.tsx`), aqui o objetivo é
- * GARANTIR a precondição antes de chamar a RPC e MOSTRAR claramente por que
- * uma emissão pode falhar:
- *
- *   1) Pre-flight de infraestrutura (RPC + tabela de log) — bloqueante.
- *   2) Documentação aprovada (participant_documents) — bloqueante.
- *   3) Irregularidades bloqueantes abertas (RPC get_blocking_irregularities) — bloqueante.
- *   4) Credencial ativa duplicada (uq_participant_event_active) — informativo.
- *
- * Mensagens de erro são traduzidas a partir de códigos PostgREST/Postgres
- * (`PGRST202`, `PGRST205`, `P0001`, `23505`, `22023`) para algo acionável.
  */
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useEventContext } from "@/contexts/EventContext";
+import { useActiveEventId } from "@/contexts/EventContext";
 import { useCredencialamentoPreflight } from "@/hooks/useCredencialamentoPreflight";
 import { useDocumentationStatus } from "@/hooks/useDocumentationStatus";
-import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
+import { generateCredentialCode, generateSignedQrCodeValue } from "@/lib/credentialUtils";
 import { toast } from "sonner";
-
+import {
+  Search,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  ShieldCheck,
+  ShieldAlert,
+  FileCheck2,
+  Stethoscope,
+  Database,
+  CheckCircle as CheckCircleIcon,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-  Search,
-  ShieldAlert,
-  ShieldCheck,
-  XCircle,
-  Database,
-  FileCheck2,
-  Stethoscope,
-} from "lucide-react";
 
-// ----- validação -----
-const searchSchema = z
-  .string()
-  .trim()
-  .min(3, "Digite ao menos 3 caracteres.")
-  .max(120, "Busca muito longa.");
+const searchSchema = z.string().min(3, "Mínimo de 3 caracteres para busca.");
 
-interface ParticipantRow {
-  id: string;
-  status: string;
-  participant_type: string;
-  people: { full_name: string; cpf: string | null } | null;
-  delegations: { name: string } | null;
-}
-
-// ----- mapeamento de erro -----
-function humanizeError(err: any): { title: string; description: string } {
-  const code = err?.code as string | undefined;
-  const msg = (err?.message as string | undefined) ?? "";
-
-  if (code === "PGRST202") {
-    return {
-      title: "Função de emissão indisponível no banco",
-      description:
-        "A RPC issue_participant_credential não está no schema cache. Avise o time técnico para reaplicar a migração 20260424000004_credential-atomic-rpcs.sql.",
-    };
-  }
-  if (code === "PGRST205") {
-    return {
-      title: "Tabela de telemetria ausente",
-      description:
-        "A tabela db_operation_logs não existe no banco. A emissão pode prosseguir, mas o log será desativado.",
-    };
-  }
-  if (code === "P0001" || msg.includes("Credenciamento bloqueado") || msg.includes("irregularidade")) {
-    return {
-      title: "Credenciamento bloqueado",
-      description: "O atleta possui irregularidade aberta. Resolva em /admin/irregularidades antes de emitir.",
-    };
-  }
-  if (code === "23505" || msg.includes("uq_participant_event_active")) {
-    return {
-      title: "Credencial ativa já existe",
-      description: "Este participante já possui uma credencial ativa neste evento. Use reemissão para invalidar a anterior.",
-    };
-  }
-  if (code === "22023") {
-    return {
-      title: "Parâmetros obrigatórios ausentes",
-      description: "Verifique evento, participante e usuário autenticado.",
-    };
-  }
-  return {
-    title: "Falha ao emitir credencial",
-    description: msg || "Erro desconhecido.",
-  };
+function humanizeError(err: any) {
+  const code = err?.code || (err as any)?.message;
+  if (code === "23505") return { title: "Duplicidade", description: "Este participante já possui uma credencial ativa." };
+  if (code === "P0001") return { title: "Regra de Negócio", description: err.message };
+  return { title: "Erro na emissão", description: err.message || "Erro desconhecido" };
 }
 
 export default function CredenciamentoSeguroPage() {
+  const activeEventId = useActiveEventId();
   const { user } = useAuth();
-  const { activeEventId } = useEventContext();
   const queryClient = useQueryClient();
-
   const [rawSearch, setRawSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchError, setSearchError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const preflight = useCredencialamentoPreflight();
-
-  // ----- busca de participantes -----
-  const { data: results = [], isFetching: isSearching } = useQuery<ParticipantRow[]>({
+  
+  const { data: results = [], isLoading: isSearching } = useQuery({
     queryKey: ["credenciamento-seguro-search", activeEventId, searchTerm],
-    enabled: !!activeEventId && searchTerm.length >= 3,
     queryFn: async () => {
-      const term = searchTerm.replace(/[%,]/g, "");
+      if (!searchTerm || !activeEventId) return [];
       const { data, error } = await supabase
         .from("participants")
-        .select(
-          "id, status, participant_type, people!inner(full_name, cpf), delegations(name)"
-        )
-        .eq("event_id", activeEventId!)
-        .eq("is_active", true)
-        .or(`full_name.ilike.%${term}%,cpf.ilike.%${term}%`, { foreignTable: "people" })
-        .limit(15);
+        .select("id, status, participant_type, people(full_name, cpf), delegations(name)")
+        .eq("event_id", activeEventId)
+        .or(`people.full_name.ilike.%${searchTerm}%,people.cpf.ilike.%${searchTerm}%`)
+        .limit(10);
       if (error) throw error;
-      return (data ?? []) as unknown as ParticipantRow[];
+      return (data || []) as any[];
     },
+    enabled: !!activeEventId && !!searchTerm,
   });
 
-  const selected = useMemo(
-    () => results.find((r) => r.id === selectedId) ?? null,
-    [results, selectedId]
-  );
-
-  // ----- documentação do selecionado -----
-  const docCheck = useDocumentationStatus(activeEventId ?? undefined, selected?.id);
-
-  // ----- irregularidades bloqueantes -----
-  const blockingQuery = useQuery({
-    queryKey: ["blocking-irregs", activeEventId, selected?.id],
-    enabled: !!activeEventId && !!selected?.id,
-    staleTime: 10_000,
+  const selected = results.find((r) => r.id === selectedId);
+  const docCheck = useDocumentationStatus(selectedId || "");
+  
+  const { data: blockingData } = useQuery({
+    queryKey: ["blocking-irregularities", selectedId, activeEventId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("get_blocking_irregularities", {
-        p_event_id: activeEventId,
-        p_participant_id: selected!.id,
+      if (!selectedId || !activeEventId) return { has_blocking: false, items: [] };
+      const { data, error } = await supabase.rpc("get_blocking_irregularities", { 
+        p_participant_id: selectedId,
+        p_event_id: activeEventId
       });
       if (error) throw error;
-      return data as { has_blocking: boolean; items: Array<{ rule_code: string; message: string }> };
+      const items = (data || []) as any[];
+      return { has_blocking: items.length > 0, items };
     },
+    enabled: !!selectedId && !!activeEventId,
   });
 
-  // ----- credencial ativa atual -----
   const activeCredQuery = useQuery({
-    queryKey: ["active-cred", activeEventId, selected?.id],
-    enabled: !!activeEventId && !!selected?.id,
+    queryKey: ["active-cred", selectedId],
     queryFn: async () => {
+      if (!selectedId) return null;
       const { data, error } = await supabase
         .from("participant_credentials")
-        .select("id, credential_code, issued_at")
-        .eq("event_id", activeEventId!)
-        .eq("participant_id", selected!.id)
-        .eq("is_active", true)
+        .select("id, credential_code")
+        .eq("participant_id", selectedId)
+        .eq("status", "active")
         .maybeSingle();
       if (error) throw error;
       return data;
     },
+    enabled: !!selectedId,
   });
 
-  // ----- mutation de emissão -----
   const emitMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId || !selected || !user?.id) {
-        throw Object.assign(new Error("Contexto incompleto"), { code: "22023" });
-      }
+      if (!selected || !activeEventId) return;
       const credentialCode = generateCredentialCode();
-      const qrCodeValue = generateQrCodeValue(activeEventId, selected.id, credentialCode);
+      const qrCodeValue = await generateSignedQrCodeValue(activeEventId, selected.id, credentialCode);
       const { error } = await (supabase as any).rpc("issue_participant_credential", {
         p_event_id: activeEventId,
         p_participant_id: selected.id,
         p_credential_code: credentialCode,
         p_qr_code_value: qrCodeValue,
-        p_user_id: user.id,
+        p_user_id: user?.id,
         p_binding_source: "manual",
         p_revoke_id: activeCredQuery.data?.id ?? null,
       });
@@ -208,9 +133,9 @@ export default function CredenciamentoSeguroPage() {
   // ----- gates -----
   const preflightOk = preflight.data?.canIssue === true;
   const docsOk = docCheck.data?.isClear === true;
-  const irregsOk = blockingQuery.data ? !blockingQuery.data.has_blocking : true;
+  const irregsOk = blockingData ? !blockingData.has_blocking : true;
   const allChecksLoading =
-    preflight.isLoading || docCheck.isLoading || blockingQuery.isLoading;
+    preflight.isLoading || docCheck.isLoading || !blockingData;
   const canEmit =
     !!selected && preflightOk && docsOk && irregsOk && !allChecksLoading;
 
@@ -282,7 +207,6 @@ export default function CredenciamentoSeguroPage() {
                 onChange={(e) => setRawSearch(e.target.value)}
                 maxLength={120}
                 placeholder="Nome ou CPF"
-                aria-invalid={!!searchError}
               />
               {searchError && (
                 <p className="text-xs text-destructive">{searchError}</p>
@@ -301,7 +225,7 @@ export default function CredenciamentoSeguroPage() {
 
           {results.length > 0 && (
             <ul className="mt-4 divide-y divide-border rounded-md border">
-              {results.map((p) => {
+              {results.map((p: any) => {
                 const isSel = p.id === selectedId;
                 return (
                   <li key={p.id}>
@@ -318,7 +242,7 @@ export default function CredenciamentoSeguroPage() {
                             {p.people?.full_name ?? "—"}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {p.delegations?.name ?? "Sem delegação"} ·{" "}
+                            {(p.delegations as any)?.name ?? "Sem delegação"} ·{" "}
                             {p.participant_type} · {p.people?.cpf ?? "sem CPF"}
                           </p>
                         </div>
@@ -355,11 +279,11 @@ export default function CredenciamentoSeguroPage() {
             />
             <CheckRow
               label="Irregularidades bloqueantes"
-              loading={blockingQuery.isLoading}
+              loading={!blockingData}
               ok={irregsOk}
               detail={
-                blockingQuery.data?.has_blocking
-                  ? `${blockingQuery.data.items.length} bloqueante(s) aberta(s).`
+                blockingData?.has_blocking
+                  ? `${blockingData.items.length} bloqueante(s) aberta(s).`
                   : "Nenhuma irregularidade bloqueante."
               }
             />
@@ -444,7 +368,7 @@ function CheckRow({
         {loading ? (
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         ) : ok ? (
-          <CheckCircle2 className="h-5 w-5 text-success" />
+          <CheckCircle2 className="h-5 w-5 text-green-600" />
         ) : (
           <XCircle className="h-5 w-5 text-destructive" />
         )}
@@ -507,7 +431,7 @@ function PreflightCard({
             )}
             {!hasIssue && data.canIssue && (
               <Alert>
-                <CheckCircle2 className="h-4 w-4" />
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <AlertTitle>Tudo certo</AlertTitle>
                 <AlertDescription>
                   Infraestrutura disponível. Verificação válida por 60s.
@@ -544,7 +468,7 @@ function PreflightLine({
   const Icon = status === "ok" ? CheckCircle2 : status === "missing" ? XCircle : Database;
   const color =
     status === "ok"
-      ? "text-success"
+      ? "text-green-600"
       : status === "missing"
         ? "text-destructive"
         : "text-muted-foreground";

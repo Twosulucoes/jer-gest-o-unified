@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { generateCredentialCode, generateQrCodeValue } from "@/lib/credentialUtils";
+import { generateCredentialCode, generateSignedQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -471,7 +471,7 @@ export default function CredenciamentoPage() {
     mutationFn: async ({ participantId, externalCode }: { participantId: string; externalCode?: string }) => {
       const isExternal = !!externalCode;
       const credentialCode = externalCode || generateCredentialCode();
-      const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
+      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, participantId, credentialCode);
 
       const { error } = await (supabase as any).rpc("issue_participant_credential", {
         p_event_id: selectedEventId,
@@ -506,7 +506,7 @@ export default function CredenciamentoPage() {
   const emitCredentialMutation = useMutation({
     mutationFn: async (participantId: string) => {
       const credentialCode = generateCredentialCode();
-      const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
+      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, participantId, credentialCode);
 
       const { error } = await (supabase as any).rpc("issue_participant_credential", {
         p_event_id: selectedEventId,
@@ -537,7 +537,7 @@ export default function CredenciamentoPage() {
     mutationFn: async (participantId: string) => {
       const existing = activeCredMap.get(participantId);
       const credentialCode = generateCredentialCode();
-      const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
+      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, participantId, credentialCode);
 
       const { error } = await (supabase as any).rpc("issue_participant_credential", {
         p_event_id: selectedEventId,
@@ -695,7 +695,7 @@ export default function CredenciamentoPage() {
         continue;
       }
       const credentialCode = generateCredentialCode();
-      const qrCodeValue = generateQrCodeValue(selectedEventId, id, credentialCode);
+      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, id, credentialCode);
       const { error } = await (supabase as any).rpc("issue_participant_credential", {
         p_event_id: selectedEventId,
         p_participant_id: id,
@@ -731,7 +731,7 @@ export default function CredenciamentoPage() {
         continue;
       }
       const credentialCode = generateCredentialCode();
-      const qrCodeValue = generateQrCodeValue(selectedEventId, id, credentialCode);
+      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, id, credentialCode);
       const { error } = await (supabase as any).rpc("issue_participant_credential", {
         p_event_id: selectedEventId,
         p_participant_id: id,

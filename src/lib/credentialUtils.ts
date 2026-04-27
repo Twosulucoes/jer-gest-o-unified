@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 /**
  * Centralized credential code and QR code generation utilities.
  * All credential issuance/reissuance points MUST use these helpers
@@ -16,11 +18,8 @@ export function generateCredentialCode(): string {
 }
 
 /**
- * Generates the official QR code value for a credential.
+ * Generates the official QR code value for a credential (legacy/unsigned).
  * Format: jer:{event_id}:{participant_id}:{credential_code}
- * 
- * This is the canonical format used for validation.
- * The validate-qr edge function looks up credentials by this value.
  */
 export function generateQrCodeValue(
   eventId: string,
@@ -29,3 +28,26 @@ export function generateQrCodeValue(
 ): string {
   return `jer:${eventId}:${participantId}:${credentialCode}`;
 }
+
+/**
+ * Generates a signed QR code value using the generate-credential-qr Edge Function.
+ * Format: jer:v2:{event_id}:{participant_id}:{credential_code}:{hmac_short}
+ */
+export async function generateSignedQrCodeValue(
+  eventId: string,
+  participantId: string,
+  credentialCode: string,
+): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("generate-credential-qr", {
+    body: { event_id: eventId, participant_id: participantId, credential_code: credentialCode },
+  });
+
+  if (error) {
+    console.error("Error generating signed QR:", error);
+    // Fallback to legacy format if function fails, but log error
+    return generateQrCodeValue(eventId, participantId, credentialCode);
+  }
+
+  return data.qr_code_value;
+}
+

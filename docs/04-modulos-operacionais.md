@@ -1,6 +1,6 @@
 # 04 — Módulos Operacionais
 
-> Auditoria atualizada em 2026-04-27 (Etapa 7)
+> Auditoria atualizada em 2026-04-21 (Correções Críticas de Segurança e OSC)
 
 ## 1. Importação / Espelhamento SIGECOM (✅ Pronto)
 - **Página**: `/admin/importacao`
@@ -8,52 +8,31 @@
 - **Auditoria**: `import_logs` + `import_row_errors`
 - **Comportamento**: idempotente, tolerante a falhas por linha, cria/reutiliza entidades, suporta múltiplas provas por linha
 - **Perfis**: admin, secretaria (importar) | coordenacao_tecnica (visualizar logs)
-- **Estados de UI**: ✅ loading, ✅ vazio, ✅ erro, ✅ sucesso parcial
 
 ## 2. Credenciamento (✅ Pronto)
-- **Página**: `/admin/credenciamento`
+- **Página**: `/admin/credenciamento` e `/admin/credenciamento/seguro`
 - **Ações**: check-in (registrar presença), emitir credencial, reemitir (2ª via), batch com confirmação
-- **Labels**: "Registrar presença", "Emitir credencial", "Registrar presença e emitir"
-- **Status visíveis**: Pendente → Confirmado → Pronto p/ emissão → Credencial ativa
-- **Bloqueios**: bloqueia credenciamento se houver irregularidades pendentes
-- **Perfis**: admin, secretaria, coordenacao_tecnica
-- **Estados de UI**: ✅ loading, ✅ vazio, ✅ erro
+- **Segurança**: Assinatura HMAC-SHA256 do QR Code via Edge Function `generate-credential-qr` (v2).
+- **Validação**: Edge function `validate-qr` valida assinatura HMAC; aceita legado com flag `legacy_format` em `credential_scans`.
 
 ## 3. Credencial + QR Code (✅ Pronto)
-- **Templates**: `/admin/credenciais/modelos` — CRUD com config de campos (🟡 editor visual parcial)
-- **Geração**: client-side Canvas com QR Code via biblioteca `qrcode`
-- **Utilitário**: `credentialUtils.ts` — formato único para `credential_code` e `qr_code_value`
-- **Validação**: Edge function `validate-qr` + tabela `credential_scans`
-- **Reemissão**: invalida anterior (status `reissued`), gera novos códigos
-- **Dados reais**: 378 credenciais emitidas
+- **Templates**: `/admin/credenciais/modelos` — CRUD com config de campos
+- **Geração**: Chamada à Edge Function `generate-credential-qr` para QR assinado.
+- **Utilitário**: `credentialUtils.ts` — suporte a `generateSignedQrCodeValue` (async).
+- **Auditoria**: `credential_scans` agora rastreia se a credencial é do formato legado.
 
-## 4. Transporte (✅ Pronto — 85%)
+## 4. Transporte (✅ Pronto — 90%)
 - **Páginas admin**: veículos, rotas, viagens, embarque por viagem, **relatórios** (`/admin/transporte/relatorios`)
-- **Páginas PWA**: home, viagens, scan, embarque, rotas
-- **Tabelas**: `transport_vehicles`, `transport_routes`, `transport_trips`, `transport_passengers`
-- **Perfis**: admin, secretaria, coordenacao_tecnica, transporte
-- **Implementado**: ✅ CRUD de veículos, rotas, viagens | ✅ Embarque com lista de passageiros | ✅ Relatório exportável CSV com filtros por data/rota/veículo
-- **Gaps**: ❌ Sem controle de retorno | ⚠️ Scan QR no embarque parcial
-- **Dados reais**: 0 viagens cadastradas
+- **Evidências**: Suporte a upload de diários de bordo e fotos de embarque no bucket `operational-evidence`.
 
 ## 5. Alimentação (✅ Pronto — 100%)
-- **Páginas admin**: tipos de refeição, janelas de serviço, registro de consumo, **dashboard tempo real** (`/admin/alimentacao/dashboard`), **relatórios** (`/admin/alimentacao/relatorios`)
-- **Páginas PWA**: home, scan, buscar, janelas, histórico
-- **Tabelas**: `meal_types`, `meal_windows`, `meal_consumptions`
-- **Perfis**: admin, secretaria, coordenacao_tecnica, alimentacao
-- **Implementado**: ✅ CRUD tipos/janelas | ✅ Registro de consumo | ✅ Dashboard com auto-refresh 30s | ✅ Relatório exportável CSV com totalizadores por delegação e tipo
-- **Gaps**: Nenhum bloqueante
-- **Dados reais**: 0 consumos registrados
+- **Controle de Acesso**: Tabela `meal_window_eligibility` permite restringir janelas por Delegação, Instituição ou Perfil de Participante.
+- **Validação**: Trigger `trg_validate_meal_consumption_eligibility` bloqueia consumos não autorizados.
+- **Evidências**: Registro de listas de presença e fotos de buffet vinculadas às janelas.
 
-## 6. Alojamento (✅ Pronto — 85%)
-- **Páginas admin**: locais, unidades, ocupação, **relatórios** (`/admin/alojamento/relatorios`)
-- **Páginas PWA**: home, scan, buscar, ocupação, pessoa, incidentes
-- **Tabelas**: `lodging_locations`, `lodging_units`, `lodging_occupancies`
-- **Trigger**: `validate_lodging_capacity` impede alocação acima da capacidade
-- **Perfis**: admin, secretaria, coordenacao_tecnica, alojamento
-- **Implementado**: ✅ CRUD locais/unidades | ✅ Alocação com trigger de capacidade | ✅ PWA com incidentes | ✅ Relatório com gráfico de ocupação e exportação CSV
-- **Gaps**: ❌ Sem controle temporal de permanência
-- **Dados reais**: 0 ocupações
+## 6. Alojamento (✅ Pronto — 95%)
+- **Segurança de Gênero**: Trigger `trg_validate_lodging_gender` impede alocação de participantes em unidades com restrição de gênero incompatível.
+- **Evidências**: Checklists de entrada/saída e fotos de vistorias centralizadas.
 
 ## 7. Competição (✅ Pronto — Refatoração Etapa 3: Painel Combat)
 - **Tabelas**: 15 tabelas (phases, groups, matches, entries, results, scores, lineups, events, penalties, officials, attachments, attempts, player_stats, discipline, match_user_assignments)
@@ -127,9 +106,10 @@
 - **Edge Functions**: `public-events` e `public-results`
 - **Gaps**: ❌ Sem portal público para consulta | ❌ Sem boletins PDF | ❌ Sem quadro de medalhas
 
-## 14. Evidências / OSC (⛔ Não iniciado)
-- **Existente**: bucket `match-attachments` para anexos de partidas
-- **Gaps**: ❌ Sem modelo genérico de evidências | ❌ Sem bucket dedicado | ❌ Sem metadados OSC
+## 14. Evidências / OSC (✅ Pronto)
+- **Tabela**: `operational_evidence` — Modelo unificado para todos os módulos.
+- **Bucket**: `operational-evidence` — Privado com RLS segmentado.
+- **Status**: Fluxo de aprovação (pending, approved, rejected) integrado.
 
 ## 15. Configurações (✅ Pronto)
 - Parâmetros do Evento: limites de participação por atleta

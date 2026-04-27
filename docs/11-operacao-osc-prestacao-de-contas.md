@@ -4,43 +4,37 @@
 
 O JER é financiado via recursos públicos e requer prestação de contas formal (OSC — Organização da Sociedade Civil ou equivalente). Evidências operacionais precisam ser vinculadas ao contexto correto para servir como comprovação.
 
-## Status Atual: ⛔ Não Iniciado
+## Status Atual: ✅ Infraestrutura Implementada
 
 ### O que já existe
-- Bucket `match-attachments` permite upload de anexos vinculados a **partidas**
-- `import_logs` registra histórico de importações
-- `credential_scans` registra validações de QR
-- Campos `*_by` e `*_at` em várias tabelas garantem rastreabilidade
+- **Tabela `operational_evidence`**: Centraliza evidências de todos os módulos.
+- **Bucket `operational-evidence`**: Storage privado com políticas de acesso segmentadas por perfil operacional.
+- **Assinatura HMAC de QR Code**: Garante a integridade das credenciais validadas no campo.
+- **Rastreabilidade**: `credential_scans` agora identifica formatos legados (`legacy_format`).
+- **Controle de Gênero**: Validação via trigger no banco para ocupação de alojamentos.
+- **Elegibilidade de Refeições**: Controle fino de quem pode consumir em cada janela.
 
-### O que falta
+### Modelo de Dados Unificado (Tabela `operational_evidence`)
 
-1. **Tabela de evidências genérica** — vinculando documento a qualquer contexto operacional (evento, módulo, participante, viagem, refeição)
-2. **Bucket dedicado** para evidências OSC (com policies restritivas)
-3. **Metadados OSC** — tipo de documento, período de referência, status de aprovação
-4. **Relatórios consolidados** — exportação para prestação de contas
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `module` | text | credenciamento, alimentacao, alojamento, transporte, competicao, geral |
+| `evidence_type` | text | photo, document, list, report, other |
+| `reference_table` | text | Nome da tabela vinculada (opcional) |
+| `reference_id` | uuid | ID do registro vinculado (opcional) |
+| `status` | text | pending, approved, rejected |
+| `period_start/end`| date | Período de referência para prestação de contas |
 
-## Modelo Sugerido (Não Implementado)
+### Cenários de Uso Implementados
 
-```
-evidencias
-├── id
-├── event_id
-├── modulo (credenciamento, transporte, alimentacao, alojamento, competicao, geral)
-├── tipo_documento (lista_presenca, foto, recibo, relatorio, outro)
-├── referencia_id (id do registro vinculado, ex: trip_id, meal_window_id)
-├── file_url
-├── file_name
-├── descricao
-├── periodo_inicio / periodo_fim
-├── uploaded_by
-├── created_at
-└── status (pendente, aprovado, rejeitado)
-```
+1. **Transporte**: Relatórios de viagem e fotos de embarque vinculados ao módulo.
+2. **Alimentação**: Listas de presença e fotos de buffet vinculadas à janela de serviço via `reference_id`.
+3. **Alojamento**: Fotos de vistorias e ocupação.
+4. **Competição**: Súmulas assinadas e quadros de resultados.
+5. **Geral**: Documentos administrativos do evento.
 
-## Cenários de Uso
+## Próximos Passos (Prompt 2)
 
-1. **Transporte**: foto do embarque vinculada à viagem
-2. **Alimentação**: lista de presença da refeição vinculada à janela de serviço
-3. **Alojamento**: registro fotográfico da ocupação
-4. **Competição**: súmula assinada vinculada à partida (já parcialmente coberto)
-5. **Geral**: relatório consolidado do evento
+- Interface administrativa para gestão e revisão de evidências.
+- Dashboard de conformidade OSC.
+- Exportação de pacotes de evidências por período/módulo.
