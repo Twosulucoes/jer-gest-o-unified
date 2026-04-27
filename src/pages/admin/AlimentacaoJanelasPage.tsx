@@ -51,7 +51,7 @@ export default function AlimentacaoJanelasPage() {
     queryKey: ["meal_windows", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      let q = supabase.from("meal_windows").select("*, meal_locations(name)").eq("event_id", selectedEventId);
+      let q = (supabase as any).from("meal_windows").select("*, meal_locations(name)").eq("event_id", selectedEventId);
       if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
       const { data, error } = await q.order("service_date").order("start_time");
       if (error) throw error;
@@ -97,7 +97,7 @@ export default function AlimentacaoJanelasPage() {
 
   const updateMut = useMutation({
     mutationFn: async ({ id, ...v }: MealWindowFormValues & { id: string }) => {
-      const { error } = await supabase.from("meal_windows").update({
+      const { error } = await (supabase as any).from("meal_windows").update({
         meal_type_id: v.meal_type_id,
         label: v.label || null,
         service_date: v.service_date,
