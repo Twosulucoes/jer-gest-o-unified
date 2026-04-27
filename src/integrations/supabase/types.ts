@@ -44,6 +44,39 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_config: {
+        Row: {
+          active: boolean
+          category: string
+          description: string | null
+          id: number
+          key: string
+          sort_order: number
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          description?: string | null
+          id?: number
+          key: string
+          sort_order?: number
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          description?: string | null
+          id?: number
+          key?: string
+          sort_order?: number
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -459,6 +492,13 @@ export type Database = {
             foreignKeyName: "competition_matches_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "v_venue_dependencies"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venues"
             referencedColumns: ["id"]
           },
@@ -654,6 +694,66 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      db_operation_logs: {
+        Row: {
+          created_at: string | null
+          error_code: string | null
+          event_id: string | null
+          id: string
+          is_success: boolean | null
+          metadata: Json | null
+          module_name: string
+          operation: string
+          rows_affected: number | null
+          table_name: string
+          user_id: string | null
+          user_role: Database["public"]["Enums"]["app_role"] | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_code?: string | null
+          event_id?: string | null
+          id?: string
+          is_success?: boolean | null
+          metadata?: Json | null
+          module_name: string
+          operation: string
+          rows_affected?: number | null
+          table_name: string
+          user_id?: string | null
+          user_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Update: {
+          created_at?: string | null
+          error_code?: string | null
+          event_id?: string | null
+          id?: string
+          is_success?: boolean | null
+          metadata?: Json | null
+          module_name?: string
+          operation?: string
+          rows_affected?: number | null
+          table_name?: string
+          user_id?: string | null
+          user_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "db_operation_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "db_operation_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1443,6 +1543,8 @@ export type Database = {
           created_by: string | null
           ends_at: string | null
           event_id: string
+          host_city: string | null
+          host_name: string | null
           id: string
           kind: string
           name: string
@@ -1458,6 +1560,8 @@ export type Database = {
           created_by?: string | null
           ends_at?: string | null
           event_id: string
+          host_city?: string | null
+          host_name?: string | null
           id?: string
           kind?: string
           name: string
@@ -1473,6 +1577,8 @@ export type Database = {
           created_by?: string | null
           ends_at?: string | null
           event_id?: string
+          host_city?: string | null
+          host_name?: string | null
           id?: string
           kind?: string
           name?: string
@@ -4365,6 +4471,7 @@ export type Database = {
           id: string
           institution_id: string | null
           is_active: boolean
+          kind: string
           medical_notes: string | null
           phone: string | null
           photo_url: string | null
@@ -4385,6 +4492,7 @@ export type Database = {
           id?: string
           institution_id?: string | null
           is_active?: boolean
+          kind?: string
           medical_notes?: string | null
           phone?: string | null
           photo_url?: string | null
@@ -4405,6 +4513,7 @@ export type Database = {
           id?: string
           institution_id?: string | null
           is_active?: boolean
+          kind?: string
           medical_notes?: string | null
           phone?: string | null
           photo_url?: string | null
@@ -5136,6 +5245,7 @@ export type Database = {
       }
       public_content: {
         Row: {
+          access_count: number
           active: boolean
           content_md: string | null
           created_at: string
@@ -5144,6 +5254,7 @@ export type Database = {
           destination_url: string | null
           id: string
           kind: string
+          last_accessed_at: string | null
           open_in_new_tab: boolean
           slug: string
           sort_order: number
@@ -5154,6 +5265,7 @@ export type Database = {
           visibility: string
         }
         Insert: {
+          access_count?: number
           active?: boolean
           content_md?: string | null
           created_at?: string
@@ -5162,6 +5274,7 @@ export type Database = {
           destination_url?: string | null
           id?: string
           kind: string
+          last_accessed_at?: string | null
           open_in_new_tab?: boolean
           slug: string
           sort_order?: number
@@ -5172,6 +5285,7 @@ export type Database = {
           visibility?: string
         }
         Update: {
+          access_count?: number
           active?: boolean
           content_md?: string | null
           created_at?: string
@@ -5180,6 +5294,7 @@ export type Database = {
           destination_url?: string | null
           id?: string
           kind?: string
+          last_accessed_at?: string | null
           open_in_new_tab?: boolean
           slug?: string
           sort_order?: number
@@ -6597,13 +6712,61 @@ export type Database = {
           },
         ]
       }
+      venue_event_stages: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_stage_id: string
+          id: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_stage_id: string
+          id?: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_stage_id?: string
+          id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_event_stages_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "v_venue_dependencies"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_event_stages_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venues: {
         Row: {
           address: string | null
           city: string | null
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           event_id: string
-          event_stage_id: string
+          event_stage_id: string | null
           id: string
           is_active: boolean
           name: string
@@ -6616,8 +6779,10 @@ export type Database = {
           address?: string | null
           city?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           event_id: string
-          event_stage_id: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -6630,8 +6795,10 @@ export type Database = {
           address?: string | null
           city?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           event_id?: string
-          event_stage_id?: string
+          event_stage_id?: string | null
           id?: string
           is_active?: boolean
           name?: string
@@ -6700,6 +6867,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_venue_dependencies: {
+        Row: {
+          event_id: string | null
+          matches_future: number | null
+          matches_past: number | null
+          matches_total: number | null
+          venue_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venues_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_import_errors: {
+        Row: {
+          aluno: string | null
+          error_code: string | null
+          error_message: string | null
+          escola: string | null
+          file_name: string | null
+          id: string | null
+          imported_at: string | null
+          modalidade: string | null
+          prova: string | null
+          row_number: number | null
+        }
+        Relationships: []
       }
       vw_participant_sport_history: {
         Row: {
@@ -6916,6 +7116,8 @@ export type Database = {
         }
         Returns: Json
       }
+      bot_get_full_context: { Args: { phone_number: string }; Returns: Json }
+      bot_lookup_participant: { Args: { phone_number: string }; Returns: Json }
       check_is_admin_or_secretaria: {
         Args: { _user_id: string }
         Returns: boolean
@@ -7056,6 +7258,18 @@ export type Database = {
       is_admin_or_secretaria: { Args: never; Returns: boolean }
       is_protected_user: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      issue_participant_credential: {
+        Args: {
+          p_binding_source?: string
+          p_credential_code: string
+          p_event_id: string
+          p_participant_id: string
+          p_qr_code_value: string
+          p_revoke_id?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       list_alojamento_facilities: { Args: never; Returns: Json }
       list_blocked_participants: {
         Args: { p_event_id: string }
@@ -7148,6 +7362,10 @@ export type Database = {
         Returns: Json
       }
       resolve_qr: { Args: { p_token: string }; Returns: Json }
+      rpc_archive_venue: {
+        Args: { p_force?: boolean; p_reason?: string; p_venue_id: string }
+        Returns: Json
+      }
       rpc_build_preset_rules: { Args: { p_preset_key: string }; Returns: Json }
       rpc_can_regenerate_matches: {
         Args: { p_event_id: string; p_sport_event_id: string }
@@ -7326,6 +7544,14 @@ export type Database = {
         Args: { p_event_id?: string; p_sport_event_id: string }
         Returns: Json
       }
+      rpc_homologate_match_result: {
+        Args: { p_match_id: string; p_observation?: string }
+        Returns: Json
+      }
+      rpc_increment_public_content_access: {
+        Args: { p_kind?: string; p_slug: string }
+        Returns: undefined
+      }
       rpc_kpi_partidas_sem_resultado: {
         Args: { p_event_id: string }
         Returns: Json
@@ -7360,6 +7586,7 @@ export type Database = {
         Args: { p_event_id: string; p_input: string; p_kind: string }
         Returns: string
       }
+      rpc_restore_venue: { Args: { p_venue_id: string }; Returns: Json }
       rpc_seed_sport_event_rules_for_event: {
         Args: { p_dry_run?: boolean; p_event_id: string; p_mode?: string }
         Returns: Json
@@ -7374,6 +7601,18 @@ export type Database = {
       }
       rpc_sync_rules_from_truth: {
         Args: { p_event_id: string; p_payload: Json }
+        Returns: Json
+      }
+      rpc_sync_venue_stages: {
+        Args: { p_stage_ids: string[]; p_venue_id: string }
+        Returns: Json
+      }
+      rpc_unpublish_results_for_sport_event: {
+        Args: {
+          p_event_id: string
+          p_reason?: string
+          p_sport_event_id: string
+        }
         Returns: Json
       }
       rpc_upsert_sport_event_rules: {
