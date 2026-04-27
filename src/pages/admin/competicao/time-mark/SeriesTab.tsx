@@ -219,12 +219,39 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
         </div>
       ) : (
         <div className="space-y-8">
-          {phases.map((phase: any) => (
-            <div key={phase.id} className="space-y-4">
-              <div className="flex items-center gap-3">
-                <h4 className="font-heading font-bold text-lg">{phase.name}</h4>
-                <Badge variant="secondary">{phase.competition_groups?.length || 0} Séries</Badge>
-              </div>
+          {phases.map((phase: any) => {
+            const nextP = phases.find(p => p.sort_order > phase.sort_order);
+            const allHomologated = phase.competition_groups?.every((g: any) => 
+              g.competition_matches?.every((m: any) => 
+                m.status === 'finished' && 
+                m.competition_match_entries?.every((e: any) => 
+                  !e.results?.[0] || e.results[0].result_status === 'resultado_validado' || e.results[0].result_status === 'publicado'
+                )
+              )
+            );
+
+            return (
+              <div key={phase.id} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-heading font-bold text-lg">{phase.name}</h4>
+                    <Badge variant="secondary">{phase.competition_groups?.length || 0} Séries</Badge>
+                  </div>
+                  
+                  {allHomologated && nextP && (
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      className="gap-2"
+                      onClick={() => {
+                        setSelectedPhaseForClassification(phase);
+                        setShowClassificationModal(true);
+                      }}
+                    >
+                      <Trophy className="h-4 w-4" /> Classificar para {nextP.name}
+                    </Button>
+                  )}
+                </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {phase.competition_groups?.map((group: any) => (
