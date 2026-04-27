@@ -522,12 +522,57 @@ export default function VouchersPage() {
       <IssueBatchWizard open={batchIssueOpen} onOpenChange={setBatchIssueOpen} eventId={eventId} instances={instances} />
       <UsageHistoryDialog voucher={historyVoucher} onClose={() => setHistoryVoucher(null)} />
       
-      {/* Revoke Dialog */}
-      <AlertDialog open={!!revokeTarget} onOpenChange={(o) => !o && setRevokeTarget(null)}>
+      {/* Revoke/Reissue Reason Dialog */}
+      <AlertDialog 
+        open={!!revokeTarget || !!revokeBatchTarget || !!reissueTarget} 
+        onOpenChange={(o) => {
+          if (!o) {
+            setRevokeTarget(null);
+            setRevokeBatchTarget(null);
+            setReissueTarget(null);
+            setRevokeReason("");
+          }
+        }}
+      >
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Revogar Voucher</AlertDialogTitle></AlertDialogHeader>
-          <div className="py-4"><Label>Motivo</Label><Textarea value={revokeReason} onChange={e => setRevokeReason(e.target.value)} /></div>
-          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => revokeMutation.mutate()} disabled={!revokeReason}>Revogar</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {reissueTarget ? "Confirmar Reemissão" : "Confirmar Revogação"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {reissueTarget 
+                ? "O voucher original será invalidado e um novo será gerado para a mesma instância." 
+                : "Esta ação é definitiva. O(s) voucher(s) não poderão mais ser utilizados."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-2">
+            <Label>Motivo {reissueTarget ? "(Obrigatório p/ reemissão)" : "(Obrigatório)"}</Label>
+            <Select onValueChange={setRevokeReason} value={revokeReason}>
+              <SelectTrigger><SelectValue placeholder="Selecione um motivo..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Extravio / Perda">Extravio / Perda</SelectItem>
+                <SelectItem value="Erro de Impressão">Erro de Impressão</SelectItem>
+                <SelectItem value="Dano Físico">Dano Físico</SelectItem>
+                <SelectItem value="Cancelamento da Autorização">Cancelamento da Autorização</SelectItem>
+                <SelectItem value="Outro">Outro (digite abaixo)</SelectItem>
+              </SelectContent>
+            </Select>
+            <Textarea 
+              placeholder="Descreva o motivo com mais detalhes se necessário..." 
+              value={revokeReason} 
+              onChange={e => setRevokeReason(e.target.value)} 
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              className={reissueTarget ? "bg-primary" : "bg-destructive text-destructive-foreground"}
+              onClick={() => reissueTarget ? reissueMutation.mutate() : revokeMutation.mutate()} 
+              disabled={!revokeReason || (reissueTarget ? reissueMutation.isPending : revokeMutation.isPending)}
+            >
+              {reissueTarget ? "Confirmar e Reemitir" : "Confirmar Revogação"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
