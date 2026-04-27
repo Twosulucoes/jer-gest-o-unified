@@ -638,6 +638,47 @@ export default function CompeticaoLancamentoTimeMarkPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Correction 5: Duplicate Position Confirmation Dialog */}
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Posições Duplicadas Detectadas</DialogTitle>
+            <DialogDescription>
+              Existem atletas com a mesma posição definida. Deseja confirmar como empate ou corrigir antes de salvar?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            {duplicateEntriesInfo.map(info => (
+              <div key={info.pos} className="text-sm p-3 bg-muted rounded-md border border-yellow-500/30">
+                <p className="font-bold text-yellow-600 mb-1">Posição {info.pos}º:</p>
+                <ul className="list-disc list-inside">
+                  {info.names.map(name => <li key={name}>{name}</li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowDuplicateDialog(false)}>Corrigir</Button>
+            <Button 
+              className="gap-2"
+              onClick={async () => {
+                setShowDuplicateDialog(false);
+                try {
+                  await saveResults();
+                  toast.success("Resultados salvos com sucesso (empate confirmado)!");
+                  qc.invalidateQueries({ queryKey: ["competition_phases"] });
+                  navigate(-1);
+                } catch (e: any) {
+                  toast.error("Erro ao salvar: " + e.message);
+                }
+              }}
+            >
+              Confirmar como empate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
