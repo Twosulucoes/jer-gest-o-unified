@@ -1,15 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Users } from "lucide-react";
 import {
   STATUS_CONFIG,
-  STEP_COLORS,
-  getActionIcon,
-  getActionLabel,
 } from "./lib/statusConfig";
-import type { ProvaRow, ProvaStatus } from "./lib/computeProvaData";
+import type { ProvaRow } from "./lib/computeProvaData";
 
 interface ProvaCardProps {
   prova: ProvaRow;
