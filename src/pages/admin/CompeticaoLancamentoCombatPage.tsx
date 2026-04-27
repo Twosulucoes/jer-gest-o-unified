@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,15 +8,9 @@ import {
   Trophy, 
   Save, 
   CheckCircle2, 
-  Clock, 
-  AlertCircle,
   AlertTriangle,
   History,
   RotateCcw,
-  Calendar,
-  MapPin,
-  Info,
-  ChevronDown,
   Timer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,7 +26,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Dialog, 
   DialogContent, 
