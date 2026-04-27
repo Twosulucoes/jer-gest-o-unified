@@ -570,7 +570,7 @@ function IssueVoucherDialog({
   }, [open]);
 
   const { data: eventualOptions = [] } = useQuery({
-    queryKey: ["voucher-eventual-search", activeEventId, participantSearch],
+    queryKey: ["voucher-eventual-search", eventId, participantSearch],
     queryFn: async () => {
       if (!participantSearch.trim() || participantSearch.trim().length < 2) return [];
       const term = `%${participantSearch.trim()}%`;
@@ -904,8 +904,8 @@ function IssueVoucherDialog({
               <VoucherPreviewCard
                 voucherType={voucherType}
                 label={voucherType === "aggregate" ? aggregateLabel : selected?.full_name ?? ""}
-                participantType={voucherType === "nominal" ? selected?.participant_type ?? null : null}
-                cpf={voucherType === "nominal" ? selected?.cpf ?? null : null}
+                participantType={voucherType === "nominal" ? selected?.involvement_type ?? null : null}
+                cpf={voucherType === "nominal" ? selected?.organization ?? null : null}
                 scopeTransport={scopeTransport}
                 scopeMeals={scopeMeals}
                 scopeLodging={scopeLodging}
@@ -918,7 +918,7 @@ function IssueVoucherDialog({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tipo</span>
                   <span className="font-medium">
-                    {voucherType === "aggregate" ? "Agregado" : "Nominal (contingência)"}
+                    {voucherType === "aggregate" ? "Agregado" : "Nominal"}
                   </span>
                 </div>
                 {voucherType === "aggregate" ? (
