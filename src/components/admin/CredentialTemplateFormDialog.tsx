@@ -271,6 +271,7 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
         width,
         height,
         is_active: isActive,
+        participant_type_filter: participantTypeFilter,
         notes: notes || null,
         background_url: bgUrl,
         field_config: JSON.parse(JSON.stringify(fieldConfig)),
