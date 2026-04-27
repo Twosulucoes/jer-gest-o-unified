@@ -43,6 +43,7 @@ interface CollectiveScoreFormProps {
   onSubmit: (scores: ScoreEntry[], notes: string) => void;
   isPending: boolean;
   notes?: string;
+  phaseType?: string;
 }
 
 export default function CollectiveScoreForm({
