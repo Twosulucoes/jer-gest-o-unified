@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/sb/client";
 import { Button } from "@/components/ui/button";
 import { Trophy, Swords, Info, RefreshCw, Plus } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,7 +17,7 @@ interface BracketTabProps {
 }
 
 export function BracketTab({ sportEventId }: BracketTabProps) {
-  const sb = supabase as any;
+  const sb = sb as any;
   const qc = useQueryClient();
   const [isMounting, setIsMounting] = useState(false);
   const [withBronze, setWithBronze] = useState(true);
@@ -27,7 +27,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
   const { data: weighingStats } = useQuery({
     queryKey: ["weighing-stats", sportEventId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from("participant_sport_events")
         .select("id, weighing_status" as any)
         .eq("sport_event_id", sportEventId);
@@ -47,7 +47,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
   const { data: phases = [], isLoading: loadingPhases } = useQuery<any[]>({
     queryKey: ["bracket-phases", sportEventId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from("competition_phases")
         .select(`id, name, phase_type`)
         .eq("sport_event_id", sportEventId!)
@@ -59,7 +59,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
       const phaseIds = data.map(p => p.id);
       if (phaseIds.length === 0) return data;
 
-      const { data: matches, error: mError } = await (supabase
+      const { data: matches, error: mError } = await (sb
         .from("competition_matches") as any)
         .select(`
           id, phase_id, match_number, round_number, status,
@@ -87,7 +87,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
     setIsMounting(true);
     try {
       // 1. Get confirmed athletes
-      const { data: athletes, error: athError } = await supabase
+      const { data: athletes, error: athError } = await sb
         .from("participant_sport_events")
         .select("id")
         .eq("sport_event_id", sportEventId)
@@ -100,7 +100,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
       }
 
       // 2. Get event info
-      const { data: sportEvent } = await supabase
+      const { data: sportEvent } = await sb
         .from('sport_events')
         .select('event_id')
         .eq('id', sportEventId)
@@ -108,7 +108,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
 
       // 3. Create or find the phase
       let phaseId: string;
-      const { data: existingPhase } = await supabase
+      const { data: existingPhase } = await sb
         .from("competition_phases")
         .select("id")
         .eq("sport_event_id", sportEventId)
@@ -118,7 +118,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
       if (existingPhase) {
         phaseId = existingPhase.id;
       } else {
-        const { data: newPhase, error: pError } = await supabase
+        const { data: newPhase, error: pError } = await sb
           .from("competition_phases")
           .insert({
             sport_event_id: sportEventId,
