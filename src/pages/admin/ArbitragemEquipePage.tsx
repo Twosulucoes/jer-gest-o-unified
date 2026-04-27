@@ -21,7 +21,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { Loader2, Search, Users, Radio, ExternalLink, Calendar, MapPin, UserPlus, ListChecks, Download, FileText, FileSpreadsheet, Settings } from "lucide-react";
 import { format, parse } from "date-fns";
 import { EscalaLoteDialog, formatMatchLabel } from "@/components/admin/arbitragem/EscalaLoteDialog";
 import { downloadCsv, downloadPdf, type EscalaExportRow, type EscalaColumnKey } from "@/components/admin/arbitragem/escalaExport";
@@ -420,10 +420,24 @@ export default function ArbitragemEquipePage() {
             Para escalar oficiais em uma partida, abra o detalhe da partida.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-          <Download className="mr-1 h-4 w-4" />
-          Exportar escalas
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="remuneracao">
+              <Settings className="mr-1 h-4 w-4" />
+              Remuneração
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="apuracao">
+              <Calendar className="mr-1 h-4 w-4" />
+              Apuração
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+            <Download className="mr-1 h-4 w-4" />
+            Exportar escalas
+          </Button>
+        </div>
       </div>
 
       <ExportColumnsDialog
