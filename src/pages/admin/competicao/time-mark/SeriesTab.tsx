@@ -44,6 +44,8 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
   const [showAutoModal, setShowAutoModal] = useState(false);
   const [lanesPerHeat, setLanesPerHeat] = useState("8");
   const [distributionType, setDistributionType] = useState("random");
+  const [showClassificationModal, setShowClassificationModal] = useState(false);
+  const [selectedPhaseForClassification, setSelectedPhaseForClassification] = useState<any>(null);
 
   // Fetch event rules to determine format
   const { data: rules, isLoading: loadingRules } = useQuery({
@@ -253,54 +255,55 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
                   )}
                 </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {phase.competition_groups?.map((group: any) => (
-                  <Card key={group.id} className="overflow-hidden">
-                    <CardHeader className="p-3 bg-muted/50 border-b flex flex-row items-center justify-between">
-                      <CardTitle className="text-sm">{group.name}</CardTitle>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7"><Calendar className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <div className="divide-y text-xs">
-                        {group.competition_matches?.[0]?.competition_match_entries?.map((entry: any) => (
-                          <div key={entry.id} className="px-3 py-2 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-[10px] bg-muted px-1 rounded w-6 text-center">{entry.side || "-"}</span>
-                              <span className="font-medium">{entry.participant_sport_events?.participants?.people?.full_name || "Vazio"}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {phase.competition_groups?.map((group: any) => (
+                    <Card key={group.id} className="overflow-hidden">
+                      <CardHeader className="p-3 bg-muted/50 border-b flex flex-row items-center justify-between">
+                        <CardTitle className="text-sm">{group.name}</CardTitle>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7"><Calendar className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <div className="divide-y text-xs">
+                          {group.competition_matches?.[0]?.competition_match_entries?.map((entry: any) => (
+                            <div key={entry.id} className="px-3 py-2 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-[10px] bg-muted px-1 rounded w-6 text-center">{entry.side || "-"}</span>
+                                <span className="font-medium">{entry.participant_sport_events?.participants?.people?.full_name || "Vazio"}</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                        {(!group.competition_matches?.[0]?.competition_match_entries || group.competition_matches?.[0]?.competition_match_entries.length === 0) && (
-                          <div className="px-3 py-8 text-center text-muted-foreground italic">
-                            Série vazia
-                          </div>
-                        )}
+                          ))}
+                          {(!group.competition_matches?.[0]?.competition_match_entries || group.competition_matches?.[0]?.competition_match_entries.length === 0) && (
+                            <div className="px-3 py-8 text-center text-muted-foreground italic">
+                              Série vazia
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                      <div className="p-2 bg-muted/20 border-t flex justify-between items-center px-3">
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+                           <PlayCircle className="h-3 w-3" /> {group.competition_matches?.[0]?.status === 'finished' ? 'Finalizada' : 'Não iniciada'}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            className="h-auto p-0 text-[10px] text-primary font-bold gap-1"
+                            onClick={() => {
+                              const matchId = group.competition_matches?.[0]?.id;
+                              if (matchId) window.location.href = `${window.location.pathname}/serie/${matchId}/resultado`;
+                            }}
+                          >
+                            <Trophy className="h-3 w-3" /> Lançar Marcas
+                          </Button>
+                          <Button variant="link" size="sm" className="h-auto p-0 text-[10px]">Editar atletas</Button>
+                        </div>
                       </div>
-                    </CardContent>
-                    <div className="p-2 bg-muted/20 border-t flex justify-between items-center px-3">
-                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
-                         <PlayCircle className="h-3 w-3" /> {group.competition_matches?.[0]?.status === 'finished' ? 'Finalizada' : 'Não iniciada'}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="link" 
-                          size="sm" 
-                          className="h-auto p-0 text-[10px] text-primary font-bold gap-1"
-                          onClick={() => {
-                            const matchId = group.competition_matches?.[0]?.id;
-                            if (matchId) window.location.href = `${window.location.pathname}/serie/${matchId}/resultado`;
-                          }}
-                        >
-                          <Trophy className="h-3 w-3" /> Lançar Marcas
-                        </Button>
-                        <Button variant="link" size="sm" className="h-auto p-0 text-[10px]">Editar atletas</Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  ))}
+                </div>
               </div>
             );
           })}
