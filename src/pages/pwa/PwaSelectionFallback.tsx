@@ -28,32 +28,69 @@ const PwaSelectionFallback = () => {
             Para acessar os módulos operacionais, você precisa selecionar um evento e uma etapa ativa.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-start gap-3 p-3 bg-white dark:bg-zinc-900 rounded-lg border shadow-sm">
-            <Calendar className={`w-5 h-5 mt-0.5 ${activeEventId ? "text-green-500" : "text-red-500"}`} />
-            <div>
-              <p className="text-sm font-medium">Evento</p>
-              <p className="text-xs text-muted-foreground">
-                {activeEventId ? "Selecionado" : "Nenhum evento ativo selecionado (Obrigatório)"}
-              </p>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 px-1">
+              <Calendar className={`w-4 h-4 ${activeEventId ? "text-green-500" : "text-red-500"}`} />
+              <label className="text-sm font-semibold uppercase tracking-wider opacity-70">Evento</label>
             </div>
+            <Select value={activeEventId || ""} onValueChange={setActiveEventId}>
+              <SelectTrigger className="h-14 rounded-2xl border-muted-foreground/20 bg-white dark:bg-zinc-900 shadow-sm">
+                <SelectValue placeholder="Selecione o evento..." />
+              </SelectTrigger>
+              <SelectContent>
+                {events.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.name} ({e.year})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="flex items-start gap-3 p-3 bg-white dark:bg-zinc-900 rounded-lg border shadow-sm">
-            <MapPin className={`w-5 h-5 mt-0.5 ${activeStageId ? "text-green-500" : "text-amber-500"}`} />
-            <div>
-              <p className="text-sm font-medium">Etapa</p>
-              <p className="text-xs text-muted-foreground">
-                {activeStageId ? "Selecionada" : "Nenhuma etapa ativa selecionada (Obrigatório para módulos)"}
-              </p>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 px-1">
+              <MapPin className={`w-4 h-4 ${activeStageId ? "text-green-500" : "text-amber-500"}`} />
+              <label className="text-sm font-semibold uppercase tracking-wider opacity-70">Etapa de Trabalho</label>
             </div>
+            <Select 
+              value={activeStageId || ""} 
+              onValueChange={setActiveStageId}
+              disabled={!activeEventId || stages.length === 0}
+            >
+              <SelectTrigger className="h-14 rounded-2xl border-muted-foreground/20 bg-white dark:bg-zinc-900 shadow-sm">
+                <SelectValue placeholder={!activeEventId ? "Selecione um evento primeiro" : "Selecione a etapa..."} />
+              </SelectTrigger>
+              <SelectContent>
+                {stages.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!activeStageId && activeEventId && stages.length > 0 && (
+              <p className="text-[10px] text-amber-600 font-bold uppercase tracking-tight px-1 animate-pulse">
+                A seleção da etapa é obrigatória para este módulo
+              </p>
+            )}
+            {activeEventId && stages.length === 0 && (
+              <p className="text-[10px] text-destructive font-bold uppercase tracking-tight px-1">
+                Nenhuma etapa ativa encontrada para este evento
+              </p>
+            )}
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2">
-          <Button onClick={handleSelectEvent} className="w-full bg-orange-600 hover:bg-orange-700 text-white">
-            Selecionar Evento e Etapa
+        <CardFooter className="flex flex-col gap-3 pt-2">
+          <Button 
+            onClick={handleGoHome} 
+            disabled={!activeEventId}
+            className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg transition-all active:scale-[0.98]"
+          >
+            Confirmar e Ir para Início
           </Button>
-          <Button variant="outline" onClick={() => navigate("/pwa")} className="w-full">
-            Voltar para Início do PWA
+          <Button variant="ghost" onClick={() => navigate("/selecionar-modulo")} className="w-full text-muted-foreground">
+            Alterar Módulo do Sistema
           </Button>
         </CardFooter>
       </Card>
