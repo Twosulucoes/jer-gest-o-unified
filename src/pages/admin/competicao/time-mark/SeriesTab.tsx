@@ -133,7 +133,7 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
         best_value: rules?.family === 'time' ? a.results?.[0]?.time_ms : a.results?.[0]?.distance_cm
       }));
 
-      const { data, error } = await supabase.rpc("rpc_propagate_classification_time_mark", {
+      const { data, error } = await (supabase.rpc as any)("rpc_propagate_classification_time_mark", {
         p_sport_event_id: sportEventId,
         p_from_phase_id: selectedPhaseForClassification.id,
         p_to_phase_id: nextPhase.id,
