@@ -66,7 +66,7 @@
   - ✅ Aba Chave: visualização de bracket eliminatório com montagem automática (suporte a BYE com propagação imediata e disputa de bronze opcional).
   - ✅ Aba Lutas: grade densa (estilo planilha) com filtros por fase e status
   - ✅ Formulário lateral (Drawer) para edição de lutas com designação de arbitragem por modalidade
-  - ✅ **Lançamento Combat (Etapa 7 concluída)**: Rota dedicada, placar dinâmico (Judo vs Others), registro de tempo de luta, prorrogação (Golden Score/Overtime), métodos de vitória dinâmicos por modalidade, propagação automática do vencedor no bracket após homologação.
+  - ✅ **Lançamento Combat (Etapa 7 concluída)**: Rota dedicada, placar dinâmico (Judo vs Others), registro de tempo de luta, prorrogação (Golden Score/Overtime), métodos de vitória dinâmicos por modalidade, propagação automática do vencedor no bracket (e perdedor para bronze se aplicável) após homologação. Suporte a reversão com limpeza de propagação.
   - ✅ **Lançamento Sets (Etapa 6 concluída)**: Rota dedicada, placar dinâmico por sets, cômputo automático de W.O. e Desistência, cálculo de average de sets/pontos para desempate.
 - **Features legadas (reaproveitadas)**:
   - ✅ Wizard de 8 passos (coletivas) / 7 passos (individuais time/mark)
