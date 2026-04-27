@@ -1,8 +1,9 @@
 import { Navigate, Link, useParams, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
+import { useStageContext } from "@/contexts/StageContext";
 import AuthLoadingScreen from "@/components/auth/AuthLoadingScreen";
-import { AlertCircle, CalendarDays, Lock } from "lucide-react";
+import { AlertCircle, CalendarDays, Lock, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AppRole } from "@/config/accessControl";
 import { useEffect, useState } from "react";
@@ -14,11 +15,14 @@ interface PwaRouteGuardProps {
   children: React.ReactNode;
   /** Roles allowed to access this PWA module. If empty, any authenticated user passes. */
   allowedRoles?: AppRole[];
+  /** Whether this route requires a stage (etapa) to be selected. Defaults to true. */
+  requireStage?: boolean;
 }
 
-export default function PwaRouteGuard({ children, allowedRoles }: PwaRouteGuardProps) {
+export default function PwaRouteGuard({ children, allowedRoles, requireStage = true }: PwaRouteGuardProps) {
   const { user, loading, hasRole } = useAuth();
   const { activeEventId, eventsLoading } = useEventContext();
+  const { activeStageId, stagesLoading } = useStageContext();
   const { incidentId } = useParams();
   const location = useLocation();
   const [resourceValidating, setResourceValidating] = useState(false);
@@ -61,12 +65,38 @@ export default function PwaRouteGuard({ children, allowedRoles }: PwaRouteGuardP
     validateIncident();
   }, [incidentId, activeEventId, location.pathname]);
 
-  if (loading || eventsLoading || resourceValidating) {
+  if (loading || eventsLoading || stagesLoading || resourceValidating) {
     return <AuthLoadingScreen />;
   }
 
   if (!user) {
-    return <Navigate to="/pwa/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Central Event Scope Check: If no event is selected, block PWA usage
+  if (!activeEventId) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-2">
+          <CalendarDays className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold tracking-tight">Nenhum Evento Selecionado</h2>
+          <p className="text-muted-foreground max-w-[280px]">
+            Para utilizar os módulos do PWA, você precisa selecionar um evento ativo no seletor principal.
+          </p>
+        </div>
+        <Button asChild variant="default" className="w-full max-w-[240px]">
+          <Link to="/selecionar-modulo">Ir para Seleção</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  // Stage Check: If route requires stage and none is selected, redirect to landing page
+  // The PwaLandingPage itself will set requireStage={false}
+  if (requireStage && !activeStageId && location.pathname !== "/pwa" && !location.pathname.startsWith("/pwa/install")) {
+    return <Navigate to="/pwa" replace />;
   }
 
   // If specific roles required, check. Admin/secretaria always pass.
@@ -92,26 +122,6 @@ export default function PwaRouteGuard({ children, allowedRoles }: PwaRouteGuardP
         </div>
         <Button asChild variant="outline" className="w-full max-w-[240px]">
           <Link to="/pwa/coordenacao-tecnica/incidentes">Voltar para Incidentes</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  // Central Event Scope Check: If no event is selected, block PWA usage
-  if (!activeEventId) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center space-y-4">
-        <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-2">
-          <CalendarDays className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-xl font-bold tracking-tight">Nenhum Evento Selecionado</h2>
-          <p className="text-muted-foreground max-w-[280px]">
-            Para utilizar os módulos do PWA, você precisa selecionar um evento ativo no seletor principal.
-          </p>
-        </div>
-        <Button asChild variant="default" className="w-full max-w-[240px]">
-          <Link to="/selecionar-modulo">Voltar para Seleção</Link>
         </Button>
       </div>
     );

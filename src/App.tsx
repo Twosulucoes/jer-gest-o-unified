@@ -512,7 +512,7 @@ const App = () => (
             <Route path="/pwa/recover" element={<Navigate to="/login" replace />} />
             <Route path="/pwa/set-password" element={<PwaSetPasswordPage />} />
             {/* PWA Landing (requires auth) */}
-            <Route path="/pwa" element={<PwaLandingPage />} />
+            <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLandingPage /></PwaRouteGuard>} />
             
             {/* PWA Alojamento — perfil alojamento */}
             <Route path="/pwa/alojamento" element={<PwaRouteGuard allowedRoles={["alojamento"]}><AlojamentoHomePage /></PwaRouteGuard>} />
@@ -572,18 +572,18 @@ const App = () => (
             <Route path="/pwa/credenciamento/vincular" element={<PwaRouteGuard allowedRoles={["admin", "secretaria"]}><VincularCredencialPage /></PwaRouteGuard>} />
 
             {/* PWA Module pages (Catch-all for implemented modules but also placeholder for future ones) */}
-            <Route path="/pwa/:module" element={<PwaModulePage />} />
+            <Route path="/pwa/:module" element={<PwaRouteGuard><PwaModulePage /></PwaRouteGuard>} />
             {/* PWA Pesquisa (PIN auth, no Supabase Auth) */}
             <Route path="/pwa/pesquisa/login" element={<PesquisaLoginPage />} />
             <Route path="/pwa/pesquisa/home" element={<PesquisaHomePage />} />
             <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
             <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
-            <Route path="/pwa/install" element={<PwaInstallPage />} />
+            <Route path="/pwa/install" element={<PwaRouteGuard requireStage={false}><PwaInstallPage /></PwaRouteGuard>} />
             {/* PwaDebugPage and QrDiagnosticoPage moved to /admin/sistema */}
             {/* Ao Vivo PWA — qualquer autenticado */}
             <Route path="/aovivo/login" element={<Suspense fallback={null}><AoVivoLoginPage /></Suspense>} />
-            <Route path="/aovivo" element={<Suspense fallback={null}><AoVivoHomePage /></Suspense>} />
-            <Route path="/aovivo/partida/:matchId" element={<Suspense fallback={null}><AoVivoMatchPage /></Suspense>} />
+            <Route path="/aovivo" element={<PwaRouteGuard requireStage={false}><Suspense fallback={null}><AoVivoHomePage /></Suspense></PwaRouteGuard>} />
+            <Route path="/aovivo/partida/:matchId" element={<PwaRouteGuard requireStage={false}><Suspense fallback={null}><AoVivoMatchPage /></Suspense></PwaRouteGuard>} />
             {/* Public content routes */}
             <Route path="/tecnica" element={<EntregaTecnicaPage />} />
             <Route path="/public/results" element={<PublicResultsPage />} />
