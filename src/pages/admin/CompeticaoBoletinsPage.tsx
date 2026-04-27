@@ -6,10 +6,10 @@ import { FileText, Trophy, Medal } from "lucide-react";
 import DailyBulletinsTab from "@/components/admin/boletins/DailyBulletinsTab";
 import FinalBulletinTab from "@/components/admin/boletins/FinalBulletinTab";
 import MedalTableTab from "@/components/admin/boletins/MedalTableTab";
-import { useEvent } from "@/contexts/EventContext";
+import { useEventContext } from "@/contexts/EventContext";
 
 export default function CompeticaoBoletinsPage() {
-  const { selectedEvent } = useEvent();
+  const { activeEvent: selectedEvent } = useEventContext();
   const [activeTab, setActiveTab] = useState("daily");
 
   if (!selectedEvent) {
