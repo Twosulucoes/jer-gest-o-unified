@@ -5,14 +5,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { AlertCircle, Calendar, MapPin } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const PwaSelectionFallback = () => {
   const navigate = useNavigate();
-  const { activeEventId } = useEventContext();
-  const { activeStageId } = useStageContext();
+  const { activeEventId, events, setActiveEventId } = useEventContext();
+  const { activeStageId, stages, setActiveStageId } = useStageContext();
 
-  const handleSelectEvent = () => {
-    navigate("/selecionar-modulo"); // This page usually allows selecting event/stage
+  const handleGoHome = () => {
+    navigate("/pwa");
   };
 
   return (
