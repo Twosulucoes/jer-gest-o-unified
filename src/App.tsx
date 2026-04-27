@@ -159,6 +159,7 @@ import PesquisaConfirmacaoPage from "./pages/pwa/PesquisaConfirmacaoPage";
 import PwaSetPasswordPage from "./pages/pwa/PwaSetPasswordPage";
 import PwaLandingPage from "./pages/pwa/PwaLandingPage";
 import PwaModulePage from "./pages/pwa/PwaModulePage";
+import PwaSelectionFallback from "./pages/pwa/PwaSelectionFallback";
 import PwaInstallPage from "./pages/pwa/PwaInstallPage";
 // PWA Alojamento pages
 import AlojamentoHomePage from "./pages/pwa/alojamento/AlojamentoHomePage";
