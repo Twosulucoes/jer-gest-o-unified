@@ -27,7 +27,7 @@ export default function CompeticaoPainelTimeMarkPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  // const [statusFilter, setStatusFilter] = useState("all");
 
   // Fetch sport details based on one sport event
   const { data: currentSportEvent } = useQuery({
