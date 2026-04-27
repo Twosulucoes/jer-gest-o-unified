@@ -142,7 +142,7 @@ export default function PesquisaLoginPage() {
               className="h-14 w-full text-lg hidden"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
-              {loading ? 'Entrando...' : 'Entrar'}
+              {loading ? 'Acessando...' : 'Acessar'}
             </Button>
           </CardContent>
         </Card>
