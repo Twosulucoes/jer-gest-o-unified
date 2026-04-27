@@ -1,14 +1,17 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Calendar, MapPin } from "lucide-react";
+import { AlertCircle, Calendar, MapPin, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const PwaSelectionFallback = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/pwa";
+  const reason = location.state?.reason;
   const { activeEventId, events, setActiveEventId } = useEventContext();
   const { activeStageId, stages, setActiveStageId } = useStageContext();
 
@@ -16,16 +19,24 @@ const PwaSelectionFallback = () => {
     navigate("/pwa");
   };
 
+  const isMissingStageOnly = activeEventId && !activeStageId;
+  const isMissingEvent = !activeEventId;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md border-orange-200 bg-orange-50/30 dark:bg-orange-950/10">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mb-4 text-orange-600 dark:text-orange-400">
-            <AlertCircle className="w-8 h-8" />
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-in fade-in duration-500">
+      <Card className="w-full max-w-md border-orange-200 bg-orange-50/30 dark:bg-orange-950/10 shadow-xl overflow-hidden">
+        <div className="bg-orange-500 h-1.5 w-full" />
+        <CardHeader className="text-center pt-8">
+          <div className="mx-auto w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mb-6 text-orange-600 dark:text-orange-400 ring-4 ring-orange-50 dark:ring-orange-900/10">
+            <AlertCircle className="w-10 h-10" />
           </div>
-          <CardTitle className="text-xl font-bold">Configuração Necessária</CardTitle>
-          <CardDescription>
-            Para acessar os módulos operacionais, você precisa selecionar um evento e uma etapa ativa.
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            {isMissingStageOnly ? "Selecione uma Etapa" : "Configuração Necessária"}
+          </CardTitle>
+          <CardDescription className="text-base px-2">
+            {isMissingStageOnly 
+              ? "Você selecionou o evento, mas este módulo exige uma etapa de trabalho ativa para funcionar."
+              : "Para acessar os módulos operacionais do PWA, você precisa definir o contexto de trabalho atual."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -81,17 +92,44 @@ const PwaSelectionFallback = () => {
             )}
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-3 pt-2">
+        <CardFooter className="flex flex-col gap-3 pt-4">
           <Button 
-            onClick={handleGoHome} 
-            disabled={!activeEventId}
-            className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg transition-all active:scale-[0.98]"
+            onClick={() => navigate(from)} 
+            disabled={!activeEventId || !activeStageId}
+            className="w-full h-14 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl shadow-lg transition-all active:scale-[0.98] text-base font-semibold gap-2"
           >
-            Confirmar e Ir para Início
+            {activeEventId && activeStageId ? (
+              <>
+                <CheckCircle2 className="w-5 h-5" />
+                Confirmar e Continuar
+              </>
+            ) : (
+              "Selecione para Continuar"
+            )}
           </Button>
-          <Button variant="ghost" onClick={() => navigate("/selecionar-modulo")} className="w-full text-muted-foreground">
-            Alterar Módulo do Sistema
-          </Button>
+
+          <div className="grid grid-cols-2 gap-3 w-full">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/pwa")} 
+              className="h-12 rounded-xl border-muted-foreground/20"
+            >
+              Início PWA
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/selecionar-modulo")} 
+              className="h-12 rounded-xl border-muted-foreground/20"
+            >
+              Sair do PWA
+            </Button>
+          </div>
+          
+          {from !== "/pwa" && (
+            <p className="text-xs text-center text-muted-foreground mt-2">
+              Você será levado de volta para: <span className="font-mono bg-muted px-1 rounded">{from}</span>
+            </p>
+          )}
         </CardFooter>
       </Card>
     </div>

@@ -80,12 +80,12 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
 
   // Central Event Scope Check: If no event is selected, block PWA usage
   if (!activeEventId) {
-    return <Navigate to="/pwa/configuracao" replace />;
+    return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_event" }} replace />;
   }
 
   // Stage Check: If route requires stage and none is selected, redirect to fallback configuration
   if (requireStage && !activeStageId && !location.pathname.startsWith("/pwa/install")) {
-    return <Navigate to="/pwa/configuracao" replace />;
+    return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_stage" }} replace />;
   }
 
   // If specific roles required, check. Admin/secretaria always pass.
