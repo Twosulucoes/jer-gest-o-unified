@@ -159,6 +159,7 @@ import PesquisaConfirmacaoPage from "./pages/pwa/PesquisaConfirmacaoPage";
 import PwaSetPasswordPage from "./pages/pwa/PwaSetPasswordPage";
 import PwaLandingPage from "./pages/pwa/PwaLandingPage";
 import PwaModulePage from "./pages/pwa/PwaModulePage";
+import PwaSelectionFallback from "./pages/pwa/PwaSelectionFallback";
 import PwaInstallPage from "./pages/pwa/PwaInstallPage";
 // PWA Alojamento pages
 import AlojamentoHomePage from "./pages/pwa/alojamento/AlojamentoHomePage";
@@ -511,6 +512,7 @@ const App = () => (
             <Route path="/pwa/login" element={<Navigate to="/login" replace />} />
             <Route path="/pwa/recover" element={<Navigate to="/login" replace />} />
             <Route path="/pwa/set-password" element={<PwaSetPasswordPage />} />
+            <Route path="/pwa/configuracao" element={<PwaSelectionFallback />} />
             {/* PWA Landing (requires auth) */}
             <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLandingPage /></PwaRouteGuard>} />
             
