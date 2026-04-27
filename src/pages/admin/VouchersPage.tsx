@@ -259,23 +259,102 @@ export default function VouchersPage() {
 
   const revokeMutation = useMutation({
     mutationFn: async () => {
-      if (!revokeTarget) throw new Error("Nenhum voucher selecionado");
+      if (!revokeTarget && !revokeBatchTarget) throw new Error("Nenhum alvo selecionado");
       if (!revokeReason.trim()) throw new Error("Informe o motivo");
-      const { error } = await supabase
-        .from("service_vouchers")
-        .update({
-          status: "revoked",
-          revoked_at: new Date().toISOString(),
-          revoke_reason: revokeReason.trim(),
-        })
-        .eq("id", revokeTarget.id);
-      if (error) throw error;
+      
+      const reason = revokeReason.trim();
+      const now = new Date().toISOString();
+
+      if (revokeTarget) {
+        const { error } = await supabase
+          .from("service_vouchers")
+          .update({
+            status: "revoked",
+            revoked_at: now,
+            revoke_reason: reason,
+          })
+          .eq("id", revokeTarget.id);
+        if (error) throw error;
+      } else if (revokeBatchTarget) {
+        const { error } = await supabase
+          .from("service_vouchers")
+          .update({
+            status: "revoked",
+            revoked_at: now,
+            revoke_reason: `[Lote] ${reason}`,
+          })
+          .eq("batch_id", revokeBatchTarget.id)
+          .eq("status", "active");
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vouchers"] });
-      toast.success("Voucher revogado");
+      queryClient.invalidateQueries({ queryKey: ["voucher-batches"] });
+      toast.success(revokeBatchTarget ? "Lote revogado" : "Voucher revogado");
       setRevokeTarget(null);
+      setRevokeBatchTarget(null);
       setRevokeReason("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const reissueMutation = useMutation({
+    mutationFn: async () => {
+      if (!reissueTarget) throw new Error("Voucher não selecionado");
+      if (!revokeReason.trim()) throw new Error("Informe o motivo da reemissão");
+
+      const oldV = reissueTarget;
+      const now = new Date().toISOString();
+      const reason = `[Reemissão] ${revokeReason.trim()}`;
+
+      // 1. Invalida o antigo
+      const { error: updErr } = await supabase
+        .from("service_vouchers")
+        .update({
+          status: "revoked",
+          revoked_at: now,
+          revoke_reason: reason,
+        })
+        .eq("id", oldV.id);
+      if (updErr) throw updErr;
+
+      // 2. Cria o novo
+      const { data: newV, error: insErr } = await supabase
+        .from("service_vouchers")
+        .insert({
+          event_id: oldV.event_id,
+          participant_id: oldV.participant_id,
+          eventual_person_id: oldV.eventual_person_id,
+          qr_code_value: genQrValue(),
+          status: "active",
+          voucher_type: oldV.voucher_type as any,
+          is_nominal: oldV.is_nominal,
+          label: oldV.label,
+          scope_meals: oldV.scope_meals,
+          scope_transport: oldV.scope_transport,
+          scope_lodging: oldV.scope_lodging,
+          target_meal_window_id: oldV.target_meal_window_id,
+          target_trip_id: oldV.target_trip_id,
+          target_facility_id: oldV.target_facility_id,
+          target_date: oldV.target_date,
+          max_uses: oldV.max_uses,
+          valid_until: oldV.valid_until,
+          replaces_voucher_id: oldV.id,
+          reissued_at: now,
+          notes: `Reemissão de ${oldV.qr_code_value}. Motivo: ${revokeReason.trim()}`
+        })
+        .select()
+        .single();
+      if (insErr) throw insErr;
+      return newV as VoucherRow;
+    },
+    onSuccess: (newV) => {
+      queryClient.invalidateQueries({ queryKey: ["vouchers"] });
+      toast.success("Voucher reemitido com sucesso");
+      setReissueTarget(null);
+      setRevokeReason("");
+      handlePrintIndividual(newV); // Imprime o novo imediatamente
     },
     onError: (e: any) => toast.error(e.message),
   });
