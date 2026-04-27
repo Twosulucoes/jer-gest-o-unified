@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, ScanLine, Users, ShieldAlert, UserPlus, CloudOff } from "lucide-react";
 import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
+import { addToVoucherQueue } from "@/lib/voucherOffline";
 
 import { toast } from "sonner";
 import { type IncidentModule } from "@/types/incidents";
