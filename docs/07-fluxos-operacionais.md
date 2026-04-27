@@ -147,7 +147,20 @@ FLUXO TIME/MARK:
        - Limpa alocações anteriores na fase de destino (idempotência).
        - Distribui atletas classificados entre as séries de destino usando critério de "serpentina" (alternância de melhores marcas entre séries).
        - Registra snapshot da classificação no histórico com `action_type = 'classification_propagated'`.
-```
+
+FLUXO RANKING:
+  → Painel Ranking (/admin/competicao/painel-ranking/:sportEventId)
+  → Lista de Provas: Visualiza todas as competições/provas da modalidade (ex: séries de Ginástica, torneios de Xadrez).
+  → Seleciona uma Prova → Abre área de operação inferior:
+     - Aba Inscritos: Visualiza e marca presença (DNS) dos participantes (atletas ou equipes).
+     - Aba Resultado: Grade Spreadsheet para lançamento de pontuação final consolidada.
+       - Cálculo Automático: Classificação (posição) recalculada em tempo real com regra de salto em empate (1-1-3).
+       - Status: Participou, DNS (não compareceu), DSQ (desclassificado).
+       - Observações: Campo livre por participante e campo geral da prova.
+     - Aba Agenda: Define Data/Hora/Local único para a prova selecionada.
+     - Aba Arbitragem: Designa equipe técnica (Árbitro Central, Mesa, etc).
+  → Salvar: Chama RPC `rpc_launch_match_result` (ramificação Ranking) para persistir pontuação e classificação.
+  → Homologação: Botão "Homologar Resultado" com senha do coordenador valida a prova inteira para publicação.
 ```
 
 ### 7.2 Homologação e Publicação (Governança)
