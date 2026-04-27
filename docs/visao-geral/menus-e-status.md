@@ -73,7 +73,8 @@
 |--------|------|--------|
 | Locais de Alojamento | `/admin/alojamento/locais` | ✅ Feito |
 | Unidades | `/admin/alojamento/unidades` | ✅ Feito |
-| Ocupação | `/admin/alojamento/ocupacao` | 🟡 Parcial |
+| Ocupação | `/admin/alojamento/ocupacao` | ✅ Feito |
+| Alocação em Lote | `/admin/alojamento/alocacao-lote` | ✅ Feito |
 
 ### Cadastros
 | Módulo | Rota | Status |
