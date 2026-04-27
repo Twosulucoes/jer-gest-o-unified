@@ -1,17 +1,5 @@
 /**
  * Tela de credenciamento "seguro" — fluxo enxuto e validador.
- *
- * Diferente da tela cheia (`CredenciamentoPage.tsx`), aqui o objetivo é
- * GARANTIR a precondição antes de chamar a RPC e MOSTRAR claramente por que
- * uma emissão pode falhar:
- *
- *   1) Pre-flight de infraestrutura (RPC + tabela de log) — bloqueante.
- *   2) Documentação aprovada (participant_documents) — bloqueante.
- *   3) Irregularidades bloqueantes abertas (RPC get_blocking_irregularities) — bloqueante.
- *   4) Credencial ativa duplicada (uq_participant_event_active) — informativo.
- *
- * Mensagens de erro são traduzidas a partir de códigos PostgREST/Postgres
- * (`PGRST202`, `PGRST205`, `P0001`, `23505`, `22023`) para algo acionável.
  */
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,18 +7,106 @@ import { Link } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useEventContext } from "@/contexts/EventContext";
+import { useActiveEventId } from "@/contexts/EventContext";
 import { useCredencialamentoPreflight } from "@/hooks/useCredencialamentoPreflight";
 import { useDocumentationStatus } from "@/hooks/useDocumentationStatus";
 import { generateCredentialCode, generateSignedQrCodeValue } from "@/lib/credentialUtils";
-...
+import { toast } from "sonner";
+import {
+  Search,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  ShieldCheck,
+  ShieldAlert,
+  FileCheck2,
+  Stethoscope,
+  Database,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+
+const searchSchema = z.string().min(3, "Mínimo de 3 caracteres para busca.");
+
+function humanizeError(err: any) {
+  const code = err?.code || (err as any)?.message;
+  if (code === "23505") return { title: "Duplicidade", description: "Este participante já possui uma credencial ativa." };
+  if (code === "P0001") return { title: "Regra de Negócio", description: err.message };
+  return { title: "Erro na emissão", description: err.message || "Erro desconhecido" };
+}
+
+export default function CredenciamentoSeguroPage() {
+  const activeEventId = useActiveEventId();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [rawSearch, setRawSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const preflight = useCredencialamentoPreflight();
+  
+  const { data: results = [], isLoading: isSearching } = useQuery({
+    queryKey: ["credenciamento-seguro-search", activeEventId, searchTerm],
+    queryFn: async () => {
+      if (!searchTerm) return [];
+      const { data, error } = await supabase
+        .from("participants")
+        .select("id, status, participant_type, people(full_name, cpf), delegations(name)")
+        .eq("event_id", activeEventId)
+        .or(`people.full_name.ilike.%${searchTerm}%,people.cpf.ilike.%${searchTerm}%`)
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activeEventId && !!searchTerm,
+  });
+
+  const selected = results.find((r) => r.id === selectedId);
+  const docCheck = useDocumentationStatus(selectedId || "");
+  
+  const { data: blockingQuery } = useQuery({
+    queryKey: ["blocking-irregularities", selectedId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_blocking_irregularities", { p_participant_id: selectedId });
+      if (error) throw error;
+      return { has_blocking: data.length > 0, items: data };
+    },
+    enabled: !!selectedId,
+  });
+
+  const activeCredQuery = useQuery({
+    queryKey: ["active-cred", selectedId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("participant_credentials")
+        .select("id, credential_code")
+        .eq("participant_id", selectedId)
+        .eq("status", "active")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedId,
+  });
+
+  const emitMutation = useMutation({
+    mutationFn: async () => {
+      if (!selected || !activeEventId) return;
+      const credentialCode = generateCredentialCode();
       const qrCodeValue = await generateSignedQrCodeValue(activeEventId, selected.id, credentialCode);
       const { error } = await (supabase as any).rpc("issue_participant_credential", {
         p_event_id: activeEventId,
         p_participant_id: selected.id,
         p_credential_code: credentialCode,
         p_qr_code_value: qrCodeValue,
-        p_user_id: user.id,
+        p_user_id: user?.id,
         p_binding_source: "manual",
         p_revoke_id: activeCredQuery.data?.id ?? null,
       });
