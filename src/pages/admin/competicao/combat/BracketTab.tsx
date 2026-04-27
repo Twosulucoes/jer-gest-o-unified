@@ -78,11 +78,16 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
   });
 
   const mountBracket = async (automatic: boolean) => {
+    if (!automatic) {
+      toast.info("A montagem manual deve ser feita na aba 'Inscritos' ou 'Lutas'.");
+      return;
+    }
+
     setIsMounting(true);
     try {
       // 1. Get confirmed athletes
-      const { data: athletes, error: athError } = await (supabase
-        .from("participant_sport_events") as any)
+      const { data: athletes, error: athError } = await supabase
+        .from("participant_sport_events")
         .select("id")
         .eq("sport_event_id", sportEventId)
         .eq("weighing_status", "confirmed");
@@ -93,61 +98,62 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
         return;
       }
 
-      // 2. Call RPC to generate bracket
-      // Note: We need a function to handle this logic on backend or we do it here.
-      // For now, let's assume we have an RPC or we use the logic from migration e518000a
-      // If we don't have an RPC, we would need to implement the logic here.
-      
-      // MOCK implementation for now - creating a phase and matches
-      const { data: event } = await supabase.from('sport_events').select('event_id').eq('id', sportEventId).single();
-
-      const { data: phase, error: pError } = await supabase
-        .from("competition_phases")
-        .insert({
-          sport_event_id: sportEventId,
-          event_id: event?.event_id,
-          name: "Chave Eliminatória",
-          phase_type: "knockout",
-          sort_order: 1
-        })
-        .select()
+      // 2. Get event info
+      const { data: sportEvent } = await supabase
+        .from('sport_events')
+        .select('event_id')
+        .eq('id', sportEventId)
         .single();
 
-      if (pError) throw pError;
+      // 3. Create or find the phase
+      let phaseId: string;
+      const { data: existingPhase } = await supabase
+        .from("competition_phases")
+        .select("id")
+        .eq("sport_event_id", sportEventId)
+        .eq("phase_type", "knockout")
+        .maybeSingle();
 
-      // Logic to generate pairings (simplified for now)
-      const pairs = [];
-      const shuffled = [...athletes].sort(() => Math.random() - 0.5);
-      for (let i = 0; i < shuffled.length; i += 2) {
-        pairs.push([shuffled[i], shuffled[i+1] || null]);
-      }
-
-      for (let i = 0; i < pairs.length; i++) {
-        const [a, b] = pairs[i];
-        const { data: match, error: mError } = await supabase
-          .from("competition_matches")
+      if (existingPhase) {
+        phaseId = existingPhase.id;
+      } else {
+        const { data: newPhase, error: pError } = await supabase
+          .from("competition_phases")
           .insert({
-            event_id: event?.event_id,
             sport_event_id: sportEventId,
-            phase_id: phase.id,
-            match_number: i + 1,
-            round_number: 1,
-            status: "scheduled"
+            event_id: sportEvent?.event_id,
+            name: "Chave Eliminatória",
+            phase_type: "knockout",
+            sort_order: 1
           })
           .select()
           .single();
-        
-        if (mError) throw mError;
-
-        await supabase.from("competition_match_entries").insert([
-          { match_id: match.id, side: "A", participant_sport_event_id: a.id },
-          { match_id: match.id, side: "B", participant_sport_event_id: b?.id || null }
-        ]);
+        if (pError) throw pError;
+        phaseId = newPhase.id;
       }
 
-      toast.success("Chave montada com sucesso!");
+      // 4. Prepare participants for RPC
+      const participants = athletes.map((a, idx) => ({
+        participant_id: a.id,
+        seed: idx + 1,
+        label: `Atleta ${idx + 1}`,
+        participant_type: "participant" as const
+      }));
+
+      // 5. Call RPC via hook
+      await generateKnockout.mutateAsync({
+        eventId: sportEvent?.event_id!,
+        sportEventId,
+        phaseId,
+        participants,
+        seedingMode: "automatic",
+        force: true,
+        withBronzeMatch: withBronze
+      });
+
       qc.invalidateQueries({ queryKey: ["bracket-phases", sportEventId] });
-      qc.invalidateQueries({ queryKey: ["sport_categories"] });
+      qc.invalidateQueries({ queryKey: ["knockout-bracket", phaseId] });
+      
     } catch (error: any) {
       toast.error("Erro ao montar chave: " + error.message);
     } finally {
