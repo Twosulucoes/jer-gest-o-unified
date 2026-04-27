@@ -89,7 +89,9 @@ export function ProvaCard({ prova, onAction }: ProvaCardProps) {
             onClick={() => onAction(prova)}
           >
             {prova.family === "combat" ? "Abrir Painel Combat" : 
-             prova.family === "sets" ? "Abrir Painel Sets" : "Abrir Painel Score"}
+             prova.family === "sets" ? "Abrir Painel Sets" : 
+             (prova.family === "time" || prova.family === "mark") ? "Abrir Painel Time/Mark" :
+             "Abrir Painel Score"}
           </Button>
         </div>
       </CardContent>
