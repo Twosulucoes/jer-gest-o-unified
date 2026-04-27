@@ -53,6 +53,7 @@ export default function CollectiveScoreForm({
   onSubmit,
   isPending,
   notes: initialNotes = "",
+  phaseType,
 }: CollectiveScoreFormProps) {
   const scoreType = matchConfig.score_type || "simple";
   const periods = matchConfig.periods ?? 2;
