@@ -579,12 +579,11 @@ const App = () => (
             <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
             <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
             <Route path="/pwa/install" element={<PwaRouteGuard requireStage={false}><PwaInstallPage /></PwaRouteGuard>} />
-            <Route path="/pwa/install" element={<PwaInstallPage />} />
             {/* PwaDebugPage and QrDiagnosticoPage moved to /admin/sistema */}
             {/* Ao Vivo PWA — qualquer autenticado */}
             <Route path="/aovivo/login" element={<Suspense fallback={null}><AoVivoLoginPage /></Suspense>} />
-            <Route path="/aovivo" element={<Suspense fallback={null}><AoVivoHomePage /></Suspense>} />
-            <Route path="/aovivo/partida/:matchId" element={<Suspense fallback={null}><AoVivoMatchPage /></Suspense>} />
+            <Route path="/aovivo" element={<PwaRouteGuard requireStage={false}><Suspense fallback={null}><AoVivoHomePage /></Suspense></PwaRouteGuard>} />
+            <Route path="/aovivo/partida/:matchId" element={<PwaRouteGuard requireStage={false}><Suspense fallback={null}><AoVivoMatchPage /></Suspense></PwaRouteGuard>} />
             {/* Public content routes */}
             <Route path="/tecnica" element={<EntregaTecnicaPage />} />
             <Route path="/public/results" element={<PublicResultsPage />} />
