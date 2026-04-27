@@ -119,6 +119,53 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
       setSelectedAtletaIds(new Set(top8));
     }
   }, [classifiedAtletas]);
+  
+  const { mutate: propagate, isPending: propagating } = useMutation({
+    mutationFn: async () => {
+      const nextPhase = phases.find(p => p.sort_order > selectedPhaseForClassification.sort_order);
+      if (!nextPhase) throw new Error("Fase de destino não encontrada");
+
+      const selectedAtletas = classifiedAtletas.filter(a => selectedAtletaIds.has(a.id));
+      
+      const payload = selectedAtletas.map(a => ({
+        participant_sport_event_id: a.participant_sport_event_id,
+        score: rules?.family === 'time' ? formatTimeMs(a.results?.[0]?.time_ms) : formatDistanceCm(a.results?.[0]?.distance_cm),
+        best_value: rules?.family === 'time' ? a.results?.[0]?.time_ms : a.results?.[0]?.distance_cm
+      }));
+
+      const { data, error } = await supabase.rpc("rpc_propagate_classification_time_mark", {
+        p_sport_event_id: sportEventId,
+        p_from_phase_id: selectedPhaseForClassification.id,
+        p_to_phase_id: nextPhase.id,
+        p_classified_entries: payload
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(`Sucesso: ${data.allocated_count} atletas distribuídos.`);
+      qc.invalidateQueries({ queryKey: ["competition_phases", sportEventId] });
+      setShowClassificationModal(false);
+      setShowRepropagateConfirm(false);
+    },
+    onError: (e: any) => {
+      toast.error("Erro na propagação: " + e.message);
+    }
+  });
+
+  const handlePropagateClick = () => {
+    const nextPhase = phases.find(p => p.sort_order > selectedPhaseForClassification.sort_order);
+    const hasExisting = nextPhase?.competition_groups?.some((g: any) => 
+      g.competition_matches?.some((m: any) => m.competition_match_entries?.length > 0)
+    );
+
+    if (hasExisting) {
+      setShowRepropagateConfirm(true);
+    } else {
+      propagate();
+    }
+  };
 
 
   // Fetch existing phases and groups (heats)
