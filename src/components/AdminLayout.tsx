@@ -127,6 +127,8 @@ const navGroups: NavGroup[] = [
       { label: "Auditoria do Sistema", to: "/admin/auditoria", icon: <Shield className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
       { label: "Evidências OSC", to: "/admin/evidencias-osc", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "alimentacao", "alojamento", "transporte", "coordenacao_tecnica"] as AppRole[] },
       { label: "Monitoramento DB", to: "/admin/monitoramento-db", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["super_admin", "admin"] as AppRole[] },
+      { label: "Conexão Supabase", to: "/admin/configuracoes/supabase", icon: <Cloud className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
+
       { label: "Status do PWA", to: "/admin/pwa-status", icon: <Cloud className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria"] as AppRole[] },
 
       { label: "Resultados (Coord. Modalidade)", to: "/pwa/resultados", icon: <Trophy className="h-4 w-4" />, roles: ["super_admin", "admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as AppRole[] },
