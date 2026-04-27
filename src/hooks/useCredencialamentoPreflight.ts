@@ -32,12 +32,12 @@ export interface CredencialamentoPreflight {
 
 async function probeIssueRpc(): Promise<{ status: ProbeStatus; detail?: string }> {
   // Probe com NULLs — RPC existe? validação interna dispara 22023; se não existe, 404+PGRST202.
-  const { error } = await supabase.rpc("issue_participant_credential" as any, {
-    p_event_id: null,
-    p_participant_id: null,
-    p_credential_code: null,
-    p_qr_code_value: null,
-    p_user_id: null,
+  const { error } = await supabase.rpc("issue_participant_credential", {
+    p_event_id: null as any,
+    p_participant_id: null as any,
+    p_credential_code: null as any,
+    p_qr_code_value: null as any,
+    p_user_id: null as any,
   });
 
   if (!error) {
@@ -45,7 +45,7 @@ async function probeIssueRpc(): Promise<{ status: ProbeStatus; detail?: string }
     return { status: "ok", detail: "RPC respondeu sem erro ao probe." };
   }
 
-  const code = (error as any)?.code as string | undefined;
+  const code = error.code;
 
   if (code === "PGRST202") {
     return {
@@ -65,13 +65,13 @@ async function probeIssueRpc(): Promise<{ status: ProbeStatus; detail?: string }
 
 async function probeLogTable(): Promise<{ status: ProbeStatus; detail?: string }> {
   const { error } = await supabase
-    .from("db_operation_logs" as any)
+    .from("db_operation_logs")
     .select("id", { count: "exact", head: true })
     .limit(0);
 
   if (!error) return { status: "ok" };
 
-  const code = (error as any)?.code as string | undefined;
+  const code = error.code;
   if (code === "PGRST205" || code === "42P01") {
     return {
       status: "missing",
