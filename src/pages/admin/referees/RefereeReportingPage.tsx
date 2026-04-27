@@ -96,7 +96,7 @@ export default function RefereeReportingPage() {
       
       const { data, error } = await q;
       if (error) throw error;
-      return data as ReportingRow[];
+      return data as unknown as ReportingRow[];
     },
   });
 
