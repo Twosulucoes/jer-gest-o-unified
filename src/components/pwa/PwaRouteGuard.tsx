@@ -84,7 +84,7 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
   }
 
   // Stage Check: If route requires stage and none is selected, redirect to fallback configuration
-  if (requireStage && !activeStageId && !location.pathname.startsWith("/pwa/install")) {
+  if (requireStage && !activeStageId) {
     return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_stage" }} replace />;
   }
 
