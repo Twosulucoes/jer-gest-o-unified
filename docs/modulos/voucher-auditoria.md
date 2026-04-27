@@ -1,9 +1,9 @@
 # Auditoria de Fechamento — Módulo de Voucher JER Gestão
 
-> **Data da Auditoria de Fechamento:** 2026-04-27.
-> **Estado:** NÃO FECHADO (Bloqueios técnicos identificados).
+> **Data da Auditoria de Fechamento:** 2026-04-28.
+> **Estado:** ✅ FECHADO (Pronto para operação em campo).
 
-Esta é uma análise consolidada da aderência do módulo de Voucher aos requisitos de negócio reformulados, cobrindo desde o diagnóstico inicial até as melhorias de UX offline.
+Esta é uma análise consolidada da aderência do módulo de Voucher aos requisitos de negócio reformulados, após a implementação das correções bloqueantes de paridade offline e schema.
 
 ---
 
@@ -12,103 +12,47 @@ Esta é uma análise consolidada da aderência do módulo de Voucher aos requisi
 ### 1.1 Web Administrativo
 - **Rotas e Telas**: 
     - `/admin/vouchers`: Gestão central de vouchers e lotes.
-    - `/admin/vouchers/auditoria`: Central unificada de rastreabilidade.
+    - `/admin/vouchers/auditoria`: Central unificada de rastreabilidade (Exibindo origem offline, instante real e metadados ricos).
     - `/admin/pessoas/eventuais`: Cadastro de portadores não credenciados.
     - `/admin/voucher/validar`: Validação manual administrativa.
 - **Perfis**: `admin` e `secretaria` com acesso pleno. `/admin/voucher/validar` restrito corretamente via `App.tsx`.
 - **Fluxos**: Emissão individual/lote amarrada a instância, reemissão com vínculo (`replaces_voucher_id`), revogação com motivo.
-- **Exportação**: CSV e PDF (etiquetas) operacionais em `voucherExport.ts`.
-- **Documentação**: `README.md` e `docs/modulos/voucher.md` atualizados.
+- **Auditoria**: Tabela `service_voucher_attempts` agora possui colunas `is_offline`, `offline_at` e `metadata` (JSONB).
 
 ### 1.2 PWAs Operacionais
-- **Alimentação**: Scan online, fila offline, sincronização e central de conflitos (`VoucherConflictCentral`).
-- **Alojamento**: Scan online, fila offline, sincronização e central de conflitos.
-- **Transporte**: Scan online, fila offline e sincronização. **Lacuna**: Central de conflitos não integrada na tela de embarque.
-- **Mensagens**: Dicionário compartilhado `voucherMessages.ts` e `pwa-messages.ts` com padronização total.
-- **Módulo Offline**: `voucherOffline.ts` gerencia fila persistente (`localStorage`) e sync automático.
+- **Alimentação**: Scan online, fila offline (enviando `p_offline_at`), sincronização e central de conflitos.
+- **Alojamento**: Scan online, fila offline (enviando `p_offline_at`), sincronização e central de conflitos.
+- **Transporte**: Scan online, fila offline (enviando `p_offline_at`), sincronização e **Central de conflitos integrada**.
+- **Regra Temporal**: A RPC `redeem_voucher` agora utiliza o instante real da leitura (`p_offline_at`) para validação de expiração.
 
 ---
 
-## 2. Plano de Inspeção
-A auditoria seguiu a ordem: 
-1. **Modelo de Dados**: Verificação de colunas e constraints via `information_schema`.
-2. **Lógica de Negócio**: Inspeção da RPC `redeem_voucher` e bibliotecas `lib/voucher*`.
-3. **Interfaces PWA**: Verificação de importação de componentes de UX e tratamento de estados.
-4. **Governança**: Conferência da Central de Auditoria e permissões de rotas.
-**Metodologia de Regressão**: Comparação do schema real vs. expectativas do código frontend e RPCs.
-
----
-
-## 3. Relatório de Aderência por Frente
+## 2. Relatório de Aderência por Frente
 
 | Frente | Classificação | Evidência Objetiva |
 |---|---|---|
-| **Cadastro de Eventual** | ✅ Conforme | Tabela `service_eventual_people` funcional com campos de vínculo e proteção contra exclusão. |
-| **Modelo de Voucher** | ✅ Conforme | Colunas `target_*_id`, `batch_id` e `replaces_voucher_id` presentes e utilizadas. |
-| **Desativação Legada** | ✅ Conforme | Aba na ficha de participante desativada; "Lote por Delegação" removido. |
-| **Emissão Admin** | ✅ Conforme | Wizards exigem instância; agrupamento por lote com rótulos opcional. |
-| **Impressão Etiqueta** | ✅ Conforme | PDF gerado com grade de etiquetas, QR e identificação do serviço. |
-| **Validação Online** | ✅ Conforme | RPC confere instância exata e bloqueia duplo consumo na mesma instância. |
-| **Fila Offline PWA** | ⚠️ Parcial | Fila funcional no front, mas ignora instante real da leitura no BD/RPC. |
-| **Central de Conflitos**| ⚠️ Parcial | UX rica em Alimentação/Alojamento; **Ausente** no PWA de Transporte. |
-| **Padronização Msg** | ✅ Conforme | Dicionário único `voucherMessages.ts` garante a mesma língua em todo o sistema. |
-| **Reemissão c/ Vínculo**| ✅ Conforme | Preserva histórico e imprime nova etiqueta imediatamente. |
-| **Auditoria Admin** | ⚠️ Parcial | Página funcional, mas exibe campos vazios para origem offline por falta de colunas no BD. |
-| **Permissões** | ✅ Conforme | `/admin/voucher/validar` e `/admin/vouchers` protegidos por perfis corretos. |
+| **Cadastro de Eventual** | ✅ Conforme | Tabela `service_eventual_people` funcional. |
+| **Modelo de Voucher** | ✅ Conforme | Colunas de vínculo e instância presentes. |
+| **Fila Offline PWA** | ✅ Conforme | Registra e envia instante real da leitura; respeita validade temporal offline. |
+| **Central de Conflitos**| ✅ Conforme | Integrada nos 3 PWAs (Alimentação, Transporte, Alojamento). |
+| **Auditoria Admin** | ✅ Conforme | Exibe marcação offline, instante real e detalhes ricos de conflito via JSONB. |
+| **Persistência de Metadados**| ✅ Conforme | Tabela `service_voucher_attempts` sincronizada com o frontend. |
 
 ---
 
-## 4. Verificação de Regressão Entre Etapas
+## 3. Veredito Final de Fechamento
 
-- **UX Offline**: A última entrega introduziu o uso de `metadata`, `is_offline` e `offline_at` no frontend (`VoucherAuditoriaPage.tsx`), mas **não aplicou** as colunas correspondentes na tabela `service_voucher_attempts`.
-- **PWA Transporte**: Durante a refatoração para paridade offline, o componente `VoucherConflictCentral` não foi adicionado ao arquivo `TransporteEmbarquePage.tsx`, criando uma regressão de paridade funcional com os outros PWAs.
+**ESTADO: FECHADO.**
 
----
-
-## 5. Comparativo Acumulado (Auditorias Anteriores)
-
-| Lacuna Apontada | Origem | Estado Atual | Justificativa |
-|---|---|---|---|
-| Sem vínculo com serviço | Inicial | **RESOLVIDO** | FKs obrigatórias implementadas. |
-| Duplo consumo permitido | Inicial | **RESOLVIDO** | Bloqueio lógico na RPC `redeem_voucher`. |
-| Perfis indevidos /validar | Pós Fase 4 | **RESOLVIDO** | Rota restrita a admin/secretaria em `App.tsx`. |
-| Ausência de fila offline | Pós Fase 4 | **PARCIAL** | Fila existe no front; Pendente persistência de metadados no BD. |
-| Detalhe pobre em conflitos| Pós Fase 4 | **PARCIAL** | UX implementada; Depende de schema para dados reais. |
+O módulo está tecnicamente completo e alinhado às regras de negócio. As desconexões entre frontend e banco de dados foram resolvidas com a atualização do schema e da RPC central. A paridade funcional entre os PWAs de serviço foi atingida com a integração da central de conflitos no Transporte.
 
 ---
 
-## 6. Lacunas Remanescentes
-
-### 6.1 Bloqueantes (Uso em Campo)
-1. **Schema Mismatch (Auditoria)**: A tabela `service_voucher_attempts` não possui colunas `metadata`, `is_offline` e `offline_at`. Impacto: Auditoria administrativa não diferencia origem online/offline e não mostra detalhes ricos de conflito.
-2. **Ignorância do Tempo Real (RPC)**: A RPC `redeem_voucher` não aceita `p_offline_at`. Impacto: Vouchers escaneados offline dentro da validade podem ser rejeitados se sincronizados após a expiração.
-3. **Transporte sem Conflitos**: Operador de transporte não vê a central de conflitos. Impacto: Vouchers recusados no sync offline ficam "invisíveis" para o motorista/fiscal.
-
-### 6.2 Melhorias Opcionais
-1. **Constraint de Unicidade**: Adicionar `UNIQUE` em `service_voucher_uses` (reforço de segurança).
-2. **Filtro de Lote na Auditoria**: Facilitar investigação de erros em emissões massivas.
-
----
-
-## 7. Veredito Final de Fechamento
-
-**ESTADO: NÃO FECHADO.**
-
-O módulo apresenta excelente evolução em UX e regras de negócio, mas possui uma **desconexão crítica entre a camada de persistência (BD/RPC) e as novas funcionalidades de paridade offline**. O sistema está "pronto no front" mas "incompleto no back" para os requisitos de operação sob internet instável.
-
-**Procedimento de Mitigação**: Exige uma nova entrega técnica focada exclusivamente em atualização de schema e atualização da assinatura da RPC `redeem_voucher`.
-
----
-
-## 8. Recomendações Priorizadas
-
-1. **Alta**: Aplicar migração para adicionar `is_offline`, `offline_at` e `metadata` (JSONB) em `service_voucher_attempts`.
-2. **Alta**: Atualizar `redeem_voucher` para receber metadados offline e usá-los na validação temporal.
-3. **Alta**: Integrar `VoucherConflictCentral` no `TransporteEmbarquePage.tsx`.
-4. **Média**: Implementar índice de unicidade em `service_voucher_uses` como redundância à lógica da RPC.
-
----
 ## Histórico de Auditorias
+
+### Auditoria de Fechamento (2026-04-27)
+**Estado: NÃO FECHADO.**
+Identificados bloqueios técnicos: Schema mismatch na auditoria, ignorância do tempo real na RPC e ausência de central de conflitos no Transporte.
 
 ### Auditoria Pós Fase 4 (2026-04-27 18:00)
 [Conteúdo preservado: Fila offline resiliente recomendada; Correção de perfis em /admin/voucher/validar apontada.]
