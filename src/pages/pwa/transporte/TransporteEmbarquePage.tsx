@@ -249,6 +249,16 @@ export default function TransporteEmbarquePage() {
       let viaVoucher = false;
 
       if (isVoucherQr(rawValue)) {
+        if (!isOnline()) {
+          addToOfflineQueue("transporte", {
+            trip_id: tripId,
+            qr_value: rawValue,
+            is_voucher: true,
+            attempted_at: new Date().toISOString()
+          }, "Portador de Voucher");
+          toast.info("Voucher registrado offline. Sincronize quando houver internet.");
+          return;
+        }
         const voucher = await tryRedeemVoucher(rawValue, "transport", tripId);
         if (!voucher || !voucher.ok) {
           const msg = voucherErrorMessage(voucher?.reason, lang);
