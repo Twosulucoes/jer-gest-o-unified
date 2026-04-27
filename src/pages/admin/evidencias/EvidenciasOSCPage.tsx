@@ -5,12 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { toast } from "sonner";
 import {
-  FileCheck, Filter, Plus, Search, Download, Trash2, Check, X, Clock, User, 
-  ChevronRight, MoreVertical, FileText, Image as ImageIcon, FileArchive, Upload, Loader2
+  FileCheck, Plus, Search, Download, Trash2, Check, X, User, 
+  Upload, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
