@@ -203,6 +203,10 @@ export default function CompeticaoPainelPage() {
       navigate(`${baseNav}/painel-combat/${prova.id}`);
       return;
     }
+    if (prova.family === "time" || prova.family === "mark") {
+      navigate(`${baseNav}/painel-time-mark/${prova.id}`);
+      return;
+    }
     if (prova.family === "sets") {
       navigate(`/admin/competicao/painel-sets/${prova.id}`);
       return;
