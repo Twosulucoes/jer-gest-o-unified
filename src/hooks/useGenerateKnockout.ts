@@ -14,6 +14,7 @@ interface GenerateKnockoutParams {
   }[];
   seedingMode?: string;
   force?: boolean;
+  withBronzeMatch?: boolean;
 }
 
 export function useGenerateKnockout() {
