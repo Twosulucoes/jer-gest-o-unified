@@ -16,7 +16,7 @@
 - **Validação**: Edge function `validate-qr` valida assinatura HMAC; aceita legado com flag `legacy_format` em `credential_scans`.
 
 ## 3. Credencial + QR Code (✅ Pronto)
-- **Templates**: `/admin/credenciais/modelos` — CRUD com config de campos
+- **Templates**: `/admin/credenciais/modelos` — CRUD com config de campos e filtro por tipo de participante (Atleta, Técnico, Staff, etc)
 - **Geração**: Chamada à Edge Function `generate-credential-qr` para QR assinado.
 - **Utilitário**: `credentialUtils.ts` — suporte a `generateSignedQrCodeValue` (async).
 - **Auditoria**: `credential_scans` agora rastreia se a credencial é do formato legado.
