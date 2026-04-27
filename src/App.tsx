@@ -572,12 +572,13 @@ const App = () => (
             <Route path="/pwa/credenciamento/vincular" element={<PwaRouteGuard allowedRoles={["admin", "secretaria"]}><VincularCredencialPage /></PwaRouteGuard>} />
 
             {/* PWA Module pages (Catch-all for implemented modules but also placeholder for future ones) */}
-            <Route path="/pwa/:module" element={<PwaModulePage />} />
+            <Route path="/pwa/:module" element={<PwaRouteGuard><PwaModulePage /></PwaRouteGuard>} />
             {/* PWA Pesquisa (PIN auth, no Supabase Auth) */}
             <Route path="/pwa/pesquisa/login" element={<PesquisaLoginPage />} />
             <Route path="/pwa/pesquisa/home" element={<PesquisaHomePage />} />
             <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
             <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
+            <Route path="/pwa/install" element={<PwaRouteGuard requireStage={false}><PwaInstallPage /></PwaRouteGuard>} />
             <Route path="/pwa/install" element={<PwaInstallPage />} />
             {/* PwaDebugPage and QrDiagnosticoPage moved to /admin/sistema */}
             {/* Ao Vivo PWA — qualquer autenticado */}
