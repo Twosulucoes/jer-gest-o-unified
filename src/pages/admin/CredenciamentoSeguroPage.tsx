@@ -1,7 +1,7 @@
 /**
  * Tela de credenciamento "seguro" — fluxo enxuto e validador.
  */
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { z } from "zod";
@@ -23,6 +23,7 @@ import {
   FileCheck2,
   Stethoscope,
   Database,
+  CheckCircle as CheckCircleIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,7 @@ export default function CredenciamentoSeguroPage() {
   const { data: results = [], isLoading: isSearching } = useQuery({
     queryKey: ["credenciamento-seguro-search", activeEventId, searchTerm],
     queryFn: async () => {
-      if (!searchTerm) return [];
+      if (!searchTerm || !activeEventId) return [];
       const { data, error } = await supabase
         .from("participants")
         .select("id, status, participant_type, people(full_name, cpf), delegations(name)")
@@ -63,7 +64,7 @@ export default function CredenciamentoSeguroPage() {
         .or(`people.full_name.ilike.%${searchTerm}%,people.cpf.ilike.%${searchTerm}%`)
         .limit(10);
       if (error) throw error;
-      return data;
+      return (data || []) as any[];
     },
     enabled: !!activeEventId && !!searchTerm,
   });
@@ -71,19 +72,25 @@ export default function CredenciamentoSeguroPage() {
   const selected = results.find((r) => r.id === selectedId);
   const docCheck = useDocumentationStatus(selectedId || "");
   
-  const { data: blockingQuery } = useQuery({
-    queryKey: ["blocking-irregularities", selectedId],
+  const { data: blockingData } = useQuery({
+    queryKey: ["blocking-irregularities", selectedId, activeEventId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_blocking_irregularities", { p_participant_id: selectedId });
+      if (!selectedId || !activeEventId) return { has_blocking: false, items: [] };
+      const { data, error } = await supabase.rpc("get_blocking_irregularities", { 
+        p_participant_id: selectedId,
+        p_event_id: activeEventId
+      });
       if (error) throw error;
-      return { has_blocking: data.length > 0, items: data };
+      const items = (data || []) as any[];
+      return { has_blocking: items.length > 0, items };
     },
-    enabled: !!selectedId,
+    enabled: !!selectedId && !!activeEventId,
   });
 
   const activeCredQuery = useQuery({
     queryKey: ["active-cred", selectedId],
     queryFn: async () => {
+      if (!selectedId) return null;
       const { data, error } = await supabase
         .from("participant_credentials")
         .select("id, credential_code")
@@ -126,9 +133,9 @@ export default function CredenciamentoSeguroPage() {
   // ----- gates -----
   const preflightOk = preflight.data?.canIssue === true;
   const docsOk = docCheck.data?.isClear === true;
-  const irregsOk = blockingQuery.data ? !blockingQuery.data.has_blocking : true;
+  const irregsOk = blockingData ? !blockingData.has_blocking : true;
   const allChecksLoading =
-    preflight.isLoading || docCheck.isLoading || blockingQuery.isLoading;
+    preflight.isLoading || docCheck.isLoading || !blockingData;
   const canEmit =
     !!selected && preflightOk && docsOk && irregsOk && !allChecksLoading;
 
@@ -200,7 +207,6 @@ export default function CredenciamentoSeguroPage() {
                 onChange={(e) => setRawSearch(e.target.value)}
                 maxLength={120}
                 placeholder="Nome ou CPF"
-                aria-invalid={!!searchError}
               />
               {searchError && (
                 <p className="text-xs text-destructive">{searchError}</p>
@@ -219,7 +225,7 @@ export default function CredenciamentoSeguroPage() {
 
           {results.length > 0 && (
             <ul className="mt-4 divide-y divide-border rounded-md border">
-              {results.map((p) => {
+              {results.map((p: any) => {
                 const isSel = p.id === selectedId;
                 return (
                   <li key={p.id}>
@@ -236,7 +242,7 @@ export default function CredenciamentoSeguroPage() {
                             {p.people?.full_name ?? "—"}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {p.delegations?.name ?? "Sem delegação"} ·{" "}
+                            {(p.delegations as any)?.name ?? "Sem delegação"} ·{" "}
                             {p.participant_type} · {p.people?.cpf ?? "sem CPF"}
                           </p>
                         </div>
@@ -273,11 +279,11 @@ export default function CredenciamentoSeguroPage() {
             />
             <CheckRow
               label="Irregularidades bloqueantes"
-              loading={blockingQuery.isLoading}
+              loading={!blockingData}
               ok={irregsOk}
               detail={
-                blockingQuery.data?.has_blocking
-                  ? `${blockingQuery.data.items.length} bloqueante(s) aberta(s).`
+                blockingData?.has_blocking
+                  ? `${blockingData.items.length} bloqueante(s) aberta(s).`
                   : "Nenhuma irregularidade bloqueante."
               }
             />
@@ -362,7 +368,7 @@ function CheckRow({
         {loading ? (
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         ) : ok ? (
-          <CheckCircle2 className="h-5 w-5 text-success" />
+          <CheckCircle2 className="h-5 w-5 text-green-600" />
         ) : (
           <XCircle className="h-5 w-5 text-destructive" />
         )}
@@ -425,7 +431,7 @@ function PreflightCard({
             )}
             {!hasIssue && data.canIssue && (
               <Alert>
-                <CheckCircle2 className="h-4 w-4" />
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <AlertTitle>Tudo certo</AlertTitle>
                 <AlertDescription>
                   Infraestrutura disponível. Verificação válida por 60s.
@@ -462,7 +468,7 @@ function PreflightLine({
   const Icon = status === "ok" ? CheckCircle2 : status === "missing" ? XCircle : Database;
   const color =
     status === "ok"
-      ? "text-success"
+      ? "text-green-600"
       : status === "missing"
         ? "text-destructive"
         : "text-muted-foreground";
