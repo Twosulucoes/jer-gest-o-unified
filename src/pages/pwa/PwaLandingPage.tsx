@@ -137,39 +137,70 @@ export default function PwaLandingPage() {
       </div>
 
       <div className="p-4 max-w-md mx-auto space-y-5 -mt-8">
-        {/* Seletor de Etapa */}
-        {stages.length > 1 && (
-          <div className="bg-card/95 backdrop-blur-sm rounded-3xl border border-white/20 shadow-xl p-5 space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Layers className="h-5 w-5" />
+        {/* Configuração de Contexto (Evento e Etapa) */}
+        <div className="bg-card/95 backdrop-blur-sm rounded-3xl border border-white/20 shadow-xl p-5 space-y-4">
+          <div className="space-y-4">
+            {/* Seletor de Evento */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Calendar className="h-4 w-4" />
+                </div>
+                <h2 className="text-[10px] font-bold text-foreground uppercase tracking-widest">
+                  Evento
+                </h2>
               </div>
-              <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
-                Etapa de Trabalho
-              </h2>
+              <Select value={activeEventId || ""} onValueChange={setActiveEventId}>
+                <SelectTrigger className="h-12 rounded-2xl border-muted-foreground/10 bg-background/50 focus:ring-primary/20">
+                  <SelectValue placeholder="Selecione o evento..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {events.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={activeStageId || ""} onValueChange={setActiveStageId}>
-              <SelectTrigger className="h-14 rounded-2xl border-muted-foreground/20 bg-background/50 focus:ring-primary/20">
-                <SelectValue placeholder="Selecione a etapa..." />
-              </SelectTrigger>
-              <SelectContent>
-                {stages.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!activeStageId && (
-              <div className="flex items-center gap-2 px-1">
-                <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                <p className="text-[11px] text-amber-600 font-semibold uppercase tracking-tight">
-                  Selecione uma etapa para continuar
-                </p>
+
+            {/* Seletor de Etapa */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Layers className="h-4 w-4" />
+                </div>
+                <h2 className="text-[10px] font-bold text-foreground uppercase tracking-widest">
+                  Etapa de Trabalho
+                </h2>
               </div>
-            )}
+              <Select 
+                value={activeStageId || ""} 
+                onValueChange={setActiveStageId}
+                disabled={!activeEventId || stages.length === 0}
+              >
+                <SelectTrigger className="h-12 rounded-2xl border-muted-foreground/10 bg-background/50 focus:ring-primary/20">
+                  <SelectValue placeholder={!activeEventId ? "Selecione um evento" : "Selecione a etapa..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  {stages.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!activeStageId && activeEventId && stages.length > 0 && (
+                <div className="flex items-center gap-2 px-1">
+                  <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <p className="text-[10px] text-amber-600 font-semibold uppercase tracking-tight">
+                    Selecione uma etapa para operar
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
 
         <div className="bg-card rounded-3xl border shadow-app-lg p-5 space-y-4">
           <div className="flex items-center justify-between">
