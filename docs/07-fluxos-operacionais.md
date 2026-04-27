@@ -135,15 +135,19 @@ FLUXO TIME/MARK:
   → Aba Séries: Visualiza fases (Séries, Semifinais, Final) e séries cadastradas
   → Lançar Marcas (Botão Troféu):
      - Abre rota dedicada conforme o modo da prova (identificado pelas regras)
-     - MODO A (Pista/Piscina): Grade por raia, lança tempo (mm:ss.cc), posição calculada auto.
-     - MODO B (Campo): Grade por atleta, lança tentativas (m,cm), melhor marca e posição calculadas auto.
-     - MODO C (Prova Única): Grade por ordem de chegada, lança posição manual e tempo opcional.
+     - MODO A (Pista/Piscina): Grade por raia, lança tempo (mm:ss.cc), posição calculada auto com tratamento de empate (1, 1, 3).
+     - MODO B (Campo): Grade por atleta, lança tentativas múltiplas (m,cm), melhor marca e posição calculadas auto (1, 1, 3); tentativas são persistidas de forma idempotente.
+     - MODO C (Prova Única): Grade por ordem de chegada, lança posição manual e tempo opcional; validação contra duplicidade de posição com diálogo de confirmação de empate.
   → Homologação: Coordenador valida série por série com senha → status "Validado".
   → Classificação para Próxima Fase:
      - Quando todas as séries da fase atual estão homologadas, botão "Classificar para [Fase]" aparece.
-     - Tela de Consolidação: Sistema sugere os melhores tempos/marcas de todas as séries.
-     - Operador confirma lista de classificados → Dispara "Propagar Classificação".
-     - Sistema cria alocações automáticas nas séries da fase seguinte.
+     - Tela de Consolidação: Sistema lista todos os atletas e sugere os melhores tempos/marcas de todas as séries.
+     - Operador confirma lista de classificados → Dispara "Confirmar e Propagar".
+     - Sistema executa RPC `rpc_propagate_classification_time_mark`:
+       - Limpa alocações anteriores na fase de destino (idempotência).
+       - Distribui atletas classificados entre as séries de destino usando critério de "serpentina" (alternância de melhores marcas entre séries).
+       - Registra snapshot da classificação no histórico com `action_type = 'classification_propagated'`.
+```
 ```
 
 ### 7.2 Homologação e Publicação (Governança)
