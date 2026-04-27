@@ -24,7 +24,9 @@ export function ProvaCard({ prova, onAction }: ProvaCardProps) {
               {prova.name}
             </h4>
             <Badge variant="outline" className="text-[10px]">
-              {prova.family === "combat" ? "Combate" : prova.is_collective ? "Coletiva" : "Individual"}
+              {prova.family === "combat" ? "Combate" : 
+               (prova.family === "time" || prova.family === "mark") ? "Time/Mark" :
+               prova.is_collective ? "Coletiva" : "Individual"}
             </Badge>
             <div
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${cfg.color}`}
