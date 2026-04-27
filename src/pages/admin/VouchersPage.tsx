@@ -321,15 +321,15 @@ export default function VouchersPage() {
       if (updErr) throw updErr;
 
       // 2. Cria o novo
-      const { data: newV, error: insErr } = await supabase
-        .from("service_vouchers")
+      const { data: newV, error: insErr } = await (supabase
+        .from("service_vouchers") as any)
         .insert({
           event_id: oldV.event_id,
           participant_id: oldV.participant_id,
           eventual_person_id: oldV.eventual_person_id,
           qr_code_value: genQrValue(),
           status: "active",
-          voucher_type: oldV.voucher_type as any,
+          voucher_type: oldV.voucher_type,
           is_nominal: oldV.is_nominal,
           label: oldV.label,
           scope_meals: oldV.scope_meals,
