@@ -43,7 +43,7 @@ interface Props {
 
 export default function MealWindowFormDialog({ open, onOpenChange, window: mealWindow, mealTypes, onSubmit, isPending }: Props) {
   const isEditing = !!mealWindow;
-  const qc = useQueryClient();
+  // No query client needed here as we are just setting state
   const [rules, setRules] = useState<any[]>([]);
   const [ruleType, setRuleType] = useState<string>("participant_type");
   const [ruleValue, setRuleValue] = useState<string>("");
