@@ -5,7 +5,8 @@
 | Bucket | Público | Uso atual |
 |--------|---------|-----------|
 | `credential-templates` | Sim | Imagens de fundo dos modelos de credencial |
-| `match-attachments` | Sim | Anexos de partidas (súmulas, fotos, documentos) |
+| `match-attachments` | Sim | Anexos de partidas (súmulas, fotos, documentos) — Legado |
+| `operational-evidence` | Não | Evidências OSC unificadas (fotos, documentos, relatórios) |
 
 ## Observações de Segurança
 
