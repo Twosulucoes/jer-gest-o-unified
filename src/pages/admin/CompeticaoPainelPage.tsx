@@ -207,8 +207,12 @@ export default function CompeticaoPainelPage() {
       navigate(`${baseNav}/painel-time-mark/${prova.id}`);
       return;
     }
+    if (prova.family === "ranking") {
+      navigate(`${baseNav}/painel-ranking/${prova.id}`);
+      return;
+    }
     if (prova.family === "sets") {
-      navigate(`/admin/competicao/painel-sets/${prova.id}`);
+      navigate(`${baseNav}/painel-sets/${prova.id}`);
       return;
     }
 

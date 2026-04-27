@@ -81,6 +81,13 @@ export function computeProvaData(row: any, family?: string | null): ProvaRow {
       { key: "results", label: "Resultados", state: withResult > 0 ? (withResult === matchCount ? "done" : "active") : "pending" },
       { key: "published", label: "Homologado", state: validated > 0 ? (validated === matchCount ? "done" : "active") : "pending" },
     ];
+  } else if (family === "ranking") {
+    steps = [
+      { key: "athletes", label: "Inscritos", state: enrolled > 0 ? "done" : "pending" },
+      { key: "agenda", label: "Agenda", state: withSchedule > 0 ? "done" : "pending" },
+      { key: "results", label: "Resultados", state: withResult > 0 ? (validated === matchCount ? "done" : "active") : "pending" },
+      { key: "published", label: "Homologado", state: validated > 0 ? (validated === matchCount ? "done" : "active") : "pending" },
+    ];
   } else if (isCollective) {
     steps = [
       { key: "teams", label: "Equipes", state: teams > 0 ? "done" : "pending" },
