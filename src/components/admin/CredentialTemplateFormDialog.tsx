@@ -420,10 +420,27 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
               </label>
             </div>
 
-            {/* Active + Notes */}
-            <div className="flex items-center gap-3">
-              <Switch checked={isActive} onCheckedChange={setIsActive} />
-              <Label>Modelo ativo</Label>
+            {/* Active + Filter + Notes */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-3 h-10">
+                <Switch checked={isActive} onCheckedChange={setIsActive} />
+                <Label>Modelo ativo</Label>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Aplicar a</Label>
+                <Select value={participantTypeFilter} onValueChange={setParticipantTypeFilter}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="athlete">Atletas</SelectItem>
+                    <SelectItem value="coach">Técnicos</SelectItem>
+                    <SelectItem value="head_of_delegation">Dirigentes</SelectItem>
+                    <SelectItem value="staff">Staff</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-1">
               <Label>Observações</Label>
