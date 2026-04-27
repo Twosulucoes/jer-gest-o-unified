@@ -70,7 +70,7 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
     queryKey: ["meal_window_eligibility", (mealWindow as any)?.id],
     queryFn: async () => {
       if (!mealWindow?.id) return [];
-      const { data, error } = await (supabase.from("meal_window_eligibility") as any)
+      const { data, error } = await (supabase as any).from("meal_window_eligibility")
         .select(`
           *,
           delegations(school_name),
