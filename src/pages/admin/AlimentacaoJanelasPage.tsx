@@ -51,7 +51,7 @@ export default function AlimentacaoJanelasPage() {
     queryKey: ["meal_windows", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      let q = supabase.from("meal_windows").select("*").eq("event_id", selectedEventId);
+      let q = (supabase as any).from("meal_windows").select("*, meal_locations(name)").eq("event_id", selectedEventId);
       if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
       const { data, error } = await q.order("service_date").order("start_time");
       if (error) throw error;
@@ -60,7 +60,7 @@ export default function AlimentacaoJanelasPage() {
     enabled: !!selectedEventId,
   });
 
-  const mealTypesMap = new Map(mealTypes.map((m) => [m.id, m]));
+  const mealTypesMap = useMemo(() => new Map(mealTypes.map((m) => [m.id, m])), [mealTypes]);
 
   const createMut = useMutation({
     mutationFn: async (v: MealWindowFormValues) => {
@@ -72,6 +72,7 @@ export default function AlimentacaoJanelasPage() {
         start_time: v.start_time,
         end_time: v.end_time,
         location: v.location || null,
+        meal_window_location_id: v.meal_window_location_id || null,
         is_active: v.is_active,
       };
       if (isStageScoped && stageId) payload.event_stage_id = stageId;
@@ -96,13 +97,14 @@ export default function AlimentacaoJanelasPage() {
 
   const updateMut = useMutation({
     mutationFn: async ({ id, ...v }: MealWindowFormValues & { id: string }) => {
-      const { error } = await supabase.from("meal_windows").update({
+      const { error } = await (supabase as any).from("meal_windows").update({
         meal_type_id: v.meal_type_id,
         label: v.label || null,
         service_date: v.service_date,
         start_time: v.start_time,
         end_time: v.end_time,
         location: v.location || null,
+        meal_window_location_id: v.meal_window_location_id || null,
         is_active: v.is_active,
       }).eq("id", id);
       if (error) throw error;
@@ -150,7 +152,8 @@ export default function AlimentacaoJanelasPage() {
       const matchesSearch = !searchTerm || 
         mt?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         w.label?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        w.location?.toLowerCase().includes(searchTerm.toLowerCase());
+        w.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.meal_locations?.name?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === "all" || 
         (statusFilter === "active" && w.is_active) ||
@@ -245,7 +248,9 @@ export default function AlimentacaoJanelasPage() {
                         <span className="text-[10px] font-mono text-muted-foreground uppercase">{w.start_time?.slice(0, 5)} – {w.end_time?.slice(0, 5)}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{w.location || "—"}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                      {w.meal_locations?.name || w.location || "—"}
+                    </TableCell>
                     <TableCell>
                       {canWrite ? (
                         <Button 

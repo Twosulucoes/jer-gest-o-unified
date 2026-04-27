@@ -47,6 +47,7 @@ import TransporteViagensPage from "./pages/admin/TransporteViagensPage";
 import TransporteEmbarquePage from "./pages/admin/TransporteEmbarquePage";
 import AlimentacaoHubPage from "./pages/admin/AlimentacaoHubPage";
 import AlimentacaoTiposPage from "./pages/admin/AlimentacaoTiposPage";
+import AlimentacaoLocaisPage from "./pages/admin/AlimentacaoLocaisPage";
 import AlimentacaoJanelasPage from "./pages/admin/AlimentacaoJanelasPage";
 import AlimentacaoConsumoPage from "./pages/admin/AlimentacaoConsumoPage";
 import AlimentacaoDashboardPage from "./pages/admin/AlimentacaoDashboardPage";
@@ -376,6 +377,8 @@ const App = () => (
                <Route path="sistema/diagnostico/kpi" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><SistemaDiagnosticoKpiPage /></ProtectedRoute>} />
                <Route path="monitoramento-db" element={<ProtectedRoute allowedRoles={["super_admin", "admin"]}><DatabaseMonitoringPage /></ProtectedRoute>} />
                <Route path="pwa-status" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><PwaStatusPage /></ProtectedRoute>} />
+               <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
+               <Route path="sistema/debug-qr" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><QrDiagnosticoPage /></ProtectedRoute>} />
 
               <Route path="dados" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralDadosPage /></ProtectedRoute>} />
               <Route path="boletins" element={<Navigate to="/admin/relatorios/boletins" replace />} />
@@ -476,6 +479,7 @@ const App = () => (
               {/* Alimentação */}
               <Route path="alimentacao" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoHubPage /></ProtectedRoute>} />
               <Route path="alimentacao/tipos" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoTiposPage /></ProtectedRoute>} />
+              <Route path="alimentacao/locais" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoLocaisPage /></ProtectedRoute>} />
               <Route path="alimentacao/janelas" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoJanelasPage /></ProtectedRoute>} />
               <Route path="alimentacao/consumo" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoConsumoPage /></ProtectedRoute>} />
               <Route path="alimentacao/dashboard" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoDashboardPage /></ProtectedRoute>} />
@@ -568,11 +572,7 @@ const App = () => (
             <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
             <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
             <Route path="/pwa/install" element={<PwaInstallPage />} />
-            <Route path="/pwa/debug" element={<PwaDebugPage />} />
-            <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
-            {/* PWA Diagnóstico */}
-            <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
-            <Route path="/pwa/debug" element={<PwaDebugPage />} />
+            {/* PwaDebugPage and QrDiagnosticoPage moved to /admin/sistema */}
             {/* Ao Vivo PWA — qualquer autenticado */}
             <Route path="/aovivo/login" element={<Suspense fallback={null}><AoVivoLoginPage /></Suspense>} />
             <Route path="/aovivo" element={<Suspense fallback={null}><AoVivoHomePage /></Suspense>} />
