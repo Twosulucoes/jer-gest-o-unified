@@ -17,6 +17,7 @@ interface BracketTabProps {
 }
 
 export function BracketTab({ sportEventId }: BracketTabProps) {
+  const sb = supabase as any;
   const qc = useQueryClient();
   const [isMounting, setIsMounting] = useState(false);
   const [withBronze, setWithBronze] = useState(true);
