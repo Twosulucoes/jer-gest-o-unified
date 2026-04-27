@@ -605,6 +605,7 @@ export type Database = {
           credential_id: string
           event_id: string
           id: string
+          legacy_format: boolean
           notes: string | null
           scan_point: string
           scan_result: string
@@ -615,6 +616,7 @@ export type Database = {
           credential_id: string
           event_id: string
           id?: string
+          legacy_format?: boolean
           notes?: string | null
           scan_point?: string
           scan_result?: string
@@ -625,6 +627,7 @@ export type Database = {
           credential_id?: string
           event_id?: string
           id?: string
+          legacy_format?: boolean
           notes?: string | null
           scan_point?: string
           scan_result?: string
