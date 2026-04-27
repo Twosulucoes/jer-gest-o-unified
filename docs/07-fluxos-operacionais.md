@@ -55,7 +55,7 @@ Credencial perdida/danificada
 ## 5. Registro de Refeição e Elegibilidade
 
 ```
-Janela de serviço aberta (ex: Almoço 11h-13h)
+Janela de serviço aberta (ex: Almoço 11h-13h) vinculado a um Local (meal_locations)
   → Participante apresenta credencial
   → Operador valida QR
   → Trigger trg_validate_meal_consumption_eligibility verifica regras de elegibilidade:
@@ -64,6 +64,9 @@ Janela de serviço aberta (ex: Almoço 11h-13h)
   → Se autorizado: registra meal_consumption.
   → Se não: retorna erro "Participante não autorizado nesta janela".
 ```
+
+## 5.1 Exportação de Relatórios Consolidados
+Os relatórios de Alimentação e Alojamento suportam exportação em CSV, XLSX (com abas de Resumo e Detalhe) e PDF (com cabeçalho institucional e assinatura). O nome do arquivo gerado inclui o nome do responsável (assinatura) para fins de auditoria.
 
 ## 6. Configuração de Regras por Prova
 
