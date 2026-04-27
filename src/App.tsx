@@ -98,6 +98,8 @@ import AcessosPwaAuditPage from "./pages/admin/AcessosPwaAuditPage";
 import IrregularidadesPage from "./pages/admin/IrregularidadesPage";
 import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
 import SchemaValidadorPage from "./pages/admin/SchemaValidadorPage";
+import SupabaseSetupPage from "./pages/admin/SupabaseSetupPage";
+
 import OcorrenciasPage from "./pages/admin/OcorrenciasPage";
 // MapaSistemaPage and DiagnosticoCompeticaoPage accessed only via SistemaDiagnosticoPage
 import SistemaDiagnosticoPage from "./pages/admin/SistemaDiagnosticoPage";
