@@ -86,7 +86,7 @@ export default function AlimentacaoJanelasPage() {
           participant_type_value: r.participant_type_value,
           reference_id: r.reference_id
         }));
-        const { error: rulesError } = await (supabase.from("meal_window_eligibility") as any).insert(rulesPayload);
+        const { error: rulesError } = await (supabase as any).from("meal_window_eligibility").insert(rulesPayload);
         if (rulesError) throw rulesError;
       }
     },
