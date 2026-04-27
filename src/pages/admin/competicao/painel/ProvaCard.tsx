@@ -1,15 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Users } from "lucide-react";
 import {
   STATUS_CONFIG,
-  STEP_COLORS,
-  getActionIcon,
-  getActionLabel,
 } from "./lib/statusConfig";
-import type { ProvaRow, ProvaStatus } from "./lib/computeProvaData";
+import type { ProvaRow } from "./lib/computeProvaData";
 
 interface ProvaCardProps {
   prova: ProvaRow;
@@ -29,7 +24,9 @@ export function ProvaCard({ prova, onAction }: ProvaCardProps) {
               {prova.name}
             </h4>
             <Badge variant="outline" className="text-[10px]">
-              {prova.family === "combat" ? "Combate" : prova.is_collective ? "Coletiva" : "Individual"}
+              {prova.family === "combat" ? "Combate" : 
+               (prova.family === "time" || prova.family === "mark") ? "Time/Mark" :
+               prova.is_collective ? "Coletiva" : "Individual"}
             </Badge>
             <div
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${cfg.color}`}
@@ -45,22 +42,22 @@ export function ProvaCard({ prova, onAction }: ProvaCardProps) {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            {prova.is_grouped_combat ? "Múltiplas Categorias" : `${prova.sport_name} · ${prova.category_name}`}
+            {prova.is_grouped_combat || prova.is_grouped_time_mark ? "Múltiplas Categorias/Provas" : `${prova.sport_name} · ${prova.category_name}`}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
-            {prova.is_grouped_combat && (
+            {(prova.is_grouped_combat || prova.is_grouped_time_mark) && (
               <div className="flex flex-col">
-                <span className="text-[10px] uppercase text-muted-foreground font-semibold">Categorias</span>
+                <span className="text-[10px] uppercase text-muted-foreground font-semibold">Provas</span>
                 <span className="text-lg font-bold">{prova.category_count}</span>
               </div>
             )}
             <div className="flex flex-col">
               <span className="text-[10px] uppercase text-muted-foreground font-semibold">
-                {prova.is_grouped_combat ? "Atletas" : "Lutas"}
+                {prova.is_grouped_time_mark ? "Séries Montadas" : (prova.is_grouped_combat ? "Atletas" : "Lutas")}
               </span>
               <span className="text-lg font-bold">
-                {prova.is_grouped_combat ? prova.enrolled_count : prova.match_count}
+                {prova.is_grouped_time_mark ? prova.phase_count : (prova.is_grouped_combat ? prova.enrolled_count : prova.match_count)}
               </span>
             </div>
             <div className="flex flex-col">
@@ -89,7 +86,9 @@ export function ProvaCard({ prova, onAction }: ProvaCardProps) {
             onClick={() => onAction(prova)}
           >
             {prova.family === "combat" ? "Abrir Painel Combat" : 
-             prova.family === "sets" ? "Abrir Painel Sets" : "Abrir Painel Score"}
+             prova.family === "sets" ? "Abrir Painel Sets" : 
+             (prova.family === "time" || prova.family === "mark") ? "Abrir Painel Time/Mark" :
+             "Abrir Painel Score"}
           </Button>
         </div>
       </CardContent>

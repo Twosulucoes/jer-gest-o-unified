@@ -38,6 +38,7 @@ export interface ProvaRow {
   family?: string | null;
   category_count?: number;
   is_grouped_combat?: boolean;
+  is_grouped_time_mark?: boolean;
 }
 
 export function computeProvaData(row: any, family?: string | null): ProvaRow {
@@ -71,6 +72,14 @@ export function computeProvaData(row: any, family?: string | null): ProvaRow {
             ? "active"
             : "pending",
       },
+    ];
+  } else if (family === "time" || family === "mark") {
+    steps = [
+      { key: "athletes", label: "Inscritos", state: enrolled > 0 ? "done" : "pending" },
+      { key: "structure", label: "Séries", state: phases > 0 ? "done" : "pending" },
+      { key: "agenda", label: "Agenda", state: withSchedule > 0 ? "done" : "pending" },
+      { key: "results", label: "Resultados", state: withResult > 0 ? (withResult === matchCount ? "done" : "active") : "pending" },
+      { key: "published", label: "Homologado", state: validated > 0 ? (validated === matchCount ? "done" : "active") : "pending" },
     ];
   } else if (isCollective) {
     steps = [

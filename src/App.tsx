@@ -74,6 +74,7 @@ import CompeticaoPainelPage from "./pages/admin/CompeticaoPainelPage";
 import CompeticaoPainelScorePage from "./pages/admin/CompeticaoPainelScorePage";
 import CompeticaoPainelSetsPage from "./pages/admin/CompeticaoPainelSetsPage";
 import CompeticaoPainelCombatPage from "./pages/admin/CompeticaoPainelCombatPage";
+import CompeticaoPainelTimeMarkPage from "./pages/admin/CompeticaoPainelTimeMarkPage";
 import ParticipantesPage from "./pages/admin/ParticipantesPage";
 import VoucherValidarPage from "./pages/admin/VoucherValidarPage";
 import DuplicidadesPessoasPage from "./pages/admin/DuplicidadesPessoasPage";
@@ -339,6 +340,7 @@ const App = () => (
               <Route path="competicao/painel-score/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoScorePage /></ProtectedRoute>} />
               <Route path="competicao/painel-sets/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoSetsPage /></ProtectedRoute>} />
               <Route path="competicao/painel-combat/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoCombatPage /></ProtectedRoute>} />
+              <Route path="competicao/painel-time-mark/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelTimeMarkPage /></ProtectedRoute>} />
               <Route path="competicao/equipes" element={<RedirectToEtapas />} />
               <Route path="competicao/resultados" element={<RedirectToEtapas />} />
               <Route path="competicao/sincronizar-equipes" element={<RedirectToEtapas />} />
@@ -437,6 +439,7 @@ const App = () => (
               <Route path="competicao/painel-score/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelScorePage /></ProtectedRoute>} />
               <Route path="competicao/painel-sets/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelSetsPage /></ProtectedRoute>} />
               <Route path="competicao/painel-combat/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelCombatPage /></ProtectedRoute>} />
+              <Route path="competicao/painel-time-mark/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelTimeMarkPage /></ProtectedRoute>} />
               <Route path="competicao/pre-validacao" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><PreValidacaoPage /></ProtectedRoute>} />
               <Route path="competicao/central" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoCentralPage /></ProtectedRoute>} />
               <Route path="competicao/fases" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoFasesPage /></ProtectedRoute>} />
