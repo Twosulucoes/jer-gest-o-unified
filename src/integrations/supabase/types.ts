@@ -3766,6 +3766,68 @@ export type Database = {
           },
         ]
       }
+      operational_evidence: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_id: string
+          evidence_type: string
+          file_name: string
+          file_url: string
+          id: string
+          module: string
+          reference_id: string | null
+          reference_table: string | null
+          review_notes: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_id: string
+          evidence_type: string
+          file_name: string
+          file_url: string
+          id?: string
+          module: string
+          reference_id?: string | null
+          reference_table?: string | null
+          review_notes?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_id?: string
+          evidence_type?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          module?: string
+          reference_id?: string | null
+          reference_table?: string | null
+          review_notes?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_evidence_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       operational_incidents: {
         Row: {
           admin_response: string | null
