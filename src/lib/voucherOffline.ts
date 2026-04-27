@@ -11,6 +11,7 @@ export interface VoucherOfflineItem {
   person_name?: string;
   status: "pending" | "synced" | "conflict";
   conflict_reason?: string;
+  conflict_context?: Record<string, any>;
   resolved_at?: string;
 }
 
@@ -89,6 +90,12 @@ export const syncVoucherQueue = async () => {
       if (error || !res.ok) {
         updatedQueue[idx].status = "conflict";
         updatedQueue[idx].conflict_reason = res?.reason || error?.message || "unknown";
+        updatedQueue[idx].conflict_context = {
+          used_at: res?.used_at,
+          operator_name: res?.operator_name,
+          // Outros campos que a RPC possa retornar no futuro
+          ...res
+        };
         conflictCount++;
       } else {
         updatedQueue[idx].status = "synced";

@@ -1,55 +1,63 @@
 import { voucherErrorMessage } from "./voucherMessages";
 
-export type PwaMessageCode =
-  | "ERR_NOT_FOUND"
-  | "ERR_ALREADY_REGISTERED"
-  | "ERR_SESSION_EXPIRED"
-  | "ERR_WINDOW_REQUIRED"
-  | "ERR_LIMIT_REACHED"
-  | "ERR_UNKNOWN"
-  | "ERR_NAME_REQUIRED"
-  | "SUCCESS_REGISTERED"
-  | "SUCCESS_BOARDING"
-  | "ALREADY_BOARDED"
-  | "SEARCH_PLACEHOLDER"
-  | "NO_RESULTS"
-  | "MANUAL_SEARCH"
-  | "QR_VALID"
-  | "VOUCHER_NOT_FOUND"
-  | "VOUCHER_INACTIVE"
-  | "VOUCHER_EXPIRED"
-  | "VOUCHER_NOT_YET_VALID"
-  | "VOUCHER_SCOPE_DENIED"
-  | "VOUCHER_MAX_USES"
-  | "MANUAL_BOARDING"
-  | "FULL_NAME"
-  | "PASSENGER_NAME_PLACEHOLDER"
-  | "TAKE_PHOTO"
-  | "SAVING"
-  | "REGISTER_BOARDING"
-  | "CANCEL"
-  | "SEARCH_MANUALLY"
-  | "CHECKIN_SUCCESS"
-  | "CHECKOUT_SUCCESS"
-  | "ERR_INVALID_QR"
-  | "ERR_SELECT_FACILITY"
-  | "ERR_UNDER_12"
-  | "ERR_ALREADY_STAYING"
-  | "ERR_NOT_STAYING"
-  | "SCAN_QR"
-  | "SCAN_TITLE"
-  | "SCAN"
-  | "BUSCANDO"
-  | "EMBARQUE"
-  | "MANUAL"
-  | "FINALIZAR"
-  | "NENHUM_PASSAGEIRO"
-  | "EMBARCADO"
-  | "PENDENTE"
-  | "VOLTAR"
-  | "ACESSO_BLOQUEADO"
-  | "APENAS_MOTORISTA"
-  | "SCAN_EMBARQUE";
+export const PWA_MESSAGE_CODES = [
+  "ERR_NOT_FOUND",
+  "ERR_ALREADY_REGISTERED",
+  "ERR_SESSION_EXPIRED",
+  "ERR_WINDOW_REQUIRED",
+  "ERR_LIMIT_REACHED",
+  "ERR_UNKNOWN",
+  "ERR_NAME_REQUIRED",
+  "SUCCESS_REGISTERED",
+  "SUCCESS_BOARDING",
+  "ALREADY_BOARDED",
+  "SEARCH_PLACEHOLDER",
+  "NO_RESULTS",
+  "MANUAL_SEARCH",
+  "QR_VALID",
+  "VOUCHER_NOT_FOUND",
+  "VOUCHER_INACTIVE",
+  "VOUCHER_EXPIRED",
+  "VOUCHER_NOT_YET_VALID",
+  "VOUCHER_SCOPE_DENIED",
+  "VOUCHER_MAX_USES",
+  "MANUAL_BOARDING",
+  "FULL_NAME",
+  "PASSENGER_NAME_PLACEHOLDER",
+  "TAKE_PHOTO",
+  "SAVING",
+  "REGISTER_BOARDING",
+  "CANCEL",
+  "SEARCH_MANUALLY",
+  "CHECKIN_SUCCESS",
+  "CHECKOUT_SUCCESS",
+  "ERR_INVALID_QR",
+  "ERR_SELECT_FACILITY",
+  "ERR_UNDER_12",
+  "ERR_ALREADY_STAYING",
+  "ERR_NOT_STAYING",
+  "SCAN_QR",
+  "SCAN_TITLE",
+  "SCAN",
+  "BUSCANDO",
+  "EMBARQUE",
+  "MANUAL",
+  "FINALIZAR",
+  "NENHUM_PASSAGEIRO",
+  "EMBARCADO",
+  "PENDENTE",
+  "VOLTAR",
+  "ACESSO_BLOQUEADO",
+  "APENAS_MOTORISTA",
+  "SCAN_EMBARQUE",
+  "SYNC_PENDING",
+  "SYNCING",
+  "SYNC_SUCCESS",
+  "SYNC_CONFLICTS",
+  "VOUCHER_OFFLINE_RECORDED"
+] as const;
+
+export type PwaMessageCode = typeof PWA_MESSAGE_CODES[number];
 
 export type PwaLang = "pt" | "es";
 
@@ -249,6 +257,26 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
   SCAN_EMBARQUE: {
     pt: "Scan Embarque",
     es: "Scan Embarque",
+  },
+  SYNC_PENDING: {
+    pt: "Sincronização pendente",
+    es: "Sincronización pendiente",
+  },
+  SYNCING: {
+    pt: "Sincronizando...",
+    es: "Sincronizando...",
+  },
+  SYNC_SUCCESS: {
+    pt: "Sincronização concluída",
+    es: "Sincronización completada",
+  },
+  SYNC_CONFLICTS: {
+    pt: "Sincronização concluída com conflitos",
+    es: "Sincronización completada con conflictos",
+  },
+  VOUCHER_OFFLINE_RECORDED: {
+    pt: "Voucher registrado offline. Sincronize quando houver internet.",
+    es: "Voucher registrado offline. Sincronice cuando haya internet.",
   },
 };
 

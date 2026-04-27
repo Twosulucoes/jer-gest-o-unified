@@ -23,6 +23,8 @@ export interface VoucherMessage {
   tone: VoucherMessageTone;
   /** Código estável para logs/telemetria. */
   code: string;
+  /** Contexto adicional do erro para detalhamento (ex.: em conflitos offline) */
+  context?: Record<string, any>;
 }
 
 // ---------------- Reasons (erros vindos da RPC redeem_voucher) ----------------
@@ -64,35 +66,17 @@ const REASON_TEXT: Record<VoucherReason, Record<PwaLang, string>> = {
     es: "Límite de usos del voucher alcanzado",
   },
   wrong_instance: {
-    pt: "Voucher pertence a outra refeição, viagem ou diária",
-    es: "Voucher pertenece a otra instancia de servicio",
+    pt: "Voucher pertence a outra instância",
+    es: "Voucher pertenece a otra instancia",
   },
   already_used_here: {
-    pt: "Voucher já foi consumido nesta instância",
-    es: "Voucher ya fue consumido en esta instancia",
+    pt: "Voucher já consumido nesta instância",
+    es: "Voucher ya consumido en esta instancia",
   },
   unknown: {
     pt: "Voucher inválido ou erro de sistema",
     es: "Voucher inválido o error del sistema",
   },
-};
-
-// ---------------- Success / info templates ----------------
-
-const SERVICE_LABEL: Record<ServiceKind, Record<PwaLang, string>> = {
-  transport: { pt: "transporte", es: "transporte" },
-  meals: { pt: "alimentação", es: "alimentación" },
-  lodging: { pt: "alojamento", es: "alojamiento" },
-};
-
-const TYPE_LABEL: Record<VoucherType, Record<PwaLang, string>> = {
-  aggregate: { pt: "agregado", es: "agregado" },
-  nominal: { pt: "nominal", es: "nominal" },
-};
-
-const REMAINING_TEXT: Record<PwaLang, (n: number | "infinite") => string> = {
-  pt: (n) => (n === "infinite" ? "usos ilimitados" : `${n} uso${n === 1 ? "" : "s"} restante${n === 1 ? "" : "s"}`),
-  es: (n) => (n === "infinite" ? "usos ilimitados" : `${n} uso${n === 1 ? "" : "s"} restante${n === 1 ? "" : "s"}`),
 };
 
 // ---------------- Public helpers ----------------
@@ -102,19 +86,58 @@ function lang(l?: PwaLang): PwaLang {
 }
 
 /** Mensagem para uma `reason` retornada pela RPC. */
-export function voucherErrorMessage(reason: string | undefined, l?: PwaLang): VoucherMessage {
+export function voucherErrorMessage(
+  reason: string | undefined, 
+  l?: PwaLang,
+  context?: Record<string, any>
+): VoucherMessage {
   const code = (reason && (reason as VoucherReason) in REASON_TEXT ? (reason as VoucherReason) : "unknown");
+  
+  let text = REASON_TEXT[code][lang(l)];
+
+  // Detalhamento de contexto se disponível
+  if (context) {
+    if (code === "inactive" && context.revocation_reason) {
+      text += `: ${context.revocation_reason}`;
+      if (context.revoked_by) text += ` (por ${context.revoked_by})`;
+    } else if (code === "expired" && context.valid_until) {
+      text += ` (válido até ${new Date(context.valid_until).toLocaleString(lang(l) === 'es' ? 'es' : 'pt-BR')})`;
+    } else if (code === "wrong_instance" && context.correct_instance) {
+      text += `. Correto: ${context.correct_instance}`;
+    } else if (code === "already_used_here" && context.used_at) {
+      text += ` às ${new Date(context.used_at).toLocaleTimeString(lang(l) === 'es' ? 'es' : 'pt-BR')}`;
+      if (context.operator_name) text += ` por ${context.operator_name}`;
+    }
+  }
+
   return {
-    text: REASON_TEXT[code][lang(l)],
+    text,
     tone: "error",
     code: `voucher.${code}`,
+    context
   };
 }
+
+const SERVICE_LABEL: Record<string, Record<PwaLang, string>> = {
+  transport: { pt: "transporte", es: "transporte" },
+  meals: { pt: "alimentação", es: "alimentación" },
+  lodging: { pt: "alojamento", es: "alojamiento" },
+};
+
+const TYPE_LABEL: Record<string, Record<PwaLang, string>> = {
+  aggregate: { pt: "agregado", es: "agregado" },
+  nominal: { pt: "nominal", es: "nominal" },
+};
+
+const REMAINING_TEXT: Record<PwaLang, (n: number | "infinite") => string> = {
+  pt: (n) => (n === "infinite" ? "usos ilimitados" : `${n} uso${n === 1 ? "" : "s"} restante${n === 1 ? "" : "s"}`),
+  es: (n) => (n === "infinite" ? "usos ilimitados" : `${n} uso${n === 1 ? "" : "s"} restante${n === 1 ? "" : "s"}`),
+};
 
 /** Mensagem de sucesso após uma RPC `ok`. */
 export function voucherSuccessMessage(
   voucher: VoucherRedeemResult,
-  serviceKind: ServiceKind,
+  serviceKind: string,
   l?: PwaLang,
 ): VoucherMessage {
   const lg = lang(l);
@@ -125,7 +148,7 @@ export function voucherSuccessMessage(
     : voucher.person_name || (lg === "es" ? "Participante" : "Participante");
 
   const typeLabel = TYPE_LABEL[isAggregate ? "aggregate" : "nominal"][lg];
-  const serviceLabel = SERVICE_LABEL[serviceKind][lg];
+  const serviceLabel = SERVICE_LABEL[serviceKind] ? SERVICE_LABEL[serviceKind][lg] : serviceKind;
 
   const remaining =
     voucher.remaining_uses === null || voucher.remaining_uses === undefined
@@ -133,9 +156,7 @@ export function voucherSuccessMessage(
       : REMAINING_TEXT[lg](Math.max(0, voucher.remaining_uses));
 
   // Ex.: "🎫 Voucher agregado validado · Acompanhante (transporte) · 4 usos restantes"
-  const text = `🎫 ${
-    lg === "es" ? "Voucher" : "Voucher"
-  } ${typeLabel} ${lg === "es" ? "validado" : "validado"} · ${subject} (${serviceLabel}) · ${remaining}`;
+  const text = `🎫 Voucher ${typeLabel} validado · ${subject} (${serviceLabel}) · ${remaining}`;
 
   return {
     text,
@@ -160,7 +181,7 @@ export function voucherContingencyNotice(l?: PwaLang): VoucherMessage {
 /** Helper conveniente: dado o resultado da RPC, devolve a mensagem certa. */
 export function voucherMessageFromResult(
   result: VoucherRedeemResult | null | undefined,
-  serviceKind: ServiceKind,
+  serviceKind: string,
   l?: PwaLang,
 ): VoucherMessage {
   if (!result || !result.ok) return voucherErrorMessage(result?.reason, l);

@@ -46,7 +46,7 @@ export function VoucherConflictCentral() {
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-destructive" />
                 <span className="text-xs font-bold uppercase tracking-wider text-destructive">
-                  {voucherErrorMessage(item.conflict_reason).text}
+                  {voucherErrorMessage(item.conflict_reason, undefined, item.conflict_context).text}
                 </span>
               </div>
               <span className="text-[10px] font-mono text-muted-foreground bg-background px-1.5 py-0.5 rounded border">

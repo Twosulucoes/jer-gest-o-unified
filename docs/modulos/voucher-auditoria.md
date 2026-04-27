@@ -1,7 +1,7 @@
 # Auditoria Pós-Reformulação do Módulo de Voucher
 
-> **Data da Auditoria Final:** 2026-04-27.
-> **Estado:** Concluído (Fases 1, 2, 3 e 4 integradas).
+> **Data da Auditoria Final:** 2026-04-28.
+> **Estado:** Concluído (Fases 1-4 + Melhorias UX Offline integradas).
 
 ---
 
@@ -83,7 +83,7 @@
 ---
 
 ## 5. Lacunas Remanescentes e Riscos
-- **Offline para Vouchers**: ✅ RESOLVIDO (2026-04-28). Integrada fila offline resiliente `voucherOffline.ts` nos 3 PWAs operacionais com paridade à fila de credenciais e central de conflitos local.
+- **Offline para Vouchers**: ✅ RESOLVIDO (2026-04-28). Integrada fila offline resiliente `voucherOffline.ts` nos 3 PWAs operacionais com paridade à fila de credenciais e central de conflitos local. Evoluído em 2026-04-28 com detalhamento de motivos de conflito e padronização total de mensagens.
 - **Consolidação de "People"**: Existem duas tabelas de pessoas (`people` e `service_eventual_people`). No futuro, uma view unificada pode facilitar relatórios globais de consumo.
 
 ---
