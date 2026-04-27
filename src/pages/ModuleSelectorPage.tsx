@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useEventContext } from "@/contexts/EventContext";
 import {
   Loader2, UtensilsCrossed, Users, Clipboard, Shield, LogOut,
   LayoutDashboard, Bus, Bed, Trophy, ScanLine, IdCard, Search
@@ -143,6 +144,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
 
 export default function ModuleSelectorPage() {
   const navigate = useNavigate();
+  const { activeEventId } = useEventContext();
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
@@ -169,7 +171,9 @@ export default function ModuleSelectorPage() {
       const isSuperAdmin = roles.includes("super_admin");
       const available = isSuperAdmin ? MODULE_OPTIONS : MODULE_OPTIONS.filter(m => m.roles.some(r => roles.includes(r)));
       
-      if (!isSuperAdmin && available.length <= 1) {
+      // Só redireciona automaticamente se já houver um evento selecionado.
+      // Caso contrário, o usuário deve ver a lista de módulos (que pode estar vazia ou redirecionar para a seleção de evento).
+      if (!isSuperAdmin && available.length <= 1 && activeEventId) {
         const target = available.length === 1 ? available[0].path : "/pwa";
         navigate(target, { replace: true });
         return;
@@ -177,7 +181,7 @@ export default function ModuleSelectorPage() {
 
       setLoading(false);
     })();
-  }, [navigate]);
+  }, [navigate, activeEventId]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
