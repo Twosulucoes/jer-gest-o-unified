@@ -223,7 +223,13 @@ export default function PwaLandingPage() {
               {visibleCards.map((card) => (
                 <button
                   key={card.role}
-                  onClick={() => navigate(card.to)}
+                  onClick={() => {
+                    if (card.to.startsWith("/pwa") && !card.to.includes("pesquisa") && !card.to.includes("install") && !activeStageId) {
+                      navigate("/pwa/configuracao", { state: { from: { pathname: card.to }, reason: "missing_stage" } });
+                    } else {
+                      navigate(card.to);
+                    }
+                  }}
                   className="group relative flex items-center gap-4 p-4 rounded-2xl border bg-card hover:bg-muted/5 hover:border-primary/30 transition-all text-left active:scale-[0.98] shadow-sm hover:shadow-md"
                 >
                   <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${card.gradient} text-white shadow-lg group-hover:scale-110 transition-transform`}>
