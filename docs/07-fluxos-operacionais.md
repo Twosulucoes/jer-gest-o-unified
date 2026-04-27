@@ -104,7 +104,8 @@ FLUXO COMBAT:
   → Sistema gera bracket eliminatório (BYE automático) e confrontos da 1ª fase
   → Aba Lutas: Visualiza grade densa com agenda e status das lutas
   → Editar Luta (Drawer): Define data/hora/local e designa arbitragem por modalidade
-  → Pós-Luta: Lança resultado no detalhe da partida (vencedor avança automaticamente e bracket atualiza visualmente)
+  → Pós-Luta: Lança resultado na rota dedicada (vencedor, método, tempo de luta, placar dinâmico)
+  → Homologação: Coordenador valida com senha → status "Validado" → Sistema propaga vencedor automaticamente para o próximo nó da chave.
 
 FLUXO SCORE/SETS:
   → Grade de confrontos: filtra por fase/grupo/status
