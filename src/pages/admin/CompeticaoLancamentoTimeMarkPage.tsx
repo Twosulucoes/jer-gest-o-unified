@@ -101,6 +101,8 @@ export default function CompeticaoLancamentoTimeMarkPage() {
   const [homologatePassword, setHomologatePassword] = useState("");
   const [homologateObservation, setHomologateObservation] = useState("");
   const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateEntriesInfo, setDuplicateEntriesInfo] = useState<{pos: number, names: string[]}[]>([]);
 
   // Initialize state from match data
   useEffect(() => {
