@@ -461,7 +461,7 @@ export default function VouchersPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos tipos</SelectItem>
                   <SelectItem value="aggregate">Agregado (acompanhantes)</SelectItem>
-                  <SelectItem value="nominal">Nominal (contingência)</SelectItem>
+                  <SelectItem value="nominal">Nominais</SelectItem>
                 </SelectContent>
               </Select>
             </div>
