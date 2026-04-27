@@ -142,7 +142,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
 
       // 5. Call RPC via hook
       await generateKnockout.mutateAsync({
-        eventId: sportEvent?.event_id!,
+        eventId: sportEvent?.event_id ?? "",
         sportEventId,
         phaseId,
         participants,
