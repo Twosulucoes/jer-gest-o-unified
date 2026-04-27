@@ -172,6 +172,8 @@ export default function VouchersPage() {
   const [printVoucher, setPrintVoucher] = useState<VoucherRow | null>(null);
   const [historyVoucher, setHistoryVoucher] = useState<VoucherRow | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<VoucherRow | null>(null);
+  const [revokeBatchTarget, setRevokeBatchTarget] = useState<BatchRow | null>(null);
+  const [reissueTarget, setReissueTarget] = useState<VoucherRow | null>(null);
   const [revokeReason, setRevokeReason] = useState("");
 
   const { data: vouchers = [], isLoading } = useQuery({
