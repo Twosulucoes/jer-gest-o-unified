@@ -25,8 +25,7 @@ export default function AlimentacaoLocaisPage() {
     queryKey: ["meal_locations", selectedEventId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await supabase
-        .from("meal_locations")
+      const { data, error } = await (supabase.from("meal_locations") as any)
         .select("*")
         .eq("event_id", selectedEventId)
         .order("name");
@@ -38,7 +37,7 @@ export default function AlimentacaoLocaisPage() {
 
   const createMut = useMutation({
     mutationFn: async (v: MealLocationFormValues) => {
-      const { error } = await supabase.from("meal_locations").insert({
+      const { error } = await (supabase.from("meal_locations") as any).insert({
         event_id: selectedEventId!,
         name: v.name,
         address: v.address || null,
@@ -57,8 +56,7 @@ export default function AlimentacaoLocaisPage() {
 
   const updateMut = useMutation({
     mutationFn: async ({ id, ...v }: MealLocationFormValues & { id: string }) => {
-      const { error } = await supabase
-        .from("meal_locations")
+      const { error } = await (supabase.from("meal_locations") as any)
         .update({
           name: v.name,
           address: v.address || null,
