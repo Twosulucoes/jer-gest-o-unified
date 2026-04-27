@@ -786,48 +786,47 @@ function IssueVoucherDialog({
 
           {step === 2 && voucherType === "nominal" && (
             <div className="space-y-3">
-              <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
-                Vouchers nominais são marcados como <strong>contingência</strong>. O fluxo padrão
-                para credenciados é a credencial física.
+              <div className="rounded-md border border-blue-500/40 bg-blue-500/10 p-3 text-xs">
+                Vouchers nominais exigem uma pessoa cadastrada no módulo de <strong>Pessoas Eventuais</strong>.
               </div>
               {selected ? (
                 <Card className="p-3 flex items-center justify-between">
                   <div>
                     <p className="font-medium">{selected.full_name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {selected.participant_type}
-                      {selected.cpf ? ` · CPF ${selected.cpf}` : ""}
+                      {selected.involvement_type}
+                      {selected.organization ? ` · ${selected.organization}` : ""}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setParticipantId(null)}>
+                  <Button variant="ghost" size="sm" onClick={() => setEventualId(null)}>
                     Trocar
                   </Button>
                 </Card>
               ) : (
                 <>
-                  <Label>Buscar participante *</Label>
+                  <Label>Buscar pessoa eventual *</Label>
                   <Input
-                    placeholder="Nome ou CPF (mín. 2 caracteres)"
+                    placeholder="Nome da pessoa (mín. 2 caracteres)"
                     value={participantSearch}
                     onChange={(e) => setParticipantSearch(e.target.value)}
                     autoFocus
                   />
-                  {participantSearch.trim().length >= 2 && participantOptions.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Nenhum participante encontrado.</p>
+                  {participantSearch.trim().length >= 2 && eventualOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Nenhuma pessoa encontrada.</p>
                   )}
-                  {participantOptions.length > 0 && (
+                  {eventualOptions.length > 0 && (
                     <Card className="max-h-48 overflow-auto divide-y divide-border">
-                      {participantOptions.map((p) => (
+                      {eventualOptions.map((p) => (
                         <button
                           key={p.id}
                           type="button"
-                          onClick={() => setParticipantId(p.id)}
+                          onClick={() => setEventualId(p.id)}
                           className="w-full text-left p-2 hover:bg-accent transition-colors"
                         >
                           <p className="text-sm font-medium">{p.full_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {p.participant_type}
-                            {p.cpf ? ` · ${p.cpf}` : ""}
+                            {p.involvement_type}
+                            {p.organization ? ` · ${p.organization}` : ""}
                           </p>
                         </button>
                       ))}
