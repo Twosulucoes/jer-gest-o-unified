@@ -41,7 +41,7 @@ const INVOLVEMENT_TYPES = [
 
 export default function EventuaisPage() {
   const { hasRole } = useAuth();
-  const { activeEventId } = useActiveEventId();
+  const activeEventId = useActiveEventId();
   const qc = useQueryClient();
   const canManage = hasRole("admin") || hasRole("secretaria") || hasRole("super_admin");
 
