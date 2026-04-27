@@ -78,8 +78,8 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
     return <div className="tactical-cockpit min-h-screen pb-20">{children}</div>;
   }
 
-  // Central Event Scope Check: If no event is selected, block PWA usage
-  if (!activeEventId) {
+  // Central Event Scope Check: If no event is selected, block PWA usage (except for the landing page itself)
+  if (!activeEventId && location.pathname !== "/pwa") {
     return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_event" }} replace />;
   }
 
