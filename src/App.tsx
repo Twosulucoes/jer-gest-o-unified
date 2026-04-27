@@ -54,6 +54,8 @@ import AlojamentoHubPage from "./pages/admin/AlojamentoHubPage";
 import AlojamentoLocaisPage from "./pages/admin/AlojamentoLocaisPage";
 import AlojamentoUnidadesPage from "./pages/admin/AlojamentoUnidadesPage";
 import AlojamentoOcupacaoPage from "./pages/admin/AlojamentoOcupacaoPage";
+import AlocacaoLotePage from "./pages/admin/alojamento/AlocacaoLotePage";
+import EvidenciasOSCPage from "./pages/admin/evidencias/EvidenciasOSCPage";
 import TransporteRelatoriosPage from "./pages/admin/TransporteRelatoriosPage";
 import AlimentacaoRelatoriosPage from "./pages/admin/AlimentacaoRelatoriosPage";
 import AlojamentoRelatoriosPage from "./pages/admin/AlojamentoRelatoriosPage";
