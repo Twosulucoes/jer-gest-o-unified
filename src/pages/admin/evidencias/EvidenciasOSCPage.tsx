@@ -93,7 +93,7 @@ export default function EvidenciasOSCPage() {
 
   const reviewMutation = useMutation({
     mutationFn: async ({ id, status, notes }: { id: string, status: string, notes?: string }) => {
-      const { error } = await (supabase.from("operational_evidence") as any).update({
+      const { error } = await (supabase as any).from("operational_evidence").update({
         status,
         reviewed_by: user!.id,
         reviewed_at: new Date().toISOString(),
@@ -110,7 +110,7 @@ export default function EvidenciasOSCPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase.from("operational_evidence") as any).delete().eq("id", id);
+      const { error } = await (supabase as any).from("operational_evidence").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
