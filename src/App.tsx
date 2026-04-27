@@ -572,11 +572,7 @@ const App = () => (
             <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
             <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
             <Route path="/pwa/install" element={<PwaInstallPage />} />
-            <Route path="/pwa/debug" element={<PwaDebugPage />} />
-            <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
-            {/* PWA Diagnóstico */}
-            <Route path="/pwa/diagnostico/qr" element={<QrDiagnosticoPage />} />
-            <Route path="/pwa/debug" element={<PwaDebugPage />} />
+            {/* PwaDebugPage and QrDiagnosticoPage moved to /admin/sistema */}
             {/* Ao Vivo PWA — qualquer autenticado */}
             <Route path="/aovivo/login" element={<Suspense fallback={null}><AoVivoLoginPage /></Suspense>} />
             <Route path="/aovivo" element={<Suspense fallback={null}><AoVivoHomePage /></Suspense>} />
