@@ -5625,6 +5625,9 @@ export type Database = {
           context_id: string | null
           event_id: string | null
           id: string
+          is_offline: boolean | null
+          metadata: Json | null
+          offline_at: string | null
           outcome: string
           qr_value: string | null
           reason: string | null
@@ -5637,6 +5640,9 @@ export type Database = {
           context_id?: string | null
           event_id?: string | null
           id?: string
+          is_offline?: boolean | null
+          metadata?: Json | null
+          offline_at?: string | null
           outcome: string
           qr_value?: string | null
           reason?: string | null
@@ -5649,6 +5655,9 @@ export type Database = {
           context_id?: string | null
           event_id?: string | null
           id?: string
+          is_offline?: boolean | null
+          metadata?: Json | null
+          offline_at?: string | null
           outcome?: string
           qr_value?: string | null
           reason?: string | null
@@ -7768,14 +7777,25 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
-      redeem_voucher: {
-        Args: {
-          p_context_id?: string
-          p_qr_value: string
-          p_service_kind: string
-        }
-        Returns: Json
-      }
+      redeem_voucher:
+        | {
+            Args: {
+              p_context_id?: string
+              p_qr_value: string
+              p_service_kind: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_context_id?: string
+              p_is_offline?: boolean
+              p_offline_at?: string
+              p_qr_value: string
+              p_service_kind: string
+            }
+            Returns: Json
+          }
       refresh_sport_event_prova_map: {
         Args: { p_event_id: string }
         Returns: Json

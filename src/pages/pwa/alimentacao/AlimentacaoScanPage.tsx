@@ -242,6 +242,8 @@ export default function AlimentacaoScanPage() {
             ok: true, 
             source: "qr", 
             message: successMsg,
+            is_offline: true,
+            offline_at: new Date().toISOString()
           } as any);
           toast.info(getPwaMessage("VOUCHER_OFFLINE_RECORDED", lang));
           recordOutcome("ok");

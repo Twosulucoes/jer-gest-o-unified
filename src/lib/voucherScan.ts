@@ -39,6 +39,7 @@ export async function tryRedeemVoucher(
   rawValue: string,
   serviceKind: ServiceKind,
   contextId?: string,
+  offlineData?: { isOffline: boolean; offlineAt: string }
 ): Promise<VoucherRedeemResult | null> {
   if (!isVoucherQr(rawValue)) return null;
 
@@ -46,6 +47,10 @@ export async function tryRedeemVoucher(
     p_qr_value: rawValue.trim(),
     p_service_kind: serviceKind,
     ...(contextId ? { p_context_id: contextId } : {}),
+    ...(offlineData ? { 
+      p_is_offline: offlineData.isOffline, 
+      p_offline_at: offlineData.offlineAt 
+    } : {}),
   });
 
   if (error) {

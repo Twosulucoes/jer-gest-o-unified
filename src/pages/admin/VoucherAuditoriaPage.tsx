@@ -49,22 +49,22 @@ export default function VoucherAuditoriaPage() {
       if (attErr) throw attErr;
 
       // 2. Mapeia para um formato unificado
-      return (attempts || []).map(a => ({
+      return (attempts || []).map((a: any) => ({
         id: a.id,
         timestamp: a.attempted_at,
         type: a.outcome === 'success' ? 'CONSUMO' : 'TENTATIVA RECUSADA',
         service: a.service_kind,
         details: a.outcome === 'success' ? 'Sucesso' : voucherErrorMessage(a.reason, 'pt', { 
-          used_at: (a as any).metadata?.used_at, 
-          operator_name: (a as any).metadata?.operator_name,
-          correct_instance: (a as any).metadata?.correct_instance,
-          revocation_reason: (a as any).metadata?.revocation_reason,
-          valid_until: (a as any).metadata?.valid_until
+          used_at: a.metadata?.used_at, 
+          operator_name: a.metadata?.operator_name,
+          correct_instance: a.metadata?.correct_instance,
+          revocation_reason: a.metadata?.revocation_reason,
+          valid_until: a.metadata?.valid_until
         }).text,
-        identifier: (a as any).voucher?.eventual_person?.full_name || (a as any).voucher?.qr_code_value || a.qr_value,
-        operator: (a as any).operator?.display_name || 'Sistema',
-        is_offline: (a as any).is_offline,
-        offline_at: (a as any).offline_at,
+        identifier: a.voucher?.eventual_person?.full_name || a.voucher?.qr_code_value || a.qr_value,
+        operator: a.operator?.display_name || 'Sistema',
+        is_offline: a.is_offline,
+        offline_at: a.offline_at,
         tone: a.outcome === 'success' ? 'success' : 'destructive'
       }));
     },

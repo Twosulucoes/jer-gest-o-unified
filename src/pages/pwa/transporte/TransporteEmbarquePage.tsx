@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, ScanLine, Users, ShieldAlert, UserPlus, CloudOff } from "lucide-react";
 import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
+import { addToVoucherQueue } from "@/lib/voucherOffline";
 
 import { toast } from "sonner";
 import { type IncidentModule } from "@/types/incidents";
@@ -33,6 +34,8 @@ interface Passenger {
   is_manual?: boolean;
   manual_name?: string | null;
 }
+
+import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
 
 interface TripInfo {
   routeName?: string;
@@ -247,6 +250,12 @@ export default function TransporteEmbarquePage() {
       let viaVoucher = false;
 
       if (isVoucherQr(rawValue)) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!isOnline()) {
+          addToVoucherQueue(rawValue, "transport", tripId, session?.user?.id || "", "Portador de Voucher");
+          toast.info("Voucher registrado offline. Sincronize quando houver internet.");
+          return;
+        }
         const voucher = await tryRedeemVoucher(rawValue, "transport", tripId);
         if (!voucher || !voucher.ok) {
           const msg = voucherErrorMessage(voucher?.reason, lang);
@@ -387,6 +396,7 @@ export default function TransporteEmbarquePage() {
 
       <main className="p-3 max-w-4xl mx-auto space-y-3">
         <OfflineSyncStatus />
+        <VoucherConflictCentral />
 
         {!loading && <DelegationAlertBanner delegationCounts={delegationCounts} />}
 
