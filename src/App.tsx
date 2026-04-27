@@ -98,6 +98,8 @@ import AcessosPwaAuditPage from "./pages/admin/AcessosPwaAuditPage";
 import IrregularidadesPage from "./pages/admin/IrregularidadesPage";
 import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
 import SchemaValidadorPage from "./pages/admin/SchemaValidadorPage";
+import SupabaseSetupPage from "./pages/admin/SupabaseSetupPage";
+
 import OcorrenciasPage from "./pages/admin/OcorrenciasPage";
 // MapaSistemaPage and DiagnosticoCompeticaoPage accessed only via SistemaDiagnosticoPage
 import SistemaDiagnosticoPage from "./pages/admin/SistemaDiagnosticoPage";
@@ -410,6 +412,8 @@ const App = () => (
               <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><RelatoriosHubPage /></ProtectedRoute>} />
               <Route path="relatorios/central" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ReportCenterPage /></ProtectedRoute>} />
               <Route path="configuracoes/identidade-visual" element={<ProtectedRoute allowedRoles={["admin"]}><IdentidadeVisualPage /></ProtectedRoute>} />
+              <Route path="configuracoes/supabase" element={<ProtectedRoute allowedRoles={["admin"]}><SupabaseSetupPage /></ProtectedRoute>} />
+
               <Route path="atletas/qrcode" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AtletaQrCodePage /></ProtectedRoute>} />
               {/* Ocorrências — operacional, redireciona para Etapa */}
               <Route path="ocorrencias" element={<RedirectToEtapas />} />
