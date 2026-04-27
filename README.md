@@ -4,6 +4,7 @@ Sistema de **gestão operacional** dos Jogos Escolares de Roraima (JER e JERPA).
 
 Gerencia toda a operação do evento **após a fase de inscrição**: credenciamento, logística (transporte, alimentação, alojamento), competição, apuração e publicação de resultados.
 
+> **Segurança e Integridade ✅ QR Assinado & OSC** — Implementação de assinatura HMAC-SHA256 para QR Codes, validação de gênero no alojamento, controle de elegibilidade por delegação/perfil na alimentação e modelo unificado de evidências operacionais para prestação de contas OSC (2026-04-21)
 > **Pessoas Unificadas + Vouchers QR ✅** — Toda pessoa do evento (atletas, técnicos, mesários, motoristas, cozinheiras, fiscais, terceiros) é cadastrada como **Pessoa única** (CPF como chave), podendo ter **múltiplas funções**. Vouchers QR multiuso liberam consumo logístico para quem não tem credencial. Relatório consolidado por pessoa em `/admin/relatorios` e merge de duplicidades em `/admin/pessoas/duplicidades` (2026-04-19)
 > **Tipos de Participantes ✅ Delegação vs Organização** — Separação clara entre participantes de delegações (Atleta/Staff) e participantes da organização (Coordenação/Apoio), com campos administrativos específicos e regras rígidas de privacidade e exclusividade de CPF (2026-04-21)
 > **Navegação ✅ Refatorada Global vs Etapa** — Separação total entre contexto Global e contexto de Etapa (2026-04-17)
