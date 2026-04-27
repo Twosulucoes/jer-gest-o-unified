@@ -150,6 +150,7 @@ export default function VoucherAuditoriaPage() {
                   <TableRow>
                     <TableHead>Data/Hora</TableHead>
                     <TableHead>Operação</TableHead>
+                    <TableHead>Origem</TableHead>
                     <TableHead>Serviço</TableHead>
                     <TableHead>Identificador</TableHead>
                     <TableHead>Detalhes</TableHead>
