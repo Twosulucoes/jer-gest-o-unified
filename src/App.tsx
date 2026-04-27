@@ -86,6 +86,7 @@ import DuplicidadesPessoasPage from "./pages/admin/DuplicidadesPessoasPage";
 import PessoasPage from "./pages/admin/PessoasPage";
 import EventuaisPage from "./pages/admin/EventuaisPage";
 import VouchersPage from "./pages/admin/VouchersPage";
+import VoucherAuditoriaPage from "./pages/admin/VoucherAuditoriaPage";
 import LogisticaConsolidadaPage from "./pages/admin/LogisticaConsolidadaPage";
 import ParticipanteHistoricoPage from "./pages/admin/ParticipanteHistoricoPage";
 import HistoricoBuscaPage from "./pages/admin/HistoricoBuscaPage.tsx";
@@ -450,6 +451,7 @@ const App = () => (
                <Route path="pessoas/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
                <Route path="pessoas/eventuais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><EventuaisPage /></ProtectedRoute>} />
               <Route path="vouchers" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><VouchersPage /></ProtectedRoute>} />
+              <Route path="vouchers/auditoria" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><VoucherAuditoriaPage /></ProtectedRoute>} />
               <Route path="logistica/consolidada" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento"]}><LogisticaConsolidadaPage /></ProtectedRoute>} />
               {/* Competição */}
               <Route path="competicao" element={<Navigate to="painel" replace />} />

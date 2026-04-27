@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -80,6 +81,7 @@ import {
 // -------- Types --------
 interface VoucherRow {
   id: string;
+  event_id: string;
   participant_id: string | null;
   eventual_person_id: string | null;
   qr_code_value: string;
@@ -103,6 +105,8 @@ interface VoucherRow {
   notes: string | null;
   revoke_reason: string | null;
   revoked_at: string | null;
+  replaces_voucher_id: string | null;
+  reissued_at: string | null;
   created_at: string;
 }
 
@@ -159,6 +163,7 @@ function getServiceInstanceLabel(v: any, instances: any) {
 // -------- Main Page --------
 export default function VouchersPage() {
   const eventId = useActiveEventId();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -170,6 +175,8 @@ export default function VouchersPage() {
   const [printVoucher, setPrintVoucher] = useState<VoucherRow | null>(null);
   const [historyVoucher, setHistoryVoucher] = useState<VoucherRow | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<VoucherRow | null>(null);
+  const [revokeBatchTarget, setRevokeBatchTarget] = useState<BatchRow | null>(null);
+  const [reissueTarget, setReissueTarget] = useState<VoucherRow | null>(null);
   const [revokeReason, setRevokeReason] = useState("");
 
   const { data: vouchers = [], isLoading } = useQuery({
@@ -253,23 +260,102 @@ export default function VouchersPage() {
 
   const revokeMutation = useMutation({
     mutationFn: async () => {
-      if (!revokeTarget) throw new Error("Nenhum voucher selecionado");
+      if (!revokeTarget && !revokeBatchTarget) throw new Error("Nenhum alvo selecionado");
       if (!revokeReason.trim()) throw new Error("Informe o motivo");
-      const { error } = await supabase
-        .from("service_vouchers")
-        .update({
-          status: "revoked",
-          revoked_at: new Date().toISOString(),
-          revoke_reason: revokeReason.trim(),
-        })
-        .eq("id", revokeTarget.id);
-      if (error) throw error;
+      
+      const reason = revokeReason.trim();
+      const now = new Date().toISOString();
+
+      if (revokeTarget) {
+        const { error } = await supabase
+          .from("service_vouchers")
+          .update({
+            status: "revoked",
+            revoked_at: now,
+            revoke_reason: reason,
+          })
+          .eq("id", revokeTarget.id);
+        if (error) throw error;
+      } else if (revokeBatchTarget) {
+        const { error } = await supabase
+          .from("service_vouchers")
+          .update({
+            status: "revoked",
+            revoked_at: now,
+            revoke_reason: `[Lote] ${reason}`,
+          })
+          .eq("batch_id", revokeBatchTarget.id)
+          .eq("status", "active");
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vouchers"] });
-      toast.success("Voucher revogado");
+      queryClient.invalidateQueries({ queryKey: ["voucher-batches"] });
+      toast.success(revokeBatchTarget ? "Lote revogado" : "Voucher revogado");
       setRevokeTarget(null);
+      setRevokeBatchTarget(null);
       setRevokeReason("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const reissueMutation = useMutation({
+    mutationFn: async () => {
+      if (!reissueTarget) throw new Error("Voucher não selecionado");
+      if (!revokeReason.trim()) throw new Error("Informe o motivo da reemissão");
+
+      const oldV = reissueTarget;
+      const now = new Date().toISOString();
+      const reason = `[Reemissão] ${revokeReason.trim()}`;
+
+      // 1. Invalida o antigo
+      const { error: updErr } = await supabase
+        .from("service_vouchers")
+        .update({
+          status: "revoked",
+          revoked_at: now,
+          revoke_reason: reason,
+        })
+        .eq("id", oldV.id);
+      if (updErr) throw updErr;
+
+      // 2. Cria o novo
+      const { data: newV, error: insErr } = await (supabase
+        .from("service_vouchers") as any)
+        .insert({
+          event_id: oldV.event_id,
+          participant_id: oldV.participant_id,
+          eventual_person_id: oldV.eventual_person_id,
+          qr_code_value: genQrValue(),
+          status: "active",
+          voucher_type: oldV.voucher_type,
+          is_nominal: oldV.is_nominal,
+          label: oldV.label,
+          scope_meals: oldV.scope_meals,
+          scope_transport: oldV.scope_transport,
+          scope_lodging: oldV.scope_lodging,
+          target_meal_window_id: oldV.target_meal_window_id,
+          target_trip_id: oldV.target_trip_id,
+          target_facility_id: oldV.target_facility_id,
+          target_date: oldV.target_date,
+          max_uses: oldV.max_uses,
+          valid_until: oldV.valid_until,
+          replaces_voucher_id: oldV.id,
+          reissued_at: now,
+          notes: `Reemissão de ${oldV.qr_code_value}. Motivo: ${revokeReason.trim()}`
+        })
+        .select()
+        .single();
+      if (insErr) throw insErr;
+      return newV as VoucherRow;
+    },
+    onSuccess: (newV) => {
+      queryClient.invalidateQueries({ queryKey: ["vouchers"] });
+      toast.success("Voucher reemitido com sucesso");
+      setReissueTarget(null);
+      setRevokeReason("");
+      handlePrintIndividual(newV); // Imprime o novo imediatamente
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -320,6 +406,9 @@ export default function VouchersPage() {
           <p className="text-sm text-muted-foreground">Gestão operacional de acessos eventuais.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate("/admin/vouchers/auditoria")}>
+            <History className="h-4 w-4 mr-2" /> Auditoria
+          </Button>
           <Button variant="outline" onClick={() => setBatchIssueOpen(true)}>
             <Layers className="h-4 w-4 mr-2" /> Novo Lote
           </Button>
@@ -330,7 +419,7 @@ export default function VouchersPage() {
       </div>
 
       <Tabs defaultValue="vouchers" className="w-full">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="vouchers">Vouchers Individuais</TabsTrigger>
           <TabsTrigger value="batches">Lotes de Vouchers</TabsTrigger>
         </TabsList>
@@ -372,7 +461,7 @@ export default function VouchersPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos tipos</SelectItem>
                   <SelectItem value="aggregate">Agregado (acompanhantes)</SelectItem>
-                  <SelectItem value="nominal">Nominal (contingência)</SelectItem>
+                  <SelectItem value="nominal">Nominais</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -395,7 +484,12 @@ export default function VouchersPage() {
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="flex-1" onClick={() => handlePrintIndividual(v)}><Printer className="h-3 w-3 mr-1"/> Etiqueta</Button>
                     <Button size="sm" variant="outline" className="flex-1" onClick={() => setHistoryVoucher(v)}><History className="h-3 w-3 mr-1"/> Usos</Button>
-                    {v.status === 'active' && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setRevokeTarget(v)}><Ban className="h-3 w-3"/></Button>}
+                    {v.status === 'active' && (
+                      <>
+                        <Button size="sm" variant="ghost" className="text-primary" title="Reemitir" onClick={() => setReissueTarget(v)}><History className="h-3 w-3"/></Button>
+                        <Button size="sm" variant="ghost" className="text-destructive" title="Revogar" onClick={() => setRevokeTarget(v)}><Ban className="h-3 w-3"/></Button>
+                      </>
+                    )}
                   </div>
                 </Card>
               );
@@ -414,8 +508,8 @@ export default function VouchersPage() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handlePrintBatch(b.id)}><Printer className="h-3.5 w-3.5 mr-1" /> Imprimir Lote</Button>
-                  <Button size="sm" variant="ghost" className="text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                  <Button size="sm" variant="outline" onClick={() => handlePrintBatch(b.id)}><Printer className="h-3.5 w-3.5 mr-1" /> Imprimir</Button>
+                  <Button size="sm" variant="ghost" title="Revogar Lote" className="text-destructive" onClick={() => setRevokeBatchTarget(b)}><Ban className="h-3.5 w-3.5" /></Button>
                 </div>
               </Card>
             ))}
@@ -428,12 +522,57 @@ export default function VouchersPage() {
       <IssueBatchWizard open={batchIssueOpen} onOpenChange={setBatchIssueOpen} eventId={eventId} instances={instances} />
       <UsageHistoryDialog voucher={historyVoucher} onClose={() => setHistoryVoucher(null)} />
       
-      {/* Revoke Dialog */}
-      <AlertDialog open={!!revokeTarget} onOpenChange={(o) => !o && setRevokeTarget(null)}>
+      {/* Revoke/Reissue Reason Dialog */}
+      <AlertDialog 
+        open={!!revokeTarget || !!revokeBatchTarget || !!reissueTarget} 
+        onOpenChange={(o) => {
+          if (!o) {
+            setRevokeTarget(null);
+            setRevokeBatchTarget(null);
+            setReissueTarget(null);
+            setRevokeReason("");
+          }
+        }}
+      >
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Revogar Voucher</AlertDialogTitle></AlertDialogHeader>
-          <div className="py-4"><Label>Motivo</Label><Textarea value={revokeReason} onChange={e => setRevokeReason(e.target.value)} /></div>
-          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => revokeMutation.mutate()} disabled={!revokeReason}>Revogar</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {reissueTarget ? "Confirmar Reemissão" : "Confirmar Revogação"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {reissueTarget 
+                ? "O voucher original será invalidado e um novo será gerado para a mesma instância." 
+                : "Esta ação é definitiva. O(s) voucher(s) não poderão mais ser utilizados."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-2">
+            <Label>Motivo {reissueTarget ? "(Obrigatório p/ reemissão)" : "(Obrigatório)"}</Label>
+            <Select onValueChange={setRevokeReason} value={revokeReason}>
+              <SelectTrigger><SelectValue placeholder="Selecione um motivo..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Extravio / Perda">Extravio / Perda</SelectItem>
+                <SelectItem value="Erro de Impressão">Erro de Impressão</SelectItem>
+                <SelectItem value="Dano Físico">Dano Físico</SelectItem>
+                <SelectItem value="Cancelamento da Autorização">Cancelamento da Autorização</SelectItem>
+                <SelectItem value="Outro">Outro (digite abaixo)</SelectItem>
+              </SelectContent>
+            </Select>
+            <Textarea 
+              placeholder="Descreva o motivo com mais detalhes se necessário..." 
+              value={revokeReason} 
+              onChange={e => setRevokeReason(e.target.value)} 
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              className={reissueTarget ? "bg-primary" : "bg-destructive text-destructive-foreground"}
+              onClick={() => reissueTarget ? reissueMutation.mutate() : revokeMutation.mutate()} 
+              disabled={!revokeReason || (reissueTarget ? reissueMutation.isPending : revokeMutation.isPending)}
+            >
+              {reissueTarget ? "Confirmar e Reemitir" : "Confirmar Revogação"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
