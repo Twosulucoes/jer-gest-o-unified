@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,11 @@ const ROLE_REDIRECT_MAP: Record<string, string> = {
 const ADMIN_ROLES = ["admin", "super_admin", "secretaria", "coordenacao_tecnica", "cde"];
 
 function resolveRedirect(roles: string[]): string {
+  // Check for active event/stage in localStorage
+  const activeEventId = localStorage.getItem("jer_active_event_id");
+  const activeStageId = localStorage.getItem("jer_active_stage_id");
+  const hasPwaContext = !!activeEventId && !!activeStageId;
+
   // If only coordenador_modalidade, redirect to their dashboard
   if (roles.includes("coordenador_modalidade") && roles.length === 1) {
     return "/admin/coordenador-modalidade";
@@ -41,12 +46,20 @@ function resolveRedirect(roles: string[]): string {
 
   // Single operational role → direct
   const opRoles = roles.filter(r => ROLE_REDIRECT_MAP[r]);
-  if (opRoles.length === 1) return ROLE_REDIRECT_MAP[opRoles[0]];
+  if (opRoles.length === 1) {
+    const target = ROLE_REDIRECT_MAP[opRoles[0]];
+    // If operational role is a PWA role, check context
+    if (target.startsWith("/pwa") && !hasPwaContext && target !== "/pwa/configuracao") {
+      return "/pwa/configuracao";
+    }
+    return target;
+  }
 
   // Multiple operational roles → module selector
   if (opRoles.length > 1) return "/selecionar-modulo";
 
-  return "/pwa";
+  // Default fallback for PWA users
+  return hasPwaContext ? "/pwa" : "/pwa/configuracao";
 }
 
 export default function LoginPage() {
@@ -59,13 +72,31 @@ export default function LoginPage() {
 
   // If already authenticated, redirect immediately
   const { user: currentUser, roles: currentRoles, loading: authLoading } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
     if (!authLoading && currentUser && currentRoles.length > 0) {
+      // Priority 1: state.from (if reason is not missing_stage or if context exists)
+      const from = (location.state as any)?.from?.pathname;
+      const reason = (location.state as any)?.reason;
+      const activeEventId = localStorage.getItem("jer_active_event_id");
+      const activeStageId = localStorage.getItem("jer_active_stage_id");
+      const hasPwaContext = !!activeEventId && !!activeStageId;
+
+      if (from && from !== "/login") {
+        // If coming from PWA but missing stage, must go to config unless context was recovered
+        if (from.startsWith("/pwa") && from !== "/pwa/configuracao" && !hasPwaContext) {
+          navigate("/pwa/configuracao", { replace: true, state: { from: (location.state as any)?.from, reason: "missing_stage" } });
+        } else {
+          navigate(from, { replace: true });
+        }
+        return;
+      }
+
       const target = resolveRedirect(currentRoles);
       navigate(target, { replace: true });
     }
-  }, [authLoading, currentUser, currentRoles, navigate]);
+  }, [authLoading, currentUser, currentRoles, navigate, location]);
 
   // Recovery modal
   const [recoverOpen, setRecoverOpen] = useState(false);
@@ -105,7 +136,22 @@ export default function LoginPage() {
 
       const userRoles = (rolesRes.data || []).map((r) => r.role as string);
       const target = resolveRedirect(userRoles);
-      navigate(target, { replace: true });
+      
+      // Use state.from if available and context is valid
+      const from = (location.state as any)?.from?.pathname;
+      const activeEventId = localStorage.getItem("jer_active_event_id");
+      const activeStageId = localStorage.getItem("jer_active_stage_id");
+      const hasPwaContext = !!activeEventId && !!activeStageId;
+
+      if (from && from !== "/login") {
+        if (from.startsWith("/pwa") && from !== "/pwa/configuracao" && !hasPwaContext) {
+          navigate("/pwa/configuracao", { replace: true, state: { from: (location.state as any)?.from, reason: "missing_stage" } });
+        } else {
+          navigate(from, { replace: true });
+        }
+      } else {
+        navigate(target, { replace: true });
+      }
     }
 
     setLoading(false);
