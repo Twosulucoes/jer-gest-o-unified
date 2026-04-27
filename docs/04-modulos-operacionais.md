@@ -26,9 +26,11 @@
 - **Evidências**: Suporte a upload de diários de bordo e fotos de embarque no bucket `operational-evidence`.
 
 ## 5. Alimentação (✅ Pronto — 100%)
+- **Entidades**: Agora utiliza `meal_locations` como entidade dedicada para locais de refeição, permitindo gestão de capacidade e endereços.
+- **Páginas**: `/admin/alimentacao/locais` (CRUD de locais) e `/admin/alimentacao/janelas` (gestão de janelas com dropdown de locais).
 - **Controle de Acesso**: Tabela `meal_window_eligibility` permite restringir janelas por Delegação, Instituição ou Perfil de Participante.
-- **Interface Admin**: Gestor de regras integrado na edição de janelas (`/admin/alimentacao/janelas`).
 - **Validação**: Trigger `trg_validate_meal_consumption_eligibility` bloqueia consumos não autorizados.
+- **Relatórios**: Exportação em PDF, XLSX e CSV com assinatura do responsável.
 - **Evidências**: Registro de listas de presença e fotos de buffet vinculadas às janelas.
 
 ## 6. Alojamento (✅ Pronto — 100%)
