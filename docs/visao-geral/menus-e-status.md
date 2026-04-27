@@ -103,7 +103,7 @@
 ### Extras
 | Módulo | Rota | Status |
 |--------|------|--------|
-| Boletins Oficiais | `/admin/boletins` | 🟡 Parcial |
+| Boletins Oficiais | `/admin/competicao/boletins` | ✅ Feito |
 | Central de Dados | `/admin/dados` | ✅ Feito |
 | Demo Seeds | `/admin/demo` | ✅ Feito |
 | Email Templates | `/admin/auth/email-templates` | ✅ Feito |

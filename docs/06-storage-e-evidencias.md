@@ -7,6 +7,7 @@
 | `credential-templates` | Sim | Imagens de fundo dos modelos de credencial |
 | `match-attachments` | Sim | Anexos de partidas (súmulas, fotos, documentos) — Legado |
 | `operational-evidence` | Não | Evidências OSC unificadas (fotos, documentos, relatórios) |
+| `bulletins` | Não | Boletins Oficiais gerados pelo sistema (PDF) |
 
 ## Observações de Segurança
 

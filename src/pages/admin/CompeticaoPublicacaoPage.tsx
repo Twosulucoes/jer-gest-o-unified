@@ -121,7 +121,13 @@ export default function CompeticaoPublicacaoPage() {
       return data;
     },
     onSuccess: () => {
-      toast.success("Resultados publicados com sucesso!");
+      toast.success("Resultados publicados com sucesso!", {
+        description: "O boletim do dia está sendo atualizado automaticamente.",
+        action: {
+          label: "Ver Boletins",
+          onClick: () => window.location.href = "/admin/competicao/boletins"
+        }
+      });
       setSelectedMatches([]);
       setShowConfirmBatch(false);
       qc.invalidateQueries({ queryKey: ["publication-matches"] });

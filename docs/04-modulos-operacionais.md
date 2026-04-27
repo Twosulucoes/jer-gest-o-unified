@@ -86,13 +86,14 @@
 - **RLS**: funcional para anon (SELECT WHERE `result_status = 'publicado'`)
 - **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento dedicado Score/Sets/Combat/Time-Mark Pages | ✅ Homologação com senha real | ✅ Publicação Centralizada | ✅ Reversão de status | ✅ Auditoria completa (tabela history + audit_events)
 
-## 10. Boletins Oficiais (🟡 Parcial)
-- **Página**: `/admin/boletins`
-- **Tabela**: `official_bulletins` (number, title, status, event_id)
-- **RPCs**: `rpc_create_bulletin`, `rpc_publish_bulletin`
-- **Implementado**: ✅ CRUD de boletins | ✅ Publicação de boletim
-- **Gaps**: ❌ Sem geração de PDF | ❌ Sem vinculação automática de resultados ao boletim
-- **Dados reais**: 4 boletins
+## 10. Boletins Oficiais (✅ Pronto)
+- **Página**: `/admin/competicao/boletins`
+- **Tabela**: `bulletin_documents` (event_id, stage_id, type, date, file_url, version, is_current)
+- **Geração**: Edge Function `generate-bulletin` usando `jsPDF`.
+- **Automação**: Trigger `trg_after_match_publish` dispara regeneração automática do boletim do dia após cada publicação de resultado.
+- **Implementado**: ✅ Geração automática após publicação | ✅ Geração manual por etapa/data | ✅ Boletim Final com Quadro de Medalhas Oficial | ✅ Versionamento e Histórico | ✅ Vinculação automática como Evidência OSC.
+- **RLS**: Leitura para admin, secretaria, coordenacao_tecnica e delegacao. Escrita via processo seguro.
+- **Documentos**: Boletim do Dia (por etapa) e Boletim Final do Evento.
 
 ## 11. PWA Operacional (🟡 Parcial)
 - **Módulos**: Alojamento (7 telas), Transporte (5 telas), Alimentação (5 telas), Coordenação (6 telas), Delegação (5 telas)

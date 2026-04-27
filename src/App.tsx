@@ -109,6 +109,7 @@ import DashboardOperacionalPage from "./pages/admin/relatorios/DashboardOperacio
 import QuadroMedalhasPage from "./pages/admin/relatorios/QuadroMedalhasPage";
 import PrestacaoContasOscPage from "./pages/admin/relatorios/PrestacaoContasOscPage";
 import CompeticaoPublicacaoPage from "./pages/admin/CompeticaoPublicacaoPage";
+import CompeticaoBoletinsPage from "./pages/admin/CompeticaoBoletinsPage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 // RegrasEventoPage removed — consolidated into RegrasPage
@@ -397,6 +398,8 @@ const App = () => (
               <Route path="ocorrencias" element={<RedirectToEtapas />} />
               {/* Pesquisa de Satisfação — operacional, redireciona para Etapa */}
               <Route path="pesquisa" element={<RedirectToEtapas />} />
+              <Route path="competicao/publicacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><CompeticaoPublicacaoPage /></ProtectedRoute>} />
+              <Route path="competicao/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "delegacao"]}><CompeticaoBoletinsPage /></ProtectedRoute>} />
               <Route path="pesquisa/eventos" element={<RedirectToEtapas />} />
               <Route path="pesquisa/eventos/:eventId/form" element={<RedirectToEtapas />} />
               <Route path="pesquisa/pesquisadores" element={<RedirectToEtapas />} />

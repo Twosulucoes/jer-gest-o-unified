@@ -241,3 +241,20 @@ Operação em campo ou Admin (Alimentação, Transporte, etc.)
   → Fluxo de Revisão: admin/secretaria avalia evidência (Aprovar / Rejeitar com motivo)
   → Auditoria: registra reviewed_by e reviewed_at para transparência
 ```
+
+## 11. Geração de Boletins Oficiais
+
+```
+Publicação de Resultado (rpc_publish_match_result)
+  → Trigger trg_after_match_publish detecta mudança de status
+  → Trigger chama Edge Function generate-bulletin (via net.http_post)
+  → Edge Function consolida resultados da etapa/dia
+  → Edge Function gera PDF institucional (jsPDF)
+  → PDF salvo no bucket 'bulletins'
+  → Registro criado em bulletin_documents (is_current=true, version incrementada)
+  → Boletim vinculado automaticamente como Evidence OSC
+  → Toast no admin informa "Boletim do dia atualizado" com link para download
+```
+
+**Cenário manual**: A coordenação acessa `/admin/competicao/boletins`, seleciona etapa/data e clica em "Gerar Boletim". O sistema executa o mesmo fluxo de background, criando uma nova versão oficial do documento.
+

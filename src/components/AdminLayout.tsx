@@ -141,6 +141,7 @@ const navGroups: NavGroup[] = [
       { label: "Painel da Competição", to: "/admin/competicao/painel", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Publicação de Resultados", to: "/admin/competicao/publicacao", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria", "super_admin"] },
       { label: "Central da Competição", to: "/admin/competicao/central", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Boletins Oficiais", to: "/admin/competicao/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Regras por Prova", to: "/admin/competicao/regras", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
