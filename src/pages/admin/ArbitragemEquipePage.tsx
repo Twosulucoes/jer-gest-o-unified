@@ -420,10 +420,24 @@ export default function ArbitragemEquipePage() {
             Para escalar oficiais em uma partida, abra o detalhe da partida.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-          <Download className="mr-1 h-4 w-4" />
-          Exportar escalas
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="remuneracao">
+              <Settings className="mr-1 h-4 w-4" />
+              Remuneração
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="apuracao">
+              <Calendar className="mr-1 h-4 w-4" />
+              Apuração
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+            <Download className="mr-1 h-4 w-4" />
+            Exportar escalas
+          </Button>
+        </div>
       </div>
 
       <ExportColumnsDialog
