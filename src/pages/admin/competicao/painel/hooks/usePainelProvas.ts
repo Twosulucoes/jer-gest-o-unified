@@ -85,7 +85,7 @@ export function usePainelProvas({
             family
           };
         })
-        .filter(p => p.family === "score" || p.family === "sets" || p.family === "combat");
+        .filter(p => p.family === "score" || p.family === "sets" || p.family === "combat" || p.family === "time" || p.family === "mark");
 
       // Group combat by sport if needed, or keep them as individual weight classes.
       // The requirement says "O card de cada modalidade", implying one card for Judo, one for Taekwondo.
