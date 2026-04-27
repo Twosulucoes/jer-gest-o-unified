@@ -8,14 +8,7 @@ import { toast } from "sonner";
 import { 
   Trophy, 
   Save, 
-  Trash2, 
-  History,
-  CheckCircle2,
-  Timer,
-  Flag,
-  Ruler,
-  AlertTriangle,
-  PlayCircle
+  CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
