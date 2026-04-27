@@ -274,8 +274,10 @@ export default function CompeticaoLancamentoSetsPage() {
     }
 
     // Check for winner in knockout
-    if (match?.phase?.phase_type === 'knockout' && totalSetsA === totalSetsB) {
-      toast.error("Fase eliminatória exige um vencedor.");
+    if (match?.phase?.phase_type === 'knockout' && !isFinished) {
+      toast.error("Esta partida é de fase eliminatória e exige um vencedor. Verifique as parciais dos sets e garanta que uma equipe tenha vencido o número de sets necessário para a partida.", {
+        duration: 5000,
+      });
       return false;
     }
 

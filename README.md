@@ -149,25 +149,25 @@ O cliente distribui acessos para operadores através de **links curtos** com QR 
 
 ---
 
-## Status dos Módulos (Auditoria 2026-04-14)
+## Status dos Módulos (Auditoria 2026-04-26 — Etapa 6)
 
 | Módulo | Status | Completude |
 |--------|--------|-----------|
 | **Preparação** (Eventos, Instituições, Delegações, Importação, Participantes) | ✅ Pronto | 100% |
 | **Credenciamento** (Check-in, Emissão, QR, Validação) | ✅ Pronto | 95% |
 | **Modelos de Credencial** | 🟡 Parcial | 70% |
-| **Competição — Central/Wizard** (Fases, Grupos, Estrutura, Confrontos, Agenda) | ✅ Pronto | 90% |
+| **Competição — Central/Wizard** (Fases, Grupos, Estrutura, Confrontos, Agenda) | ✅ Pronto | 95% |
 | **Competição — Motor de Regras** (Presets, Seed, Editor) | ✅ Pronto | 100% |
-| **Competição — Resultados e Governança** (Lançamento dedicado, Placar por Período, Pênaltis, W.O. automático, Auditoria, Validação Real com Senha) | ✅ Pronto | 100% |
-| **Competição — Classificação** (Standings coletivas, Ranking individual/cross-heat) | ✅ Pronto | 85% |
-| **Competição — Combate** (combat_detail JSONB, CombatResultForm, auto-detecção) | ✅ Pronto | 90% |
-| **Competição — Página da Partida** (Lineup, Eventos, Placar, Oficiais, Anexos, Rota dedicada Score) | ✅ Pronto | 100% |
+| **Competição — Resultados e Governança** (Lançamento dedicado Score/Sets, Placar por Período, Pênaltis, Sets, W.O. automático, Homologação com Senha Real via Edge Function, Central de Publicação Individual/Lote, Validação KO obrigatória) | ✅ Pronto | 100% |
+| **Competição — Classificação** (Standings coletivas, Ranking individual/cross-heat) | 🟡 Parcial | 85% |
+| **Competição — Combate** (Gestão de chave, pesagem oficial, combat_detail JSONB; **Lançamento de resultado em construção**) | 🟡 Parcial | 70% |
+| **Competição — Página da Partida** (Lineup, Eventos, Placar, Oficiais, Anexos, Rota dedicada Score/Sets) | ✅ Pronto | 100% |
 | **Painel de Controle da Competição** | ✅ Pronto | 100% |
 | **Logística — Transporte** (Veículos, Rotas, Viagens, Embarque, Relatórios) | ✅ Pronto | 85% |
 | **Logística — Alimentação** (Tipos, Janelas, Consumo, Dashboard, Relatórios) | ✅ Pronto | 100% |
 | **Logística — Alojamento** (Locais, Unidades, Ocupação, Relatórios) | ✅ Pronto | 85% |
 | **PWA Operacional** (Alojamento, Transporte, Alimentação, Coordenação, Delegação) | ✅ Pronto | 85% |
-| **PWA Ao Vivo** (Mesário touch-friendly, dark mode, offline) | ✅ Pronto | 90% |
+| **PWA Ao Vivo** (Mesário touch-friendly, dark mode, offline) | 🟡 Parcial | 60% |
 | **Publicação Oficial** (Portal público, Edge Functions, PDF boletins) | 🟡 Parcial | 65% |
 | **Evidências / OSC** | ⚪ Não iniciado | 0% |
 | **Configurações** (Parâmetros, Irregularidades, Normalização, Validador, Mapa) | ✅ Pronto | 100% |
@@ -176,10 +176,11 @@ O cliente distribui acessos para operadores através de **links curtos** com QR 
 | **Links e Páginas Públicas** | ✅ Pronto | 85% |
 | **Relatórios** (Central + Transporte + Alimentação + Alojamento) | ✅ Pronto | 100% |
 | **Relatórios Oficiais** — Identidade Visual ✅, Boletins ✅, Dashboard ✅, Quadro de Medalhas ✅, OSC ✅ | ✅ Pronto | 100% |
-| **Boletins Oficiais** (Criação, publicação, geração PDF) | 🟡 Parcial | 70% |
+| **Boletins Oficiais** (Criação, publicação, geração PDF) | 🟡 Parcial | 50% |
 | **Super Admin** (Dashboard, Eventos, Logs, Config) | ✅ Pronto | 80% |
 
-**Resumo**: 63 tabelas, 29 RPCs, 4 Edge Functions, 28+ rotas admin, 5 rotas super, 25+ rotas PWA, 12 perfis de acesso.
+**Resumo**: 63 tabelas, 30 RPCs (incluindo validação KO), 5 Edge Functions (incluindo verify-password), 28+ rotas admin, 5 rotas super, 25+ rotas PWA, 12 perfis de acesso. funcional para Score e Sets; Combat com chaves operacionais mas lançamento pendente. 
+
 
 ---
 
