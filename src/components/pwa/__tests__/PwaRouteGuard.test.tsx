@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, Navigate } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import PwaRouteGuard from '../PwaRouteGuard';
+import { useAuth } from '@/hooks/useAuth';
+import { useEventContext } from '@/contexts/EventContext';
+import { useStageContext } from '@/contexts/StageContext';
+import React from 'react';
 
 // Mock dependencies
 vi.mock('@/hooks/useAuth', () => ({
@@ -16,6 +20,27 @@ vi.mock('@/contexts/StageContext', () => ({
   useStageContext: vi.fn(),
 }));
 
+// Mock Lucide icons to avoid rendering issues
+vi.mock('lucide-react', () => ({
+  AlertCircle: () => <div />,
+  CalendarDays: () => <div />,
+  Lock: () => <div />,
+  Layers: () => <div />,
+}));
+
+// Mock child components
+vi.mock('../PwaBottomNav', () => ({
+  PwaBottomNav: () => <div data-testid="bottom-nav" />,
+}));
+
+vi.mock('../../VersionBadge', () => ({
+  VersionBadge: () => <div data-testid="version-badge" />,
+}));
+
+vi.mock('@/components/auth/AuthLoadingScreen', () => ({
+  default: () => <div data-testid="loading-screen" />,
+}));
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -24,35 +49,18 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock Supabase
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
-        })),
-      })),
-    })),
-  },
-}));
-
 describe('PwaRouteGuard Redirection Logic', () => {
-  const mockUseAuth = require('@/hooks/useAuth').useAuth;
-  const mockUseEventContext = require('@/contexts/EventContext').useEventContext;
-  const mockUseStageContext = require('@/contexts/StageContext').useStageContext;
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('redirects to login if user is not authenticated', () => {
-    mockUseAuth.mockReturnValue({ user: null, loading: false });
-    mockUseEventContext.mockReturnValue({ activeEventId: null, eventsLoading: false });
-    mockUseStageContext.mockReturnValue({ activeStageId: null, stagesLoading: false });
+    vi.mocked(useAuth).mockReturnValue({ user: null, loading: false, hasRole: vi.fn() } as any);
+    vi.mocked(useEventContext).mockReturnValue({ activeEventId: null, eventsLoading: false } as any);
+    vi.mocked(useStageContext).mockReturnValue({ activeStageId: null, stagesLoading: false } as any);
 
     render(
-      <MemoryRouter initialEntries={['/pwa/modulo']}>
+      <MemoryRouter initialEntries={['/pwa/dashboard']}>
         <PwaRouteGuard>Protected Content</PwaRouteGuard>
       </MemoryRouter>
     );
@@ -62,9 +70,9 @@ describe('PwaRouteGuard Redirection Logic', () => {
   });
 
   it('redirects to configuration if event is missing on PWA internal route', () => {
-    mockUseAuth.mockReturnValue({ user: { id: '1' }, loading: false, hasRole: () => true });
-    mockUseEventContext.mockReturnValue({ activeEventId: null, eventsLoading: false });
-    mockUseStageContext.mockReturnValue({ activeStageId: null, stagesLoading: false });
+    vi.mocked(useAuth).mockReturnValue({ user: { id: '1' } as any, loading: false, hasRole: () => true } as any);
+    vi.mocked(useEventContext).mockReturnValue({ activeEventId: null, eventsLoading: false } as any);
+    vi.mocked(useStageContext).mockReturnValue({ activeStageId: null, stagesLoading: false } as any);
 
     render(
       <MemoryRouter initialEntries={['/pwa/dashboard']}>
@@ -79,9 +87,9 @@ describe('PwaRouteGuard Redirection Logic', () => {
   });
 
   it('redirects to configuration if stage is missing when requireStage is true', () => {
-    mockUseAuth.mockReturnValue({ user: { id: '1' }, loading: false, hasRole: () => true });
-    mockUseEventContext.mockReturnValue({ activeEventId: 'event-1', eventsLoading: false });
-    mockUseStageContext.mockReturnValue({ activeStageId: null, stagesLoading: false });
+    vi.mocked(useAuth).mockReturnValue({ user: { id: '1' } as any, loading: false, hasRole: () => true } as any);
+    vi.mocked(useEventContext).mockReturnValue({ activeEventId: 'event-1', eventsLoading: false } as any);
+    vi.mocked(useStageContext).mockReturnValue({ activeStageId: null, stagesLoading: false } as any);
 
     render(
       <MemoryRouter initialEntries={['/pwa/dashboard']}>
@@ -96,9 +104,9 @@ describe('PwaRouteGuard Redirection Logic', () => {
   });
 
   it('allows access if event and stage are present', () => {
-    mockUseAuth.mockReturnValue({ user: { id: '1' }, loading: false, hasRole: () => true });
-    mockUseEventContext.mockReturnValue({ activeEventId: 'event-1', eventsLoading: false });
-    mockUseStageContext.mockReturnValue({ activeStageId: 'stage-1', stagesLoading: false });
+    vi.mocked(useAuth).mockReturnValue({ user: { id: '1' } as any, loading: false, hasRole: () => true } as any);
+    vi.mocked(useEventContext).mockReturnValue({ activeEventId: 'event-1', eventsLoading: false } as any);
+    vi.mocked(useStageContext).mockReturnValue({ activeStageId: 'stage-1', stagesLoading: false } as any);
 
     render(
       <MemoryRouter initialEntries={['/pwa/dashboard']}>
@@ -107,12 +115,13 @@ describe('PwaRouteGuard Redirection Logic', () => {
     );
 
     expect(screen.getByText('Protected Content')).toBeInTheDocument();
+    expect(screen.getByTestId('bottom-nav')).toBeInTheDocument();
   });
 
   it('allows access to configuration page without active event/stage', () => {
-    mockUseAuth.mockReturnValue({ user: { id: '1' }, loading: false, hasRole: () => true });
-    mockUseEventContext.mockReturnValue({ activeEventId: null, eventsLoading: false });
-    mockUseStageContext.mockReturnValue({ activeStageId: null, stagesLoading: false });
+    vi.mocked(useAuth).mockReturnValue({ user: { id: '1' } as any, loading: false, hasRole: () => true } as any);
+    vi.mocked(useEventContext).mockReturnValue({ activeEventId: null, eventsLoading: false } as any);
+    vi.mocked(useStageContext).mockReturnValue({ activeStageId: null, stagesLoading: false } as any);
 
     render(
       <MemoryRouter initialEntries={['/pwa/configuracao']}>
