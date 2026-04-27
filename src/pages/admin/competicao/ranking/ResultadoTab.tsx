@@ -251,7 +251,7 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
         if (verifyError) throw verifyError;
         if (!verifyData.valid) throw new Error(verifyData.message || "Senha incorreta");
 
-        const { data, error } = await (supabase.rpc as any)("rpc_homologate_match_result", {
+        const { data, error } = await (supabase as any).rpc("rpc_homologate_match_result", {
           p_match_id: matchId,
           p_observation: homologateObservation,
           p_password: homologatePassword 
