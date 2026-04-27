@@ -43,27 +43,37 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
   });
 
   // Fetch current phases and matches
-  const { data: phases = [], isLoading: loadingPhases } = useQuery<any>({
+  const { data: phases = [], isLoading: loadingPhases } = useQuery<any[]>({
     queryKey: ["bracket-phases", sportEventId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("competition_phases")
-        .select(`
-          id, name, phase_type,
-          matches:competition_matches(
-            id, match_number, round_number, status,
-            entries:competition_match_entries(
-              id, side, participant:participant_sport_events(
-                id, participant:participants(persons(name))
-              )
-            )
-          )
-        `)
-        .eq("sport_event_id", sportEventId)
+        .select(`id, name, phase_type`)
+        .eq("sport_event_id", sportEventId!)
         .order("sort_order");
       
       if (error) throw error;
-      return data as any[];
+      
+      // Fetch matches separately to avoid deep type instantiation
+      const phaseIds = data.map(p => p.id);
+      if (phaseIds.length === 0) return data;
+
+      const { data: matches, error: mError } = await (supabase
+        .from("competition_matches") as any)
+        .select(`
+          id, phase_id, match_number, round_number, status,
+          entries:competition_match_entries(
+            id, side, participant:participant_sport_event_id
+          )
+        `)
+        .in("phase_id", phaseIds);
+
+      if (mError) throw mError;
+
+      return data.map(p => ({
+        ...p,
+        matches: matches.filter((m: any) => m.phase_id === p.id)
+      }));
     },
   });
 
