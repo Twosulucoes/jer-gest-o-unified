@@ -7365,6 +7365,15 @@ export type Database = {
         Returns: Json
       }
       resolve_qr: { Args: { p_token: string }; Returns: Json }
+      rpc_allocate_lodging_batch: {
+        Args: {
+          p_allocated_by?: string
+          p_allocations: Json
+          p_delegation_id: string
+          p_event_id: string
+        }
+        Returns: Json
+      }
       rpc_archive_venue: {
         Args: { p_force?: boolean; p_reason?: string; p_venue_id: string }
         Returns: Json
