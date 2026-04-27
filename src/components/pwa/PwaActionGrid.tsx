@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
+import { useStageContext } from "@/contexts/StageContext";
+import { useEventContext } from "@/contexts/EventContext";
 
 export interface PwaAction {
   label: string;
@@ -8,6 +10,7 @@ export interface PwaAction {
   to?: string;
   onClick?: () => void;
   description?: string;
+  requireStage?: boolean;
 }
 
 /**
@@ -24,14 +27,33 @@ export function PwaActionGrid({
   className?: string;
 }) {
   const navigate = useNavigate();
+  const { activeStageId } = useStageContext();
+  const { activeEventId } = useEventContext();
   const cols = columns === 3 ? "grid-cols-3" : "grid-cols-2";
+
   return (
     <div className={cn("grid gap-3", cols, className)}>
       {actions.map((a) => {
         const Icon = a.icon;
         const handle = () => {
-          if (a.onClick) a.onClick();
-          else if (a.to) navigate(a.to);
+          if (a.onClick) {
+            a.onClick();
+          } else if (a.to) {
+            // Se o destino for um módulo e faltar contexto, redireciona para a configuração
+            const needsConfig = a.requireStage !== false && 
+                               a.to.startsWith("/pwa/") && 
+                               a.to !== "/pwa/configuracao" && 
+                               a.to !== "/pwa/install" && 
+                               (!activeStageId || !activeEventId);
+            
+            if (needsConfig) {
+              navigate("/pwa/configuracao", { 
+                state: { from: { pathname: a.to }, reason: "missing_stage" } 
+              });
+            } else {
+              navigate(a.to);
+            }
+          }
         };
         return (
           <button
