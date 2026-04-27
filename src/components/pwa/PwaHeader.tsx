@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getPwaLang, setPwaLang } from "@/lib/pwa-messages";
 import { useStageContext } from "@/contexts/StageContext";
-import { useEventContext } from "@/contexts/EventContext";
+import { usePwaNavigation, type PwaModule } from "@/hooks/pwa/usePwaNavigation";
 import { PwaRefreshButton } from "./PwaRefreshButton";
 
 interface PwaHeaderProps {
@@ -23,21 +23,21 @@ interface PwaHeaderProps {
 export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignOut, rightSlot, actionsBar }: PwaHeaderProps) {
   const navigate = useNavigate();
   const { roles } = useAuth();
-  const { activeStage, activeStageId } = useStageContext();
-  const { activeEventId } = useEventContext();
+  const { activeStage } = useStageContext();
+  const { navigateToPwa } = usePwaNavigation();
   const showSwitcher = roles.length >= 2;
 
   const handleBack = () => {
     if (onBack) onBack();
     else if (backTo) {
-      // Se backTo for um módulo operacional e não tivermos palco/evento, redirecionamos para config
       if (backTo.startsWith("/pwa/") && 
           backTo !== "/pwa/configuracao" && 
-          backTo !== "/pwa/install" && 
-          (!activeStageId || !activeEventId)) {
-        navigate("/pwa/configuracao", { 
-          state: { from: { pathname: backTo }, reason: "missing_stage" } 
-        });
+          backTo !== "/pwa/install") {
+        const moduleMatch = backTo.match(/\/pwa\/([^/]+)/);
+        const module = moduleMatch ? moduleMatch[1] as PwaModule : "configuracao" as PwaModule;
+        const subPath = backTo.replace(`/pwa/${module}`, "");
+        
+        navigateToPwa(module, subPath);
       } else {
         navigate(backTo);
       }
