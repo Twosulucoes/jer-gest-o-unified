@@ -19,6 +19,9 @@ import {
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 interface FieldConfig {
   x: number;
@@ -83,6 +86,7 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
   const [width, setWidth] = useState(600);
   const [height, setHeight] = useState(900);
   const [isActive, setIsActive] = useState(true);
+  const [participantTypeFilter, setParticipantTypeFilter] = useState("all");
   const [notes, setNotes] = useState("");
   const [fieldConfig, setFieldConfig] = useState<FieldConfigMap>(buildDefaultFieldConfig(600, 900));
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
@@ -108,6 +112,7 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
         setWidth(template.width);
         setHeight(template.height);
         setIsActive(template.is_active);
+        setParticipantTypeFilter(template.participant_type_filter || "all");
         setNotes(template.notes || "");
         setBackgroundUrl(template.background_url);
         setBgPreviewUrl(template.background_url);
@@ -118,6 +123,7 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
         setWidth(600);
         setHeight(900);
         setIsActive(true);
+        setParticipantTypeFilter("all");
         setNotes("");
         setBackgroundUrl(null);
         setBgPreviewUrl(null);
@@ -259,12 +265,13 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
         bgUrl = urlData.publicUrl;
         setUploading(false);
       }
-      const payload = {
+      const payload: any = {
         event_id: eventId,
         name,
         width,
         height,
         is_active: isActive,
+        participant_type_filter: participantTypeFilter,
         notes: notes || null,
         background_url: bgUrl,
         field_config: JSON.parse(JSON.stringify(fieldConfig)),
@@ -417,10 +424,27 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
               </label>
             </div>
 
-            {/* Active + Notes */}
-            <div className="flex items-center gap-3">
-              <Switch checked={isActive} onCheckedChange={setIsActive} />
-              <Label>Modelo ativo</Label>
+            {/* Active + Filter + Notes */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-3 h-10">
+                <Switch checked={isActive} onCheckedChange={setIsActive} />
+                <Label>Modelo ativo</Label>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Aplicar a</Label>
+                <Select value={participantTypeFilter} onValueChange={setParticipantTypeFilter}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="athlete">Atletas</SelectItem>
+                    <SelectItem value="coach">Técnicos</SelectItem>
+                    <SelectItem value="head_of_delegation">Dirigentes</SelectItem>
+                    <SelectItem value="staff">Staff</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-1">
               <Label>Observações</Label>

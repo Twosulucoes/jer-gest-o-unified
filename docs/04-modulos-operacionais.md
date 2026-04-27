@@ -1,6 +1,6 @@
 # 04 — Módulos Operacionais
 
-> Auditoria atualizada em 2026-04-21 (Correções Críticas de Segurança e OSC)
+> Auditoria atualizada em 2026-04-26 (Interfaces Administrativas, Lote e OSC)
 
 ## 1. Importação / Espelhamento SIGECOM (✅ Pronto)
 - **Página**: `/admin/importacao`
@@ -16,7 +16,7 @@
 - **Validação**: Edge function `validate-qr` valida assinatura HMAC; aceita legado com flag `legacy_format` em `credential_scans`.
 
 ## 3. Credencial + QR Code (✅ Pronto)
-- **Templates**: `/admin/credenciais/modelos` — CRUD com config de campos
+- **Templates**: `/admin/credenciais/modelos` — CRUD com config de campos e filtro por tipo de participante (Atleta, Técnico, Staff, etc).
 - **Geração**: Chamada à Edge Function `generate-credential-qr` para QR assinado.
 - **Utilitário**: `credentialUtils.ts` — suporte a `generateSignedQrCodeValue` (async).
 - **Auditoria**: `credential_scans` agora rastreia se a credencial é do formato legado.
@@ -27,10 +27,12 @@
 
 ## 5. Alimentação (✅ Pronto — 100%)
 - **Controle de Acesso**: Tabela `meal_window_eligibility` permite restringir janelas por Delegação, Instituição ou Perfil de Participante.
+- **Interface Admin**: Gestor de regras integrado na edição de janelas (`/admin/alimentacao/janelas`).
 - **Validação**: Trigger `trg_validate_meal_consumption_eligibility` bloqueia consumos não autorizados.
 - **Evidências**: Registro de listas de presença e fotos de buffet vinculadas às janelas.
 
-## 6. Alojamento (✅ Pronto — 95%)
+## 6. Alojamento (✅ Pronto — 100%)
+- **Alocação em Lote**: Rota `/admin/alojamento/alocacao-lote` com wizard para alocar delegações inteiras respeitando gênero e capacidade.
 - **Segurança de Gênero**: Trigger `trg_validate_lodging_gender` impede alocação de participantes em unidades com restrição de gênero incompatível.
 - **Evidências**: Checklists de entrada/saída e fotos de vistorias centralizadas.
 
@@ -107,9 +109,10 @@
 - **Gaps**: ❌ Sem portal público para consulta | ❌ Sem boletins PDF | ❌ Sem quadro de medalhas
 
 ## 14. Evidências / OSC (✅ Pronto)
+- **Interface Admin**: Rota `/admin/evidencias-osc` para gestão centralizada de provas operacionais.
+- **Ações**: Upload por módulo, filtragem avançada, fluxo de aprovação/rejeição com auditoria (reviewed_by).
 - **Tabela**: `operational_evidence` — Modelo unificado para todos os módulos.
 - **Bucket**: `operational-evidence` — Privado com RLS segmentado.
-- **Status**: Fluxo de aprovação (pending, approved, rejected) integrado.
 
 ## 15. Configurações (✅ Pronto)
 - Parâmetros do Evento: limites de participação por atleta
@@ -154,7 +157,7 @@
 
 ### Etapa 2 — Dashboard Operacional (✅)
 - Página `/admin/relatorios/dashboard` com 6 KPIs, gráficos recharts, exportação PDF
-- Hook `useDashboardData` com staleTime 30s, botão "Atualizar dados"
+- Hook `useDashboardData` with staleTime 30s, botão "Atualizar dados"
 
 ### Etapa 3 — Quadro de Medalhas e Classificação Geral (✅)
 - Página `/admin/relatorios/quadro-medalhas` (admin/secretaria/coordenacao_tecnica)

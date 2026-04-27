@@ -75,8 +75,20 @@ export default function AlimentacaoJanelasPage() {
         is_active: v.is_active,
       };
       if (isStageScoped && stageId) payload.event_stage_id = stageId;
-      const { error } = await supabase.from("meal_windows").insert(payload);
+      
+      const { data: window, error } = await supabase.from("meal_windows").insert(payload).select().single();
       if (error) throw error;
+
+      if (v.restrict_eligibility && v.eligibility_rules && v.eligibility_rules.length > 0) {
+        const rulesPayload = v.eligibility_rules.map(r => ({
+          meal_window_id: window.id,
+          eligibility_type: r.eligibility_type,
+          participant_type_value: r.participant_type_value,
+          reference_id: r.reference_id
+        }));
+        const { error: rulesError } = await (supabase as any).from("meal_window_eligibility").insert(rulesPayload);
+        if (rulesError) throw rulesError;
+      }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["meal_windows"] }); toast.success("Janela criada"); setDialogOpen(false); },
     onError: (e: Error) => toast.error("Erro: " + e.message),
@@ -94,6 +106,20 @@ export default function AlimentacaoJanelasPage() {
         is_active: v.is_active,
       }).eq("id", id);
       if (error) throw error;
+
+      // Sync rules
+      await (supabase as any).from("meal_window_eligibility").delete().eq("meal_window_id", id);
+      
+      if (v.restrict_eligibility && v.eligibility_rules && v.eligibility_rules.length > 0) {
+        const rulesPayload = v.eligibility_rules.map(r => ({
+          meal_window_id: id,
+          eligibility_type: r.eligibility_type,
+          participant_type_value: r.participant_type_value,
+          reference_id: r.reference_id
+        }));
+        const { error: rulesError } = await (supabase as any).from("meal_window_eligibility").insert(rulesPayload);
+        if (rulesError) throw rulesError;
+      }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["meal_windows"] }); toast.success("Janela atualizada"); setDialogOpen(false); setEditing(null); },
     onError: (e: Error) => toast.error("Erro: " + e.message),

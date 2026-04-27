@@ -162,6 +162,9 @@ export default function AlojamentoHubPage() {
         </div>
         {canWrite && (
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("alocacao-lote")}>
+              <Users className="h-4 w-4 mr-1" /> Alocação em Lote
+            </Button>
             <Button variant="outline" onClick={() => { setEditingLocation(null); setLocationDialog(true); }}>
               <Plus className="h-4 w-4 mr-1" /> Novo local
             </Button>

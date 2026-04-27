@@ -54,6 +54,8 @@ import AlojamentoHubPage from "./pages/admin/AlojamentoHubPage";
 import AlojamentoLocaisPage from "./pages/admin/AlojamentoLocaisPage";
 import AlojamentoUnidadesPage from "./pages/admin/AlojamentoUnidadesPage";
 import AlojamentoOcupacaoPage from "./pages/admin/AlojamentoOcupacaoPage";
+import AlocacaoLotePage from "./pages/admin/alojamento/AlocacaoLotePage";
+import EvidenciasOSCPage from "./pages/admin/evidencias/EvidenciasOSCPage";
 import TransporteRelatoriosPage from "./pages/admin/TransporteRelatoriosPage";
 import AlimentacaoRelatoriosPage from "./pages/admin/AlimentacaoRelatoriosPage";
 import AlojamentoRelatoriosPage from "./pages/admin/AlojamentoRelatoriosPage";
@@ -468,7 +470,9 @@ const App = () => (
               <Route path="alojamento/locais" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoLocaisPage /></ProtectedRoute>} />
               <Route path="alojamento/unidades" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoUnidadesPage /></ProtectedRoute>} />
               <Route path="alojamento/ocupacao" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoOcupacaoPage /></ProtectedRoute>} />
+              <Route path="alojamento/alocacao-lote" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlocacaoLotePage /></ProtectedRoute>} />
               <Route path="alojamento/relatorios" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoRelatoriosPage /></ProtectedRoute>} />
+              <Route path="evidencias-osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao", "alojamento", "transporte", "coordenacao_tecnica"]}><EvidenciasOSCPage /></ProtectedRoute>} />
               {/* Alimentação */}
               <Route path="alimentacao" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoHubPage /></ProtectedRoute>} />
               <Route path="alimentacao/tipos" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoTiposPage /></ProtectedRoute>} />

@@ -33,8 +33,15 @@ O JER é financiado via recursos públicos e requer prestação de contas formal
 4. **Competição**: Súmulas assinadas e quadros de resultados.
 5. **Geral**: Documentos administrativos do evento.
 
-## Próximos Passos (Prompt 2)
+## Gestão de Evidências (✅ Pronto)
 
-- Interface administrativa para gestão e revisão de evidências.
-- Dashboard de conformidade OSC.
-- Exportação de pacotes de evidências por período/módulo.
+A interface administrativa em `/admin/evidencias-osc` permite:
+- **Upload Centralizado**: Operadores de todos os módulos podem subir provas operacionais.
+- **Filtros Avançados**: Busca por módulo, tipo, status e período.
+- **Fluxo de Governança**: Admin/Secretaria revisam e aprovam cada evidência, preenchendo `reviewed_by` e `review_notes`.
+- **Auditoria**: Cada upload é rastreado pelo `uploaded_by` (auth.users).
+
+## Próximos Passos
+
+- Dashboard visual de conformidade OSC (KPIs de cobertura por módulo).
+- Exportação de pacotes (ZIP) de evidências por período/módulo para envio formal.

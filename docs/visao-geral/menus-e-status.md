@@ -26,7 +26,7 @@
 | Módulo | Rota | Status |
 |--------|------|--------|
 | Credenciamento | `/admin/credenciamento` | ✅ Feito |
-| Modelos de Credencial | `/admin/credenciais/modelos` | 🟡 Parcial |
+| Modelos de Credencial | `/admin/credenciais/modelos` | ✅ Feito |
 | Validação QR | `/admin/validacao-qr` | ✅ Feito |
 
 ### Competição
@@ -73,7 +73,8 @@
 |--------|------|--------|
 | Locais de Alojamento | `/admin/alojamento/locais` | ✅ Feito |
 | Unidades | `/admin/alojamento/unidades` | ✅ Feito |
-| Ocupação | `/admin/alojamento/ocupacao` | 🟡 Parcial |
+| Ocupação | `/admin/alojamento/ocupacao` | ✅ Feito |
+| Alocação em Lote | `/admin/alojamento/alocacao-lote` | ✅ Feito |
 
 ### Cadastros
 | Módulo | Rota | Status |
@@ -84,6 +85,7 @@
 | Módulo | Rota | Status |
 |--------|------|--------|
 | Gestão de Usuários | `/admin/acessos/usuarios` | ✅ Feito |
+| Evidências OSC | `/admin/evidencias-osc` | ✅ Feito |
 | Vínculos Delegação | `/admin/acessos/delegacoes` | 🟡 Parcial |
 
 ### Configurações
