@@ -505,6 +505,7 @@ export type Database = {
           created_at: string
           end_time: string | null
           event_id: string
+          event_stage_id: string | null
           group_id: string | null
           id: string
           match_date: string | null
@@ -524,6 +525,7 @@ export type Database = {
           created_at?: string
           end_time?: string | null
           event_id: string
+          event_stage_id?: string | null
           group_id?: string | null
           id?: string
           match_date?: string | null
@@ -543,6 +545,7 @@ export type Database = {
           created_at?: string
           end_time?: string | null
           event_id?: string
+          event_stage_id?: string | null
           group_id?: string | null
           id?: string
           match_date?: string | null
@@ -564,6 +567,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {
@@ -5530,6 +5540,58 @@ export type Database = {
         }
         Relationships: []
       }
+      referee_remuneration_configs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_stage_id: string
+          id: string
+          remuneration_type: string
+          sport_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_stage_id: string
+          id?: string
+          remuneration_type: string
+          sport_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_stage_id?: string
+          id?: string
+          remuneration_type?: string
+          sport_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referee_remuneration_configs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referee_remuneration_configs_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_id"]
+          },
+          {
+            foreignKeyName: "referee_remuneration_configs_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_presets: {
         Row: {
           columns: Json | null
@@ -7320,6 +7382,66 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_fulfilled_referee_assignments: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          event_id: string | null
+          event_stage_id: string | null
+          id: string | null
+          is_fulfilled: boolean | null
+          match_date: string | null
+          match_id: string | null
+          remuneration_type: string | null
+          role: string | null
+          sport_id: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
+          },
+          {
+            foreignKeyName: "sport_events_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_id"]
+          },
+          {
+            foreignKeyName: "sport_events_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
             referencedColumns: ["id"]
           },
         ]
