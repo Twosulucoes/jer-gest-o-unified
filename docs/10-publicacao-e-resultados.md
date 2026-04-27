@@ -122,6 +122,7 @@ Componente: `CombatResultForm` (renderizado quando `family='combat'`)
 - ✅ Base para combate (combat_detail + CombatResultForm)
 - ✅ **Lançamento dedicado para Sets (Etapa 6 concluída)**: Suporte total para modalidades de sets com cômputo de averages e parciais.
 - ✅ **Lançamento dedicado para Combate (Etapa 7 concluída)**: Rota dedicada, placar dinâmico (Judo vs Others), registro de tempo de luta, prorrogação (Golden Score/Overtime) e propagação automática do vencedor no bracket eliminatório após homologação.
+- ✅ **Lançamento dedicado para Time/Mark (Etapa 9 concluída)**: Rota dedicada, 3 modos de lançamento (Pista/Piscina, Campo/Tentativas, Prova Única/Ranking), suporte a tentativas múltiplas em match_attempts e consolidação de fase para classificação manual.
 - ⛔ Sem portal público para consulta externa
 - ⛔ Sem geração de boletins oficiais em PDF
-- ⛔ Sem quadro de medalhas
+- ⛔ Sem quadro de medalhas (Implementado na Etapa 8, aguardando validação final)
