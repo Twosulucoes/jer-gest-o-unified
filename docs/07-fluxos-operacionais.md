@@ -130,6 +130,22 @@ FLUXO SCORE/SETS:
       - Homologação: após lançamento, coordenador valida com senha → status "Validado"
 ```
 
+FLUXO TIME/MARK:
+  → Painel Time/Mark (/admin/competicao/painel-time-mark/:sportEventId)
+  → Aba Séries: Visualiza fases (Séries, Semifinais, Final) e séries cadastradas
+  → Lançar Marcas (Botão Troféu):
+     - Abre rota dedicada conforme o modo da prova (identificado pelas regras)
+     - MODO A (Pista/Piscina): Grade por raia, lança tempo (mm:ss.cc), posição calculada auto.
+     - MODO B (Campo): Grade por atleta, lança tentativas (m,cm), melhor marca e posição calculadas auto.
+     - MODO C (Prova Única): Grade por ordem de chegada, lança posição manual e tempo opcional.
+  → Homologação: Coordenador valida série por série com senha → status "Validado".
+  → Classificação para Próxima Fase:
+     - Quando todas as séries da fase atual estão homologadas, botão "Classificar para [Fase]" aparece.
+     - Tela de Consolidação: Sistema sugere os melhores tempos/marcas de todas as séries.
+     - Operador confirma lista de classificados → Dispara "Propagar Classificação".
+     - Sistema cria alocações automáticas nas séries da fase seguinte.
+```
+
 ### 7.2 Homologação e Publicação (Governança)
 ```
 Resultado Lançado (Mesário/Coordenador)

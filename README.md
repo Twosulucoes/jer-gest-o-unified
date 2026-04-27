@@ -7,7 +7,7 @@ Gerencia toda a operação do evento **após a fase de inscrição**: credenciam
 > **Pessoas Unificadas + Vouchers QR ✅** — Toda pessoa do evento (atletas, técnicos, mesários, motoristas, cozinheiras, fiscais, terceiros) é cadastrada como **Pessoa única** (CPF como chave), podendo ter **múltiplas funções**. Vouchers QR multiuso liberam consumo logístico para quem não tem credencial. Relatório consolidado por pessoa em `/admin/relatorios` e merge de duplicidades em `/admin/pessoas/duplicidades` (2026-04-19)
 > **Tipos de Participantes ✅ Delegação vs Organização** — Separação clara entre participantes de delegações (Atleta/Staff) e participantes da organização (Coordenação/Apoio), com campos administrativos específicos e regras rígidas de privacidade e exclusividade de CPF (2026-04-21)
 > **Navegação ✅ Refatorada Global vs Etapa** — Separação total entre contexto Global e contexto de Etapa (2026-04-17)
-> **Refatoração Competição ✅ Painel Score, Sets & Combat** — Nova experiência de operação para modalidades de placar (Futsal, Futebol, etc), sets (Vôlei, Tênis de Mesa, etc) e combate (Judô, Karatê, etc) com pesagem oficial, montagem de chave e grade densa (2026-04-23)
+> **Refatoração Competição ✅ Painel Score, Sets, Combat & Time/Mark** — Nova experiência de operação para modalidades de placar (Futsal, Futebol, etc), sets (Vôlei, Tênis de Mesa, etc), combate (Judô, Karatê, etc) e marcas/tempo (Atletismo, Natação, Ciclismo) com pesagem oficial, montagem de chave, séries/raias e lançamento de tentativas múltiplas (2026-04-23)
 > **Governança de Resultados ✅ Homologação e Publicação** — Ciclo de vida completo do resultado (Lançado → Validado → Publicado) com central de publicação para secretaria, homologação com senha para coordenação e auditoria completa (2026-04-24)
 
 ---
@@ -158,8 +158,8 @@ O cliente distribui acessos para operadores através de **links curtos** com QR 
 | **Modelos de Credencial** | 🟡 Parcial | 70% |
 | **Competição — Central/Wizard** (Fases, Grupos, Estrutura, Confrontos, Agenda) | ✅ Pronto | 95% |
 | **Competição — Motor de Regras** (Presets, Seed, Editor) | ✅ Pronto | 100% |
-| **Competição — Resultados e Governança** (Lançamento dedicado Score/Sets/Combat, Placar por Período, Pênaltis, Sets, Métodos Combat, W.O. automático, Homologação com Senha Real via Edge Function, Central de Publicação Individual/Lote, Validação KO obrigatória, Propagação automática de vencedor em Combat) | ✅ Pronto | 100% |
-| **Competição — Classificação** (Standings coletivas, Ranking individual/cross-heat) | 🟡 Parcial | 85% |
+| **Competição — Resultados e Governança** (Lançamento dedicado Score/Sets/Combat/Time-Mark, Placar por Período, Pênaltis, Sets, Métodos Combat, Tentativas Múltiplas, Tempo/Distância, W.O. automático, Homologação com Senha Real via Edge Function, Central de Publicação Individual/Lote, Validação KO obrigatória, Propagação automática de vencedor em Combat, Propagação manual em Time/Mark) | ✅ Pronto | 100% |
+| **Competição — Classificação** (Standings coletivas, Ranking individual/cross-heat, Consolidação de fase em Time/Mark) | ✅ Pronto | 100% |
 | **Competição — Combate** (Gestão de chave, pesagem oficial, combat_detail JSONB, lançamento de resultado dedicado com prorrogação e tempo de luta) | ✅ Pronto | 100% |
 | **Competição — Página da Partida** (Lineup, Eventos, Placar, Oficiais, Anexos, Rota dedicada Score/Sets) | ✅ Pronto | 100% |
 | **Painel de Controle da Competição** | ✅ Pronto | 100% |

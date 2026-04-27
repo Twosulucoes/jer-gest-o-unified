@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +12,8 @@ import {
   Layers, 
   CheckCircle2,
   PlayCircle,
-  Flag
+  Flag,
+  Trophy
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -34,6 +35,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+import { formatTimeMs, formatDistanceCm } from "@/lib/competition-formatters";
 
 interface SeriesTabProps {
   sportEventId: string;
@@ -43,6 +54,9 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
   const [showAutoModal, setShowAutoModal] = useState(false);
   const [lanesPerHeat, setLanesPerHeat] = useState("8");
   const [distributionType, setDistributionType] = useState("random");
+  const [showClassificationModal, setShowClassificationModal] = useState(false);
+  const [selectedPhaseForClassification, setSelectedPhaseForClassification] = useState<any>(null);
+
 
   // Fetch event rules to determine format
   const { data: rules, isLoading: loadingRules } = useQuery({
@@ -58,6 +72,50 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
     },
     enabled: !!sportEventId,
   });
+
+  const classifiedAtletas = useMemo(() => {
+    if (!selectedPhaseForClassification) return [];
+    
+    const allEntries = selectedPhaseForClassification.competition_groups?.flatMap((g: any) => 
+      g.competition_matches?.flatMap((m: any) => 
+        m.competition_match_entries?.map((e: any) => ({
+          ...e,
+          group_name: g.name,
+          match_id: m.id
+        })) || []
+      ) || []
+    ) || [];
+
+    const isTime = rules?.family === 'time';
+    return [...allEntries].sort((a, b) => {
+      const resA = a.results?.[0];
+      const resB = b.results?.[0];
+      
+      if (!resA || (resA.outcome !== 'win' && resA.outcome !== 'loss' && resA.outcome !== 'draw')) return 1;
+      if (!resB || (resB.outcome !== 'win' && resB.outcome !== 'loss' && resB.outcome !== 'draw')) return -1;
+
+      if (isTime) {
+        if (!resA.time_ms) return 1;
+        if (!resB.time_ms) return -1;
+        return Number(resA.time_ms) - Number(resB.time_ms);
+      } else {
+        if (!resA.distance_cm) return 1;
+        if (!resB.distance_cm) return -1;
+        return Number(resB.distance_cm) - Number(resA.distance_cm);
+      }
+    });
+  }, [selectedPhaseForClassification, rules]);
+
+  const [selectedAtletaIds, setSelectedAtletaIds] = useState<Set<string>>(new Set());
+
+  // Auto-select top X (e.g., 8)
+  useEffect(() => {
+    if (classifiedAtletas.length > 0) {
+      const top8 = classifiedAtletas.slice(0, 8).map(a => a.id);
+      setSelectedAtletaIds(new Set(top8));
+    }
+  }, [classifiedAtletas]);
+
 
   // Fetch existing phases and groups (heats)
   const { data: phases = [], isLoading: loadingPhases } = useQuery({
@@ -85,9 +143,11 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
                 participant_sport_event_id,
                 participant_sport_events (
                   participants (
+                    id,
                     people (full_name)
                   )
-                )
+                ),
+                results:competition_match_results(result_status, outcome, score, time_ms, distance_cm)
               )
             )
           )
@@ -121,9 +181,21 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Lista de Largada</CardTitle>
-            <Button size="sm" className="gap-2">
-              <Flag className="h-4 w-4" /> Confirmar Largada
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                className="gap-2"
+                onClick={() => {
+                   const matchId = phases[0]?.competition_groups?.[0]?.competition_matches?.[0]?.id;
+                   if (matchId) window.location.href = `${window.location.pathname}/serie/${matchId}/resultado`;
+                }}
+              >
+                <Trophy className="h-4 w-4" /> Lançar Marcas
+              </Button>
+              <Button size="sm" variant="outline" className="gap-2">
+                <Flag className="h-4 w-4" /> Confirmar Largada
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
@@ -204,51 +276,92 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
         </div>
       ) : (
         <div className="space-y-8">
-          {phases.map((phase: any) => (
-            <div key={phase.id} className="space-y-4">
-              <div className="flex items-center gap-3">
-                <h4 className="font-heading font-bold text-lg">{phase.name}</h4>
-                <Badge variant="secondary">{phase.competition_groups?.length || 0} Séries</Badge>
-              </div>
+          {phases.map((phase: any) => {
+            const nextP = phases.find(p => p.sort_order > phase.sort_order);
+            const allHomologated = phase.competition_groups?.every((g: any) => 
+              g.competition_matches?.every((m: any) => 
+                m.status === 'finished' && 
+                m.competition_match_entries?.every((e: any) => 
+                  !e.results?.[0] || e.results[0].result_status === 'resultado_validado' || e.results[0].result_status === 'publicado'
+                )
+              )
+            );
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {phase.competition_groups?.map((group: any) => (
-                  <Card key={group.id} className="overflow-hidden">
-                    <CardHeader className="p-3 bg-muted/50 border-b flex flex-row items-center justify-between">
-                      <CardTitle className="text-sm">{group.name}</CardTitle>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7"><Calendar className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <div className="divide-y text-xs">
-                        {group.competition_matches?.[0]?.competition_match_entries?.map((entry: any) => (
-                          <div key={entry.id} className="px-3 py-2 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-[10px] bg-muted px-1 rounded w-6 text-center">{entry.side || "-"}</span>
-                              <span className="font-medium">{entry.participant_sport_events?.participants?.people?.full_name || "Vazio"}</span>
+            return (
+              <div key={phase.id} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-heading font-bold text-lg">{phase.name}</h4>
+                    <Badge variant="secondary">{phase.competition_groups?.length || 0} Séries</Badge>
+                  </div>
+                  
+                  {allHomologated && nextP && (
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      className="gap-2"
+                      onClick={() => {
+                        setSelectedPhaseForClassification(phase);
+                        setShowClassificationModal(true);
+                      }}
+                    >
+                      <Trophy className="h-4 w-4" /> Classificar para {nextP.name}
+                    </Button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {phase.competition_groups?.map((group: any) => (
+                    <Card key={group.id} className="overflow-hidden">
+                      <CardHeader className="p-3 bg-muted/50 border-b flex flex-row items-center justify-between">
+                        <CardTitle className="text-sm">{group.name}</CardTitle>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7"><Calendar className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <div className="divide-y text-xs">
+                          {group.competition_matches?.[0]?.competition_match_entries?.map((entry: any) => (
+                            <div key={entry.id} className="px-3 py-2 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-[10px] bg-muted px-1 rounded w-6 text-center">{entry.side || "-"}</span>
+                                <span className="font-medium">{entry.participant_sport_events?.participants?.people?.full_name || "Vazio"}</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                        {(!group.competition_matches?.[0]?.competition_match_entries || group.competition_matches?.[0]?.competition_match_entries.length === 0) && (
-                          <div className="px-3 py-8 text-center text-muted-foreground italic">
-                            Série vazia
-                          </div>
-                        )}
+                          ))}
+                          {(!group.competition_matches?.[0]?.competition_match_entries || group.competition_matches?.[0]?.competition_match_entries.length === 0) && (
+                            <div className="px-3 py-8 text-center text-muted-foreground italic">
+                              Série vazia
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                      <div className="p-2 bg-muted/20 border-t flex justify-between items-center px-3">
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+                           <PlayCircle className="h-3 w-3" /> {group.competition_matches?.[0]?.status === 'finished' ? 'Finalizada' : 'Não iniciada'}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            className="h-auto p-0 text-[10px] text-primary font-bold gap-1"
+                            onClick={() => {
+                              const matchId = group.competition_matches?.[0]?.id;
+                              if (matchId) window.location.href = `${window.location.pathname}/serie/${matchId}/resultado`;
+                            }}
+                          >
+                            <Trophy className="h-3 w-3" /> Lançar Marcas
+                          </Button>
+                          <Button variant="link" size="sm" className="h-auto p-0 text-[10px]">Editar atletas</Button>
+                        </div>
                       </div>
-                    </CardContent>
-                    <div className="p-2 bg-muted/20 border-t flex justify-between items-center px-3">
-                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
-                         <PlayCircle className="h-3 w-3" /> Não iniciada
-                      </div>
-                      <Button variant="link" size="sm" className="h-auto p-0 text-[10px]">Editar atletas</Button>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           <div className="pt-4 border-t border-dashed">
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -258,6 +371,88 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
           </div>
         </div>
       )}
+      {/* Classification Modal */}
+      <Dialog open={showClassificationModal} onOpenChange={setShowClassificationModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Classificação para Próxima Fase</DialogTitle>
+            <DialogDescription>
+              Selecione os atletas que avançam para a fase seguinte. O sistema sugere os melhores tempos/marcas.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+             {/* Simple table listing results from current phase */}
+             <div className="border rounded-lg overflow-hidden">
+               <Table>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>Atleta</TableHead>
+                     <TableHead>Marca</TableHead>
+                     <TableHead className="text-center">Avança?</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {classifiedAtletas.map((atleta, index) => {
+                     const result = atleta.results?.[0];
+                     const isTime = rules?.family === 'time';
+                     const formattedResult = isTime 
+                       ? formatTimeMs(result?.time_ms) 
+                       : formatDistanceCm(result?.distance_cm);
+
+                     return (
+                       <TableRow key={atleta.id}>
+                         <TableCell>
+                           <div className="flex flex-col">
+                             <span className="font-bold">{atleta.participant_sport_events?.participants?.people?.full_name}</span>
+                             <span className="text-[10px] text-muted-foreground">{atleta.group_name}</span>
+                           </div>
+                         </TableCell>
+                         <TableCell className="font-mono">
+                           {formattedResult || 'S/M'}
+                         </TableCell>
+                         <TableCell className="text-center">
+                           <input 
+                             type="checkbox" 
+                             className="h-4 w-4"
+                             checked={selectedAtletaIds.has(atleta.id)}
+                             onChange={(e) => {
+                               const newSet = new Set(selectedAtletaIds);
+                               if (e.target.checked) newSet.add(atleta.id);
+                               else newSet.delete(atleta.id);
+                               setSelectedAtletaIds(newSet);
+                             }}
+                           />
+                         </TableCell>
+                       </TableRow>
+                     );
+                   })}
+                   {classifiedAtletas.length === 0 && (
+                     <TableRow>
+                       <TableCell colSpan={3} className="text-center py-10 text-muted-foreground italic">
+                          Nenhum resultado homologado encontrado para esta fase.
+                       </TableCell>
+                     </TableRow>
+                   )}
+                 </TableBody>
+               </Table>
+             </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowClassificationModal(false)}>Cancelar</Button>
+            <Button 
+              className="gap-2"
+              onClick={() => {
+                // Placeholder for propagation logic
+                setShowClassificationModal(false);
+              }}
+            >
+              Confirmar e Propagar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -57,17 +57,16 @@
 
 ## 7. Competição (✅ Pronto — Refatoração Etapa 3: Painel Combat)
 - **Tabelas**: 15 tabelas (phases, groups, matches, entries, results, scores, lineups, events, penalties, officials, attachments, attempts, player_stats, discipline, match_user_assignments)
-- **Páginas admin**: painel (entry point), painel-score, painel-sets, painel-combat (novo), fases, grupos, equipes, partidas, detalhe da partida, agenda, resultados, central, pré-validação, regras, regras em lote, diagnóstico, sincronizar equipes
-- **Painel Score, Sets & Combat (Novos)**:
-  - ✅ Lista modalidades das famílias "score", "sets" e "combat"
-  - ✅ Cards operacionais com contagem adaptada (Categorias, Atletas, Lutas)
-  - ✅ Painel Combat dedicado com seletor de categoria de peso
-  - ✅ Aba Pesagem: registro de peso oficial, status (conferido/fora do peso) e auditoria
-  - ✅ Aba Chave: visualização de bracket eliminatório com montagem automática (suporte a BYE com propagação imediata e disputa de bronze opcional).
-  - ✅ Aba Lutas: grade densa (estilo planilha) com filtros por fase e status
-  - ✅ Formulário lateral (Drawer) para edição de lutas com designação de arbitragem por modalidade
-  - ✅ **Lançamento Combat (Etapa 7 concluída)**: Rota dedicada, placar dinâmico (Judo vs Others), registro de tempo de luta, prorrogação (Golden Score/Overtime), métodos de vitória dinâmicos por modalidade, propagação automática do vencedor no bracket (e perdedor para bronze se aplicável) após homologação. Suporte a reversão com limpeza de propagação.
-  - ✅ **Lançamento Sets (Etapa 6 concluída)**: Rota dedicada, placar dinâmico por sets, cômputo automático de W.O. e Desistência, cálculo de average de sets/pontos para desempate.
+- **Páginas admin**: painel (entry point), painel-score, painel-sets, painel-combat, painel-time-mark (novo), fases, grupos, equipes, partidas, detalhe da partida, agenda, resultados, central, pré-validação, regras, regras em lote, diagnóstico, sincronizar equipes
+- **Painel Score, Sets, Combat & Time/Mark (Novos)**:
+  - ✅ Lista modalidades das famílias "score", "sets", "combat", "time" e "mark"
+  - ✅ Cards operacionais com contagem adaptada (Categorias, Atletas, Lutas, Séries)
+  - ✅ Painel Combat dedicado com seletor de categoria de peso e pesagem oficial
+  - ✅ Painel Time/Mark dedicado com gestão de séries, raias e distribuição automática
+  - ✅ **Lançamento Time/Mark (Etapa 9 concluída)**: Rota dedicada, 3 modos de lançamento (Pista/Piscina, Campo/Tentativas, Prova Única/Ranking), cálculo automático de posição por melhor marca, suporte a marcas especiais (DNS/DNF/DSQ/Nula), registro de múltiplas tentativas em provas de campo.
+  - ✅ **Propagação Time/Mark (Etapa 9 concluída)**: Tela de classificação consolidada da fase com sugestão dos melhores que avançam; propagação manual para a fase seguinte.
+  - ✅ **Lançamento Combat (Etapa 7 concluída)**: Rota dedicada, placar dinâmico, prorrogação, métodos de vitória, propagação automática no bracket.
+  - ✅ **Lançamento Sets (Etapa 6 concluída)**: Rota dedicada, placar dinâmico por sets, cômputo automático de W.O. e Desistência.
 - **Features legadas (reaproveitadas)**:
   - ✅ Wizard de 8 passos (coletivas) / 7 passos (individuais time/mark)
   - ✅ Estrutura automática de grupos com sugestão
@@ -100,7 +99,7 @@
   - ✅ **Indicadores de Ciclo**: Badges padronizados (Agendado → Em Andamento → Lançado → Validado → Publicado).
   - ✅ **Reversão Admin**: Fluxo de exceção para administradores corrigirem status com diálogos Shadcn UI e justificativa obrigatória.
 - **RLS**: funcional para anon (SELECT WHERE `result_status = 'publicado'`)
-- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento dedicado Score Page | ✅ Homologação com senha real | ✅ Publicação Centralizada | ✅ Reversão de status | ✅ Auditoria completa (tabela history + audit_events)
+- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento dedicado Score/Sets/Combat/Time-Mark Pages | ✅ Homologação com senha real | ✅ Publicação Centralizada | ✅ Reversão de status | ✅ Auditoria completa (tabela history + audit_events)
 
 ## 10. Boletins Oficiais (🟡 Parcial)
 - **Página**: `/admin/boletins`
