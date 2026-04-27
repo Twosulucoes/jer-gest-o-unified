@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/sb/client";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Trophy, Swords, Info, RefreshCw, Plus } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,7 +17,7 @@ interface BracketTabProps {
 }
 
 export function BracketTab({ sportEventId }: BracketTabProps) {
-  const sb = sb as any;
+  const sb = supabase as any;
   const qc = useQueryClient();
   const [isMounting, setIsMounting] = useState(false);
   const [withBronze, setWithBronze] = useState(true);
@@ -36,8 +36,8 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
       
       const list = (data || []) as any[];
       const total = list.length;
-      const pending = list.filter(a => a.weighing_status === "pending").length;
-      const confirmed = list.filter(a => a.weighing_status === "confirmed").length;
+      const pending = list.filter((a: any) => a.weighing_status === "pending").length;
+      const confirmed = list.filter((a: any) => a.weighing_status === "confirmed").length;
       
       return { total, pending, confirmed };
     },
@@ -56,7 +56,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
       if (error) throw error;
       
       // Fetch matches separately to avoid deep type instantiation
-      const phaseIds = data.map(p => p.id);
+      const phaseIds = data.map((p: any) => p.id);
       if (phaseIds.length === 0) return data;
 
       const { data: matches, error: mError } = await (sb
@@ -71,7 +71,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
 
       if (mError) throw mError;
 
-      return data.map(p => ({
+      return data.map((p: any) => ({
         ...p,
         matches: matches.filter((m: any) => m.phase_id === p.id)
       }));
@@ -134,7 +134,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
       }
 
       // 4. Prepare participants for RPC
-      const participants = athletes.map((a, idx) => ({
+      const participants = athletes.map((a: any, idx: number) => ({
         participant_id: a.id,
         seed: idx + 1,
         label: `Atleta ${idx + 1}`,
