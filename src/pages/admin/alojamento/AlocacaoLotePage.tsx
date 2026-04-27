@@ -218,7 +218,7 @@ export default function AlocacaoLotePage() {
                   <SelectContent>
                     {delegations.map(d => (
                       <SelectItem key={d.id} value={d.id}>
-                        {d.name} {d.institutions?.name ? `(${d.institutions.name})` : ""}
+                        {d.school_name} {d.institutions?.name ? `(${d.institutions.name})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
