@@ -1,14 +1,17 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Calendar, MapPin } from "lucide-react";
+import { AlertCircle, Calendar, MapPin, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const PwaSelectionFallback = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/pwa";
+  const reason = location.state?.reason;
   const { activeEventId, events, setActiveEventId } = useEventContext();
   const { activeStageId, stages, setActiveStageId } = useStageContext();
 
