@@ -26,6 +26,10 @@ import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
+import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
+import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
+import { addToVoucherQueue } from "@/lib/voucherOffline";
+import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
 
 
 const MODULE = "transporte" as const;
