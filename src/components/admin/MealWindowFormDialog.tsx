@@ -2,14 +2,13 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription,
 } from "@/components/ui/form";
@@ -19,7 +18,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Trash2, Plus, Users, School, UserCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 
 const windowSchema = z.object({
   meal_type_id: z.string().min(1, "Selecione o tipo"),
