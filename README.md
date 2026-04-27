@@ -178,7 +178,7 @@ O cliente distribui acessos para operadores através de **links curtos** com QR 
 | **Links e Páginas Públicas** | ✅ Pronto | 85% |
 | **Relatórios** (Central + Transporte + Alimentação + Alojamento) | ✅ Pronto | 100% |
 | **Relatórios Oficiais** — Identidade Visual ✅, Boletins ✅, Dashboard ✅, Quadro de Medalhas ✅, OSC ✅ | ✅ Pronto | 100% |
-| **Boletins Oficiais** (Criação, publicação, geração PDF) | 🟡 Parcial | 50% |
+| **Boletins Oficiais** (Criação, publicação, geração PDF automática e manual, versionamento, quadro de medalhas oficial) | ✅ Pronto | 100% |
 | **Super Admin** (Dashboard, Eventos, Logs, Config) | ✅ Pronto | 80% |
 
 **Resumo**: 63 tabelas, 30 RPCs (incluindo validação KO), 5 Edge Functions (incluindo verify-password), 28+ rotas admin, 5 rotas super, 25+ rotas PWA, 12 perfis de acesso. funcional para Score e Sets; Combat com chaves operacionais mas lançamento pendente. 
