@@ -1,7 +1,7 @@
 # Menus e Status de Implementação — JER Gestão
 
 > Fonte única de verdade: `src/config/systemMap.ts`
-> Auditoria atualizada em 2026-04-27 (Etapa 7)
+> Auditoria atualizada em 2026-04-28 (Correções pós-auditoria) — Fim da Etapa 7.
 
 ## Critérios de Classificação
 
