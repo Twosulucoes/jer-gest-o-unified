@@ -45,17 +45,12 @@ async function validateHMAC(payload: string, hmacShort: string): Promise<boolean
 
 /**
  * Normaliza o conteúdo escaneado do QR.
- * Aceita:
- *  - JSON ({ qr, code, credential_code, cpf })
- *  - URLs com query (?qr=... | ?code=... | ?cpf=...)
- *  - Texto puro
  */
 function extractCandidates(raw: string): { values: string[]; cpfDigits: string | null } {
   const set = new Set<string>();
   const value = raw.trim();
   set.add(value);
 
-  // JSON?
   if (value.startsWith("{")) {
     try {
       const obj = JSON.parse(value);
@@ -65,7 +60,6 @@ function extractCandidates(raw: string): { values: string[]; cpfDigits: string |
     } catch (_) { /* ignore */ }
   }
 
-  // URL?
   if (/^https?:\/\//i.test(value)) {
     try {
       const u = new URL(value);
@@ -73,13 +67,11 @@ function extractCandidates(raw: string): { values: string[]; cpfDigits: string |
         const v = u.searchParams.get(k);
         if (v) set.add(v.trim());
       }
-      // último segmento do path
       const seg = u.pathname.split("/").filter(Boolean).pop();
       if (seg) set.add(seg);
     } catch (_) { /* ignore */ }
   }
 
-  // Versão só com dígitos (útil para CPF)
   const digits = value.replace(/\D/g, "");
   if (digits) set.add(digits);
 
@@ -123,8 +115,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Input validation: limit length and reject control/escape chars that
-    // could break PostgREST filter parsing.
     const qrStr = String(qr_code_value);
     if (qrStr.length > 500) {
       return jsonResponse({ error: "qr_code_value too long" }, 400);
@@ -133,21 +123,19 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "qr_code_value contains invalid characters" }, 400);
     }
 
-    // Logica de assinatura HMAC
+    // Lógica de assinatura HMAC e detecção de versão
     let isLegacy = false;
     let qrPayload = qrStr;
     
     if (qrStr.startsWith("jer:v2:")) {
       const parts = qrStr.split(":");
       if (parts.length === 6) {
-        // jer:v2:event_id:participant_id:credential_code:hmac_short
         const [,, eid, pid, ccode, hmac] = parts;
         const payload = eid + pid + ccode;
         const isValid = await validateHMAC(payload, hmac);
         if (!isValid) {
           return jsonResponse({ error: "Assinatura do QR Code inválida (Possível fraude)" }, 403);
         }
-        // Se válido, o qr_code_value para busca no banco é o formato v1 ou apenas o code
         qrPayload = `jer:${eid}:${pid}:${ccode}`;
       } else {
         return jsonResponse({ error: "Formato de QR Code v2 inválido" }, 400);
@@ -161,35 +149,24 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Server-side role check: only operational roles may validate QR codes.
     const { data: roleRows } = await serviceClient
       .from("user_roles")
       .select("role")
       .eq("user_id", operatorId);
     const roles = (roleRows ?? []).map((r: any) => r.role);
-    const ALLOWED_ROLES = [
-      "admin",
-      "secretaria",
-      "coordenacao_tecnica",
-      "transporte",
-      "alimentacao",
-      "alojamento",
-      "super_admin",
-    ];
+    const ALLOWED_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento", "super_admin"];
+    
     if (!roles.some((r: string) => ALLOWED_ROLES.includes(r))) {
       return jsonResponse({ error: "Forbidden" }, 403);
     }
 
     const { values: candidates, cpfDigits } = extractCandidates(qrPayload);
-
-    // Drop any candidate that still contains unsafe characters.
     const safeCandidates = candidates.filter(
       (v) => v.length > 0 && v.length <= 500 && !/[\\"\x00-\x1F\x7F]/.test(v)
     );
 
-    // ── 1. Busca em participant_credentials por qr_code_value OU credential_code ──
     let credential: any = null;
-    let matchedSource: "qr_code_value" | "credential_code" | "external_credential" | "cpf" | null = null;
+    let matchedSource: string | null = null;
 
     for (const candidate of safeCandidates) {
       const { data: byQr } = await serviceClient
@@ -218,9 +195,8 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // ── 2. Fallback: external_credentials.credential_code ──
     if (!credential) {
-      const { data: ext, error: extErr } = await serviceClient
+      const { data: ext } = await serviceClient
         .from("external_credentials")
         .select("id, credential_code, event_id, participant_id, status")
         .eq("event_id", event_id)
@@ -228,10 +204,8 @@ Deno.serve(async (req: Request) => {
         .eq("status", "active")
         .limit(1)
         .maybeSingle();
-      if (extErr) console.error("external_credentials lookup error:", extErr);
 
       if (ext) {
-        // Tenta achar a credencial "real" do participante
         const { data: pc } = await serviceClient
           .from("participant_credentials")
           .select("id, status, credential_code, qr_code_value, event_id, participant_id, activated_at, revoked_at")
@@ -244,7 +218,6 @@ Deno.serve(async (req: Request) => {
         if (pc) {
           credential = pc;
         } else {
-          // Sem participant_credentials: monta um "virtual" para validar pelo participante
           credential = {
             id: ext.id,
             status: "active",
@@ -261,7 +234,6 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // ── 3. Fallback: CPF (11 dígitos) → people → participants → credenciais ──
     if (!credential && cpfDigits) {
       const { data: person } = await serviceClient
         .from("people")
@@ -293,7 +265,6 @@ Deno.serve(async (req: Request) => {
             credential = pc;
             matchedSource = "cpf";
           } else {
-            // Tem participante mas sem credencial: também bloqueia, mas com mensagem mais clara
             credential = {
               id: part.id,
               status: "no_credential",
@@ -319,7 +290,6 @@ Deno.serve(async (req: Request) => {
       scanResult = "not_found";
       scanNotes = "QR Code não encontrado no sistema";
     } else {
-      // Basic info checking
       if (credential.event_id !== event_id) {
         scanResult = "wrong_event";
         scanNotes = "Credencial pertence a outro evento";
@@ -339,10 +309,9 @@ Deno.serve(async (req: Request) => {
         scanResult = "valid";
       } else {
         scanResult = "unknown_status";
-        scanNotes = `Status desconhecido: ${credential.status}`;
+        scanNotes = `Status desconhecido: \${credential.status}`;
       }
 
-      // Fetch participant + person info for ANY found credential (to show who it is)
       const { data: participant } = await serviceClient
         .from("participants")
         .select("id, participant_type, status, delegation_id, person_id")
@@ -385,7 +354,6 @@ Deno.serve(async (req: Request) => {
         };
       }
 
-      // Update last_validated_at apenas se for credencial real (não virtual) e válida
       if (scanResult === "valid" && !credential.__virtual_external) {
         await serviceClient
           .from("participant_credentials")
@@ -394,9 +362,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // 2. Register scan in credential_scans (apenas se for credencial real do participant_credentials)
     if (credential && !credential.__virtual_external) {
-      // Check for duplicates (same credential, same scan_point, last 30 seconds)
       const { data: recentScan } = await serviceClient
         .from("credential_scans")
         .select("id")
@@ -426,11 +392,8 @@ Deno.serve(async (req: Request) => {
       matched_by: matchedSource,
       timestamp: new Date().toISOString(),
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("validate-qr error:", err);
-    return jsonResponse(
-      { error: "Erro interno" },
-      500
-    );
+    return jsonResponse({ error: "Erro interno: " + err.message }, 500);
   }
 });
