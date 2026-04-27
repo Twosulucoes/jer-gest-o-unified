@@ -86,9 +86,11 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
                 participant_sport_event_id,
                 participant_sport_events (
                   participants (
+                    id,
                     people (full_name)
                   )
-                )
+                ),
+                results:competition_match_results(result_status, outcome, score, time_ms, distance_cm)
               )
             )
           )
