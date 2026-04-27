@@ -96,7 +96,7 @@ export default function AlojamentoScanPage() {
           participant_type: "Voucher",
           message: successMsg,
         });
-        toast.info("Voucher registrado offline. Sincronize quando houver internet.");
+        toast.info(getPwaMessage("VOUCHER_OFFLINE_RECORDED", lang));
         recordOutcome("ok");
         if (navigator.vibrate) navigator.vibrate(200);
         reopenIfContinuous();

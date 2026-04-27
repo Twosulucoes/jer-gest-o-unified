@@ -31,7 +31,12 @@ export default function VoucherAuditoriaPage() {
         .from("service_voucher_attempts")
         .select(`
           *,
-          voucher:service_vouchers(qr_code_value, is_nominal, eventual_person:service_eventual_people(full_name)),
+          voucher:service_vouchers(
+            qr_code_value, 
+            is_nominal, 
+            eventual_person:service_eventual_people(full_name),
+            batch:service_voucher_batches(name)
+          ),
           operator:profiles(display_name)
         `)
         .eq("event_id", eventId)
@@ -48,7 +53,13 @@ export default function VoucherAuditoriaPage() {
         timestamp: a.attempted_at,
         type: a.outcome === 'success' ? 'CONSUMO' : 'TENTATIVA RECUSADA',
         service: a.service_kind,
-        details: a.reason ? `Recusa: ${a.reason}` : 'Sucesso',
+        details: a.outcome === 'success' ? 'Sucesso' : voucherErrorMessage(a.reason, 'pt', { 
+          used_at: a.metadata?.used_at, 
+          operator_name: a.metadata?.operator_name,
+          correct_instance: a.metadata?.correct_instance,
+          revocation_reason: a.metadata?.revocation_reason,
+          valid_until: a.metadata?.valid_until
+        }).text,
         identifier: (a as any).voucher?.eventual_person?.full_name || (a as any).voucher?.qr_code_value || a.qr_value,
         operator: (a as any).operator?.display_name || 'Sistema',
         is_offline: (a as any).is_offline,

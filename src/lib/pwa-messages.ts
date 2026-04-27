@@ -250,6 +250,26 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
     pt: "Scan Embarque",
     es: "Scan Embarque",
   },
+  SYNC_PENDING: {
+    pt: "Sincronização pendente",
+    es: "Sincronización pendiente",
+  },
+  SYNCING: {
+    pt: "Sincronizando...",
+    es: "Sincronizando...",
+  },
+  SYNC_SUCCESS: {
+    pt: "Sincronização concluída",
+    es: "Sincronización completada",
+  },
+  SYNC_CONFLICTS: {
+    pt: "Sincronização concluída com conflitos",
+    es: "Sincronización completada con conflictos",
+  },
+  VOUCHER_OFFLINE_RECORDED: {
+    pt: "Voucher registrado offline. Sincronize quando houver internet.",
+    es: "Voucher registrado offline. Sincronice cuando haya internet.",
+  },
 };
 
 export function getPwaLang(): PwaLang {
