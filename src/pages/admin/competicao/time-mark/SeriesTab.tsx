@@ -58,6 +58,8 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
   const [distributionType, setDistributionType] = useState("random");
   const [showClassificationModal, setShowClassificationModal] = useState(false);
   const [selectedPhaseForClassification, setSelectedPhaseForClassification] = useState<any>(null);
+  const [showRepropagateConfirm, setShowRepropagateConfirm] = useState(false);
+  const qc = useQueryClient();
 
 
   // Fetch event rules to determine format
