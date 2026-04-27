@@ -482,6 +482,8 @@ const App = () => (
               <Route path="competicao/regras" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><RegrasProvaPage /></ProtectedRoute>} />
               <Route path="competicao/regras/lote" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><RegrasLotePage /></ProtectedRoute>} />
               <Route path="competicao/arbitragem" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "arbitragem"]}><ArbitragemEquipePage /></ProtectedRoute>} />
+              <Route path="competicao/arbitragem/remuneracao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RefereeRemunerationConfigPage /></ProtectedRoute>} />
+              <Route path="competicao/arbitragem/apuracao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RefereeReportingPage /></ProtectedRoute>} />
               {/* Alojamento */}
               <Route path="alojamento" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoHubPage /></ProtectedRoute>} />
               <Route path="alojamento/locais" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoLocaisPage /></ProtectedRoute>} />
