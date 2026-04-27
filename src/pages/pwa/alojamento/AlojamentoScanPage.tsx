@@ -239,6 +239,8 @@ export default function AlojamentoScanPage() {
       />
 
       <main className="p-4 max-w-md mx-auto space-y-4 pb-20">
+        <OfflineSyncStatus />
+        <VoucherConflictCentral />
         <ScanPreferencesPanel
           prefs={prefs}
           telemetry={telemetry}
