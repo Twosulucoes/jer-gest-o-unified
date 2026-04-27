@@ -5625,6 +5625,9 @@ export type Database = {
           context_id: string | null
           event_id: string | null
           id: string
+          is_offline: boolean | null
+          metadata: Json | null
+          offline_at: string | null
           outcome: string
           qr_value: string | null
           reason: string | null
@@ -5637,6 +5640,9 @@ export type Database = {
           context_id?: string | null
           event_id?: string | null
           id?: string
+          is_offline?: boolean | null
+          metadata?: Json | null
+          offline_at?: string | null
           outcome: string
           qr_value?: string | null
           reason?: string | null
@@ -5649,6 +5655,9 @@ export type Database = {
           context_id?: string | null
           event_id?: string | null
           id?: string
+          is_offline?: boolean | null
+          metadata?: Json | null
+          offline_at?: string | null
           outcome?: string
           qr_value?: string | null
           reason?: string | null
