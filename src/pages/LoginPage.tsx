@@ -134,9 +134,23 @@ export default function LoginPage() {
         return;
       }
 
-      const userRoles = (rolesRes.data || []).map((r) => r.role as string);
       const target = resolveRedirect(userRoles);
-      navigate(target, { replace: true });
+      
+      // Use state.from if available and context is valid
+      const from = (location.state as any)?.from?.pathname;
+      const activeEventId = localStorage.getItem("jer_active_event_id");
+      const activeStageId = localStorage.getItem("jer_active_stage_id");
+      const hasPwaContext = !!activeEventId && !!activeStageId;
+
+      if (from && from !== "/login") {
+        if (from.startsWith("/pwa") && from !== "/pwa/configuracao" && !hasPwaContext) {
+          navigate("/pwa/configuracao", { replace: true, state: { from: (location.state as any)?.from, reason: "missing_stage" } });
+        } else {
+          navigate(from, { replace: true });
+        }
+      } else {
+        navigate(target, { replace: true });
+      }
     }
 
     setLoading(false);
