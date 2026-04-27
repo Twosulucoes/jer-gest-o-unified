@@ -55,6 +55,49 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
   const [showClassificationModal, setShowClassificationModal] = useState(false);
   const [selectedPhaseForClassification, setSelectedPhaseForClassification] = useState<any>(null);
 
+  const classifiedAtletas = useMemo(() => {
+    if (!selectedPhaseForClassification) return [];
+    
+    const allEntries = selectedPhaseForClassification.competition_groups?.flatMap((g: any) => 
+      g.competition_matches?.flatMap((m: any) => 
+        m.competition_match_entries?.map((e: any) => ({
+          ...e,
+          group_name: g.name,
+          match_id: m.id
+        })) || []
+      ) || []
+    ) || [];
+
+    const isTime = rules?.family === 'time';
+    return [...allEntries].sort((a, b) => {
+      const resA = a.results?.[0];
+      const resB = b.results?.[0];
+      
+      if (!resA || resA.outcome !== 'win' && resA.outcome !== 'loss') return 1;
+      if (!resB || resB.outcome !== 'win' && resB.outcome !== 'loss') return -1;
+
+      if (isTime) {
+        if (!resA.time_ms) return 1;
+        if (!resB.time_ms) return -1;
+        return Number(resA.time_ms) - Number(resB.time_ms);
+      } else {
+        if (!resA.distance_cm) return 1;
+        if (!resB.distance_cm) return -1;
+        return Number(resB.distance_cm) - Number(resA.distance_cm);
+      }
+    });
+  }, [selectedPhaseForClassification, rules]);
+
+  const [selectedAtletaIds, setSelectedAtletaIds] = useState<Set<string>>(new Set());
+
+  // Auto-select top X (e.g., 8)
+  useEffect(() => {
+    if (classifiedAtletas.length > 0) {
+      const top8 = classifiedAtletas.slice(0, 8).map(a => a.id);
+      setSelectedAtletaIds(new Set(top8));
+    }
+  }, [classifiedAtletas]);
+
   // Fetch event rules to determine format
   const { data: rules, isLoading: loadingRules } = useQuery({
     queryKey: ["sport_event_rules", sportEventId],
