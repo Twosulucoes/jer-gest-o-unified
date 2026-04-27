@@ -512,7 +512,7 @@ const App = () => (
             <Route path="/pwa/recover" element={<Navigate to="/login" replace />} />
             <Route path="/pwa/set-password" element={<PwaSetPasswordPage />} />
             {/* PWA Landing (requires auth) */}
-            <Route path="/pwa" element={<PwaLandingPage />} />
+            <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLandingPage /></PwaRouteGuard>} />
             
             {/* PWA Alojamento — perfil alojamento */}
             <Route path="/pwa/alojamento" element={<PwaRouteGuard allowedRoles={["alojamento"]}><AlojamentoHomePage /></PwaRouteGuard>} />
