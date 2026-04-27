@@ -13,6 +13,9 @@ import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessage
 import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { useAuth } from "@/hooks/useAuth";
+import { addToVoucherQueue } from "@/lib/voucherOffline";
+import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
+import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
