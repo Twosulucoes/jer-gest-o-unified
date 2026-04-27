@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers, IdCard, Download } from "lucide-react";
+import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers, IdCard, Download, Calendar } from "lucide-react";
+import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VersionBadge } from "@/components/VersionBadge";
@@ -28,6 +29,7 @@ const MODULE_CARDS = [
 
 export default function PwaLandingPage() {
   const navigate = useNavigate();
+  const { events, activeEventId, setActiveEventId } = useEventContext();
   const { stages, activeStageId, setActiveStageId } = useStageContext();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,9 +63,6 @@ export default function PwaLandingPage() {
 
       const opCards = MODULE_CARDS.filter((c) => roles.includes(c.role) || (c.role === "secretaria" && roles.includes("admin")));
       
-      // Só redireciona automaticamente se houver apenas um módulo E uma etapa já estiver selecionada
-      // Isso evita o loop onde o usuário é mandado para o módulo, o módulo bloqueia por falta de etapa, 
-      // o usuário volta para cá e é mandado de novo.
       if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria") && activeStageId) {
         navigate(opCards[0].to, { replace: true });
         return;
