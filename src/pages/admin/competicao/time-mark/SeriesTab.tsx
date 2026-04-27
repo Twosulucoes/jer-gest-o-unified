@@ -391,13 +391,47 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
                    </TableRow>
                  </TableHeader>
                  <TableBody>
-                   {/* This is a placeholder for the real consolidated ranking logic */}
-                   <TableRow>
-                     <TableCell colSpan={3} className="text-center py-10 text-muted-foreground italic">
-                        Funcionalidade de consolidação de ranking em desenvolvimento. 
-                        A propagação criará as alocações na próxima fase.
-                     </TableCell>
-                   </TableRow>
+                   {classifiedAtletas.map((atleta, index) => {
+                     const result = atleta.results?.[0];
+                     const isTime = rules?.family === 'time';
+                     const formattedResult = isTime 
+                       ? formatTimeMs(result?.time_ms) 
+                       : formatDistanceCm(result?.distance_cm);
+
+                     return (
+                       <TableRow key={atleta.id}>
+                         <TableCell>
+                           <div className="flex flex-col">
+                             <span className="font-bold">{atleta.participant_sport_events?.participants?.people?.full_name}</span>
+                             <span className="text-[10px] text-muted-foreground">{atleta.group_name}</span>
+                           </div>
+                         </TableCell>
+                         <TableCell className="font-mono">
+                           {formattedResult || 'S/M'}
+                         </TableCell>
+                         <TableCell className="text-center">
+                           <input 
+                             type="checkbox" 
+                             className="h-4 w-4"
+                             checked={selectedAtletaIds.has(atleta.id)}
+                             onChange={(e) => {
+                               const newSet = new Set(selectedAtletaIds);
+                               if (e.target.checked) newSet.add(atleta.id);
+                               else newSet.delete(atleta.id);
+                               setSelectedAtletaIds(newSet);
+                             }}
+                           />
+                         </TableCell>
+                       </TableRow>
+                     );
+                   })}
+                   {classifiedAtletas.length === 0 && (
+                     <TableRow>
+                       <TableCell colSpan={3} className="text-center py-10 text-muted-foreground italic">
+                          Nenhum resultado homologado encontrado para esta fase.
+                       </TableCell>
+                     </TableRow>
+                   )}
                  </TableBody>
                </Table>
              </div>
