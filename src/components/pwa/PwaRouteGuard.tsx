@@ -78,14 +78,19 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
     return <div className="tactical-cockpit min-h-screen pb-20">{children}</div>;
   }
 
-  // Central Event Scope Check: If no event is selected, block PWA usage (except for the landing page itself)
-  if (!activeEventId && location.pathname !== "/pwa") {
-    return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_event" }} replace />;
-  }
+  // Central redirection layer for internal PWA routes
+  const isPwaInternalRoute = location.pathname.startsWith("/pwa/") && 
+                             location.pathname !== "/pwa/configuracao" &&
+                             location.pathname !== "/pwa/install" &&
+                             location.pathname !== "/pwa/set-password";
 
-  // Stage Check: If route requires stage and none is selected, redirect to fallback configuration
-  if (requireStage && !activeStageId) {
-    return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_stage" }} replace />;
+  if (isPwaInternalRoute) {
+    if (!activeEventId) {
+      return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_event" }} replace />;
+    }
+    if (requireStage && !activeStageId) {
+      return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_stage" }} replace />;
+    }
   }
 
   // If specific roles required, check. Admin/secretaria always pass.
