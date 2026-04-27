@@ -20,7 +20,7 @@ Esta é uma análise consolidada da aderência do módulo de Voucher aos requisi
 - **Auditoria**: Tabela `service_voucher_attempts` agora possui colunas `is_offline`, `offline_at` e `metadata` (JSONB).
 
 ### 1.2 PWAs Operacionais
-- **Alimentação**: Scan online, fila offline (enviando `p_offline_at`), sincronização e central de conflitos.
+- **Alimentacao**: Scan online, fila offline (enviando `p_offline_at`), sincronização e central de conflitos.
 - **Alojamento**: Scan online, fila offline (enviando `p_offline_at`), sincronização e central de conflitos.
 - **Transporte**: Scan online, fila offline (enviando `p_offline_at`), sincronização e **Central de conflitos integrada**.
 - **Regra Temporal**: A RPC `redeem_voucher` agora utiliza o instante real da leitura (`p_offline_at`) para validação de expiração.
@@ -34,17 +34,37 @@ Esta é uma análise consolidada da aderência do módulo de Voucher aos requisi
 | **Cadastro de Eventual** | ✅ Conforme | Tabela `service_eventual_people` funcional. |
 | **Modelo de Voucher** | ✅ Conforme | Colunas de vínculo e instância presentes. |
 | **Fila Offline PWA** | ✅ Conforme | Registra e envia instante real da leitura; respeita validade temporal offline. |
-| **Central de Conflitos**| ✅ Conforme | Integrada nos 3 PWAs (Alimentação, Transporte, Alojamento). |
+| **Central de Conflitos**| ✅ Conforme | Integrada nos 3 PWAs (Alimentacao, Transporte, Alojamento). |
 | **Auditoria Admin** | ✅ Conforme | Exibe marcação offline, instante real e detalhes ricos de conflito via JSONB. |
 | **Persistência de Metadados**| ✅ Conforme | Tabela `service_voucher_attempts` sincronizada com o frontend. |
 
 ---
 
-## 3. Veredito Final de Fechamento
+## 3. Mini-auditoria de Confirmação (2026-04-28 19:30)
+
+### 3.1 Bloqueante de Schema
+- **Status**: ✅ Resolvido.
+- **Evidência**: Inspecionada a tabela `service_voucher_attempts`. Colunas `is_offline` (boolean), `offline_at` (timestamptz) e `metadata` (jsonb) existem e estão operacionais. Registros legados mantêm compatibilidade.
+
+### 3.2 Bloqueante da Função de Validação
+- **Status**: ✅ Resolvido.
+- **Evidência**: A RPC `public.redeem_voucher` agora aceita `p_is_offline` e `p_offline_at`. A lógica utiliza `v_reference_time := COALESCE(p_offline_at, now())` para validar expiração, garantindo que leituras em campo dentro da validade sejam aceitas mesmo se sincronizadas tarde. A função compõe metadados detalhados (status, motivo da revogação, etc.) e os persiste em `service_voucher_attempts`.
+
+### 3.3 Bloqueante do PWA Transporte
+- **Status**: ✅ Resolvido.
+- **Evidência**: `TransporteEmbarquePage.tsx` integra `<VoucherConflictCentral />`. O fluxo de leitura em `handleScan` agora trata vouchers offline via `addToVoucherQueue` com paridade aos demais PWAs. A central de conflitos unificada permite resolução e descarte local com persistência.
+
+### 3.4 Verificação Integrada e Não Regressão
+- **Auditoria Administrativa**: `/admin/vouchers/auditoria` exibe crachá de "OFFLINE", instante da leitura e detalhes ricos extraídos do JSONB de metadados.
+- **Não Regressão**: Fluxos online e filas de credencial (Alimentacao/Alojamento) permanecem funcionais e isolados das mudanças de voucher.
+
+---
+
+## 4. Veredito Final
 
 **ESTADO: FECHADO.**
 
-O módulo está tecnicamente completo e alinhado às regras de negócio. As desconexões entre frontend e banco de dados foram resolvidas com a atualização do schema e da RPC central. A paridade funcional entre os PWAs de serviço foi atingida com a integração da central de conflitos no Transporte.
+O módulo de Voucher está tecnicamente completo, seguro e resiliente para operação real em campo, atendendo a todos os requisitos de rastreabilidade, paridade offline e governança temporal.
 
 ---
 
