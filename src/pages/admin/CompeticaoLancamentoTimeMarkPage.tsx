@@ -382,7 +382,7 @@ export default function CompeticaoLancamentoTimeMarkPage() {
             {canHomologate && (
               <Button 
                 variant="secondary" 
-                className="gap-2 bg-amber-500 hover:bg-amber-600 text-white border-none"
+                className="gap-2"
                 onClick={() => setShowHomologateDialog(true)}
               >
                 <CheckCircle2 className="h-4 w-4" />
