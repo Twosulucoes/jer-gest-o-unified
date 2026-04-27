@@ -42,11 +42,11 @@ export function ProvaCard({ prova, onAction }: ProvaCardProps) {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            {prova.is_grouped_combat || (prova as any).is_grouped_time_mark ? "Múltiplas Categorias/Provas" : `${prova.sport_name} · ${prova.category_name}`}
+            {prova.is_grouped_combat || prova.is_grouped_time_mark ? "Múltiplas Categorias/Provas" : `${prova.sport_name} · ${prova.category_name}`}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
-            {(prova.is_grouped_combat || (prova as any).is_grouped_time_mark) && (
+            {(prova.is_grouped_combat || prova.is_grouped_time_mark) && (
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase text-muted-foreground font-semibold">Provas</span>
                 <span className="text-lg font-bold">{prova.category_count}</span>
@@ -54,10 +54,10 @@ export function ProvaCard({ prova, onAction }: ProvaCardProps) {
             )}
             <div className="flex flex-col">
               <span className="text-[10px] uppercase text-muted-foreground font-semibold">
-                {(prova as any).is_grouped_time_mark ? "Séries Montadas" : (prova.is_grouped_combat ? "Atletas" : "Lutas")}
+                {prova.is_grouped_time_mark ? "Séries Montadas" : (prova.is_grouped_combat ? "Atletas" : "Lutas")}
               </span>
               <span className="text-lg font-bold">
-                {(prova as any).is_grouped_time_mark ? prova.phase_count : (prova.is_grouped_combat ? prova.enrolled_count : prova.match_count)}
+                {prova.is_grouped_time_mark ? prova.phase_count : (prova.is_grouped_combat ? prova.enrolled_count : prova.match_count)}
               </span>
             </div>
             <div className="flex flex-col">
