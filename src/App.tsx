@@ -341,6 +341,7 @@ const App = () => (
               <Route path="competicao/painel-sets/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoSetsPage /></ProtectedRoute>} />
               <Route path="competicao/painel-combat/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoCombatPage /></ProtectedRoute>} />
               <Route path="competicao/painel-time-mark/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelTimeMarkPage /></ProtectedRoute>} />
+              <Route path="competicao/painel-time-mark/:sportEventId/serie/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoTimeMarkPage /></ProtectedRoute>} />
               <Route path="competicao/equipes" element={<RedirectToEtapas />} />
               <Route path="competicao/resultados" element={<RedirectToEtapas />} />
               <Route path="competicao/sincronizar-equipes" element={<RedirectToEtapas />} />
