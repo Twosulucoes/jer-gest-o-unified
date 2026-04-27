@@ -134,6 +134,7 @@ export default function LoginPage() {
         return;
       }
 
+      const userRoles = (rolesRes.data || []).map((r) => r.role as string);
       const target = resolveRedirect(userRoles);
       
       // Use state.from if available and context is valid
