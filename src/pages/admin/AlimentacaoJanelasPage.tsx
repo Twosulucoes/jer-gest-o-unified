@@ -108,7 +108,7 @@ export default function AlimentacaoJanelasPage() {
       if (error) throw error;
 
       // Sync rules
-      await (supabase.from("meal_window_eligibility") as any).delete().eq("meal_window_id", id);
+      await (supabase as any).from("meal_window_eligibility").delete().eq("meal_window_id", id);
       
       if (v.restrict_eligibility && v.eligibility_rules && v.eligibility_rules.length > 0) {
         const rulesPayload = v.eligibility_rules.map(r => ({
@@ -117,7 +117,7 @@ export default function AlimentacaoJanelasPage() {
           participant_type_value: r.participant_type_value,
           reference_id: r.reference_id
         }));
-        const { error: rulesError } = await (supabase.from("meal_window_eligibility") as any).insert(rulesPayload);
+        const { error: rulesError } = await (supabase as any).from("meal_window_eligibility").insert(rulesPayload);
         if (rulesError) throw rulesError;
       }
     },
