@@ -22,6 +22,8 @@ interface MatchesTabProps {
 }
 
 export function MatchesTab({ sportEventId }: MatchesTabProps) {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
