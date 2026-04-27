@@ -12,7 +12,7 @@ resultado_lancado → resultado_validado → publicado
 |--------|-------------|-------------------|
 | `resultado_lancado` | admin, secretaria, coord_tecnica | coord_tecnica, secretaria, mesário |
 | `resultado_validado` | admin, secretaria, coord_tecnica | admin (reverter), coordenacao_tecnica (homologar) |
-| `publicado` | **todos** (incluindo público anon) | admin (reverter), secretaria (publicar) |
+| `publicado` | **todos** (incluindo público anon via Select restrito) | admin (reverter), secretaria (publicar) |
 
 ## Strings Canônicas (Fonte de Verdade)
 
