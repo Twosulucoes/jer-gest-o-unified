@@ -109,6 +109,7 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
         setWidth(template.width);
         setHeight(template.height);
         setIsActive(template.is_active);
+        setParticipantTypeFilter(template.participant_type_filter || "all");
         setNotes(template.notes || "");
         setBackgroundUrl(template.background_url);
         setBgPreviewUrl(template.background_url);
