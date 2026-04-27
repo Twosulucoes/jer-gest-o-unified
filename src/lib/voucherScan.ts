@@ -13,6 +13,8 @@ export interface VoucherRedeemResult {
   label?: string | null;
   is_contingency?: boolean;
   remaining_uses?: number | null;
+  used_at?: string;
+  operator_name?: string;
 }
 
 // Mensagens centralizadas no dicionário único `voucherMessages.ts`.
