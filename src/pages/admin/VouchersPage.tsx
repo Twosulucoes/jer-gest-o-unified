@@ -419,7 +419,7 @@ export default function VouchersPage() {
       </div>
 
       <Tabs defaultValue="vouchers" className="w-full">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="vouchers">Vouchers Individuais</TabsTrigger>
           <TabsTrigger value="batches">Lotes de Vouchers</TabsTrigger>
         </TabsList>
