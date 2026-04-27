@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Calendar, MapPin } from "lucide-react";
-import { useEvent } from "@/contexts/EventContext";
-import { useStage } from "@/contexts/StageContext";
+import { useEventContext } from "@/contexts/EventContext";
+import { useStageContext } from "@/contexts/StageContext";
 
 const PwaSelectionFallback = () => {
   const navigate = useNavigate();
-  const { activeEventId } = useEvent();
-  const { activeStageId } = useStage();
+  const { activeEventId } = useEventContext();
+  const { activeStageId } = useStageContext();
 
   const handleSelectEvent = () => {
     navigate("/selecionar-modulo"); // This page usually allows selecting event/stage
