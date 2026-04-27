@@ -62,7 +62,7 @@ export default function CompeticaoPainelTimeMarkPage() {
         .eq("sport_id", sportId!)
         .eq("event_stage_id", stageId!);
       if (error) throw error;
-      return data;
+      return (data || []) as any[];
     },
   });
 
