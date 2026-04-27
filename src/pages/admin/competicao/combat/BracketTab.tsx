@@ -46,25 +46,15 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
   const { data: phases = [], isLoading: loadingPhases } = useQuery<any>({
     queryKey: ["bracket-phases", sportEventId],
     queryFn: async () => {
-      const { data, error } = await (supabase
-        .from("competition_phases") as any)
+      const { data, error } = await (supabase as any)
+        .from("competition_phases")
         .select(`
-          id,
-          name,
-          phase_type,
+          id, name, phase_type,
           matches:competition_matches(
-            id,
-            match_number,
-            round_number,
-            status,
+            id, match_number, round_number, status,
             entries:competition_match_entries(
-              id,
-              side,
-              participant:participant_sport_events(
-                id,
-                participant:participants(
-                  persons(name)
-                )
+              id, side, participant:participant_sport_events(
+                id, participant:participants(persons(name))
               )
             )
           )
@@ -73,7 +63,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
         .order("sort_order");
       
       if (error) throw error;
-      return data;
+      return data as any[];
     },
   });
 
