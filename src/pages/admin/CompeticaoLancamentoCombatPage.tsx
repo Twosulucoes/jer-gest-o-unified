@@ -249,7 +249,7 @@ export default function CompeticaoLancamentoCombatPage() {
           throw new Error(verifyData.message || "Senha incorreta");
         }
 
-        const { data, error } = await supabase.rpc("rpc_homologate_match_result", {
+        const { data, error } = await (supabase.rpc as any)("rpc_homologate_match_result", {
           p_match_id: matchId,
           p_password: homologatePassword, // Still required by RPC but verified above
           p_observation: homologateObservation
@@ -323,9 +323,10 @@ export default function CompeticaoLancamentoCombatPage() {
                 variant="secondary" 
                 className="gap-2 bg-amber-500 hover:bg-amber-600 text-white border-none"
                 onClick={() => setShowHomologateDialog(true)}
+                disabled={isVerifyingPassword}
               >
                 <CheckCircle2 className="h-4 w-4" />
-                Homologar Resultado
+                {isVerifyingPassword ? "Verificando..." : "Homologar Resultado"}
               </Button>
             )}
             <Button 
@@ -634,7 +635,7 @@ export default function CompeticaoLancamentoCombatPage() {
                   <span className="font-medium">{rules?.scoring?.score_type}</span>
                 </div>
                 {!rules && !loadingRules && (
-                  <Alert variant="warning" className="mt-4 p-2 text-[10px]">
+                  <Alert className="mt-4 p-2 text-[10px]">
                     <AlertTriangle className="h-3 w-3" />
                     <AlertDescription>
                       Regras não encontradas. Verifique o cadastro em Regras.
