@@ -5618,6 +5618,60 @@ export type Database = {
           },
         ]
       }
+      service_voucher_attempts: {
+        Row: {
+          attempted_at: string
+          attempted_by: string | null
+          context_id: string | null
+          event_id: string | null
+          id: string
+          outcome: string
+          qr_value: string | null
+          reason: string | null
+          service_kind: string
+          voucher_id: string | null
+        }
+        Insert: {
+          attempted_at?: string
+          attempted_by?: string | null
+          context_id?: string | null
+          event_id?: string | null
+          id?: string
+          outcome: string
+          qr_value?: string | null
+          reason?: string | null
+          service_kind: string
+          voucher_id?: string | null
+        }
+        Update: {
+          attempted_at?: string
+          attempted_by?: string | null
+          context_id?: string | null
+          event_id?: string | null
+          id?: string
+          outcome?: string
+          qr_value?: string | null
+          reason?: string | null
+          service_kind?: string
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_voucher_attempts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_voucher_attempts_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "service_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_voucher_batches: {
         Row: {
           created_at: string
