@@ -63,6 +63,7 @@ import CompeticaoPartidaDetalhePage from "./pages/admin/CompeticaoPartidaDetalhe
 import CompeticaoLancamentoScorePage from "./pages/admin/CompeticaoLancamentoScorePage";
 import CompeticaoLancamentoSetsPage from "./pages/admin/CompeticaoLancamentoSetsPage";
 import CompeticaoLancamentoCombatPage from "./pages/admin/CompeticaoLancamentoCombatPage";
+import CompeticaoLancamentoTimeMarkPage from "./pages/admin/CompeticaoLancamentoTimeMarkPage";
 import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
 import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
 import CompeticaoEquipesPage from "./pages/admin/CompeticaoEquipesPage";
