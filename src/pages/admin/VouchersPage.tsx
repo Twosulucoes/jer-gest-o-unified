@@ -103,6 +103,8 @@ interface VoucherRow {
   notes: string | null;
   revoke_reason: string | null;
   revoked_at: string | null;
+  replaces_voucher_id: string | null;
+  reissued_at: string | null;
   created_at: string;
 }
 
