@@ -34,6 +34,8 @@ interface Passenger {
   manual_name?: string | null;
 }
 
+import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
+
 interface TripInfo {
   routeName?: string;
   origin?: string | null;
@@ -387,6 +389,7 @@ export default function TransporteEmbarquePage() {
 
       <main className="p-3 max-w-4xl mx-auto space-y-3">
         <OfflineSyncStatus />
+        <VoucherConflictCentral />
 
         {!loading && <DelegationAlertBanner delegationCounts={delegationCounts} />}
 
