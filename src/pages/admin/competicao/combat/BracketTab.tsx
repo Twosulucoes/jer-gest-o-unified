@@ -19,6 +19,8 @@ interface BracketTabProps {
 export function BracketTab({ sportEventId }: BracketTabProps) {
   const qc = useQueryClient();
   const [isMounting, setIsMounting] = useState(false);
+  const [withBronze, setWithBronze] = useState(true);
+  const generateKnockout = useGenerateKnockout();
 
   // Check if all athletes are weighed
   const { data: weighingStats } = useQuery({
