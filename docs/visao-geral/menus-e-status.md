@@ -65,6 +65,7 @@
 | Módulo | Rota | Status |
 |--------|------|--------|
 | Refeições | `/admin/alimentacao/tipos` | ✅ Feito |
+| Locais de Refeição | `/admin/alimentacao/locais` | ✅ Feito |
 | Janelas | `/admin/alimentacao/janelas` | ✅ Feito |
 | Consumo | `/admin/alimentacao/consumo` | 🟡 Parcial |
 
@@ -96,6 +97,8 @@
 | Normalização de Provas | `/admin/normalizacao-provas` | ✅ Feito |
 | Validador de Estrutura | `/admin/schema/validador` | ✅ Feito |
 | Mapa do Sistema | `/admin/mapa` | ✅ Feito |
+| Diagnóstico PWA | `/admin/sistema/debug-pwa` | ✅ Feito |
+| Diagnóstico QR | `/admin/sistema/debug-qr` | ✅ Feito |
 
 ### Extras
 | Módulo | Rota | Status |
