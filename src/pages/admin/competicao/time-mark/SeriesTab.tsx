@@ -122,9 +122,21 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Lista de Largada</CardTitle>
-            <Button size="sm" className="gap-2">
-              <Flag className="h-4 w-4" /> Confirmar Largada
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                className="gap-2"
+                onClick={() => {
+                   const matchId = phases[0]?.competition_groups?.[0]?.competition_matches?.[0]?.id;
+                   if (matchId) window.location.href = `${window.location.pathname}/serie/${matchId}/resultado`;
+                }}
+              >
+                <Trophy className="h-4 w-4" /> Lançar Marcas
+              </Button>
+              <Button size="sm" variant="outline" className="gap-2">
+                <Flag className="h-4 w-4" /> Confirmar Largada
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
