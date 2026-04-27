@@ -113,7 +113,7 @@ export default function PwaModulePage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate("/pwa/login", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   if (loading || !config) {
