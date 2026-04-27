@@ -81,6 +81,7 @@ import {
 // -------- Types --------
 interface VoucherRow {
   id: string;
+  event_id: string;
   participant_id: string | null;
   eventual_person_id: string | null;
   qr_code_value: string;
