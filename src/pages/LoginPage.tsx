@@ -263,7 +263,7 @@ export default function LoginPage() {
                       {loading ? (
                         <Loader2 className="mr-2 h-6 w-6 animate-spin" />
                       ) : (
-                        "Entrar no Sistema"
+                        "Acessar Plataforma JER"
                       )}
                     </Button>
                     
