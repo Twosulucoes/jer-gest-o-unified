@@ -316,6 +316,54 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
           </div>
         </div>
       )}
+      {/* Classification Modal */}
+      <Dialog open={showClassificationModal} onOpenChange={setShowClassificationModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Classificação para Próxima Fase</DialogTitle>
+            <DialogDescription>
+              Selecione os atletas que avançam para a fase seguinte. O sistema sugere os melhores tempos/marcas.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+             {/* Simple table listing results from current phase */}
+             <div className="border rounded-lg overflow-hidden">
+               <Table>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>Atleta</TableHead>
+                     <TableHead>Marca</TableHead>
+                     <TableHead className="text-center">Avança?</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {/* This is a placeholder for the real consolidated ranking logic */}
+                   <TableRow>
+                     <TableCell colSpan={3} className="text-center py-10 text-muted-foreground italic">
+                        Funcionalidade de consolidação de ranking em desenvolvimento. 
+                        A propagação criará as alocações na próxima fase.
+                     </TableCell>
+                   </TableRow>
+                 </TableBody>
+               </Table>
+             </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowClassificationModal(false)}>Cancelar</Button>
+            <Button 
+              className="gap-2"
+              onClick={() => {
+                // Placeholder for propagation logic
+                setShowClassificationModal(false);
+              }}
+            >
+              Confirmar e Propagar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
