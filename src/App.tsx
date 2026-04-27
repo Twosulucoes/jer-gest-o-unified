@@ -109,6 +109,7 @@ import DashboardOperacionalPage from "./pages/admin/relatorios/DashboardOperacio
 import QuadroMedalhasPage from "./pages/admin/relatorios/QuadroMedalhasPage";
 import PrestacaoContasOscPage from "./pages/admin/relatorios/PrestacaoContasOscPage";
 import CompeticaoPublicacaoPage from "./pages/admin/CompeticaoPublicacaoPage";
+import CompeticaoBoletinsPage from "./pages/admin/CompeticaoBoletinsPage";
 import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
 import RegrasLotePage from "./pages/admin/RegrasLotePage";
 // RegrasEventoPage removed — consolidated into RegrasPage
