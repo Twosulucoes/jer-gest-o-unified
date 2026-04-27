@@ -212,9 +212,9 @@ export default function CompeticaoPainelTimeMarkPage() {
         {selectedEventId ? (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <h2 className="text-xl font-heading font-bold">{selectedEvent?.name}</h2>
+              <h2 className="text-xl font-heading font-bold">{(selectedEvent as any)?.name}</h2>
               <Badge variant="secondary">
-                {selectedEvent?.category_name} · {selectedEvent?.gender_scope?.toUpperCase()}
+                {(selectedEvent as any)?.category_name} · {(selectedEvent as any)?.gender_scope?.toUpperCase()}
               </Badge>
             </div>
 
