@@ -36,7 +36,7 @@ export default function EvidenciasOSCPage() {
     queryKey: ["operational_evidence", selectedEventId, moduleFilter, statusFilter],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      let q = (supabase.from("operational_evidence") as any).select(`
+      let q = (supabase as any).from("operational_evidence").select(`
         *,
         uploader:uploaded_by(email),
         reviewer:reviewed_by(email)
