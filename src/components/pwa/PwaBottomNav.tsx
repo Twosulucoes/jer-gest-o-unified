@@ -1,8 +1,7 @@
 import { Home, Scan, Search, History, ClipboardList, Users, Calendar, Bus, Trophy, LayoutDashboard, Radio, LogOut } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useStageContext } from "@/contexts/StageContext";
-import { useEventContext } from "@/contexts/EventContext";
+import { usePwaNavigation, type PwaModule } from "@/hooks/pwa/usePwaNavigation";
 
 interface NavItem {
   label: string;
@@ -14,10 +13,8 @@ interface NavItem {
 
 export function PwaBottomNav() {
   const location = useLocation();
-  const navigate = useNavigate();
   const path = location.pathname;
-  const { activeStageId } = useStageContext();
-  const { activeEventId } = useEventContext();
+  const { navigateToPwa } = usePwaNavigation();
 
   const getModuleConfig = (): { items: NavItem[] } => {
     if (path.startsWith("/pwa/transporte")) {
@@ -110,15 +107,15 @@ export function PwaBottomNav() {
   const { items } = getModuleConfig();
 
   const handleNavigate = (e: React.MouseEvent, item: NavItem) => {
-    if (item.requireStage && (!activeStageId || !activeEventId)) {
+    if (item.requireStage) {
       e.preventDefault();
-      navigate("/pwa/configuracao", { 
-        state: { 
-          from: { pathname: item.path }, 
-          reason: !activeEventId ? "missing_event" : "missing_stage" 
-        } 
-      });
-      return;
+      
+      // Extrair o módulo da URL (ex: /pwa/transporte/viagens -> transporte)
+      const moduleMatch = item.path.match(/\/pwa\/([^/]+)/);
+      const module = moduleMatch ? moduleMatch[1] as PwaModule : "configuracao" as PwaModule;
+      const subPath = item.path.replace(`/pwa/${module}`, "");
+      
+      navigateToPwa(module, subPath);
     }
   };
 

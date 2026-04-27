@@ -1,8 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
-import { useStageContext } from "@/contexts/StageContext";
-import { useEventContext } from "@/contexts/EventContext";
+import { usePwaNavigation, type PwaModule } from "@/hooks/pwa/usePwaNavigation";
 
 export interface PwaAction {
   label: string;
@@ -27,8 +26,7 @@ export function PwaActionGrid({
   className?: string;
 }) {
   const navigate = useNavigate();
-  const { activeStageId } = useStageContext();
-  const { activeEventId } = useEventContext();
+  const { navigateToPwa } = usePwaNavigation();
   const cols = columns === 3 ? "grid-cols-3" : "grid-cols-2";
 
   return (
@@ -39,17 +37,12 @@ export function PwaActionGrid({
           if (a.onClick) {
             a.onClick();
           } else if (a.to) {
-            // Se o destino for um módulo e faltar contexto, redireciona para a configuração
-            const needsConfig = a.requireStage !== false && 
-                               a.to.startsWith("/pwa/") && 
-                               a.to !== "/pwa/configuracao" && 
-                               a.to !== "/pwa/install" && 
-                               (!activeStageId || !activeEventId);
-            
-            if (needsConfig) {
-              navigate("/pwa/configuracao", { 
-                state: { from: { pathname: a.to }, reason: "missing_stage" } 
-              });
+            if (a.to.startsWith("/pwa/") && a.to !== "/pwa/configuracao" && a.to !== "/pwa/install") {
+              const moduleMatch = a.to.match(/\/pwa\/([^/]+)/);
+              const module = moduleMatch ? moduleMatch[1] as PwaModule : "configuracao" as PwaModule;
+              const subPath = a.to.replace(`/pwa/${module}`, "");
+              
+              navigateToPwa(module, subPath, { skipStageCheck: a.requireStage === false });
             } else {
               navigate(a.to);
             }
