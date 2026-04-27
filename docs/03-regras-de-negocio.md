@@ -6,11 +6,18 @@
 A inscrição oficial é realizada no sistema oficial (SIGECOM), conforme Regulamento. O JER Gestão **importa/espelha** os dados exportados do SIGECOM para montar a **base operacional do evento**, materializando automaticamente instituições, delegações, modalidades, categorias e provas. Essa base não tem valor regulatório de inscrição — serve exclusivamente para execução de campo.
 
 ### 2. Credencial é Central
-- Toda operação logística e esportiva exige credencial ativa
-- QR Code é o meio de validação em todos os pontos operacionais
-- Formato oficial: `jer:{event_id}:{participant_id}:{credential_code}`
+- Toda operação logística e esportiva exige credencial ativa.
+- QR Code é o meio de validação em todos os pontos operacionais.
+- Formato oficial: `jer:{event_id}:{participant_id}:{credential_code}`.
 
-### 3. Participante Regular
+### 3. Vouchers QR (Regra Reformulada JER-VOU-01)
+- O voucher é instrumento **exclusivo para pessoas eventuais** (prestadores, visitantes, acompanhantes).
+- **Participantes credenciados nunca usam voucher**; em caso de extravio, a credencial é reemitida.
+- Cada voucher deve estar vinculado a uma **instância específica de serviço** (uma refeição definida, uma viagem definida).
+- Vouchers podem ser **nominais** (vinculados a uma Pessoa Eventual) ou **anônimos**.
+- Apenas perfis `admin` e `secretaria` podem gerenciar vouchers.
+
+### 4. Participante Regular
 Participante só pode ser operado (transporte, alimentação, competição) se estiver com status regular na base do evento (`confirmed` ou superior).
 
 ### 4. Sem Duplicidade de Consumo
