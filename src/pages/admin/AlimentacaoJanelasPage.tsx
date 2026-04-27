@@ -60,7 +60,7 @@ export default function AlimentacaoJanelasPage() {
     enabled: !!selectedEventId,
   });
 
-  const mealTypesMap = new Map(mealTypes.map((m) => [m.id, m]));
+  const mealTypesMap = useMemo(() => new Map(mealTypes.map((m) => [m.id, m])), [mealTypes]);
 
   const createMut = useMutation({
     mutationFn: async (v: MealWindowFormValues) => {
