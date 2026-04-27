@@ -494,12 +494,34 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
             <Button variant="outline" onClick={() => setShowClassificationModal(false)}>Cancelar</Button>
             <Button 
               className="gap-2"
-              onClick={() => {
-                // Placeholder for propagation logic
-                setShowClassificationModal(false);
-              }}
+              onClick={handlePropagateClick}
+              disabled={propagating || selectedAtletaIds.size === 0}
             >
-              Confirmar e Propagar
+              <Trophy className="h-4 w-4" />
+              {propagating ? "Propagando..." : "Confirmar e Propagar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Re-propagation Confirmation Dialog */}
+      <Dialog open={showRepropagateConfirm} onOpenChange={setShowRepropagateConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Já existe uma classificação</DialogTitle>
+            <DialogDescription>
+              A fase de destino já possui atletas alocados. Se você continuar, a alocação atual será excluída e substituída por esta nova classificação. Deseja prosseguir?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRepropagateConfirm(false)}>Cancelar</Button>
+            <Button 
+              variant="destructive"
+              className="gap-2"
+              onClick={() => propagate()}
+              disabled={propagating}
+            >
+              {propagating ? "Processando..." : "Sim, sobrescrever e propagar"}
             </Button>
           </DialogFooter>
         </DialogContent>
