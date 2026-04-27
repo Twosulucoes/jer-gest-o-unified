@@ -281,6 +281,8 @@ export default function VouchersPage() {
       ...v,
       qr_data_url: qrUrl,
       participant_name: p?.full_name || null,
+      participant_type: p?.involvement_type || null,
+      cpf: p?.organization || null,
       service_info: getServiceInstanceLabel(v, instances),
     };
     await printVoucherLabelsPdf([row]);
@@ -300,6 +302,8 @@ export default function VouchersPage() {
         ...v,
         qr_data_url: qrUrl,
         participant_name: p?.full_name || null,
+        participant_type: p?.involvement_type || null,
+        cpf: p?.organization || null,
         service_info: getServiceInstanceLabel(v, instances),
         batch_label: batches.find(b => b.id === batchId)?.label || "Lote"
       };
@@ -558,6 +562,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
       const vouchers = Array.from({ length: quantity }).map(() => ({
         event_id: eventId,
         batch_id: batch.id,
+        participant_id: null,
         voucher_type: "aggregate",
         is_nominal: false,
         qr_code_value: genQrValue(),
