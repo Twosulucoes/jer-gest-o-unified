@@ -169,30 +169,42 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h4 className="text-lg font-semibold">Chave de Competição</h4>
           <p className="text-sm text-muted-foreground">Visualize a progressão dos atletas no bracket.</p>
         </div>
         
         {!firstKnockoutPhase && (
-          <div className="flex gap-2">
-            <Button 
-              disabled={isWeighingIncomplete || isMounting} 
-              onClick={() => mountBracket(true)}
-              className="gap-2"
-            >
-              <RefreshCw className={cn("h-4 w-4", isMounting && "animate-spin")} />
-              Montagem Automática
-            </Button>
-            <Button 
-              variant="outline" 
-              disabled={isWeighingIncomplete || isMounting}
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Montagem Manual
-            </Button>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="bronze-toggle" 
+                checked={withBronze} 
+                onCheckedChange={setWithBronze} 
+              />
+              <Label htmlFor="bronze-toggle" className="text-sm cursor-pointer">Incluir disputa de 3º lugar</Label>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                disabled={isWeighingIncomplete || isMounting} 
+                onClick={() => mountBracket(true)}
+                className="gap-2"
+              >
+                <RefreshCw className={cn("h-4 w-4", isMounting && "animate-spin")} />
+                Montagem Automática
+              </Button>
+              <Button 
+                variant="outline" 
+                disabled={isWeighingIncomplete || isMounting}
+                onClick={() => mountBracket(false)}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Montagem Manual
+              </Button>
+            </div>
           </div>
         )}
       </div>
