@@ -158,8 +158,8 @@ O cliente distribui acessos para operadores através de **links curtos** com QR 
 | **Modelos de Credencial** | 🟡 Parcial | 70% |
 | **Competição — Central/Wizard** (Fases, Grupos, Estrutura, Confrontos, Agenda) | ✅ Pronto | 95% |
 | **Competição — Motor de Regras** (Presets, Seed, Editor) | ✅ Pronto | 100% |
-| **Competição — Resultados e Governança** (Lançamento dedicado Score/Sets/Combat, Placar por Período, Pênaltis, Sets, Métodos Combat, W.O. automático, Homologação com Senha Real via Edge Function, Central de Publicação Individual/Lote, Validação KO obrigatória, Propagação automática de vencedor em Combat) | ✅ Pronto | 100% |
-| **Competição — Classificação** (Standings coletivas, Ranking individual/cross-heat) | 🟡 Parcial | 85% |
+| **Competição — Resultados e Governança** (Lançamento dedicado Score/Sets/Combat/Time-Mark, Placar por Período, Pênaltis, Sets, Métodos Combat, Tentativas Múltiplas, Tempo/Distância, W.O. automático, Homologação com Senha Real via Edge Function, Central de Publicação Individual/Lote, Validação KO obrigatória, Propagação automática de vencedor em Combat, Propagação manual em Time/Mark) | ✅ Pronto | 100% |
+| **Competição — Classificação** (Standings coletivas, Ranking individual/cross-heat, Consolidação de fase em Time/Mark) | ✅ Pronto | 100% |
 | **Competição — Combate** (Gestão de chave, pesagem oficial, combat_detail JSONB, lançamento de resultado dedicado com prorrogação e tempo de luta) | ✅ Pronto | 100% |
 | **Competição — Página da Partida** (Lineup, Eventos, Placar, Oficiais, Anexos, Rota dedicada Score/Sets) | ✅ Pronto | 100% |
 | **Painel de Controle da Competição** | ✅ Pronto | 100% |
