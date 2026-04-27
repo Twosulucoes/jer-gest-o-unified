@@ -250,13 +250,9 @@ export default function TransporteEmbarquePage() {
       let viaVoucher = false;
 
       if (isVoucherQr(rawValue)) {
+        const { data: { session } } = await supabase.auth.getSession();
         if (!isOnline()) {
-          addToOfflineQueue("transporte", {
-            trip_id: tripId,
-            qr_value: rawValue,
-            is_voucher: true,
-            attempted_at: new Date().toISOString()
-          }, "Portador de Voucher");
+          addToVoucherQueue(rawValue, "transport", tripId, session?.user?.id || "", "Portador de Voucher");
           toast.info("Voucher registrado offline. Sincronize quando houver internet.");
           return;
         }
