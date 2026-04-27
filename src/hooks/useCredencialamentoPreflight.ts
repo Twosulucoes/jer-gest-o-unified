@@ -32,7 +32,7 @@ export interface CredencialamentoPreflight {
 
 async function probeIssueRpc(): Promise<{ status: ProbeStatus; detail?: string }> {
   // Probe com NULLs — RPC existe? validação interna dispara 22023; se não existe, 404+PGRST202.
-  const { error } = await (supabase as any).rpc("issue_participant_credential", {
+  const { error } = await supabase.rpc("issue_participant_credential" as any, {
     p_event_id: null,
     p_participant_id: null,
     p_credential_code: null,
@@ -64,8 +64,8 @@ async function probeIssueRpc(): Promise<{ status: ProbeStatus; detail?: string }
 }
 
 async function probeLogTable(): Promise<{ status: ProbeStatus; detail?: string }> {
-  const { error } = await (supabase as any)
-    .from("db_operation_logs")
+  const { error } = await supabase
+    .from("db_operation_logs" as any)
     .select("id", { count: "exact", head: true })
     .limit(0);
 
