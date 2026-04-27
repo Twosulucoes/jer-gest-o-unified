@@ -162,6 +162,7 @@ function getServiceInstanceLabel(v: any, instances: any) {
 // -------- Main Page --------
 export default function VouchersPage() {
   const eventId = useActiveEventId();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
