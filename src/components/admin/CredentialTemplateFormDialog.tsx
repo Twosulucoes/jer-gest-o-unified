@@ -120,6 +120,7 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
         setWidth(600);
         setHeight(900);
         setIsActive(true);
+        setParticipantTypeFilter("all");
         setNotes("");
         setBackgroundUrl(null);
         setBgPreviewUrl(null);
