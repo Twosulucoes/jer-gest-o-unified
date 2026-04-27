@@ -49,7 +49,7 @@ export default function VoucherAuditoriaPage() {
       if (attErr) throw attErr;
 
       // 2. Mapeia para um formato unificado
-      return (attempts || []).map(a => ({
+      return (attempts || []).map((a: any) => ({
         id: a.id,
         timestamp: a.attempted_at,
         type: a.outcome === 'success' ? 'CONSUMO' : 'TENTATIVA RECUSADA',
