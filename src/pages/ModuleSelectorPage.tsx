@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useEventContext } from "@/contexts/EventContext";
+import { useStageContext } from "@/contexts/StageContext";
 import {
   Loader2, UtensilsCrossed, Users, Clipboard, Shield, LogOut,
   LayoutDashboard, Bus, Bed, Trophy, ScanLine, IdCard, Search
@@ -17,6 +18,7 @@ interface ModuleOption {
   icon: React.ElementType;
   path: string;
   gradient: string;
+  requireStage?: boolean;
 }
 
 const MODULE_OPTIONS: ModuleOption[] = [
@@ -51,6 +53,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: Clipboard,
     path: "/pwa/coordenacao",
     gradient: "from-[hsl(174,87%,34%)] to-[hsl(212,84%,36%)]",
+    requireStage: true,
   },
   {
     roles: ["transporte"],
@@ -59,6 +62,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: Bus,
     path: "/pwa/transporte",
     gradient: "from-[hsl(212,84%,36%)] to-[hsl(214,78%,21%)]",
+    requireStage: true,
   },
   {
     roles: ["alimentacao"],
@@ -67,6 +71,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: UtensilsCrossed,
     path: "/pwa/alimentacao",
     gradient: "from-[hsl(174,87%,34%)] to-[hsl(212,84%,36%)]",
+    requireStage: true,
   },
   {
     roles: ["alojamento"],
@@ -75,6 +80,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: Bed,
     path: "/pwa/alojamento",
     gradient: "from-[hsl(133,55%,45%)] to-[hsl(174,87%,34%)]",
+    requireStage: true,
   },
   {
     roles: ["delegacao"],
@@ -83,6 +89,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: Users,
     path: "/pwa/delegacao",
     gradient: "from-[hsl(174,87%,34%)] to-[hsl(133,55%,45%)]",
+    requireStage: true,
   },
   {
     roles: ["mesario"],
@@ -91,6 +98,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: ScanLine,
     path: "/pwa/resultados",
     gradient: "from-[hsl(214,78%,21%)] to-[hsl(212,84%,36%)]",
+    requireStage: true,
   },
   {
     roles: ["mesario", "arbitragem"],
@@ -123,6 +131,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: IdCard,
     path: "/pwa/credenciamento",
     gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]",
+    requireStage: true,
   },
   {
     roles: ["pesquisador", "coordenador_pesquisa"],
@@ -131,6 +140,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: Search,
     path: "/pwa/pesquisa",
     gradient: "from-[hsl(25,95%,53%)] to-[hsl(15,90%,40%)]",
+    requireStage: true,
   },
   {
     roles: ["admin", "secretaria", "coordenacao_tecnica", "super_admin"],
@@ -139,12 +149,14 @@ const MODULE_OPTIONS: ModuleOption[] = [
     icon: Search,
     path: "/pwa/diagnostico",
     gradient: "from-[hsl(174,87%,34%)] to-[hsl(212,84%,36%)]",
+    requireStage: true,
   },
 ];
 
 export default function ModuleSelectorPage() {
   const navigate = useNavigate();
   const { activeEventId } = useEventContext();
+  const { activeStageId } = useStageContext();
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
@@ -167,21 +179,22 @@ export default function ModuleSelectorPage() {
       setUserRoles(roles);
       setUserName(profileRes.data?.full_name || session.user.email || "");
 
-      // If super_admin or single role, redirect or allow selection
       const isSuperAdmin = roles.includes("super_admin");
       const available = isSuperAdmin ? MODULE_OPTIONS : MODULE_OPTIONS.filter(m => m.roles.some(r => roles.includes(r)));
       
-      // Só redireciona automaticamente se já houver um evento selecionado.
-      // Caso contrário, o usuário deve ver a lista de módulos (que pode estar vazia ou redirecionar para a seleção de evento).
-      if (!isSuperAdmin && available.length <= 1 && activeEventId) {
-        const target = available.length === 1 ? available[0].path : "/pwa";
-        navigate(target, { replace: true });
+      if (!isSuperAdmin && available.length === 1 && activeEventId) {
+        const mod = available[0];
+        if (mod.requireStage && !activeStageId) {
+          navigate("/pwa/configuracao", { state: { from: { pathname: mod.path }, reason: "missing_stage" } });
+        } else {
+          navigate(mod.path, { replace: true });
+        }
         return;
       }
 
       setLoading(false);
     })();
-  }, [navigate, activeEventId]);
+  }, [navigate, activeEventId, activeStageId]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -195,6 +208,19 @@ export default function ModuleSelectorPage() {
     m.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleModuleClick = (mod: ModuleOption) => {
+    if (mod.requireStage && (!activeStageId || !activeEventId)) {
+      navigate("/pwa/configuracao", { 
+        state: { 
+          from: { pathname: mod.path }, 
+          reason: !activeEventId ? "missing_event" : "missing_stage" 
+        } 
+      });
+    } else {
+      navigate(mod.path);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -202,6 +228,7 @@ export default function ModuleSelectorPage() {
       </div>
     );
   }
+  
   if (availableModules.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -250,7 +277,7 @@ export default function ModuleSelectorPage() {
               <Card
                 key={`${mod.label}-${idx}`}
                 className="cursor-pointer hover:shadow-app-md active:scale-[0.98] transition-all border-2 hover:border-primary/30"
-                onClick={() => navigate(mod.path)}
+                onClick={() => handleModuleClick(mod)}
               >
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${mod.gradient} text-white shadow-app-sm shrink-0`}>
