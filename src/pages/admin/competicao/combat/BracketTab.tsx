@@ -46,8 +46,8 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
   const { data: phases = [], isLoading: loadingPhases } = useQuery<any>({
     queryKey: ["bracket-phases", sportEventId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("competition_phases")
+      const { data, error } = await (supabase
+        .from("competition_phases") as any)
         .select(`
           id,
           name,
@@ -68,7 +68,7 @@ export function BracketTab({ sportEventId }: BracketTabProps) {
               )
             )
           )
-        ` as any)
+        `)
         .eq("sport_event_id", sportEventId)
         .order("sort_order");
       
