@@ -382,9 +382,10 @@ export default function ParticipanteDetalhePage() {
           <TabsTrigger value="rastreamento" className="gap-1.5">
             <Activity className="h-3.5 w-3.5" />Rastreamento
           </TabsTrigger>
-          <TabsTrigger value="vouchers" className="gap-1.5">
+          {/* Aba de vouchers desativada pela regra JER-VOU-01 */}
+          {/* <TabsTrigger value="vouchers" className="gap-1.5">
             <QrCode className="h-3.5 w-3.5" />Vouchers
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="resumo">
