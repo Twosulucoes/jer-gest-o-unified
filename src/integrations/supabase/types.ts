@@ -5798,6 +5798,8 @@ export type Database = {
           notes: string | null
           participant_id: string
           qr_code_value: string
+          reissued_at: string | null
+          replaces_voucher_id: string | null
           revoke_reason: string | null
           revoked_at: string | null
           revoked_by: string | null
@@ -5826,6 +5828,8 @@ export type Database = {
           notes?: string | null
           participant_id: string
           qr_code_value: string
+          reissued_at?: string | null
+          replaces_voucher_id?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
@@ -5854,6 +5858,8 @@ export type Database = {
           notes?: string | null
           participant_id?: string
           qr_code_value?: string
+          reissued_at?: string | null
+          replaces_voucher_id?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
@@ -5904,6 +5910,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_person_logistics_consumption"
             referencedColumns: ["participant_id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_replaces_voucher_id_fkey"
+            columns: ["replaces_voucher_id"]
+            isOneToOne: false
+            referencedRelation: "service_vouchers"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "service_vouchers_target_facility_id_fkey"
