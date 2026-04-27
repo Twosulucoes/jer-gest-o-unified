@@ -63,7 +63,7 @@
   - ✅ Cards operacionais com contagem adaptada (Categorias, Atletas, Lutas)
   - ✅ Painel Combat dedicado com seletor de categoria de peso
   - ✅ Aba Pesagem: registro de peso oficial, status (conferido/fora do peso) e auditoria
-  - ✅ Aba Chave: visualização de bracket eliminatório com montagem automática
+  - ✅ Aba Chave: visualização de bracket eliminatório com montagem automática (suporte a BYE com propagação imediata e disputa de bronze opcional).
   - ✅ Aba Lutas: grade densa (estilo planilha) com filtros por fase e status
   - ✅ Formulário lateral (Drawer) para edição de lutas com designação de arbitragem por modalidade
   - ✅ **Lançamento Combat (Etapa 7 concluída)**: Rota dedicada, placar dinâmico (Judo vs Others), registro de tempo de luta, prorrogação (Golden Score/Overtime), métodos de vitória dinâmicos por modalidade, propagação automática do vencedor no bracket após homologação.
