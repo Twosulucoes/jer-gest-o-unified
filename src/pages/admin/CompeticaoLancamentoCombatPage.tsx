@@ -350,9 +350,9 @@ export default function CompeticaoLancamentoCombatPage() {
                 {/* Atleta A */}
                 <div className={cn(
                   "flex flex-col items-center p-6 rounded-2xl transition-all border-2",
-                  winnerEntryId === entryA?.id ? "bg-primary/20 border-primary" : "bg-white/5 border-transparent"
+                  winnerEntryId === entryA?.id ? "bg-primary/20 border-primary" : "bg-card/50 border-transparent"
                 )}>
-                  <div className="h-20 w-20 rounded-full bg-blue-600 flex items-center justify-center text-3xl font-bold mb-4">
+                  <div className="h-20 w-20 rounded-full bg-primary flex items-center justify-center text-3xl font-bold mb-4">
                     {athleteA?.person?.full_name?.charAt(0)}
                   </div>
                   <h3 className="text-xl font-bold text-center">{athleteA?.person?.full_name}</h3>
