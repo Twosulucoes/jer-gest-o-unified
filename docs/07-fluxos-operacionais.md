@@ -106,7 +106,8 @@ FLUXO COMBAT:
   → Aba Lutas: Visualiza grade densa com agenda e status das lutas
   → Editar Luta (Drawer): Define data/hora/local e designa arbitragem por modalidade
   → Pós-Luta: Lança resultado na rota dedicada (vencedor, método, tempo de luta, placar dinâmico)
-  → Homologação: Coordenador valida com senha → status "Validado" → Sistema propaga vencedor automaticamente para o próximo nó da chave.
+  → Homologação: Coordenador valida com senha → status "Validado" → Sistema propaga vencedor automaticamente para o próximo nó da chave (e perdedor da semifinal para disputa de bronze, se houver).
+  → Reversão: Admin pode reverter para status "Lançado", limpando automaticamente a propagação no bracket (bloqueado se a luta posterior já tiver resultado).
 
 FLUXO SCORE/SETS:
   → Grade de confrontos: filtra por fase/grupo/status
