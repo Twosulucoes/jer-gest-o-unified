@@ -42,7 +42,7 @@ export default function AlimentacaoHomePage() {
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/pwa/login", { replace: true }); return; }
+      if (!session) { navigate("/login", { replace: true }); return; }
 
       const { data: profile } = await supabase.from("profiles").select("active").eq("id", session.user.id).single();
       if (!profile?.active) { navigate("/pwa", { replace: true }); return; }
@@ -100,7 +100,7 @@ export default function AlimentacaoHomePage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate("/pwa/login", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   const eventSubtitle = undefined;

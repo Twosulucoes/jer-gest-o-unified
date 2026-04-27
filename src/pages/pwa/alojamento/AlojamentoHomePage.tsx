@@ -43,7 +43,7 @@ export default function AlojamentoHomePage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate("/pwa/login", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   useEffect(() => {
