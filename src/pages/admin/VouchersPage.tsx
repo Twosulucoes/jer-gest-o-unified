@@ -625,27 +625,42 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
 }
 
 function UsageHistoryDialog({ voucher, onClose }: any) {
-  const { data: uses = [], isLoading } = useQuery({
-    queryKey: ["voucher-uses", voucher?.id],
+  const { data: history = [], isLoading } = useQuery({
+    queryKey: ["voucher-history-combined", voucher?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("service_voucher_uses").select("*").eq("voucher_id", voucher.id).order("used_at", { ascending: false });
-      return data || [];
+      const [uses, attempts] = await Promise.all([
+        supabase.from("service_voucher_uses").select("id, service_kind, used_at, used_by, context_id").eq("voucher_id", voucher.id),
+        supabase.from("service_voucher_attempts").select("id, service_kind, attempted_at, outcome, reason, context_id").eq("voucher_id", voucher.id).neq("outcome", "success")
+      ]);
+      
+      const combined = [
+        ...(uses.data || []).map(u => ({ ...u, type: 'use', timestamp: u.used_at })),
+        ...(attempts.data || []).map(a => ({ ...a, type: 'attempt', timestamp: a.attempted_at }))
+      ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      
+      return combined;
     },
     enabled: !!voucher
   });
 
   return (
     <Dialog open={!!voucher} onOpenChange={o => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Histórico de Uso</DialogTitle></DialogHeader>
-        <div className="space-y-2">
-          {isLoading ? <Loader2 className="animate-spin m-auto"/> : uses.map((u: any) => (
-            <div key={u.id} className="p-2 border-b text-xs flex justify-between">
-              <span>{format(new Date(u.used_at), "dd/MM HH:mm")}</span>
-              <span className="font-bold capitalize">{u.service_kind}</span>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Histórico e Auditoria</DialogTitle></DialogHeader>
+        <div className="space-y-2 max-h-[60vh] overflow-auto pr-2">
+          {isLoading ? <Loader2 className="animate-spin m-auto py-8"/> : history.map((h: any) => (
+            <div key={h.id} className={`p-3 rounded-lg border flex flex-col gap-1 ${h.type === 'use' ? 'border-green-500/20 bg-green-500/5' : 'border-destructive/20 bg-destructive/5'}`}>
+              <div className="flex justify-between items-start">
+                <span className="text-xs font-bold uppercase tracking-wider">{h.service_kind}</span>
+                <span className="text-[10px] text-muted-foreground">{format(new Date(h.timestamp), "dd/MM/yy HH:mm")}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">{h.type === 'use' ? '✅ Consumo Efetivado' : '❌ Tentativa Recusada'}</span>
+                {h.reason && <Badge variant="outline" className="text-[9px] uppercase">{h.reason}</Badge>}
+              </div>
             </div>
           ))}
-          {uses.length === 0 && <p className="text-center opacity-50 py-4">Nenhum uso registrado.</p>}
+          {history.length === 0 && <p className="text-center opacity-50 py-8">Nenhum registro encontrado.</p>}
         </div>
       </DialogContent>
     </Dialog>

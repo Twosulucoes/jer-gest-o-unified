@@ -27,6 +27,7 @@ import {
 } from "@/lib/pwaScan";
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 import { ScanLine, CheckCircle2, XCircle } from "lucide-react";
+import { format } from "date-fns";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { dbTelemetry } from "@/lib/monitoring/dbTelemetry";
@@ -86,19 +87,21 @@ export default function AlojamentoScanPage() {
       const voucher = await tryRedeemVoucher(rawValue, "lodging", facilityId);
       if (!voucher || !voucher.ok) {
         const msg = voucherErrorMessage(voucher?.reason, lang);
-        toast.error(msg.text);
+        let extra = "";
+        if (voucher?.reason === 'already_used_here' && voucher.used_at) {
+          extra = ` às ${format(new Date(voucher.used_at), "HH:mm")}`;
+        }
+        toast.error(`${msg.text}${extra}`);
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         return;
       }
       const successMsg = voucherSuccessMessage(voucher, "lodging", lang);
-      const displayName =
-        voucher.voucher_type === "aggregate"
-          ? voucher.label || voucher.person_name || "Acompanhante"
-          : voucher.person_name ?? "";
+      const displayName = voucher.person_name || "Portador de Voucher";
+      
       setResult({
         ok: true,
         full_name: displayName,
-        participant_type: voucher.voucher_type === "aggregate" ? "Voucher agregado" : "Voucher",
+        participant_type: voucher.voucher_type === "aggregate" ? "Voucher anônimo" : "Voucher nominal",
         person_id: null,
         message: successMsg.text,
       });

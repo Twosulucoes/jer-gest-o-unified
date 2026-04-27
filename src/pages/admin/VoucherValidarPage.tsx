@@ -21,7 +21,9 @@ const REASON_MESSAGES: Record<string, string> = {
   expired: "Voucher expirado",
   not_yet_valid: "Voucher ainda não está válido",
   scope_denied: "Voucher não cobre este serviço",
-  max_uses_reached: "Limite de usos atingido",
+  max_uses_reached: "Limite total de usos atingido",
+  wrong_instance: "Voucher pertence a outra instância (refeição/viagem/diária)",
+  already_used_here: "Voucher já foi consumido nesta instância específica",
 };
 
 interface RedeemResult {
@@ -31,6 +33,8 @@ interface RedeemResult {
   participant_id?: string;
   person_name?: string;
   remaining_uses?: number | null;
+  used_at?: string;
+  operator_name?: string;
 }
 
 export default function VoucherValidarPage() {
@@ -56,7 +60,11 @@ export default function VoucherValidarPage() {
       if (res.ok) {
         toast({ title: "Voucher validado com sucesso!", description: `${res.person_name ?? "Pessoa"} - ${SERVICE_LABELS[serviceKind]}` });
       } else {
-        toast({ title: "Voucher inválido", description: REASON_MESSAGES[res.reason ?? ""] ?? res.reason, variant: "destructive" });
+        let extra = "";
+        if (res.reason === 'already_used_here' && res.used_at) {
+          extra = ` em ${new Date(res.used_at).toLocaleTimeString()}`;
+        }
+        toast({ title: "Voucher inválido", description: `${REASON_MESSAGES[res.reason ?? ""] ?? res.reason}${extra}`, variant: "destructive" });
       }
     } catch (err: any) {
       toast({ title: "Erro", description: err.message ?? String(err), variant: "destructive" });

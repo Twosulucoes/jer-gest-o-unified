@@ -249,20 +249,19 @@ export default function TransporteEmbarquePage() {
       if (isVoucherQr(rawValue)) {
         const voucher = await tryRedeemVoucher(rawValue, "transport", tripId);
         if (!voucher || !voucher.ok) {
-          toast.error(voucherErrorMessage(voucher?.reason, lang).text);
+          const msg = voucherErrorMessage(voucher?.reason, lang);
+          let extra = "";
+          if (voucher?.reason === 'already_used_here' && voucher.used_at) {
+            extra = ` às ${format(new Date(voucher.used_at), "HH:mm")}`;
+          }
+          toast.error(`${msg.text}${extra}`);
           return;
         }
 
-        // Voucher AGREGADO: apenas confirma; não há FK para participant_id
-        if (voucher.voucher_type === "aggregate" || !voucher.participant_id) {
-          toast.success(voucherSuccessMessage(voucher, "transport", lang).text);
-          if (navigator.vibrate) navigator.vibrate(200);
-          return;
-        }
-
-        participantId = voucher.participant_id ?? null;
-        name = voucher.person_name || name;
-        viaVoucher = true;
+        toast.success(voucherSuccessMessage(voucher, "transport", lang).text);
+        if (navigator.vibrate) navigator.vibrate(200);
+        await fetchPassengers();
+        return;
       } else {
         const resolved = await resolveQrCredential(rawValue);
         if (resolved) {

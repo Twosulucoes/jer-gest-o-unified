@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, ScanLine, CheckCircle, XCircle, AlertTriangle, Search, Loader2, User, LogOut } from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
@@ -235,27 +236,31 @@ export default function AlimentacaoScanPage() {
         const voucher = await tryRedeemVoucher(rawValue, "meals", windowId);
         if (!voucher || !voucher.ok) {
           const msg = voucherErrorMessage(voucher?.reason, lang);
-          setResult({ ok: false, message: msg.text, source: "qr" });
-          toast.error(msg.text);
+          let extra = "";
+          if (voucher?.reason === 'already_used_here' && voucher.used_at) {
+            extra = ` em ${format(new Date(voucher.used_at), "HH:mm")}`;
+            if (voucher.operator_name) extra += ` por ${voucher.operator_name}`;
+          }
+          setResult({ ok: false, message: `${msg.text}${extra}`, source: "qr" });
+          toast.error(`${msg.text}${extra}`);
           recordOutcome("error");
           reopenIfContinuous();
           return;
         }
 
-        // Voucher AGREGADO: não tem participant_id, registra apenas o uso (já feito pela RPC)
-        if (voucher.voucher_type === "aggregate" || !voucher.participant_id) {
-          const msg = voucherSuccessMessage(voucher, "meals", lang);
-          setResult({ ok: true, source: "qr", message: msg.text });
-          toast.success(msg.text);
-          recordOutcome("ok");
-          if (navigator.vibrate) navigator.vibrate(200);
-          reopenIfContinuous();
-          return;
-        }
-
-        participantId = voucher.participant_id ?? null;
-        participantName = voucher.person_name ?? null;
-        method = "voucher";
+        // Voucher Válido
+        const msg = voucherSuccessMessage(voucher, "meals", lang);
+        setResult({ 
+          ok: true, 
+          source: "qr", 
+          message: msg.text,
+          full_name: voucher.person_name || "Portador de Voucher"
+        } as any);
+        toast.success(msg.text);
+        recordOutcome("ok");
+        if (navigator.vibrate) navigator.vibrate(200);
+        reopenIfContinuous();
+        return;
       } else {
         const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
         if (!resolved) {
