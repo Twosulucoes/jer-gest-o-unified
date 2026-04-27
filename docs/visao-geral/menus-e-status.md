@@ -85,6 +85,7 @@
 | Módulo | Rota | Status |
 |--------|------|--------|
 | Gestão de Usuários | `/admin/acessos/usuarios` | ✅ Feito |
+| Evidências OSC | `/admin/evidencias-osc` | ✅ Feito |
 | Vínculos Delegação | `/admin/acessos/delegacoes` | 🟡 Parcial |
 
 ### Configurações
