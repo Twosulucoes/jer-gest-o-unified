@@ -162,17 +162,46 @@ export function MatchesTab({ sportEventId }: MatchesTabProps) {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="h-8 w-8 p-0"
-                        onClick={() => {
-                          setSelectedMatch(m);
-                          setIsDrawerOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                                onClick={() => {
+                                  const url = stageId 
+                                    ? `/admin/etapa/${stageId}/competicao/painel-combat/${sportEventId}/confronto/${m.id}/resultado`
+                                    : `/admin/competicao/painel-combat/${sportEventId}/confronto/${m.id}/resultado`;
+                                  navigate(url);
+                                }}
+                                disabled={athleteA?.persons?.name === "BYE" || athleteB?.persons?.name === "BYE" || status.label === "Homologado"}
+                              >
+                                <Trophy className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Lançar Resultado</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0"
+                                onClick={() => {
+                                  setSelectedMatch(m);
+                                  setIsDrawerOpen(true);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar Luta</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
