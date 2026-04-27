@@ -34,6 +34,8 @@ export type VoucherReason =
   | "not_yet_valid"
   | "scope_denied"
   | "max_uses_reached"
+  | "wrong_instance"
+  | "already_used_here"
   | "unknown";
 
 const REASON_TEXT: Record<VoucherReason, Record<PwaLang, string>> = {
@@ -61,9 +63,17 @@ const REASON_TEXT: Record<VoucherReason, Record<PwaLang, string>> = {
     pt: "Limite de usos do voucher atingido",
     es: "Límite de usos del voucher alcanzado",
   },
+  wrong_instance: {
+    pt: "Voucher pertence a outra refeição, viagem ou diária",
+    es: "Voucher pertenece a otra instancia de servicio",
+  },
+  already_used_here: {
+    pt: "Voucher já foi consumido nesta instância",
+    es: "Voucher ya fue consumido en esta instancia",
+  },
   unknown: {
-    pt: "Voucher inválido",
-    es: "Voucher inválido",
+    pt: "Voucher inválido ou erro de sistema",
+    es: "Voucher inválido o error del sistema",
   },
 };
 
