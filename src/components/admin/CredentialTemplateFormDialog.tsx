@@ -265,7 +265,7 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
         bgUrl = urlData.publicUrl;
         setUploading(false);
       }
-      const payload = {
+      const payload: any = {
         event_id: eventId,
         name,
         width,
