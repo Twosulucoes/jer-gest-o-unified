@@ -177,7 +177,7 @@ export default function CompeticaoLancamentoTimeMarkPage() {
 
     const validEntries = entries.filter(e => e.outcome === 'active');
     
-    let sorted;
+    let sorted: any[] = [];
     if (mode === 'A') {
       // Lower time is better
       sorted = [...validEntries].sort((a, b) => {
@@ -187,7 +187,6 @@ export default function CompeticaoLancamentoTimeMarkPage() {
       });
     } else {
       // Mode B: Higher distance is better
-      // First find best mark for each entry
       const withBest = entries.map(e => {
         const validAttempts = e.attempts.filter((a: any) => a.is_valid && a.value_cm !== null);
         const best = validAttempts.length > 0 ? Math.max(...validAttempts.map((a: any) => a.value_cm)) : null;
@@ -199,23 +198,31 @@ export default function CompeticaoLancamentoTimeMarkPage() {
         if (b.best_mark === null) return -1;
         return b.best_mark - a.best_mark;
       });
-      
+
       return entries.map(e => {
-        const idx = sorted.findIndex(s => s.match_entry_id === e.match_entry_id);
         const entryWithBest = withBest.find(wb => wb.match_entry_id === e.match_entry_id);
+        if (e.outcome !== 'active' || (entryWithBest && entryWithBest.best_mark === null)) {
+          return { ...e, rank: null, best_mark: entryWithBest?.best_mark };
+        }
+        
+        // Correction 4: Tie handling (1, 1, 3)
+        const betterCount = sorted.filter(s => s.best_mark > (entryWithBest?.best_mark || 0)).length;
         return { 
           ...e, 
-          rank: e.outcome === 'active' && entryWithBest?.best_mark !== null ? idx + 1 : null,
+          rank: betterCount + 1,
           best_mark: entryWithBest?.best_mark
         };
       });
     }
 
     return entries.map(e => {
-      const idx = sorted.findIndex(s => s.match_entry_id === e.match_entry_id);
+      if (e.outcome !== 'active' || e.time_ms === null) return { ...e, rank: null };
+      
+      // Correction 4: Tie handling (1, 1, 3)
+      const betterCount = sorted.filter(s => s.time_ms !== null && s.time_ms < e.time_ms!).length;
       return { 
         ...e, 
-        rank: e.outcome === 'active' && (mode === 'A' ? e.time_ms !== null : true) ? idx + 1 : null 
+        rank: betterCount + 1 
       };
     });
   }, [entries, mode]);
