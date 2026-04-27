@@ -60,14 +60,18 @@ export default function PwaLandingPage() {
       }
 
       const opCards = MODULE_CARDS.filter((c) => roles.includes(c.role) || (c.role === "secretaria" && roles.includes("admin")));
-      if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria")) {
+      
+      // Só redireciona automaticamente se houver apenas um módulo E uma etapa já estiver selecionada
+      // Isso evita o loop onde o usuário é mandado para o módulo, o módulo bloqueia por falta de etapa, 
+      // o usuário volta para cá e é mandado de novo.
+      if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria") && activeStageId) {
         navigate(opCards[0].to, { replace: true });
         return;
       }
 
       setLoading(false);
     })();
-  }, [navigate]);
+  }, [navigate, activeStageId]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
