@@ -67,7 +67,7 @@ export default function AoVivoLoginPage() {
             disabled={loading}
             className="w-full h-12 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-base transition-colors disabled:opacity-50 flex items-center justify-center"
           >
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Entrar"}
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Acessar Plataforma"}
           </button>
         </form>
       </div>

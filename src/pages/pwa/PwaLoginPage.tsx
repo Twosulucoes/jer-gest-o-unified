@@ -144,7 +144,7 @@ export default function PwaLoginPage() {
             )}
 
             <Button type="submit" className="op-btn-primary" disabled={loading}>
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Entrar"}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Acessar Plataforma"}
             </Button>
 
             <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
