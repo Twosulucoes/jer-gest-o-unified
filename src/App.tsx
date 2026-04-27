@@ -117,6 +117,8 @@ import RegrasLotePage from "./pages/admin/RegrasLotePage";
 // RegrasEventoPage removed — consolidated into RegrasPage
 import RegrasPage from "./pages/admin/RegrasPage";
 import ArbitragemEquipePage from "./pages/admin/ArbitragemEquipePage";
+import RefereeRemunerationConfigPage from "./pages/admin/referees/RefereeRemunerationConfigPage";
+import RefereeReportingPage from "./pages/admin/referees/RefereeReportingPage";
 import ImportacaoAliasesPage from "./pages/admin/ImportacaoAliasesPage";
 import AjudaChatPage from "./pages/admin/AjudaChatPage";
 import AjudaManualPage from "./pages/admin/AjudaManualPage";
