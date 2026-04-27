@@ -67,7 +67,7 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
 
   // Fetch current rules if editing
   const { data: existingRules } = useQuery({
-    queryKey: ["meal_window_eligibility", mealWindow?.id],
+    queryKey: ["meal_window_eligibility", (mealWindow as any)?.id],
     queryFn: async () => {
       if (!mealWindow?.id) return [];
       const { data, error } = await (supabase.from("meal_window_eligibility") as any)
