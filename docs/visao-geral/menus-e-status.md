@@ -26,7 +26,7 @@
 | Módulo | Rota | Status |
 |--------|------|--------|
 | Credenciamento | `/admin/credenciamento` | ✅ Feito |
-| Modelos de Credencial | `/admin/credenciais/modelos` | 🟡 Parcial |
+| Modelos de Credencial | `/admin/credenciais/modelos` | ✅ Feito |
 | Validação QR | `/admin/validacao-qr` | ✅ Feito |
 
 ### Competição
