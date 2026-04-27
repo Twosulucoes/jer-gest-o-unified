@@ -512,6 +512,7 @@ const App = () => (
             <Route path="/pwa/login" element={<Navigate to="/login" replace />} />
             <Route path="/pwa/recover" element={<Navigate to="/login" replace />} />
             <Route path="/pwa/set-password" element={<PwaSetPasswordPage />} />
+            <Route path="/pwa/configuracao" element={<PwaSelectionFallback />} />
             {/* PWA Landing (requires auth) */}
             <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLandingPage /></PwaRouteGuard>} />
             
