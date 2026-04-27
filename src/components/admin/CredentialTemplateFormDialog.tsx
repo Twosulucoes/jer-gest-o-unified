@@ -83,6 +83,7 @@ export default function CredentialTemplateFormDialog({ open, onOpenChange, event
   const [width, setWidth] = useState(600);
   const [height, setHeight] = useState(900);
   const [isActive, setIsActive] = useState(true);
+  const [participantTypeFilter, setParticipantTypeFilter] = useState("all");
   const [notes, setNotes] = useState("");
   const [fieldConfig, setFieldConfig] = useState<FieldConfigMap>(buildDefaultFieldConfig(600, 900));
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
