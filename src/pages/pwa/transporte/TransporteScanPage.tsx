@@ -248,6 +248,7 @@ export default function TransporteScanPage() {
 
       <main className="relative mx-auto max-w-md space-y-4 p-4">
         <OfflineSyncStatus />
+        <VoucherConflictCentral />
 
         <p className="text-center text-sm text-muted-foreground">Credencial ou voucher</p>
 
