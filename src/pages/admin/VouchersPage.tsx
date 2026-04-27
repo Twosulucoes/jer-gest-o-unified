@@ -324,6 +324,9 @@ export default function VouchersPage() {
           <p className="text-sm text-muted-foreground">Gestão operacional de acessos eventuais.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate("/admin/vouchers/auditoria")}>
+            <History className="h-4 w-4 mr-2" /> Auditoria
+          </Button>
           <Button variant="outline" onClick={() => setBatchIssueOpen(true)}>
             <Layers className="h-4 w-4 mr-2" /> Novo Lote
           </Button>
