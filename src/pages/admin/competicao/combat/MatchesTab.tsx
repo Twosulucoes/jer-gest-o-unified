@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Table, 
@@ -10,10 +11,11 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Calendar, Clock, MapPin } from "lucide-react";
+import { Pencil, Calendar, Clock, MapPin, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { MatchCombatFormDrawer } from "@/components/admin/competition/MatchCombatFormDrawer";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MatchesTabProps {
   sportEventId: string;
