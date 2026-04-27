@@ -302,8 +302,8 @@ export function SeriesTab({ sportEventId }: SeriesTabProps) {
                   </Card>
                 ))}
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           <div className="pt-4 border-t border-dashed">
             <div className="flex items-center gap-2 text-muted-foreground">
