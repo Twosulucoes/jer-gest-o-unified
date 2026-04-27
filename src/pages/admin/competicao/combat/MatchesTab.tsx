@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Table, 
@@ -10,16 +11,19 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Calendar, Clock, MapPin } from "lucide-react";
+import { Pencil, Calendar, Clock, MapPin, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { MatchCombatFormDrawer } from "@/components/admin/competition/MatchCombatFormDrawer";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MatchesTabProps {
   sportEventId: string;
 }
 
 export function MatchesTab({ sportEventId }: MatchesTabProps) {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -158,17 +162,46 @@ export function MatchesTab({ sportEventId }: MatchesTabProps) {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="h-8 w-8 p-0"
-                        onClick={() => {
-                          setSelectedMatch(m);
-                          setIsDrawerOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                                onClick={() => {
+                                  const url = stageId 
+                                    ? `/admin/etapa/${stageId}/competicao/painel-combat/${sportEventId}/confronto/${m.id}/resultado`
+                                    : `/admin/competicao/painel-combat/${sportEventId}/confronto/${m.id}/resultado`;
+                                  navigate(url);
+                                }}
+                                disabled={athleteA?.persons?.name === "BYE" || athleteB?.persons?.name === "BYE" || status.label === "Homologado"}
+                              >
+                                <Trophy className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Lançar Resultado</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0"
+                                onClick={() => {
+                                  setSelectedMatch(m);
+                                  setIsDrawerOpen(true);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar Luta</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

@@ -1,7 +1,7 @@
 # Menus e Status de Implementação — JER Gestão
 
 > Fonte única de verdade: `src/config/systemMap.ts`
-> Auditoria atualizada em 2026-04-14
+> Auditoria atualizada em 2026-04-27 (Etapa 7)
 
 ## Critérios de Classificação
 
@@ -48,6 +48,7 @@
 | Resultados | `/admin/competicao/resultados` | 🟡 Parcial |
 | Lançamento Score | `/admin/competicao/painel-score/:id/confronto/:matchId/resultado` | ✅ Feito |
 | Lançamento Sets | `/admin/competicao/painel-sets/:id/confronto/:matchId/resultado` | ✅ Feito |
+| Lançamento Combat | `/admin/competicao/painel-combat/:id/confronto/:matchId/resultado` | ✅ Feito |
 | Regras por Prova | `/admin/competicao/regras` | ✅ Feito |
 | Regras em Lote | `/admin/competicao/regras/lote` | ✅ Feito |
 | Diagnóstico | `/admin/diagnostico-competicao` | ✅ Feito |
