@@ -14,6 +14,8 @@ A inscrição oficial é realizada no sistema oficial (SIGECOM), conforme Regula
 - O voucher é instrumento **exclusivo para pessoas eventuais** (prestadores, visitantes, acompanhantes).
 - **Participantes credenciados nunca usam voucher**; em caso de extravio, a credencial é reemitida.
 - Cada voucher deve estar vinculado a uma **instância específica de serviço** (uma refeição definida, uma viagem definida).
+- **Validação Estrita (Fase 3):** O voucher só é aceito na instância exata para a qual foi emitido.
+- **Uso Único por Instância:** Mesmo que o voucher tenha limite de usos alto, ele não pode ser consumido duas vezes na mesma janela/viagem/diária.
 - Vouchers podem ser **nominais** (vinculados a uma Pessoa Eventual) ou **anônimos**.
 - Apenas perfis `admin` e `secretaria` podem gerenciar vouchers.
 
