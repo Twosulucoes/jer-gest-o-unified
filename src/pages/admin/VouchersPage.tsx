@@ -149,13 +149,12 @@ export default function VouchersPage() {
   const [revokeTarget, setRevokeTarget] = useState<VoucherRow | null>(null);
   const [revokeReason, setRevokeReason] = useState("");
 
-  // -------- Vouchers query --------
   const { data: vouchers = [], isLoading } = useQuery({
     queryKey: ["vouchers", eventId, statusFilter, scopeFilter, typeFilter],
     queryFn: async () => {
       let q = (supabase.from("service_vouchers") as any)
         .select(
-          "id, participant_id, qr_code_value, status, voucher_type, label, is_contingency, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
+          "id, participant_id, eventual_person_id, qr_code_value, status, voucher_type, label, is_contingency, scope_transport, scope_meals, scope_lodging, target_meal_window_id, target_trip_id, target_facility_id, target_date, batch_id, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
         )
         .eq("event_id", eventId)
         .order("created_at", { ascending: false })
@@ -170,6 +169,52 @@ export default function VouchersPage() {
       return (data ?? []) as VoucherRow[];
     },
     enabled: !!eventId,
+  });
+
+  const { data: batches = [] } = useQuery({
+    queryKey: ["voucher-batches", eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("service_voucher_batches")
+        .select("*")
+        .eq("event_id", eventId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!eventId,
+  });
+
+  const { data: instances = { meals: [], trips: [], locations: [] } } = useQuery({
+    queryKey: ["voucher-instances", eventId],
+    queryFn: async () => {
+      const [meals, trips, locations] = await Promise.all([
+        supabase.from("meal_windows").select("id, label, service_date, location").eq("event_id", eventId),
+        supabase.from("transport_trips").select("id, scheduled_at, route_id, routes(name)").eq("event_id", eventId),
+        supabase.from("lodging_locations").select("id, name").eq("event_id", eventId),
+      ]);
+      return {
+        meals: meals.data ?? [],
+        trips: (trips.data as any[]) ?? [],
+        locations: locations.data ?? [],
+      };
+    },
+    enabled: !!eventId,
+  });
+
+  const { data: eventualsMap = new Map<string, any>() } = useQuery({
+    queryKey: ["vouchers-eventuals", vouchers.map(v => v.eventual_person_id).filter(Boolean)],
+    queryFn: async () => {
+      const ids = [...new Set(vouchers.map(v => v.eventual_person_id).filter(Boolean))];
+      if (ids.length === 0) return new Map();
+      const { data, error } = await supabase
+        .from("service_eventual_people")
+        .select("id, full_name, involvement_type, organization")
+        .in("id", ids);
+      if (error) throw error;
+      return new Map(data.map(p => [p.id, p]));
+    },
+    enabled: vouchers.length > 0,
   });
 
   // -------- People for vouchers (only nominal) --------
