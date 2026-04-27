@@ -76,6 +76,7 @@ import CompeticaoPainelScorePage from "./pages/admin/CompeticaoPainelScorePage";
 import CompeticaoPainelSetsPage from "./pages/admin/CompeticaoPainelSetsPage";
 import CompeticaoPainelCombatPage from "./pages/admin/CompeticaoPainelCombatPage";
 import CompeticaoPainelTimeMarkPage from "./pages/admin/CompeticaoPainelTimeMarkPage";
+import CompeticaoPainelRankingPage from "./pages/admin/CompeticaoPainelRankingPage";
 import ParticipantesPage from "./pages/admin/ParticipantesPage";
 import VoucherValidarPage from "./pages/admin/VoucherValidarPage";
 import DuplicidadesPessoasPage from "./pages/admin/DuplicidadesPessoasPage";
