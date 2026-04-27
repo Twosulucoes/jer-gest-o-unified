@@ -99,7 +99,7 @@
   - ✅ **Indicadores de Ciclo**: Badges padronizados (Agendado → Em Andamento → Lançado → Validado → Publicado).
   - ✅ **Reversão Admin**: Fluxo de exceção para administradores corrigirem status com diálogos Shadcn UI e justificativa obrigatória.
 - **RLS**: funcional para anon (SELECT WHERE `result_status = 'publicado'`)
-- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento dedicado Score Page | ✅ Homologação com senha real | ✅ Publicação Centralizada | ✅ Reversão de status | ✅ Auditoria completa (tabela history + audit_events)
+- **Implementado**: ✅ Lançamento pelo wizard | ✅ Lançamento dedicado Score/Sets/Combat/Time-Mark Pages | ✅ Homologação com senha real | ✅ Publicação Centralizada | ✅ Reversão de status | ✅ Auditoria completa (tabela history + audit_events)
 
 ## 10. Boletins Oficiais (🟡 Parcial)
 - **Página**: `/admin/boletins`
