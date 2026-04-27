@@ -409,9 +409,10 @@ export default function ParticipanteDetalhePage() {
         <TabsContent value="rastreamento">
           <ParticipantRastreamentoTab participantId={participant.id} eventId={participant.event_id} />
         </TabsContent>
-        <TabsContent value="vouchers">
+        {/* Fluxo de voucher nominal desativado pela regra JER-VOU-01 */}
+        {/* <TabsContent value="vouchers">
           <ParticipantVoucherTab participantId={participant.id} eventId={participant.event_id} />
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
 
       {/* Reissue confirmation dialog */}
