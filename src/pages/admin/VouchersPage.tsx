@@ -660,7 +660,7 @@ function IssueVoucherDialog({
     onError: (e: any) => toast.error(e.message),
   });
 
-  const selected = participantOptions.find((p) => p.id === participantId);
+  const selected = eventualOptions.find((p) => p.id === eventualId);
 
   // ===== Wizard state =====
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
