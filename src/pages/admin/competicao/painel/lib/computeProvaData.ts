@@ -38,6 +38,7 @@ export interface ProvaRow {
   family?: string | null;
   category_count?: number;
   is_grouped_combat?: boolean;
+  is_grouped_time_mark?: boolean;
 }
 
 export function computeProvaData(row: any, family?: string | null): ProvaRow {
