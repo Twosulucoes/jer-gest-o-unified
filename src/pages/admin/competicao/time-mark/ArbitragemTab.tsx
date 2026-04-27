@@ -119,7 +119,16 @@ export function ArbitragemTab({ sportEventId }: ArbitragemTabProps) {
 
   const addAssignmentMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string, role: string }) => {
-      // We need to add this user to ALL matches of the sport event
+      // Fetch event_id first
+      const { data: eventData } = await supabase
+        .from("sport_events")
+        .select("event_id")
+        .eq("id", sportEventId)
+        .single();
+      
+      const eventId = eventData?.event_id;
+
+      // Find all matches for this sport event
       const { data: matches } = await supabase
         .from("competition_matches")
         .select("id")
@@ -133,7 +142,7 @@ export function ArbitragemTab({ sportEventId }: ArbitragemTabProps) {
         match_id: m.id,
         user_id: userId,
         role: role,
-        event_id: (await supabase.from("sport_events").select("event_id").eq("id", sportEventId).single()).data?.event_id
+        event_id: eventId
       }));
 
       const { error } = await supabase
