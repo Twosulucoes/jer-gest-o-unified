@@ -1,6 +1,6 @@
 # 04 — Módulos Operacionais
 
-> Auditoria atualizada em 2026-04-21 (Correções Críticas de Segurança e OSC)
+> Auditoria atualizada em 2026-04-26 (Interfaces Administrativas, Lote e OSC)
 
 ## 1. Importação / Espelhamento SIGECOM (✅ Pronto)
 - **Página**: `/admin/importacao`
