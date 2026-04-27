@@ -537,7 +537,7 @@ export default function CredenciamentoPage() {
     mutationFn: async (participantId: string) => {
       const existing = activeCredMap.get(participantId);
       const credentialCode = generateCredentialCode();
-      const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
+      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, participantId, credentialCode);
 
       const { error } = await (supabase as any).rpc("issue_participant_credential", {
         p_event_id: selectedEventId,
