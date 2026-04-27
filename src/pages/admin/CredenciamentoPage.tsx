@@ -471,7 +471,7 @@ export default function CredenciamentoPage() {
     mutationFn: async ({ participantId, externalCode }: { participantId: string; externalCode?: string }) => {
       const isExternal = !!externalCode;
       const credentialCode = externalCode || generateCredentialCode();
-      const qrCodeValue = generateQrCodeValue(selectedEventId, participantId, credentialCode);
+      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, participantId, credentialCode);
 
       const { error } = await (supabase as any).rpc("issue_participant_credential", {
         p_event_id: selectedEventId,
