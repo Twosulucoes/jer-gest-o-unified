@@ -484,7 +484,12 @@ export default function VouchersPage() {
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="flex-1" onClick={() => handlePrintIndividual(v)}><Printer className="h-3 w-3 mr-1"/> Etiqueta</Button>
                     <Button size="sm" variant="outline" className="flex-1" onClick={() => setHistoryVoucher(v)}><History className="h-3 w-3 mr-1"/> Usos</Button>
-                    {v.status === 'active' && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setRevokeTarget(v)}><Ban className="h-3 w-3"/></Button>}
+                    {v.status === 'active' && (
+                      <>
+                        <Button size="sm" variant="ghost" className="text-primary" title="Reemitir" onClick={() => setReissueTarget(v)}><History className="h-3 w-3"/></Button>
+                        <Button size="sm" variant="ghost" className="text-destructive" title="Revogar" onClick={() => setRevokeTarget(v)}><Ban className="h-3 w-3"/></Button>
+                      </>
+                    )}
                   </div>
                 </Card>
               );
