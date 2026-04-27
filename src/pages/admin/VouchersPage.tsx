@@ -71,14 +71,20 @@ import {
 interface VoucherRow {
   id: string;
   participant_id: string | null;
+  eventual_person_id: string | null;
   qr_code_value: string;
   status: string;
   voucher_type: "nominal" | "aggregate";
+  is_nominal: boolean;
   label: string | null;
   is_contingency: boolean;
   scope_transport: boolean;
   scope_meals: boolean;
   scope_lodging: boolean;
+  target_meal_window_id: string | null;
+  target_trip_id: string | null;
+  target_facility_id: string | null;
+  target_date: string | null;
   max_uses: number | null;
   current_uses: number;
   valid_from: string;
@@ -87,6 +93,13 @@ interface VoucherRow {
   revoke_reason: string | null;
   revoked_at: string | null;
   created_at: string;
+}
+
+interface EventualOption {
+  id: string;
+  full_name: string;
+  involvement_type: string;
+  organization: string | null;
 }
 
 interface ParticipantOption {
@@ -529,9 +542,12 @@ function IssueVoucherDialog({
   const [aggregateBatchSize, setAggregateBatchSize] = useState("1");
   const [participantSearch, setParticipantSearch] = useState("");
   const [participantId, setParticipantId] = useState<string | null>(null);
+  const [eventualId, setEventualId] = useState<string | null>(null);
   const [scopeTransport, setScopeTransport] = useState(true);
   const [scopeMeals, setScopeMeals] = useState(true);
   const [scopeLodging, setScopeLodging] = useState(false);
+  const [targetMealId, setTargetMealId] = useState<string | null>(null);
+  const [targetTripId, setTargetTripId] = useState<string | null>(null);
   const [maxUses, setMaxUses] = useState<string>("");
   const [validUntil, setValidUntil] = useState<string>("");
   const [notes, setNotes] = useState("");
@@ -553,38 +569,21 @@ function IssueVoucherDialog({
     }
   }, [open]);
 
-  const { data: participantOptions = [] } = useQuery({
-    queryKey: ["voucher-issue-search", eventId, participantSearch],
+  const { data: eventualOptions = [] } = useQuery({
+    queryKey: ["voucher-eventual-search", activeEventId, participantSearch],
     queryFn: async () => {
       if (!participantSearch.trim() || participantSearch.trim().length < 2) return [];
       const term = `%${participantSearch.trim()}%`;
-      const { data: people, error } = await supabase
-        .from("people")
-        .select("id, full_name, cpf")
-        .or(`full_name.ilike.${term},cpf.ilike.${term}`)
+      const { data, error } = await supabase
+        .from("service_eventual_people")
+        .select("id, full_name, involvement_type, organization")
+        .eq("event_id", eventId)
+        .ilike("full_name", term)
         .limit(20);
       if (error) throw error;
-      const personIds = (people ?? []).map((p) => p.id);
-      if (personIds.length === 0) return [];
-      const { data: parts, error: pErr } = await supabase
-        .from("participants")
-        .select("id, participant_type, person_id, status")
-        .eq("event_id", eventId)
-        .in("person_id", personIds)
-        .neq("status", "removed");
-      if (pErr) throw pErr;
-      const peopleById = new Map(people!.map((p) => [p.id, p]));
-      return (parts ?? []).map((p) => {
-        const person = peopleById.get(p.person_id);
-        return {
-          id: p.id,
-          participant_type: p.participant_type,
-          full_name: person?.full_name ?? "—",
-          cpf: person?.cpf ?? null,
-        };
-      });
+      return data as EventualOption[];
     },
-    enabled: open && participantSearch.trim().length >= 2,
+    enabled: open && participantSearch.trim().length >= 2 && voucherType === "nominal",
   });
 
   const issueMutation = useMutation({
@@ -597,25 +596,26 @@ function IssueVoucherDialog({
       } = await supabase.auth.getUser();
 
       if (voucherType === "nominal") {
-        if (!participantId) throw new Error("Selecione um participante");
+        if (!eventualId) throw new Error("Selecione uma pessoa eventual");
         const { data, error } = await (supabase.from("service_vouchers") as any)
           .insert({
             event_id: eventId,
-            participant_id: participantId,
+            eventual_person_id: eventualId,
             voucher_type: "nominal",
-            is_contingency: true,
+            is_nominal: true,
+            is_contingency: false,
             qr_code_value: genQrValue(),
             scope_transport: scopeTransport,
             scope_meals: scopeMeals,
             scope_lodging: scopeLodging,
+            target_meal_window_id: targetMealId,
+            target_trip_id: targetTripId,
             max_uses: max,
             valid_until: validUntil ? new Date(validUntil).toISOString() : null,
             notes: notes.trim() || null,
             issued_by: user?.id ?? null,
           })
-          .select(
-            "id, participant_id, qr_code_value, status, voucher_type, label, is_contingency, scope_transport, scope_meals, scope_lodging, max_uses, current_uses, valid_from, valid_until, notes, revoke_reason, revoked_at, created_at"
-          )
+          .select()
           .single();
         if (error) throw error;
         return data as VoucherRow;
@@ -630,6 +630,7 @@ function IssueVoucherDialog({
         participant_id: null,
         voucher_type: "aggregate",
         label: batch > 1 ? `${labelBase} #${String(i + 1).padStart(2, "0")}` : labelBase,
+        is_nominal: false,
         is_contingency: false,
         qr_code_value: genQrValue(),
         scope_transport: scopeTransport,
