@@ -56,7 +56,6 @@ export default function EvidenciasOSCPage() {
     mutationFn: async (v: any) => {
       const file = v.file;
       const module = v.module;
-      const ext = file.name.split(".").pop();
       const path = `${selectedEventId}/${module}/${Date.now()}_${file.name}`;
       
       // 1. Upload to storage
@@ -70,7 +69,7 @@ export default function EvidenciasOSCPage() {
         .getPublicUrl(path);
         
       // 2. Insert record
-      const { error: dbError } = await (supabase.from("operational_evidence") as any).insert({
+      const { error: dbError } = await (supabase as any).from("operational_evidence").insert({
         event_id: selectedEventId,
         module: v.module,
         evidence_type: v.evidence_type,
