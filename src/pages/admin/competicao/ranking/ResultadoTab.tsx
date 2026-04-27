@@ -2,12 +2,11 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Save, AlertTriangle, CheckCircle2, Trophy, History } from "lucide-react";
+import { Save, AlertTriangle, Trophy, History, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Table,
@@ -23,8 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useActiveEventId } from "@/contexts/EventContext";
-import { HomologationDialog } from "@/components/admin/competicao/HomologationDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ResultadoTabProps {
   sportEventId: string;
@@ -44,12 +51,19 @@ interface ParticipantResult {
 export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
   const eventId = useActiveEventId();
   const queryClient = useQueryClient();
+  const { hasRole } = useAuth();
   const [results, setResults] = useState<ParticipantResult[]>([]);
   const [generalNotes, setGeneralNotes] = useState("");
   const [isDirty, setIsDirty] = useState(false);
+  
+  // Homologation state
+  const [showHomologateDialog, setShowHomologateDialog] = useState(false);
+  const [homologatePassword, setHomologatePassword] = useState("");
+  const [homologateObservation, setHomologateObservation] = useState("");
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
   // Fetch the first match of the sport event
-  const { data: match, isLoading: loadingMatch } = useQuery({
+  const { data: match, isLoading: loadingMatch, refetch: refetchMatch } = useQuery({
     queryKey: ["ranking_match", sportEventId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -93,7 +107,7 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
 
       const { data: currentResults, error: resultsError } = await supabase
         .from("competition_match_results")
-        .select("match_entry_id, score, outcome, position, notes")
+        .select("match_entry_id, score, outcome, position, notes, result_status")
         .eq("match_id", matchId);
 
       if (resultsError) throw resultsError;
@@ -115,7 +129,8 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
           score: res?.score || "",
           outcome: res?.outcome || "active",
           classification: res?.position || null,
-          notes: res?.notes || ""
+          notes: res?.notes || "",
+          status: res?.result_status || "agendado"
         };
       });
     },
@@ -124,10 +139,24 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
 
   useEffect(() => {
     if (initialData) {
-      setResults(initialData);
+      setResults(initialData.map(d => ({
+        match_entry_id: d.match_entry_id,
+        participant_id: d.participant_id,
+        name: d.name,
+        institution: d.institution,
+        score: d.score,
+        outcome: d.outcome,
+        classification: d.classification,
+        notes: d.notes
+      })));
       setIsDirty(false);
     }
   }, [initialData]);
+
+  const resultStatus = initialData?.[0]?.status || "agendado";
+  const canWrite = hasRole("admin") || hasRole("coordenacao_tecnica") || hasRole("mesario");
+  const isLocked = (resultStatus === "resultado_validado" || resultStatus === "publicado") && !hasRole("admin");
+  const canHomologate = (hasRole("admin") || hasRole("coordenacao_tecnica")) && resultStatus === "resultado_lancado";
 
   // Recalculate classification
   const calculatedResults = useMemo(() => {
@@ -143,16 +172,13 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
       if (r.outcome !== "active") return { ...r, classification: null };
       
       const scoreR = parseFloat(r.score.replace(",", ".")) || 0;
-      // Find position
       let pos = 1;
-      let tieCount = 0;
       
       for (let i = 0; i < sorted.length; i++) {
         const sScore = parseFloat(sorted[i].score.replace(",", ".")) || 0;
         if (sScore > scoreR) {
           pos++;
         } else if (sScore === scoreR) {
-          // It's the same score, so same position
           break;
         }
       }
@@ -188,7 +214,8 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
           participant_id: r.participant_id,
           score: r.score,
           outcome: r.outcome,
-          classification: r.classification
+          classification: r.classification,
+          notes: r.notes
         })),
         notes: generalNotes
       };
@@ -213,11 +240,42 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
     }
   });
 
-  const isHomologated = useMemo(() => {
-    // Check if any result of this match is validated
-    // This is a bit simplified, but status is on the results table
-    return false; // Placeholder
-  }, []);
+  const homologateMutation = useMutation({
+    mutationFn: async () => {
+      setIsVerifyingPassword(true);
+      try {
+        const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-current-user-password', {
+          body: { password: homologatePassword }
+        });
+
+        if (verifyError) throw verifyError;
+        if (!verifyData.valid) throw new Error(verifyData.message || "Senha incorreta");
+
+        const { data, error } = await supabase.rpc("rpc_homologate_match_result", {
+          p_match_id: matchId,
+          p_observation: homologateObservation,
+          p_password: homologatePassword // Still needed by RPC signature even if verified by function
+        } as any);
+        
+        if (error) throw error;
+        return data;
+      } finally {
+        setIsVerifyingPassword(false);
+      }
+    },
+    onSuccess: () => {
+      toast.success("Resultado homologado com sucesso!");
+      setShowHomologateDialog(false);
+      setHomologatePassword("");
+      setHomologateObservation("");
+      refetchMatch();
+      queryClient.invalidateQueries({ queryKey: ["ranking_results", matchId] });
+      queryClient.invalidateQueries({ queryKey: ["sport_events_ranking"] });
+    },
+    onError: (e: any) => {
+      toast.error("Erro ao homologar: " + e.message);
+    }
+  });
 
   if (loadingMatch || loadingData) {
     return <div className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-64 w-full" /></div>;
@@ -233,8 +291,6 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
     );
   }
 
-  const hasAnyResult = results.some(r => r.score || r.outcome !== "active");
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -245,11 +301,16 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
            <Button variant="outline" size="sm" className="gap-2">
              <History className="h-4 w-4" /> Histórico
            </Button>
-           {hasAnyResult && (
-             <HomologationDialog 
-               matchId={matchId} 
-               onSuccess={() => queryClient.invalidateQueries({ queryKey: ["ranking_results", matchId] })}
-             />
+           {canHomologate && (
+              <Button 
+                variant="secondary" 
+                size="sm"
+                className="gap-2 bg-amber-500 hover:bg-amber-600 text-white border-none"
+                onClick={() => setShowHomologateDialog(true)}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Homologar Resultado
+              </Button>
            )}
         </div>
       </div>
@@ -285,11 +346,15 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
                     className="h-8 text-center font-mono"
                     value={r.score}
                     onChange={(e) => handleScoreChange(r.match_entry_id, e.target.value)}
-                    disabled={r.outcome !== "active"}
+                    disabled={r.outcome !== "active" || isLocked}
                   />
                 </TableCell>
                 <TableCell className="text-center">
-                  <Select value={r.outcome} onValueChange={(val) => handleOutcomeChange(r.match_entry_id, val)}>
+                  <Select 
+                    value={r.outcome} 
+                    onValueChange={(val) => handleOutcomeChange(r.match_entry_id, val)}
+                    disabled={isLocked}
+                  >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
@@ -305,6 +370,7 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
                     placeholder="Opcional..."
                     className="h-8 text-xs"
                     value={r.notes}
+                    disabled={isLocked}
                     onChange={(e) => {
                       setResults(prev => prev.map(res => 
                         res.match_entry_id === r.match_entry_id ? { ...res, notes: e.target.value } : res
@@ -325,6 +391,7 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
           placeholder="Registre ocorrências, recursos ou observações gerais..."
           className="min-h-[100px]"
           value={generalNotes}
+          disabled={isLocked}
           onChange={(e) => {
             setGeneralNotes(e.target.value);
             setIsDirty(true);
@@ -335,13 +402,55 @@ export function ResultadoTab({ sportEventId }: ResultadoTabProps) {
       <div className="flex justify-end pt-4 border-t sticky bottom-0 bg-background/80 backdrop-blur-sm p-4 -mx-4">
         <Button 
           onClick={() => saveMutation.mutate()} 
-          disabled={!isDirty || saveMutation.isPending}
+          disabled={!isDirty || saveMutation.isPending || !canWrite || isLocked}
           className="gap-2 px-8"
         >
           <Save className="h-4 w-4" />
           {saveMutation.isPending ? "Salvando..." : "Salvar Resultados"}
         </Button>
       </div>
+
+      {/* Homologation Dialog */}
+      <Dialog open={showHomologateDialog} onOpenChange={setShowHomologateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Homologar Resultado da Prova</DialogTitle>
+            <DialogDescription>
+              A homologação valida os resultados e permite a publicação oficial. 
+              Esta ação exige sua senha de acesso.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Sua Senha</label>
+              <Input 
+                type="password" 
+                placeholder="Confirme sua senha"
+                value={homologatePassword}
+                onChange={(e) => setHomologatePassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Observações (Opcional)</label>
+              <Textarea 
+                placeholder="Notas que constarão na auditoria da homologação..."
+                value={homologateObservation}
+                onChange={(e) => setHomologateObservation(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHomologateDialog(false)}>Cancelar</Button>
+            <Button 
+              className="bg-amber-500 hover:bg-amber-600 text-white border-none"
+              onClick={() => homologateMutation.mutate()}
+              disabled={!homologatePassword || homologateMutation.isPending || isVerifyingPassword}
+            >
+              {homologateMutation.isPending ? "Processando..." : "Confirmar Homologação"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
