@@ -118,10 +118,26 @@ export function voucherErrorMessage(
   };
 }
 
+const SERVICE_LABEL: Record<string, Record<PwaLang, string>> = {
+  transport: { pt: "transporte", es: "transporte" },
+  meals: { pt: "alimentação", es: "alimentación" },
+  lodging: { pt: "alojamento", es: "alojamiento" },
+};
+
+const TYPE_LABEL: Record<string, Record<PwaLang, string>> = {
+  aggregate: { pt: "agregado", es: "agregado" },
+  nominal: { pt: "nominal", es: "nominal" },
+};
+
+const REMAINING_TEXT: Record<PwaLang, (n: number | "infinite") => string> = {
+  pt: (n) => (n === "infinite" ? "usos ilimitados" : `${n} uso${n === 1 ? "" : "s"} restante${n === 1 ? "" : "s"}`),
+  es: (n) => (n === "infinite" ? "usos ilimitados" : `${n} uso${n === 1 ? "" : "s"} restante${n === 1 ? "" : "s"}`),
+};
+
 /** Mensagem de sucesso após uma RPC `ok`. */
 export function voucherSuccessMessage(
   voucher: VoucherRedeemResult,
-  serviceKind: ServiceKind,
+  serviceKind: string,
   l?: PwaLang,
 ): VoucherMessage {
   const lg = lang(l);
@@ -132,7 +148,7 @@ export function voucherSuccessMessage(
     : voucher.person_name || (lg === "es" ? "Participante" : "Participante");
 
   const typeLabel = TYPE_LABEL[isAggregate ? "aggregate" : "nominal"][lg];
-  const serviceLabel = SERVICE_LABEL[serviceKind][lg];
+  const serviceLabel = SERVICE_LABEL[serviceKind] ? SERVICE_LABEL[serviceKind][lg] : serviceKind;
 
   const remaining =
     voucher.remaining_uses === null || voucher.remaining_uses === undefined
@@ -140,9 +156,7 @@ export function voucherSuccessMessage(
       : REMAINING_TEXT[lg](Math.max(0, voucher.remaining_uses));
 
   // Ex.: "🎫 Voucher agregado validado · Acompanhante (transporte) · 4 usos restantes"
-  const text = `🎫 ${
-    lg === "es" ? "Voucher" : "Voucher"
-  } ${typeLabel} ${lg === "es" ? "validado" : "validado"} · ${subject} (${serviceLabel}) · ${remaining}`;
+  const text = `🎫 Voucher ${typeLabel} validado · ${subject} (${serviceLabel}) · ${remaining}`;
 
   return {
     text,

@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Download, History, ArrowLeft, Filter, FileSpreadsheet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { voucherErrorMessage } from "@/lib/voucherMessages";
 
 export default function VoucherAuditoriaPage() {
   const eventId = useActiveEventId();
@@ -54,11 +55,11 @@ export default function VoucherAuditoriaPage() {
         type: a.outcome === 'success' ? 'CONSUMO' : 'TENTATIVA RECUSADA',
         service: a.service_kind,
         details: a.outcome === 'success' ? 'Sucesso' : voucherErrorMessage(a.reason, 'pt', { 
-          used_at: a.metadata?.used_at, 
-          operator_name: a.metadata?.operator_name,
-          correct_instance: a.metadata?.correct_instance,
-          revocation_reason: a.metadata?.revocation_reason,
-          valid_until: a.metadata?.valid_until
+          used_at: (a as any).metadata?.used_at, 
+          operator_name: (a as any).metadata?.operator_name,
+          correct_instance: (a as any).metadata?.correct_instance,
+          revocation_reason: (a as any).metadata?.revocation_reason,
+          valid_until: (a as any).metadata?.valid_until
         }).text,
         identifier: (a as any).voucher?.eventual_person?.full_name || (a as any).voucher?.qr_code_value || a.qr_value,
         operator: (a as any).operator?.display_name || 'Sistema',
