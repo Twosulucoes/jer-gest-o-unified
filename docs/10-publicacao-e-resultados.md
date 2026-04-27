@@ -95,9 +95,11 @@ Campo `combat_detail` (JSONB) em `competition_match_results`:
 
 Componente: `CombatResultForm` (renderizado quando `family='combat'`)
 
-## Tabelas de Auditoria
-- `audit_events`: registra ações relevantes de governança.
-- `match_results_history`: registra snapshots completos do payload a cada salvamento em modalidades Score.
+## Auditoria e Histórico
+- `audit_events`: registra ações transversais do sistema.
+- `match_results_history`: registra snapshots completos do payload a cada salvamento ou propagação.
+  - **Action Types**: `save`, `launched`, `updated`, `homologated`, `published`, `reverted`, `classification_propagated`, `classification_repropagated`.
+  - **Payload**: Snapshots JSONB contendo estado completo dos resultados e tentativas no momento da ação.
 
 ## Segurança e Autenticação
 
