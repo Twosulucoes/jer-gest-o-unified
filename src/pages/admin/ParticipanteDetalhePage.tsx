@@ -22,7 +22,7 @@ import ParticipantHistoricoTab from "@/components/admin/participant/ParticipantH
 import ParticipantCredencialTab from "@/components/admin/participant/ParticipantCredencialTab";
 import ParticipantLogisticaTab from "@/components/admin/participant/ParticipantLogisticaTab";
 import ParticipantRastreamentoTab from "@/components/admin/participant/ParticipantRastreamentoTab";
-import ParticipantVoucherTab from "@/components/admin/participant/ParticipantVoucherTab";
+// import ParticipantVoucherTab from "@/components/admin/participant/ParticipantVoucherTab";
 import { SingleLabelDialog } from "@/components/admin/CredentialLabelPrint";
 import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
 import { BackButton } from "@/components/navigation/BackButton";

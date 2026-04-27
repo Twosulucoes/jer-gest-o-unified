@@ -315,9 +315,10 @@ export default function VouchersPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" onClick={() => setBulkOpen(true)}>
+          {/* Fluxo legado de contingência desativado para novos lotes */}
+          {/* <Button variant="outline" onClick={() => setBulkOpen(true)}>
             <Users className="h-4 w-4 mr-2" /> Lote por Delegação
-          </Button>
+          </Button> */}
           <Button onClick={() => setIssueOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Emitir Voucher
           </Button>
