@@ -92,17 +92,44 @@ const PwaSelectionFallback = () => {
             )}
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-3 pt-2">
+        <CardFooter className="flex flex-col gap-3 pt-4">
           <Button 
-            onClick={handleGoHome} 
-            disabled={!activeEventId}
-            className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg transition-all active:scale-[0.98]"
+            onClick={() => navigate(from)} 
+            disabled={!activeEventId || !activeStageId}
+            className="w-full h-14 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl shadow-lg transition-all active:scale-[0.98] text-base font-semibold gap-2"
           >
-            Confirmar e Ir para Início
+            {activeEventId && activeStageId ? (
+              <>
+                <CheckCircle2 className="w-5 h-5" />
+                Confirmar e Continuar
+              </>
+            ) : (
+              "Selecione para Continuar"
+            )}
           </Button>
-          <Button variant="ghost" onClick={() => navigate("/selecionar-modulo")} className="w-full text-muted-foreground">
-            Alterar Módulo do Sistema
-          </Button>
+
+          <div className="grid grid-cols-2 gap-3 w-full">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/pwa")} 
+              className="h-12 rounded-xl border-muted-foreground/20"
+            >
+              Início PWA
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/selecionar-modulo")} 
+              className="h-12 rounded-xl border-muted-foreground/20"
+            >
+              Sair do PWA
+            </Button>
+          </div>
+          
+          {from !== "/pwa" && (
+            <p className="text-xs text-center text-muted-foreground mt-2">
+              Você será levado de volta para: <span className="font-mono bg-muted px-1 rounded">{from}</span>
+            </p>
+          )}
         </CardFooter>
       </Card>
     </div>
