@@ -84,6 +84,7 @@ import ParticipantesPage from "./pages/admin/ParticipantesPage";
 import VoucherValidarPage from "./pages/admin/VoucherValidarPage";
 import DuplicidadesPessoasPage from "./pages/admin/DuplicidadesPessoasPage";
 import PessoasPage from "./pages/admin/PessoasPage";
+import EventuaisPage from "./pages/admin/EventuaisPage";
 import VouchersPage from "./pages/admin/VouchersPage";
 import LogisticaConsolidadaPage from "./pages/admin/LogisticaConsolidadaPage";
 import ParticipanteHistoricoPage from "./pages/admin/ParticipanteHistoricoPage";
