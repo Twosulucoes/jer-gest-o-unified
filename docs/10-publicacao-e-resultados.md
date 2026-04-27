@@ -117,7 +117,7 @@ Componente: `CombatResultForm` (renderizado quando `family='combat'`)
 - ✅ Sincronização match_scores → resultado oficial
 - ✅ Base para combate (combat_detail + CombatResultForm)
 - ✅ **Lançamento dedicado para Sets (Etapa 6 concluída)**: Suporte total para modalidades de sets com cômputo de averages e parciais.
-- 🟡 CombatResultForm não integrado automaticamente na página da partida (requer detecção de family)
+- ✅ **Lançamento dedicado para Combate (Etapa 7 concluída)**: Rota dedicada, placar dinâmico (Judo vs Others), registro de tempo de luta, prorrogação (Golden Score/Overtime) e propagação automática do vencedor no bracket eliminatório após homologação.
 - ⛔ Sem portal público para consulta externa
 - ⛔ Sem geração de boletins oficiais em PDF
 - ⛔ Sem quadro de medalhas
