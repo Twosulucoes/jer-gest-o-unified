@@ -7,7 +7,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
 import { toast } from "sonner";
 import {
-  Users, Building, Check, ChevronRight, AlertCircle, ArrowLeft, Loader2, Search
+  Building, Check, ChevronRight, ArrowLeft, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
