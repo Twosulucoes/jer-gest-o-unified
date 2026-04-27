@@ -16,10 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { InscritosTab } from "./ranking/InscritosTab";
-import { ResultadoTab } from "./ranking/ResultadoTab";
-import { AgendaTab } from "./ranking/AgendaTab";
-import { ArbitragemTab } from "./ranking/ArbitragemTab";
+import { InscritosTab } from "./competicao/ranking/InscritosTab";
+import { ResultadoTab } from "./competicao/ranking/ResultadoTab";
+import { AgendaTab } from "./competicao/ranking/AgendaTab";
+import { ArbitragemTab } from "./competicao/ranking/ArbitragemTab";
 
 export default function CompeticaoPainelRankingPage() {
   const { sportEventId, stageId } = useParams();
