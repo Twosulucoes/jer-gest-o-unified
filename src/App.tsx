@@ -398,6 +398,8 @@ const App = () => (
               <Route path="ocorrencias" element={<RedirectToEtapas />} />
               {/* Pesquisa de Satisfação — operacional, redireciona para Etapa */}
               <Route path="pesquisa" element={<RedirectToEtapas />} />
+              <Route path="competicao/publicacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><CompeticaoPublicacaoPage /></ProtectedRoute>} />
+              <Route path="competicao/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "delegacao"]}><CompeticaoBoletinsPage /></ProtectedRoute>} />
               <Route path="pesquisa/eventos" element={<RedirectToEtapas />} />
               <Route path="pesquisa/eventos/:eventId/form" element={<RedirectToEtapas />} />
               <Route path="pesquisa/pesquisadores" element={<RedirectToEtapas />} />
