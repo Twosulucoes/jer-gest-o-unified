@@ -67,3 +67,47 @@ O sistema foi unificado no esquema `public`:
 ## Histórico de Auditorias
 - **2026-04-28:** Unificação concluída (Fase 1). Esquemas Admin e PWA operando sobre a mesma base de dados.
 - **2026-04-28 (Manhã):** Auditoria inicial completa. Identificada desconexão crítica entre os esquemas de dados Admin e PWA.
+
+---
+
+# Mini-Auditoria de Confirmação - Fase 1
+**Data:** 28 de Abril de 2026 (Tarde)
+**Veredito:** ✅ Confirmada e Sólida
+
+## 1. Passo a Passo da Validação
+
+### 1.1 Fonte Única de Verdade (Single Source of Truth)
+- **Status:** ✅ Conforme
+- **Evidência:** Varredura completa do código fonte confirmou que não existem mais `INSERT` ou `UPDATE` direcionados ao esquema `alojamento`. Todas as rotas operacionais e administrativas convergem para `public.lodging_occupancies`. Referências remanescentes ao esquema `alojamento` são exclusivas para leitura histórica ou via RPC `resolve_qr` (que apenas lê tokens).
+
+### 1.2 RPCs Operacionais
+- **Status:** ✅ Conforme
+- **Evidência:** Inspeção das funções `pwa_lodging_checkin` e `pwa_lodging_checkout` confirmou:
+  - Proteção rigorosa contra check-in duplo.
+  - Validação de status de participante (ativo).
+  - Registro automático de divergência entre unidade planejada e executada.
+  - Gravação em `lodging_audit_logs` com metadados ricos (dispositivo, usuário, erro).
+
+### 1.3 Integração Admin (Planejado vs Executado)
+- **Status:** ✅ Conforme
+- **Evidência:** A tela `AlojamentoOcupacaoPage` consome a mesma tabela que o PWA. O alerta de divergência está implementado e visível no dashboard administrativo, garantindo que a gestão saiba quando o planejado não foi seguido.
+
+### 1.4 Fila Offline no PWA
+- **Status:** ✅ Conforme
+- **Evidência:** O hook `useAlojamentoOffline` foi atualizado para as novas RPCs unificadas. O fluxo de persistência local, tentativa de sincronismo e notificação de sucesso/erro permanece funcional e integrado ao novo modelo de dados.
+
+### 1.5 Trilha de Auditoria Unificada
+- **Status:** ✅ Conforme
+- **Evidência:** A tabela `public.lodging_audit_logs` centraliza agora todos os eventos operacionais de alojamento, eliminando a dispersão que existia na `alojamento.scan_events`.
+
+### 1.6 Permissões e Segurança
+- **Status:** ✅ Conforme
+- **Evidência:** Políticas RLS (Row Level Security) aplicadas a todas as novas tabelas do `public`. Proteções de rota no `App.tsx` garantem que apenas o perfil `alojamento` acesse o PWA e perfis administrativos acessem a gestão.
+
+## 2. Verificação de Não Regressão
+- **Alocação em Lote:** Mantida funcional, agora com vínculos corrigidos (hints de FK) para evitar ambiguidade.
+- **Voucher de Alojamento:** Integração preservada no scanner PWA.
+- **Pessoas Unificadas:** Fluxo de busca e detalhamento de pessoa integrado ao modelo de participantes unificado.
+
+## 3. Conclusão
+A fundação do módulo de Alojamento foi corrigida com sucesso. A dualidade de esquemas, que era o maior risco técnico identificado, foi eliminada sem perda de funcionalidade. O sistema está pronto para a **Fase 2: Controle de Presença Noturna**.
