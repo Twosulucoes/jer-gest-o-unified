@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, RefreshCw, FileText, Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { Download, RefreshCw, FileText, Calendar as CalendarIcon, Loader2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
