@@ -8,6 +8,7 @@ import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getOfflineQueue } from "@/lib/offlineQueue";
 import { getVoucherQueue } from "@/lib/voucherOffline";
+import { getAlojamentoQueue } from "@/hooks/useAlojamentoOffline";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
