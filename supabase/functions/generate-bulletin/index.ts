@@ -240,8 +240,12 @@ Deno.serve(async (req) => {
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
+    console.error("Error generating bulletin:", err);
+    return new Response(JSON.stringify({ 
+      error: err.message || "Erro interno ao gerar boletim",
+      details: "Se o problema persistir, verifique as permissões de storage ou entre em contato com o suporte."
+    }), {
+      status: err.status || 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
