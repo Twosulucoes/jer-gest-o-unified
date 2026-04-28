@@ -2706,6 +2706,68 @@ export type Database = {
           },
         ]
       }
+      lodging_presence_logs: {
+        Row: {
+          created_at: string | null
+          device_id: string | null
+          event_id: string | null
+          id: string
+          participant_id: string
+          recorded_at: string | null
+          recorded_by: string | null
+          unit_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_id?: string | null
+          event_id?: string | null
+          id?: string
+          participant_id: string
+          recorded_at?: string | null
+          recorded_by?: string | null
+          unit_id: string
+        }
+        Update: {
+          created_at?: string | null
+          device_id?: string | null
+          event_id?: string | null
+          id?: string
+          participant_id?: string
+          recorded_at?: string | null
+          recorded_by?: string | null
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lodging_presence_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_presence_logs_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_presence_logs_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+          {
+            foreignKeyName: "lodging_presence_logs_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lodging_supervisions: {
         Row: {
           created_at: string
@@ -8335,6 +8397,15 @@ export type Database = {
       }
       pwa_lodging_checkout: {
         Args: { p_device_id: string; p_location_id: string; p_token: string }
+        Returns: Json
+      }
+      pwa_lodging_register_presence: {
+        Args: {
+          p_device_id: string
+          p_mode?: string
+          p_token: string
+          p_unit_id: string
+        }
         Returns: Json
       }
       pwa_search_person: {
