@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getOfflineQueue } from "@/lib/offlineQueue";
 import { getVoucherQueue } from "@/lib/voucherOffline";
+import { getAlojamentoQueue } from "@/hooks/useAlojamentoOffline";
 
 interface PwaLayoutProps {
   moduleTitle?: string;
