@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -241,19 +243,45 @@ export default function MatchUserAssignmentsCard({ matchId, eventId, canWrite }:
                 const profile = profileMap.get(a.user_id);
                 const count = countMap.get(a.user_id) || 0;
                 return (
-                  <div key={a.id} className="flex items-center justify-between gap-2 text-sm rounded-lg border p-2.5">
-                    <div className="flex items-center gap-2 flex-wrap min-w-0">
-                      <span className="font-medium">{profile?.full_name ?? "Usuário"}</span>
-                      <Badge variant="secondary" className="text-[10px]">{getRoleLabel(a.role)}</Badge>
-                      {count > 1 && (
-                        <Badge variant="outline" className="text-[10px]">{count} partidas no evento</Badge>
+                  <div key={a.id} className="flex flex-col gap-2 rounded-lg border p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <span className="font-medium">{profile?.full_name ?? "Usuário"}</span>
+                        <Badge variant="secondary" className="text-[10px]">{getRoleLabel(a.role)}</Badge>
+                        {count > 1 && (
+                          <Badge variant="outline" className="text-[10px]">{count} partidas no evento</Badge>
+                        )}
+                      </div>
+                      {canManageAssignments && (
+                        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setRemoveId(a.id)}>
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
                       )}
                     </div>
-                    {canManageAssignments && (
-                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setRemoveId(a.id)}>
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </Button>
-                    )}
+
+                    <div className="flex items-center gap-3 border-t pt-2 mt-1">
+                      {a.acceptance_status === 'confirmed' ? (
+                        <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Confirmado
+                        </div>
+                      ) : a.acceptance_status === 'unavailable' ? (
+                        <div className="flex items-center gap-1 text-[11px] font-medium text-destructive">
+                          <AlertCircle className="h-3.5 w-3.5" />
+                          Indisponível: {a.indisponibility_reason || "Não informado"}
+                          {a.reported_at && (
+                            <span className="text-[9px] text-muted-foreground ml-1">
+                              ({format(parseISO(a.reported_at), "HH:mm")})
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-[11px] font-medium text-amber-600">
+                          <Clock className="h-3.5 w-3.5" />
+                          Pendente
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}

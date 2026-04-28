@@ -33,6 +33,7 @@ export interface StageDashboardData {
     meals_today: number;
     lodging_capacity: number;
     lodging_occupied: number;
+    unhandled_indisponibilities: number;
   };
   competicao: {
     by_sport: SportProgressRow[];
@@ -102,14 +103,23 @@ export function useStageDashboardData(stageId?: string | null) {
           return (data ?? []) as any[];
         }, []),
       },
+      {
+        queryKey: ["stage_dash", "referee_indisponibilities", stageId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const { data } = await supabase.rpc("get_unhandled_referee_indisponibilities", { p_etapa_id: stageId });
+          return (data ?? []) as any[];
+        }, []),
+      },
     ],
   });
 
   const isLoading = queries.some((q) => q.isLoading);
   const refetchAll = async () => { await Promise.all(queries.map((q) => q.refetch())); };
 
-  const [participants, matches, lodgingUnits, lodgingOccupied, mealWindows] =
-    queries.map((q) => q.data) as [any[], any[], any[], number, any[]];
+  const [participants, matches, lodgingUnits, lodgingOccupied, mealWindows, refereeIndisponibilities] =
+    queries.map((q) => q.data) as [any[], any[], any[], number, any[], any[]];
 
   const windowIds = (mealWindows ?? []).map(w => w.id);
 
@@ -183,7 +193,8 @@ export function useStageDashboardData(stageId?: string | null) {
       meals_total: C.length,
       meals_today: mealsToday,
       lodging_capacity: LU.reduce((acc, curr) => acc + (curr.capacity || 0), 0),
-      lodging_occupied: LO
+      lodging_occupied: LO,
+      unhandled_indisponibilities: (refereeIndisponibilities ?? []).length
     },
     competicao: {
       by_sport: bySport,

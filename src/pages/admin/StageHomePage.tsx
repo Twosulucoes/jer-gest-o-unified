@@ -1,8 +1,9 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import {
   BadgeCheck, Trophy, Building, UtensilsCrossed, Bus,
   AlertTriangle, ClipboardList, FileBarChart, ArrowRight, Gavel,
-  Users, CheckCircle2, RefreshCw, CalendarClock, Clock
+  Users, CheckCircle2, RefreshCw, CalendarClock, Clock, AlertCircle, X
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,8 +43,10 @@ const MODULES: ModuleCard[] = [
 
 export default function StageHomePage() {
   const { stageId } = useParams<{ stageId: string }>();
+  const navigate = useNavigate();
   const { hasRole } = useAuth();
   const { data, isLoading, refetchAll, lastUpdated } = useStageDashboardData(stageId);
+  const [showBanner, setShowBanner] = useState(true);
 
   const visible = MODULES.filter((m) => m.roles.some((r) => hasRole(r)));
   const r = data.resumo;
@@ -56,6 +59,43 @@ export default function StageHomePage() {
 
   return (
     <div className="animate-fade-in space-y-6">
+      {/* Global Referee Indisponibility Alert */}
+      {showBanner && r.unhandled_indisponibilities > 0 && (
+        <div className="relative overflow-hidden rounded-2xl border border-destructive/20 bg-destructive/5 p-4 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="absolute left-0 top-0 h-full w-1.5 bg-destructive" />
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-destructive">
+                  Alerta de Indisponibilidade de Arbitragem
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Existem <strong>{r.unhandled_indisponibilities}</strong> oficial(is) que reportaram indisponibilidade para partidas desta etapa e ainda não foram substituídos.
+                </p>
+                <div className="pt-2">
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="h-8 text-[11px] font-bold"
+                    onClick={() => navigate(`competicao`)}
+                  >
+                    Ver na Agenda
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <button 
+              onClick={() => setShowBanner(false)}
+              className="rounded-lg p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Painel da Etapa</h1>
