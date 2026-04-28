@@ -107,21 +107,7 @@ export default function AlimentacaoHomePage() {
 
   return (
     <div className="op-screen">
-      <PwaHeader
-        title="Alimentação"
-        subtitle={eventSubtitle}
-        icon={UtensilsCrossed}
-        backTo="/pwa"
-        onSignOut={handleSignOut}
-        rightSlot={
-          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-muted/40 hover:text-foreground" onClick={() => setIncidentOpen(true)}>
-            <AlertTriangle className="h-5 w-5" />
-          </Button>
-        }
-      />
-
-      <PwaContainer>
-        <OfflineSyncStatus />
+        <AlimentacaoDuplicateAlert />
         <AlimentacaoDuplicateAlert />
 
 
