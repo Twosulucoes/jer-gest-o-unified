@@ -256,7 +256,14 @@ export default function AlimentacaoJanelasPage() {
             className="pl-9"
           />
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <Calendar className="h-4 w-4 text-muted-foreground hidden md:block" />
+          <Input 
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="w-full md:w-[150px] h-10"
+          />
           <Filter className="h-4 w-4 text-muted-foreground hidden md:block" />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full md:w-[150px]">
