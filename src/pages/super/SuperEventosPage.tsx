@@ -91,23 +91,58 @@ export default function SuperEventosPage() {
   };
 
   const toggleRegistros = async (eventId: string, current: boolean) => {
-    const confirmMsg = current 
-      ? "Deseja desativar o Modo Registros? O módulo Competição complexo voltará a aparecer para este evento." 
-      : "Deseja ativar o Modo Registros? Isso simplificará o registro de partidas e ocultará o módulo Competição complexo.";
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!window.confirm(confirmMsg)) return;
-
-    const { error } = await supabase
+    // Perform update
+    const { error: updateError } = await supabase
       .from("events")
       .update({ registros_mode_enabled: !current })
       .eq("id", eventId);
     
-    if (error) toast.error(error.message);
-    else {
-      toast.success(current ? "Modo Registros desativado" : "Modo Registros ativado com sucesso");
-      refetch();
+    if (updateError) {
+      toast.error(updateError.message);
+      return;
     }
+
+    // Log the change
+    const { error: logError } = await supabase
+      .from("registros_mode_logs")
+      .insert({
+        event_id: eventId,
+        user_id: user?.id,
+        old_value: current,
+        new_value: !current
+      });
+
+    if (logError) console.error("Erro ao registrar log de auditoria:", logError);
+
+    toast.success(!current ? "Modo Registros ativado com sucesso" : "Modo Registros desativado");
+    refetch();
+    setConfirmDialog({ ...confirmDialog, open: false });
   };
+
+  const { data: logHistory, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ["registros-history", historySheet.eventId],
+    queryFn: async () => {
+      if (!historySheet.eventId) return [];
+      const { data, error } = await supabase
+        .from("registros_mode_logs")
+        .select(`
+          id,
+          created_at,
+          old_value,
+          new_value,
+          profiles (
+            full_name
+          )
+        `)
+        .eq("event_id", historySheet.eventId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: historySheet.open
+  });
 
   const statusColors: Record<string, string> = {
     active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
