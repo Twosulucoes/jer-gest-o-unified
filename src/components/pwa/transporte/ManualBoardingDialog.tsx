@@ -53,7 +53,7 @@ export function ManualBoardingDialog({
 
   const handleSave = async () => {
     if (!name.trim()) {
-      toast.error(getPwaMessage("ERR_NAME_REQUIRED", lang));
+      toast.error(getSystemMessage("ERR_NAME_REQUIRED", lang));
       return;
     }
     setSaving(true);
@@ -107,13 +107,13 @@ export function ManualBoardingDialog({
       if (error) throw error;
 
 
-      toast.success(`${name.trim()} ${getPwaMessage("SUCCESS_BOARDING", lang)} (${getPwaMessage("MANUAL_SEARCH", lang)})`);
+      toast.success(`${name.trim()} ${getSystemMessage("SUCCESS_BOARDING", lang)} (${getSystemMessage("MANUAL_SEARCH", lang)})`);
       if (navigator.vibrate) navigator.vibrate(200);
       reset();
       onOpenChange(false);
       onSuccess();
     } catch (err: any) {
-      toast.error(`${getPwaMessage("ERR_UNKNOWN", lang)}: ` + (err.message || "desconhecido"));
+      toast.error(`${getSystemMessage("ERR_UNKNOWN", lang)}: ` + (err.message || "desconhecido"));
     } finally {
       setSaving(false);
     }
@@ -123,13 +123,13 @@ export function ManualBoardingDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{getPwaMessage("MANUAL_BOARDING", lang)}</DialogTitle>
+          <DialogTitle>{getSystemMessage("MANUAL_BOARDING", lang)}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <Label className="text-sm">{getPwaMessage("FULL_NAME", lang)} *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={getPwaMessage("PASSENGER_NAME_PLACEHOLDER", lang)} />
+            <Label className="text-sm">{getSystemMessage("FULL_NAME", lang)} *</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={getSystemMessage("PASSENGER_NAME_PLACEHOLDER", lang)} />
           </div>
 
           <div className="space-y-1">
@@ -138,7 +138,7 @@ export function ManualBoardingDialog({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-sm">{getPwaMessage("TAKE_PHOTO", lang)}</Label>
+            <Label className="text-sm">{getSystemMessage("TAKE_PHOTO", lang)}</Label>
             <input
               ref={fileRef}
               type="file"
@@ -161,7 +161,7 @@ export function ManualBoardingDialog({
               </div>
             ) : (
               <Button variant="outline" className="w-full" onClick={() => fileRef.current?.click()}>
-                <Camera className="h-4 w-4 mr-2" /> {getPwaMessage("TAKE_PHOTO", lang)}
+                <Camera className="h-4 w-4 mr-2" /> {getSystemMessage("TAKE_PHOTO", lang)}
               </Button>
             )}
           </div>
@@ -169,10 +169,10 @@ export function ManualBoardingDialog({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            {getPwaMessage("CANCEL", lang)}
+            {getSystemMessage("CANCEL", lang)}
           </Button>
           <Button onClick={handleSave} disabled={saving || !name.trim()}>
-            {saving ? getPwaMessage("SAVING", lang) : getPwaMessage("REGISTER_BOARDING", lang)}
+            {saving ? getSystemMessage("SAVING", lang) : getSystemMessage("REGISTER_BOARDING", lang)}
           </Button>
         </DialogFooter>
       </DialogContent>

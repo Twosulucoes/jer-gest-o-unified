@@ -224,7 +224,7 @@ export default function AlimentacaoScanPage() {
     foodRestrictions?: string | null,
   ) {
     if (!windowId) {
-      toast.error(getPwaMessage("ERR_WINDOW_REQUIRED", lang));
+      toast.error(getSystemMessage("ERR_WINDOW_REQUIRED", lang));
       return;
     }
 
@@ -236,7 +236,7 @@ export default function AlimentacaoScanPage() {
         .eq("meal_window_id", windowId);
 
       if ((count || 0) > 0) {
-        const errorMsg = getPwaMessage("ERR_ALREADY_REGISTERED", lang);
+        const errorMsg = getSystemMessage("ERR_ALREADY_REGISTERED", lang);
         setResult({ ok: false, message: errorMsg, source: resultSource });
         toast.error(errorMsg);
         recordOutcome("error");
@@ -251,7 +251,7 @@ export default function AlimentacaoScanPage() {
     } = await supabase.auth.getSession();
 
     if (!session?.user.id) {
-      setResult({ ok: false, message: getPwaMessage("ERR_SESSION_EXPIRED", lang) });
+      setResult({ ok: false, message: getSystemMessage("ERR_SESSION_EXPIRED", lang) });
       recordOutcome("error");
       return;
     }
@@ -265,7 +265,7 @@ export default function AlimentacaoScanPage() {
 
     if (!isOnline()) {
       addToOfflineQueue("alimentacao", consumptionData, participantName || undefined);
-      const successMsg = `${getPwaMessage("SUCCESS_REGISTERED", lang)} (Offline): ${participantName || ""}`;
+      const successMsg = `${getSystemMessage("SUCCESS_REGISTERED", lang)} (Offline): ${participantName || ""}`;
       setResult({
         ok: true,
         source: resultSource,
@@ -286,8 +286,8 @@ export default function AlimentacaoScanPage() {
       throw error;
     }
 
-    const prefix = method === "voucher" ? "Voucher · " : method === "manual" ? `${getPwaMessage("MANUAL_SEARCH", lang)} · ` : "";
-    const successMsg = `${prefix}${getPwaMessage("SUCCESS_REGISTERED", lang)}: ${participantName || ""}`;
+    const prefix = method === "voucher" ? "Voucher · " : method === "manual" ? `${getSystemMessage("MANUAL_SEARCH", lang)} · ` : "";
+    const successMsg = `${prefix}${getSystemMessage("SUCCESS_REGISTERED", lang)}: ${participantName || ""}`;
     
     setResult({
       ok: true,
@@ -308,7 +308,7 @@ export default function AlimentacaoScanPage() {
     if (!rawValue.trim()) return;
 
     if (!windowId) {
-      toast.error(getPwaMessage("ERR_WINDOW_REQUIRED", lang));
+      toast.error(getSystemMessage("ERR_WINDOW_REQUIRED", lang));
       return;
     }
 
@@ -329,7 +329,7 @@ export default function AlimentacaoScanPage() {
             is_offline: true,
             offline_at: new Date().toISOString()
           } as any);
-          toast.info(getPwaMessage("VOUCHER_OFFLINE_RECORDED", lang));
+          toast.info(getSystemMessage("VOUCHER_OFFLINE_RECORDED", lang));
           recordOutcome("ok");
           if (navigator.vibrate) navigator.vibrate(200);
           reopenIfContinuous();
@@ -375,7 +375,7 @@ export default function AlimentacaoScanPage() {
       } else {
         const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
         if (!resolved) {
-          const errorMsg = getPwaMessage("ERR_NOT_FOUND", lang);
+          const errorMsg = getSystemMessage("ERR_NOT_FOUND", lang);
           setResult({ ok: false, message: errorMsg, source: "qr" });
           toast.error(errorMsg);
           recordOutcome("error");
@@ -388,14 +388,14 @@ export default function AlimentacaoScanPage() {
       }
 
       if (!participantId) {
-        setResult({ ok: false, message: getPwaMessage("ERR_UNKNOWN", lang), source: "qr" });
+        setResult({ ok: false, message: getSystemMessage("ERR_UNKNOWN", lang), source: "qr" });
         recordOutcome("error");
         return;
       }
 
       await registerMealConsumption(participantId, participantName, method, "qr", foodRestrictions);
     } catch (err: unknown) {
-      setResult({ ok: false, message: `${getPwaMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}` });
+      setResult({ ok: false, message: `${getSystemMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}` });
       recordOutcome("error");
     }
   };
@@ -406,13 +406,13 @@ export default function AlimentacaoScanPage() {
     try {
       await registerMealConsumption(row.participant_id, row.full_name, "manual", "manual", null);
     } catch (err: unknown) {
-      setResult({ ok: false, message: `${getPwaMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}` });
+      setResult({ ok: false, message: `${getSystemMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}` });
       recordOutcome("error");
     }
   };
 
   return (
-    <PwaLayout backTo="/pwa/alimentacao" moduleTitle={getPwaMessage("SCAN_QR", lang)}>
+    <PwaLayout backTo="/pwa/alimentacao" moduleTitle={getSystemMessage("SCAN_QR", lang)}>
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
 
       <main className="relative mx-auto max-w-md space-y-4 p-4">
@@ -554,7 +554,7 @@ export default function AlimentacaoScanPage() {
               <div className="min-w-0">
                 {result.ok && (
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                    {result.source === "manual" ? getPwaMessage("MANUAL_SEARCH", lang) : getPwaMessage("QR_VALID", lang)}
+                    {result.source === "manual" ? getSystemMessage("MANUAL_SEARCH", lang) : getSystemMessage("QR_VALID", lang)}
                   </p>
                 )}
                 <span className="text-sm font-medium leading-snug">{result.message}</span>
