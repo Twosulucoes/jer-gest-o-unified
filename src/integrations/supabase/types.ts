@@ -3629,6 +3629,80 @@ export type Database = {
           },
         ]
       }
+      meal_window_patterns: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_time: string
+          event_id: string
+          event_stage_id: string | null
+          id: string
+          is_active: boolean
+          label: string | null
+          meal_type_id: string
+          meal_window_location_id: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_time: string
+          event_id: string
+          event_stage_id?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          meal_type_id: string
+          meal_window_location_id?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_time?: string
+          event_id?: string
+          event_stage_id?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          meal_type_id?: string
+          meal_window_location_id?: string | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_window_patterns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_window_patterns_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_window_patterns_meal_type_id_fkey"
+            columns: ["meal_type_id"]
+            isOneToOne: false
+            referencedRelation: "meal_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_window_patterns_meal_window_location_id_fkey"
+            columns: ["meal_window_location_id"]
+            isOneToOne: false
+            referencedRelation: "meal_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_windows: {
         Row: {
           created_at: string
