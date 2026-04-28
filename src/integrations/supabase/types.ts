@@ -7908,6 +7908,27 @@ export type Database = {
         Returns: Json
       }
       get_group_standings: { Args: { p_group_id: string }; Returns: Json }
+      get_participant_counts_by_delegation: {
+        Args: { p_event_id: string; p_stage_id?: string }
+        Returns: {
+          count: number
+          id: string
+        }[]
+      }
+      get_participant_counts_by_institution: {
+        Args: { p_event_id: string; p_stage_id?: string }
+        Returns: {
+          count: number
+          id: string
+        }[]
+      }
+      get_participant_counts_by_profile: {
+        Args: { p_event_id: string; p_stage_id?: string }
+        Returns: {
+          count: number
+          type: string
+        }[]
+      }
       get_participant_sport_history: {
         Args: { _participant_id: string }
         Returns: {
