@@ -1,5 +1,7 @@
 import { NavLink, Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import EventSwitcher from "@/components/admin/EventSwitcher";
+import { useEventContext } from "@/contexts/EventContext";
+
 import RequireActiveEvent from "@/components/admin/RequireActiveEvent";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";

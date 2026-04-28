@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useStageContext } from "@/contexts/StageContext";
+import { useEventContext } from "@/contexts/EventContext";
+
 import { usePwaNavigation } from "@/hooks/pwa/usePwaNavigation";
 import { PwaHeader } from "./PwaHeader";
 import { PwaScreen } from "./PwaScreen";
