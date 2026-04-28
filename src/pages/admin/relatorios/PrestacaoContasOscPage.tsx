@@ -61,6 +61,20 @@ export default function PrestacaoContasOscPage() {
   const credPct = r && r.totalParticipants > 0 ? Math.round((r.totalCredentialed / r.totalParticipants) * 100) : 0;
   const lodgePct = r && r.totalLodgingCapacity > 0 ? Math.round((r.totalLodgingOccupied / r.totalLodgingCapacity) * 100) : 0;
 
+  const [auditHistory, setAuditHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const fetchAuditHistory = async () => {
+    const { data: history } = await supabase
+      .from("audit_events")
+      .select("*")
+      .eq("table_name", "osc_reports")
+      .eq("record_id", eventId)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    setAuditHistory(history || []);
+  };
+
   const onPdf = async () => {
     if (!data) return;
     try {
@@ -73,15 +87,54 @@ export default function PrestacaoContasOscPage() {
         .eq("status", "approved")
         .not("osc_category", "is", null);
 
+      const evidences = evs || [];
+      const categories = ["infraestrutura", "atendimento", "competicao", "cerimonial"];
+      const counts = categories.reduce((acc, cat) => {
+        acc[cat] = evidences.filter(e => e.osc_category === cat).length;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const hasCriticalGap = Object.values(counts).some(c => c === 0);
+      const hasWarning = Object.values(counts).some(c => c < 2 || c > 4);
+
+      if (hasCriticalGap) {
+        const proceed = window.confirm("ATENÇÃO: Existem categorias sem NENHUMA foto. O relatório formal pode ser rejeitado. Deseja prosseguir mesmo assim?");
+        if (!proceed) return;
+      } else if (hasWarning) {
+        const proceed = window.confirm("AVISO: Algumas categorias não possuem entre 2 e 4 fotos (regra de conformidade). Deseja prosseguir?");
+        if (!proceed) return;
+      }
+
       await exportOscPdf(data, {
         eventName: activeEvent?.name || "Evento",
         branding: branding ?? null,
         oscConfig: oscConfig ?? null,
         generatedAt: new Date(),
         periodLabel,
-        evidences: evs || []
+        evidences
       });
-      toast.success("PDF gerado");
+
+      // Registrar auditoria
+      const { data: userData } = await supabase.auth.getUser();
+      await supabase.from("audit_events").insert({
+        table_name: "osc_reports",
+        record_id: eventId,
+        action: "generate_pdf",
+        created_by: userData.user?.id,
+        payload: {
+          event_name: activeEvent?.name,
+          photo_counts: counts,
+          stats: {
+            participants: data.resumo.totalParticipants,
+            matches: data.resumo.totalMatches,
+            meals: data.resumo.totalMeals
+          },
+          config_used: oscConfig
+        }
+      });
+
+      toast.success("PDF gerado e registrado na auditoria");
+      fetchAuditHistory();
     } catch (e: any) {
       toast.error("Erro ao gerar PDF", { description: e?.message });
     } finally { setExporting(null); }
