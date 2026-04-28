@@ -33,6 +33,7 @@ export interface StageDashboardData {
     meals_today: number;
     lodging_capacity: number;
     lodging_occupied: number;
+    unhandled_indisponibilities: number;
   };
   competicao: {
     by_sport: SportProgressRow[];
