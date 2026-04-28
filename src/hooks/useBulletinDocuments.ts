@@ -62,8 +62,30 @@ export function useBulletinDocuments(eventId: string) {
       queryClient.invalidateQueries({ queryKey: ["bulletin-documents", eventId] });
       toast.success("Solicitação de geração de boletim enviada com sucesso.");
     },
-    onError: (error: any) => {
-      toast.error(`Erro ao gerar boletim: ${error.message}`);
+    onError: async (error: any) => {
+      console.error("Bulletin generation error:", error);
+      
+      let errorMessage = "Ocorreu um erro inesperado.";
+      let description = error.message;
+
+      // Se for um erro da Edge Function com corpo JSON
+      if (error.context && typeof error.context.json === 'function') {
+        try {
+          const body = await error.context.json();
+          if (body.error) errorMessage = body.error;
+          if (body.details) description = body.details;
+        } catch (e) {
+          console.error("Failed to parse error body", e);
+        }
+      } else if (error.message?.includes("non-2xx")) {
+        errorMessage = "Falha na validação do boletim";
+        description = "A função retornou um erro. Geralmente isso ocorre quando não há resultados publicados para o período/etapa selecionada.";
+      }
+
+      toast.error(errorMessage, {
+        description: description,
+        duration: 5000,
+      });
     }
   });
 
