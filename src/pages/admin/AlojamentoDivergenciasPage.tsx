@@ -10,8 +10,6 @@ import {
   ArrowLeft, 
   Download, 
   Search,
-  Filter,
-  User,
   Building
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
@@ -55,9 +54,7 @@ export default function AlojamentoDivergenciasPage() {
 
       let result = data as any[];
 
-      // In a real scenario, we would join with lodging_presence_logs to find missing_presence
-      // For this implementation, we focus on unit_divergence and missing_checkin (status='allocated')
-      
+      // Filter based on selected divergence type
       if (typeFilter === "unit_divergence") {
         result = result.filter(o => o.divergence_notes && o.status === 'checked_in');
       } else if (typeFilter === "missing_checkin") {

@@ -7,7 +7,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, Building, DoorOpen, KeyRound, BedDouble, Users,
+  Plus, Pencil, Building, DoorOpen, KeyRound, BedDouble, Users, Moon, AlertTriangle, History, ClipboardList
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -215,16 +215,48 @@ export default function AlojamentoHubPage() {
         </Card>
       </div>
 
-      {/* Check-in shortcut */}
-      <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("ocupacao")}>
-        <CardContent className="flex items-center gap-3 p-4">
-          <KeyRound className="h-8 w-8 text-primary shrink-0" />
-          <div>
-            <p className="font-medium text-sm">Check-in / Check-out</p>
-            <p className="text-xs text-muted-foreground">Operação de hospedagem em tempo real</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Operations Shortcuts */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("ocupacao")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <KeyRound className="h-8 w-8 text-primary shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Check-in / Out</p>
+              <p className="text-xs text-muted-foreground">Operação real</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors border-amber-200 bg-amber-50/10" onClick={() => navigate("divergencias")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <AlertTriangle className="h-8 w-8 text-amber-500 shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Divergências</p>
+              <p className="text-xs text-muted-foreground">Relatório conflitos</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors border-purple-200 bg-purple-50/10" onClick={() => navigate("presenca")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <Moon className="h-8 w-8 text-purple-500 shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Presença Noturna</p>
+              <p className="text-xs text-muted-foreground">Reconciliação</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("relatorios")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <ClipboardList className="h-8 w-8 text-primary shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Relatórios</p>
+              <p className="text-xs text-muted-foreground">Exportação completa</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Locais + Quartos nested */}
       {isLoading ? (
