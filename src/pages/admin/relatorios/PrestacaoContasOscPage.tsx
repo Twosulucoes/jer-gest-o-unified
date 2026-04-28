@@ -140,19 +140,13 @@ export default function PrestacaoContasOscPage() {
     } finally { setExporting(null); }
   };
 
-  const onXlsx = async () => {
-    if (!data) return;
-    try {
-      setExporting("xlsx");
-      await exportOscXlsx(data, {
-        eventName: activeEvent?.name || "Evento",
-        generatedAt: new Date(),
-        periodLabel,
-      });
-      toast.success("Planilha gerada");
-    } catch (e: any) {
-      toast.error("Erro ao gerar XLSX", { description: e?.message });
-    } finally { setExporting(null); }
+  const getHistoryStatus = (entry: any) => {
+    const counts = entry.payload?.photo_counts || {};
+    const gaps = Object.values(counts).filter(c => (c as number) === 0).length;
+    if (gaps > 0) return { label: "Incompleto", color: "text-red-500" };
+    const warnings = Object.values(counts).filter(c => (c as number) < 2 || (c as number) > 4).length;
+    if (warnings > 0) return { label: "Com Alertas", color: "text-amber-500" };
+    return { label: "Conforme", color: "text-green-500" };
   };
 
   return (
@@ -168,6 +162,10 @@ export default function PrestacaoContasOscPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchAuditHistory(); }}>
+            <FileSpreadsheet className="h-4 w-4 mr-1.5" />
+            Histórico
+          </Button>
           <Link to="/admin/registros/configuracao-osc">
             <Button variant="outline" size="sm">
               <Settings className="h-4 w-4 mr-1.5" />
@@ -185,6 +183,39 @@ export default function PrestacaoContasOscPage() {
           </Button>
         </div>
       </header>
+
+      {showHistory && (
+        <Card className="animate-in fade-in slide-in-from-top-4">
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Histórico de Gerações</CardTitle></CardHeader>
+          <CardContent>
+            {auditHistory.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma geração registrada.</p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {auditHistory.map((entry) => {
+                  const status = getHistoryStatus(entry);
+                  return (
+                    <div key={entry.id} className="p-3 border rounded-lg space-y-2 text-xs">
+                      <div className="flex justify-between items-start">
+                        <span className="font-medium">{new Date(entry.created_at).toLocaleString("pt-BR")}</span>
+                        <span className={`font-semibold ${status.color}`}>{status.label}</span>
+                      </div>
+                      <div className="text-muted-foreground">
+                        {Object.entries(entry.payload?.photo_counts || {}).map(([k, v]) => (
+                          <div key={k} className="flex justify-between">
+                            <span className="capitalize">{k}:</span>
+                            <span>{v as number} foto(s)</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Indicadores */}
       <section>
