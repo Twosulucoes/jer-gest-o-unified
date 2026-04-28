@@ -312,14 +312,14 @@ const App = () => (
               <Route path="instituicoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><InstituicoesPage /></ProtectedRoute>} />
               <Route path="delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacoesPage /></ProtectedRoute>} />
               <Route path="delegacoes/:delegationId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacaoDetalhePage /></ProtectedRoute>} />
-              <Route path="importacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPage /></ProtectedRoute>} />
+              <Route path="importacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ImportacaoPage /></ProtectedRoute>} />
               <Route path="importacao/modelo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoModeloPage /></ProtectedRoute>} />
               <Route path="importacao/pendencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPendenciasPage /></ProtectedRoute>} />
               <Route path="importacao/catalogo" element={<Navigate to="/admin/regras" replace />} />
               <Route path="importacao/aliases" element={<ProtectedRoute allowedRoles={["super_admin"]}><ImportacaoAliasesPage /></ProtectedRoute>} />
               <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipantesPage /></ProtectedRoute>} />
               <Route path="participantes/historico" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><HistoricoBuscaPage /></ProtectedRoute>} />
-              <Route path="participantes/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
+              <Route path="participantes/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
               <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteDetalhePage /></ProtectedRoute>} />
               <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
               <Route path="credenciamento" element={<RedirectToEtapas />} />
@@ -401,7 +401,7 @@ const App = () => (
               <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
               <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
               <Route path="seed-logistica" element={<ProtectedRoute allowedRoles={["super_admin"]}><SeedLogisticaEtapaPage /></ProtectedRoute>} />
-              <Route path="clonar-logistica" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ClonarLogisticaPage /></ProtectedRoute>} />
+              <Route path="clonar-logistica" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ClonarLogisticaPage /></ProtectedRoute>} />
               <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["super_admin"]}><DebugPublicadosPage /></ProtectedRoute>} />
               <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["super_admin"]}><EmailTemplatesPage /></ProtectedRoute>} />
               {/* Protestos / Ocorrências — operacionais, redirecionam para Etapa */}
@@ -418,7 +418,7 @@ const App = () => (
               <Route path="ajuda" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
               <Route path="ajuda/chat" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
               <Route path="ajuda/manual" element={<ProtectedRoute><AjudaManualPage /></ProtectedRoute>} />
-              <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinksPage /></ProtectedRoute>} />
+              <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><LinksPage /></ProtectedRoute>} />
               <Route path="links/novo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
               <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
               <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />

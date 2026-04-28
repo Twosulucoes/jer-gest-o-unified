@@ -1,10 +1,10 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import { getOperationalRedirect } from "@/config/accessControl";
 
 const Index = () => {
   const { user, roles, loading } = useAuth();
-  const { getOperationalRedirect } = await import("@/config/accessControl"); // This is sync actually, just fixing the import flow below if needed
 
   if (loading) {
     return (
