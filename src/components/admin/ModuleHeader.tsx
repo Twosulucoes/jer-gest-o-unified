@@ -49,7 +49,7 @@ export default function ModuleHeader({
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           {actions}
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
-            <Link to={`/admin/mapa?route=${encodeURIComponent(route)}`}>
+            <Link to={`/admin/sistema/diagnostico?route=${encodeURIComponent(route)}`}>
               <Map className="mr-1.5 h-3.5 w-3.5" />
               <span className="hidden sm:inline">Ver no Mapa</span>
             </Link>
