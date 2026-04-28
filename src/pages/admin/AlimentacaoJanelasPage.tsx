@@ -450,6 +450,38 @@ export default function AlimentacaoJanelasPage() {
         onSubmit={handleSubmit}
         isPending={createMut.isPending || updateMut.isPending}
       />
+
+      <AlertDialog open={reportOpen} onOpenChange={setReportOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Relatório de Geração</AlertDialogTitle>
+            <AlertDialogDescription>
+              {report?.created > 0 
+                ? `${report.created} novas janelas foram geradas como INATIVAS.`
+                : "Nenhuma nova janela foi criada."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-[300px] overflow-y-auto space-y-2 my-4">
+            {report?.details.map((d: any, i: number) => (
+              <div key={i} className="flex items-center justify-between p-2 rounded border text-sm">
+                <span className="font-medium">{d.type}</span>
+                <div className="flex items-center gap-2">
+                  {d.status === 'created' ? (
+                    <Badge variant="default" className="bg-green-600 hover:bg-green-600">Criada</Badge>
+                  ) : d.status === 'skipped' ? (
+                    <Badge variant="secondary">Já existe</Badge>
+                  ) : (
+                    <Badge variant="destructive">Falhou</Badge>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setReportOpen(false)}>Entendido</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
