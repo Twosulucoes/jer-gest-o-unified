@@ -396,3 +396,44 @@ O Passo 4 da Fase 4 está funcional mas necessita de dois ajustes técnicos ante
 396: - `src/pages/pwa/PwaSelectionFallback.tsx`: Lógica de trava expandida e retorno contextual.
 397: - `src/components/pwa/PwaHeader.tsx`: Passagem de estado na navegação.
 398: - `src/components/pwa/PwaLayout.tsx`: Passagem de estado no switcher e atualização do indicador visual de sincronização.
+
+## 15. Mini-auditoria de Não Regressão — Fase 4 Passo 4 (2026-04-28)
+
+Confirmação tática dos ajustes de trava de fila offline e retorno contextual.
+
+### Passo 1 — Verificação da Trava Estendida
+- **Evidência:** O componente `PwaSelectionFallback.tsx` agora importa `getAlojamentoQueue` e inclui sua contagem na soma de `pendingItems`.
+- **Detalhamento Visual:** O componente renderiza um `ul` com o breakdown das pendências (`pendingBreakdown`), identificando claramente "Alojamento", "Vouchers" e "Operações (Alimentação/Transporte)".
+- **Cenários Testados (Análise):**
+  - **Alojamento com pendências:** Trava bloqueia com mensagem específica e lista "Alojamento: N". **[CONFORME]**
+  - **Alimentação/Transporte com pendências:** Trava bloqueia e lista "Operações...: N". **[CONFORME]**
+  - **Voucher pendente:** Trava bloqueia (transversal). **[CONFORME]**
+  - **Sem pendências:** Fluxo de troca segue normalmente. **[CONFORME]**
+- **Classificação:** CONFORME.
+
+### Passo 2 — Exposição da Contagem do useAlojamentoOffline
+- **Evidência:** O hook `useAlojamentoOffline.ts` expõe a função pura `getAlojamentoQueue()` (padrão coerente com `getOfflineQueue` e `getVoucherQueue`), permitindo o consumo pela trava sem interferir no estado interno do hook usado pelo PWA Alojamento.
+- **Uso Primário:** O hook continua mantendo seu estado local sincronizado com o localStorage para o uso no módulo Alojamento.
+- **Classificação:** CONFORME.
+
+### Passo 3 — Preservação da Origem
+- **Evidência:** 
+  - O `PwaLayout.tsx` e `PwaHeader.tsx` passam `state: { from: location }` ao navegar para `/pwa/configuracao`.
+  - O `PwaSelectionFallback.tsx` recupera a origem via `location.state?.from?.pathname || "/pwa"`.
+  - Ao confirmar, o `navigate(from)` é chamado, retornando ao PWA de origem.
+- **Cenários Testados (Análise):**
+  - **Alimentação/Transporte/Alojamento:** Retornam corretamente ao módulo de origem após a troca. **[CONFORME]**
+  - **Acesso direto/Fallback:** Sem `state`, retorna para `/pwa` (comportamento seguro esperado). **[CONFORME]**
+- **Classificação:** CONFORME.
+
+### Passo 4 — Auditoria da Troca
+- **Evidência:** O bloco `supabase.from("audit_events").insert` em `PwaSelectionFallback.tsx` registra `from_path`, `is_voluntary`, e os IDs de origem/destino.
+- **Classificação:** CONFORME.
+
+### Passo 5 — Não Regressão Mínima
+- **useAlojamentoOffline:** Funções de Check-in/out e Sincronização automática permanecem intactas. **[SEM REGRESSÃO]**
+- **Travas Alimentação/Transporte:** Mantidas e unificadas no breakdown visual. **[SEM REGRESSÃO]**
+- **Acesso à Configuração:** Descobrível via Footer (PwaLayout) e Header em todos os módulos. **[SEM REGRESSÃO]**
+
+### Passo 6 — Veredito
+**CONFIRMADA.** A correção tática atende integralmente aos requisitos de segurança operacional e usabilidade de navegação, unificando as travas offline e preservando o contexto de trabalho do operador. O sistema está pronto para a auditoria de fechamento da Fase 4.
