@@ -8,5 +8,5 @@
 
 ### Módulos Operacionais PWA:
 - **🏠 Alojamento:** Controle total de Check-in, Check-out e Presença Noturna com validação rigorosa e resiliência offline.
-- **🍽️ Alimentação:** Scan de consumos, recusas estruturadas, suporte a vouchers e motor de divergências com exportação para buffet.
+- **🍽️ Alimentação:** Scan de consumos, motor de previsão de demanda para cozinha, alertas de capacidade, recusas estruturadas e motor de divergências.
 - **🚌 Transporte:** (Operacional) Controle de embarque e listas de passageiros por viagem.
