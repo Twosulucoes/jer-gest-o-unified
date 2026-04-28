@@ -1,9 +1,9 @@
 # Auditoria do Módulo de Árbitros — JER Gestão
 
-> **Última Atualização:** 2026-04-28 (Fase 3 Concluída)
+> **Última Atualização:** 2026-04-28 (Fase 4 Concluída)
 > **Estado:** ✅ PLENAMENTE IMPLEMENTADO
 
-Este relatório consolida a implementação das quatro fases (0 a 3) da reformulação do módulo de Árbitros do sistema JER Gestão.
+Este relatório consolida a implementação das cinco fases (0 a 4) da reformulação do módulo de Árbitros do sistema JER Gestão.
 
 ---
 
@@ -24,6 +24,11 @@ Este relatório consolida a implementação das quatro fases (0 a 3) da reformul
 ### Fase 3: Apuração de Atividades para Remuneração
 - **Status:** ✅ Concluído
 - **Entregas:** Configuração de tipo de remuneração (Diária vs Partida) por modalidade e etapa. Apuração automática baseada em atuação comprovada no PWA Ao Vivo. Exportação de relatório consolidado para o setor financeiro.
+
+
+### Fase 4: PWA Ao Vivo — Minha Agenda e Confirmação
+- **Status:** ✅ Concluído
+- **Entregas:** Área "Minha Agenda" no PWA para árbitros confirmarem presença ou reportarem indisponibilidade em tempo real. Alerta visual global no painel administrativo da etapa para gestão de faltas críticas.
 
 ---
 
