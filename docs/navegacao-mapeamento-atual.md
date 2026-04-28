@@ -2,6 +2,8 @@
 
 Este documento descreve o estado real da navegação do sistema JER Gestão, consolidando rotas, menus, permissões e componentes de layout em 28 de abril de 2026.
 
+> **Status:** Fase 1 da Reformulação da Navegação concluída (Limpeza do Web Administrativo e Reforço do Super Admin).
+
 ## 1. Visão Geral da Arquitetura de Navegação
 
 O sistema utiliza `react-router-dom` (v6) para gestão de rotas, estruturado em três grandes áreas:
@@ -25,19 +27,19 @@ A navegação principal ocorre no componente `AdminLayout`, que utiliza uma barr
 | | Participantes | `/admin/participantes` | `admin`, `secretaria`, `coord_tecnica` |
 | | Pessoas Eventuais | `/admin/pessoas/eventuais` | `admin`, `secretaria`, `coord_tecnica` |
 | | Delegações (Escolas) | `/admin/delegacoes` | `admin`, `secretaria`, `coord_tecnica` |
-| | Importação | `/admin/importacao` | `super_admin`, `admin`, `secretaria` |
+| | Importação | `/admin/importacao` | `admin`, `secretaria` (Item movido para Super Admin) |
 | **Relatórios** | Central de Relatórios | `/admin/relatorios` | `admin`, `secretaria`, `coord_tecnica` |
 | | Boletins | `/admin/relatorios/boletins` | `admin`, `secretaria`, `coord_tecnica` |
 | | Quadro de Medalhas | `/admin/relatorios/quadro-medalhas` | `admin`, `secretaria`, `coord_tecnica` |
 | **Logística** | Logística Consolidada | `/admin/etapas` | `admin`, `secretaria`, `coord_tecnica` |
-| | Clonar Logística | `/admin/clonar-logistica` | `super_admin`, `admin`, `secretaria` |
-| **Acessos** | Usuários e Perfis | `/admin/acessos/usuarios` | `super_admin`, `admin`, `secretaria` |
-| | Acessos e Vínculos | `/admin/acessos/delegacoes` | `super_admin`, `admin`, `secretaria` |
-| | Auditoria PWA | `/admin/acessos/pwa` | `super_admin`, `admin`, `secretaria` |
-| | Evidências OSC | `/admin/evidencias-osc` | Múltiplas roles operacionais |
+| | Clonar Logística | `/admin/clonar-logistica` | `admin`, `secretaria` (Item movido para Super Admin) |
+| **Acessos** | Usuários e Perfis | `/admin/acessos/usuarios` | `admin`, `secretaria` (Item movido para Super Admin) |
+| | Acessos e Vínculos | `/admin/acessos/delegacoes` | `admin`, `secretaria` |
+| | Auditoria PWA | `/admin/acessos/pwa` | `admin`, `secretaria` (Item movido para Super Admin) |
+| | Evidências OSC | `/admin/evidencias-osc` | `admin`, `secretaria`, `coord_tecnica` (Visibilidade restrita por módulo para outros) |
 | **Competição** | Painel Competição | `/admin/competicao/painel` | `admin`, `secretaria`, `coord_tecnica` |
 | | Central Competição | `/admin/competicao/central` | `admin`, `secretaria`, `coord_tecnica` |
-| **Arbitragem** | Equipe Arbitragem | `/admin/competicao/arbitragem?tab=officials` | Operacional + Arbitragem |
+| **Arbitragem** | Equipe Arbitragem | `/admin/competicao/arbitragem?tab=officials` | `admin`, `secretaria`, `coord_tecnica` |
 | | Protestos (CDE) | `/admin/protestos` | `admin`, `secretaria`, `cde` |
 | **Config** | Regras do Evento | `/admin/regras` | `admin`, `secretaria`, `coord_tecnica` |
 | | Modalidades | `/admin/modalidades` | `admin`, `secretaria`, `coord_tecnica` |
@@ -60,6 +62,10 @@ Acessível via `/super`, utiliza o `SuperAdminLayout`.
 | Logs | `/super/logs` | Auditoria de sistema. |
 | Permissões | `/super/permissoes` | Gestão fina de RLS e claims. |
 | Diagnóstico | `/super/diagnostico` | Verificação de integridade do sistema. |
+| Clonar Logística | `/admin/clonar-logistica` | Função de plataforma migrada. |
+| Importação | `/admin/importacao` | Função de plataforma migrada. |
+| Usuários e Perfis | `/admin/acessos/usuarios` | Gestão de contas e perfis. |
+| Acessos PWA | `/admin/acessos/pwa` | Auditoria técnica de uso. |
 
 ---
 
@@ -104,14 +110,14 @@ A navegação PWA começa em `/pwa` (`PwaLandingPage`), onde o usuário selecion
 
 | Perfil | Admin Web | Super Admin | PWAs Operacionais |
 | :--- | :---: | :---: | :---: |
-| `super_admin` | Sim (Total) | Sim | Sim (Total) |
+| `super_admin` | Sim (Suporte) | Sim | Sim (Total) |
 | `admin` | Sim (Total) | Não | Sim (Total) |
 | `secretaria` | Sim (Parcial) | Não | Sim (Limitado) |
-| `transporte` | Não | Não | Somente Transporte |
-| `alimentacao` | Não | Não | Somente Alimentação |
-| `alojamento` | Não | Não | Somente Alojamento |
+| `transporte` | Bloqueado (403/Redirect) | Não | Somente Transporte |
+| `alimentacao` | Bloqueado (403/Redirect) | Não | Somente Alimentação |
+| `alojamento` | Bloqueado (403/Redirect) | Não | Somente Alojamento |
 | `coordenador_modalidade` | Somente Painel Coord. | Não | Somente Resultados |
-| `arbitragem` / `mesario` | Não | Não | Somente Ao Vivo |
+| `arbitragem` / `mesario` | Bloqueado (403/Redirect) | Não | Somente Ao Vivo |
 
 ---
 
