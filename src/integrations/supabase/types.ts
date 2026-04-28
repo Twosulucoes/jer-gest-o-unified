@@ -3328,29 +3328,41 @@ export type Database = {
       }
       match_user_assignments: {
         Row: {
+          acceptance_status: string | null
           created_at: string
           created_by: string | null
           event_id: string
           id: string
+          indisponibility_reason: string | null
           match_id: string
+          notified_at: string | null
+          reported_at: string | null
           role: string
           user_id: string
         }
         Insert: {
+          acceptance_status?: string | null
           created_at?: string
           created_by?: string | null
           event_id: string
           id?: string
+          indisponibility_reason?: string | null
           match_id: string
+          notified_at?: string | null
+          reported_at?: string | null
           role?: string
           user_id: string
         }
         Update: {
+          acceptance_status?: string | null
           created_at?: string
           created_by?: string | null
           event_id?: string
           id?: string
+          indisponibility_reason?: string | null
           match_id?: string
+          notified_at?: string | null
+          reported_at?: string | null
           role?: string
           user_id?: string
         }
@@ -7805,6 +7817,18 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_unhandled_referee_indisponibilities: {
+        Args: { p_etapa_id: string }
+        Returns: {
+          assignment_id: string
+          is_critical: boolean
+          match_id: string
+          match_time: string
+          reason: string
+          referee_name: string
+          reported_at: string
+        }[]
       }
       get_user_delegation_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
