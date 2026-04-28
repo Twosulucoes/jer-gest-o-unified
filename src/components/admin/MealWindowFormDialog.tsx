@@ -27,6 +27,7 @@ const windowSchema = z.object({
   end_time: z.string().min(1, "Hora fim obrigatória"),
   location: z.string().optional().or(z.literal("")),
   meal_window_location_id: z.string().optional().nullable(),
+  capacity: z.coerce.number().min(0).optional().nullable(),
   is_active: z.boolean(),
   restrict_eligibility: z.boolean(),
 });
@@ -60,6 +61,7 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
       end_time: "", 
       location: "", 
       meal_window_location_id: null,
+      capacity: null,
       is_active: true,
       restrict_eligibility: false
     },
@@ -104,6 +106,7 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
         end_time: mealWindow.end_time?.slice(0, 5) ?? "",
         location: mealWindow.location ?? "",
         meal_window_location_id: mealWindow.meal_window_location_id ?? null,
+        capacity: mealWindow.capacity ?? null,
         is_active: mealWindow.is_active,
         restrict_eligibility: false,
       });
@@ -116,6 +119,7 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
         end_time: "", 
         location: "", 
         meal_window_location_id: null,
+        capacity: null,
         is_active: true,
         restrict_eligibility: false
       });
@@ -265,6 +269,14 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
                   </FormItem>
                 )} />
               </div>
+              <FormField control={form.control} name="capacity" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Capacidade da Janela (opcional)</FormLabel>
+                  <FormControl><Input type="number" placeholder="Limite de refeições" {...field} value={field.value || ""} /></FormControl>
+                  <FormDescription>Limite informativo para o operador no PWA</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <FormField control={form.control} name="is_active" render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-md border p-3">
                   <div className="space-y-0.5">

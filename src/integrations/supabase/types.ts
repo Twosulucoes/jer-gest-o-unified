@@ -3943,6 +3943,7 @@ export type Database = {
       }
       meal_windows: {
         Row: {
+          capacity: number | null
           created_at: string
           end_time: string
           event_id: string
@@ -3960,6 +3961,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          capacity?: number | null
           created_at?: string
           end_time: string
           event_id: string
@@ -3977,6 +3979,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          capacity?: number | null
           created_at?: string
           end_time?: string
           event_id?: string
