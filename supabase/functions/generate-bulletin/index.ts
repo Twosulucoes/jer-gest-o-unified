@@ -57,6 +57,16 @@ Deno.serve(async (req) => {
     const { data: matchesRaw, error: queryErr } = await query;
     if (queryErr) throw queryErr;
     matches = matchesRaw || [];
+    
+    if (matches.length === 0) {
+      return new Response(JSON.stringify({ 
+        error: "Nenhum resultado publicado foi encontrado para os filtros selecionados.",
+        details: "O boletim só pode ser gerado para resultados com status 'publicado'. Certifique-se de validar e publicar os resultados na Central de Resultados antes de tentar novamente."
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // 3. Generate PDF with jsPDF
     const doc = new jsPDF();
@@ -230,8 +240,12 @@ Deno.serve(async (req) => {
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
+    console.error("Error generating bulletin:", err);
+    return new Response(JSON.stringify({ 
+      error: err.message || "Erro interno ao gerar boletim",
+      details: "Se o problema persistir, verifique as permissões de storage ou entre em contato com o suporte."
+    }), {
+      status: err.status || 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

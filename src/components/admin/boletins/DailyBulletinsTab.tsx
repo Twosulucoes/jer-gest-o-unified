@@ -81,6 +81,10 @@ export default function DailyBulletinsTab({ eventId }: { eventId: string }) {
               Gerar Boletim
             </Button>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-3 italic">
+            * O boletim só incluirá resultados com status <strong>"publicado"</strong>. 
+            Vá até a Central de Resultados para validar e publicar partidas.
+          </p>
         </CardContent>
       </Card>
 
