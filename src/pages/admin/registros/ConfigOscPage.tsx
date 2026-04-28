@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useActiveEvent } from "@/hooks/useActiveEvent";
+import { useEventContext } from "@/contexts/EventContext";
 import { useEventOscConfig } from "@/hooks/useEventOscConfig";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { RotateCcw, Save, Info } from "lucide-react";
-import AdminLayout from "@/components/layouts/AdminLayout";
+import AdminLayout from "@/components/AdminLayout";
 
 export default function ConfigOscPage() {
-  const { eventId, eventName } = useActiveEvent();
+  const { activeEventId: eventId, activeEvent } = useEventContext();
+  const eventName = activeEvent?.name;
   const { data: config, isLoading, upsertMutation, defaults } = useEventOscConfig(eventId);
   
   const [formData, setFormData] = useState<any>({});
