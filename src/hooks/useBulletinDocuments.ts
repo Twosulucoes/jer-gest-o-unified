@@ -65,26 +65,29 @@ export function useBulletinDocuments(eventId: string) {
     onError: async (error: any) => {
       console.error("Bulletin generation error:", error);
       
-      let errorMessage = "Ocorreu um erro inesperado.";
+      let errorMessage = "Erro na geração do boletim";
       let description = error.message;
 
-      // Se for um erro da Edge Function com corpo JSON
-      if (error.context && typeof error.context.json === 'function') {
-        try {
+      // Tenta extrair o erro padronizado (code, field, error, details)
+      try {
+        if (error.context && typeof error.context.json === 'function') {
           const body = await error.context.json();
           if (body.error) errorMessage = body.error;
           if (body.details) description = body.details;
-        } catch (e) {
-          console.error("Failed to parse error body", e);
+          
+          // Log extra para depuração técnica se necessário
+          if (body.code) console.warn(`[${body.code}] Error on field: ${body.field || 'N/A'}`);
+        } else if (error.message?.includes("non-2xx")) {
+          errorMessage = "Falha na validação";
+          description = "A função retornou um erro. Geralmente isso ocorre quando não há resultados publicados.";
         }
-      } else if (error.message?.includes("non-2xx")) {
-        errorMessage = "Falha na validação do boletim";
-        description = "A função retornou um erro. Geralmente isso ocorre quando não há resultados publicados para o período/etapa selecionada.";
+      } catch (e) {
+        console.error("Failed to parse error body", e);
       }
 
       toast.error(errorMessage, {
         description: description,
-        duration: 5000,
+        duration: 6000,
       });
     }
   });
