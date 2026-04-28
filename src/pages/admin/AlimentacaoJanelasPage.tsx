@@ -235,9 +235,14 @@ export default function AlimentacaoJanelasPage() {
           <p className="text-sm text-muted-foreground mt-1">Gestão de janelas de serviço de alimentação</p>
         </div>
         {canWrite && selectedEventId && (
-          <Button onClick={() => { setEditing(null); setDialogOpen(true); }} disabled={!mealTypes.length}>
-            <Plus className="mr-2 h-4 w-4" />Nova janela
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={generateDefaultWindows} disabled={!mealTypes.length || isGenerating || !filterDate}>
+              <Sparkles className="mr-2 h-4 w-4" />Gerar Padrão
+            </Button>
+            <Button onClick={() => { setEditing(null); setDialogOpen(true); }} disabled={!mealTypes.length}>
+              <Plus className="mr-2 h-4 w-4" />Nova janela
+            </Button>
+          </div>
         )}
       </div>
 
