@@ -77,6 +77,8 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
         slug: string;
         kind: string;
         status: string;
+        starts_at: string | null;
+        ends_at: string | null;
       } | null;
     },
   });
