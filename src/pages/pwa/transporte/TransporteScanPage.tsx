@@ -24,6 +24,7 @@ import {
 } from "@/lib/pwaScan";
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import PwaLayout from "@/components/pwa/PwaLayout";
 import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
@@ -238,13 +239,8 @@ export default function TransporteScanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <PwaLayout backTo={tripId ? `/pwa/transporte/embarque?tripId=${tripId}` : "/pwa/transporte"} moduleTitle="Escanear QR">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
-      <PwaHeader
-        title="Escanear QR"
-        icon={ScanLine}
-        backTo={tripId ? `/pwa/transporte/embarque?tripId=${tripId}` : "/pwa/transporte"}
-      />
 
       <main className="relative mx-auto max-w-md space-y-4 p-4">
         <OfflineSyncStatus />
@@ -347,6 +343,6 @@ export default function TransporteScanPage() {
         onScan={handleScan}
         title="Escanear QR"
       />
-    </div>
+    </PwaLayout>
   );
 }
