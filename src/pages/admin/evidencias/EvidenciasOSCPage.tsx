@@ -120,10 +120,18 @@ export default function EvidenciasOSCPage() {
     onError: (e: any) => toast.error("Erro ao remover: " + e.message),
   });
 
-  const filteredEvidences = evidences.filter((e: any) => 
-    e.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.file_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEvidences = evidences.filter((e: any) => {
+    // Hide evidences from other modules if the user is not admin/secretaria
+    if (!isAdminOrSecretaria) {
+      if (e.module === 'alimentacao' && !hasRole('alimentacao')) return false;
+      if (e.module === 'alojamento' && !hasRole('alojamento')) return false;
+      if (e.module === 'transporte' && !hasRole('transporte')) return false;
+      if (e.module === 'competicao' && !hasRole('coordenacao_tecnica')) return false;
+    }
+
+    return e.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           e.file_name?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const stats = {
     total: evidences.length,

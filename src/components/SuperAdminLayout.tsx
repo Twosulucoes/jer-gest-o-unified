@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   LayoutDashboard, Calendar, LogOut, Menu, X, ScrollText, Settings,
   ChevronsLeft, ChevronsRight, User, ChevronLeft, Activity, BookOpen, LifeBuoy, DatabaseZap,
-  ShieldCheck, Database as DatabaseIcon, Info, CheckCircle, Layers,
+  ShieldCheck, Database as DatabaseIcon, Info, CheckCircle, Layers, KeyRound, Upload, Monitor,
 } from "lucide-react";
 import { useState } from "react";
 import { brand } from "@/theme/brand";
@@ -36,6 +36,10 @@ const navItems: NavItem[] = [
   { label: "Central de Dados", to: "/super/dados", icon: <DatabaseIcon className="h-4 w-4" /> },
   { label: "Diagnóstico Sistema", to: "/super/diagnostico", icon: <Info className="h-4 w-4" /> },
   { label: "Validador de Schema", to: "/super/validador", icon: <CheckCircle className="h-4 w-4" /> },
+  { label: "Clonar Logística", to: "/admin/clonar-logistica", icon: <Layers className="h-4 w-4" /> },
+  { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" /> },
+  { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" /> },
+  { label: "Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" /> },
   { label: "Vínculos de Importação", to: "/admin/importacao/aliases", icon: <Layers className="h-4 w-4" /> },
 ];
 

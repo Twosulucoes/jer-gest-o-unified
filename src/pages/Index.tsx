@@ -1,9 +1,10 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import { getOperationalRedirect } from "@/config/accessControl";
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, roles, loading } = useAuth();
 
   if (loading) {
     return (
@@ -14,6 +15,13 @@ const Index = () => {
   }
 
   if (user) {
+    if (roles.includes("super_admin")) {
+      return <Navigate to="/super" replace />;
+    }
+    const opTarget = getOperationalRedirect(roles);
+    if (opTarget) {
+      return <Navigate to={opTarget} replace />;
+    }
     return <Navigate to="/admin" replace />;
   }
 
