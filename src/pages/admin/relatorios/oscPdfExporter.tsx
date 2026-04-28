@@ -91,10 +91,10 @@ function OscDocument({ data, meta }: { data: OscData; meta: Meta }) {
           <Text style={s.sectionTitle}>4. Evidências Fotográficas</Text>
           <View style={s.evidenceGrid}>
             {evs.map((ev, i) => (
-              <View key={i} style={s.evidenceCard}>
+              <View key={i} style={s.evidenceCard} wrap={false}>
                 <Image src={ev.file_url} style={s.evidenceImg} />
-                <Text style={s.evidenceLabel}>{ev.caption || ev.description || "Sem legenda"}</Text>
-                <Text style={[s.evidenceLabel, { color: "#888" }]}>Local: {ev.location_name || "—"} | Data: {ev.photo_at ? new Date(ev.photo_at).toLocaleDateString() : "—"}</Text>
+                <Text style={s.evidenceLabel}>{ev.osc_category?.toUpperCase() || "GERAL"} - {ev.caption || ev.description || "Sem legenda"}</Text>
+                <Text style={[s.evidenceLabel, { color: "#888" }]}>Local: {ev.location_name || "—"} | Data: {ev.photo_at ? new Date(ev.photo_at).toLocaleDateString("pt-BR") : "—"}</Text>
               </View>
             ))}
           </View>
