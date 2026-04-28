@@ -28,6 +28,17 @@ export async function rpcCheckout(deviceId: string, token: string, locationId: s
   return data as Record<string, any>;
 }
 
+export async function rpcRegisterPresence(deviceId: string, token: string, unitId: string, mode = "person_qr") {
+  const { data, error } = await supabase.rpc("pwa_lodging_register_presence" as any, {
+    p_device_id: deviceId,
+    p_token: token,
+    p_unit_id: unitId,
+    p_mode: mode,
+  });
+  if (error) throw error;
+  return data as Record<string, any>;
+}
+
 export async function rpcAssignBed(deviceId: string, personToken: string, bedToken: string) {
   const { data, error } = await supabase.rpc("pwa_assign_bed" as any, {
     p_device_id: deviceId,
@@ -75,4 +86,13 @@ export function getSelectedFacility(): string | null {
 
 export function setSelectedFacility(id: string) {
   localStorage.setItem("jer_alj_facility_id", id);
+}
+
+export function getSelectedUnit(): string | null {
+  return localStorage.getItem("jer_alj_unit_id");
+}
+
+export function setSelectedUnit(id: string | null) {
+  if (id) localStorage.setItem("jer_alj_unit_id", id);
+  else localStorage.removeItem("jer_alj_unit_id");
 }

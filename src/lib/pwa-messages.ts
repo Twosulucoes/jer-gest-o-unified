@@ -54,7 +54,11 @@ export const PWA_MESSAGE_CODES = [
   "SYNCING",
   "SYNC_SUCCESS",
   "SYNC_CONFLICTS",
-  "VOUCHER_OFFLINE_RECORDED"
+  "VOUCHER_OFFLINE_RECORDED",
+  "GENDER_MISMATCH",
+  "CAPACITY_FULL",
+  "CAPACITY_NOT_DEFINED",
+  "PRESENCE_SUCCESS"
 ] as const;
 
 export type PwaMessageCode = typeof PWA_MESSAGE_CODES[number];
@@ -277,6 +281,22 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
   VOUCHER_OFFLINE_RECORDED: {
     pt: "Voucher registrado offline. Sincronize quando houver internet.",
     es: "Voucher registrado offline. Sincronice cuando haya internet.",
+  },
+  GENDER_MISMATCH: {
+    pt: "Gênero incompatível com a unidade",
+    es: "Género incompatible con la unidad",
+  },
+  CAPACITY_FULL: {
+    pt: "Unidade lotada",
+    es: "Unidad llena",
+  },
+  CAPACITY_NOT_DEFINED: {
+    pt: "Capacidade não definida (solicite à coordenação)",
+    es: "Capacidad no definida (solicite a la coordinación)",
+  },
+  PRESENCE_SUCCESS: {
+    pt: "Presença registrada!",
+    es: "¡Presencia registrada!",
   },
 };
 
