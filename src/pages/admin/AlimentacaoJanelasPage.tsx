@@ -27,7 +27,7 @@ import { useStageScope } from "@/hooks/useStageScope";
 
 export default function AlimentacaoJanelasPage() {
   const qc = useQueryClient();
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
