@@ -54,6 +54,8 @@ import AlimentacaoDashboardPage from "./pages/admin/AlimentacaoDashboardPage";
 import AlimentacaoPrevisaoPage from "./pages/admin/AlimentacaoPrevisaoPage";
 import AlimentacaoPadroesPage from "./pages/admin/AlimentacaoPadroesPage";
 import AlojamentoHubPage from "./pages/admin/AlojamentoHubPage";
+import AlojamentoPresencaPage from "./pages/admin/AlojamentoPresencaPage";
+import AlojamentoDivergenciasPage from "./pages/admin/AlojamentoDivergenciasPage";
 import AlojamentoLocaisPage from "./pages/admin/AlojamentoLocaisPage";
 import AlojamentoUnidadesPage from "./pages/admin/AlojamentoUnidadesPage";
 import AlojamentoOcupacaoPage from "./pages/admin/AlojamentoOcupacaoPage";

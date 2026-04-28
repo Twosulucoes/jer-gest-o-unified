@@ -64,7 +64,23 @@ O sistema foi unificado no esquema `public`:
 2. **Integração com Alimentação**: Bloqueio opcional de refeições baseado no status de alojamento.
 
 ---
+## 6. Relatório de Entrega (Fase 3)
+
+| Frente | Status | Detalhe |
+|:---|:---:|:---|
+| **Inteligência de Presença** | ✅ Pleno | RPC valida check-in ativo e unidade correta com bloqueios. |
+| **Definição de Noite** | ✅ Pleno | Ciclo operacional 18h-06h consolidado na lógica de duplicidade. |
+| **Painel de Reconciliação** | ✅ Pleno | Tela admin exibe Presentes, Ausentes e Sem Check-in por unidade. |
+| **Relatório de Divergências** | ✅ Pleno | Consolidação de unidade divergente e pendências de check-in. |
+| **Visibilidade de Faltosos (PWA)** | ✅ Pleno | Operador vê lista de quem "deveria estar mas não chegou" na unidade. |
+
+### 6.1 Critérios Aplicados
+- **Noite Operacional:** Das 18:00 às 06:00 do dia seguinte. Registros nesta janela são considerados da mesma "noite".
+- **Faltoso da Unidade:** Pessoa com status `allocated` (alocação planejada) mas sem `checked_in`.
+
+---
 ## Histórico de Auditorias
+- **2024-04-28 (Noite II):** Fase 3 Concluída. Inteligência, Relatórios e Reconciliação.
 - **2026-04-28 (Noite):** Fase 2 Concluída. Granularidade, Gênero e Presença implementados.
 - **2026-04-28 (Tarde):** Unificação confirmada (Fase 1).
 - **2026-04-28 (Manhã):** Auditoria inicial completa.
