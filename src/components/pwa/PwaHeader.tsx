@@ -77,7 +77,7 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
             </p>
             {(subtitle || activeStage) && (
               <button 
-                onClick={() => navigate("/pwa/configuracao")}
+                onClick={() => navigate("/pwa/configuracao", { state: { from: location } })}
                 className="truncate text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors active:scale-95"
               >
                 {activeStage && (
