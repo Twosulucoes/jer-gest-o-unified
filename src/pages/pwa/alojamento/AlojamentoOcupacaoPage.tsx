@@ -17,7 +17,7 @@ import {
   occupancyBarClass,
   occupancyTone,
 } from "@/components/pwa/PwaDashboardPrimitives";
-import { Building, ScanLine, Search, X, Users } from "lucide-react";
+import { Building, ScanLine, Search, X, Users, ChevronRight } from "lucide-react";
 
 interface RoomInfo {
   id: string;
@@ -238,46 +238,60 @@ export default function AlojamentoOcupacaoPage() {
             </Card>
           ) : (
             blockSummaries.map(({ block, cap, occ, pct }) => (
-              <Card
-                key={block.id}
-                className="overflow-hidden border-border/60 bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all active:scale-[0.99] rounded-2xl"
-              >
-                <CardContent className="space-y-3 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate font-bold text-foreground text-base">{block.name}</p>
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
-                        {genderLabel[block.gender_policy] || block.gender_policy}
-                      </p>
+              <div key={block.id} className="space-y-3">
+                <Card className="overflow-hidden border-border/60 bg-card/80 backdrop-blur-sm rounded-2xl shadow-sm">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-bold text-foreground text-base">{block.name}</p>
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
+                          {genderLabel[block.gender_policy] || block.gender_policy}
+                        </p>
+                      </div>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className={`shrink-0 rounded-full border-0 px-2 py-0.5 text-[10px] font-bold ${
-                        pct >= 90
-                          ? "bg-red-500/15 text-red-600 dark:text-red-400"
-                          : pct >= 70
-                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                            : "bg-green-500/15 text-green-700 dark:text-green-400"
-                      }`}
-                    >
-                      {pct}% Ocupado
-                    </Badge>
-                  </div>
-                  <Progress value={pct} indicatorClassName={occupancyBarClass(pct)} className="h-2 bg-muted/40 rounded-full" />
-                  <div className="flex justify-between text-[11px] text-muted-foreground font-bold">
-                    <span>
-                      <span className={occupancyTone(pct) === "red" ? "text-red-600 font-black" : "text-foreground font-black"}>
-                        {occ}
-                      </span>{" "}
-                      alocados
-                    </span>
-                    <span>
-                      <span className="text-foreground font-black">{Math.max(0, cap - occ)}</span> livres de{" "}
-                      <span className="text-foreground font-black">{cap}</span>
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-1 gap-2">
+                  {block.rooms.map((room) => {
+                    const roomPct = room.capacity > 0 ? Math.round((room.occupied / room.capacity) * 100) : 0;
+                    return (
+                      <Card
+                        key={room.id}
+                        className="overflow-hidden border-border/60 bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all active:scale-[0.99] rounded-2xl"
+                        onClick={() => navigate(`/pwa/alojamento/unidade/${room.id}/faltosos`)}
+                      >
+                        <CardContent className="space-y-3 p-4">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="truncate font-bold text-foreground text-sm">{room.code}</p>
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className={`shrink-0 rounded-full border-0 px-2 py-0.5 text-[10px] font-bold ${
+                                roomPct >= 90
+                                  ? "bg-red-500/15 text-red-600 dark:text-red-400"
+                                  : roomPct >= 70
+                                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                                    : "bg-green-500/15 text-green-700 dark:text-green-400"
+                              }`}
+                            >
+                              {roomPct}% Ocupado
+                            </Badge>
+                          </div>
+                          <Progress value={roomPct} indicatorClassName={occupancyBarClass(roomPct)} className="h-2 bg-muted/40 rounded-full" />
+                          <div className="flex justify-between text-[11px] text-muted-foreground font-bold">
+                            <span>{room.occupied} / {room.capacity} alocados</span>
+                            <span className="text-primary flex items-center gap-1">
+                              Ver faltosos <ChevronRight className="h-3 w-3" />
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
             ))
           )}
         </div>

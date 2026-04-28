@@ -270,6 +270,9 @@ export default function AlojamentoScanPage() {
           GENDER_MISMATCH: getPwaMessage("GENDER_MISMATCH", lang),
           UNIT_FULL: getPwaMessage("CAPACITY_FULL", lang),
           CAPACITY_NOT_DEFINED: getPwaMessage("CAPACITY_NOT_DEFINED", lang),
+          PRESENCE_WITHOUT_CHECKIN: "Pessoa sem check-in ativo.",
+          PRESENCE_WRONG_UNIT: "Pessoa em unidade divergente.",
+          PRESENCE_ALREADY_REGISTERED: "Presença já registrada hoje.",
         };
         toast.error(errorMessages[res.error] || res.message || res.error || getPwaMessage("ERR_UNKNOWN", lang));
         recordOutcome("error");
