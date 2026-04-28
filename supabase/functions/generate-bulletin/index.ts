@@ -92,6 +92,8 @@ Deno.serve(async (req) => {
     
     if (matches.length === 0) {
       return new Response(JSON.stringify({ 
+        code: "NO_RESULTS_FOUND",
+        field: "matches",
         error: "Nenhum resultado publicado foi encontrado para os filtros selecionados.",
         details: "O boletim só pode ser gerado para resultados com status 'publicado'. Certifique-se de validar e publicar os resultados na Central de Resultados antes de tentar novamente."
       }), {
