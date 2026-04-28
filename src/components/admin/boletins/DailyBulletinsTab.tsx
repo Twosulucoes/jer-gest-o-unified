@@ -34,7 +34,27 @@ export default function DailyBulletinsTab({ eventId }: { eventId: string }) {
   const dailyBulletins = bulletins.filter(b => b.bulletin_type === 'daily');
 
   const handleGenerate = () => {
-    if (!selectedStageId) return;
+    if (!eventId) {
+      toast.error("Evento não identificado", {
+        description: "Não foi possível localizar o ID do evento ativo."
+      });
+      return;
+    }
+
+    if (!selectedStageId) {
+      toast.warning("Selecione uma etapa", {
+        description: "É necessário informar a etapa para gerar um boletim diário."
+      });
+      return;
+    }
+
+    if (!referenceDate) {
+      toast.warning("Selecione uma data", {
+        description: "É necessário informar a data de referência."
+      });
+      return;
+    }
+
     generateBulletin.mutate({
       stageId: selectedStageId,
       referenceDate,
