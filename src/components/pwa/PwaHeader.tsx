@@ -22,6 +22,7 @@ interface PwaHeaderProps {
 
 export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignOut, rightSlot, actionsBar }: PwaHeaderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { roles } = useAuth();
   const { activeStage } = useStageContext();
   const { navigateToPwa } = usePwaNavigation();
