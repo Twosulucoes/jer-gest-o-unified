@@ -84,7 +84,7 @@ export default function DelegacaoHomePage() {
   const initials = (name: string | null) => (name || "?").split(" ").map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 
   return (
-    <PwaLayout backTo="/pwa" title="Delegação">
+    <PwaLayout backTo="/pwa" moduleTitle="Delegação">
       <PwaContainer>
         {!delegationId && !loading && (
           <div className="op-card border-amber/40 p-4 text-center text-sm text-muted-foreground">
