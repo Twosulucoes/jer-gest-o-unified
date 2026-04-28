@@ -147,6 +147,59 @@ export default function AlimentacaoJanelasPage() {
     onError: (e: Error) => toast.error("Erro ao alterar status: " + e.message),
   });
 
+  const generateDefaultWindows = async () => {
+    if (!selectedEventId) return;
+    const dateToUse = filterDate || new Date().toISOString().split('T')[0];
+    
+    setIsGenerating(true);
+    try {
+      const standards = [
+        { slug: 'cafe', start: '06:00', end: '09:00', label: 'Café da Manhã' },
+        { slug: 'almoco', start: '11:30', end: '14:30', label: 'Almoço' },
+        { slug: 'janta', start: '18:30', end: '21:30', label: 'Jantar' },
+      ];
+
+      const toInsert = [];
+      for (const std of standards) {
+        const mType = mealTypes.find(t => t.slug?.toLowerCase() === std.slug);
+        if (mType) {
+          const alreadyExists = windows?.some(w => 
+            w.service_date === dateToUse && 
+            w.meal_type_id === mType.id
+          );
+          
+          if (!alreadyExists) {
+            toInsert.push({
+              event_id: selectedEventId,
+              event_stage_id: stageId || null,
+              meal_type_id: mType.id,
+              label: std.label,
+              service_date: dateToUse,
+              start_time: std.start,
+              end_time: std.end,
+              is_active: true
+            });
+          }
+        }
+      }
+
+      if (toInsert.length === 0) {
+        toast.info("Janelas padrão já existem para esta data");
+        return;
+      }
+
+      const { error } = await supabase.from("meal_windows").insert(toInsert);
+      if (error) throw error;
+
+      toast.success(`${toInsert.length} janelas geradas para ${dateToUse}`);
+      qc.invalidateQueries({ queryKey: ["meal_windows"] });
+    } catch (e: any) {
+      toast.error("Erro: " + e.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const filteredWindows = useMemo(() => {
     if (!windows) return [];
     return windows.filter((w: any) => {
@@ -161,9 +214,11 @@ export default function AlimentacaoJanelasPage() {
         (statusFilter === "active" && w.is_active) ||
         (statusFilter === "inactive" && !w.is_active);
 
-      return matchesSearch && matchesStatus;
+      const matchesDate = !filterDate || w.service_date === filterDate;
+
+      return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [windows, searchTerm, statusFilter, mealTypesMap]);
+  }, [windows, searchTerm, statusFilter, filterDate, mealTypesMap]);
 
   const handleSubmit = (v: MealWindowFormValues) => {
     if (editing && !editing.isCopy) updateMut.mutate({ id: editing.id, ...v });
