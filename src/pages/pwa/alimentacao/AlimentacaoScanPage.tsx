@@ -98,6 +98,21 @@ export default function AlimentacaoScanPage() {
 
   useEffect(() => {
     (async () => {
+      // 1. Load from cache immediately if available
+      const cached = localStorage.getItem("pwa_meal_windows_cache");
+      if (cached) {
+        try {
+          const { windows: cachedWindows } = JSON.parse(cached);
+          const today = new Date().toISOString().slice(0, 10);
+          const todaysWindows = cachedWindows.filter((w: any) => w.service_date === today || w.window_start.startsWith(today));
+          if (todaysWindows.length > 0) {
+            setWindows(todaysWindows);
+            if (todaysWindows.length === 1) setWindowId(todaysWindows[0].id);
+          }
+        } catch (e) {}
+      }
+
+      // 2. Fetch fresh data
       const today = new Date().toISOString().slice(0, 10);
       let q = supabase
         .from("meal_windows")
