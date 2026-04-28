@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Clock } from "lucide-react";
 import { format } from "date-fns";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import PwaLayout from "@/components/pwa/PwaLayout";
 
 interface WindowItem {
   id: string;
@@ -85,9 +86,7 @@ export default function AlimentacaoJanelasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <PwaHeader title="Janelas da Etapa" icon={Clock} backTo="/pwa/alimentacao" />
-
+    <PwaLayout backTo="/pwa/alimentacao" moduleTitle="Janelas da Etapa">
       <main className="p-4 max-w-md mx-auto space-y-3">
         {(() => {
           const cached = localStorage.getItem("pwa_meal_windows_cache");
@@ -134,6 +133,6 @@ export default function AlimentacaoJanelasPage() {
           );
         })}
       </main>
-    </div>
+    </PwaLayout>
   );
 }

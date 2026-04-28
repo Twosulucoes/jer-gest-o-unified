@@ -10,6 +10,7 @@ import {
   ClipboardList, Bus, Gavel, ChevronRight, AlertTriangle,
 } from "lucide-react";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import PwaLayout from "@/components/pwa/PwaLayout";
 
 interface AthleteRow {
   id: string;
@@ -83,81 +84,83 @@ export default function DelegacaoHomePage() {
   const initials = (name: string | null) => (name || "?").split(" ").map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 
   return (
-    <PwaContainer>
-      {!delegationId && !loading && (
-        <div className="op-card border-amber/40 p-4 text-center text-sm text-muted-foreground">
-          Nenhuma delegação vinculada ao seu perfil
-        </div>
-      )}
-
-      {delegationId && delegationLabel && (
-        <p className="text-center text-[11px] uppercase tracking-widest text-muted-foreground">{delegationLabel}</p>
-      )}
-
-      {delegationId && (
-        <PwaStatTriplet
-          loading={loading}
-          items={[
-            { label: "Atletas", value: kpis.atletas, tone: "module" },
-            { label: "Credenciados", value: kpis.credenciados, tone: "green" },
-            { label: "Pendentes", value: kpis.pendentesCred, tone: "red" },
-          ]}
-        />
-      )}
-
-      {delegationId && kpis.pendentesCred > 0 && (
-        <button
-          type="button"
-          onClick={() => navigate("/pwa/delegacao/participantes")}
-          className="op-card flex w-full items-center gap-3 border-destructive/40 bg-destructive/10 p-4 text-left transition-colors hover:bg-destructive/15"
-        >
-          <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-destructive">
-              {kpis.pendentesCred} pendência{kpis.pendentesCred > 1 ? "s" : ""} de credencial
-            </p>
-            <p className="text-xs text-muted-foreground">Documento ausente ou inválido</p>
+    <PwaLayout backTo="/pwa" moduleTitle="Delegação">
+      <PwaContainer>
+        {!delegationId && !loading && (
+          <div className="op-card border-amber/40 p-4 text-center text-sm text-muted-foreground">
+            Nenhuma delegação vinculada ao seu perfil
           </div>
-          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-        </button>
-      )}
+        )}
 
-      {delegationId && athletes.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <span className="op-label">Atletas</span>
-            <button onClick={() => navigate("/pwa/delegacao/participantes")} className="text-[11px] font-semibold text-module hover:underline">
-              Ver todos
-            </button>
-          </div>
+        {delegationId && delegationLabel && (
+          <p className="text-center text-[11px] uppercase tracking-widest text-muted-foreground">{delegationLabel}</p>
+        )}
+
+        {delegationId && (
+          <PwaStatTriplet
+            loading={loading}
+            items={[
+              { label: "Atletas", value: kpis.atletas, tone: "module" },
+              { label: "Credenciados", value: kpis.credenciados, tone: "green" },
+              { label: "Pendentes", value: kpis.pendentesCred, tone: "red" },
+            ]}
+          />
+        )}
+
+        {delegationId && kpis.pendentesCred > 0 && (
+          <button
+            type="button"
+            onClick={() => navigate("/pwa/delegacao/participantes")}
+            className="op-card flex w-full items-center gap-3 border-destructive/40 bg-destructive/10 p-4 text-left transition-colors hover:bg-destructive/15"
+          >
+            <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-destructive">
+                {kpis.pendentesCred} pendência{kpis.pendentesCred > 1 ? "s" : ""} de credencial
+              </p>
+              <p className="text-xs text-muted-foreground">Documento ausente ou inválido</p>
+            </div>
+            <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+          </button>
+        )}
+
+        {delegationId && athletes.length > 0 && (
           <div className="space-y-2">
-            {athletes.map((a) => (
-              <PwaListItem
-                key={a.id}
-                leading={<PwaListAvatar initials={initials(a.full_name)} />}
-                title={a.full_name || "Sem nome"}
-                subtitle="Atleta"
-                status={{
-                  label: a.status === "confirmed" ? "OK" : a.status === "pending" ? "Pendente" : (a.status || "—"),
-                  tone: a.status === "confirmed" ? "ok" : a.status === "pending" ? "pending" : "neutral",
-                }}
-              />
-            ))}
+            <div className="flex items-center justify-between px-1">
+              <span className="op-label">Atletas</span>
+              <button onClick={() => navigate("/pwa/delegacao/participantes")} className="text-[11px] font-semibold text-module hover:underline">
+                Ver todos
+              </button>
+            </div>
+            <div className="space-y-2">
+              {athletes.map((a) => (
+                <PwaListItem
+                  key={a.id}
+                  leading={<PwaListAvatar initials={initials(a.full_name)} />}
+                  title={a.full_name || "Sem nome"}
+                  subtitle="Atleta"
+                  status={{
+                    label: a.status === "confirmed" ? "OK" : a.status === "pending" ? "Pendente" : (a.status || "—"),
+                    tone: a.status === "confirmed" ? "ok" : a.status === "pending" ? "pending" : "neutral",
+                  }}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {delegationId && (
-        <PwaActionGrid
-          actions={[
-            { label: "Participantes", icon: ClipboardList, to: "/pwa/delegacao/participantes" },
-            { label: "Agenda", icon: Calendar, to: "/pwa/delegacao/agenda" },
-            { label: "Logística", icon: Bus, to: "/pwa/delegacao/logistica" },
-            { label: "Locais", icon: MapPin, to: "/pwa/delegacao/locais" },
-            { label: "Protestos", icon: Gavel, to: "/pwa/delegacao/protestos" },
-          ]}
-        />
-      )}
-    </PwaContainer>
+        {delegationId && (
+          <PwaActionGrid
+            actions={[
+              { label: "Participantes", icon: ClipboardList, to: "/pwa/delegacao/participantes" },
+              { label: "Agenda", icon: Calendar, to: "/pwa/delegacao/agenda" },
+              { label: "Logística", icon: Bus, to: "/pwa/delegacao/logistica" },
+              { label: "Locais", icon: MapPin, to: "/pwa/delegacao/locais" },
+              { label: "Protestos", icon: Gavel, to: "/pwa/delegacao/protestos" },
+            ]}
+          />
+        )}
+      </PwaContainer>
+    </PwaLayout>
   );
 }

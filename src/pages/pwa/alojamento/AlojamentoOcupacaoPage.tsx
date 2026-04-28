@@ -11,6 +11,7 @@ import { getSelectedFacility } from "@/hooks/useAlojamento";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import PwaLayout from "@/components/pwa/PwaLayout";
 import {
   PwaSectionLabel,
   PwaStatTriplet,
@@ -127,15 +128,7 @@ export default function AlojamentoOcupacaoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
-      
-      <PwaHeader 
-        title="Ocupação" 
-        icon={Building}
-        backTo="/pwa/alojamento" 
-      />
-
+    <PwaLayout backTo="/pwa/alojamento" moduleTitle="Ocupação">
       <main className="relative max-w-md mx-auto space-y-4 px-4 pb-28 pt-4">
         {/* Search Bar */}
         <div className="relative group">
@@ -268,7 +261,7 @@ export default function AlojamentoOcupacaoPage() {
                             </div>
                             <Badge
                               variant="outline"
-                              className={`shrink-0 rounded-full border-0 px-2 py-0.5 text-[10px] font-bold ${
+                              className={`shrink-0 rounded-full border-0 px-2.5 py-0.5 text-[10px] font-bold ${
                                 roomPct >= 90
                                   ? "bg-red-500/15 text-red-600 dark:text-red-400"
                                   : roomPct >= 70
@@ -317,6 +310,6 @@ export default function AlojamentoOcupacaoPage() {
           </Button>
         </div>
       </div>
-    </div>
+    </PwaLayout>
   );
 }

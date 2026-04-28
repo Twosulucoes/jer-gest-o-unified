@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Loader2 } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import PwaLayout from "@/components/pwa/PwaLayout";
 
 interface PersonResult {
   id: string;
@@ -40,9 +41,7 @@ export default function AlimentacaoBuscarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <PwaHeader title="Buscar Pessoa" icon={Search} backTo="/pwa/alimentacao" />
-
+    <PwaLayout backTo="/pwa/alimentacao" moduleTitle="Buscar Pessoa">
       <main className="p-4 max-w-md mx-auto space-y-4">
         <div className="flex gap-2">
           <Input
@@ -78,6 +77,6 @@ export default function AlimentacaoBuscarPage() {
           ))}
         </div>
       </main>
-    </div>
+    </PwaLayout>
   );
 }

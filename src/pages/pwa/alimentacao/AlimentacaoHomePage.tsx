@@ -16,6 +16,7 @@ import { FoodIncidentDialog } from "@/components/pwa/alimentacao/FoodIncidentDia
 import { AlimentacaoDuplicateAlert } from "@/components/pwa/alimentacao/AlimentacaoDuplicateAlert";
 import { format } from "date-fns";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import PwaLayout from "@/components/pwa/PwaLayout";
 
 
 interface OpenWindowState {
@@ -97,7 +98,7 @@ export default function AlimentacaoHomePage() {
   }, [navigate]);
 
   return (
-    <>
+    <PwaLayout backTo="/pwa" moduleTitle="Alimentação">
       <AlimentacaoDuplicateAlert />
 
       <PwaStatTriplet
@@ -157,6 +158,6 @@ export default function AlimentacaoHomePage() {
 
         <FoodIncidentDialog open={incidentOpen} onOpenChange={setIncidentOpen} />
       </PwaContainer>
-    </>
+    </PwaLayout>
   );
 }

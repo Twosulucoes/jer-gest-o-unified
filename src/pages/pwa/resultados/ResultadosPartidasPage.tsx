@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ClipboardList, ChevronRight, Calendar } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import PwaLayout from "@/components/pwa/PwaLayout";
 import { format, parseISO, isToday, isTomorrow, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { usePartidasModalidade, type PartidaItem } from "@/hooks/useLancamentoResultados";
@@ -46,9 +47,7 @@ export default function ResultadosPartidasPage() {
   const grouped = groupByDate(partidas);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <PwaHeader title="Partidas" icon={ClipboardList} backTo="/pwa/resultados" />
-
+    <PwaLayout backTo="/pwa/resultados" moduleTitle="Partidas">
       <main className="flex-1 p-4 max-w-md mx-auto w-full space-y-5">
         {isLoading && (
           <div className="space-y-3">
@@ -142,6 +141,6 @@ export default function ResultadosPartidasPage() {
           </section>
         ))}
       </main>
-    </div>
+    </PwaLayout>
   );
 }

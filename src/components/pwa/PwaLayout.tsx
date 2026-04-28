@@ -30,13 +30,17 @@ interface PwaLayoutProps {
   moduleIcon?: React.ElementType;
   backTo?: string;
   hideFooter?: boolean;
+  onBack?: () => void;
+  children?: React.ReactNode;
 }
 
 export default function PwaLayout({ 
   moduleTitle, 
   moduleIcon, 
   backTo,
-  hideFooter = false 
+  hideFooter = false,
+  onBack,
+  children
 }: PwaLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -111,11 +115,12 @@ export default function PwaLayout({
         title={displayTitle} 
         icon={DisplayIcon} 
         backTo={backTo}
+        onBack={onBack}
         onSignOut={handleSignOut}
       />
       
       <main className={cn("flex-1 overflow-auto", !hideFooter && "pb-24")}>
-        <Outlet />
+        {children || <Outlet />}
       </main>
 
       {!hideFooter && (

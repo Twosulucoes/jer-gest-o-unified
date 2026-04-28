@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart3 } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import PwaLayout from "@/components/pwa/PwaLayout";
 import { format } from "date-fns";
 
 interface ConsumptionItem {
@@ -33,9 +34,7 @@ export default function AlimentacaoHistoricoPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <PwaHeader title="Histórico de Hoje" icon={BarChart3} backTo="/pwa/alimentacao" />
-
+    <PwaLayout backTo="/pwa/alimentacao" moduleTitle="Histórico de Hoje">
       <main className="p-4 max-w-md mx-auto space-y-3">
         {loading && [1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-14 w-full" />)}
 
@@ -59,6 +58,6 @@ export default function AlimentacaoHistoricoPage() {
           </Card>
         ))}
       </main>
-    </div>
+    </PwaLayout>
   );
 }

@@ -2,7 +2,7 @@
 
 Este documento descreve o estado real da navegação do sistema JER Gestão, consolidando rotas, menus, permissões e componentes de layout em 28 de abril de 2026.
 
-> **Status:** Fase 1 da Reformulação da Navegação concluída (Limpeza do Web Administrativo e Reforço do Super Admin).
+> **Status:** Fase 2 da Reformulação da Navegação concluída (Unificação do `PwaLayout` em todos os módulos operacionais).
 
 ## 1. Visão Geral da Arquitetura de Navegação
 
@@ -225,4 +225,4 @@ Este complemento detalha o padrão de navegação e componentes de layout dos PW
 - **`PwaRefreshButton.tsx` (`src/components/pwa/`):** Botão de "hard refresh" integrado ao header para limpar caches.
 - **`OfflineSyncStatus.tsx` (`src/components/pwa/`):** Alerta de registros pendentes de sincronização.
 
-**Observação:** Não existe um `PwaLayout` único que envolva as rotas (como o `AdminLayout`). Cada página PWA importa e monta os componentes (`PwaHeader`, `PwaContainer`, etc.) individualmente, o que explica as pequenas variações de posicionamento de elementos como o `OfflineSyncStatus`.
+**Observação:** Todas as rotas operacionais agora são envoltas pelo `PwaLayout` unificado (seja via roteamento ou herança direta), garantindo footer fixo com scanner, indicador de sincronização e switcher de módulos consistente em toda a experiência mobile.

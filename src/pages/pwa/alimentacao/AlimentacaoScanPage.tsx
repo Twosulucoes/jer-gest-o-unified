@@ -29,6 +29,7 @@ import {
 } from "@/lib/pwaScan";
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import PwaLayout from "@/components/pwa/PwaLayout";
 import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
 import { addToVoucherQueue } from "@/lib/voucherOffline";
@@ -411,13 +412,8 @@ export default function AlimentacaoScanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <PwaLayout backTo="/pwa/alimentacao" moduleTitle={getPwaMessage("SCAN_QR", lang)}>
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
-      <PwaHeader 
-        title={getPwaMessage("SCAN_QR", lang)} 
-        icon={ScanLine}
-        backTo="/pwa/alimentacao" 
-      />
 
       <main className="relative mx-auto max-w-md space-y-4 p-4">
         <OfflineSyncStatus />
@@ -488,46 +484,17 @@ export default function AlimentacaoScanPage() {
           </div>
         )}
 
-        {result && (
-          <Card
-            className={
-              result.ok
-                ? "border-blue-500/50 bg-card/95 shadow-app-lg ring-1 ring-blue-500/20"
-                : "border-destructive/50 bg-card/95"
-            }
-          >
-            <CardContent className="space-y-2 p-4">
-              <div className="flex items-start gap-3">
-                {result.ok ? (
-                  <CheckCircle className="h-6 w-6 shrink-0 text-blue-500" />
-                ) : (
-                  <XCircle className="h-6 w-6 shrink-0 text-destructive" />
-                )}
-                <div className="min-w-0">
-                  {result.ok && (
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                      {result.source === "manual" ? getPwaMessage("MANUAL_SEARCH", lang) : getPwaMessage("QR_VALID", lang)}
-                    </p>
-                  )}
-                  <span className="text-sm font-medium leading-snug">{result.message}</span>
-                </div>
-              </div>
-              {result.restrictions && (
-                <div className="flex items-center gap-2 rounded-lg bg-warning/10 p-2">
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
-                  <span className="text-xs text-warning-foreground">Restrição: {result.restrictions}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+        <Button variant="module" className="h-12 w-full rounded-xl text-base font-semibold shadow-app-md" onClick={() => setScannerOpen(true)}>
+          <ScanLine className="mr-2 h-5 w-5" />
+          Escanear QR Code
+        </Button>
 
         <div className="space-y-2">
-          <p className="text-center text-xs text-muted-foreground">{getPwaMessage("SEARCH_MANUALLY", lang)}</p>
+          <p className="text-center text-xs text-muted-foreground">ou buscar manualmente</p>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder={getPwaMessage("SEARCH_PLACEHOLDER", lang)}
+              placeholder="Buscar por nome ou CPF…"
               value={manualQuery}
               onChange={(e) => setManualQuery(e.target.value)}
               className="h-11 border-border/80 bg-card/90 pl-10"
@@ -542,20 +509,19 @@ export default function AlimentacaoScanPage() {
                 {manualSearching && (
                   <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm">{getPwaMessage("BUSCANDO", lang)}</span>
+                    <span className="text-sm">Buscando…</span>
                   </div>
                 )}
                 {!manualSearching && manualHits.length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">{getPwaMessage("NO_RESULTS", lang)}</p>
+                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhum participante encontrado neste evento.</p>
                 )}
                 {!manualSearching &&
                   manualHits.map((h) => (
                     <button
                       key={h.participant_id}
                       type="button"
-                      disabled={!windowId}
                       onClick={() => void handleManualPick(h)}
-                      className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60 disabled:pointer-events-none disabled:opacity-50"
+                      className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60"
                     >
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
                         <User className="h-5 w-5" />
@@ -571,18 +537,44 @@ export default function AlimentacaoScanPage() {
           )}
         </div>
 
-        <Button variant="module" className="h-12 w-full rounded-xl font-semibold shadow-app-md" onClick={() => setScannerOpen(true)} disabled={!windowId}>
-          <ScanLine className="mr-2 h-5 w-5" />
-          {getPwaMessage("SCAN_QR", lang)}
-        </Button>
+        {result && (
+          <Card
+            className={
+              result.ok
+                ? "border-blue-500/50 bg-card/95 shadow-app-lg ring-1 ring-blue-500/20"
+                : "border-destructive/50 bg-card/95"
+            }
+          >
+            <CardContent className="flex items-start gap-3 p-4">
+              {result.ok ? (
+                <CheckCircle className="h-6 w-6 shrink-0 text-blue-500" />
+              ) : (
+                <XCircle className="h-6 w-6 shrink-0 text-destructive" />
+              )}
+              <div className="min-w-0">
+                {result.ok && (
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+                    {result.source === "manual" ? getPwaMessage("MANUAL_SEARCH", lang) : getPwaMessage("QR_VALID", lang)}
+                  </p>
+                )}
+                <span className="text-sm font-medium leading-snug">{result.message}</span>
+                {result.restrictions && (
+                  <p className="mt-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase">
+                    Restrição: {result.restrictions}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       <QrCodeScanner
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleScan}
-        title={getPwaMessage("SCAN_QR", lang)}
+        title="Escanear QR"
       />
-    </div>
+    </PwaLayout>
   );
 }
