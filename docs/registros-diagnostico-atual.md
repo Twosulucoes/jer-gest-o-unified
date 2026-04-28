@@ -243,5 +243,45 @@ A Fase 2 entrega a funcionalidade principal do relatório OSC, mas falha em segu
 2. **Regra de Fotos:** Implementar validação visual (Cenário 1) na página de prestação de contas, alertando se categorias OSC possuem menos de 2 ou mais de 4 fotos.
 3. **Persistência (Opcional):** Considerar criação de tabela `osc_report_logs` para histórico de gerações.
 
+
 ---
 *Mini-auditoria realizada em 2026-04-28.*
+
+## CORREÇÃO TÁTICA — FASE 2 (2026-04-28)
+
+### Resumo dos Ajustes
+Implementação cirúrgica das três pendências críticas identificadas na mini-auditoria da Fase 2, focando em rastreabilidade, conformidade de evidências e segurança.
+
+### 1. Auditoria da Geração do PDF
+- **Mecanismo:** Integração com a tabela `audit_events`.
+- **Trilha:** Cada geração do PDF oficial OSC agora registra:
+  - Responsável (usuário autenticado).
+  - Instante da geração.
+  - Evento e Etapa.
+  - Metadados do estado do sistema: contagem de fotos por categoria no momento, estatísticas consolidadas e configuração do convênio utilizada.
+- **Interface:** Adicionado painel de "Histórico de Gerações" na tela de prestação de contas, permitindo consulta rápida de quem gerou e quando.
+
+### 2. Regra de Fotos por Categoria
+- **Abordagem Escolhida:** **Orientativa com Bloqueio de Confirmação.**
+- **Funcionamento:** O sistema agora calcula a cobertura fotográfica antes de permitir a geração.
+  - **Crítico (Zero fotos):** Exibe alerta vermelho e exige confirmação explícita do operador para prosseguir (risco de rejeição do relatório).
+  - **Aviso (Fora do intervalo 2-4):** Exibe alerta amarelo informando descumprimento da regra de conformidade ideal.
+- **Visualização:** O histórico de gerações indica o status de conformidade de cada documento gerado.
+
+### 3. RLS e Segurança
+- **Super Admin:** Aplicada política de "Acesso Total" (ALL) para as tabelas `event_osc_configs` e `operational_evidence`, garantindo gestão global.
+- **Auditoria:** Permissão explícita de `INSERT` na tabela `audit_events` para usuários autenticados, permitindo o registro da trilha de geração pelo frontend.
+- **Metadados:** RLS contextual do módulo de evidências validada para não interferir nos fluxos de outros módulos operacionais.
+
+### Arquivos Tocados
+- **Banco:** Nova migração de RLS e permissões.
+- **Frontend:** 
+  - `src/pages/admin/relatorios/PrestacaoContasOscPage.tsx` (Lógica de auditoria, histórico e validação de fotos).
+  - `src/pages/admin/relatorios/oscPdfExporter.tsx` (Melhoria na renderização de legendas e metadados no PDF).
+- **Documentação:** Atualização deste documento e do README.md.
+
+### Veredito de Não-Regressão
+Confirmado que a estrutura de evidências para Alimentação, Alojamento e Transporte permanece inalterada. A geração de boletins e resultados públicos não foi afetada pela nova camada de auditoria e validação do relatório OSC.
+
+---
+*Correção tática da Fase 2 concluída em 2026-04-28.*

@@ -61,6 +61,20 @@ export default function PrestacaoContasOscPage() {
   const credPct = r && r.totalParticipants > 0 ? Math.round((r.totalCredentialed / r.totalParticipants) * 100) : 0;
   const lodgePct = r && r.totalLodgingCapacity > 0 ? Math.round((r.totalLodgingOccupied / r.totalLodgingCapacity) * 100) : 0;
 
+  const [auditHistory, setAuditHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const fetchAuditHistory = async () => {
+    const { data: history } = await supabase
+      .from("audit_events")
+      .select("*")
+      .eq("table_name", "osc_reports")
+      .eq("record_id", eventId)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    setAuditHistory(history || []);
+  };
+
   const onPdf = async () => {
     if (!data) return;
     try {
@@ -73,15 +87,56 @@ export default function PrestacaoContasOscPage() {
         .eq("status", "approved")
         .not("osc_category", "is", null);
 
+      const evidences = evs || [];
+      const categories = ["infraestrutura", "atendimento", "competicao", "cerimonial"];
+      const counts = categories.reduce((acc, cat) => {
+        acc[cat] = evidences.filter(e => e.osc_category === cat).length;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const hasCriticalGap = Object.values(counts).some(c => c === 0);
+      const hasWarning = Object.values(counts).some(c => c < 2 || c > 4);
+
+      if (hasCriticalGap) {
+        const proceed = window.confirm("ATENÇÃO: Existem categorias sem NENHUMA foto. O relatório formal pode ser rejeitado. Deseja prosseguir mesmo assim?");
+        if (!proceed) return;
+      } else if (hasWarning) {
+        const proceed = window.confirm("AVISO: Algumas categorias não possuem entre 2 e 4 fotos (regra de conformidade). Deseja prosseguir?");
+        if (!proceed) return;
+      }
+
       await exportOscPdf(data, {
         eventName: activeEvent?.name || "Evento",
         branding: branding ?? null,
         oscConfig: oscConfig ?? null,
         generatedAt: new Date(),
         periodLabel,
-        evidences: evs || []
+        evidences
       });
-      toast.success("PDF gerado");
+
+      // Registrar auditoria
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("audit_events").insert({
+          table_name: "osc_reports",
+          record_id: eventId,
+          action: "generate_pdf",
+          created_by: user.id,
+          payload: {
+            event_name: activeEvent?.name,
+            photo_counts: counts,
+            stats: {
+              participants: data.resumo.totalParticipants,
+              matches: data.resumo.totalMatches,
+              meals: data.resumo.totalMeals
+            },
+            config_used: oscConfig
+          }
+        } as any);
+      }
+
+      toast.success("PDF gerado e registrado na auditoria");
+      fetchAuditHistory();
     } catch (e: any) {
       toast.error("Erro ao gerar PDF", { description: e?.message });
     } finally { setExporting(null); }
@@ -102,6 +157,15 @@ export default function PrestacaoContasOscPage() {
     } finally { setExporting(null); }
   };
 
+  const getHistoryStatus = (entry: any) => {
+    const counts = entry.payload?.photo_counts || {};
+    const gaps = Object.values(counts).filter(c => (c as number) === 0).length;
+    if (gaps > 0) return { label: "Incompleto", color: "text-red-500" };
+    const warnings = Object.values(counts).filter(c => (c as number) < 2 || (c as number) > 4).length;
+    if (warnings > 0) return { label: "Com Alertas", color: "text-amber-500" };
+    return { label: "Conforme", color: "text-green-500" };
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -115,6 +179,10 @@ export default function PrestacaoContasOscPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchAuditHistory(); }}>
+            <FileSpreadsheet className="h-4 w-4 mr-1.5" />
+            Histórico
+          </Button>
           <Link to="/admin/registros/configuracao-osc">
             <Button variant="outline" size="sm">
               <Settings className="h-4 w-4 mr-1.5" />
@@ -132,6 +200,39 @@ export default function PrestacaoContasOscPage() {
           </Button>
         </div>
       </header>
+
+      {showHistory && (
+        <Card className="animate-in fade-in slide-in-from-top-4">
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Histórico de Gerações</CardTitle></CardHeader>
+          <CardContent>
+            {auditHistory.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma geração registrada.</p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {auditHistory.map((entry) => {
+                  const status = getHistoryStatus(entry);
+                  return (
+                    <div key={entry.id} className="p-3 border rounded-lg space-y-2 text-xs">
+                      <div className="flex justify-between items-start">
+                        <span className="font-medium">{new Date(entry.created_at).toLocaleString("pt-BR")}</span>
+                        <span className={`font-semibold ${status.color}`}>{status.label}</span>
+                      </div>
+                      <div className="text-muted-foreground">
+                        {Object.entries(entry.payload?.photo_counts || {}).map(([k, v]) => (
+                          <div key={k} className="flex justify-between">
+                            <span className="capitalize">{k}:</span>
+                            <span>{v as number} foto(s)</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Indicadores */}
       <section>
