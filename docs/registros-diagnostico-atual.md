@@ -461,3 +461,34 @@ A Fase 3 está sólida, com fluxos de controle técnico rigorosos e saída profi
 
 ---
 *Mini-auditoria realizada em 2026-04-28.*
+
+---
+
+## CORREÇÃO DA DESCOBRÍVELIDADE DA FLAG DE MODO REGISTROS (ETAPA A) — 2026-04-28
+
+Implementação de melhorias de UX no Super Admin para garantir que o operador consiga localizar, entender e gerenciar a flag `registros_mode_enabled` com segurança e rastreabilidade total.
+
+### 1. Substituição de Ícone por Toggle com Rótulo
+- **Localização:** Tela de Gestão de Eventos (`/super/eventos`).
+- **Novo Controle:** O ícone isolado `ListChecks` foi substituído por um conjunto visual composto por um rótulo textual ("Registros" ou "Competição") e um componente `Switch`.
+- **Destaque Visual:** Cores coordenadas (âmbar para Registros ativo) permitem identificação imediata do estado de cada evento na tabela.
+
+### 2. Tooltip Explicativo
+- **Funcionalidade:** Adicionado tooltip em hover sobre o controle de cada evento.
+- **Conteúdo:** Descreve o significado do modo atual e o impacto de cada opção (caminho simplificado vs. estrutura completa de fases/grupos).
+
+### 3. Confirmação Explícita na Alteração
+- **Mecanismo:** Ao clicar no toggle, o sistema agora abre um `AlertDialog` (Shadcn UI).
+- **Mensagem de Impacto:** O diálogo detalha exatamente o que acontecerá ao ativar ou desativar o modo, listando quais módulos serão ocultados ou exibidos para os usuários.
+- **Segurança:** A alteração só é processada após o clique explícito em "Confirmar Alteração", evitando trocas acidentais.
+
+### 4. Auditoria e Histórico Consultável
+- **Rastreabilidade:** A alteração via UI dispara um `INSERT` na tabela `registros_mode_logs`, registrando o autor (ID do usuário), instante, evento e os valores `old_value`/`new_value`.
+- **Acesso ao Histórico:** Adicionado link "Ver Histórico" abaixo do toggle de cada evento.
+- **Visualização:** Abre um painel lateral (`Sheet`) listando todas as alterações passadas em ordem cronológica, com identificação do responsável e Badge de status, garantindo transparência total sobre quem alterou a configuração do evento.
+
+### Arquivos Tocados
+- `src/pages/super/SuperEventosPage.tsx`: Implementação completa da nova UI e integração com logs.
+
+---
+*Correção da descobribilidade concluída em 2026-04-28.*
