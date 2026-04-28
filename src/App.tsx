@@ -176,6 +176,7 @@ import AlojamentoPessoaPage from "./pages/pwa/alojamento/AlojamentoPessoaPage";
 import AlojamentoIncidentesPage from "./pages/pwa/alojamento/AlojamentoIncidentesPage";
 import AlojamentoNovoIncidentePage from "./pages/pwa/alojamento/AlojamentoNovoIncidentePage";
 import AlojamentoListaCompletaPage from "./pages/pwa/alojamento/AlojamentoListaCompletaPage";
+import AlojamentoUnidadeFaltososPage from "./pages/pwa/alojamento/AlojamentoUnidadeFaltososPage";
 // PWA Transporte pages
 import TransporteHomePage from "./pages/pwa/transporte/TransporteHomePage";
 import TransporteViagensPwaPage from "./pages/pwa/transporte/TransporteViagensPage";
@@ -537,6 +538,7 @@ const App = () => (
             <Route path="/pwa/alojamento/incidentes" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoIncidentesPage /></PwaRouteGuard>} />
             <Route path="/pwa/alojamento/incidentes/nova" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoNovoIncidentePage /></PwaRouteGuard>} />
             <Route path="/pwa/alojamento/lista-completa" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoListaCompletaPage /></PwaRouteGuard>} />
+            <Route path="/pwa/alojamento/unidade/:unitId/faltosos" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoUnidadeFaltososPage /></PwaRouteGuard>} />
             
             {/* PWA Transporte — perfil transporte */}
             <Route path="/pwa/transporte" element={<PwaRouteGuard allowedRoles={["transporte"]} requireStage={true}><TransporteHomePage /></PwaRouteGuard>} />
