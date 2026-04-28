@@ -250,5 +250,39 @@ Este inventário descreve a robustez alcançada na Fase 3.
 
 ## 10. Mini-auditoria de Confirmação da Fase 3 (2026-04-28)
 
-**Veredito:** SÓLIDO. A paridade de comportamento foi alcançada sem comprometer a estabilidade dos módulos individuais. O operador agora tem a mesma experiência de resiliência em todos os PWAs. A dívida técnica de unificação do código está registrada em `docs/divida-tecnica.md`.
+**Veredito:** SÓLIDO. A paridade de comportamento entre os três mecanismos de sincronização offline (Alojamento, Geral Operacional e Voucher) foi validada e está conforme o planejado. Não foram detectadas regressões críticas nos módulos fechados.
+
+### 10.1 Paridade dos Mecanismos
+| Critério | Alojamento | Geral (Alim/Transp) | Voucher | Status Final |
+| :--- | :---: | :---: | :---: | :---: |
+| **Auto-sync (30s)** | Conforme | Conforme (via Hook) | Conforme (via Hook) | **Conforme** |
+| **Retry (5 tentativas)** | Conforme | Conforme (Contador) | Conforme (Contador) | **Conforme** |
+| **Status Explícito** | Conforme | Conforme | Conforme | **Conforme** |
+
+*Evidência:* `useAlojamentoOffline.ts` implementa auto-sync interno; `offlineQueue.ts` e `voucherOffline.ts` são servidos pelo `OfflineSyncStatus.tsx` que orquestra o loop de 30s. Todos utilizam contador de `attempts` e transições de `status` (pending -> syncing -> failed/conflict).
+
+### 10.2 Decisão de Duplicidade na Alimentação
+A regra de **Manual (Visível)** foi aplicada corretamente em `src/lib/offlineQueue.ts`.
+- Erros de duplicidade (PostgreSQL code `23505`) agora marcam o item como `conflict` com mensagem clara.
+- O registro permanece na fila para intervenção, sem limpeza automática (diferente da Fase 2).
+- Verificado que isso não afetou `voucherOffline.ts`, que já tratava duplicidade via RPC `redeem_voucher`.
+
+### 10.3 Não Regressão por Módulo
+- **Voucher:** Fila offline mantida; paridade de retry adicionada via `voucherOffline.ts`.
+- **Árbitros:** Funcionalidades do Ao Vivo (/pwa/aovivo) preservadas; navegação via prefixo /pwa validada.
+- **Alojamento:** `useAlojamentoOffline.ts` mantido como referência; integração com `PwaLayout` confirmada.
+- **Alimentação:** Novo comportamento de conflito manual validado; KPIs da home consistentes.
+- **Transporte:** Embarque via QR continua operando com a nova fila robustecida.
+
+### 10.4 Coerência do Footer Unificado
+O `OfflineFooterIndicator` em `PwaLayout.tsx` reflete corretamente a soma das pendências de `offlineQueue` e `voucherQueue`.
+- **Sync (Amber):** Mostra itens `pending` ou `failed` (aguardando retry).
+- **Erro (Red):** Mostra itens em `conflict` (exige ação manual).
+- **Divergência Menor:** O contador de Alojamento ainda é independente na home do módulo, mas o footer unificado garante visibilidade básica de rede/pendência.
+
+---
+
+## 11. Conclusão da Fase 3
+A base técnica está pronta para a **Fase 4 (Saneamento)**, onde buscaremos eliminar as divergências de implementação de UI nos indicadores e centrais de conflito, movendo para uma experiência 100% idêntica em todos os módulos.
+
 
