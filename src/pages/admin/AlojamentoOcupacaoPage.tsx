@@ -277,6 +277,7 @@ export default function AlojamentoOcupacaoPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Check-in</TableHead>
                     <TableHead>Check-out</TableHead>
+                    <TableHead>Divergência</TableHead>
                     {canOperate && <TableHead className="w-[120px]" />}
                   </TableRow>
                 </TableHeader>
