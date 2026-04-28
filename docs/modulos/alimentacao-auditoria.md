@@ -1,60 +1,58 @@
 # Auditoria do Módulo de Alimentação - JER Gestão
-**Data:** 28 de Abril de 2026 (Fechamento de Fase)
-**Status Global:** ✅ FECHADO / OPERACIONAL
+**Data:** 28 de Abril de 2026 (Fechamento da Fase 1 da Reformulação)
+**Status Global:** 🟢 OPERACIONAL / FASE 1 CONCLUÍDA
 
 ## 1. Introdução e Objetivo
-Esta auditoria reflete o estado final do módulo de Alimentação após a implementação da funcionalidade de **Previsão de Demanda**. O módulo agora cobre todo o ciclo de vida: Planejamento de Janelas, Definição de Elegibilidade, Previsão de Insumos, Execução em PWA e Auditoria de Exportações.
+Esta auditoria reflete a conclusão da **Fase 1 da Reformulação do Módulo de Alimentação**. O foco principal foi elevar a inteligência operacional do sistema, trazendo previsão de demanda para a cozinha, gestão de capacidade e resiliência offline para o PWA.
 
 ---
 
-## 2. Análise do Estado Atual
+## 2. Diagnóstico da Fase 1
 
-### 2.1 Estrutura de Dados (Database)
-- **`meal_types`**: Cadastro de tipos (Café, Almoço, Jantar).
-- **`meal_windows`**: Janelas temporais vinculadas a etapas e locais.
-- **`meal_window_patterns`**: **(NOVO)** Configuração de padrões reutilizáveis de horários e locais por estágio.
-- **`meal_locations`**: Gestão de refeitórios com capacidade e endereço.
-- **`meal_window_eligibility`**: Regras de restrição atômicas (Perfil, Delegação, Instituição).
-- **`meal_consumptions`**: Registro de consumo com proteção contra duplicidade.
-- **`meal_forecast_exports`**: Trilha de auditoria para exportações geradas para a cozinha.
+### 2.1 Motor de Previsão de Demanda (Admin)
+- **Status:** ✅ CONCLUÍDO
+- **Evidência:** Implementada página `AlimentacaoPrevisaoPage` que calcula dinamicamente o número de participantes elegíveis por janela de refeição.
+- **Destaques:** 
+  - Cálculo baseado em regras de elegibilidade (Perfil, Delegação, Instituição).
+  - Visão agregada por dia e sede para planejamento de compras.
+  - Exportação auditável para PDF e XLSX para envio à empresa de buffet.
 
-### 2.2 Interfaces Administrativas (Web Admin)
-- **`AlimentacaoHubPage`**: Hub central com cards de acesso rápido.
-- **`AlimentacaoPrevisaoPage`**: **(NOVO)** Motor de previsão que calcula elegíveis vs consumos em tempo real, com barras de progresso e alertas de ocupação.
-- **`AlimentacaoJanelasPage`**: Gestão completa de janelas, com **automação robusta para geração de janelas padrão** baseada em modelos vigentes, criando inicialmente como inativas.
-- **`AlimentacaoPadroesPage`**: **(NOVO)** Área administrativa para configurar horários e locais padrão por estágio, permitindo duplicação entre etapas.
-- **`AlimentacaoConsumoPage`**: Monitoramento de consumos individuais.
+### 2.2 Gestão de Capacidade (Admin & PWA)
+- **Status:** ✅ CONCLUÍDO
+- **Evidência:** 
+  - Tabela `meal_windows` atualizada com coluna `capacity`.
+  - Cadastro de janelas permite declaração opcional de limite físico/contratual.
+  - PWA (`AlimentacaoScanPage`) exibe barra de progresso em tempo real e alerta visual proeminente quando a capacidade é atingida.
+- **Regra de Negócio:** O sistema **não bloqueia** o consumo acima da capacidade para evitar gargalos operacionais, mantendo o caráter informativo/alerta para o operador.
 
-### 2.3 Interface Operacional (PWA)
-- **Operação Plena**: Fluxo de Scan QR, busca manual e suporte a vouchers 100% funcional e offline-ready.
-
----
-
-## 3. Relatório de Auditoria por Frente
-
-| Frente | Status | Evidência Objetiva |
-|:---|:---:|:---|
-| **Previsão de Demandas** | ✅ Pleno | Página `AlimentacaoPrevisaoPage` implementada com cálculo dinâmico. |
-| **Exportação Cozinha** | ✅ Pleno | Botões de PDF e XLSX com totais por tipo e local funcionais. |
-| **Ocupação Real-time** | ✅ Pleno | Barras de progresso e alertas visuais de excedente/saldo. |
-| **Elegibilidade** | ✅ Pleno | Tabelas `meal_window_eligibility` integradas ao motor de cálculo. |
-| **Trilha de Auditoria** | ✅ Pleno | Registro de exportações em `meal_forecast_exports` com usuário e data. |
-| **Permissões** | ✅ Pleno | Rotas protegidas em `App.tsx` para `FOOD_ROLES`. |
+### 2.3 Resiliência Offline (PWA)
+- **Status:** ✅ CONCLUÍDO
+- **Evidência:** 
+  - Mecanismo de cache em `AlimentacaoJanelasPage` que baixa todas as janelas da etapa atual.
+  - O cache é persistido no `localStorage` e carregado instantaneamente na abertura do app, mesmo sem rede.
+  - Tela de janelas exibe o indicador de "Última Atualização".
+- **Garantia:** O operador consegue identificar e selecionar a janela correta em campo mesmo se o sinal de rede for perdido antes da operação começar.
 
 ---
 
-## 4. Diagnóstico Final
+## 3. Estrutura de Dados (Estado Real)
 
-O módulo de Alimentação atingiu a maturidade necessária para operação em campo. A lacuna crítica de "Previsão de Demanda" foi sanada, permitindo que a coordenação informe à cozinha exatamente quantas pessoas são esperadas para cada refeição, reduzindo desperdício e falta de insumos.
+| Tabela | Função | Estado |
+|:---|:---|:---:|
+| `meal_types` | Cadastro de tipos (Café, Almoço, Jantar) | Estável |
+| `meal_windows` | Janelas temporais com **Capacidade** e Local | Atualizada (Fase 1) |
+| `meal_locations` | Gestão física dos refeitórios | Estável |
+| `meal_window_eligibility` | Regras atômicas de acesso | Estável |
+| `meal_consumptions` | Registros de consumo (Online/Offline) | Estável |
+| `meal_forecast_exports` | Trilha de auditoria das exportações | Estável |
 
-### 4.1 Entregas Realizadas nesta Fase:
-- **Motor de Previsão**: RPCs no banco de dados para contagem performática de participantes elegíveis.
-- **Interface de Planejamento**: Tela dedicada com filtros de data, tipo e local.
-- **Exportação Auditável**: Registro de quem gerou cada relatório para prestação de contas.
-- **UX de Ocupação**: Visualização clara de "quanto falta" para concluir o serviço da janela.
+---
+
+## 4. Veredito Final
+A Fase 1 está **HOMOLOGADA**. O sistema agora provê a inteligência necessária para que a cozinha opere sem desperdícios e o campo opere sem dependência crítica de rede estável para consulta de janelas.
 
 ---
 ## Histórico de Auditorias
-- **2026-04-28 (Aprimoramento):** Implementação de Padrões de Janelas, duplicação por estágio e geração automatizada com relatório e validações.
-- **2026-04-28 (Final):** Módulo fechado com motor de previsão e exportação para cozinha.
-- **2026-04-28 (Inicial):** Auditoria de diagnóstico identificou lacuna em previsão de demanda.
+- **2026-04-28 (Fase 1 - Conclusão):** Entrega de previsão de demanda, alertas de capacidade e cache offline de janelas.
+- **2026-04-28 (Aprimoramento Prévio):** Implementação de Padrões de Janelas e automação de geração.
+- **2026-04-28 (Diagnóstico Inicial):** Identificada necessidade de inteligência preditiva para a cozinha.
