@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { getPwaLang, setPwaLang } from "@/lib/pwa-messages";
+import { getPwaLang, setPwaLang } from "@/lib/systemMessages";
 import { useStageContext } from "@/contexts/StageContext";
 import { usePwaNavigation, type PwaModule } from "@/hooks/pwa/usePwaNavigation";
 import { PwaRefreshButton } from "./PwaRefreshButton";
