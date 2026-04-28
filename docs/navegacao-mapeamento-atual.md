@@ -304,6 +304,41 @@ O Passo 2 da Fase 4 unificou o fluxo de autenticação do módulo Ao Vivo (Árbi
 
 ---
 
+## 15. Mini-auditoria de Não Regressão — Fase 4 Passo 4 (2026-04-28)
+
+**Veredito:** PARCIALMENTE CONFORME (Ajustes técnicos necessários em travas e fluxos de retorno).
+
+### 15.1. Verificação de Remoção e Importações Órfãs
+- **Status:** ✅ CONFORME.
+- **Evidência:** Busca global (`rg "pwa-messages"`) retornou zero resultados. O arquivo antigo foi removido e todas as importações foram migradas para `systemMessages.ts`. Adotada estratégia de passada única com alias `@deprecated` para segurança.
+
+### 15.2. Integridade das Chaves no Dicionário
+- **Status:** ✅ CONFORME.
+- **Evidência:** `src/lib/systemMessages.ts` contém todas as chaves mapeadas anteriormente, preservando as traduções (PT/ES) e a estrutura de tipos.
+
+### 15.3. Não Regressão por Módulo Fechado
+- **Status:** ✅ SEM REGRESSÃO.
+- **Evidência:** Amostragem em `AlimentacaoScanPage`, `AlojamentoScanPage` e `TransporteScanPage` confirmou que as mensagens (incluindo erros e sucessos) continuam sendo exibidas corretamente via `getSystemMessage`.
+
+### 15.4. Acesso Voluntário à Configuração
+- **Status:** ✅ CONFORME.
+- **Evidência:** `PwaHeader` agora torna o nome da etapa clicável. `PwaLayout` adicionou o item "Trocar Etapa" no menu de switcher de módulos. O posicionamento respeita o design system consolidado.
+
+### 15.5. Trava de Fila Offline na Troca de Etapa
+- **Status:** ⚠️ PARCIALMENTE CONFORME.
+- **Evidência:** A lógica em `PwaSelectionFallback.tsx` verifica corretamente as filas de `offlineQueue` (Alimentação/Transporte) e `voucherQueue`. No entanto, a fila específica do Alojamento (`jer_alj_offline_queue`) não foi incluída na verificação da trava, permitindo troca de etapa com dados de alojamento pendentes.
+
+### 15.6. Troca Voluntária e Retorno ao PWA
+- **Status:** ⚠️ PARCIALMENTE CONFORME.
+- **Evidência:** A tela de configuração aplica corretamente o novo contexto e realiza a auditoria. Contudo, as chamadas de `navigate("/pwa/configuracao")` no `PwaLayout` e `PwaHeader` não estão passando o `state: { from: location }`, fazendo com que o botão "Confirmar e Continuar" leve o usuário sempre para a home `/pwa`, em vez de retornar ao módulo específico em que o operador estava.
+
+### 15.7. Veredito Final
+O Passo 4 da Fase 4 está funcional mas necessita de dois ajustes técnicos antes do fechamento total:
+1. Incluir a chave `jer_alj_offline_queue` na contagem de itens pendentes em `PwaSelectionFallback.tsx`.
+2. Passar o estado de navegação (`state={{ from: location }}`) nas chamadas voluntárias de configuração para garantir o retorno contextual correto.
+
+---
+
 ## 14. Relatório de Entrega — Fase 4 Passo 4 (2026-04-28)
 
 **Objetivo:** Refator técnico do dicionário de mensagens e evolução de UX para troca de etapa em campo.
