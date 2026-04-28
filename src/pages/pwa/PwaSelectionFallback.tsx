@@ -27,7 +27,9 @@ const PwaSelectionFallback = () => {
   useEffect(() => {
     const offlineCount = getOfflineQueue().filter(i => i.status === "pending" || i.status === "failed").length;
     const voucherCount = getVoucherQueue().filter(v => v.status === "pending" || v.status === "failed").length;
-    setPendingItems(offlineCount + voucherCount);
+    const alojamentoCount = getAlojamentoQueue().filter(a => a.status === "pending" || a.status === "failed").length;
+    
+    setPendingItems(offlineCount + voucherCount + alojamentoCount);
   }, []);
 
   const handleConfirm = async () => {
