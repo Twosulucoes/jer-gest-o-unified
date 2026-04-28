@@ -12,7 +12,7 @@ import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
-import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
+import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
 import {
   loadScanPreferences,
   saveScanPreferences,

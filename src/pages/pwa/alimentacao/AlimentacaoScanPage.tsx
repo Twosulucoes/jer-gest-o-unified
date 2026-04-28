@@ -16,7 +16,7 @@ import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
-import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
+import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
 import { useAuth } from "@/hooks/useAuth";
 import {
   loadScanPreferences,
