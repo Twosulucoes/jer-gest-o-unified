@@ -240,7 +240,7 @@ import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 // Ao Vivo PWA (lazy loaded)
 import StatusPage from "./pages/Status";
 
-const AoVivoLoginPage = lazy(() => import("./pages/aovivo/AoVivoLoginPage"));
+// AoVivoLoginPage removed — unified login at /login
 const AoVivoHomePage = lazy(() => import("./pages/aovivo/AoVivoHomePage"));
 const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
 
@@ -596,13 +596,13 @@ const App = () => (
               <Route path="/pwa/credenciamento/vincular" element={<VincularCredencialPage />} />
 
               {/* PWA Ao Vivo */}
-              <Route path="/aovivo" element={<Suspense fallback={null}><AoVivoHomePage /></Suspense>} />
-              <Route path="/aovivo/partida/:matchId" element={<Suspense fallback={null}><AoVivoMatchPage /></Suspense>} />
+              <Route path="/aovivo" element={<ProtectedRoute allowedRoles={["mesario", "arbitragem", "admin", "coordenacao_tecnica"]}><Suspense fallback={null}><AoVivoHomePage /></Suspense></ProtectedRoute>} />
+              <Route path="/aovivo/partida/:matchId" element={<ProtectedRoute allowedRoles={["mesario", "arbitragem", "admin", "coordenacao_tecnica"]}><Suspense fallback={null}><AoVivoMatchPage /></Suspense></ProtectedRoute>} />
             </Route>
 
             {/* Rotas fora do layout operacional padrão */}
             <Route path="/pwa/install" element={<PwaRouteGuard requireStage={false}><PwaInstallPage /></PwaRouteGuard>} />
-            <Route path="/aovivo/login" element={<Suspense fallback={null}><AoVivoLoginPage /></Suspense>} />
+            <Route path="/aovivo/login" element={<Navigate to="/login" state={{ from: { pathname: "/aovivo" } }} replace />} />
             
             {/* PWA Pesquisa (PIN auth, no layout operacional padrão) */}
             <Route path="/pwa/pesquisa/login" element={<PesquisaLoginPage />} />

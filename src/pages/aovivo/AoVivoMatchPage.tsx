@@ -299,9 +299,7 @@ export default function AoVivoMatchPage() {
     }
   };
 
-  useEffect(() => {
-    if (!authLoading && !user) navigate("/aovivo/login");
-  }, [authLoading, user, navigate]);
+  // Protection is now handled by ProtectedRoute in App.tsx
 
   if (authLoading || accessLoading) {
     return (

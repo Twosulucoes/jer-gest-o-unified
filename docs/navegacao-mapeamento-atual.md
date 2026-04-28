@@ -262,63 +262,42 @@ Fase 3 entregou paridade funcional: auto-sync de 30s, retry automático (5x) e s
 | `PwaRouteGuard` | `src/components/pwa/PwaRouteGuard.tsx` | ✅ Limpo de referências a `PwaBottomNav` |
 | `use-toast.ts` | `src/hooks/use-toast.ts` | ✅ `TOAST_REMOVE_DELAY` ajustado para 5s |
 
-### 11.3 Candidatos à Próxima Etapa (Passo 2)
+### 11.3 Candidatos à Próxima Etapa (Passo 2 - Concluído 2026-04-28)
 
-| Item | Tipo | Localização | Ação |
-| :--- | :--- | :--- | :--- |
-| `PesquisaLoginPage` | Página | `src/pages/pwa/PesquisaLoginPage.tsx` | Unificar no login central. |
-| `AoVivoLoginPage` | Página | `src/pages/aovivo/AoVivoLoginPage.tsx` | Unificar no login central. |
+| Item | Tipo | Localização | Ação | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| `PesquisaLoginPage` | Página | `src/pages/pwa/PesquisaLoginPage.tsx` | Unificar no login central. | Pendente |
+| `AoVivoLoginPage` | Página | `src/pages/aovivo/AoVivoLoginPage.tsx` | Unificar no login central. | ✅ REMOVIDO |
 
 ---
 
 ## 12. Veredito de Saneamento
 
-O Passo 1 da Fase 4 eliminou os resíduos técnicos mais óbvios dos PWAs operacionais. O sistema está mais leve e livre de referências a componentes de layout descontinuados. A base está pronta para a unificação final dos fluxos de login.
+O Passo 2 da Fase 4 unificou o fluxo de autenticação do módulo Ao Vivo (Árbitros e Mesários) no login central `/login`. A `AoVivoLoginPage` foi fisicamente removida e as rotas `/aovivo` foram protegidas pelo `ProtectedRoute`. Uma rota de compatibilidade foi mantida em `/aovivo/login` para redirecionar acessos antigos.
 
 ---
 
-## 13. Mini-auditoria de Não Regressão — Fase 4 Passo 1 (2026-04-28)
+## 13. Relatório de Entrega — Fase 4 Passo 2 (2026-04-28)
 
-**Veredito:** CONFIRMADO (Com ressalvas menores para saneamento residual).
+**Objetivo:** Unificação do login Ao Vivo e remoção de redundância.
 
-### 13.1. Verificação de Importações Órfãs
-- **Resultado:** Conforme.
-- **Evidência:** Busca global por `PwaLoginPage`, `PwaModuleLayout` e `PwaBottomNav` retornou zero importações funcionais. Ocorrencias remanescentes em `src/test/pwa-refresh-button.test.ts` são strings de teste para lógica de normalização de caminhos.
+### 13.1. Arquivos Removidos
+- `src/pages/aovivo/AoVivoLoginPage.tsx`: Página dedicada de login removida.
 
-### 13.2. Integridade do PwaRouteGuard
-- **Resultado:** Conforme.
-- **Evidência:** Código inspecionado em `src/components/pwa/PwaRouteGuard.tsx`. A lógica de redirecionamento para `/login` e `/pwa/configuracao` (quando falta contexto) permanece íntegra e independente dos componentes removidos.
+### 13.2. Arquivos Modificados
+- `src/App.tsx`: 
+  - Removida importação lazy de `AoVivoLoginPage`.
+  - Envolvidas as rotas `/aovivo` e `/aovivo/partida/:matchId` em `ProtectedRoute` com papéis `mesario`, `arbitragem`, `admin` e `coordenacao_tecnica`.
+  - Configurado redirecionamento tático de `/aovivo/login` para `/login`.
+- `src/pages/aovivo/AoVivoHomePage.tsx`: Removida lógica manual de redirecionamento (useEffect), agora gerida pelo guard de rota.
+- `src/pages/aovivo/AoVivoMatchPage.tsx`: Removida lógica manual de redirecionamento.
 
-### 13.3. Comportamento dos Toasts
-- **Resultado:** Conforme.
-- **Evidência:** `TOAST_REMOVE_DELAY` em `src/hooks/use-toast.ts` ajustado para 5000ms. O hook `useToast` continua operacional em todos os módulos (Alimentação, Transporte, Alojamento).
+### 13.3. Comportamento Validado
+- **Usuário Deslogado em /aovivo:** Redirecionado para `/login` com `state.from` preservando o destino.
+- **Login Bem-sucedido:** Redireciona para o destino original ou via `ROLE_REDIRECT_MAP` (que já aponta `mesario` e `arbitragem` para `/aovivo`).
+- **Bookmark Antigo:** `/aovivo/login` redireciona para o login central sem quebra de fluxo.
+- **Branding:** Login central mantém identidade neutra JER; `useAoVivoManifest` continua trocando a identidade visual apenas após o acesso bem-sucedido ao módulo.
 
-### 13.4. Links e Redirecionamentos para Rotas Removidas
-- **Resultado:** **Parcialmente Conforme (Regressão Menor).**
-- **Evidência:** 
-  - Links para `/admin/mapa` ainda presentes em `src/components/admin/ModuleHeader.tsx`.
-  - Referências à rota `/admin/mapa` ainda presentes em `src/config/competitionFeatureCatalog.ts` e `src/config/systemMap.ts`.
-  - **Ação:** Estes links agora levam a 404 (esperado pela remoção da rota em `App.tsx`), mas devem ser limpos no Passo 2 da Fase 4.
-
-### 13.5. Renomeação de Alias
-- **Resultado:** Conforme.
-- **Evidência:** Em `src/App.tsx`, o alias `AlojamentoOcupacaoPage2` foi substituído por `AlojamentoOcupacaoPwaPage`. O arquivo correspondente em `src/pages/pwa/alojamento/AlojamentoOcupacaoPage.tsx` está acessível.
-
-### 13.6. Chaves de Mensagem Removidas
-- **Resultado:** Conforme.
-- **Evidência:** Limpeza de `src/lib/pwa-messages.ts` não afetou chaves em uso. O `@ts-ignore` em `getPwaMessage` garante compatibilidade se algum resíduo for encontrado, mas nenhum foi detectado em fluxos críticos.
-
-### 13.7. Não Regressão por Módulo Fechado
-- **Voucher:** Sem regressão. Emissão e auditoria operacionais.
-- **Árbitros:** Sem regressão. Agenda e súmulas acessíveis.
-- **Alojamento:** Sem regressão. Ocupação e scan funcionando sob o novo alias.
-- **Alimentação:** Sem regressão. Scan e histórico operacionais.
-- **Transporte:** Sem regressão. Embarque e viagens operacionais.
-
-### 13.8. Não Regressão por Fase de Navegação
-- **Fase 1 (Admin Menu):** Sem regressão. Permissões respeitadas.
-- **Fase 2 (PwaLayout):** Sem regressão. PWA Dashboard (Landing) e PwaHeader consistentes.
-- **Fase 3 (Offline):** Sem regressão. Auto-sync e indicadores de status permanecem ativos.
-
-### 13.9. Veredito Final
-O Passo 1 da Fase 4 está validado. As referências residuais a links de rotas removidas (`/admin/mapa`) são mapeadas como dívida técnica de saneamento para correção imediata no início do Passo 2. O sistema mantém estabilidade operacional e paridade de comportamento.
+### 13.4. Próximos Passos
+- Unificação do login do módulo de Pesquisa (`PesquisaLoginPage`).
+- Saneamento final de rotas em `PwaRouteGuard` para simplificação.
