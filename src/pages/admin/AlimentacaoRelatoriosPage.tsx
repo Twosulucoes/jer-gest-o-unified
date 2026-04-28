@@ -5,7 +5,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useStageScope } from "@/hooks/useStageScope";
 import { format } from "date-fns";
-import { Download, Utensils, AlertCircle, Info, FileText, Table as TableIcon } from "lucide-react";
+import { Download, Utensils, AlertCircle, Info, FileText, Table as TableIcon, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -237,6 +237,55 @@ export default function AlimentacaoRelatoriosPage() {
     }
   };
 
+  const exportBuffetRealized = () => {
+    if (!consumptions?.length) return;
+    setIsExporting(true);
+    try {
+      // Group by window
+      const windowsMap = new Map<string, any[]>();
+      consumptions.forEach(c => {
+        const winId = c.meal_window_id;
+        if (!windowsMap.has(winId)) windowsMap.set(winId, []);
+        windowsMap.get(winId)?.push(c);
+      });
+
+      const data: any[] = [];
+      windowsMap.forEach((items, winId) => {
+        const win = items[0].meal_windows;
+        data.push({
+          "Janela": win.label || win.meal_types?.name,
+          "Data": format(new Date(win.service_date + "T00:00:00"), "dd/MM/yyyy"),
+          "Tipo": win.meal_types?.name,
+          "Total Realizado": items.length,
+          "Status": "Finalizado"
+        });
+        
+        // Add detail rows
+        items.forEach(i => {
+          data.push({
+            "Janela": "",
+            "Data": "",
+            "Tipo": "Detalhe",
+            "Participante": i.participants?.person?.full_name,
+            "Instante": format(new Date(i.consumed_at), "HH:mm:ss"),
+            "Método": i.method
+          });
+        });
+        data.push({}); // Empty line between windows
+      });
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Realizado Buffet");
+      XLSX.writeFile(wb, `realizado_buffet_${startDate || "geral"}.xlsx`);
+      toast.success("Exportação Buffet gerada");
+    } catch (e) {
+      toast.error("Falha ao exportar");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
@@ -261,6 +310,9 @@ export default function AlimentacaoRelatoriosPage() {
             </Button>
             <Button variant="outline" size="sm" onClick={exportXlsx} disabled={!consumptions?.length || isExporting}>
               <TableIcon className="mr-2 h-4 w-4" /> XLSX
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportBuffetRealized} disabled={!consumptions?.length || isExporting} title="Exportar realizado para buffet">
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Buffet (Realizado)
             </Button>
             <Button size="sm" onClick={exportPdf} disabled={!consumptions?.length || isExporting}>
               <FileText className="mr-2 h-4 w-4" /> PDF

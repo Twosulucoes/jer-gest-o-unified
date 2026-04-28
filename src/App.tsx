@@ -193,6 +193,7 @@ import AlimentacaoBuscarPwaPage from "./pages/pwa/alimentacao/AlimentacaoBuscarP
 import AlimentacaoJanelasPwaPage from "./pages/pwa/alimentacao/AlimentacaoJanelasPage";
 import AlimentacaoHistoricoPage from "./pages/pwa/alimentacao/AlimentacaoHistoricoPage";
 import AlimentacaoListaConsumosPage from "./pages/pwa/alimentacao/AlimentacaoListaConsumosPage";
+import AlimentacaoDivergenciasPage from "./pages/admin/AlimentacaoDivergenciasPage";
 // PWA Coordenação Técnica pages
 import CoordenacaoHomePage from "./pages/pwa/coordenacao/CoordenacaoHomePage";
 import CoordenacaoAgendaPage from "./pages/pwa/coordenacao/CoordenacaoAgendaPage";
@@ -505,6 +506,7 @@ const App = () => (
               <Route path="alimentacao/consumo" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoConsumoPage /></ProtectedRoute>} />
               <Route path="alimentacao/dashboard" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoDashboardPage /></ProtectedRoute>} />
               <Route path="alimentacao/previsao" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoPrevisaoPage /></ProtectedRoute>} />
+              <Route path="alimentacao/divergencias" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoDivergenciasPage /></ProtectedRoute>} />
               <Route path="alimentacao/padroes" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoPadroesPage /></ProtectedRoute>} />
               <Route path="alimentacao/relatorios" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoRelatoriosPage /></ProtectedRoute>} />
               {/* Transporte */}

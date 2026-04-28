@@ -3731,6 +3731,64 @@ export type Database = {
           },
         ]
       }
+      meal_incidents: {
+        Row: {
+          created_at: string
+          device_info: Json | null
+          id: string
+          incident_at: string
+          incident_type: Database["public"]["Enums"]["meal_incident_type"]
+          is_offline: boolean | null
+          meal_window_id: string
+          participant_id: string | null
+          registered_by: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          incident_at?: string
+          incident_type: Database["public"]["Enums"]["meal_incident_type"]
+          is_offline?: boolean | null
+          meal_window_id: string
+          participant_id?: string | null
+          registered_by: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          incident_at?: string
+          incident_type?: Database["public"]["Enums"]["meal_incident_type"]
+          is_offline?: boolean | null
+          meal_window_id?: string
+          participant_id?: string | null
+          registered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_incidents_meal_window_id_fkey"
+            columns: ["meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "meal_windows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_incidents_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_incidents_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+        ]
+      }
       meal_locations: {
         Row: {
           address: string | null
@@ -8419,6 +8477,17 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      record_meal_incident: {
+        Args: {
+          p_device_info?: Json
+          p_incident_at?: string
+          p_incident_type: Database["public"]["Enums"]["meal_incident_type"]
+          p_is_offline?: boolean
+          p_meal_window_id: string
+          p_participant_id?: string
+        }
+        Returns: string
+      }
       redeem_voucher:
         | {
             Args: {
@@ -8795,6 +8864,15 @@ export type Database = {
         | "resultado_lancado"
         | "resultado_validado"
         | "publicado"
+      meal_incident_type:
+        | "NOT_ELIGIBLE"
+        | "OUTSIDE_WINDOW"
+        | "DUPLICATE"
+        | "VOUCHER_INVALID"
+        | "VOUCHER_REVOKED"
+        | "VOUCHER_EXPIRED"
+        | "VOUCHER_ALREADY_USED"
+        | "OTHER"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -8943,6 +9021,16 @@ export const Constants = {
         "resultado_lancado",
         "resultado_validado",
         "publicado",
+      ],
+      meal_incident_type: [
+        "NOT_ELIGIBLE",
+        "OUTSIDE_WINDOW",
+        "DUPLICATE",
+        "VOUCHER_INVALID",
+        "VOUCHER_REVOKED",
+        "VOUCHER_EXPIRED",
+        "VOUCHER_ALREADY_USED",
+        "OTHER",
       ],
     },
   },
