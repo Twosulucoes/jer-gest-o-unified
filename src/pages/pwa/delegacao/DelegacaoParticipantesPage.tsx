@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { PwaSectionLabel } from "@/components/pwa/PwaDashboardPrimitives";
 import { ClipboardList, Search } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import PwaLayout from "@/components/pwa/PwaLayout";
 import { cn } from "@/lib/utils";
 
 interface Participant {
@@ -75,9 +76,8 @@ export default function DelegacaoParticipantesPage() {
     : participants;
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <PwaLayout backTo="/pwa/delegacao" moduleTitle="Participantes">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
-      <PwaHeader title="Participantes" icon={ClipboardList} backTo="/pwa/delegacao" />
 
       <main className="relative max-w-md mx-auto space-y-4 p-4">
         <div className="relative">
@@ -139,6 +139,6 @@ export default function DelegacaoParticipantesPage() {
           })}
         </div>
       </main>
-    </div>
+    </PwaLayout>
   );
 }
