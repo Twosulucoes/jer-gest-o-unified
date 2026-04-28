@@ -63,6 +63,7 @@ export default function PwaLayout({
     if (path.startsWith("/pwa/delegacao")) return "delegacao";
     if (path.startsWith("/pwa/credenciamento")) return "credenciamento";
     if (path.startsWith("/pwa/resultados")) return "resultados";
+    if (path.startsWith("/pwa/registros")) return "registros";
     if (path.startsWith("/aovivo")) return "aovivo";
     return null;
   }, [path]);
@@ -75,6 +76,7 @@ export default function PwaLayout({
     delegacao: { title: "Delegação", icon: Users, homeTo: "/pwa/delegacao" },
     credenciamento: { title: "Credenciamento", icon: IdCard, scanTo: "/pwa/credenciamento/vincular", homeTo: "/pwa/credenciamento" },
     resultados: { title: "Resultados", icon: Award, homeTo: "/pwa/resultados" },
+    registros: { title: "Registros", icon: Trophy, homeTo: "/pwa/registros", primaryAction: { icon: Plus, to: "/pwa/registros", label: "Novo" } },
     aovivo: { title: "JER Ao Vivo", icon: Radio, homeTo: "/aovivo" },
   };
 
@@ -92,6 +94,7 @@ export default function PwaLayout({
       { role: "delegacao", label: "Delegação", icon: Users, to: "/pwa/delegacao" },
       { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento" },
       { role: "mesario", label: "Ao Vivo", icon: Radio, to: "/aovivo" },
+      { role: "mesario", label: "Registros", icon: Trophy, to: "/pwa/registros", showOnlyIfRegistrosEnabled: true },
       { role: "arbitragem", label: "Ao Vivo", icon: ShieldCheck, to: "/aovivo" },
     ];
     
