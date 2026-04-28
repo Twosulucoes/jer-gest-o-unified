@@ -6,7 +6,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { toast } from "sonner";
 import {
   FileCheck, Plus, Search, Download, Trash2, Check, X, User, 
-  Upload, Loader2
+  Upload, Loader2, Camera, MapPin, Calendar as CalendarIcon, Type, Link as LinkIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+
+const OSC_CATEGORIES = [
+  { value: "abertura_encerramento", label: "Abertura ou Encerramento" },
+  { value: "partida_andamento", label: "Partida em Andamento" },
+  { value: "premiacao_podio", label: "Premiação ou Pódio" },
+  { value: "equipes_atletas", label: "Equipes e Atletas" },
+  { value: "organizacao_voluntarios", label: "Organização e Voluntários" },
+  { value: "estrutura_geral", label: "Estrutura (Sede, Refeitório, Alojamento)" }
+];
+
 
 export default function EvidenciasOSCPage() {
   const qc = useQueryClient();
