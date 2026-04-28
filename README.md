@@ -173,8 +173,8 @@ O cliente distribui acessos para operadores através de **links curtos** com QR 
 | **Painel de Controle da Competição** | ✅ Pronto | 100% |
 | **Logística — Transporte** (Veículos, Rotas, Viagens, Embarque, Relatórios) | ✅ Pronto | 85% |
 | **Logística — Alimentação** (Tipos, Janelas, Consumo, Dashboard, Relatórios) | ✅ Pronto | 100% |
-| **Logística — Alojamento** (Locais, Unidades, Ocupação, Relatórios) | ✅ Pronto | 85% |
-| **PWA Operacional** (Alojamento, Transporte, Alimentação, Coordenação, Delegação) | ✅ Pronto | 85% |
+| **Logística — Alojamento** (Locais, Unidades, Ocupação, Relatórios) | ✅ Pronto | 100% |
+| **PWA Operacional** (Alojamento, Transporte, Alimentação, Coordenação, Delegação) | ✅ Pronto | 90% |
 | **PWA Ao Vivo** (Mesário touch-friendly, dark mode, offline) | 🟡 Parcial | 60% |
 | **Publicação Oficial** (Portal público, Edge Functions, PDF boletins) | 🟡 Parcial | 65% |
 | **Evidências / OSC** | ⚪ Não iniciado | 0% |
