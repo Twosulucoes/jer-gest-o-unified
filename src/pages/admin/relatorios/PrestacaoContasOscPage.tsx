@@ -115,28 +115,45 @@ export default function PrestacaoContasOscPage() {
       });
 
       // Registrar auditoria
-      const { data: userData } = await supabase.auth.getUser();
-      await supabase.from("audit_events").insert({
-        table_name: "osc_reports",
-        record_id: eventId,
-        action: "generate_pdf",
-        created_by: userData.user?.id,
-        payload: {
-          event_name: activeEvent?.name,
-          photo_counts: counts,
-          stats: {
-            participants: data.resumo.totalParticipants,
-            matches: data.resumo.totalMatches,
-            meals: data.resumo.totalMeals
-          },
-          config_used: oscConfig
-        }
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("audit_events").insert({
+          table_name: "osc_reports",
+          record_id: eventId,
+          action: "generate_pdf",
+          created_by: user.id,
+          payload: {
+            event_name: activeEvent?.name,
+            photo_counts: counts,
+            stats: {
+              participants: data.resumo.totalParticipants,
+              matches: data.resumo.totalMatches,
+              meals: data.resumo.totalMeals
+            },
+            config_used: oscConfig
+          }
+        } as any);
+      }
 
       toast.success("PDF gerado e registrado na auditoria");
       fetchAuditHistory();
     } catch (e: any) {
       toast.error("Erro ao gerar PDF", { description: e?.message });
+    } finally { setExporting(null); }
+  };
+
+  const onXlsx = async () => {
+    if (!data) return;
+    try {
+      setExporting("xlsx");
+      await exportOscXlsx(data, {
+        eventName: activeEvent?.name || "Evento",
+        generatedAt: new Date(),
+        periodLabel,
+      });
+      toast.success("Planilha gerada");
+    } catch (e: any) {
+      toast.error("Erro ao gerar XLSX", { description: e?.message });
     } finally { setExporting(null); }
   };
 
