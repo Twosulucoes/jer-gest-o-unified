@@ -276,6 +276,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("Error generating bulletin:", err);
     return new Response(JSON.stringify({ 
+      code: "INTERNAL_ERROR",
       error: err.message || "Erro interno ao gerar boletim",
       details: "Se o problema persistir, verifique as permissões de storage ou entre em contato com o suporte."
     }), {
