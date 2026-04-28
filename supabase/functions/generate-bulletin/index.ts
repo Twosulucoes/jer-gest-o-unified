@@ -57,6 +57,16 @@ Deno.serve(async (req) => {
     const { data: matchesRaw, error: queryErr } = await query;
     if (queryErr) throw queryErr;
     matches = matchesRaw || [];
+    
+    if (matches.length === 0) {
+      return new Response(JSON.stringify({ 
+        error: "Nenhum resultado publicado foi encontrado para os filtros selecionados.",
+        details: "O boletim só pode ser gerado para resultados com status 'publicado'. Certifique-se de validar e publicar os resultados na Central de Resultados antes de tentar novamente."
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // 3. Generate PDF with jsPDF
     const doc = new jsPDF();
