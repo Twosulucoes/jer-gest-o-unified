@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { useAoVivoManifest } from "./useAoVivoManifest";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
-import { LogOut, Radio, Eye, Info, X, Loader2 } from "lucide-react";
+import { LogOut, Radio, Eye, Info, X, Loader2, Calendar, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format, isToday, isFuture, parseISO } from "date-fns";
+import { format, isToday, isFuture, parseISO, differenceInMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PwaStatusBadge, type PwaStatusTone } from "@/components/pwa/PwaStatusBadge";
 import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
@@ -36,7 +37,7 @@ export default function AoVivoHomePage() {
     if (!authLoading && !user) navigate("/aovivo/login");
   }, [authLoading, user, navigate]);
 
-  const { data: matches = [], isLoading } = useQuery({
+  const { data: matches = [], isLoading, refetch } = useQuery({
     queryKey: ["aovivo_matches", user?.id, activeEvent?.id],
     queryFn: async () => {
       if (!user?.id || !activeEvent?.id) return [];
@@ -56,7 +57,7 @@ export default function AoVivoHomePage() {
 
       const { data: assignments, error: aErr } = await supabase
         .from("match_user_assignments" as any)
-        .select("match_id, role")
+        .select("id, match_id, role, acceptance_status, reported_at, indisponibility_reason")
         .eq("user_id", user.id)
         .eq("event_id", activeEvent.id);
       if (aErr) throw aErr;
@@ -64,6 +65,7 @@ export default function AoVivoHomePage() {
 
       const matchIds = (assignments as any[]).map((a: any) => a.match_id);
       const roleMap = new Map((assignments as any[]).map((a: any) => [a.match_id, a.role]));
+      const assignmentMap = new Map((assignments as any[]).map((a: any) => [a.match_id, a]));
 
       const { data: matchData, error: mErr } = await supabase
         .from("competition_matches")
@@ -72,11 +74,41 @@ export default function AoVivoHomePage() {
         .order("match_date", { ascending: true, nullsFirst: false })
         .order("start_time", { ascending: true, nullsFirst: false });
       if (mErr) throw mErr;
-      return (matchData ?? []).map((m: any) => ({ ...m, role_label: roleMap.get(m.id) ?? "Mesário" }));
+      return (matchData ?? []).map((m: any) => {
+        const ass = assignmentMap.get(m.id);
+        return { 
+          ...m, 
+          role_label: roleMap.get(m.id) ?? "Mesário",
+          assignment_id: ass?.id,
+          acceptance_status: ass?.acceptance_status ?? 'pending',
+          reported_at: ass?.reported_at,
+          indisponibility_reason: ass?.indisponibility_reason
+        };
+      });
     },
     enabled: !!user?.id && !!activeEvent?.id,
     refetchInterval: 60000,
   });
+
+  const updateStatusMut = useMutation({
+    mutationFn: async ({ assignmentId, status, reason }: { assignmentId: string; status: string; reason?: string }) => {
+      const { error } = await supabase
+        .from("match_user_assignments" as any)
+        .update({ 
+          acceptance_status: status,
+          reported_at: status === 'unavailable' ? new Date().toISOString() : null,
+          indisponibility_reason: reason || null
+        } as any)
+        .eq("id", assignmentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetch();
+    }
+  });
+
+  const [reportingId, setReportingId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState("");
 
   const sportEventIds = [...new Set(matches.map((m: any) => m.sport_event_id).filter(Boolean))];
   const venueIds = [...new Set(matches.map((m: any) => m.venue_id).filter(Boolean))];
@@ -217,24 +249,68 @@ export default function AoVivoHomePage() {
             const canEnter = m.status === "scheduled" || m.status === "in_progress";
 
             return (
-              <div key={m.id} className="op-card space-y-3 p-4">
+              <div key={m.id} className="op-card space-y-4 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold leading-tight text-foreground">{getMatchLabel(m)}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {dateStr} {timeStr && `• ${timeStr}`} {venue && `• ${venue}`}
-                    </p>
+                    <div className="mt-2 flex flex-col gap-1.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {dateStr} {timeStr && `• ${timeStr}`}
+                      </div>
+                      {venue && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {venue}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <PwaStatusBadge tone={status.tone} pulse={status.tone === "live"}>
                     {status.label}
                   </PwaStatusBadge>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{m.role_label}</span>
+
+                <div className="flex items-center justify-between border-t border-border/40 pt-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">{m.role_label}</span>
+                  
+                  {m.acceptance_status === 'confirmed' ? (
+                    <div className="flex items-center gap-1.5 text-emerald-600">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span className="text-xs font-bold">Agenda confirmada</span>
+                    </div>
+                  ) : m.acceptance_status === 'unavailable' ? (
+                    <div className="flex items-center gap-1.5 text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="text-xs font-bold">Indisponível</span>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => updateStatusMut.mutate({ assignmentId: m.assignment_id, status: 'confirmed' })}
+                        disabled={updateStatusMut.isPending}
+                        className="flex h-8 items-center gap-1.5 rounded-lg bg-emerald-100 px-3 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-200"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Confirmar
+                      </button>
+                      <button
+                        onClick={() => setReportingId(m.assignment_id)}
+                        disabled={updateStatusMut.isPending}
+                        className="flex h-8 items-center gap-1.5 rounded-lg bg-destructive/10 px-3 text-[11px] font-bold text-destructive transition-colors hover:bg-destructive/20"
+                      >
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        Recusar
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end pt-1">
                   {canEnter ? (
                     <button
                       onClick={() => navigate(`/aovivo/partida/${m.id}`)}
-                      className="op-btn-primary !h-10 !w-auto !rounded-xl px-5 !text-sm"
+                      className="op-btn-primary !h-10 !w-full !rounded-xl px-5 !text-sm"
                     >
                       <Radio className="h-4 w-4" />
                       Entrar ao vivo
@@ -242,7 +318,7 @@ export default function AoVivoHomePage() {
                   ) : (
                     <button
                       onClick={() => navigate(`/aovivo/partida/${m.id}`)}
-                      className="flex h-10 items-center gap-2 rounded-xl bg-muted/40 px-5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                      className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-muted/40 px-5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
                     >
                       <Eye className="h-4 w-4" />
                       Ver resumo
@@ -254,6 +330,44 @@ export default function AoVivoHomePage() {
           })
         )}
       </div>
+
+      {/* Indisponibility Dialog */}
+      {reportingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
+          <div className="op-card w-full max-w-sm space-y-4 p-6 shadow-2xl">
+            <h3 className="text-base font-bold text-foreground">Reportar Indisponibilidade</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Informe o motivo para que a coordenação possa providenciar sua substituição.
+            </p>
+            <textarea
+              className="flex min-h-[100px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              placeholder="Ex: Problemas de saúde, emergência familiar..."
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => { setReportingId(null); setReportReason(""); }}
+                className="flex-1 h-11 rounded-xl bg-muted/40 text-sm font-bold text-muted-foreground transition-colors hover:bg-muted/60"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={!reportReason.trim() || updateStatusMut.isPending}
+                onClick={() => {
+                  updateStatusMut.mutate({ assignmentId: reportingId, status: 'unavailable', reason: reportReason });
+                  setReportingId(null);
+                  setReportReason("");
+                }}
+                className="flex-1 h-11 rounded-xl bg-destructive text-sm font-bold text-white shadow-lg shadow-destructive/20 transition-all active:scale-95 disabled:opacity-50"
+              >
+                Reportar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
