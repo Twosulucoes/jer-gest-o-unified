@@ -3445,6 +3445,95 @@ export type Database = {
           },
         ]
       }
+      meal_forecast_exports: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          event_stage_id: string | null
+          export_format: string
+          filters: Json | null
+          generated_by: string | null
+          id: string
+          service_date: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id?: string | null
+          event_stage_id?: string | null
+          export_format: string
+          filters?: Json | null
+          generated_by?: string | null
+          id?: string
+          service_date: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string | null
+          event_stage_id?: string | null
+          export_format?: string
+          filters?: Json | null
+          generated_by?: string | null
+          id?: string
+          service_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_forecast_exports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_forecast_exports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_locations: {
+        Row: {
+          address: string | null
+          capacity: number | null
+          created_at: string | null
+          event_id: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          capacity?: number | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          capacity?: number | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_locations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_types: {
         Row: {
           created_at: string
@@ -3502,6 +3591,44 @@ export type Database = {
           },
         ]
       }
+      meal_window_eligibility: {
+        Row: {
+          created_at: string | null
+          eligibility_type: string
+          id: string
+          meal_window_id: string | null
+          participant_type_value: string | null
+          reference_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          eligibility_type: string
+          id?: string
+          meal_window_id?: string | null
+          participant_type_value?: string | null
+          reference_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          eligibility_type?: string
+          id?: string
+          meal_window_id?: string | null
+          participant_type_value?: string | null
+          reference_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_window_eligibility_meal_window_id_fkey"
+            columns: ["meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "meal_windows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_windows: {
         Row: {
           created_at: string
@@ -3513,6 +3640,7 @@ export type Database = {
           label: string | null
           location: string | null
           meal_type_id: string
+          meal_window_location_id: string | null
           seed_batch_id: string | null
           seed_tag: string | null
           service_date: string
@@ -3529,6 +3657,7 @@ export type Database = {
           label?: string | null
           location?: string | null
           meal_type_id: string
+          meal_window_location_id?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           service_date: string
@@ -3545,6 +3674,7 @@ export type Database = {
           label?: string | null
           location?: string | null
           meal_type_id?: string
+          meal_window_location_id?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           service_date?: string
@@ -3571,6 +3701,13 @@ export type Database = {
             columns: ["meal_type_id"]
             isOneToOne: false
             referencedRelation: "meal_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_meal_window_location_id_fkey"
+            columns: ["meal_window_location_id"]
+            isOneToOne: false
+            referencedRelation: "meal_locations"
             referencedColumns: ["id"]
           },
         ]
@@ -7771,6 +7908,27 @@ export type Database = {
         Returns: Json
       }
       get_group_standings: { Args: { p_group_id: string }; Returns: Json }
+      get_participant_counts_by_delegation: {
+        Args: { p_event_id: string; p_stage_id?: string }
+        Returns: {
+          count: number
+          id: string
+        }[]
+      }
+      get_participant_counts_by_institution: {
+        Args: { p_event_id: string; p_stage_id?: string }
+        Returns: {
+          count: number
+          id: string
+        }[]
+      }
+      get_participant_counts_by_profile: {
+        Args: { p_event_id: string; p_stage_id?: string }
+        Returns: {
+          count: number
+          type: string
+        }[]
+      }
       get_participant_sport_history: {
         Args: { _participant_id: string }
         Returns: {

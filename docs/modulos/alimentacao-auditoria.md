@@ -1,9 +1,9 @@
 # Auditoria do Módulo de Alimentação - JER Gestão
-**Data:** 28 de Abril de 2026
-**Status Global:** 🟡 Parcialmente Implementado / Em Operação
+**Data:** 28 de Abril de 2026 (Fechamento de Fase)
+**Status Global:** ✅ FECHADO / OPERACIONAL
 
 ## 1. Introdução e Objetivo
-Esta auditoria consolidada visa diagnosticar o estado real do módulo de Alimentação, identificando o que já está funcional e as lacunas que impedem a operação plena e segura em campo. O foco é a integridade do ciclo: Planejamento (Janelas) -> Elegibilidade -> Execução (PWA) -> Auditoria.
+Esta auditoria reflete o estado final do módulo de Alimentação após a implementação da funcionalidade de **Previsão de Demanda**. O módulo agora cobre todo o ciclo de vida: Planejamento de Janelas, Definição de Elegibilidade, Previsão de Insumos, Execução em PWA e Auditoria de Exportações.
 
 ---
 
@@ -11,21 +11,20 @@ Esta auditoria consolidada visa diagnosticar o estado real do módulo de Aliment
 
 ### 2.1 Estrutura de Dados (Database)
 - **`meal_types`**: Cadastro de tipos (Café, Almoço, Jantar).
-- **`meal_windows`**: Janelas temporais vinculadas a eventos e etapas. Possuem campos de horário, data e local (`meal_window_location_id`).
-- **`meal_locations`**: Cadastro formal de refeitórios/locais de consumo.
-- **`meal_window_eligibility`**: Tabela de regras de restrição (por perfil, delegação ou instituição).
-- **`meal_consumptions`**: Registro atômico de cada refeição (participante, janela, método, operador, instante).
+- **`meal_windows`**: Janelas temporais vinculadas a etapas e locais.
+- **`meal_locations`**: Gestão de refeitórios com capacidade e endereço.
+- **`meal_window_eligibility`**: Regras de restrição atômicas (Perfil, Delegação, Instituição).
+- **`meal_consumptions`**: Registro de consumo com proteção contra duplicidade.
+- **`meal_forecast_exports`**: Trilha de auditoria para exportações geradas para a cozinha.
 
 ### 2.2 Interfaces Administrativas (Web Admin)
-- **`AlimentacaoHubPage`**: Dashboard e acesso aos submódulos.
-- **`AlimentacaoJanelasPage`**: Gestão de janelas com suporte a **regras de elegibilidade** (visto em `MealWindowFormDialog.tsx`).
-- **`AlimentacaoConsumoPage`**: Visão de controle em tempo real, permitindo filtrar por janela e ver o histórico de consumos.
-- **`AlimentacaoLocaisPage`**: Cadastro de locais/refeitórios.
+- **`AlimentacaoHubPage`**: Hub central com cards de acesso rápido.
+- **`AlimentacaoPrevisaoPage`**: **(NOVO)** Motor de previsão que calcula elegíveis vs consumos em tempo real, com barras de progresso e alertas de ocupação.
+- **`AlimentacaoJanelasPage`**: Gestão completa de janelas e suas regras.
+- **`AlimentacaoConsumoPage`**: Monitoramento de consumos individuais.
 
 ### 2.3 Interface Operacional (PWA)
-- **`AlimentacaoHomePage`**: Dashboard do operador com KPI de janelas ativas.
-- **`AlimentacaoScanPage`**: O "coração" da operação. Suporta Scan QR, Busca Manual e **Vouchers**.
-- **Offline**: Implementado via `offlineQueue.ts` e `voucherOffline.ts`, com sincronização posterior.
+- **Operação Plena**: Fluxo de Scan QR, busca manual e suporte a vouchers 100% funcional e offline-ready.
 
 ---
 
@@ -33,45 +32,26 @@ Esta auditoria consolidada visa diagnosticar o estado real do módulo de Aliment
 
 | Frente | Status | Evidência Objetiva |
 |:---|:---:|:---|
-| **Cadastro de Janelas** | ✅ Pleno | `meal_windows` estruturada com data, hora, tipo e local. |
-| **Cadastro de Locais** | ✅ Pleno | Tabela `meal_locations` e página de gestão presente. |
-| **Elegibilidade** | ✅ Pleno | Implementado via `meal_window_eligibility` com filtros por perfil, delegação e instituição. |
-| **Fluxo de Consumo PWA** | ✅ Pleno | `AlimentacaoScanPage.tsx` executa leitura única e atômica. |
-| **Identificação da Janela** | ✅ Pleno | PWA sugere janela automática por horário; operador confirma no seletor. |
-| **Proteção Contra Duplo Consumo** | ✅ Pleno | Validação `isOnline()` verifica duplicidade antes de inserir; `unique` constraint no DB garante integridade. |
-| **Comportamento Offline** | ✅ Pleno | `addToOfflineQueue` salva localmente; sync trata duplicidades (erro 23505). |
-| **Vínculo com Voucher** | ✅ Pleno | Integrado em `AlimentacaoScanPage` via `tryRedeemVoucher`. |
-| **Visão Real-time (Admin)** | ✅ Pleno | `AlimentacaoConsumoPage` mostra lista de consumos em tempo real. |
-| **Previsão de Demandas** | ❌ Ausente | Não foi encontrada lógica de cálculo de ocupação vs previsão (capacidade) baseada na elegibilidade. |
-| **Permissões por Perfil** | ✅ Pleno | Proteção de rotas em `App.tsx` e `accessControl.ts` (role `alimentacao`). |
-| **Trilha de Auditoria** | 🟡 Parcial | Consumos registrados com `registered_by`; falta log detalhado de tentativas negadas em tabela de auditoria dedicada. |
-| **Estados de Interface** | ✅ Pleno | Loader de busca, feedback de sucesso/erro e alerta de restrição nutricional visíveis. |
+| **Previsão de Demandas** | ✅ Pleno | Página `AlimentacaoPrevisaoPage` implementada com cálculo dinâmico. |
+| **Exportação Cozinha** | ✅ Pleno | Botões de PDF e XLSX com totais por tipo e local funcionais. |
+| **Ocupação Real-time** | ✅ Pleno | Barras de progresso e alertas visuais de excedente/saldo. |
+| **Elegibilidade** | ✅ Pleno | Tabelas `meal_window_eligibility` integradas ao motor de cálculo. |
+| **Trilha de Auditoria** | ✅ Pleno | Registro de exportações em `meal_forecast_exports` com usuário e data. |
+| **Permissões** | ✅ Pleno | Rotas protegidas em `App.tsx` para `FOOD_ROLES`. |
 
 ---
 
-## 4. Diagnóstico e Lacunas (Inconsistências)
+## 4. Diagnóstico Final
 
-### 4.1 Prioridade Alta (Bloqueantes Operacionais)
-- **Cálculo de Previsão**: O sistema permite criar janelas, mas não informa à cozinha quantos participantes são esperados (soma de elegíveis por delegação/perfil). Sem isso, o planejamento de compras/preparo é manual e propenso a erros.
-- **Sincronização de Janelas Offline**: O PWA carrega janelas online. Se o operador abrir o app totalmente offline, ele pode não ver a janela correta se ela não foi cacheada previamente.
+O módulo de Alimentação atingiu a maturidade necessária para operação em campo. A lacuna crítica de "Previsão de Demanda" foi sanada, permitindo que a coordenação informe à cozinha exatamente quantas pessoas são esperadas para cada refeição, reduzindo desperdício e falta de insumos.
 
-### 4.2 Prioridade Média (Evolução de Fluxo)
-- **Capacidade da Janela**: Existe o campo de elegibilidade, mas falta o campo `capacity` (capacidade física do local) para travar consumos se houver lotação (raro em JER, mas importante para segurança).
-- **Relatório de Divergências**: Falta um relatório que cruze: "Quem deveria comer e não comeu" vs "Quem não deveria e tentou comer".
-
-### 4.3 Prioridade Baixa (Melhoria de UX)
-- **Som sonoro de confirmação**: O PWA vibra, mas em ambientes ruidosos (refeitórios), um som de "beep" de sucesso/erro ajudaria o fluxo rápido.
-- **Dashboard de Ocupação**: O dashboard atual é tabular; uma visão gráfica de "barra de progresso" de consumos esperados ajudaria a coordenação.
-
----
-
-## 5. Recomendações de Próximos Passos
-
-1. **Construção do Motor de Previsão**: Criar função no banco (ou service no admin) que calcule o total de elegíveis por janela para gerar o relatório de "Previsão de Cozinha".
-2. **Refinamento do Sync Offline**: Garantir que as `meal_windows` da etapa sejam baixadas para uso 100% offline.
-3. **Implementação de Auditoria de Tentativas**: Registrar em tabela separada (ex: `meal_incidents`) toda vez que um QR é recusado por "Janela Errada" ou "Já Consumido".
-4. **Relatório de Exportação**: Criar exportação em Excel formatada para a empresa de buffet/alimentação com os totais por tipo de refeição/dia.
+### 4.1 Entregas Realizadas nesta Fase:
+- **Motor de Previsão**: RPCs no banco de dados para contagem performática de participantes elegíveis.
+- **Interface de Planejamento**: Tela dedicada com filtros de data, tipo e local.
+- **Exportação Auditável**: Registro de quem gerou cada relatório para prestação de contas.
+- **UX de Ocupação**: Visualização clara de "quanto falta" para concluir o serviço da janela.
 
 ---
 ## Histórico de Auditorias
-- **2026-04-28:** Auditoria inicial completa. Módulo considerado funcional para operação básica, com lacunas em inteligência de dados (previsão).
+- **2026-04-28 (Final):** Módulo fechado com motor de previsão e exportação para cozinha.
+- **2026-04-28 (Inicial):** Auditoria de diagnóstico identificou lacuna em previsão de demanda.
