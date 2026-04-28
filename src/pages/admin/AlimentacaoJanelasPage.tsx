@@ -289,7 +289,11 @@ export default function AlimentacaoJanelasPage() {
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <Clock className="h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground font-medium">Nenhuma janela encontrada</p>
-          <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou crie uma nova janela.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {filterDate 
+              ? `Não existem janelas para o dia ${filterDate.split('-').reverse().join('/')}. Clique em 'Gerar Padrão' para criá-las.`
+              : "Ajuste os filtros ou crie uma nova janela."}
+          </p>
         </div>
       ) : (
         <div className="rounded-lg border bg-card overflow-hidden">
