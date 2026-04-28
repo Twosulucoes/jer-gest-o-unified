@@ -4,7 +4,7 @@
 - **Alojamento:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 1, 2 e 3 concluídas.
 - **Alimentação:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 1, 2 e 3 concluídas.
 - **Transporte:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 2 e 3 concluídas.
-- **Navegação:** ✅ FASE 3 CONFIRMADA (Mini-auditoria Concluída: Paridade Offline e Não Regressão) - 🗺️ [Mapeamento Atualizado](docs/navegacao-mapeamento-atual.md) (2026-04-28).
+- **Navegação:** ✅ FASE 4 EM ANDAMENTO (Passo 1: Saneamento e Limpeza Concluído) - 🗺️ [Mapeamento Atualizado](docs/navegacao-mapeamento-atual.md) (2026-04-28).
 
 ---
 
