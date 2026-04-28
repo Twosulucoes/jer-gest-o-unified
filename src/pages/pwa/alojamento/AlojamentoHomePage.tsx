@@ -5,7 +5,6 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { getSelectedFacility, setSelectedFacility } from "@/hooks/useAlojamento";
 import { AlojamentoDuplicateAlert } from "@/components/pwa/alojamento/AlojamentoDuplicateAlert";
@@ -14,7 +13,7 @@ import { PwaStatTriplet, occupancyBarClass } from "@/components/pwa/PwaDashboard
 import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { PwaActionGrid } from "@/components/pwa/PwaActionGrid";
 import {
-  ScanLine, Search, Building, AlertTriangle, Wifi, WifiOff, Users, LogOut
+  ScanLine, Search, Building, AlertTriangle, Users
 } from "lucide-react";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { dbTelemetry } from "@/lib/monitoring/dbTelemetry";
@@ -33,18 +32,12 @@ export default function AlojamentoHomePage() {
   const navigate = useNavigate();
   const eventId = useActiveEventId();
   const stageId = useActiveStageId();
-  const { pendingCount, isOnline } = useAlojamentoOffline();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [facilityId, setFacilityId] = useState<string>(getSelectedFacility() || "");
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ hospedados: 0, livres: 0, reservados: 0, ocupacao: 0 });
 
   usePwaAudit("alojamento");
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/login", { replace: true });
-  };
 
   useEffect(() => {
     (async () => {
@@ -60,7 +53,7 @@ export default function AlojamentoHomePage() {
         query = query.eq("event_stage_id", stageId);
       }
 
-      const { data, error, status } = await query.order("name");
+      const { data, error } = await query.order("name");
       
       dbTelemetry.log({
         moduleName: 'alojamento',
@@ -89,7 +82,6 @@ export default function AlojamentoHomePage() {
     if (!facilityId) return;
     setSelectedFacility(facilityId);
     (async () => {
-      // For now, continue using the KPI RPC, but it might need to be replaced if it doesn't support the new schema
       const { data, error } = await supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId });
       
       dbTelemetry.log({
@@ -116,101 +108,78 @@ export default function AlojamentoHomePage() {
   }, [facilityId]);
 
   return (
-    <div className="op-screen">
-      <PwaHeader 
-        title="Alojamento" 
-        icon={Building} 
-        backTo="/pwa" 
-        onSignOut={handleSignOut}
+    <PwaContainer>
+      <PwaStatTriplet
+        loading={loading}
+        items={[
+          { label: "Ocupados", value: kpis.hospedados, tone: "module" },
+          { label: "Livres", value: kpis.livres, tone: "green" },
+          { label: "Reservados", value: kpis.reservados, tone: "amber" },
+        ]}
       />
 
-      <PwaContainer>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {isOnline
-              ? <Wifi className="h-4 w-4 text-green-500" />
-              : <WifiOff className="h-4 w-4 text-destructive" />}
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isOnline ? "text-green-400" : "text-destructive"}`}>
-              {isOnline ? "Conectado" : "Modo offline"}
-            </span>
+      {loading ? (
+        <Skeleton className="h-12 w-full rounded-xl bg-muted/30" />
+      ) : (
+        <Select value={facilityId} onValueChange={(v) => setFacilityId(v)}>
+          <SelectTrigger className="h-12 rounded-xl border-border/70 bg-card text-sm font-semibold">
+            <SelectValue placeholder="Selecione o local" />
+          </SelectTrigger>
+          <SelectContent>
+            {facilities.map((f) => (
+              <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      {facilityId && <AlojamentoDuplicateAlert facilityId={facilityId} />}
+
+      {facilities.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <span className="op-label">Locais de alojamento</span>
           </div>
-          {pendingCount > 0 && (
-            <PwaStatusBadge tone="danger">{pendingCount} pendente{pendingCount > 1 ? "s" : ""}</PwaStatusBadge>
-          )}
-        </div>
-
-        <PwaStatTriplet
-          loading={loading}
-          items={[
-            { label: "Ocupados", value: kpis.hospedados, tone: "module" },
-            { label: "Livres", value: kpis.livres, tone: "green" },
-            { label: "Reservados", value: kpis.reservados, tone: "amber" },
-          ]}
-        />
-
-        {loading ? (
-          <Skeleton className="h-12 w-full rounded-xl bg-muted/30" />
-        ) : (
-          <Select value={facilityId} onValueChange={(v) => setFacilityId(v)}>
-            <SelectTrigger className="h-12 rounded-xl border-border/70 bg-card text-sm font-semibold">
-              <SelectValue placeholder="Selecione o local" />
-            </SelectTrigger>
-            <SelectContent>
-              {facilities.map((f) => (
-                <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {facilityId && <AlojamentoDuplicateAlert facilityId={facilityId} />}
-
-        {facilities.length > 0 && (
           <div className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <span className="op-label">Locais de alojamento</span>
-            </div>
-            <div className="space-y-2">
-              {facilities.slice(0, 5).map((f) => {
-                const pct = Math.round(f.occupancy_pct ?? 0);
-                return (
-                  <button
-                    key={f.id}
-                    onClick={() => { setFacilityId(f.id); navigate("/pwa/alojamento/ocupacao"); }}
-                    className="op-card w-full p-3 text-left transition-colors hover:border-module"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-foreground">{f.name}</p>
-                        {f.type && <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{f.type}</p>}
-                      </div>
-                      <PwaStatusBadge tone={pct >= 85 ? "danger" : pct >= 65 ? "pending" : "ok"}>
-                        {pct}%
-                      </PwaStatusBadge>
+            {facilities.slice(0, 5).map((f) => {
+              const pct = Math.round(f.occupancy_pct ?? 0);
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => { setFacilityId(f.id); navigate("/pwa/alojamento/ocupacao"); }}
+                  className="op-card w-full p-3 text-left transition-colors hover:border-module"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-foreground">{f.name}</p>
+                      {f.type && <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{f.type}</p>}
                     </div>
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
-                      <div className={`h-full ${occupancyBarClass(pct)}`} style={{ width: `${pct}%` }} />
-                    </div>
-                    <p className="mt-1.5 text-[11px] text-muted-foreground">
-                      {f.occupied ?? 0} ocupados • {Math.max(0, (f.total ?? 0) - (f.occupied ?? 0))} vagas de {f.total ?? 0}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
+                    <PwaStatusBadge tone={pct >= 85 ? "danger" : pct >= 65 ? "pending" : "ok"}>
+                      {pct}%
+                    </PwaStatusBadge>
+                  </div>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
+                    <div className={`h-full ${occupancyBarClass(pct)}`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    {f.occupied ?? 0} ocupados • {Math.max(0, (f.total ?? 0) - (f.occupied ?? 0))} vagas de {f.total ?? 0}
+                  </p>
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
+      )}
 
-        <PwaActionGrid
-          actions={[
-            { label: "Scan QR", icon: ScanLine, to: "/pwa/alojamento/scan" },
-            { label: "Buscar", icon: Search, to: "/pwa/alojamento/buscar" },
-            { label: "Ocupação", icon: Building, to: "/pwa/alojamento/ocupacao" },
-            { label: "Lista Completa", icon: Users, to: "/pwa/alojamento/lista-completa" },
-            { label: "Ocorrências", icon: AlertTriangle, to: "/pwa/alojamento/incidentes" },
-          ]}
-        />
-      </PwaContainer>
-    </div>
+      <PwaActionGrid
+        actions={[
+          { label: "Scan QR", icon: ScanLine, to: "/pwa/alojamento/scan" },
+          { label: "Buscar", icon: Search, to: "/pwa/alojamento/buscar" },
+          { label: "Ocupação", icon: Building, to: "/pwa/alojamento/ocupacao" },
+          { label: "Lista Completa", icon: Users, to: "/pwa/alojamento/lista-completa" },
+          { label: "Ocorrências", icon: AlertTriangle, to: "/pwa/alojamento/incidentes" },
+        ]}
+      />
+    </PwaContainer>
   );
 }

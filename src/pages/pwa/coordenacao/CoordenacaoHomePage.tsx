@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { PwaContainer } from "@/components/pwa/PwaScreen";
 import { PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
 import { PwaListItem } from "@/components/pwa/PwaListItem";
@@ -70,10 +69,6 @@ export default function CoordenacaoHomePage() {
     })();
   }, [navigate, activeEventId]);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/login", { replace: true });
-  };
   const statusTone = (s: string) => {
     const v = s === "em_andamento" ? "in_progress" : s === "finalizada" ? "finished" : s;
     if (v === "in_progress") return "live";
@@ -90,74 +85,70 @@ export default function CoordenacaoHomePage() {
   };
 
   return (
-    <div className="op-screen">
-      <PwaHeader title="Coordenação" icon={Trophy} backTo="/pwa" onSignOut={handleSignOut} />
+    <PwaContainer>
+      <PwaStatTriplet
+        loading={loading}
+        items={[
+          { label: "Hoje", value: kpis.partidasHoje, tone: "module" },
+          { label: "Em curso", value: kpis.emAndamento, tone: "red" },
+          { label: "Finalizadas", value: kpis.finalizadas, tone: "green" },
+        ]}
+      />
 
-      <PwaContainer>
-        <PwaStatTriplet
-          loading={loading}
-          items={[
-            { label: "Hoje", value: kpis.partidasHoje, tone: "module" },
-            { label: "Em curso", value: kpis.emAndamento, tone: "red" },
-            { label: "Finalizadas", value: kpis.finalizadas, tone: "green" },
-          ]}
-        />
-
-        {kpis.pendingIncidents > 0 && (
-          <button 
-            onClick={() => navigate("/pwa/coordenacao-tecnica/incidentes")}
-            className="op-card w-full border-destructive/40 bg-destructive/10 p-3 flex items-center gap-3 text-left transition-all active:scale-[0.98]"
-          >
-            <AlertOctagon className="h-5 w-5 shrink-0 text-destructive" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-destructive uppercase tracking-wider">Alertas ativos</p>
-              <p className="text-sm font-semibold text-foreground">{kpis.pendingIncidents} ocorrência(s) pendente(s)</p>
-            </div>
-          </button>
-        )}
-
-        {agenda.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <span className="op-label">Agenda de hoje</span>
-              <button onClick={() => navigate("/pwa/coordenacao-tecnica/agenda")} className="text-[11px] font-semibold text-module hover:underline">
-                Ver todas
-              </button>
-            </div>
-            <div className="space-y-2">
-              {agenda.map((m) => {
-                const time = m.start_time ? m.start_time.slice(0, 5) : "—";
-                return (
-                  <PwaListItem
-                    key={m.id}
-                    leading={
-                      <div className="flex h-12 w-12 flex-col items-center justify-center rounded-xl bg-module-soft text-module">
-                        <span className="text-[10px] font-bold uppercase">{format(new Date(), "EEE")}</span>
-                        <span className="text-sm font-extrabold leading-none">{time}</span>
-                      </div>
-                    }
-                    title={`Partida ${m.id.slice(0, 8)}`}
-                    subtitle={m.venue?.name || "Local não definido"}
-                    status={{ label: statusLabel(m.status), tone: statusTone(m.status) as any }}
-                    onClick={() => navigate(`/pwa/coordenacao-tecnica/partidas`)}
-                  />
-                );
-              })}
-            </div>
+      {kpis.pendingIncidents > 0 && (
+        <button 
+          onClick={() => navigate("/pwa/coordenacao-tecnica/incidentes")}
+          className="op-card w-full border-destructive/40 bg-destructive/10 p-3 flex items-center gap-3 text-left transition-all active:scale-[0.98]"
+        >
+          <AlertOctagon className="h-5 w-5 shrink-0 text-destructive" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-destructive uppercase tracking-wider">Alertas ativos</p>
+            <p className="text-sm font-semibold text-foreground">{kpis.pendingIncidents} ocorrência(s) pendente(s)</p>
           </div>
-        )}
+        </button>
+      )}
 
-        <PwaActionGrid
-          actions={[
-            { label: "Consulta", icon: Search, to: "/pwa/coordenacao-tecnica/consulta" },
-            { label: "Agenda", icon: Calendar, to: "/pwa/coordenacao-tecnica/agenda" },
-            { label: "Partidas", icon: ClipboardList, to: "/pwa/coordenacao-tecnica/partidas" },
-            { label: "Resultados", icon: Medal, to: "/pwa/coordenacao-tecnica/resultados" },
-            { label: "Estatísticas", icon: BarChart3, to: "/pwa/coordenacao-tecnica/estatisticas" },
-            { label: "Ocorrências", icon: AlertTriangle, to: "/pwa/coordenacao-tecnica/incidentes" },
-          ]}
-        />
-      </PwaContainer>
-    </div>
+      {agenda.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <span className="op-label">Agenda de hoje</span>
+            <button onClick={() => navigate("/pwa/coordenacao-tecnica/agenda")} className="text-[11px] font-semibold text-module hover:underline">
+              Ver todas
+            </button>
+          </div>
+          <div className="space-y-2">
+            {agenda.map((m) => {
+              const time = m.start_time ? m.start_time.slice(0, 5) : "—";
+              return (
+                <PwaListItem
+                  key={m.id}
+                  leading={
+                    <div className="flex h-12 w-12 flex-col items-center justify-center rounded-xl bg-module-soft text-module">
+                      <span className="text-[10px] font-bold uppercase">{format(new Date(), "EEE")}</span>
+                      <span className="text-sm font-extrabold leading-none">{time}</span>
+                    </div>
+                  }
+                  title={`Partida ${m.id.slice(0, 8)}`}
+                  subtitle={m.venue?.name || "Local não definido"}
+                  status={{ label: statusLabel(m.status), tone: statusTone(m.status) as any }}
+                  onClick={() => navigate(`/pwa/coordenacao-tecnica/partidas`)}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <PwaActionGrid
+        actions={[
+          { label: "Consulta", icon: Search, to: "/pwa/coordenacao-tecnica/consulta" },
+          { label: "Agenda", icon: Calendar, to: "/pwa/coordenacao-tecnica/agenda" },
+          { label: "Partidas", icon: ClipboardList, to: "/pwa/coordenacao-tecnica/partidas" },
+          { label: "Resultados", icon: Medal, to: "/pwa/coordenacao-tecnica/resultados" },
+          { label: "Estatísticas", icon: BarChart3, to: "/pwa/coordenacao-tecnica/estatisticas" },
+          { label: "Ocorrências", icon: AlertTriangle, to: "/pwa/coordenacao-tecnica/incidentes" },
+        ]}
+      />
+    </PwaContainer>
   );
 }

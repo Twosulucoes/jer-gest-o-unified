@@ -25,7 +25,7 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
   const { roles } = useAuth();
   const { activeStage } = useStageContext();
   const { navigateToPwa } = usePwaNavigation();
-  const showSwitcher = roles.length >= 2;
+  const showSwitcher = false; // Layout Switcher will be in the Footer
 
   const handleBack = () => {
     if (onBack) onBack();

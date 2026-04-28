@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { PwaContainer } from "@/components/pwa/PwaScreen";
 import { PwaSectionLabel, PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
 import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
@@ -9,15 +8,14 @@ import { PwaActionGrid } from "@/components/pwa/PwaActionGrid";
 import { Progress } from "@/components/ui/progress";
 import { useEventContext } from "@/contexts/EventContext";
 import {
-  UtensilsCrossed, ScanLine, Search,
-  Clock, BarChart3, AlertTriangle, Plus, ListChecks,
+  ScanLine, Search,
+  Clock, BarChart3, Plus, ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FoodIncidentDialog } from "@/components/pwa/alimentacao/FoodIncidentDialog";
 import { AlimentacaoDuplicateAlert } from "@/components/pwa/alimentacao/AlimentacaoDuplicateAlert";
 import { format } from "date-fns";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
-import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
 
 
 interface OpenWindowState {
@@ -98,89 +96,65 @@ export default function AlimentacaoHomePage() {
     })();
   }, [navigate]);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/login", { replace: true });
-  };
-
-  const eventSubtitle = undefined;
-
   return (
-    <div className="op-screen">
-      <PwaHeader
-        title="Alimentação"
-        subtitle={eventSubtitle}
-        icon={UtensilsCrossed}
-        backTo="/pwa"
-        onSignOut={handleSignOut}
-        rightSlot={
-          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:bg-muted/40 hover:text-foreground" onClick={() => setIncidentOpen(true)}>
-            <AlertTriangle className="h-5 w-5" />
-          </Button>
-        }
+    <PwaContainer>
+      <AlimentacaoDuplicateAlert />
+
+      <PwaStatTriplet
+        loading={loading}
+        items={[
+          { label: "Refeições hoje", value: kpis.consumosHoje, tone: "module" },
+          { label: "Janelas ativas", value: kpis.janelasAbertas, tone: "amber" },
+          { label: "Janelas hoje", value: kpis.totalJanelas, tone: "blue" },
+        ]}
       />
 
-      <PwaContainer>
-        <OfflineSyncStatus />
-        <AlimentacaoDuplicateAlert />
-
-
-        <PwaStatTriplet
-          loading={loading}
-          items={[
-            { label: "Refeições hoje", value: kpis.consumosHoje, tone: "module" },
-            { label: "Janelas ativas", value: kpis.janelasAbertas, tone: "amber" },
-            { label: "Janelas hoje", value: kpis.totalJanelas, tone: "blue" },
-          ]}
-        />
-
-        {openWindow && (
-          <div className="op-card-elevated p-4 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <PwaSectionLabel>Janela atual</PwaSectionLabel>
-              <PwaStatusBadge tone="ok" pulse>Aberta</PwaStatusBadge>
-            </div>
-            <div>
-              <h3 className="text-xl font-extrabold text-foreground">{openWindow.mealName}</h3>
-              {openWindow.label && <p className="text-xs text-muted-foreground">{openWindow.label}</p>}
-              <p className="mt-1 text-sm font-medium text-foreground/80">
-                {format(new Date(openWindow.windowStart), "HH:mm")} – {format(new Date(openWindow.windowEnd), "HH:mm")}
-              </p>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-[11px] text-muted-foreground">
-                <span><span className="font-bold text-module">{openWindow.served}</span> servidas nesta janela</span>
-                <span><span className="font-bold text-foreground">{kpis.consumosHoje}</span> no dia</span>
-              </div>
-              <Progress
-                value={
-                  kpis.consumosHoje > 0
-                    ? Math.min(100, Math.round((openWindow.served / kpis.consumosHoje) * 100))
-                    : openWindow.served > 0 ? 100 : 0
-                }
-                className="h-2.5 bg-muted/40"
-                indicatorClassName="bg-module"
-              />
-            </div>
-            <Button className="op-btn-primary" onClick={() => navigate("/pwa/alimentacao/scan")}>
-              <Plus className="h-5 w-5" />
-              Registrar consumo
-            </Button>
+      {openWindow && (
+        <div className="op-card-elevated p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <PwaSectionLabel>Janela atual</PwaSectionLabel>
+            <PwaStatusBadge tone="ok" pulse>Aberta</PwaStatusBadge>
           </div>
-        )}
+          <div>
+            <h3 className="text-xl font-extrabold text-foreground">{openWindow.mealName}</h3>
+            {openWindow.label && <p className="text-xs text-muted-foreground">{openWindow.label}</p>}
+            <p className="mt-1 text-sm font-medium text-foreground/80">
+              {format(new Date(openWindow.windowStart), "HH:mm")} – {format(new Date(openWindow.windowEnd), "HH:mm")}
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-[11px] text-muted-foreground">
+              <span><span className="font-bold text-module">{openWindow.served}</span> servidas nesta janela</span>
+              <span><span className="font-bold text-foreground">{kpis.consumosHoje}</span> no dia</span>
+            </div>
+            <Progress
+              value={
+                kpis.consumosHoje > 0
+                  ? Math.min(100, Math.round((openWindow.served / kpis.consumosHoje) * 100))
+                  : openWindow.served > 0 ? 100 : 0
+              }
+              className="h-2.5 bg-muted/40"
+              indicatorClassName="bg-module"
+            />
+          </div>
+          <Button className="op-btn-primary" onClick={() => navigate("/pwa/alimentacao/scan")}>
+            <Plus className="h-5 w-5" />
+            Registrar consumo
+          </Button>
+        </div>
+      )}
 
-        <PwaActionGrid
-          actions={[
-            { label: "Scan QR", icon: ScanLine, to: "/pwa/alimentacao/scan" },
-            { label: "Buscar", icon: Search, to: "/pwa/alimentacao/buscar" },
-            { label: "Janelas", icon: Clock, to: "/pwa/alimentacao/janelas" },
-            { label: "Histórico", icon: BarChart3, to: "/pwa/alimentacao/historico" },
-            { label: "Lista de Consumos", icon: ListChecks, to: "/pwa/alimentacao/lista-consumos" },
-          ]}
-        />
-      </PwaContainer>
+      <PwaActionGrid
+        actions={[
+          { label: "Scan QR", icon: ScanLine, to: "/pwa/alimentacao/scan" },
+          { label: "Buscar", icon: Search, to: "/pwa/alimentacao/buscar" },
+          { label: "Janelas", icon: Clock, to: "/pwa/alimentacao/janelas" },
+          { label: "Histórico", icon: BarChart3, to: "/pwa/alimentacao/historico" },
+          { label: "Lista de Consumos", icon: ListChecks, to: "/pwa/alimentacao/lista-consumos" },
+        ]}
+      />
 
       <FoodIncidentDialog open={incidentOpen} onOpenChange={setIncidentOpen} />
-    </div>
+    </PwaContainer>
   );
 }

@@ -160,6 +160,8 @@ import PwaStatusPage from "./pages/admin/PwaStatusPage";
 
 // PWA pages
 import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
+import PwaLayout from "./components/pwa/PwaLayout";
+
 import PesquisaHomePage from "./pages/pwa/PesquisaHomePage";
 import PesquisaNovaPage from "./pages/pwa/PesquisaNovaPage";
 import PesquisaConfirmacaoPage from "./pages/pwa/PesquisaConfirmacaoPage";
@@ -533,77 +535,81 @@ const App = () => (
             {/* PWA Landing (requires auth) */}
             <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLandingPage /></PwaRouteGuard>} />
             
-            {/* PWA Alojamento — perfil alojamento */}
-            <Route path="/pwa/alojamento" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoHomePage /></PwaRouteGuard>} />
-            <Route path="/pwa/alojamento/scan" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoScanPage /></PwaRouteGuard>} />
-            <Route path="/pwa/alojamento/buscar" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoBuscarPage /></PwaRouteGuard>} />
-            <Route path="/pwa/alojamento/ocupacao" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoOcupacaoPage2 /></PwaRouteGuard>} />
-            <Route path="/pwa/alojamento/pessoa/:id" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoPessoaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/alojamento/incidentes" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoIncidentesPage /></PwaRouteGuard>} />
-            <Route path="/pwa/alojamento/incidentes/nova" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoNovoIncidentePage /></PwaRouteGuard>} />
-            <Route path="/pwa/alojamento/lista-completa" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoListaCompletaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/alojamento/unidade/:unitId/faltosos" element={<PwaRouteGuard allowedRoles={["alojamento"]} requireStage={true}><AlojamentoUnidadeFaltososPage /></PwaRouteGuard>} />
+            {/* PWAs operacionais envoltos no PwaLayout */}
+            <Route element={<PwaRouteGuard requireStage={true}><PwaLayout /></PwaRouteGuard>}>
+              {/* PWA Alojamento */}
+              <Route path="/pwa/alojamento" element={<AlojamentoHomePage />} />
+              <Route path="/pwa/alojamento/scan" element={<AlojamentoScanPage />} />
+              <Route path="/pwa/alojamento/buscar" element={<AlojamentoBuscarPage />} />
+              <Route path="/pwa/alojamento/ocupacao" element={<AlojamentoOcupacaoPage2 />} />
+              <Route path="/pwa/alojamento/pessoa/:id" element={<AlojamentoPessoaPage />} />
+              <Route path="/pwa/alojamento/incidentes" element={<AlojamentoIncidentesPage />} />
+              <Route path="/pwa/alojamento/incidentes/nova" element={<AlojamentoNovoIncidentePage />} />
+              <Route path="/pwa/alojamento/lista-completa" element={<AlojamentoListaCompletaPage />} />
+              <Route path="/pwa/alojamento/unidade/:unitId/faltosos" element={<AlojamentoUnidadeFaltososPage />} />
+              
+              {/* PWA Transporte */}
+              <Route path="/pwa/transporte" element={<TransporteHomePage />} />
+              <Route path="/pwa/transporte/viagens" element={<TransporteViagensPwaPage />} />
+              <Route path="/pwa/transporte/scan" element={<TransporteScanPage />} />
+              <Route path="/pwa/transporte/embarque" element={<TransporteEmbarquePwaPage />} />
+              <Route path="/pwa/transporte/embarque/:tripId" element={<TransporteEmbarquePwaPage />} />
+              <Route path="/pwa/transporte/rotas" element={<TransporteRotasPwaPage />} />
+              <Route path="/pwa/transporte/viagem/:tripId/passageiros" element={<TransportePassageirosPage />} />
+              
+              {/* PWA Alimentação */}
+              <Route path="/pwa/alimentacao" element={<AlimentacaoHomePage />} />
+              <Route path="/pwa/alimentacao/scan" element={<AlimentacaoScanPage />} />
+              <Route path="/pwa/alimentacao/buscar" element={<AlimentacaoBuscarPwaPage />} />
+              <Route path="/pwa/alimentacao/janelas" element={<AlimentacaoJanelasPwaPage />} />
+              <Route path="/pwa/alimentacao/historico" element={<AlimentacaoHistoricoPage />} />
+              <Route path="/pwa/alimentacao/lista-consumos" element={<AlimentacaoListaConsumosPage />} />
+              
+              {/* PWA Coordenação Técnica */}
+              <Route path="/pwa/coordenacao-tecnica" element={<CoordenacaoHomePage />} />
+              <Route path="/pwa/coordenacao-tecnica/agenda" element={<CoordenacaoAgendaPage />} />
+              <Route path="/pwa/coordenacao-tecnica/partidas" element={<CoordenacaoPartidasPage />} />
+              <Route path="/pwa/coordenacao-tecnica/partida/:matchId" element={<CoordenacaoPartidaDetalhePage />} />
+              <Route path="/pwa/coordenacao-tecnica/resultados" element={<CoordenacaoResultadosPwaPage />} />
+              <Route path="/pwa/coordenacao-tecnica/estatisticas" element={<CoordenacaoEstatisticasPage />} />
+              <Route path="/pwa/coordenacao-tecnica/consulta" element={<CoordenacaoConsultaPage />} />
+              <Route path="/pwa/coordenacao-tecnica/incidentes" element={<CoordenacaoIncidentesPage />} />
+              <Route path="/pwa/coordenacao-tecnica/incidente/:incidentId" element={<CoordenacaoIncidentePage />} />
+
+              {/* PWA Resultados (coordenador_modalidade) */}
+              <Route path="/pwa/resultados" element={<ResultadosHomePage />} />
+              <Route path="/pwa/resultados/partidas" element={<ResultadosPartidasPage />} />
+              <Route path="/pwa/resultados/partida/:matchId" element={<ResultadosPartidaFormPage />} />
+
+              {/* PWA Delegação */}
+              <Route path="/pwa/delegacao" element={<DelegacaoHomePage />} />
+              <Route path="/pwa/delegacao/participantes" element={<DelegacaoParticipantesPage />} />
+              <Route path="/pwa/delegacao/agenda" element={<DelegacaoAgendaPage />} />
+              <Route path="/pwa/delegacao/logistica" element={<DelegacaoLogisticaPage />} />
+              <Route path="/pwa/delegacao/locais" element={<DelegacaoLocaisPage />} />
+              <Route path="/pwa/delegacao/protestos" element={<DelegacaoProtestosPage />} />
+              <Route path="/pwa/delegacao/protestos/novo" element={<DelegacaoProtestoNovoPage />} />
+              <Route path="/pwa/delegacao/protestos/:id" element={<DelegacaoProtestoDetalhePage />} />
+
+              {/* Credenciamento */}
+              <Route path="/pwa/credenciamento" element={<VincularCredencialPage />} />
+              <Route path="/pwa/credenciamento/vincular" element={<VincularCredencialPage />} />
+
+              {/* PWA Ao Vivo */}
+              <Route path="/aovivo" element={<Suspense fallback={null}><AoVivoHomePage /></Suspense>} />
+              <Route path="/aovivo/partida/:matchId" element={<Suspense fallback={null}><AoVivoMatchPage /></Suspense>} />
+            </Route>
+
+            {/* Rotas fora do layout operacional padrão */}
+            <Route path="/pwa/install" element={<PwaRouteGuard requireStage={false}><PwaInstallPage /></PwaRouteGuard>} />
+            <Route path="/aovivo/login" element={<Suspense fallback={null}><AoVivoLoginPage /></Suspense>} />
             
-            {/* PWA Transporte — perfil transporte */}
-            <Route path="/pwa/transporte" element={<PwaRouteGuard allowedRoles={["transporte"]} requireStage={true}><TransporteHomePage /></PwaRouteGuard>} />
-            <Route path="/pwa/transporte/viagens" element={<PwaRouteGuard allowedRoles={["transporte"]} requireStage={true}><TransporteViagensPwaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/transporte/scan" element={<PwaRouteGuard allowedRoles={["transporte"]} requireStage={true}><TransporteScanPage /></PwaRouteGuard>} />
-            <Route path="/pwa/transporte/embarque" element={<PwaRouteGuard allowedRoles={["transporte"]} requireStage={true}><TransporteEmbarquePwaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/transporte/embarque/:tripId" element={<PwaRouteGuard allowedRoles={["transporte"]} requireStage={true}><TransporteEmbarquePwaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/transporte/rotas" element={<PwaRouteGuard allowedRoles={["transporte"]} requireStage={true}><TransporteRotasPwaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/transporte/viagem/:tripId/passageiros" element={<PwaRouteGuard allowedRoles={["transporte"]} requireStage={true}><TransportePassageirosPage /></PwaRouteGuard>} />
-            
-            {/* PWA Alimentação — perfil alimentacao */}
-            <Route path="/pwa/alimentacao" element={<PwaRouteGuard allowedRoles={["alimentacao"]} requireStage={true}><AlimentacaoHomePage /></PwaRouteGuard>} />
-            <Route path="/pwa/alimentacao/scan" element={<PwaRouteGuard allowedRoles={["alimentacao"]} requireStage={true}><AlimentacaoScanPage /></PwaRouteGuard>} />
-            <Route path="/pwa/alimentacao/buscar" element={<PwaRouteGuard allowedRoles={["alimentacao"]} requireStage={true}><AlimentacaoBuscarPwaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/alimentacao/janelas" element={<PwaRouteGuard allowedRoles={["alimentacao"]} requireStage={true}><AlimentacaoJanelasPwaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/alimentacao/historico" element={<PwaRouteGuard allowedRoles={["alimentacao"]} requireStage={true}><AlimentacaoHistoricoPage /></PwaRouteGuard>} />
-            <Route path="/pwa/alimentacao/lista-consumos" element={<PwaRouteGuard allowedRoles={["alimentacao"]} requireStage={true}><AlimentacaoListaConsumosPage /></PwaRouteGuard>} />
-            
-            {/* PWA Coordenação Técnica — perfil coordenacao_tecnica */}
-            <Route path="/pwa/coordenacao-tecnica" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]} requireStage={true}><CoordenacaoHomePage /></PwaRouteGuard>} />
-            <Route path="/pwa/coordenacao-tecnica/agenda" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]} requireStage={true}><CoordenacaoAgendaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/coordenacao-tecnica/partidas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]} requireStage={true}><CoordenacaoPartidasPage /></PwaRouteGuard>} />
-            <Route path="/pwa/coordenacao-tecnica/partida/:matchId" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]} requireStage={true}><CoordenacaoPartidaDetalhePage /></PwaRouteGuard>} />
-            <Route path="/pwa/coordenacao-tecnica/resultados" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]} requireStage={true}><CoordenacaoResultadosPwaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/coordenacao-tecnica/estatisticas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]} requireStage={true}><CoordenacaoEstatisticasPage /></PwaRouteGuard>} />
-            <Route path="/pwa/coordenacao-tecnica/consulta" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]} requireStage={true}><CoordenacaoConsultaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/coordenacao-tecnica/incidentes" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]} requireStage={true}><CoordenacaoIncidentesPage /></PwaRouteGuard>} />
-            <Route path="/pwa/coordenacao-tecnica/incidente/:incidentId" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica"]} requireStage={true}><CoordenacaoIncidentePage /></PwaRouteGuard>} />
-
-            {/* PWA Resultados — perfil coordenador_modalidade */}
-            <Route path="/pwa/resultados" element={<PwaRouteGuard allowedRoles={["coordenador_modalidade"]} requireStage={true}><ResultadosHomePage /></PwaRouteGuard>} />
-            <Route path="/pwa/resultados/partidas" element={<PwaRouteGuard allowedRoles={["coordenador_modalidade"]} requireStage={true}><ResultadosPartidasPage /></PwaRouteGuard>} />
-            <Route path="/pwa/resultados/partida/:matchId" element={<PwaRouteGuard allowedRoles={["coordenador_modalidade"]} requireStage={true}><ResultadosPartidaFormPage /></PwaRouteGuard>} />
-
-            {/* PWA Delegação — perfil delegacao */}
-            <Route path="/pwa/delegacao" element={<PwaRouteGuard allowedRoles={["delegacao"]} requireStage={true}><DelegacaoHomePage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/participantes" element={<PwaRouteGuard allowedRoles={["delegacao"]} requireStage={true}><DelegacaoParticipantesPage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/agenda" element={<PwaRouteGuard allowedRoles={["delegacao"]} requireStage={true}><DelegacaoAgendaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/logistica" element={<PwaRouteGuard allowedRoles={["delegacao"]} requireStage={true}><DelegacaoLogisticaPage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/locais" element={<PwaRouteGuard allowedRoles={["delegacao"]} requireStage={true}><DelegacaoLocaisPage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/protestos" element={<PwaRouteGuard allowedRoles={["delegacao"]} requireStage={true}><DelegacaoProtestosPage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/protestos/novo" element={<PwaRouteGuard allowedRoles={["delegacao"]} requireStage={true}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
-            <Route path="/pwa/delegacao/protestos/:id" element={<PwaRouteGuard allowedRoles={["delegacao"]} requireStage={true}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
-
-            {/* Credenciamento */}
-            <Route path="/pwa/credenciamento" element={<PwaRouteGuard allowedRoles={["admin", "secretaria"]} requireStage={true}><VincularCredencialPage /></PwaRouteGuard>} />
-            <Route path="/pwa/credenciamento/vincular" element={<PwaRouteGuard allowedRoles={["admin", "secretaria"]} requireStage={true}><VincularCredencialPage /></PwaRouteGuard>} />
-
-            {/* PWA Module pages (Catch-all for implemented modules but also placeholder for future ones) */}
-            <Route path="/pwa/:module" element={<PwaRouteGuard requireStage={true}><PwaModulePage /></PwaRouteGuard>} />
-            {/* PWA Pesquisa (PIN auth, no Supabase Auth) */}
+            {/* PWA Pesquisa (PIN auth, no layout operacional padrão) */}
             <Route path="/pwa/pesquisa/login" element={<PesquisaLoginPage />} />
             <Route path="/pwa/pesquisa/home" element={<PesquisaHomePage />} />
             <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
             <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
-            <Route path="/pwa/install" element={<PwaRouteGuard requireStage={false}><PwaInstallPage /></PwaRouteGuard>} />
-            {/* PwaDebugPage and QrDiagnosticoPage moved to /admin/sistema */}
-            {/* Ao Vivo PWA — qualquer autenticado */}
-            <Route path="/aovivo/login" element={<Suspense fallback={null}><AoVivoLoginPage /></Suspense>} />
-            <Route path="/aovivo" element={<PwaRouteGuard requireStage={false}><Suspense fallback={null}><AoVivoHomePage /></Suspense></PwaRouteGuard>} />
-            <Route path="/aovivo/partida/:matchId" element={<PwaRouteGuard requireStage={false}><Suspense fallback={null}><AoVivoMatchPage /></Suspense></PwaRouteGuard>} />
+
             {/* Public content routes */}
             <Route path="/tecnica" element={<EntregaTecnicaPage />} />
             <Route path="/public/results" element={<PublicResultsPage />} />
