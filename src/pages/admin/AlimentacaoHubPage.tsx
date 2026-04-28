@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, UtensilsCrossed, Clock, ClipboardList, LayoutDashboard, AlertTriangle, Layers,
+  Plus, Pencil, UtensilsCrossed, Clock, ClipboardList, LayoutDashboard, AlertTriangle, Layers, Calculator, MapPin, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
