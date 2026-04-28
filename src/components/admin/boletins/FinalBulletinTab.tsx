@@ -66,6 +66,9 @@ export default function FinalBulletinTab({ eventId }: { eventId: string }) {
             {generateBulletin.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Gerar Boletim Final Oficial
           </Button>
+          <p className="text-[11px] text-muted-foreground mt-2 italic">
+            * O boletim final consolida todos os resultados <strong>publicados</strong> do evento e gera o quadro de medalhas.
+          </p>
         </CardContent>
       </Card>
 
