@@ -285,4 +285,53 @@ O `OfflineFooterIndicator` em `PwaLayout.tsx` reflete corretamente a soma das pe
 ## 11. Conclusão da Fase 3
 A base técnica está pronta para a **Fase 4 (Saneamento)**, onde buscaremos eliminar as divergências de implementação de UI nos indicadores e centrais de conflito, movendo para uma experiência 100% idêntica em todos os módulos.
 
+---
+
+## 12. Diagnóstico de Saneamento (Fase 4 - Preparação)
+
+Este diagnóstico lista os candidatos a remoção, depreciação ou unificação identificados em 28 de abril de 2026.
+
+### 12.1 Candidatos à Remoção Segura
+Itens sem referências ativas no código ou cujo uso foi explicitamente descontinuado.
+
+| Item | Tipo | Localização | Motivo |
+| :--- | :--- | :--- | :--- |
+| `PwaLoginPage.tsx` | Página | `src/pages/pwa/PwaLoginPage.tsx` | Login unificado em `/login`. Mapeado como "removed" em `App.tsx`. |
+| `PwaModuleLayout.tsx`| Componente| `src/components/pwa/PwaModuleLayout.tsx`| Órfão. Substituído pelo `PwaLayout.tsx` unificado na Fase 2. |
+| `PwaBottomNav.tsx` | Componente| `src/components/pwa/PwaBottomNav.tsx` | Só usado pelo `PwaModuleLayout` (órfão) e `PwaRouteGuard` (legado). |
+| `pwa_messages` chaves | String | `src/lib/pwa-messages.ts` | Diversas chaves de erro PWA duplicadas por `voucherMessages.ts`. |
+| `RegrasLegacyPage` | Rota | `src/App.tsx` | Redirecionamento de `/admin/regras-legacy` para `/admin/regras`. |
+| `/admin/mapa` | Rota | `src/App.tsx` | Redirecionamento para `/admin/sistema/diagnostico`. |
+
+### 12.2 Candidatos à Depreciação com Aviso
+Itens em uso residual que devem ser substituídos pelos novos padrões.
+
+| Item | Tipo | Localização | Ação Recomendada |
+| :--- | :--- | :--- | :--- |
+| `PesquisaLoginPage` | Página | `src/pages/pwa/PesquisaLoginPage.tsx` | Migrar para o login unificado `/login` com parâmetro de contexto. |
+| `AoVivoLoginPage` | Página | `src/pages/aovivo/AoVivoLoginPage.tsx` | Migrar para o login unificado `/login`. |
+| `AlojamentoOcupacaoPage2`| Alias | `src/App.tsx` | Renomear alias na importação para remover o sufixo "2". |
+| `PwaRouteGuard` | Componente| `src/components/pwa/PwaRouteGuard.tsx` | Limpar referências ao `PwaBottomNav` e componentes de layout antigos. |
+
+### 12.3 Itens para Investigação Adicional
+Necessário validar se o uso é intencional ou se é resíduo de módulos não migrados.
+
+| Item | Tipo | Localização | Dúvida de Saneamento |
+| :--- | :--- | :--- | :--- |
+| `AlojamentoOcupacaoPage` | Página | `src/pages/admin/AlojamentoOcupacaoPage.tsx` | É a versão Admin. Validar se deve ser unificada com a versão PWA. |
+| `pwa-messages.ts` | Arquivo | `src/lib/pwa-messages.ts` | Validar se deve ser completamente absorvido pelo `voucherMessages.ts`. |
+| `/pwa/configuracao` | Rota | `src/App.tsx` | Usada como fallback de seleção de etapa. Validar se ainda é o fluxo desejado. |
+| Migrações 20260402* | Banco | `supabase/migrations/` | Verificar se os scripts de "bootstrap" contêm tabelas nunca utilizadas. |
+
+### 12.4 Comentários de Dívida Técnica (TODO/FIXME)
+| Arquivo | Linha | Descrição |
+| :--- | :--- | :--- |
+| `computeProvaData.ts` | ~6 | TODO: Implement weighing status in query |
+| `use-toast.ts` | ~1 | TOAST_REMOVE_DELAY de 1000000ms (HACK temporal). |
+
+---
+
+## 13. Veredito de Saneamento
+O inventário revela que o sistema está em estado avançado de limpeza após as fases de navegação, mas a remoção física dos arquivos `PwaLoginPage`, `PwaModuleLayout` e `PwaBottomNav` é o passo imediato mais seguro. A unificação dos logins de Pesquisa e Ao Vivo é a tarefa de maior impacto para o saneamento da Fase 4.
+
 
