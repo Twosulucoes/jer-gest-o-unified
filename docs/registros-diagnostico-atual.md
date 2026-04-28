@@ -135,3 +135,35 @@ Testado e validado que eventos existentes mantêm o fluxo complexo operacional. 
 
 ---
 *Implementação da Fase 1 concluída em 2026-04-28.*
+
+## MINI-AUDITORIA DE CONFIRMAÇÃO — FASE 1 (2026-04-28)
+
+### 1. Evolução de Schema
+- **Conforme.** Coluna `source` em `competition_matches` com default `'complex'`. Constraint `complex_matches_require_phase` validada: permite `phase_id` nulo apenas se `source = 'simple'`, preservando integridade para o módulo complexo.
+
+### 2. Flag Modo Registros
+- **Conforme.** Flag `registros_mode_enabled` (boolean, default false) na tabela `events`. Controle de escrita restrito a **Super Admin** via interface no painel `/super/eventos`. Trilha de auditoria em `registros_mode_logs` funcional.
+
+### 3. Integração com Consumidores
+- **Boletim:** **Conforme.** A lógica de consulta em `useLancamentoResultados.ts` busca partidas por `event_id` e `sport_event_id`, sem filtrar por phase/group, garantindo que partidas `simple` apareçam.
+- **API Pública:** **Conforme.** A `public_results_view` baseia-se em `competition_match_results`, sem JOINs obrigatórios com tabelas estruturais de competição que excluiriam partidas simplificadas.
+- **Generate Bulletin:** **Conforme.** Endpoint suporta a criação de boletins baseados em resultados publicados, independentemente da origem da partida.
+
+### 4. RLS e Fluxos
+- **Conforme.** Políticas para `Admin`, `Secretaria` e `Coordenação Técnica` permitem gestão total de partidas. `Mesário` possui acesso de leitura às partidas designadas. A flag de evento é protegida por política exclusiva de `super_admin`.
+
+### 5. Navegação Condicional
+- **Conforme.** `AdminLayout` e `PwaLayout` atualizados com lógica de visibilidade baseada em `registros_mode_enabled`. O switcher de evento reage corretamente à flag, alternando entre o menu de "Competição" (complexo) e "Registros" (simples).
+
+### 6. PWA de Registros
+- **Conforme.** Integrado ao `PwaLayout` com footer e indicadores de status. Suporte a fila offline garantido pelo padrão de sincronização global e paridade com demais módulos operacionais.
+
+### 7. Não Regressão
+- **Módulos Fechados:** Sem regressão. Vouchers, Árbitros, Alojamento, Alimentação e Transporte operam normalmente. O consumo de `match_user_assignments` por Registros é não-destrutivo.
+- **Reformulação da Navegação:** Sem regressão. Fases 1 a 4 preservadas, com o novo módulo Registros seguindo rigorosamente os padrões de layout e UX estabelecidos.
+
+### Veredito Final
+**FASE 1 CONFIRMADA.** A base técnica para o módulo de Registros está sólida, segura e transparente para os consumidores de dados existentes. Pronta para iniciar a Fase 2 (Relatórios OSC).
+
+---
+*Mini-auditoria realizada em 2026-04-28.*
