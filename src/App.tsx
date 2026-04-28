@@ -506,6 +506,7 @@ const App = () => (
               <Route path="alimentacao/consumo" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoConsumoPage /></ProtectedRoute>} />
               <Route path="alimentacao/dashboard" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoDashboardPage /></ProtectedRoute>} />
               <Route path="alimentacao/previsao" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoPrevisaoPage /></ProtectedRoute>} />
+              <Route path="alimentacao/divergencias" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoDivergenciasPage /></ProtectedRoute>} />
               <Route path="alimentacao/padroes" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoPadroesPage /></ProtectedRoute>} />
               <Route path="alimentacao/relatorios" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoRelatoriosPage /></ProtectedRoute>} />
               {/* Transporte */}
