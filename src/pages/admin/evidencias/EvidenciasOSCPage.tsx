@@ -42,6 +42,27 @@ export default function EvidenciasOSCPage() {
   
   const isAdminOrSecretaria = hasRole("admin") || hasRole("secretaria");
 
+  // Fetch matches for linking
+  const { data: matches = [] } = useQuery({
+    queryKey: ["competition_matches", selectedEventId],
+    queryFn: async () => {
+      if (!selectedEventId) return [];
+      const { data, error } = await supabase
+        .from("competition_matches")
+        .select(`
+          id, 
+          match_number, 
+          sport_events (
+            sports (name)
+          )
+        `)
+        .eq("event_id", selectedEventId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedEventId,
+  });
+
   // Fetch evidences
   const { data: evidences = [], isLoading } = useQuery({
     queryKey: ["operational_evidence", selectedEventId, moduleFilter, statusFilter],
@@ -50,7 +71,8 @@ export default function EvidenciasOSCPage() {
       let q = (supabase as any).from("operational_evidence").select(`
         *,
         uploader:uploaded_by(email),
-        reviewer:reviewed_by(email)
+        reviewer:reviewed_by(email),
+        match:match_id(id, match_number, sport_events(sports(name)))
       `).eq("event_id", selectedEventId);
       
       if (moduleFilter !== "all") q = q.eq("module", moduleFilter);
