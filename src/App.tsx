@@ -160,6 +160,8 @@ import PwaStatusPage from "./pages/admin/PwaStatusPage";
 
 // PWA pages
 import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
+import PwaLayout from "./components/pwa/PwaLayout";
+
 import PesquisaHomePage from "./pages/pwa/PesquisaHomePage";
 import PesquisaNovaPage from "./pages/pwa/PesquisaNovaPage";
 import PesquisaConfirmacaoPage from "./pages/pwa/PesquisaConfirmacaoPage";
