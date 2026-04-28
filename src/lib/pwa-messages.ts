@@ -282,6 +282,22 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
     pt: "Voucher registrado offline. Sincronize quando houver internet.",
     es: "Voucher registrado offline. Sincronice cuando haya internet.",
   },
+  GENDER_MISMATCH: {
+    pt: "Gênero incompatível com a unidade",
+    es: "Género incompatible con la unidad",
+  },
+  CAPACITY_FULL: {
+    pt: "Unidade lotada",
+    es: "Unidad llena",
+  },
+  CAPACITY_NOT_DEFINED: {
+    pt: "Capacidade não definida (solicite à coordenação)",
+    es: "Capacidad no definida (solicite a la coordinación)",
+  },
+  PRESENCE_SUCCESS: {
+    pt: "Presença registrada!",
+    es: "¡Presencia registrada!",
+  },
 };
 
 export function getPwaLang(): PwaLang {
