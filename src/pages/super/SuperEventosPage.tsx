@@ -34,6 +34,12 @@ import {
 export default function SuperEventosPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; eventId: string; current: boolean; eventName: string }>({ 
+    open: false, eventId: "", current: false, eventName: "" 
+  });
+  const [historySheet, setHistorySheet] = useState<{ open: boolean; eventId: string; eventName: string }>({
+    open: false, eventId: "", eventName: ""
+  });
   const navigate = useNavigate();
   const { setActiveEventId } = useEventContext();
 
