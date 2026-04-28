@@ -158,6 +158,8 @@ import DatabaseMonitoringPage from "./pages/admin/DatabaseMonitoringPage";
 import AuditoriaPage from "./pages/admin/AuditoriaPage";
 import PwaStatusPage from "./pages/admin/PwaStatusPage";
 import RegistrosPage from "./pages/admin/registros/RegistrosPage";
+import ConfigOscPage from "./pages/admin/registros/ConfigOscPage";
+
 
 // PWA pages
 import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
