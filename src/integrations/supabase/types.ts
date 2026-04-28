@@ -2525,16 +2525,14 @@ export type Database = {
       }
       lodging_occupancies: {
         Row: {
-          check_in_by: string | null
-          check_in_device_id: string | null
-          check_in_location_id: string | null
-          check_in_unit_id: string | null
-          check_out_by: string | null
           checked_in_at: string | null
           checked_in_by: string | null
+          checked_in_device_id: string | null
+          checked_in_location_id: string | null
+          checked_in_unit_id: string | null
           checked_out_at: string | null
           checked_out_by: string | null
-          checkout_device_id: string | null
+          checked_out_device_id: string | null
           created_at: string
           divergence_notes: string | null
           event_id: string
@@ -2548,16 +2546,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          check_in_by?: string | null
-          check_in_device_id?: string | null
-          check_in_location_id?: string | null
-          check_in_unit_id?: string | null
-          check_out_by?: string | null
           checked_in_at?: string | null
           checked_in_by?: string | null
+          checked_in_device_id?: string | null
+          checked_in_location_id?: string | null
+          checked_in_unit_id?: string | null
           checked_out_at?: string | null
           checked_out_by?: string | null
-          checkout_device_id?: string | null
+          checked_out_device_id?: string | null
           created_at?: string
           divergence_notes?: string | null
           event_id: string
@@ -2571,16 +2567,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          check_in_by?: string | null
-          check_in_device_id?: string | null
-          check_in_location_id?: string | null
-          check_in_unit_id?: string | null
-          check_out_by?: string | null
           checked_in_at?: string | null
           checked_in_by?: string | null
+          checked_in_device_id?: string | null
+          checked_in_location_id?: string | null
+          checked_in_unit_id?: string | null
           checked_out_at?: string | null
           checked_out_by?: string | null
-          checkout_device_id?: string | null
+          checked_out_device_id?: string | null
           created_at?: string
           divergence_notes?: string | null
           event_id?: string
@@ -2596,14 +2590,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "lodging_occupancies_check_in_location_id_fkey"
-            columns: ["check_in_location_id"]
+            columns: ["checked_in_location_id"]
             isOneToOne: false
             referencedRelation: "lodging_locations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "lodging_occupancies_check_in_unit_id_fkey"
-            columns: ["check_in_unit_id"]
+            columns: ["checked_in_unit_id"]
             isOneToOne: false
             referencedRelation: "lodging_units"
             referencedColumns: ["id"]
