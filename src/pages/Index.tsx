@@ -3,7 +3,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, roles, loading } = useAuth();
+  const { getOperationalRedirect } = await import("@/config/accessControl"); // This is sync actually, just fixing the import flow below if needed
 
   if (loading) {
     return (
@@ -14,6 +15,13 @@ const Index = () => {
   }
 
   if (user) {
+    if (roles.includes("super_admin")) {
+      return <Navigate to="/super" replace />;
+    }
+    const opTarget = getOperationalRedirect(roles);
+    if (opTarget) {
+      return <Navigate to={opTarget} replace />;
+    }
     return <Navigate to="/admin" replace />;
   }
 
