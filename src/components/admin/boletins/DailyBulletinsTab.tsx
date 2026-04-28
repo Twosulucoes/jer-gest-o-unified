@@ -8,10 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, RefreshCw, FileText, Calendar as CalendarIcon, Loader2, AlertCircle } from "lucide-react";
+import { Download, RefreshCw, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
 
 export default function DailyBulletinsTab({ eventId }: { eventId: string }) {
   const { bulletins, isLoading, generateBulletin } = useBulletinDocuments(eventId);
@@ -23,7 +23,7 @@ export default function DailyBulletinsTab({ eventId }: { eventId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("event_stages")
-        .select("id, name")
+        .select("id, name, stage_code")
         .eq("event_id", eventId)
         .order("sort_order", { ascending: true });
       if (error) throw error;
@@ -32,34 +32,43 @@ export default function DailyBulletinsTab({ eventId }: { eventId: string }) {
     enabled: !!eventId,
   });
 
+  const { data: pendingStatus, refetch: refetchPending } = useQuery({
+    queryKey: ["pending-homologation", eventId, selectedStageId, referenceDate],
+    queryFn: async () => {
+      if (!selectedStageId || !referenceDate) return null;
+      
+      const { data } = await supabase
+        .from("competition_matches")
+        .select("id, competition_match_results(result_status)")
+        .eq("event_id", eventId)
+        .eq("event_stage_id", selectedStageId)
+        .eq("match_date", referenceDate);
+      
+      const pending = (data || []).filter(m => {
+        const results = m.competition_match_results as any[] || [];
+        if (results.length === 0) return true;
+        return results.some(r => r.result_status !== 'publicado' && r.result_status !== 'resultado_validado');
+      });
+      
+      return {
+        count: pending.length,
+        isReady: pending.length === 0
+      };
+    },
+    enabled: !!selectedStageId && !!referenceDate
+  });
+
   const dailyBulletins = bulletins.filter(b => b.bulletin_type === 'daily');
 
   const handleGenerate = () => {
-    if (!eventId) {
-      toast.error("Evento não identificado", {
-        description: "Não foi possível localizar o ID do evento ativo."
-      });
-      return;
-    }
-
-    if (!selectedStageId) {
-      toast.warning("Selecione uma etapa", {
-        description: "É necessário informar a etapa para gerar um boletim diário."
-      });
-      return;
-    }
-
-    if (!referenceDate) {
-      toast.warning("Selecione uma data", {
-        description: "É necessário informar a data de referência."
-      });
-      return;
-    }
+    if (!eventId || !selectedStageId || !referenceDate) return;
 
     generateBulletin.mutate({
       stageId: selectedStageId,
       referenceDate,
       bulletinType: 'daily'
+    }, {
+      onSuccess: () => refetchPending()
     });
   };
 
@@ -67,8 +76,10 @@ export default function DailyBulletinsTab({ eventId }: { eventId: string }) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Geração Manual de Boletim do Dia</CardTitle>
-          <CardDescription>Selecione a etapa e a data para gerar ou regenerar o boletim.</CardDescription>
+          <CardTitle>Publicação de Boletim Diário Oficial</CardTitle>
+          <CardDescription>
+            Atribui numeração automática e gera PDF institucional. Requer homologação total das partidas.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -80,7 +91,7 @@ export default function DailyBulletinsTab({ eventId }: { eventId: string }) {
                 </SelectTrigger>
                 <SelectContent>
                   {stages.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    <SelectItem key={s.id} value={s.id}>{s.name} ({s.stage_code || "—"})</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -95,24 +106,36 @@ export default function DailyBulletinsTab({ eventId }: { eventId: string }) {
             </div>
             <Button 
               onClick={handleGenerate} 
-              disabled={!selectedStageId || generateBulletin.isPending}
+              disabled={!selectedStageId || !pendingStatus?.isReady || generateBulletin.isPending}
               className="gap-2"
             >
               {generateBulletin.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Gerar Boletim
+              Publicar Boletim Oficial
             </Button>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-3 italic">
-            * O boletim só incluirá resultados com status <strong>"publicado"</strong>. 
-            Vá até a Central de Resultados para validar e publicar partidas.
-          </p>
+          
+          {selectedStageId && pendingStatus && (
+            <div className={`mt-4 p-3 rounded-md border flex items-center gap-3 ${pendingStatus.isReady ? 'bg-green-50 border-green-100 text-green-800' : 'bg-amber-50 border-amber-100 text-amber-800'}`}>
+              {pendingStatus.isReady ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span className="text-sm font-medium">Todas as partidas do dia estão homologadas e prontas para publicação.</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-5 w-5" />
+                  <span className="text-sm font-medium">Existem {pendingStatus.count} partidas pendentes de homologação neste escopo. O botão de publicação ficará travado.</span>
+                </>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Boletins Gerados</CardTitle>
-          <CardDescription>Lista de boletins diários para este evento.</CardDescription>
+          <CardTitle>Boletins Oficiais Publicados</CardTitle>
+          <CardDescription>Lista de boletins diários com numeração automática.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -121,53 +144,39 @@ export default function DailyBulletinsTab({ eventId }: { eventId: string }) {
             </div>
           ) : dailyBulletins.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
-              Nenhum boletim gerado até o momento.
+              Nenhum boletim oficial publicado até o momento.
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Código</TableHead>
                   <TableHead>Etapa</TableHead>
                   <TableHead>Data Ref.</TableHead>
-                  <TableHead>Versão</TableHead>
-                  <TableHead>Geração</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Publicação</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {dailyBulletins.map((b) => (
-                  <TableRow key={b.id} className={!b.is_current ? "opacity-60 bg-muted/30" : ""}>
+                  <TableRow key={b.id}>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono">{b.summary?.bulletin_code || b.file_name.split('_')[0]}</Badge>
+                    </TableCell>
                     <TableCell className="font-medium">
                       {stages.find(s => s.id === b.stage_id)?.name || "—"}
                     </TableCell>
                     <TableCell>
                       {b.reference_date ? format(new Date(b.reference_date + "T12:00:00"), "dd/MM/yyyy") : "—"}
                     </TableCell>
-                    <TableCell>v{b.version}</TableCell>
                     <TableCell className="text-xs">
                       {format(new Date(b.generated_at), "dd/MM/yy HH:mm")}
-                      <br />
-                      <span className="text-muted-foreground">
-                        {b.generation_trigger === 'automatic_after_publish' ? 'Automática' : 'Manual'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {b.is_current ? (
-                        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                          Atual
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                          Histórico
-                        </span>
-                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" asChild>
                         <a href={b.file_url} target="_blank" rel="noreferrer" className="flex items-center gap-2">
                           <Download className="h-4 w-4" />
-                          PDF
+                          PDF Profissional
                         </a>
                       </Button>
                     </TableCell>
