@@ -357,3 +357,61 @@ Validado que os módulos de Voucher, Alimentação, Alojamento e Transporte perm
 
 ---
 *Implementação da Fase 3 concluída em 2026-04-28.*
+
+---
+
+## MINI-AUDITORIA DE CONFIRMAÇÃO — FASE 3 (2026-04-28)
+
+Esta mini-auditoria valida a entrega da Fase 3 do módulo de Registros, focando na integridade da API pública, numeração automática, fluxo de homologação e não regressão.
+
+### PASSO 1 — VERIFICAÇÃO DA SIGLA DE ETAPA
+- **Conforme.** A coluna `stage_code` foi implementada na tabela `event_stages`. Exemplos validados no código do componente `DailyBulletinsTab.tsx`: "BON", "PAC", "BVA". O mecanismo de override é direto via edição do campo no banco/interface de etapas.
+- **Uso:** A sigla é consumida pela RPC `get_next_bulletin_number` para compor o prefixo dos códigos alfanuméricos.
+
+### PASSO 2 — VERIFICAÇÃO DO CICLO DE HOMOLOGAÇÃO
+- **Conforme.** O estado de homologação é derivado do campo `result_status` em `competition_match_results`.
+- **Estados:** `resultado_lancado` (em registro), `resultado_validado` (homologada), `publicado` (publicada).
+- **Transições:** Validadas em `ResultGovernancePanel.tsx`. A transição para `resultado_validado` é manual (RPC `rpc_validate_results_for_sport_event`). A transição para `publicado` é automática na publicação do boletim via Edge Function `generate-bulletin`.
+
+### PASSO 3 — VERIFICAÇÃO DA NUMERAÇÃO ALFANUMÉRICA AUTOMÁTICA
+- **Conforme.** Implementada via RPC `get_next_bulletin_number`.
+- **Formatos:** `SIGLA-NNN` para diários (com zero-padding de 3 dígitos) e `SIGLA-FIN` para finais. A lógica garante unicidade por etapa e evento.
+
+### PASSO 4 — VERIFICAÇÃO DO FLUXO DE PUBLICAÇÃO
+- **Conforme.** O componente `DailyBulletinsTab.tsx` implementa trava visual e funcional no botão "Publicar Boletim Oficial" baseada na query `pending-homologation`.
+- **Trava:** O botão é desabilitado se houver partidas sem resultado ou com resultados não validados.
+- **Histórico:** A tabela `bulletin_documents` preserva o histórico de versões com timestamps e URLs do storage.
+
+### PASSO 5 — VERIFICAÇÃO DO PDF PROFISSIONAL
+- **Conforme.** A Edge Function `generate-bulletin` utiliza `jspdf` e `jspdf-autotable` para gerar um layout profissional:
+  - Cabeçalho institucional com código alfanumérico em destaque.
+  - Resumo executivo dinâmico.
+  - Resultados agrupados por modalidade com tabelas formatadas.
+  - Quadro de medalhas automático em boletins do tipo `final`.
+
+### PASSO 6 — VERIFICAÇÃO DOS ENDPOINTS PADRONIZADOS
+- **Conforme.** Endpoints `public-results` e `public-events` atualizados para o formato `{ items, meta }`.
+- **Metadados:** Incluem `total`, `generated_at` e, no caso de resultados, `duration_ms`.
+- **Filtros:** Suporte nativo a `bulletin_number` (alfanumérico) em `public-results`.
+
+### PASSO 7 — VERIFICAÇÃO DA INTEGRIDADE DA PUBLIC_RESULTS_VIEW
+- **Conforme.** A view foi recriada para tratar `source = 'simple'` e `source = 'complex'` simetricamente, garantindo que partidas simplificadas não sejam filtradas por falta de `phase_id` ou `group_id`.
+
+### PASSO 8 — VERIFICAÇÃO DE NÃO REGRESSÃO DOS CONSUMIDORES INTERNOS
+- **Sem Regressão.**
+  - **Relatório OSC:** Continua funcional, consumindo dados consolidados de ambas as fontes.
+  - **AutoBulletinDialog:** Preservado para uso em rascunhos rápidos e prévias em Markdown, enquanto o novo fluxo entrega PDFs oficiais assinados.
+  - **Quadro de Medalhas:** A lógica de cálculo foi replicada na Edge Function para o boletim final, mantendo paridade com a página administrativa.
+
+### PASSO 9 & 10 — NÃO REGRESSÃO GERAL
+- **Sem Regressão.** Módulos operacionais (Voucher, Alimentação, Alojamento, Transporte) mantêm integridade total. A navegação condicional e os recursos das Fases 1 e 2 de Registros operam conforme documentado.
+
+### VEREDITO FINAL: CONFIRMADA
+A Fase 3 está sólida, com fluxos de controle técnico rigorosos e saída profissional de dados. O sistema está pronto para a validação visual externa e para o encerramento do módulo de Registros.
+
+**Ajustes Recomendados (Melhoria Contínua):**
+1. **UX:** Adicionar link direto para a tela de homologação quando houver partidas pendentes no boletim diário (atualmente apenas informa a contagem).
+2. **Performance:** Monitorar tempo de execução da Edge Function `generate-bulletin` em etapas com volume massivo de partidas (+500).
+
+---
+*Mini-auditoria realizada em 2026-04-28.*
