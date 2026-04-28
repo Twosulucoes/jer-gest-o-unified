@@ -1,10 +1,12 @@
 # JER Gestão — Sistema de Gestão de Eventos
 
-## Status do Módulo de Alojamento: ✅ FECHADO PARA OPERAÇÃO (2026-04-28)
+## Status dos Módulos em Reformulação:
+- **Alojamento:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 1, 2 e 3 concluídas.
+- **Alimentação:** 🟡 FASE 1 CONCLUÍDA (2026-04-28) - Previsão de demanda, gestão de capacidade e cache offline.
 
-O módulo de Alojamento completou seu ciclo de reformulação e está pronto para uso em campo.
-- **Fase 1:** Unificação de esquema (`public`).
-- **Fase 2:** Granularidade por unidade e validações operacionais (Gênero/Capacidade).
-- **Fase 3:** Inteligência de Presença (Modo Lua) e Reconciliação Administrativa.
+---
 
-> **Módulos Operacionais PWA — Alojamento 🏠** — Controle total de Check-in, Check-out e Presença Noturna com validação rigorosa e resiliência offline.
+### Módulos Operacionais PWA:
+- **🏠 Alojamento:** Controle total de Check-in, Check-out e Presença Noturna com validação rigorosa e resiliência offline.
+- **🍽️ Alimentação:** Scan de consumos, busca manual e suporte a vouchers com motor de previsão de demanda e gestão de capacidade.
+- **🚌 Transporte:** (Operacional) Controle de embarque e listas de passageiros por viagem.
