@@ -640,7 +640,7 @@ export const systemMap: SystemMapGroup[] = [
       {
         id: "mapa-sistema",
         label: "Mapa do Sistema",
-        route: "/admin/mapa",
+        route: "/admin/sistema/diagnostico",
         pageFile: "src/pages/admin/MapaSistemaPage.tsx",
         description: "Visão geral de todos os módulos do sistema com status de implementação, gaps e próximos passos.",
         roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"],

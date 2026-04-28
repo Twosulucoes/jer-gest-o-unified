@@ -164,7 +164,7 @@ export const competitionFeatureCatalog: CompetitionFeature[] = [
     key: "mapa",
     label: "Mapa do Sistema",
     description: "Visão geral de módulos com status, gaps e KPIs.",
-    route: "/admin/mapa",
+    route: "/admin/sistema/diagnostico",
     entities: [],
     supabaseUsage: {
       tables: [],
