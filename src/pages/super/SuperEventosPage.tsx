@@ -188,7 +188,7 @@ export default function SuperEventosPage() {
               <TableHead className="text-zinc-400">Ano</TableHead>
               <TableHead className="text-zinc-400 text-center">Portal Público</TableHead>
               <TableHead className="text-zinc-400 text-center">Agenda Pública</TableHead>
-              <TableHead className="text-zinc-400 text-center">Modo Registros</TableHead>
+              <TableHead className="text-zinc-400 text-center">Modo Registros (Flag)</TableHead>
               <TableHead className="text-zinc-400">Status</TableHead>
               <TableHead className="text-zinc-400 text-right">Ação</TableHead>
             </TableRow>
