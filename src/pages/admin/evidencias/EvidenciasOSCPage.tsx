@@ -141,6 +141,19 @@ export default function EvidenciasOSCPage() {
     onError: (e: any) => toast.error("Erro ao atualizar: " + e.message),
   });
 
+  const updateMetadataMutation = useMutation({
+    mutationFn: async (v: any) => {
+      const { id, ...metadata } = v;
+      const { error } = await (supabase as any).from("operational_evidence").update(metadata).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["operational_evidence"] });
+      toast.success("Metadados atualizados!");
+    },
+    onError: (e: any) => toast.error("Erro ao atualizar: " + e.message),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any).from("operational_evidence").delete().eq("id", id);
