@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { rpcCheckin, rpcCheckout, rpcAssignBed, getDeviceId } from "./useAlojamento";
+import { rpcCheckin, rpcCheckout, rpcAssignBed, rpcRegisterPresence, getDeviceId } from "./useAlojamento";
 import { toast } from "sonner";
 
 export interface OfflineOp {
   op_id: string;
-  type: "checkin" | "checkout" | "assign" | "incident_create";
+  type: "checkin" | "checkout" | "assign" | "incident_create" | "presence";
   payload: Record<string, any>;
   created_at: string;
   attempts: number;
@@ -78,6 +78,8 @@ export function useAlojamentoOffline() {
         result = await rpcCheckout(deviceId, op.payload.token, op.payload.location_id || op.payload.facility_id);
       } else if (op.type === "assign") {
         result = await rpcAssignBed(deviceId, op.payload.person_token, op.payload.bed_token);
+      } else if (op.type === "presence") {
+        result = await rpcRegisterPresence(deviceId, op.payload.token, op.payload.unit_id, op.payload.mode || "person_qr");
       }
       if (result && !result.ok) {
         // Definitive error (business rule)
