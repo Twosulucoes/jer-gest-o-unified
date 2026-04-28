@@ -463,7 +463,7 @@ export default function ResultadosPartidaFormPage() {
           <Skeleton className="h-24 w-full rounded-xl" />
           <Skeleton className="h-48 w-full rounded-xl" />
         </main>
-      </div>
+      </PwaLayout>
     );
   }
 
@@ -482,19 +482,10 @@ export default function ResultadosPartidaFormPage() {
   const hora = match.start_time ? match.start_time.slice(0, 5) : null;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <PwaHeader
-        title={match.match_number ? `Jogo ${match.match_number}` : "Partida"}
-        icon={Trophy}
-        onBack={() => navigate(-1)}
-        rightSlot={
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${STATUS_COLORS[match.status] ?? "bg-slate-100 text-slate-700"}`}>
-            {STATUS_LABELS[match.status] ?? match.status}
-          </span>
-        }
-      />
-
-      {/* Card resumo */}
+    <PwaLayout
+      moduleTitle={match.match_number ? `Jogo ${match.match_number}` : "Partida"}
+      onBack={() => navigate(-1)}
+    >
       <div className="bg-card border-b px-4 py-3 flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <span className="font-bold text-sm truncate flex-1 mr-2">{nomeA}</span>
@@ -517,7 +508,6 @@ export default function ResultadosPartidaFormPage() {
         )}
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="placar" className="flex-1 flex flex-col">
         <TabsList className="w-full rounded-none border-b h-11 bg-background shrink-0 grid grid-cols-4">
           <TabsTrigger value="placar" className="flex items-center gap-1 text-xs">
@@ -560,6 +550,6 @@ export default function ResultadosPartidaFormPage() {
           </TabsContent>
         </div>
       </Tabs>
-    </div>
+    </PwaLayout>
   );
 }
