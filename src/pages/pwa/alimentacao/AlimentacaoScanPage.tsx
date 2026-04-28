@@ -42,6 +42,7 @@ interface MealWindow {
   service_date: string;
   start_time: string;
   end_time: string;
+  capacity?: number;
 }
 
 const MODULE = "alimentacao" as const;
@@ -56,6 +57,7 @@ export default function AlimentacaoScanPage() {
   const lang = getPwaLang();
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState("");
+  const [consumptionCount, setConsumptionCount] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [prefs, setPrefs] = useState<ScanPreferences>(() => loadScanPreferences(MODULE, userId));
   const [telemetry, setTelemetry] = useState<ScanTelemetry>(() => loadScanTelemetry(MODULE, userId));
@@ -99,7 +101,7 @@ export default function AlimentacaoScanPage() {
       const today = new Date().toISOString().slice(0, 10);
       let q = supabase
         .from("meal_windows")
-        .select("id, meal_type:meal_types(name), service_date, start_time, end_time")
+        .select("id, meal_type:meal_types(name), service_date, start_time, end_time, capacity")
         .eq("service_date", today)
         .order("start_time");
       if (activeEventId) q = q.eq("event_id", activeEventId);
@@ -110,6 +112,45 @@ export default function AlimentacaoScanPage() {
       if (list.length === 1) setWindowId(list[0].id);
     })();
   }, [activeEventId, stageId]);
+
+  useEffect(() => {
+    if (!windowId) {
+      setConsumptionCount(0);
+      return;
+    }
+
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("meal_consumptions")
+        .select("*", { count: 'exact', head: true })
+        .eq("meal_window_id", windowId);
+      
+      setConsumptionCount(count || 0);
+    };
+
+    void fetchCount();
+
+    // Subscribe to real-time updates for this window
+    const channel = supabase
+      .channel(`meal_consumptions_${windowId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'meal_consumptions',
+          filter: `meal_window_id=eq.${windowId}`
+        },
+        () => {
+          void fetchCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [windowId]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
@@ -360,6 +401,40 @@ export default function AlimentacaoScanPage() {
               ))}
             </SelectContent>
           </Select>
+        )}
+
+        {windowId && (
+          <div className="space-y-2">
+            {(() => {
+              const win = windows.find(w => w.id === windowId);
+              if (!win?.capacity) return null;
+              const isFull = consumptionCount >= win.capacity;
+              return (
+                <Card className={isFull ? "border-amber-500 bg-amber-500/5 animate-pulse" : "border-border/50 bg-card/50"}>
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Ocupação da Janela</span>
+                      <span className="text-sm font-bold">
+                        {consumptionCount} / {win.capacity}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-500 ${isFull ? 'bg-amber-500' : 'bg-blue-500'}`}
+                        style={{ width: `${Math.min(100, (consumptionCount / win.capacity) * 100)}%` }}
+                      />
+                    </div>
+                    {isFull && (
+                      <div className="flex items-center gap-2 mt-2 text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span className="text-xs font-bold uppercase">Atenção: Capacidade Atingida</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
+          </div>
         )}
 
         {result && (
