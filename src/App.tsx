@@ -157,10 +157,12 @@ import PesquisaPesquisadoresPage from "./pages/admin/PesquisaPesquisadoresPage";
 import DatabaseMonitoringPage from "./pages/admin/DatabaseMonitoringPage";
 import AuditoriaPage from "./pages/admin/AuditoriaPage";
 import PwaStatusPage from "./pages/admin/PwaStatusPage";
+import RegistrosPage from "./pages/admin/registros/RegistrosPage";
 
 // PWA pages
 import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
 import PwaLayout from "./components/pwa/PwaLayout";
+import PwaRegistrosPage from "./pages/pwa/registros/PwaRegistrosPage";
 
 import PesquisaHomePage from "./pages/pwa/PesquisaHomePage";
 import PesquisaNovaPage from "./pages/pwa/PesquisaNovaPage";
