@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, UtensilsCrossed, Clock, ClipboardList, LayoutDashboard, AlertTriangle, Layers, Calculator, MapPin, FileText
+  Plus, Pencil, UtensilsCrossed, Clock, ClipboardList, LayoutDashboard, AlertTriangle, Layers, Calculator, MapPin, FileText, UserX
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -262,6 +262,16 @@ export default function AlimentacaoHubPage() {
             <div>
               <p className="font-medium text-sm">Relatórios</p>
               <p className="text-xs text-muted-foreground">Exportações e listagens</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/divergencias")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <UserX className="h-8 w-8 text-amber-500 shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Divergências</p>
+              <p className="text-xs text-muted-foreground">Recusas e ausências</p>
             </div>
           </CardContent>
         </Card>

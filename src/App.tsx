@@ -193,6 +193,7 @@ import AlimentacaoBuscarPwaPage from "./pages/pwa/alimentacao/AlimentacaoBuscarP
 import AlimentacaoJanelasPwaPage from "./pages/pwa/alimentacao/AlimentacaoJanelasPage";
 import AlimentacaoHistoricoPage from "./pages/pwa/alimentacao/AlimentacaoHistoricoPage";
 import AlimentacaoListaConsumosPage from "./pages/pwa/alimentacao/AlimentacaoListaConsumosPage";
+import AlimentacaoDivergenciasPage from "./pages/admin/AlimentacaoDivergenciasPage";
 // PWA Coordenação Técnica pages
 import CoordenacaoHomePage from "./pages/pwa/coordenacao/CoordenacaoHomePage";
 import CoordenacaoAgendaPage from "./pages/pwa/coordenacao/CoordenacaoAgendaPage";
