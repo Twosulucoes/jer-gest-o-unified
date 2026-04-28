@@ -298,6 +298,13 @@ export default function AlojamentoOcupacaoPage() {
                         <TableCell className="text-xs text-muted-foreground">
                           {o.checked_out_at ? new Date(o.checked_out_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}
                         </TableCell>
+                        <TableCell className="text-xs">
+                          {o.divergence_notes ? (
+                            <Badge variant="outline" className="text-[10px] border-amber-200 text-amber-700 bg-amber-50">
+                              {o.divergence_notes}
+                            </Badge>
+                          ) : "—"}
+                        </TableCell>
                         {canOperate && (
                           <TableCell className="space-x-1">
                             {o.status === "allocated" && (
