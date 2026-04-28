@@ -211,6 +211,3 @@ const PwaSelectionFallback = () => {
 };
 
 export default PwaSelectionFallback;
-
-
-export default PwaSelectionFallback;
