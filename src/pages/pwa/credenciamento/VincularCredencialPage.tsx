@@ -12,6 +12,7 @@ import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import PwaLayout from "@/components/pwa/PwaLayout";
 
 export default function VincularCredencialPage() {
   useAuth();
@@ -164,13 +165,8 @@ export default function VincularCredencialPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <PwaLayout backTo="/pwa" moduleTitle="Credenciamento">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
-      <PwaHeader
-        title="Vincular Credencial"
-        icon={IdCard}
-        backTo="/pwa"
-      />
 
       <main className="relative mx-auto max-w-md space-y-6 p-4">
         {!scannedCode ? (
@@ -345,6 +341,6 @@ export default function VincularCredencialPage() {
           </div>
         </div>
       )}
-    </div>
+    </PwaLayout>
   );
 }
