@@ -73,20 +73,7 @@ export const syncOfflineQueue = async () => {
           }
           throw error;
         }
-      }
-        if (error) {
-          // If it's a "already registered" error, we can consider it "synced" or at least remove from queue
-          if (error.code === "23505") { // Unique violation
-             removeFromOfflineQueue(item.id);
-             successCount++;
-             continue;
-          }
-          throw error;
-        }
       } else if (item.module === "transporte") {
-        // For transport, we might need to check if passenger exists first or use upsert
-        // But the original code does a select maybeSingle then update/insert
-        // To simplify offline sync, we can try to find and update or insert.
         const { data: existing } = await supabase
           .from("transport_passengers")
           .select("id")
