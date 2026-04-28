@@ -58,7 +58,7 @@ export default function AlocacaoLotePage() {
           participant_type,
           person_id,
           people(full_name, gender),
-          lodging_occupancies(id, unit_id, lodging_units(name, lodging_locations(name)))
+          lodging_occupancies!lodging_occupancies_participant_id_fkey(id, unit_id, lodging_units!lodging_occupancies_unit_id_fkey(name, lodging_locations(name)))
         `)
         .eq("delegation_id", selectedDelegationId)
         .in("lodging_occupancies.status", ["allocated", "checked_in"]);
@@ -90,7 +90,7 @@ export default function AlocacaoLotePage() {
       if (!stageId) return [];
       const { data, error } = await supabase
         .from("lodging_units")
-        .select("*, lodging_occupancies(id)")
+        .select("*, lodging_occupancies!lodging_occupancies_unit_id_fkey(id)")
         .eq("event_stage_id", stageId)
         .eq("is_active", true);
       if (error) throw error;

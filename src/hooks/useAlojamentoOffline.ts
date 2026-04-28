@@ -73,9 +73,9 @@ export function useAlojamentoOffline() {
     try {
       let result: any;
       if (op.type === "checkin") {
-        result = await rpcCheckin(deviceId, op.payload.token, op.payload.facility_id, op.payload.mode || "person_qr");
+        result = await rpcCheckin(deviceId, op.payload.token, op.payload.location_id || op.payload.facility_id, op.payload.unit_id, op.payload.mode || "person_qr");
       } else if (op.type === "checkout") {
-        result = await rpcCheckout(deviceId, op.payload.token, op.payload.facility_id);
+        result = await rpcCheckout(deviceId, op.payload.token, op.payload.location_id || op.payload.facility_id);
       } else if (op.type === "assign") {
         result = await rpcAssignBed(deviceId, op.payload.person_token, op.payload.bed_token);
       }

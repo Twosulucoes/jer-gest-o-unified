@@ -6,22 +6,23 @@ export async function rpcResolveQr(token: string) {
   return data as Record<string, any>;
 }
 
-export async function rpcCheckin(deviceId: string, token: string, facilityId: string, mode = "person_qr") {
-  const { data, error } = await supabase.rpc("pwa_checkin" as any, {
+export async function rpcCheckin(deviceId: string, token: string, locationId: string, unitId?: string, mode = "person_qr") {
+  const { data, error } = await supabase.rpc("pwa_lodging_checkin" as any, {
     p_device_id: deviceId,
     p_token: token,
-    p_facility_id: facilityId,
+    p_location_id: locationId,
+    p_unit_id: unitId || null,
     p_mode: mode,
   });
   if (error) throw error;
   return data as Record<string, any>;
 }
 
-export async function rpcCheckout(deviceId: string, token: string, facilityId: string) {
-  const { data, error } = await supabase.rpc("pwa_checkout" as any, {
+export async function rpcCheckout(deviceId: string, token: string, locationId: string) {
+  const { data, error } = await supabase.rpc("pwa_lodging_checkout" as any, {
     p_device_id: deviceId,
     p_token: token,
-    p_facility_id: facilityId,
+    p_location_id: locationId,
   });
   if (error) throw error;
   return data as Record<string, any>;

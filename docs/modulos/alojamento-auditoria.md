@@ -1,75 +1,69 @@
 # Auditoria do Módulo de Alojamento - JER Gestão
 **Data:** 28 de Abril de 2026
-**Status Global:** 🟡 Parcialmente Implementado / Inconsistência Crítica
+**Status Global:** 🟢 Unificado (Fase 1 Concluída - 2026-04-28)
 
 ## 1. Introdução e Objetivo
 Esta auditoria analisa o estado do módulo de Alojamento, focando na integração entre a gestão administrativa (alocação) e a operação de campo (PWA). O diagnóstico identifica uma divergência estrutural grave entre os esquemas de dados que compromete a utilidade do módulo em operação real.
 
 ---
 
-## 2. Análise do Estado Atual
+## 2. Análise do Estado Atual (Pós-Unificação)
 
-### 2.1 Estrutura de Dados e Conflitos de Esquema
-O sistema possui hoje dois conjuntos de tabelas concorrentes e desconectados:
-- **Esquema `public` (Admin):** Utiliza `lodging_locations`, `lodging_units` e `lodging_occupancies`. É aqui que a Secretaria faz a alocação em lote (`AlocacaoLotePage.tsx`).
-- **Esquema `alojamento` (PWA/Operacional):** Utiliza `facilities`, `rooms`, `beds` e `stays`. É aqui que as RPCs operacionais (`pwa_checkin`, `pwa_checkout`) registram a atividade.
-- **Inconsistência:** Não existe sincronização entre a alocação planejada no `public` e a execução registrada no `alojamento`.
+### 2.1 Estrutura de Dados Unificada
+O sistema foi unificado no esquema `public`:
+- **Tabelas Operacionais:** `lodging_locations`, `lodging_units` e `lodging_occupancies`.
+- **Registro de Execução:** O PWA agora utiliza as RPCs `pwa_lodging_checkin` e `pwa_lodging_checkout` que gravam diretamente em `public.lodging_occupancies`.
+- **Auditoria:** Nova tabela `public.lodging_audit_logs` registra cada tentativa de check-in/out para rastreabilidade total.
 
 ### 2.2 Interfaces Administrativas (Web Admin)
-- **`AlojamentoHubPage`**: Dashboard básico de capacidade.
-- **`AlojamentoLocaisPage` / `AlojamentoUnidadesPage`**: Gestão de hotéis e quartos (esquema `public`).
-- **`AlocacaoLotePage`**: Wizard funcional que distribui delegações em quartos respeitando gênero e capacidade (esquema `public`).
-- **`AlojamentoOcupacaoPage`**: Visão de check-in manual e lista de ocupantes (esquema `public`).
+- **`AlojamentoHubPage`**: Dashboard unificado que mostra ocupação real vinda do campo.
+- **`AlocacaoLotePage`**: Wizard funcional que agora reflete o status de check-in real dos participantes.
+- **`AlojamentoOcupacaoPage`**: Visão detalhada que exibe notas de divergência (quando o check-in ocorre em local diferente do planejado).
 
 ### 2.3 Interface Operacional (PWA)
-- **`AlojamentoScanPage`**: Executa Check-in e Check-out via QR Code.
-- **Validações:** Realiza check de idade (+12 anos) e se o participante possui credencial ativa na etapa.
-- **Offline:** Fila de sincronização funcional via `useAlojamentoOffline`.
-- **Vouchers:** Integração com resgate de vouchers de alojamento presente.
+- **`AlojamentoScanPage`**: Executa Check-in e Check-out via QR Code gravando no esquema unificado.
+- **Divergência:** Sistema permite check-in não planejado ou em local divergente, registrando a ocorrência para auditoria posterior.
 
 ---
 
-## 3. Relatório de Auditoria por Frente
+## 3. Relatório de Evolução (Fase 1)
 
 | Frente | Status | Evidência Objetiva |
 |:---|:---:|:---|
-| **Cadastro de Unidades** | ✅ Pleno | Tabelas e telas de gestão de locais e quartos funcionais. |
-| **Alocação de Pessoas** | 🟡 Parcial | Funciona no Admin (Wizard), mas o dado não é lido pelo PWA. |
-| **Check-in por QR** | 🟡 Parcial | Funciona no PWA, mas não valida se a pessoa foi alocada naquela unidade/local. |
-| **Identificação da Unidade** | ❌ Ausente | O PWA opera por "Facility" (Local), perdendo a granularidade de "Quarto" alocada no Admin. |
-| **Controle de Presença** | ❌ Ausente | Não há registro de retorno (presença noturna), apenas o Check-in inicial e Check-out final. |
-| **Check-out por QR** | ✅ Pleno | Fluxo de saída implementado e funcional no PWA. |
-| **Proteção contra Duplicidade** | ✅ Pleno | RPC `pwa_checkin` impede check-in duplo se já estiver `hospedado`. |
-| **Comportamento Offline** | ✅ Pleno | Sistema de fila e sync persistente no `localStorage`. |
-| **Vínculo com Voucher** | ✅ Pleno | Resgate de voucher integrado ao scanner operacional. |
-| **Visão Real-time (Admin)** | 🟡 Parcial | Mostra ocupação baseada no `public`, ignorando os dados do `alojamento` vindos do PWA. |
-| **Perfil/Permissões** | ✅ Pleno | Role `alojamento` configurada e protegida. |
-| **Trilha de Auditoria** | ✅ Pleno | Tabela `alojamento.scan_events` registra cada tentativa com sucesso/erro. |
+| **Cadastro de Unidades** | ✅ Pleno | Tabelas unificadas no `public`. |
+| **Alocação de Pessoas** | ✅ Pleno | Agora o dado planejado (`public`) é lido e validado pelo PWA. |
+| **Check-in por QR** | ✅ Pleno | Implementado no `public` com registro de divergência. |
+| **Identificação da Unidade** | 🟡 Parcial | RPC suporta unidade, PWA utiliza localização (Facility) como base. |
+| **Controle de Presença** | ❌ Ausente | Planejado para Fase 2. |
+| **Check-out por QR** | ✅ Pleno | Fluxo unificado e auditável no `public`. |
+| **Proteção contra Duplicidade** | ✅ Pleno | RPC `pwa_lodging_checkin` impede check-in duplo no esquema unificado. |
+| **Comportamento Offline** | ✅ Pleno | Sync atualizado para as novas RPCs unificadas. |
+| **Visão Real-time (Admin)** | ✅ Pleno | Dashboard agora reflete a operação real via `public.lodging_occupancies`. |
+| **Trilha de Auditoria** | ✅ Pleno | Nova tabela `public.lodging_audit_logs` registra eventos operacionais. |
 
 ---
 
-## 4. Diagnóstico e Lacunas (Inconsistências)
+## 4. Diagnóstico Pós-Unificação
 
-### 4.1 Prioridade Crítica (Bloqueante de Produto)
-- **Desconexão entre Alocação e Check-in**: Atualmente, um coordenador aloca um atleta no "Quarto 10" do "Hotel X". No entanto, o PWA registra apenas que o atleta entrou no "Hotel X". O dado de "Quarto 10" nunca é atualizado ou validado no momento do check-in.
-- **Divergência de Tabelas**: O uso de dois esquemas (`public` vs `alojamento`) para a mesma finalidade gerou um "módulo esquizofrênico" onde a mão administrativa não vê o que a mão operacional faz.
+### 4.1 Conquistas da Fase 1
+- **Fim da Dualidade de Esquemas**: O esquema `alojamento` foi aposentado para novas gravações operacionais. Tudo converge para `public.lodging_occupancies`.
+- **Registro de Divergência**: Se um participante faz check-in em local diferente do planejado, o sistema registra a divergência mas não bloqueia a operação, permitindo flexibilidade em campo.
+- **Rastreabilidade**: Todas as tentativas de check-in/out (sucesso ou erro) são gravadas em `lodging_audit_logs`.
 
-### 4.2 Prioridade Alta (Impacto Operacional)
-- **Falta de Controle de Presença**: No alojamento, o check-in é feito uma vez (chegada). A operação precisa de um controle de "Presença Diária" para saber quem realmente dormiu na unidade em cada noite da etapa.
-- **Validação de Gênero no Check-in**: Embora o Admin valide gênero na alocação, o PWA não impede que um atleta masculino faça check-in em uma unidade feminina se o operador errar a seleção.
-
-### 4.3 Prioridade Média (UX/Processo)
-- **Visibilidade de Ocupação no PWA**: O operador de campo não consegue ver facilmente a lista de quem *deveria* estar no alojamento e ainda não chegou (faltosos).
+### 4.2 Lacunas Remanescentes (Fase 2)
+- **Controle de Presença Diária**: Necessidade de validar se o hóspede retornou ao alojamento todas as noites (Presença Noturna).
+- **Granularidade de Quarto no PWA**: Evoluir a UI do PWA para permitir seleção ou leitura de QR do Quarto específico.
+- **Validação de Regras de Gênero no Check-in**: Implementar bloqueios ou alertas mais rígidos caso o gênero do ocupante não bata com a unidade.
 
 ---
 
-## 5. Recomendações de Próximos Passos
+## 5. Recomendações de Próximos Passos (Fase 2)
 
-1. **Unificação do Esquema de Dados**: Migrar toda a lógica operacional do PWA para as tabelas do `public` (ou vice-versa), garantindo que `lodging_occupancies` seja a fonte única de verdade tanto para Alocação (Admin) quanto para Check-in (PWA).
-2. **Vínculo Granular no Check-in**: Alterar o PWA para que o operador selecione a **Unidade (Quarto)** e não apenas o Local (Facility), permitindo a atualização real da ocupação planejada.
-3. **Módulo de Presença Noturna**: Criar um modo "Presença" no scanner PWA que registre apenas o retorno da pessoa à unidade, sem alterar o status de `checked_in`.
-4. **Relatório de Divergência de Alocação**: Criar painel administrativo que aponte pessoas que fizeram check-in em locais diferentes do alocado pela coordenação.
+1. **Módulo de Presença Noturna**: Criar um modo "Presença" no scanner PWA que registre apenas o retorno da pessoa à unidade, sem alterar o status de `checked_in`.
+2. **Vínculo Granular no Check-in (UI)**: Alterar o PWA para que o operador possa selecionar a **Unidade (Quarto)**, permitindo a atualização real da ocupação planejada em nível de quarto.
+3. **Painel de Gestão de Divergência**: Criar relatório no Admin focado em resolver as divergências registradas durante o check-in.
 
 ---
 ## Histórico de Auditorias
-- **2026-04-28:** Auditoria inicial completa. Identificada desconexão crítica entre os esquemas de dados Admin e PWA. Módulo requer refatoração de schema para operação real.
+- **2026-04-28:** Unificação concluída (Fase 1). Esquemas Admin e PWA operando sobre a mesma base de dados.
+- **2026-04-28 (Manhã):** Auditoria inicial completa. Identificada desconexão crítica entre os esquemas de dados Admin e PWA.

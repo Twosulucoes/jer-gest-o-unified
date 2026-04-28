@@ -149,10 +149,10 @@ export default function AlojamentoScanPage() {
     try {
       if (!isOnline) {
         if (mode === "checkin") {
-          enqueue("checkin", { token, facility_id: facilityId, mode: "person_qr" });
+          enqueue("checkin", { token, location_id: facilityId, mode: "person_qr" });
           toast.info("Check-in enfileirado (offline)");
         } else if (mode === "checkout") {
-          enqueue("checkout", { token, facility_id: facilityId });
+          enqueue("checkout", { token, location_id: facilityId });
           toast.info("Check-out enfileirado (offline)");
         }
         return;

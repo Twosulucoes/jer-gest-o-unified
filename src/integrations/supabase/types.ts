@@ -2392,6 +2392,147 @@ export type Database = {
           },
         ]
       }
+      lodging_audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          device_id: string | null
+          error_code: string | null
+          error_message: string | null
+          id: string
+          location_id: string | null
+          metadata: Json | null
+          participant_id: string | null
+          success: boolean
+          unit_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          device_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          location_id?: string | null
+          metadata?: Json | null
+          participant_id?: string | null
+          success?: boolean
+          unit_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          device_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          location_id?: string | null
+          metadata?: Json | null
+          participant_id?: string | null
+          success?: boolean
+          unit_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lodging_audit_logs_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lodging_incidents: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          location_id: string
+          participant_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          location_id: string
+          participant_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          location_id?: string
+          participant_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lodging_incidents_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_incidents_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_incidents_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+        ]
+      }
       lodging_locations: {
         Row: {
           address: string | null
@@ -2453,12 +2594,18 @@ export type Database = {
         Row: {
           checked_in_at: string | null
           checked_in_by: string | null
+          checked_in_device_id: string | null
+          checked_in_location_id: string | null
+          checked_in_unit_id: string | null
           checked_out_at: string | null
           checked_out_by: string | null
+          checked_out_device_id: string | null
           created_at: string
+          divergence_notes: string | null
           event_id: string
           event_stage_id: string | null
           id: string
+          metadata: Json | null
           notes: string | null
           participant_id: string
           status: string
@@ -2468,12 +2615,18 @@ export type Database = {
         Insert: {
           checked_in_at?: string | null
           checked_in_by?: string | null
+          checked_in_device_id?: string | null
+          checked_in_location_id?: string | null
+          checked_in_unit_id?: string | null
           checked_out_at?: string | null
           checked_out_by?: string | null
+          checked_out_device_id?: string | null
           created_at?: string
+          divergence_notes?: string | null
           event_id: string
           event_stage_id?: string | null
           id?: string
+          metadata?: Json | null
           notes?: string | null
           participant_id: string
           status?: string
@@ -2483,12 +2636,18 @@ export type Database = {
         Update: {
           checked_in_at?: string | null
           checked_in_by?: string | null
+          checked_in_device_id?: string | null
+          checked_in_location_id?: string | null
+          checked_in_unit_id?: string | null
           checked_out_at?: string | null
           checked_out_by?: string | null
+          checked_out_device_id?: string | null
           created_at?: string
+          divergence_notes?: string | null
           event_id?: string
           event_stage_id?: string | null
           id?: string
+          metadata?: Json | null
           notes?: string | null
           participant_id?: string
           status?: string
@@ -2496,6 +2655,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lodging_occupancies_check_in_location_id_fkey"
+            columns: ["checked_in_location_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_occupancies_check_in_unit_id_fkey"
+            columns: ["checked_in_unit_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lodging_occupancies_event_id_fkey"
             columns: ["event_id"]
@@ -2618,6 +2791,7 @@ export type Database = {
           created_at: string
           event_id: string
           event_stage_id: string | null
+          floor: string | null
           gender_restriction: string
           gender_zone: string | null
           id: string
@@ -2637,6 +2811,7 @@ export type Database = {
           created_at?: string
           event_id: string
           event_stage_id?: string | null
+          floor?: string | null
           gender_restriction?: string
           gender_zone?: string | null
           id?: string
@@ -2656,6 +2831,7 @@ export type Database = {
           created_at?: string
           event_id?: string
           event_stage_id?: string | null
+          floor?: string | null
           gender_restriction?: string
           gender_zone?: string | null
           id?: string
@@ -8145,6 +8321,20 @@ export type Database = {
       }
       pwa_checkout: {
         Args: { p_device_id: string; p_facility_id: string; p_token: string }
+        Returns: Json
+      }
+      pwa_lodging_checkin: {
+        Args: {
+          p_device_id: string
+          p_location_id: string
+          p_mode?: string
+          p_token: string
+          p_unit_id?: string
+        }
+        Returns: Json
+      }
+      pwa_lodging_checkout: {
+        Args: { p_device_id: string; p_location_id: string; p_token: string }
         Returns: Json
       }
       pwa_search_person: {
