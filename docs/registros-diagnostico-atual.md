@@ -492,3 +492,59 @@ Implementação de melhorias de UX no Super Admin para garantir que o operador c
 
 ---
 *Correção da descobribilidade concluída em 2026-04-28.*
+
+## DIAGNÓSTICO DE FAMÍLIAS DE MODALIDADE — ETAPA C (2026-04-28)
+
+Este diagnóstico mapeia como o sistema categoriza as modalidades esportivas por famílias de resultado, avaliando a cobertura da infraestrutura de dados para os diferentes formatos exigidos por cada esporte.
+
+### 1. Inventário das Famílias Definidas no Código
+As famílias estão formalmente definidas no arquivo `src/types/sportEventRules.ts` e consumidas por componentes como `BulletinRouter.tsx` e `MatchScoreFormDrawer.tsx`.
+
+| Família | Nome Amigável | Tipo de Resultado Representado |
+| :--- | :--- | :--- |
+| **score** | Placar (gols/pontos) | Modalidades coletivas e individuais baseadas em pontuação direta. |
+| **sets** | Sets (best-of) | Modalidades de raquete e voleibol (melhor de N sets). |
+| **time** | Tempo (heats) | Atletismo de pista, Natação, Ciclismo (milissegundos). |
+| **mark** | Marca (campo) | Atletismo de campo, Lançamentos (distância em cm). |
+| **combat** | Combate (lutas) | Judô, Karatê, Taekwondo, Wrestling (pontos/ippon). |
+| **ranking** | Ranking (sem confronto) | Xadrez, Ginástica Rítmica (pontuação acumulada ou nota). |
+
+### 2. Inventário do Cadastro de Modalidades
+A associação entre modalidade e família é feita via coluna `match_config` (JSONB) na tabela `sports`, especificamente no campo `family`.
+
+**Amostragem de Modalidades:**
+| Modalidade | Família Atribuída | Observação |
+| :--- | :--- | :--- |
+| Futsal, Futebol, Basquete, Handebol | `score` | Coerente (Placar simples). |
+| Voleibol, Vôlei de Praia, Tênis de Mesa, Badminton | `sets` | Coerente (Sets/Games). |
+| Judô, Karatê (Kumite), Taekwondo, Wrestling | `combat` | Coerente (Lutas). |
+| Atletismo (Pista), Natação, Ciclismo | `time` | Coerente (Tempo). |
+| Atletismo (Campo), Tiro com Arco | `mark` | Coerente (Distância/Marca). |
+| Xadrez, Ginástica Rítmica, Karatê (Kata) | `ranking` | Coerente (Pontuação/Nota). |
+
+**Lacuna Identificada:** Atualmente, os esportes no banco de dados (`sports`) possuem o campo `match_config` nulo por padrão. A associação correta só ocorre via `sport_event_rules` quando um preset do `sportPresetCatalog.ts` é aplicado a uma prova específica. **Recomendação:** Migrar o `family` para o nível da modalidade (`sports`) para simplificar a UI de criação.
+
+### 3. Cobertura da Infraestrutura de Resultado
+Análise da tabela `competition_match_results` frente às necessidades de cada família:
+
+| Família | Campos Utilizados | Cobertura | Detalhe |
+| :--- | :--- | :--- | :--- |
+| **Score** | `score`, `outcome` | Integral | Placar A x B textual e vencedor. |
+| **Sets** | `score` | Parcial | Hoje o placar set a set é armazenado como texto livre em `score`. |
+| **Combat** | `outcome`, `combat_detail` | Integral | Campo JSONB dedicado para detalhes técnicos da luta. |
+| **Mark** | `distance_cm`, `position` | Integral | Suporta ranking por distância e desempate. |
+| **Time** | `time_ms`, `position` | Integral | Suporta ranking por tempo (milissegundos). |
+| **Ranking** | `points`, `position` | Parcial | Para Ginástica Rítmica, o detalhamento por juiz ainda é limitado. |
+
+### 4. UI de Lançamento e Boletim por Família
+- **Lançamento (Admin):** O `MatchScoreFormDrawer.tsx` já detecta a família via regras da prova e exibe resumos pertinentes, mas o formulário de resultado final ainda é excessivamente genérico.
+- **Lançamento (Registros/PWA):** Atualmente força o formato de placar (A x B) para todas as famílias, o que é um gap crítico para modalidades de Tempo/Marca.
+- **Boletim:** O `BulletinRouter.tsx` está bem estruturado com componentes específicos (`BulletinSets`, `BulletinCombat`, `BulletinTimeMark`), garantindo renderização fiel ao esporte quando o dado está presente.
+
+### 5. Conclusões e Recomendações
+1. **Padronização do Banco:** Aplicar os presets de família diretamente na tabela `sports` para evitar modalidades "órfãs" de lógica.
+2. **Evolução da UI de Registros (Fase 4):** Adaptar o formulário de lançamento no PWA para exibir campos de Tempo (`time_ms`) ou Marca (`distance_cm`) quando a família não for `score/sets`.
+3. **Consolidação de Sets:** Avaliar a estruturação do placar set a set em campo JSONB para permitir cálculos automáticos de saldo de sets em relatórios complexos.
+
+---
+*Diagnóstico de Famílias de Modalidade concluído em 2026-04-28.*
