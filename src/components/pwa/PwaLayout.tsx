@@ -47,6 +47,9 @@ export default function PwaLayout({
   const navigate = useNavigate();
   const { user, roles, profile, signOut, hasRole } = useAuth();
   const { activeStage } = useStageContext();
+  const { activeEvent } = useEventContext();
+  const registrosMode = activeEvent?.registros_mode_enabled || false;
+
   const path = location.pathname;
 
   // Detect which PWA module we are in based on path
@@ -90,7 +93,10 @@ export default function PwaLayout({
       { role: "arbitragem", label: "Ao Vivo", icon: ShieldCheck, to: "/aovivo" },
     ];
     
-    const accessible = all.filter(m => hasRole(m.role as any) || (m.role === "secretaria" && hasRole("admin")));
+    const accessible = all.filter(m => {
+      if ((m as any).showOnlyIfRegistrosEnabled && !registrosMode) return false;
+      return hasRole(m.role as any) || (m.role === "secretaria" && hasRole("admin"));
+    });
     // Remove duplicates (like Ao Vivo having two roles)
     const unique = [];
     const seen = new Set();
