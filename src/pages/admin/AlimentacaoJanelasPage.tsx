@@ -77,6 +77,7 @@ export default function AlimentacaoJanelasPage() {
         end_time: v.end_time,
         location: v.location || null,
         meal_window_location_id: v.meal_window_location_id || null,
+        capacity: v.capacity || null,
         is_active: v.is_active,
       };
       if (isStageScoped && stageId) payload.event_stage_id = stageId;
@@ -109,6 +110,7 @@ export default function AlimentacaoJanelasPage() {
         end_time: v.end_time,
         location: v.location || null,
         meal_window_location_id: v.meal_window_location_id || null,
+        capacity: v.capacity || null,
         is_active: v.is_active,
       }).eq("id", id);
       if (error) throw error;
