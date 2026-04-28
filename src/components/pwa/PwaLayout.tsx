@@ -201,7 +201,8 @@ function OfflineFooterIndicator() {
   
   useEffect(() => {
     const update = () => {
-      const c = getOfflineQueue().length + getVoucherQueue().filter(v => v.status === "pending").length;
+      const c = getOfflineQueue().filter(i => i.status === "pending" || i.status === "failed").length + 
+                getVoucherQueue().filter(v => v.status === "pending" || v.status === "failed").length;
       setCount(c);
     };
     update();

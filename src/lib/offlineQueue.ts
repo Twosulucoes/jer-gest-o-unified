@@ -7,6 +7,9 @@ export type OfflineQueueItem = {
   data: any;
   timestamp: string;
   participantName?: string;
+  attempts: number;
+  status: "pending" | "syncing" | "failed" | "conflict";
+  lastError?: string;
 };
 
 const STORAGE_KEY = "pwa_offline_queue";
@@ -28,6 +31,8 @@ export const addToOfflineQueue = (module: "alimentacao" | "transporte", data: an
     data,
     timestamp: new Date().toISOString(),
     participantName,
+    attempts: 0,
+    status: "pending",
   };
   queue.push(newItem);
   saveOfflineQueue(queue);
@@ -44,31 +49,34 @@ export const clearOfflineQueue = () => {
   localStorage.removeItem(STORAGE_KEY);
 };
 
-export const syncOfflineQueue = async () => {
-  const queue = getOfflineQueue();
-  if (queue.length === 0) return { success: true, count: 0 };
+let isSyncing = false;
 
+export const syncOfflineQueue = async () => {
+  if (isSyncing || !navigator.onLine) return { success: false, count: 0 };
+  
+  const queue = getOfflineQueue();
+  const pending = queue.filter(item => item.status === "pending" || item.status === "failed");
+  
+  if (pending.length === 0) return { success: true, count: 0 };
+
+  isSyncing = true;
   let successCount = 0;
   let errorCount = 0;
+  const updatedQueue = [...queue];
 
-  for (const item of queue) {
+  for (const item of pending) {
+    const idx = updatedQueue.findIndex(i => i.id === item.id);
+    updatedQueue[idx].status = "syncing";
+    saveOfflineQueue(updatedQueue);
+
     try {
       if (item.module === "alimentacao") {
         const { error } = await supabase.from("meal_consumptions").insert(item.data);
         if (error) {
-          // If it's a "already registered" error, record incident and remove from queue
           if (error.code === "23505") { // Unique violation
-             await (supabase as any).from("meal_incidents").insert({
-               meal_window_id: item.data.meal_window_id,
-               incident_type: 'DUPLICATE',
-               participant_id: item.data.participant_id,
-               registered_by: item.data.registered_by,
-               is_offline: true,
-               incident_at: item.timestamp,
-               device_info: { offline_sync: true }
-             });
-             removeFromOfflineQueue(item.id);
-             successCount++;
+             updatedQueue[idx].status = "conflict";
+             updatedQueue[idx].lastError = "Consumo já registrado para este período.";
+             errorCount++;
              continue;
           }
           throw error;
@@ -97,14 +105,30 @@ export const syncOfflineQueue = async () => {
         }
       }
       
-      removeFromOfflineQueue(item.id);
+      updatedQueue[idx].status = "syncing"; // Final check before removal
       successCount++;
-    } catch (err) {
+      // Remove success items
+      const finalQueue = getOfflineQueue().filter(i => i.id !== item.id);
+      saveOfflineQueue(finalQueue);
+      // Update local reference for the loop
+      updatedQueue.splice(idx, 1);
+    } catch (err: any) {
       console.error(`Error syncing item ${item.id}:`, err);
+      updatedQueue[idx].attempts += 1;
+      updatedQueue[idx].lastError = err.message || "Erro de conexão";
+      
+      if (updatedQueue[idx].attempts >= 5) {
+        updatedQueue[idx].status = "conflict";
+        updatedQueue[idx].lastError = "Limite de tentativas excedido.";
+      } else {
+        updatedQueue[idx].status = "failed";
+      }
+      saveOfflineQueue(updatedQueue);
       errorCount++;
     }
   }
 
+  isSyncing = false;
   return { success: errorCount === 0, count: successCount, errors: errorCount };
 };
 

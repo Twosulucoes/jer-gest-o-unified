@@ -2,7 +2,7 @@
 
 Este documento descreve o estado real da navegação do sistema JER Gestão, consolidando rotas, menus, permissões e componentes de layout em 28 de abril de 2026.
 
-> **Status:** Fase 2 da Reformulação da Navegação concluída (Unificação do `PwaLayout` em todos os módulos operacionais).
+> **Status:** Fase 3 da Reformulação da Navegação concluída (Paridade de Robustez Offline entre mecanismos).
 
 ## 1. Visão Geral da Arquitetura de Navegação
 
@@ -225,4 +225,30 @@ Este complemento detalha o padrão de navegação e componentes de layout dos PW
 - **`PwaRefreshButton.tsx` (`src/components/pwa/`):** Botão de "hard refresh" integrado ao header para limpar caches.
 - **`OfflineSyncStatus.tsx` (`src/components/pwa/`):** Alerta de registros pendentes de sincronização.
 
-**Observação:** Todas as rotas operacionais agora são envoltas pelo `PwaLayout` unificado (seja via roteamento ou herança direta), garantindo footer fixo com scanner, indicador de sincronização e switcher de módulos consistente em toda a experiência mobile.
+**Observação:** Todas as rotas operacionais agora são envoltas pelo `PwaLayout` unificado. Os mecanismos de sincronização offline (`offlineQueue.ts`, `voucherOffline.ts` e `useAlojamentoOffline.ts`) operam com paridade funcional: auto-sync de 30s, retry automático (5 tentativas) e status visível ao operador via indicadores de rodapé e centrais de conflito locais.
+
+---
+
+## 9. Diagnóstico do Mecanismo de Sincronização Offline (Concluído)
+
+Este inventário descreve a robustez alcançada na Fase 3.
+
+### 9.1 Inventário de Mecanismos
+
+| Mecanismo | Arquivo | Módulos | Persistência | Auto-Sync | Retry | Status |
+| :--- | :--- | :--- | :--- | :---: | :---: | :---: |
+| **Alojamento** | `useAlojamentoOffline.ts` | Alojamento | LocalStorage | 30s | Sim | Sim |
+| **Geral Operacional**| `offlineQueue.ts` | Alimentação, Transporte | LocalStorage | 30s | Sim (5x) | Sim |
+| **Voucher** | `voucherOffline.ts` | Transversal | LocalStorage | 30s | Sim (5x) | Sim |
+
+### 9.2 Comportamento de Falha e Conflito
+- **Retry Esgotado:** O item é marcado como `conflict` (ou `failed_retry`) e permanece na fila para intervenção manual. O indicador de "Erro" no footer do `PwaLayout` é ativado.
+- **Conflito de Regra (Alimentação):** Duplicidades (erro 23505) agora são marcadas como conflito visível ao operador em vez de serem limpas automaticamente, permitindo auditoria no local.
+- **Voucher:** Conflitos retornados pela RPC (já usado, revogado) param o retry e exigem resolução manual.
+
+---
+
+## 10. Mini-auditoria de Confirmação da Fase 3 (2026-04-28)
+
+**Veredito:** SÓLIDO. A paridade de comportamento foi alcançada sem comprometer a estabilidade dos módulos individuais. O operador agora tem a mesma experiência de resiliência em todos os PWAs. A dívida técnica de unificação do código está registrada em `docs/divida-tecnica.md`.
+

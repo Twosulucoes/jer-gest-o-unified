@@ -2,8 +2,9 @@
 
 ## Status dos Módulos em Reformulação:
 - **Alojamento:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 1, 2 e 3 concluídas.
-- **Alimentação:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 1 e 2 concluídas.
-- **Navegação:** ✅ FASE 1 CONCLUÍDA (Web Admin limpo, Super Admin reforçado, Redirects operacionais) - 🗺️ [Mapeamento Atualizado](docs/navegacao-mapeamento-atual.md) (2026-04-28).
+- **Alimentação:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 1, 2 e 3 concluídas.
+- **Transporte:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 2 e 3 concluídas.
+- **Navegação:** ✅ FASE 3 CONCLUÍDA (Robustez Offline Paritária e Layout Unificado) - 🗺️ [Mapeamento Atualizado](docs/navegacao-mapeamento-atual.md) (2026-04-28).
 
 ---
 

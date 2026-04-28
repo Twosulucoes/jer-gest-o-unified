@@ -9,7 +9,9 @@ export interface VoucherOfflineItem {
   attempted_at: string;
   attempted_by: string;
   person_name?: string;
-  status: "pending" | "synced" | "conflict";
+  status: "pending" | "synced" | "conflict" | "syncing" | "failed";
+  attempts: number;
+  last_error?: string;
   conflict_reason?: string;
   conflict_context?: Record<string, any>;
   resolved_at?: string;
@@ -45,6 +47,7 @@ export const addToVoucherQueue = (
     attempted_by: userId,
     person_name,
     status: "pending",
+    attempts: 0,
   };
   queue.push(newItem);
   saveVoucherQueue(queue);
@@ -65,16 +68,25 @@ export const resolveVoucherConflict = (itemId: string, action: "resolved" | "dis
   saveVoucherQueue(queue);
 };
 
+let isVoucherSyncing = false;
+
 export const syncVoucherQueue = async () => {
+  if (isVoucherSyncing || !navigator.onLine) return { count: 0, conflicts: 0 };
+  
   const queue = getVoucherQueue();
-  const pending = queue.filter(i => i.status === "pending");
+  const pending = queue.filter(i => i.status === "pending" || i.status === "failed");
   if (pending.length === 0) return { count: 0, conflicts: 0 };
 
+  isVoucherSyncing = true;
   let syncedCount = 0;
   let conflictCount = 0;
   const updatedQueue = [...queue];
 
   for (const item of pending) {
+    const idx = updatedQueue.findIndex(i => i.id === item.id);
+    updatedQueue[idx].status = "syncing";
+    saveVoucherQueue(updatedQueue);
+
     try {
       const { data, error } = await supabase.rpc("redeem_voucher" as any, {
         p_qr_value: item.qr_value,
@@ -90,7 +102,6 @@ export const syncVoucherQueue = async () => {
       });
 
       const res = data as VoucherRedeemResult;
-      const idx = updatedQueue.findIndex(i => i.id === item.id);
 
       if (error || !res.ok) {
         updatedQueue[idx].status = "conflict";
@@ -98,7 +109,6 @@ export const syncVoucherQueue = async () => {
         updatedQueue[idx].conflict_context = {
           used_at: res?.used_at,
           operator_name: res?.operator_name,
-          // Outros campos que a RPC possa retornar no futuro
           ...res
         };
         conflictCount++;
@@ -106,12 +116,24 @@ export const syncVoucherQueue = async () => {
         updatedQueue[idx].status = "synced";
         syncedCount++;
       }
-    } catch (err) {
+      saveVoucherQueue(updatedQueue);
+    } catch (err: any) {
       console.error("Erro ao sincronizar voucher offline", err);
+      updatedQueue[idx].attempts += 1;
+      updatedQueue[idx].last_error = err.message || "Erro de conexão";
+      
+      if (updatedQueue[idx].attempts >= 5) {
+        updatedQueue[idx].status = "conflict";
+        updatedQueue[idx].conflict_reason = "Limite de tentativas excedido.";
+      } else {
+        updatedQueue[idx].status = "failed";
+      }
+      saveVoucherQueue(updatedQueue);
     }
   }
 
+  isVoucherSyncing = false;
   // Mantém conflitos para resolução manual no PWA
-  saveVoucherQueue(updatedQueue.filter(i => i.status !== "synced"));
+  saveVoucherQueue(getVoucherQueue().filter(i => i.status !== "synced"));
   return { count: syncedCount, conflicts: conflictCount };
 };

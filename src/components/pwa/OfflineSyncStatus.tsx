@@ -13,8 +13,8 @@ export function OfflineSyncStatus() {
   const [online, setOnline] = useState(isOnline());
 
   const updateQueueCounts = () => {
-    setQueueCount(getOfflineQueue().length);
-    setVoucherQueueCount(getVoucherQueue().filter(i => i.status === "pending").length);
+    setQueueCount(getOfflineQueue().filter(i => i.status === "pending" || i.status === "failed").length);
+    setVoucherQueueCount(getVoucherQueue().filter(i => i.status === "pending" || i.status === "failed").length);
   };
 
   useEffect(() => {
@@ -28,10 +28,18 @@ export function OfflineSyncStatus() {
     
     const interval = setInterval(updateQueueCounts, 5000);
     
+    // Auto-sync effect
+    const autoSyncInterval = setInterval(() => {
+      if (isOnline()) {
+        handleSync();
+      }
+    }, 30000);
+    
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       clearInterval(interval);
+      clearInterval(autoSyncInterval);
     };
   }, []);
 
