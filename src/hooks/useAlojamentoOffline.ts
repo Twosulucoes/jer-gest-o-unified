@@ -14,7 +14,7 @@ export interface OfflineOp {
 
 const STORAGE_KEY = "jer_alj_offline_queue";
 
-function loadQueue(): OfflineOp[] {
+export function getAlojamentoQueue(): OfflineOp[] {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
   } catch {
