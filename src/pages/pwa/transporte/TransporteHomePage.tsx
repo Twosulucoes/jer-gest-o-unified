@@ -14,6 +14,7 @@ import { PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
 import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import PwaLayout from "@/components/pwa/PwaLayout";
 
 
 interface TripRow {
@@ -178,42 +179,44 @@ export default function TransporteHomePage() {
   );
 
   return (
-    <PwaContainer size="md">
-      <PwaStatTriplet
-        loading={loading}
-        items={[
-          { label: "Embarques hoje", value: myTrips.reduce((s, t) => s + boardedCount(t), 0), tone: "module" },
-          { label: "Viagens", value: myTrips.length + available.length, tone: "green" },
-          { label: "Pendentes", value: available.length, tone: "amber" },
-        ]}
-      />
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar rota ou veículo..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="h-11 rounded-xl border-border/70 bg-card/80 pl-9 text-sm"
+    <PwaLayout backTo="/pwa" moduleTitle="Transporte">
+      <PwaContainer size="md">
+        <PwaStatTriplet
+          loading={loading}
+          items={[
+            { label: "Embarques hoje", value: myTrips.reduce((s, t) => s + boardedCount(t), 0), tone: "module" },
+            { label: "Viagens", value: myTrips.length + available.length, tone: "green" },
+            { label: "Pendentes", value: available.length, tone: "amber" },
+          ]}
         />
-      </div>
 
-      {loading && <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">{[1,2,3].map(i => <Skeleton key={i} className="h-28 w-full bg-muted/30" />)}</div>}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar rota ou veículo..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="h-11 rounded-xl border-border/70 bg-card/80 pl-9 text-sm"
+          />
+        </div>
 
-      {!loading && (
-        <>
-          <Section title="Viagens em andamento" icon={ArrowRight} trips={myTrips} variant="mine" />
-          <Section title="Disponíveis" icon={Clock} trips={available} variant="available" />
-          <Section title="Outros motoristas" icon={AlertTriangle} trips={others} variant="other" />
+        {loading && <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">{[1,2,3].map(i => <Skeleton key={i} className="h-28 w-full bg-muted/30" />)}</div>}
 
-          {filtered.length === 0 && (
-            <div className="op-card flex flex-col items-center justify-center py-10 text-center">
-              <Bus className="h-8 w-8 text-muted-foreground/50" />
-              <p className="mt-2 text-sm font-medium text-muted-foreground">Nenhuma viagem encontrada</p>
-            </div>
-          )}
-        </>
-      )}
-    </PwaContainer>
+        {!loading && (
+          <>
+            <Section title="Viagens em andamento" icon={ArrowRight} trips={myTrips} variant="mine" />
+            <Section title="Disponíveis" icon={Clock} trips={available} variant="available" />
+            <Section title="Outros motoristas" icon={AlertTriangle} trips={others} variant="other" />
+
+            {filtered.length === 0 && (
+              <div className="op-card flex flex-col items-center justify-center py-10 text-center">
+                <Bus className="h-8 w-8 text-muted-foreground/50" />
+                <p className="mt-2 text-sm font-medium text-muted-foreground">Nenhuma viagem encontrada</p>
+              </div>
+            )}
+          </>
+        )}
+      </PwaContainer>
+    </PwaLayout>
   );
 }
