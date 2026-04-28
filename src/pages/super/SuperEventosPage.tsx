@@ -305,7 +305,6 @@ export default function SuperEventosPage() {
           </TableBody>
         </Table>
       </div>
-    </div>
 
       <AlertDialog open={confirmDialog.open} onOpenChange={(o) => setConfirmDialog({ ...confirmDialog, open: o })}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
