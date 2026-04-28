@@ -2,7 +2,7 @@
 
 Este documento descreve o estado real da navegação do sistema JER Gestão, consolidando rotas, menus, permissões e componentes de layout em 28 de abril de 2026.
 
-> **Status:** Fase 3 da Reformulação da Navegação concluída (Paridade de Robustez Offline entre mecanismos).
+> **Status:** Fase 4 (Saneamento) em andamento. Passo 1 concluído.
 
 ## 1. Visão Geral da Arquitetura de Navegação
 
@@ -102,7 +102,7 @@ A navegação PWA começa em `/pwa` (`PwaLandingPage`), onde o usuário selecion
 - **Coordenação Técnica:** `/pwa/coordenacao-tecnica` (Agenda, Partidas, Resultados).
 - **Delegação:** `/pwa/delegacao` (Agenda, Participantes, Logística).
 - **Resultados:** `/pwa/resultados` (Lançamento manual por coordenador de modalidade).
-- **JER Ao Vivo:** `/aovivo` (Mesa e Arbitragem).
+- **JER Ao Vivo:** `/pwa/aovivo` (Mesa e Arbitragem).
 
 ---
 
@@ -126,17 +126,17 @@ A navegação PWA começa em `/pwa` (`PwaLandingPage`), onde o usuário selecion
 - **`AdminLayout`:** Sidebar colapsável, Header com switcher de evento, Breadcrumbs e VersionBadge.
 - **`SuperAdminLayout`:** Sidebar técnica simplificada, Foco em monitoramento.
 - **`StageLayout`:** Utilizado dentro de contextos de Etapa específica para navegação local.
-- **`PwaRouteGuard`:** Garante que o usuário PWA tenha um Evento e Etapa selecionados antes de operar.
+- **`PwaRouteGuard`:** Garante que o usuário PWA tenha um Evento e Etapa selecionados antes de operar. Limpo de referências legadas na Fase 4.
 - **`ProtectedRoute`:** Valida autenticação e roles gerais via `react-router`.
 
 ---
 
 ## 7. Observações de Consistência e Inconsistências
 
-1. **Unificação de Login:** O login foi unificado em `/login`, mas ainda existem referências a `PwaLoginPage` e `PesquisaLoginPage` no código (algumas descontinuadas).
+1. **Unificação de Login:** O login foi unificado em `/login`. `PwaLoginPage` removida. `PesquisaLoginPage` e `AoVivoLoginPage` candidatos a unificação no Passo 2 da Fase 4.
 2. **Contexto Etapa:** Módulos PWA exigem `activeStageId` em `/pwa/configuracao` antes de permitir o acesso às ferramentas de campo.
 3. **Redirecionamento:** O `/` redireciona para `/admin` ou `/pwa` dependendo do perfil detectado no `Index.tsx`.
-4. **Duplicidade de Telas:** Existem telas com nomes similares como `AlojamentoOcupacaoPage` (Admin) e `AlojamentoOcupacaoPage2` (PWA).
+4. **Saneamento de Arquivos:** Fase 4 Passo 1 removeu `PwaModuleLayout.tsx` e `PwaBottomNav.tsx` (órfãos).
 
 ---
 
@@ -149,7 +149,7 @@ Este complemento detalha o padrão de navegação e componentes de layout dos PW
 #### PWA: Alimentação
 - **Home:** `src/pages/pwa/alimentacao/AlimentacaoHomePage.tsx`. Exibe dashboard com KPIs (refeições hoje, janelas ativas), card da janela atual com progresso de ocupação e grade de ações (Scan, Buscar, Janelas, Histórico, Lista).
 - **Header:** Utiliza `PwaHeader` compartilhado. Elementos: Ícone `UtensilsCrossed`, Título "Alimentação", Subtítulo (Etapa ativa via context), Switcher de Idioma (PT/ES), Botão Sair.
-- **Footer/Bottom Bar:** Não possui barra inferior fixa na home (usa grade de ações); Telas internas como Scan também não possuem footer fixo (botão de scan é central).
+- **Footer/Bottom Bar:** Não possui barra inferior fixa na home (usa grade de ações).
 - **Botão Voltar:** Presente em todas as telas internas via `PwaHeader` (prop `backTo`). No Scan, volta para a home do módulo.
 - **Atualizar Dados:** Integrado no `PwaHeader` via componente `PwaRefreshButton` (ícone de recarga). Limpa caches e recarrega a página.
 - **Indicadores de Estado:** `OfflineSyncStatus` visível no topo do container. Mostra contagem de consumos pendentes.
@@ -166,7 +166,7 @@ Este complemento detalha o padrão de navegação e componentes de layout dos PW
 #### PWA: Alojamento
 - **Home:** `src/pages/pwa/alojamento/AlojamentoHomePage.tsx`. Exibe seletor de local (lodging unit), KPIs (ocupados, livres, reservados), lista de blocos e grade de ações.
 - **Header:** Utiliza `PwaHeader` compartilhado. Ícone `Building`, Título "Alojamento".
-- **Footer/Bottom Bar:** Possui barra inferior fixa customizada (não usa `PwaBottomBar`) na tela de Ocupação (`AlojamentoOcupacaoPage.tsx`) com botões para Scanner e Lista.
+- **Footer/Bottom Bar:** Possui barra inferior fixa customizada na tela de Ocupação (`AlojamentoOcupacaoPwaPage.tsx`) com botões para Scanner e Lista.
 - **Indicadores de Estado:** Mostra status de conexão (ícone Wifi) e contagem de sincronização pendente explicitamente no topo da home.
 - **Contexto Operacional:** Seletor de local define o contexto da unidade de alojamento ativa.
 
@@ -204,36 +204,28 @@ Este complemento detalha o padrão de navegação e componentes de layout dos PW
 
 ### 8.3. Inconsistências de Padrão Observadas
 
-1. **Uso de Footer/Bottom Bar:** Apenas o PWA de Transporte utiliza o componente `PwaBottomBar` de forma consistente na home. O PWA de Alojamento implementa uma barra fixa customizada na tela de ocupação, enquanto os outros módulos usam apenas `PwaActionGrid` no corpo do scroll.
-2. **Indicador de Sincronização:** Alimentação e Transporte usam o componente `OfflineSyncStatus`, enquanto o Alojamento usa uma implementação manual de ícones de Wifi e contadores no topo da tela.
-3. **Navegação de Retorno:** A maioria dos PWAs usa `backTo="/pwa"` para retornar à Landing Page, mas o PWA de Resultados no `PwaHeader` não define `backTo` explicitamente na Home, dependendo do comportamento default do navegador ou do botão Sair.
-4. **Contexto de Etapa/Evento:** No `PwaHeader`, o nome da etapa é exibido automaticamente via context, mas alguns PWAs (como Alimentação) tentam passar `subtitle` manualmente, gerando duplicidade ou inconsistência visual na segunda linha do header.
-5. **Acesso ao Scanner:** Transporte coloca o Scanner em um botão fixo no rodapé. Alimentação e Alojamento colocam na grade de ações (`ActionGrid`) e também dentro de contextos específicos (card de janela ou barra customizada).
+1. **Uso de Footer/Bottom Bar:** Transporte utiliza `PwaBottomBar` na home. Alojamento tem barra customizada na tela de ocupação.
+2. **Indicador de Sincronização:** Alimentação e Transporte usam `OfflineSyncStatus`. Alojamento usa implementação manual.
+3. **Navegação de Retorno:** A maioria dos PWAs usa `backTo="/pwa"`. Resultados depende do default.
+4. **Contexto de Etapa/Evento:** `PwaHeader` gerencia isso via context, mas há resíduos de passagem manual de `subtitle`.
 
 ---
 
 ### 8.4. Mapeamento de Componentes de Layout PWA
 
-- **`PwaHeader.tsx` (`src/components/pwa/`):** Componente central de navegação superior. Gerencia título, ícone, botões de voltar, sair, switcher de idioma e o botão de refresh. É o componente mais unificado do sistema operacional.
-- **`PwaScreen.tsx` (`src/components/pwa/`):**
-  - `PwaScreen`: Wrapper raiz que aplica estilos de fundo e áreas seguras.
-  - `PwaContainer`: Gerencia largura máxima mobile-first (sm, md, lg) e paddings laterais.
-  - `PwaBottomBar`: Barra fixa no rodapé (usada principalmente no Transporte).
-- **`PwaDashboardPrimitives.tsx` (`src/components/pwa/`):** Contém `PwaStatTriplet` (os 3 cards de KPI do topo) e `PwaSectionLabel`.
-- **`PwaActionGrid.tsx` (`src/components/pwa/`):** Grade de ícones para navegação secundária dentro do módulo.
-- **`PwaListItem.tsx` (`src/components/pwa/`):** Padrão de linha de lista com avatar, título e badge de status.
-- **`PwaRefreshButton.tsx` (`src/components/pwa/`):** Botão de "hard refresh" integrado ao header para limpar caches.
-- **`OfflineSyncStatus.tsx` (`src/components/pwa/`):** Alerta de registros pendentes de sincronização.
-
-**Observação:** Todas as rotas operacionais agora são envoltas pelo `PwaLayout` unificado. Os mecanismos de sincronização offline (`offlineQueue.ts`, `voucherOffline.ts` e `useAlojamentoOffline.ts`) operam com paridade funcional: auto-sync de 30s, retry automático (5 tentativas) e status visível ao operador via indicadores de rodapé e centrais de conflito locais.
+- **`PwaHeader.tsx` (`src/components/pwa/`):** Componente central de navegação superior. Gerencia título, ícone, botões de voltar, sair, switcher de idioma e o botão de refresh.
+- **`PwaScreen.tsx` (`src/components/pwa/`):** Wrapper raiz e containers mobile-first.
+- **`PwaDashboardPrimitives.tsx` (`src/components/pwa/`):** KPIs e labels.
+- **`PwaActionGrid.tsx` (`src/components/pwa/`):** Grade de ícones.
+- **`PwaListItem.tsx` (`src/components/pwa/`):** Padrão de linha de lista.
+- **`PwaRefreshButton.tsx` (`src/components/pwa/`):** Botão de "hard refresh".
+- **`OfflineSyncStatus.tsx` (`src/components/pwa/`):** Alerta de registros pendentes.
 
 ---
 
-## 9. Diagnóstico do Mecanismo de Sincronização Offline (Concluído)
+## 9. Diagnóstico do Mecanismo de Sincronização Offline
 
-Este inventário descreve a robustez alcançada na Fase 3.
-
-### 9.1 Inventário de Mecanismos
+Fase 3 entregou paridade funcional: auto-sync de 30s, retry automático (5x) e status visível.
 
 | Mecanismo | Arquivo | Módulos | Persistência | Auto-Sync | Retry | Status |
 | :--- | :--- | :--- | :--- | :---: | :---: | :---: |
@@ -241,97 +233,44 @@ Este inventário descreve a robustez alcançada na Fase 3.
 | **Geral Operacional**| `offlineQueue.ts` | Alimentação, Transporte | LocalStorage | 30s | Sim (5x) | Sim |
 | **Voucher** | `voucherOffline.ts` | Transversal | LocalStorage | 30s | Sim (5x) | Sim |
 
-### 9.2 Comportamento de Falha e Conflito
-- **Retry Esgotado:** O item é marcado como `conflict` (ou `failed_retry`) e permanece na fila para intervenção manual. O indicador de "Erro" no footer do `PwaLayout` é ativado.
-- **Conflito de Regra (Alimentação):** Duplicidades (erro 23505) agora são marcadas como conflito visível ao operador em vez de serem limpas automaticamente, permitindo auditoria no local.
-- **Voucher:** Conflitos retornados pela RPC (já usado, revogado) param o retry e exigem resolução manual.
-
 ---
 
 ## 10. Mini-auditoria de Confirmação da Fase 3 (2026-04-28)
 
-**Veredito:** SÓLIDO. A paridade de comportamento entre os três mecanismos de sincronização offline (Alojamento, Geral Operacional e Voucher) foi validada e está conforme o planejado. Não foram detectadas regressões críticas nos módulos fechados.
-
-### 10.1 Paridade dos Mecanismos
-| Critério | Alojamento | Geral (Alim/Transp) | Voucher | Status Final |
-| :--- | :---: | :---: | :---: | :---: |
-| **Auto-sync (30s)** | Conforme | Conforme (via Hook) | Conforme (via Hook) | **Conforme** |
-| **Retry (5 tentativas)** | Conforme | Conforme (Contador) | Conforme (Contador) | **Conforme** |
-| **Status Explícito** | Conforme | Conforme | Conforme | **Conforme** |
-
-*Evidência:* `useAlojamentoOffline.ts` implementa auto-sync interno; `offlineQueue.ts` e `voucherOffline.ts` são servidos pelo `OfflineSyncStatus.tsx` que orquestra o loop de 30s. Todos utilizam contador de `attempts` e transições de `status` (pending -> syncing -> failed/conflict).
-
-### 10.2 Decisão de Duplicidade na Alimentação
-A regra de **Manual (Visível)** foi aplicada corretamente em `src/lib/offlineQueue.ts`.
-- Erros de duplicidade (PostgreSQL code `23505`) agora marcam o item como `conflict` com mensagem clara.
-- O registro permanece na fila para intervenção, sem limpeza automática (diferente da Fase 2).
-- Verificado que isso não afetou `voucherOffline.ts`, que já tratava duplicidade via RPC `redeem_voucher`.
-
-### 10.3 Não Regressão por Módulo
-- **Voucher:** Fila offline mantida; paridade de retry adicionada via `voucherOffline.ts`.
-- **Árbitros:** Funcionalidades do Ao Vivo (/pwa/aovivo) preservadas; navegação via prefixo /pwa validada.
-- **Alojamento:** `useAlojamentoOffline.ts` mantido como referência; integração com `PwaLayout` confirmada.
-- **Alimentação:** Novo comportamento de conflito manual validado; KPIs da home consistentes.
-- **Transporte:** Embarque via QR continua operando com a nova fila robustecida.
-
-### 10.4 Coerência do Footer Unificado
-O `OfflineFooterIndicator` em `PwaLayout.tsx` reflete corretamente a soma das pendências de `offlineQueue` e `voucherQueue`.
-- **Sync (Amber):** Mostra itens `pending` ou `failed` (aguardando retry).
-- **Erro (Red):** Mostra itens em `conflict` (exige ação manual).
-- **Divergência Menor:** O contador de Alojamento ainda é independente na home do módulo, mas o footer unificado garante visibilidade básica de rede/pendência.
+**Veredito:** SÓLIDO. Paridade validada. Sem regressões em módulos fechados. Conflitos de duplicidade na Alimentação agora são manuais (visíveis).
 
 ---
 
-## 11. Conclusão da Fase 3
-A base técnica está pronta para a **Fase 4 (Saneamento)**, onde buscaremos eliminar as divergências de implementação de UI nos indicadores e centrais de conflito, movendo para uma experiência 100% idêntica em todos os módulos.
+## 11. Diagnóstico de Saneamento (Fase 4 - Passo 1)
 
----
+### 11.1 Remoção Segura (Concluído 2026-04-28)
 
-## 12. Diagnóstico de Saneamento (Fase 4 - Preparação)
-
-Este diagnóstico lista os candidatos a remoção, depreciação ou unificação identificados em 28 de abril de 2026.
-
-### 12.1 Candidatos à Remoção Segura
-Itens sem referências ativas no código ou cujo uso foi explicitamente descontinuado.
-
-| Item | Tipo | Localização | Motivo |
+| Item | Tipo | Localização | Status |
 | :--- | :--- | :--- | :--- |
-| `PwaLoginPage.tsx` | Página | `src/pages/pwa/PwaLoginPage.tsx` | Login unificado em `/login`. Mapeado como "removed" em `App.tsx`. |
-| `PwaModuleLayout.tsx`| Componente| `src/components/pwa/PwaModuleLayout.tsx`| Órfão. Substituído pelo `PwaLayout.tsx` unificado na Fase 2. |
-| `PwaBottomNav.tsx` | Componente| `src/components/pwa/PwaBottomNav.tsx` | Só usado pelo `PwaModuleLayout` (órfão) e `PwaRouteGuard` (legado). |
-| `pwa_messages` chaves | String | `src/lib/pwa-messages.ts` | Diversas chaves de erro PWA duplicadas por `voucherMessages.ts`. |
-| `RegrasLegacyPage` | Rota | `src/App.tsx` | Redirecionamento de `/admin/regras-legacy` para `/admin/regras`. |
-| `/admin/mapa` | Rota | `src/App.tsx` | Redirecionamento para `/admin/sistema/diagnostico`. |
+| `PwaLoginPage.tsx` | Página | `src/pages/pwa/PwaLoginPage.tsx` | ✅ REMOVIDO |
+| `PwaModuleLayout.tsx`| Componente| `src/components/pwa/PwaModuleLayout.tsx`| ✅ REMOVIDO |
+| `PwaBottomNav.tsx` | Componente| `src/components/pwa/PwaBottomNav.tsx` | ✅ REMOVIDO |
+| `pwa_messages` chaves | String | `src/lib/pwa-messages.ts` | ✅ LIMPO (Voucher keys removidas) |
+| `RegrasLegacyPage` | Rota | `src/App.tsx` | ✅ REMOVIDO |
+| `/admin/mapa` | Rota | `src/App.tsx` | ✅ REMOVIDO |
 
-### 12.2 Candidatos à Depreciação com Aviso
-Itens em uso residual que devem ser substituídos pelos novos padrões.
+### 11.2 Depreciação e Correções Rápidas (Concluído 2026-04-28)
 
-| Item | Tipo | Localização | Ação Recomendada |
-| :--- | :--- | :--- | :--- |
-| `PesquisaLoginPage` | Página | `src/pages/pwa/PesquisaLoginPage.tsx` | Migrar para o login unificado `/login` com parâmetro de contexto. |
-| `AoVivoLoginPage` | Página | `src/pages/aovivo/AoVivoLoginPage.tsx` | Migrar para o login unificado `/login`. |
-| `AlojamentoOcupacaoPage2`| Alias | `src/App.tsx` | Renomear alias na importação para remover o sufixo "2". |
-| `PwaRouteGuard` | Componente| `src/components/pwa/PwaRouteGuard.tsx` | Limpar referências ao `PwaBottomNav` e componentes de layout antigos. |
-
-### 12.3 Itens para Investigação Adicional
-Necessário validar se o uso é intencional ou se é resíduo de módulos não migrados.
-
-| Item | Tipo | Localização | Dúvida de Saneamento |
-| :--- | :--- | :--- | :--- |
-| `AlojamentoOcupacaoPage` | Página | `src/pages/admin/AlojamentoOcupacaoPage.tsx` | É a versão Admin. Validar se deve ser unificada com a versão PWA. |
-| `pwa-messages.ts` | Arquivo | `src/lib/pwa-messages.ts` | Validar se deve ser completamente absorvido pelo `voucherMessages.ts`. |
-| `/pwa/configuracao` | Rota | `src/App.tsx` | Usada como fallback de seleção de etapa. Validar se ainda é o fluxo desejado. |
-| Migrações 20260402* | Banco | `supabase/migrations/` | Verificar se os scripts de "bootstrap" contêm tabelas nunca utilizadas. |
-
-### 12.4 Comentários de Dívida Técnica (TODO/FIXME)
-| Arquivo | Linha | Descrição |
+| Item | Localização | Ação Realizada |
 | :--- | :--- | :--- |
-| `computeProvaData.ts` | ~6 | TODO: Implement weighing status in query |
-| `use-toast.ts` | ~1 | TOAST_REMOVE_DELAY de 1000000ms (HACK temporal). |
+| `AlojamentoOcupacaoPage2`| `src/App.tsx` | ✅ Renomeado para `AlojamentoOcupacaoPwaPage` |
+| `PwaRouteGuard` | `src/components/pwa/PwaRouteGuard.tsx` | ✅ Limpo de referências a `PwaBottomNav` |
+| `use-toast.ts` | `src/hooks/use-toast.ts` | ✅ `TOAST_REMOVE_DELAY` ajustado para 5s |
+
+### 11.3 Candidatos à Próxima Etapa (Passo 2)
+
+| Item | Tipo | Localização | Ação |
+| :--- | :--- | :--- | :--- |
+| `PesquisaLoginPage` | Página | `src/pages/pwa/PesquisaLoginPage.tsx` | Unificar no login central. |
+| `AoVivoLoginPage` | Página | `src/pages/aovivo/AoVivoLoginPage.tsx` | Unificar no login central. |
 
 ---
 
-## 13. Veredito de Saneamento
-O inventário revela que o sistema está em estado avançado de limpeza após as fases de navegação, mas a remoção física dos arquivos `PwaLoginPage`, `PwaModuleLayout` e `PwaBottomNav` é o passo imediato mais seguro. A unificação dos logins de Pesquisa e Ao Vivo é a tarefa de maior impacto para o saneamento da Fase 4.
+## 12. Veredito de Saneamento
 
-
+O Passo 1 da Fase 4 eliminou os resíduos técnicos mais óbvios dos PWAs operacionais. O sistema está mais leve e livre de referências a componentes de layout descontinuados. A base está pronta para a unificação final dos fluxos de login.
