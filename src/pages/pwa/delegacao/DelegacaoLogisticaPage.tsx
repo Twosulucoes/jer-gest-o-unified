@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Bus, UtensilsCrossed, Building } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import PwaLayout from "@/components/pwa/PwaLayout";
 
 export default function DelegacaoLogisticaPage() {
   const items = [
@@ -10,9 +11,7 @@ export default function DelegacaoLogisticaPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <PwaHeader title="Logística" icon={Bus} backTo="/pwa/delegacao" />
-
+    <PwaLayout backTo="/pwa/delegacao" moduleTitle="Logística">
       <main className="p-4 max-w-md mx-auto space-y-3">
         {items.map((item) => (
           <Card key={item.label}>
@@ -28,6 +27,6 @@ export default function DelegacaoLogisticaPage() {
           </Card>
         ))}
       </main>
-    </div>
+    </PwaLayout>
   );
 }
