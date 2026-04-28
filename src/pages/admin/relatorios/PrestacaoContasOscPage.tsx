@@ -7,14 +7,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import {
   Receipt, Download, FileSpreadsheet, Users, BadgeCheck, UtensilsCrossed,
-  Bed, Bus, Trophy, Award, Building2, Sparkles,
+  Bed, Bus, Trophy, Award, Building2, Sparkles, Settings
 } from "lucide-react";
 import { useOscData } from "./useOscData";
 import { useEventBranding } from "@/hooks/useEventBranding";
+import { useEventOscConfig } from "@/hooks/useEventOscConfig";
 import { exportOscPdf } from "./oscPdfExporter";
 import { exportOscXlsx } from "./oscXlsxExporter";
 import { ReportPresetsButton } from "@/components/relatorios/ReportPresetsButton";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 function Kpi({ icon: Icon, label, value, sub }: { icon: any; label: string; value: string | number; sub?: string }) {
   return (
@@ -40,6 +43,7 @@ export default function PrestacaoContasOscPage() {
   const eventId = activeEvent?.id;
   const { data, isLoading } = useOscData(eventId);
   const { data: branding } = useEventBranding(eventId);
+  const { data: oscConfig } = useEventOscConfig(eventId);
   const [exporting, setExporting] = useState<"pdf" | "xlsx" | null>(null);
 
   if (!eventId) {
@@ -61,11 +65,21 @@ export default function PrestacaoContasOscPage() {
     if (!data) return;
     try {
       setExporting("pdf");
+      
+      const { data: evs } = await supabase
+        .from("operational_evidence")
+        .select("*")
+        .eq("event_id", eventId)
+        .eq("status", "approved")
+        .not("osc_category", "is", null);
+
       await exportOscPdf(data, {
         eventName: activeEvent?.name || "Evento",
         branding: branding ?? null,
+        oscConfig: oscConfig ?? null,
         generatedAt: new Date(),
         periodLabel,
+        evidences: evs || []
       });
       toast.success("PDF gerado");
     } catch (e: any) {
@@ -101,6 +115,12 @@ export default function PrestacaoContasOscPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Link to="/admin/registros/configuracao-osc">
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-1.5" />
+              Configurar Convênio
+            </Button>
+          </Link>
           <ReportPresetsButton reportId="prestacao-contas-osc" eventId={eventId} currentFilters={{}} onApply={() => {}} />
           <Button variant="outline" size="sm" onClick={onXlsx} disabled={!data || exporting !== null}>
             <FileSpreadsheet className="h-4 w-4 mr-1.5" />

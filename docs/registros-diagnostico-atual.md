@@ -167,3 +167,27 @@ Testado e validado que eventos existentes mantêm o fluxo complexo operacional. 
 
 ---
 *Mini-auditoria realizada em 2026-04-28.*
+
+## IMPLEMENTAÇÃO — FASE 2 (2026-04-28)
+
+### Resumo da Entrega
+Implementação do Relatório de Prestação de Contas OSC consolidado por etapa, com configuração híbrida institucional e extensão do módulo de evidências fotográficas.
+
+### Alterações Realizadas
+- **Configuração Híbrida:** 
+  - Nova tabela `event_osc_configs` para dados do convênio por evento.
+  - Tela `/admin/registros/configuracao-osc` para gestão de dados institucionais (Órgão, OSC, CNPJ, Responsável).
+- **Extensão de Evidências:** 
+  - Tabela `operational_evidence` estendida com metadados OSC (`osc_category`, `caption`, `match_id`, `photo_at`, `location_name`).
+  - UI de upload e gestão em `/admin/evidencias-osc` atualizada para suportar metadados formais e vínculo com partidas.
+- **Relatório OSC (PDF):**
+  - Gerador `oscPdfExporter` reformulado para incluir cabeçalho institucional dinâmico, resumo executivo e galeria de evidências aprovadas.
+  - Página `/admin/relatorios/osc` integrada com a nova configuração e fluxo de evidências.
+- **Navegação:** Inclusão de atalho rápido para configuração OSC na tela de relatórios.
+
+### Veredito de Não-Regressão
+Validado que fluxos de Alimentação, Alojamento e Transporte que usam evidências operacionais mantêm o funcionamento original, ignorando os campos opcionais de OSC. Estatísticas do relatório consolidam partidas de ambas as fontes (`simple` e `complex`).
+
+---
+*Implementação da Fase 2 concluída em 2026-04-28.*
+
