@@ -116,8 +116,13 @@ const PwaSelectionFallback = () => {
               <div className="space-y-1">
                 <p className="text-sm font-bold text-destructive uppercase tracking-tight">Bloqueio de Segurança</p>
                 <p className="text-xs text-destructive/80 font-medium">
-                  Existem {pendingItems} registros pendentes na fila offline. Sincronize todos os dados antes de trocar de etapa para evitar perda de informações.
+                  Você tem {pendingItems} registros pendentes. Sincronize todos os dados antes de trocar de etapa para evitar perda de informações.
                 </p>
+                <ul className="text-[10px] text-destructive/70 list-disc pl-4 mt-1 font-bold uppercase tracking-tighter">
+                  {pendingBreakdown.map((item, idx) => (
+                    <li key={idx}>{item.label}: {item.count}</li>
+                  ))}
+                </ul>
               </div>
             </div>
           )}
