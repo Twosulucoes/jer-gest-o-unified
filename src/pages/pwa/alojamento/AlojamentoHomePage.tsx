@@ -16,6 +16,7 @@ import {
   ScanLine, Search, Building, AlertTriangle, Users
 } from "lucide-react";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import PwaLayout from "@/components/pwa/PwaLayout";
 import { dbTelemetry } from "@/lib/monitoring/dbTelemetry";
 
 
@@ -108,7 +109,7 @@ export default function AlojamentoHomePage() {
   }, [facilityId]);
 
   return (
-    <PwaContainer>
+    <PwaLayout backTo="/pwa" moduleTitle="Alojamento">
       <PwaStatTriplet
         loading={loading}
         items={[
@@ -180,6 +181,6 @@ export default function AlojamentoHomePage() {
           { label: "Ocorrências", icon: AlertTriangle, to: "/pwa/alojamento/incidentes" },
         ]}
       />
-    </PwaContainer>
+    </PwaLayout>
   );
 }
