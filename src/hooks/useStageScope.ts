@@ -66,7 +66,7 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
     enabled: !!stageId && !!eventId,
     queryFn: async () => {
       const { data, error } = await (supabase.from("event_stages" as never) as any)
-        .select("id,name,slug,kind,status")
+        .select("id,name,slug,kind,status,starts_at,ends_at")
         .eq("id", stageId)
         .eq("event_id", eventId)
         .maybeSingle();
@@ -77,6 +77,8 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
         slug: string;
         kind: string;
         status: string;
+        starts_at: string | null;
+        ends_at: string | null;
       } | null;
     },
   });

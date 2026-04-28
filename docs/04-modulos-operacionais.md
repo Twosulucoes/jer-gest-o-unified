@@ -27,7 +27,8 @@
 
 ## 5. Alimentação (✅ Pronto — 100%)
 - **Entidades**: Agora utiliza `meal_locations` como entidade dedicada para locais de refeição, permitindo gestão de capacidade e endereços.
-- **Páginas**: `/admin/alimentacao/locais` (CRUD de locais) e `/admin/alimentacao/janelas` (gestão de janelas com dropdown de locais).
+- **Páginas**: `/admin/alimentacao/locais` (CRUD de locais), `/admin/alimentacao/janelas` (gestão de janelas com geração automatizada) e `/admin/alimentacao/padroes` (configuração de modelos reutilizáveis por estágio).
+- **Automação**: Motor de geração de janelas robusto com validação de datas por estágio, idempotência e criação inativa por padrão para revisão humana.
 - **Controle de Acesso**: Tabela `meal_window_eligibility` permite restringir janelas por Delegação, Instituição ou Perfil de Participante.
 - **Validação**: Trigger `trg_validate_meal_consumption_eligibility` bloqueia consumos não autorizados.
 - **Relatórios**: Exportação em PDF, XLSX e CSV com assinatura do responsável.

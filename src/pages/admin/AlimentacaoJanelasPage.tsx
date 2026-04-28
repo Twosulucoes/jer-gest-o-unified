@@ -27,15 +27,17 @@ import { useStageScope } from "@/hooks/useStageScope";
 
 export default function AlimentacaoJanelasPage() {
   const qc = useQueryClient();
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [filterDate, setFilterDate] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [report, setReport] = useState<any>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   const selectedEventId = useActiveEventId();
-  const { stageId, isStageScoped } = useStageScope();
+  const { stageId, isStageScoped, stage } = useStageScope();
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
   const { data: mealTypes = [] } = useQuery({
@@ -148,51 +150,108 @@ export default function AlimentacaoJanelasPage() {
   });
 
   const generateDefaultWindows = async () => {
-    if (!selectedEventId) return;
-    const dateToUse = filterDate || new Date().toISOString().split('T')[0];
+    if (!selectedEventId || !filterDate) {
+      toast.error("Selecione uma data para gerar as janelas");
+      return;
+    }
     
-    setIsGenerating(true);
-    try {
-      const standards = [
-        { slug: 'cafe', start: '06:00', end: '09:00', label: 'Café da Manhã' },
-        { slug: 'almoco', start: '11:30', end: '14:30', label: 'Almoço' },
-        { slug: 'janta', start: '18:30', end: '21:30', label: 'Jantar' },
-      ];
-
-      const toInsert = [];
-      for (const std of standards) {
-        const mType = mealTypes.find(t => t.slug?.toLowerCase() === std.slug);
-        if (mType) {
-          const alreadyExists = windows?.some(w => 
-            w.service_date === dateToUse && 
-            w.meal_type_id === mType.id
-          );
-          
-          if (!alreadyExists) {
-            toInsert.push({
-              event_id: selectedEventId,
-              event_stage_id: stageId || null,
-              meal_type_id: mType.id,
-              label: std.label,
-              service_date: dateToUse,
-              start_time: std.start,
-              end_time: std.end,
-              is_active: true
-            });
-          }
+    // Validate date against stage
+    if (isStageScoped && stage) {
+      const d = new Date(filterDate + "T00:00:00");
+      if (stage.starts_at) {
+        const start = new Date(stage.starts_at + "T00:00:00");
+        if (d < start) {
+          toast.error(`A data ${formatDate(filterDate)} é anterior ao início da etapa (${formatDate(stage.starts_at)})`);
+          return;
         }
       }
+      if (stage.ends_at) {
+        const end = new Date(stage.ends_at + "T00:00:00");
+        if (d > end) {
+          toast.error(`A data ${formatDate(filterDate)} é posterior ao fim da etapa (${formatDate(stage.ends_at)})`);
+          return;
+        }
+      }
+    }
 
-      if (toInsert.length === 0) {
-        toast.info("Janelas padrão já existem para esta data");
+    setIsGenerating(true);
+    const results: any[] = [];
+    try {
+      const { data: patterns, error: pError } = await supabase
+        .from("meal_window_patterns")
+        .select("*, meal_types(name)")
+        .eq("event_id", selectedEventId)
+        .eq("is_active", true);
+      
+      if (pError) throw pError;
+
+      const filteredPatterns = patterns?.filter(p => !p.event_stage_id || p.event_stage_id === stageId) || [];
+
+      if (filteredPatterns.length === 0) {
+        toast.info("Nenhum padrão configurado para este estágio/evento. Vá em 'Padrões de Janelas' para configurar.");
+        setIsGenerating(false);
         return;
       }
 
-      const { error } = await supabase.from("meal_windows").insert(toInsert);
-      if (error) throw error;
+      // Priority: stage-specific patterns over global patterns
+      const finalPatternsMap = new Map();
+      filteredPatterns.forEach(p => {
+        const existing = finalPatternsMap.get(p.meal_type_id);
+        if (!existing || (p.event_stage_id && !existing.event_stage_id)) {
+          finalPatternsMap.set(p.meal_type_id, p);
+        }
+      });
+      const finalPatterns = Array.from(finalPatternsMap.values());
 
-      toast.success(`${toInsert.length} janelas geradas para ${dateToUse}`);
+      const toInsert = [];
+      for (const p of finalPatterns) {
+        const alreadyExists = windows?.some(w => 
+          w.service_date === filterDate && 
+          w.meal_type_id === p.meal_type_id
+        );
+        
+        if (alreadyExists) {
+          results.push({ type: p.meal_types?.name, status: 'skipped', message: 'Já existe uma janela deste tipo nesta data' });
+          continue;
+        }
+
+        toInsert.push({
+          event_id: selectedEventId,
+          event_stage_id: stageId || null,
+          meal_type_id: p.meal_type_id,
+          label: p.label,
+          service_date: filterDate,
+          start_time: p.start_time,
+          end_time: p.end_time,
+          meal_window_location_id: p.meal_window_location_id,
+          is_active: false
+        });
+        results.push({ type: p.meal_types?.name, status: 'created' });
+      }
+
+      if (toInsert.length > 0) {
+        const { error } = await supabase.from("meal_windows").insert(toInsert);
+        if (error) throw error;
+      }
+
+      setReport({
+        created: toInsert.length,
+        skipped: results.filter(r => r.status === 'skipped').length,
+        details: results
+      });
+      setReportOpen(true);
       qc.invalidateQueries({ queryKey: ["meal_windows"] });
+      
+      await supabase.from("db_operation_logs").insert({
+        user_id: (user as any)?.id,
+        module_name: "alimentacao",
+        table_name: "meal_windows",
+        operation: "GENERATE_DEFAULT",
+        event_id: selectedEventId,
+        is_success: true,
+        metadata: { date: filterDate, stageId, count: toInsert.length }
+      });
+
     } catch (e: any) {
       toast.error("Erro: " + e.message);
     } finally {
@@ -391,6 +450,38 @@ export default function AlimentacaoJanelasPage() {
         onSubmit={handleSubmit}
         isPending={createMut.isPending || updateMut.isPending}
       />
+
+      <AlertDialog open={reportOpen} onOpenChange={setReportOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Relatório de Geração</AlertDialogTitle>
+            <AlertDialogDescription>
+              {report?.created > 0 
+                ? `${report.created} novas janelas foram geradas como INATIVAS.`
+                : "Nenhuma nova janela foi criada."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-[300px] overflow-y-auto space-y-2 my-4">
+            {report?.details.map((d: any, i: number) => (
+              <div key={i} className="flex items-center justify-between p-2 rounded border text-sm">
+                <span className="font-medium">{d.type}</span>
+                <div className="flex items-center gap-2">
+                  {d.status === 'created' ? (
+                    <Badge variant="default" className="bg-green-600 hover:bg-green-600">Criada</Badge>
+                  ) : d.status === 'skipped' ? (
+                    <Badge variant="secondary">Já existe</Badge>
+                  ) : (
+                    <Badge variant="destructive">Falhou</Badge>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setReportOpen(false)}>Entendido</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

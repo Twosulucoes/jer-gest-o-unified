@@ -12,6 +12,7 @@ Esta auditoria reflete o estado final do módulo de Alimentação após a implem
 ### 2.1 Estrutura de Dados (Database)
 - **`meal_types`**: Cadastro de tipos (Café, Almoço, Jantar).
 - **`meal_windows`**: Janelas temporais vinculadas a etapas e locais.
+- **`meal_window_patterns`**: **(NOVO)** Configuração de padrões reutilizáveis de horários e locais por estágio.
 - **`meal_locations`**: Gestão de refeitórios com capacidade e endereço.
 - **`meal_window_eligibility`**: Regras de restrição atômicas (Perfil, Delegação, Instituição).
 - **`meal_consumptions`**: Registro de consumo com proteção contra duplicidade.
@@ -20,7 +21,8 @@ Esta auditoria reflete o estado final do módulo de Alimentação após a implem
 ### 2.2 Interfaces Administrativas (Web Admin)
 - **`AlimentacaoHubPage`**: Hub central com cards de acesso rápido.
 - **`AlimentacaoPrevisaoPage`**: **(NOVO)** Motor de previsão que calcula elegíveis vs consumos em tempo real, com barras de progresso e alertas de ocupação.
-- **`AlimentacaoJanelasPage`**: Gestão completa de janelas, com **automação para geração de janelas padrão (Café/Almoço/Janta)** por data.
+- **`AlimentacaoJanelasPage`**: Gestão completa de janelas, com **automação robusta para geração de janelas padrão** baseada em modelos vigentes, criando inicialmente como inativas.
+- **`AlimentacaoPadroesPage`**: **(NOVO)** Área administrativa para configurar horários e locais padrão por estágio, permitindo duplicação entre etapas.
 - **`AlimentacaoConsumoPage`**: Monitoramento de consumos individuais.
 
 ### 2.3 Interface Operacional (PWA)
@@ -53,5 +55,6 @@ O módulo de Alimentação atingiu a maturidade necessária para operação em c
 
 ---
 ## Histórico de Auditorias
+- **2026-04-28 (Aprimoramento):** Implementação de Padrões de Janelas, duplicação por estágio e geração automatizada com relatório e validações.
 - **2026-04-28 (Final):** Módulo fechado com motor de previsão e exportação para cozinha.
 - **2026-04-28 (Inicial):** Auditoria de diagnóstico identificou lacuna em previsão de demanda.
