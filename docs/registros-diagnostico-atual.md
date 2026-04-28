@@ -283,5 +283,42 @@ Implementação cirúrgica das três pendências críticas identificadas na mini
 ### Veredito de Não-Regressão
 Confirmado que a estrutura de evidências para Alimentação, Alojamento e Transporte permanece inalterada. A geração de boletins e resultados públicos não foi afetada pela nova camada de auditoria e validação do relatório OSC.
 
+
 ---
 *Correção tática da Fase 2 concluída em 2026-04-28.*
+
+## MINI-CONFIRMAÇÃO RÁPIDA — CORREÇÃO TÁTICA FASE 2 (2026-04-28)
+
+Esta mini-confirmação valida tecnicamente os três pontos da correção tática aplicada ao módulo de Registros.
+
+### 1. Trilha de Auditoria do PDF
+- **Status:** **Conforme.**
+- **Evidência:** O código em `PrestacaoContasOscPage.tsx` realiza `insert` na tabela `audit_events` com `action: "generate_pdf"`, `table_name: "osc_reports"` e `record_id` vinculado ao evento. O payload inclui contagem de fotos por categoria, estatísticas e configuração utilizada. O painel de histórico na interface é funcional e utiliza `fetchAuditHistory` para exibir os últimos 10 registros em ordem cronológica reversa.
+
+### 2. Regra de Fotos por Categoria
+- **Status:** **Conforme (com esclarecimento).**
+- **Comportamento Realizado:**
+  - **0 fotos:** Alerta crítico (vermelho) com bloqueio de confirmação (window.confirm).
+  - **1 foto:** Alerta de conformidade (amarelo) com bloqueio de confirmação.
+  - **2 a 4 fotos:** Faixa de conformidade plena (sem alertas na geração).
+  - **5 ou mais fotos:** Alerta de conformidade (amarelo) com bloqueio de confirmação (excesso de evidências).
+- **Divergência de Resumo:** O resumo anterior mencionou erroneamente "0 a 4", mas o código implementa corretamente o intervalo [2, 4] como conformidade, tratando tanto o déficit quanto o excesso como alertas orientativos que exigem ação consciente.
+
+### 3. RLS e Segurança
+- **Status:** **Conforme.**
+- **Evidência:**
+  - **`event_osc_configs`:** Políticas garantem acesso ALL para `super_admin` e acesso SELECT para admin/secretaria/coordenação técnica.
+  - **`operational_evidence`:** Política `Super admin tem acesso total evidencias` adicionada.
+  - **`audit_events`:** Política `Users can insert their own audit events` garante que o frontend consiga registrar a geração sem violar segurança.
+  - **Acesso Global:** O uso do `has_role(auth.uid(), 'super_admin'::app_role)` nas novas políticas confirma o padrão de guard global.
+
+### 4. Não Regressão Mínima
+- **Status:** **Sem Regressão.**
+  - Configuração híbrida e geração de PDF PDF continuam operando normalmente.
+  - O módulo `operational_evidence` mantém integridade para outros usos (Alimentação/Alojamento/Transporte), pois a nova lógica de OSC em `PrestacaoContasOscPage.tsx` utiliza filtros específicos (`not("osc_category", "is", null)`).
+
+### Veredito Final
+**CORREÇÃO TÁTICA CONFIRMADA.** Os ajustes de auditoria, conformidade e segurança estão sólidos e a ambiguidade na descrição da regra de fotos foi tecnicamente esclarecida pelo código. O sistema está pronto para a Fase 3 (Boletim Diário e API Pública).
+
+---
+*Mini-confirmação realizada em 2026-04-28.*
