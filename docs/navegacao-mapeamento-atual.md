@@ -301,3 +301,34 @@ O Passo 2 da Fase 4 unificou o fluxo de autenticação do módulo Ao Vivo (Árbi
 ### 13.4. Próximos Passos
 - Unificação do login do módulo de Pesquisa (`PesquisaLoginPage`).
 - Saneamento final de rotas em `PwaRouteGuard` para simplificação.
+
+---
+
+## 14. Relatório de Entrega — Fase 4 Passo 4 (2026-04-28)
+
+**Objetivo:** Refator técnico do dicionário de mensagens e evolução de UX para troca de etapa em campo.
+
+### 14.1. Refator Técnico (Dicionário de Mensagens)
+- **Arquivo Renomeado:** `src/lib/pwa-messages.ts` -> `src/lib/systemMessages.ts`.
+- **Escopo:** O dicionário agora é reconhecido como "do sistema", refletindo seu uso compartilhado entre PWAs e Admin.
+- **Funções Renomeadas:** `getPwaMessage` migrado para `getSystemMessage` (mantido alias para compatibilidade onde necessário).
+- **Consumidores Atualizados:** Todos os módulos operacionais (Alimentação, Transporte, Alojamento) agora importam do novo caminho.
+
+### 14.2. Evolução de UX (Troca de Etapa Voluntária)
+- **Header Interativo:** O nome da etapa ativa no `PwaHeader` agora é clicável e leva diretamente à tela de configuração.
+- **Atalho no Menu:** Adicionada a opção "Trocar Etapa de Trabalho" no menu de switcher de módulos do `PwaLayout`.
+- **Bloqueio de Segurança:** Implementada trava na tela de seleção de etapa que impede a troca caso existam registros offline pendentes (Alimentação, Transporte, Alojamento ou Voucher). O operador é alertado a sincronizar os dados primeiro.
+- **Invalidação de Contexto:** A troca voluntária de etapa agora limpa automaticamente caches específicos da etapa anterior (janelas de alimentação e locais de alojamento selecionados) para evitar contaminação de dados.
+- **Auditoria:** Cada troca voluntária de etapa é registrada em `audit_events` com detalhamento da origem, destino e responsável.
+
+### 14.3. Arquivos Modificados
+- `src/lib/systemMessages.ts` (Renomeado e atualizado)
+- `src/components/pwa/PwaHeader.tsx` (Header clicável)
+- `src/components/pwa/PwaLayout.tsx` (Atalho no menu e novos ícones)
+- `src/pages/pwa/PwaSelectionFallback.tsx` (Lógica de trava, auditoria e UX)
+- + Consumidores de mensagens: `AlimentacaoScanPage.tsx`, `AlojamentoScanPage.tsx`, `TransporteScanPage.tsx`, `TransporteEmbarquePage.tsx`, `ManualBoardingDialog.tsx`.
+
+### 14.4. Comportamento Validado
+- **Troca Bloqueada:** Com fila offline populada, o botão de confirmação é desabilitado e um alerta vermelho é exibido.
+- **Retorno de Fluxo:** Após a troca voluntária, o operador retorna automaticamente para a tela onde estava, mantendo o fluxo operacional.
+- **Paridade:** O padrão visual segue rigorosamente o design system consolidado na Fase 2.
