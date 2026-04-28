@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Search, Calendar, Globe, CalendarRange } from "lucide-react";
+import { Search, Calendar, Globe, CalendarRange, ListChecks } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEventContext } from "@/contexts/EventContext";
 import { toast } from "sonner";
@@ -65,6 +65,25 @@ export default function SuperEventosPage() {
     }
   };
 
+  const toggleRegistros = async (eventId: string, current: boolean) => {
+    const confirmMsg = current 
+      ? "Deseja desativar o Modo Registros? O módulo Competição complexo voltará a aparecer para este evento." 
+      : "Deseja ativar o Modo Registros? Isso simplificará o registro de partidas e ocultará o módulo Competição complexo.";
+    
+    if (!window.confirm(confirmMsg)) return;
+
+    const { error } = await supabase
+      .from("events")
+      .update({ registros_mode_enabled: !current })
+      .eq("id", eventId);
+    
+    if (error) toast.error(error.message);
+    else {
+      toast.success(current ? "Modo Registros desativado" : "Modo Registros ativado com sucesso");
+      refetch();
+    }
+  };
+
   const statusColors: Record<string, string> = {
     active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     draft: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
@@ -109,6 +128,7 @@ export default function SuperEventosPage() {
               <TableHead className="text-zinc-400">Ano</TableHead>
               <TableHead className="text-zinc-400 text-center">Portal Público</TableHead>
               <TableHead className="text-zinc-400 text-center">Agenda Pública</TableHead>
+              <TableHead className="text-zinc-400 text-center">Modo Registros</TableHead>
               <TableHead className="text-zinc-400">Status</TableHead>
               <TableHead className="text-zinc-400 text-right">Ação</TableHead>
             </TableRow>
@@ -121,13 +141,14 @@ export default function SuperEventosPage() {
                   <TableCell><Skeleton className="h-4 w-12 bg-zinc-800" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16 bg-zinc-800 mx-auto" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16 bg-zinc-800 mx-auto" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16 bg-zinc-800 mx-auto" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16 bg-zinc-800" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-20 bg-zinc-800" /></TableCell>
                 </TableRow>
               ))
             ) : filtered.length === 0 ? (
               <TableRow className="border-zinc-800">
-                <TableCell colSpan={6} className="text-center py-12 text-zinc-500">
+                <TableCell colSpan={7} className="text-center py-12 text-zinc-500">
                   <Calendar className="mx-auto h-10 w-10 mb-2 text-zinc-600" />
                   <p>Nenhum evento encontrado.</p>
                 </TableCell>
@@ -159,6 +180,18 @@ export default function SuperEventosPage() {
                       title={event.public_agenda_published ? "Remover Agenda Pública" : "Publicar Agenda Pública"}
                     >
                       <CalendarRange className="h-4 w-4" />
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <button 
+                      onClick={() => toggleRegistros(event.id, event.registros_mode_enabled)}
+                      className={cn(
+                        "p-2 rounded-lg transition-colors",
+                        event.registros_mode_enabled ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30" : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700"
+                      )}
+                      title={event.registros_mode_enabled ? "Desativar Modo Registros" : "Ativar Modo Registros"}
+                    >
+                      <ListChecks className="h-4 w-4" />
                     </button>
                   </TableCell>
                   <TableCell>

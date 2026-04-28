@@ -511,10 +511,11 @@ export type Database = {
           match_date: string | null
           match_number: number | null
           notes: string | null
-          phase_id: string
+          phase_id: string | null
           round_number: number | null
           seed_batch_id: string | null
           seed_tag: string | null
+          source: string
           sport_event_id: string | null
           start_time: string | null
           status: string
@@ -531,10 +532,11 @@ export type Database = {
           match_date?: string | null
           match_number?: number | null
           notes?: string | null
-          phase_id: string
+          phase_id?: string | null
           round_number?: number | null
           seed_batch_id?: string | null
           seed_tag?: string | null
+          source?: string
           sport_event_id?: string | null
           start_time?: string | null
           status?: string
@@ -551,10 +553,11 @@ export type Database = {
           match_date?: string | null
           match_number?: number | null
           notes?: string | null
-          phase_id?: string
+          phase_id?: string | null
           round_number?: number | null
           seed_batch_id?: string | null
           seed_tag?: string | null
+          source?: string
           sport_event_id?: string | null
           start_time?: string | null
           status?: string
@@ -1740,6 +1743,7 @@ export type Database = {
           is_public: boolean | null
           name: string
           public_agenda_published: boolean | null
+          registros_mode_enabled: boolean
           slug: string
           start_date: string | null
           status: string
@@ -1753,6 +1757,7 @@ export type Database = {
           is_public?: boolean | null
           name: string
           public_agenda_published?: boolean | null
+          registros_mode_enabled?: boolean
           slug: string
           start_date?: string | null
           status?: string
@@ -1766,6 +1771,7 @@ export type Database = {
           is_public?: boolean | null
           name?: string
           public_agenda_published?: boolean | null
+          registros_mode_enabled?: boolean
           slug?: string
           start_date?: string | null
           status?: string
@@ -6110,6 +6116,41 @@ export type Database = {
             columns: ["sport_id"]
             isOneToOne: false
             referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registros_mode_logs: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          id: string
+          new_value: boolean | null
+          old_value: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          new_value?: boolean | null
+          old_value?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          new_value?: boolean | null
+          old_value?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_mode_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]

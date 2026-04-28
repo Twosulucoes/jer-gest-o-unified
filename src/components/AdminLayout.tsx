@@ -1,5 +1,7 @@
 import { NavLink, Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import EventSwitcher from "@/components/admin/EventSwitcher";
+import { useEventContext } from "@/contexts/EventContext";
+
 import RequireActiveEvent from "@/components/admin/RequireActiveEvent";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,8 @@ interface NavItem {
   to: string;
   icon: React.ReactNode;
   roles: AppRole[] | "all";
+  hideIfRegistrosEnabled?: boolean;
+  showOnlyIfRegistrosEnabled?: boolean;
 }
 
 interface NavGroup {
@@ -139,9 +143,10 @@ const navGroups: NavGroup[] = [
     id: "competicao", label: "Competição", description: "Operação das modalidades e confrontos.",
     icon: <Trophy className="h-4 w-4" />,
     items: [
-      { label: "Painel da Competição", to: "/admin/competicao/painel", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Painel da Competição", to: "/admin/competicao/painel", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES, hideIfRegistrosEnabled: true },
       { label: "Publicação de Resultados", to: "/admin/competicao/publicacao", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria"] },
-      { label: "Central da Competição", to: "/admin/competicao/central", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Central da Competição", to: "/admin/competicao/central", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES, hideIfRegistrosEnabled: true },
+      { label: "Registros de Partidas", to: "/admin/registros", icon: <ClipboardList className="h-4 w-4" />, roles: ADMIN_ROLES, showOnlyIfRegistrosEnabled: true },
       { label: "Boletins Oficiais", to: "/admin/competicao/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Regras por Prova", to: "/admin/competicao/regras", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
@@ -271,13 +276,19 @@ function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: 
 
 export default function AdminLayout() {
   const { profile, roles, signOut, hasRole } = useAuth();
+  const { activeEvent } = useEventContext();
+  const registrosMode = activeEvent?.registros_mode_enabled || false;
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   useMobileBackGuard();
 
-  const isItemVisible = (item: NavItem) =>
-    item.roles === "all" || item.roles.some((r) => hasRole(r));
+  const isItemVisible = (item: NavItem) => {
+    if (item.hideIfRegistrosEnabled && registrosMode) return false;
+    if (item.showOnlyIfRegistrosEnabled && !registrosMode) return false;
+    return item.roles === "all" || item.roles.some((r) => hasRole(r));
+  };
 
   const isGroupVisible = (group: NavGroup) => {
     if (group.items.some(isItemVisible)) return true;

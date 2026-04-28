@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useStageContext } from "@/contexts/StageContext";
+import { useEventContext } from "@/contexts/EventContext";
+
 import { usePwaNavigation } from "@/hooks/pwa/usePwaNavigation";
 import { PwaHeader } from "./PwaHeader";
 import { PwaScreen } from "./PwaScreen";
@@ -11,7 +13,8 @@ import { cn } from "@/lib/utils";
 import { 
   Home, Scan, Search, History, ClipboardList, Users, 
   Calendar, Bus, Trophy, LayoutDashboard, Radio, LogOut, 
-  Menu, ShieldCheck, AlertCircle, Settings, Layers
+  Menu, ShieldCheck, AlertCircle, Settings, Layers, Plus
+
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -47,6 +50,9 @@ export default function PwaLayout({
   const navigate = useNavigate();
   const { user, roles, profile, signOut, hasRole } = useAuth();
   const { activeStage } = useStageContext();
+  const { activeEvent } = useEventContext();
+  const registrosMode = activeEvent?.registros_mode_enabled || false;
+
   const path = location.pathname;
 
   // Detect which PWA module we are in based on path
@@ -58,6 +64,7 @@ export default function PwaLayout({
     if (path.startsWith("/pwa/delegacao")) return "delegacao";
     if (path.startsWith("/pwa/credenciamento")) return "credenciamento";
     if (path.startsWith("/pwa/resultados")) return "resultados";
+    if (path.startsWith("/pwa/registros")) return "registros";
     if (path.startsWith("/aovivo")) return "aovivo";
     return null;
   }, [path]);
@@ -70,6 +77,7 @@ export default function PwaLayout({
     delegacao: { title: "Delegação", icon: Users, homeTo: "/pwa/delegacao" },
     credenciamento: { title: "Credenciamento", icon: IdCard, scanTo: "/pwa/credenciamento/vincular", homeTo: "/pwa/credenciamento" },
     resultados: { title: "Resultados", icon: Award, homeTo: "/pwa/resultados" },
+    registros: { title: "Registros", icon: Trophy, homeTo: "/pwa/registros", primaryAction: { icon: Plus, to: "/pwa/registros", label: "Novo" } },
     aovivo: { title: "JER Ao Vivo", icon: Radio, homeTo: "/aovivo" },
   };
 
@@ -87,10 +95,14 @@ export default function PwaLayout({
       { role: "delegacao", label: "Delegação", icon: Users, to: "/pwa/delegacao" },
       { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento" },
       { role: "mesario", label: "Ao Vivo", icon: Radio, to: "/aovivo" },
+      { role: "mesario", label: "Registros", icon: Trophy, to: "/pwa/registros", showOnlyIfRegistrosEnabled: true },
       { role: "arbitragem", label: "Ao Vivo", icon: ShieldCheck, to: "/aovivo" },
     ];
     
-    const accessible = all.filter(m => hasRole(m.role as any) || (m.role === "secretaria" && hasRole("admin")));
+    const accessible = all.filter(m => {
+      if ((m as any).showOnlyIfRegistrosEnabled && !registrosMode) return false;
+      return hasRole(m.role as any) || (m.role === "secretaria" && hasRole("admin"));
+    });
     // Remove duplicates (like Ao Vivo having two roles)
     const unique = [];
     const seen = new Set();

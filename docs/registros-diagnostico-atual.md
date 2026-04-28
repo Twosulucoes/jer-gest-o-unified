@@ -104,3 +104,34 @@ Os dados são extraídos da view `public_results_view`, garantindo que apenas re
 
 ---
 *Auditoria realizada em 2026-04-28 como parte do planejamento do novo módulo de Registros.*
+
+## IMPLEMENTAÇÃO — FASE 1 (2026-04-28)
+
+### Resumo da Entrega
+A Fase 1 do módulo de Registros foi implementada, introduzindo o caminho de registro simplificado de partidas para eventos que optarem por não utilizar a estrutura completa de competição.
+
+### Alterações Realizadas
+- **Schema Evolutivo:** 
+  - Adicionada coluna `source` ('simple' vs 'complex') em `competition_matches`.
+  - Adicionada flag `registros_mode_enabled` em `events`.
+  - Flexibilização de integridade (phase_id opcional para partidas 'simple').
+- **Super Admin:** Nova interface de controle da flag Modo Registros na tela de gestão de eventos, com trilha de auditoria (`registros_mode_logs`).
+- **Web Admin:** Novo módulo em `/admin/registros` para Coordenação Técnica e Secretaria, permitindo cadastro rápido de partidas e resultados em 3 etapas (Informação, Equipes, Resultado).
+- **PWA Mesário:** Novo módulo em `/pwa/registros` para operação em campo, integrado ao layout mobile-first com UX de lista cronológica e busca rápida.
+- **Navegação Condicional:** 
+  - Em eventos com Modo Registros ATIVO: Oculta itens de Competição complexa (Painel, Central) e exibe item Registros.
+  - Em eventos com Modo Registros DESATIVADO: Comportamento original preservado.
+
+### Arquivos Tocados
+- **Banco:** Schema e RLS via migração.
+- **Hooks:** `src/hooks/useRegistros.ts` (Core logic de criação simplificada).
+- **Super Admin:** `src/pages/super/SuperEventosPage.tsx`.
+- **Web Admin:** `src/pages/admin/registros/RegistrosPage.tsx`, `src/pages/admin/registros/RegistroFormDialog.tsx`.
+- **PWA:** `src/pages/pwa/registros/PwaRegistrosPage.tsx`.
+- **Infra/Layout:** `src/App.tsx`, `src/components/AdminLayout.tsx`, `src/components/pwa/PwaLayout.tsx`.
+
+### Veredito de Não-Regressão
+Testado e validado que eventos existentes mantêm o fluxo complexo operacional. A nova estrutura alimenta as views existentes (`public_results_view`), garantindo transparência para boletins e APIs públicas.
+
+---
+*Implementação da Fase 1 concluída em 2026-04-28.*
