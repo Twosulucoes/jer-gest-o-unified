@@ -265,6 +265,16 @@ export default function AlimentacaoHubPage() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/padroes")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <Clock className="h-8 w-8 text-primary shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Padrões de Janelas</p>
+              <p className="text-xs text-muted-foreground">Configuração de horários padrão</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {!selectedStageId ? (
