@@ -191,3 +191,57 @@ Validado que fluxos de Alimentação, Alojamento e Transporte que usam evidênci
 ---
 *Implementação da Fase 2 concluída em 2026-04-28.*
 
+
+---
+
+## MINI-AUDITORIA DE CONFIRMAÇÃO — FASE 2 (2026-04-28)
+
+Esta mini-auditoria valida a entrega da Fase 2 do módulo de Registros, focando em segurança, regras de negócio formais e rastreabilidade.
+
+### PASSO 1 — VERIFICAÇÃO DA RLS PARA AS NOVAS ESTRUTURAS DE OSC
+- **Tabela `event_osc_configs`:** **Conforme.** Estrutura implementada para suporte ao modelo híbrido. Possui políticas de RLS baseadas em perfil (Admin/Secretaria gerenciam, Coordenação Técnica lê).
+- **Extensão `operational_evidence`:** **Conforme.** Novos campos (`osc_category`, `match_id`, `caption`, `photo_at`, `location_name`) integrados à estrutura existente. A RLS original do módulo de evidências foi preservada, garantindo que o acesso contextual por perfil continue operando.
+- **Tabela `osc_reports`:** **Não Conforme.** Identificada ausência da tabela física para registro de versões geradas. A geração atual ocorre em tempo real ("On the Fly") sem persistência do artefato no banco de dados.
+
+### PASSO 2 — VERIFICAÇÃO DA REGRA DE FOTOS POR CATEGORIA
+- **Status:** **Não Conforme (Cenário 3).** A regra de 2 a 4 fotos por categoria não está implementada no código (`PrestacaoContasOscPage.tsx` ou `oscPdfExporter.tsx`). O sistema gera o relatório com qualquer número de fotos aprovadas por categoria, sem alertas ou bloqueios.
+- **Evidência:** O componente busca todas as evidências aprovadas (`.eq("status", "approved")`) sem realizar contagem ou validação de intervalo antes da chamada do exportador.
+
+### PASSO 3 — VERIFICAÇÃO DA AUDITORIA DA GERAÇÃO DO PDF
+- **Status:** **Não Conforme.** Não foi encontrada trilha de auditoria específica para o ato de geração do PDF formal OSC. O sistema não registra em `audit_events` nem em tabela dedicada o momento da geração, o responsável, nem os parâmetros utilizados.
+
+### PASSO 4 — VERIFICAÇÃO DA CONFIGURAÇÃO HÍBRIDA DO CONVÊNIO
+- **Status:** **Conforme.** O modelo híbrido está funcional em `ConfigOscPage.tsx`.
+- **Campos Implementados:** Órgão Concedente, Nome da OSC, CNPJ, Endereço e Responsável possuem valores padrão (`OSC_DEFAULTS`). O sistema indica visualmente campos customizados com Badge "Customizado" e permite reset individual via `RotateCcw`.
+- **Resumo Executivo:** Suporta modelo manual ou fallback automático baseado em estatísticas reais do evento.
+
+### PASSO 5 — VERIFICAÇÃO DA INTEGRAÇÃO ENTRE EVIDÊNCIAS E PARTIDAS
+- **Status:** **Conforme.** O vínculo via `match_id` é opcional e funcional no upload.
+- **Visualização:** No PDF, as evidências incluem Local e Data, mas o detalhe da partida vinculada ainda não é renderizado na legenda do exportador, embora o dado esteja disponível na `query`.
+
+### PASSO 6 — VERIFICAÇÃO DO CÁLCULO DE ESTATÍSTICAS
+- **Status:** **Conforme.** O hook `useOscData.ts` realiza cálculos robustos:
+  - **Participantes:** Conta total de registros em `participants` (incluindo tipo 'atleta' e outros).
+  - **Partidas:** Consolida partidas de origem `simple` e `complex` via `competition_matches`.
+  - **Refeições:** Somatório real de `meal_consumptions` filtrado pelas janelas do evento.
+  - **Alojamento/Transporte:** Dados extraídos das tabelas operacionais (`lodging_occupancies`, `transport_trips`).
+
+### PASSO 7 & 8 — VERIFICAÇÃO DE NÃO REGRESSÃO (EVIDÊNCIAS E MÓDULOS)
+- **Status:** **Sem Regressão.** 
+  - O módulo `operational_evidence` continua atendendo fluxos de Alimentação, Alojamento e Transporte sem exigir os campos OSC.
+  - O filtro contextual por perfil (`hasRole`) na página de evidências garante que usuários de módulos específicos continuem restritos aos seus dados.
+  - A integração com `match_user_assignments` para contagem de árbitros é transparente.
+
+### PASSO 9 — NÃO REGRESSÃO DA NAVEGAÇÃO E FASE 1
+- **Status:** **Sem Regressão.** A navegação condicional e o `registros_mode_enabled` operam conforme esperado. O acesso às novas páginas de OSC está integrado corretamente ao menu de Registros.
+
+### VEREDITO FINAL: NECESSITA AJUSTES
+A Fase 2 entrega a funcionalidade principal do relatório OSC, mas falha em segurança de auditoria e conformidade de regras de fotos, que são críticas para um documento formal de prestação de contas.
+
+**AJUSTES RECOMENDADOS (CRÍTICOS PARA FASE 3):**
+1. **Auditoria:** Adicionar `insert` em `audit_events` no momento da geração do PDF (identificando responsável e parâmetros).
+2. **Regra de Fotos:** Implementar validação visual (Cenário 1) na página de prestação de contas, alertando se categorias OSC possuem menos de 2 ou mais de 4 fotos.
+3. **Persistência (Opcional):** Considerar criação de tabela `osc_report_logs` para histórico de gerações.
+
+---
+*Mini-auditoria realizada em 2026-04-28.*
