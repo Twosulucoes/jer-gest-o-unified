@@ -22,6 +22,8 @@ Deno.serve(async (req) => {
 
     if (!eventId) {
       return new Response(JSON.stringify({ 
+        code: "MISSING_EVENT_ID",
+        field: "eventId",
         error: "Evento não informado", 
         details: "O ID do evento é obrigatório para gerar o boletim." 
       }), {
@@ -32,6 +34,8 @@ Deno.serve(async (req) => {
 
     if (!bulletinType || !['daily', 'final'].includes(bulletinType)) {
       return new Response(JSON.stringify({ 
+        code: "INVALID_BULLETIN_TYPE",
+        field: "bulletinType",
         error: "Tipo de boletim inválido", 
         details: "O tipo de boletim deve ser 'daily' ou 'final'." 
       }), {
@@ -42,6 +46,8 @@ Deno.serve(async (req) => {
 
     if (bulletinType === 'daily' && !stageId) {
       return new Response(JSON.stringify({ 
+        code: "MISSING_STAGE_ID",
+        field: "stageId",
         error: "Etapa não informada", 
         details: "Para boletins diários, a seleção da etapa é obrigatória." 
       }), {
