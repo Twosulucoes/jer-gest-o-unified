@@ -90,7 +90,7 @@ export default function AlocacaoLotePage() {
       if (!stageId) return [];
       const { data, error } = await supabase
         .from("lodging_units")
-        .select("*, lodging_occupancies(id)")
+        .select("*, lodging_occupancies!lodging_occupancies_unit_id_fkey(id)")
         .eq("event_stage_id", stageId)
         .eq("is_active", true);
       if (error) throw error;
