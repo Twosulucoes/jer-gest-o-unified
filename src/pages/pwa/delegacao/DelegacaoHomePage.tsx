@@ -154,7 +154,7 @@ export default function DelegacaoHomePage() {
             actions={[
               { label: "Participantes", icon: ClipboardList, to: "/pwa/delegacao/participantes" },
               { label: "Agenda", icon: Calendar, to: "/pwa/delegacao/agenda" },
-              { label: "Logística", icon: Bus, to: "/pwa/delegacao/logística" },
+              { label: "Logística", icon: Bus, to: "/pwa/delegacao/logistica" },
               { label: "Locais", icon: MapPin, to: "/pwa/delegacao/locais" },
               { label: "Protestos", icon: Gavel, to: "/pwa/delegacao/protestos" },
             ]}
