@@ -23,13 +23,21 @@ const PwaSelectionFallback = () => {
   const [selectedStageId, setSelectedStageId] = useState<string | null>(activeStageId);
   const [isVoluntary] = useState(!!activeStageId);
   const [pendingItems, setPendingItems] = useState(0);
+  const [pendingBreakdown, setPendingBreakdown] = useState<{label: string, count: number}[]>([]);
 
   useEffect(() => {
     const offlineCount = getOfflineQueue().filter(i => i.status === "pending" || i.status === "failed").length;
     const voucherCount = getVoucherQueue().filter(v => v.status === "pending" || v.status === "failed").length;
     const alojamentoCount = getAlojamentoQueue().filter(a => a.status === "pending" || a.status === "failed").length;
     
-    setPendingItems(offlineCount + voucherCount + alojamentoCount);
+    const total = offlineCount + voucherCount + alojamentoCount;
+    setPendingItems(total);
+
+    const breakdown = [];
+    if (offlineCount > 0) breakdown.push({ label: "Operações (Alimentação/Transporte)", count: offlineCount });
+    if (voucherCount > 0) breakdown.push({ label: "Vouchers", count: voucherCount });
+    if (alojamentoCount > 0) breakdown.push({ label: "Alojamento", count: alojamentoCount });
+    setPendingBreakdown(breakdown);
   }, []);
 
   const handleConfirm = async () => {
