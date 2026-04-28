@@ -98,17 +98,22 @@ export default function AlimentacaoDivergenciasPage() {
       if (consError) throw consError;
 
       // 2.3 For each window, find eligible participants who didn't consume
-      // This is expensive on client-side if many participants. 
-      // In a real scenario, we might want a DB view or RPC.
-      // For now, let's implement basic "eligible but missing" logic.
-      
       // We need participant list for the event/stage
-      let partQuery = supabase
+      let partQuery = (supabase as any)
         .from("participants")
-        .select("id, people(full_name), delegation_id, delegations(school_name), type, institution_id")
+        .select(`
+          id, 
+          participant_type,
+          delegation_id, 
+          delegations(school_name, institution_id),
+          people(full_name)
+        `)
         .eq("event_id", eventId!);
       
-      if (isStageScoped && stageId) partQuery = partQuery.eq("event_stage_id", stageId);
+      // Note: participants table might not have event_stage_id directly, 
+      // but they are linked to the event. If a stage filter is needed, 
+      // it would be via registrations if they exist. 
+      // For now we use event level.
       
       const { data: participants, error: partError } = await partQuery;
       if (partError) throw partError;
@@ -124,9 +129,9 @@ export default function AlimentacaoDivergenciasPage() {
           let isEligible = rules.length === 0; // If no rules, everyone is eligible
           if (rules.length > 0) {
             isEligible = rules.some((r: any) => {
-              if (r.eligibility_type === 'participant_type') return p.type === r.participant_type_value;
+              if (r.eligibility_type === 'participant_type') return p.participant_type === r.participant_type_value;
               if (r.eligibility_type === 'delegation') return p.delegation_id === r.reference_id;
-              if (r.eligibility_type === 'institution') return p.institution_id === r.reference_id;
+              if (r.eligibility_type === 'institution') return p.delegations?.institution_id === r.reference_id;
               return false;
             });
           }
