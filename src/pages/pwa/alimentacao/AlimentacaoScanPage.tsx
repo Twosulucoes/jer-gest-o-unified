@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -192,6 +192,29 @@ export default function AlimentacaoScanPage() {
     };
   }, [debouncedManual, activeEventId]);
 
+  const recordIncident = useCallback(async (type: string, participantId?: string) => {
+    if (!windowId || !isOnline()) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user.id) return;
+
+      await supabase.from("meal_incidents").insert({
+        meal_window_id: windowId,
+        incident_type: type,
+        participant_id: participantId || null,
+        registered_by: session.user.id,
+        is_offline: false,
+        device_info: {
+          userAgent: navigator.userAgent,
+          platform: navigator.platform
+        }
+      });
+    } catch (err) {
+      console.error("Failed to record meal incident:", err);
+    }
+  }, [windowId]);
+
   async function registerMealConsumption(
     participantId: string,
     participantName: string | null,
@@ -216,6 +239,7 @@ export default function AlimentacaoScanPage() {
         setResult({ ok: false, message: errorMsg, source: resultSource });
         toast.error(errorMsg);
         recordOutcome("error");
+        void recordIncident("DUPLICATE", participantId);
         reopenIfContinuous();
         return;
       }
@@ -256,7 +280,10 @@ export default function AlimentacaoScanPage() {
 
     const { error } = await supabase.from("meal_consumptions").insert(consumptionData);
 
-    if (error) throw error;
+    if (error) {
+      void recordIncident("OTHER", participantId);
+      throw error;
+    }
 
     const prefix = method === "voucher" ? "Voucher · " : method === "manual" ? `${getPwaMessage("MANUAL_SEARCH", lang)} · ` : "";
     const successMsg = `${prefix}${getPwaMessage("SUCCESS_REGISTERED", lang)}: ${participantName || ""}`;
@@ -319,6 +346,14 @@ export default function AlimentacaoScanPage() {
           setResult({ ok: false, message: `${msg.text}${extra}`, source: "qr" });
           toast.error(`${msg.text}${extra}`);
           recordOutcome("error");
+
+          // Map voucher reason to incident type
+          let incType = "VOUCHER_INVALID";
+          if (voucher?.reason === 'already_used_here' || voucher?.reason === 'already_used') incType = "VOUCHER_ALREADY_USED";
+          else if (voucher?.reason === 'expired') incType = "VOUCHER_EXPIRED";
+          else if (voucher?.reason === 'inactive') incType = "VOUCHER_REVOKED";
+          
+          void recordIncident(incType);
           reopenIfContinuous();
           return;
         }
@@ -343,6 +378,7 @@ export default function AlimentacaoScanPage() {
           setResult({ ok: false, message: errorMsg, source: "qr" });
           toast.error(errorMsg);
           recordOutcome("error");
+          void recordIncident("OTHER"); // Or a specific type if resolved but not found in context
           return;
         }
         participantId = resolved.participant_id;
