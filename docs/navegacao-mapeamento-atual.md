@@ -2,7 +2,7 @@
 
 Este documento descreve o estado real da navegação do sistema JER Gestão, consolidando rotas, menus, permissões e componentes de layout em 28 de abril de 2026.
 
-> **Status:** Fase 4 (Saneamento) em andamento. Passo 1 concluído.
+> **Status:** Fase 4 (Saneamento) em andamento. Passo 3 concluído.
 
 ## 1. Visão Geral da Arquitetura de Navegação
 
