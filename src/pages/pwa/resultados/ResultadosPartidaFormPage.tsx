@@ -12,6 +12,7 @@ import {
   Trash2, Plus, Upload, FileText, Image, CheckCircle2,
 } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import PwaLayout from "@/components/pwa/PwaLayout";
 import {
   usePartidaDetalhe,
   useArbitrosPartida,
@@ -457,8 +458,7 @@ export default function ResultadosPartidaFormPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <PwaHeader title="Partida" icon={Trophy} onBack={() => navigate(-1)} />
+      <PwaLayout onBack={() => navigate(-1)} moduleTitle="Partida">
         <main className="p-4 space-y-4">
           <Skeleton className="h-24 w-full rounded-xl" />
           <Skeleton className="h-48 w-full rounded-xl" />
