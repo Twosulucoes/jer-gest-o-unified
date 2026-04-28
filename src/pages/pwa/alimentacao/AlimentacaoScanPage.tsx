@@ -199,7 +199,7 @@ export default function AlimentacaoScanPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user.id) return;
 
-      await supabase.from("meal_incidents").insert({
+      await (supabase as any).from("meal_incidents").insert({
         meal_window_id: windowId,
         incident_type: type,
         participant_id: participantId || null,

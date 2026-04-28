@@ -56,6 +56,25 @@ export const syncOfflineQueue = async () => {
       if (item.module === "alimentacao") {
         const { error } = await supabase.from("meal_consumptions").insert(item.data);
         if (error) {
+          // If it's a "already registered" error, record incident and remove from queue
+          if (error.code === "23505") { // Unique violation
+             await (supabase as any).from("meal_incidents").insert({
+               meal_window_id: item.data.meal_window_id,
+               incident_type: 'DUPLICATE',
+               participant_id: item.data.participant_id,
+               registered_by: item.data.registered_by,
+               is_offline: true,
+               incident_at: item.timestamp,
+               device_info: { offline_sync: true }
+             });
+             removeFromOfflineQueue(item.id);
+             successCount++;
+             continue;
+          }
+          throw error;
+        }
+      }
+        if (error) {
           // If it's a "already registered" error, we can consider it "synced" or at least remove from queue
           if (error.code === "23505") { // Unique violation
              removeFromOfflineQueue(item.id);
