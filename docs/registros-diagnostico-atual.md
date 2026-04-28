@@ -355,8 +355,54 @@ Implementação do fluxo de Boletins Oficiais (diário e final) com numeração 
 ### Veredito de Não-Regressão
 Validado que os módulos de Voucher, Alimentação, Alojamento e Transporte permanecem inalterados. A padronização da API pública foi feita mantendo compatibilidade de campos, mas exige ajuste coordenado no portal externo para o novo formato de wrapper. Os consumidores internos de resultados (Quadro de Medalhas, Estatísticas OSC) continuam operando normalmente sobre a view atualizada.
 
+
 ---
-*Implementação da Fase 3 concluída em 2026-04-28.*
+
+## INVESTIGAÇÃO DA DESCOBRÍVELIDADE DA FLAG DE MODO REGISTROS (ETAPA A) — 2026-04-28
+
+Esta investigação analisa a causa técnica da dificuldade relatada pelo operador em localizar a interface de gestão da flag `registros_mode_enabled`.
+
+### Passo 1 — Verificação da Flag no Banco
+- **Localização:** Tabela `public.events`, coluna `registros_mode_enabled`.
+- **Tipo:** `boolean`, Default: `false`.
+- **Estado Atual:** Em todos os eventos cadastrados (amostragem), a flag encontra-se em `false`.
+- **Veredito:** **Conforme.** A estrutura de dados existe e está íntegra.
+
+### Passo 2 — Verificação da RPC ou Função de Alteração
+- **Mecanismo:** Alteração via `UPDATE` direto na tabela `events`.
+- **Segurança (RLS):** Política `Super admins can manage all events` (cmd: ALL) restringe alterações a usuários com a role `super_admin`.
+- **Veredito:** **Conforme.** A proteção de acesso está implementada via RLS, garantindo que apenas o Super Admin possa manipular a flag.
+
+### Passo 3 — Verificação da Tela de Gestão no Super Admin
+- **Interface Identificada:** A gestão da flag está acoplada à tela **Gestão de Eventos** do Super Admin (`/super/eventos`).
+- **Componente:** `src/pages/super/SuperEventosPage.tsx`.
+- **UX de Controle:** Implementado como um botão de ação rápida (ícone `ListChecks`) na linha de cada evento na tabela.
+- **Veredito:** **Cenário B (Interface acoplada sem destaque).** A interface existe, mas é representada apenas por um ícone de lista na coluna "Modo Registros", sem rótulo textual direto, o que dificulta a descoberta visual imediata.
+
+### Passo 4 — Verificação do Item de Menu no SuperAdminLayout
+- **Layout:** `src/components/SuperAdminLayout.tsx`.
+- **Item de Menu:** Existe o item "Eventos" (`/super/eventos`).
+- **Problema de Descobribilidade:** Não há um item de menu dedicado para "Modo Registros", e o rótulo do item existente ("Eventos") não sugere que ali reside a chave de ativação de módulos específicos.
+- **Veredito:** **Falha de Descobribilidade.** A tela de eventos é o local correto, mas a funcionalidade de ativação do Modo Registros está "escondida" atrás de um ícone abstrato em uma tabela densa.
+
+### Passo 5 — Verificação da Trilha de Auditoria
+- **Mecanismo:** Trilha via `registros_mode_logs`.
+- **Estado:** Tabela existe mas está vazia na amostragem inicial. O componente `SuperEventosPage.tsx` realiza o `UPDATE` mas não parece disparar o `INSERT` na tabela de logs manualmente (pode haver dependência de trigger que não foi localizada ou o log é feito via `audit_events` genérico).
+- **Veredito:** **Alerta de Rastreabilidade.** A alteração funciona, mas a persistência do log específico (`registros_mode_logs`) precisa de confirmação de trigger.
+
+### Passo 6 — Verificação do Impacto Prático Atual
+- **Estado do Sistema:** Como todos os eventos estão com a flag em `false` por padrão e o operador não localiza o botão de ativação, os módulos das Fases 1, 2 e 3 estão **implementados mas inacessíveis** nos ambientes de produção/homologação operados por humanos.
+- **Causa Raiz:** O ícone `ListChecks` na cor cinza (inativo) em uma tabela com muitas colunas não comunica a ação de "Ativar Módulo de Registros" de forma clara.
+
+### Veredito Final e Recomendação
+A implementação técnica está correta e segura, mas a UX falhou em **comunicar a funcionalidade**. 
+
+**Cenário Identificado:** Interface acoplada à tela de eventos do Super Admin, mas com baixíssima descobribilidade devido à falta de rótulo e destaque visual.
+
+**Recomendação de Correção Simples:**
+1. No `SuperAdminLayout.tsx`, renomear ou adicionar badge ao item "Eventos" indicando "Gestão de Módulos".
+2. No `SuperEventosPage.tsx`, substituir o ícone isolado por um `Switch` ou `Button` com rótulo "Registros: Off/On", ou adicionar um Tooltip persistente/Onboarding visual na primeira carga do Super Admin.
+3. Garantir que o log de alteração em `registros_mode_logs` seja disparado via Trigger no banco para evitar dependência do frontend.
 
 ---
 
