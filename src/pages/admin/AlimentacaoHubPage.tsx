@@ -215,22 +215,53 @@ export default function AlimentacaoHubPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/consumo")}>
           <CardContent className="flex items-center gap-3 p-4">
             <ClipboardList className="h-8 w-8 text-primary shrink-0" />
             <div>
-              <p className="font-medium text-sm">Registrar consumo</p>
+              <p className="font-medium text-sm">Registrar Consumo</p>
               <p className="text-xs text-muted-foreground">Operação diária de refeições</p>
             </div>
           </CardContent>
         </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/previsao")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <Calculator className="h-8 w-8 text-primary shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Previsão de Demanda</p>
+              <p className="text-xs text-muted-foreground">Ocupação vs Previsão para cozinha</p>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/dashboard")}>
           <CardContent className="flex items-center gap-3 p-4">
             <LayoutDashboard className="h-8 w-8 text-primary shrink-0" />
             <div>
               <p className="font-medium text-sm">Dashboard</p>
               <p className="text-xs text-muted-foreground">Totais e estatísticas</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/locais")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <MapPin className="h-8 w-8 text-primary shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Locais de Refeição</p>
+              <p className="text-xs text-muted-foreground">Gestão de refeitórios</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/relatorios")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <FileText className="h-8 w-8 text-primary shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Relatórios</p>
+              <p className="text-xs text-muted-foreground">Exportações e listagens</p>
             </div>
           </CardContent>
         </Card>
