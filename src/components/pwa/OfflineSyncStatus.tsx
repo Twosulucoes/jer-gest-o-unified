@@ -45,7 +45,6 @@ export function OfflineSyncStatus() {
     try {
       let syncedAny = false;
       
-      // Sync Credentials
       if (queueCount > 0) {
         const result = await syncOfflineQueue();
         if (result.count > 0) {
@@ -57,7 +56,6 @@ export function OfflineSyncStatus() {
         }
       }
 
-      // Sync Vouchers
       if (voucherQueueCount > 0) {
         const vResult = await syncVoucherQueue();
         if (vResult.count > 0) {
@@ -70,9 +68,6 @@ export function OfflineSyncStatus() {
       }
 
       updateQueueCounts();
-      if (!syncedAny && queueCount === 0 && voucherQueueCount === 0) {
-        toast.info("Nada pendente para sincronizar.");
-      }
     } catch (error) {
       toast.error("Erro inesperado ao sincronizar.");
     } finally {
@@ -84,7 +79,10 @@ export function OfflineSyncStatus() {
   if (totalPending === 0 && online) return null;
 
   return (
-    <Card className={`border-dashed ${!online ? "border-amber-500/50 bg-amber-500/5" : "border-blue-500/50 bg-blue-500/5 shadow-app-sm"}`}>
+    <Card className={cn(
+      "border-dashed",
+      !online ? "border-amber-500/50 bg-amber-500/5" : "border-blue-500/50 bg-blue-500/5 shadow-app-sm"
+    )}>
       <CardContent className="p-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           {!online ? (
@@ -99,16 +97,16 @@ export function OfflineSyncStatus() {
             <div className="flex items-center gap-2 mt-0.5">
               {queueCount > 0 && (
                 <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                  {queueCount} credencial(is)
+                  {queueCount} registros
                 </span>
               )}
               {voucherQueueCount > 0 && (
                 <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded flex items-center gap-1">
-                  <Ticket className="h-2.5 w-2.5" /> {voucherQueueCount} voucher(s)
+                  <Ticket className="h-2.5 w-2.5" /> {voucherQueueCount} vouchers
                 </span>
               )}
               {totalPending === 0 && !online && (
-                <span className="text-[10px] text-muted-foreground italic">Pronto para leitura em campo</span>
+                <span className="text-[10px] text-muted-foreground italic">Pronto para campo</span>
               )}
             </div>
           </div>
@@ -122,11 +120,13 @@ export function OfflineSyncStatus() {
             onClick={handleSync}
             disabled={isSyncing}
           >
-            <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-            Sincronizar
+            <RefreshCw className={cn("h-4 w-4", isSyncing && "animate-spin")} />
+            Sync
           </Button>
         )}
       </CardContent>
     </Card>
   );
 }
+
+import { cn } from "@/lib/utils";
