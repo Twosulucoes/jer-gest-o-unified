@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 import { 
   Home, Scan, Search, History, ClipboardList, Users, 
   Calendar, Bus, Trophy, LayoutDashboard, Radio, LogOut, 
-  Menu, ShieldCheck, AlertCircle, Settings, Layers
+  Menu, ShieldCheck, AlertCircle, Settings, Layers, Plus
+
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
