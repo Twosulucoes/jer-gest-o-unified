@@ -536,7 +536,7 @@ const App = () => (
             <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLandingPage /></PwaRouteGuard>} />
             
             {/* PWAs operacionais envoltos no PwaLayout */}
-            <Route element={<PwaRouteGuard requireStage={true}><PwaLayout /></PwaRouteGuard>}>
+            <Route element={<PwaRouteGuard requireStage={true}><PwaLayout backTo="/pwa" /></PwaRouteGuard>}>
               {/* PWA Alojamento */}
               <Route path="/pwa/alojamento" element={<AlojamentoHomePage />} />
               <Route path="/pwa/alojamento/scan" element={<AlojamentoScanPage />} />

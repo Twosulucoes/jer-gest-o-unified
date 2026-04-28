@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ClipboardList, ChevronRight, Trophy } from "lucide-react";
+import { PwaContainer } from "@/components/pwa/PwaScreen";
 import { useMinhasModalidades } from "@/hooks/useLancamentoResultados";
 
 export default function ResultadosHomePage() {
@@ -25,8 +26,8 @@ export default function ResultadosHomePage() {
   }, [isLoading, modalidades, navigate]);
 
   return (
-    <div className="p-4 max-w-md mx-auto w-full space-y-4">
-      <p className="text-sm text-muted-foreground">Selecione a modalidade que deseja gerenciar.</p>
+    <PwaContainer className="py-4 space-y-4">
+      <p className="text-sm text-muted-foreground px-1">Selecione a modalidade que deseja gerenciar.</p>
 
       {isLoading && (
         <div className="space-y-3">
@@ -65,6 +66,6 @@ export default function ResultadosHomePage() {
           </button>
         ))}
       </div>
-    </div>
+    </PwaContainer>
   );
 }
