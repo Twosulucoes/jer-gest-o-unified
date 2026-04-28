@@ -65,6 +65,7 @@ const PwaSelectionFallback = () => {
             from_event_id: activeEventId,
             to_event_id: selectedEventId,
             is_voluntary: isVoluntary,
+            from_path: from,
             timestamp: new Date().toISOString()
           }
         });
