@@ -12,6 +12,7 @@ Esta auditoria reflete o estado final do módulo de Alimentação após a implem
 ### 2.1 Estrutura de Dados (Database)
 - **`meal_types`**: Cadastro de tipos (Café, Almoço, Jantar).
 - **`meal_windows`**: Janelas temporais vinculadas a etapas e locais.
+- **`meal_window_patterns`**: **(NOVO)** Configuração de padrões reutilizáveis de horários e locais por estágio.
 - **`meal_locations`**: Gestão de refeitórios com capacidade e endereço.
 - **`meal_window_eligibility`**: Regras de restrição atômicas (Perfil, Delegação, Instituição).
 - **`meal_consumptions`**: Registro de consumo com proteção contra duplicidade.
