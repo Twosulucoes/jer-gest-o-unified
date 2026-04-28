@@ -11,7 +11,6 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Optional site token validation
   const siteTokenSecret = Deno.env.get("SITE_TOKEN");
   if (siteTokenSecret) {
     const provided = req.headers.get("x-site-token");
@@ -27,23 +26,18 @@ Deno.serve(async (req) => {
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Get distinct events that have published results
   const { data, error } = await supabase
     .from("public_results_view")
     .select("event_id, event_name, event_year")
     .order("event_year", { ascending: false });
 
   if (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
-  // Deduplicate events
   const seen = new Set<string>();
   const events = (data || []).filter((row) => {
     if (seen.has(row.event_id)) return false;
@@ -53,8 +47,11 @@ Deno.serve(async (req) => {
 
   return new Response(
     JSON.stringify({
-      generated_at: new Date().toISOString(),
-      events,
+      items: events,
+      meta: {
+        total: events.length,
+        generated_at: new Date().toISOString()
+      }
     }),
     {
       status: 200,

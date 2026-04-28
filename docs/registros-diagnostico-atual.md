@@ -322,3 +322,38 @@ Esta mini-confirmação valida tecnicamente os três pontos da correção tátic
 
 ---
 *Mini-confirmação realizada em 2026-04-28.*
+
+## IMPLEMENTAÇÃO — FASE 3 (2026-04-28)
+
+### Resumo da Entrega
+Implementação do fluxo de Boletins Oficiais (diário e final) com numeração alfanumérica automática, trava de publicação por homologação completa de resultados, PDF institucional profissional, padronização da API pública para o portal externo e suporte a partidas simplificadas na view de resultados.
+
+### Alterações Realizadas
+- **Evolução de Schema e Banco:**
+  - Adicionada coluna `stage_code` em `event_stages` para siglas de etapas (ex: BON, PAC, BVA).
+  - Estendida a tabela `official_bulletins` com campos para etapa, tipo, código alfanumérico e versão.
+  - Criada função PostgreSQL `get_next_bulletin_number` para atribuição automática de códigos (SIGLA-NNN ou SIGLA-FIN).
+  - Recriada `public_results_view` com suporte nativo a partidas simplificadas (`source = simple`) e garantia de LEFT JOINs para não excluir dados.
+- **Fluxo de Homologação e Trava de Publicação:**
+  - O sistema agora verifica o estado de homologação de todas as partidas no escopo (dia/etapa) antes de permitir a publicação do boletim.
+  - A publicação é travada se houver partidas sem resultado ou resultados não validados.
+- **Geração de PDF Profissional:**
+  - Reformulado o exportador de PDF na Edge Function `generate-bulletin` para seguir layout institucional.
+  - Inclusão de cabeçalho com código alfanumérico, resumo executivo, resultados detalhados por modalidade e quadro de medalhas oficial (para boletins finais).
+- **API Pública e Portal Externo:**
+  - Padronização dos retornos de `public-results` e `public-events` para o formato wrapper `{ items: [], meta: {} }`.
+  - Suporte a buscas por `bulletin_number` alfanumérico.
+- **Interface Admin:**
+  - Atualização das abas de Boletim Diário e Final com indicadores visuais de prontidão para publicação e listagem de versões oficiais.
+
+### Arquivos Tocados
+- **Banco:** Nova migração com funções, colunas e view.
+- **Edge Functions:** `generate-bulletin`, `public-results`, `public-events`.
+- **Frontend:** `src/components/admin/boletins/DailyBulletinsTab.tsx`, `src/components/admin/boletins/FinalBulletinTab.tsx`.
+- **Documentação:** `README.md`, `docs/registros-diagnostico-atual.md`, `docs/portal-publico-contratos.md`.
+
+### Veredito de Não-Regressão
+Validado que os módulos de Voucher, Alimentação, Alojamento e Transporte permanecem inalterados. A padronização da API pública foi feita mantendo compatibilidade de campos, mas exige ajuste coordenado no portal externo para o novo formato de wrapper. Os consumidores internos de resultados (Quadro de Medalhas, Estatísticas OSC) continuam operando normalmente sobre a view atualizada.
+
+---
+*Implementação da Fase 3 concluída em 2026-04-28.*

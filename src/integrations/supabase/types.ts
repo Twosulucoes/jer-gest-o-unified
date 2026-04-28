@@ -1745,6 +1745,7 @@ export type Database = {
           name: string
           slug: string
           sort_order: number
+          stage_code: string | null
           starts_at: string | null
           status: string
           updated_at: string
@@ -1762,6 +1763,7 @@ export type Database = {
           name: string
           slug: string
           sort_order?: number
+          stage_code?: string | null
           starts_at?: string | null
           status?: string
           updated_at?: string
@@ -1779,6 +1781,7 @@ export type Database = {
           name?: string
           slug?: string
           sort_order?: number
+          stage_code?: string | null
           starts_at?: string | null
           status?: string
           updated_at?: string
@@ -4299,6 +4302,7 @@ export type Database = {
       }
       official_bulletins: {
         Row: {
+          bulletin_code: string | null
           content_md: string
           created_at: string
           created_by: string | null
@@ -4309,12 +4313,16 @@ export type Database = {
           published_at: string | null
           published_by: string | null
           rectifies_bulletin_id: string | null
+          stage_id: string | null
           status: Database["public"]["Enums"]["bulletin_status"]
           title: string
+          type: string | null
           updated_at: string
           updated_by: string | null
+          version: number | null
         }
         Insert: {
+          bulletin_code?: string | null
           content_md?: string
           created_at?: string
           created_by?: string | null
@@ -4325,12 +4333,16 @@ export type Database = {
           published_at?: string | null
           published_by?: string | null
           rectifies_bulletin_id?: string | null
+          stage_id?: string | null
           status?: Database["public"]["Enums"]["bulletin_status"]
           title: string
+          type?: string | null
           updated_at?: string
           updated_by?: string | null
+          version?: number | null
         }
         Update: {
+          bulletin_code?: string | null
           content_md?: string
           created_at?: string
           created_by?: string | null
@@ -4341,10 +4353,13 @@ export type Database = {
           published_at?: string | null
           published_by?: string | null
           rectifies_bulletin_id?: string | null
+          stage_id?: string | null
           status?: Database["public"]["Enums"]["bulletin_status"]
           title?: string
+          type?: string | null
           updated_at?: string
           updated_by?: string | null
+          version?: number | null
         }
         Relationships: [
           {
@@ -4359,6 +4374,13 @@ export type Database = {
             columns: ["rectifies_bulletin_id"]
             isOneToOne: false
             referencedRelation: "official_bulletins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "official_bulletins_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
         ]
@@ -7979,7 +8001,7 @@ export type Database = {
     Views: {
       public_results_view: {
         Row: {
-          bulletin_number: number | null
+          bulletin_number: string | null
           bulletin_published_at: string | null
           bulletin_title: string | null
           category_name: string | null
@@ -8410,6 +8432,10 @@ export type Database = {
         Returns: Json
       }
       get_group_standings: { Args: { p_group_id: string }; Returns: Json }
+      get_next_bulletin_number: {
+        Args: { p_event_id: string; p_stage_id: string; p_type: string }
+        Returns: string
+      }
       get_participant_counts_by_delegation: {
         Args: { p_event_id: string; p_stage_id?: string }
         Returns: {
