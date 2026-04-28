@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Bus, Clock, MapPin, Users, Play, ArrowRight,
-  Search, Unlock, AlertTriangle, QrCode,
+  Search, Unlock, AlertTriangle, QrCode, ScanLine
 } from "lucide-react";
 import { format } from "date-fns";
 import { PwaContainer } from "@/components/pwa/PwaScreen";
@@ -15,7 +15,6 @@ import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import PwaLayout from "@/components/pwa/PwaLayout";
-
 
 interface TripRow {
   id: string;
