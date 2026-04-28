@@ -60,5 +60,5 @@ Este relatório consolida a implementação das cinco fases (0 a 4) da reformula
 
 ## 5. Próximos Passos (Evolução Contínua)
 
-1.  **UX do Árbitro**: Evoluir o PWA Ao Vivo para exibir a "Minha Agenda" individual com status de confirmação.
-2.  **Súmula Digital**: Gerar o PDF do espelho da súmula com os nomes dos oficiais designados e atuações registradas.
+1.  **Súmula Digital**: Gerar o PDF do espelho da súmula com os nomes dos oficiais designados e atuações registradas.
+2.  **Notificações Push**: Implementar envio de notificações para o celular do árbitro quando uma nova designação for feita.
