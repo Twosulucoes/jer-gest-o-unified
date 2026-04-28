@@ -1467,6 +1467,65 @@ export type Database = {
           },
         ]
       }
+      event_osc_configs: {
+        Row: {
+          contract_number: string | null
+          contract_year: string | null
+          created_at: string
+          event_id: string
+          grantor_name: string | null
+          id: string
+          osc_address: string | null
+          osc_cnpj: string | null
+          osc_name: string | null
+          responsible_name: string | null
+          summary_model: string | null
+          updated_at: string
+          validity_end: string | null
+          validity_start: string | null
+        }
+        Insert: {
+          contract_number?: string | null
+          contract_year?: string | null
+          created_at?: string
+          event_id: string
+          grantor_name?: string | null
+          id?: string
+          osc_address?: string | null
+          osc_cnpj?: string | null
+          osc_name?: string | null
+          responsible_name?: string | null
+          summary_model?: string | null
+          updated_at?: string
+          validity_end?: string | null
+          validity_start?: string | null
+        }
+        Update: {
+          contract_number?: string | null
+          contract_year?: string | null
+          created_at?: string
+          event_id?: string
+          grantor_name?: string | null
+          id?: string
+          osc_address?: string | null
+          osc_cnpj?: string | null
+          osc_name?: string | null
+          responsible_name?: string | null
+          summary_model?: string | null
+          updated_at?: string
+          validity_end?: string | null
+          validity_start?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_osc_configs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_participation_rules: {
         Row: {
           alcohol_and_smoking_prohibited: boolean | null
@@ -4306,6 +4365,7 @@ export type Database = {
       }
       operational_evidence: {
         Row: {
+          caption: string | null
           created_at: string
           description: string | null
           event_id: string
@@ -4313,7 +4373,11 @@ export type Database = {
           file_name: string
           file_url: string
           id: string
+          location_name: string | null
+          match_id: string | null
           module: string
+          osc_category: string | null
+          photo_at: string | null
           reference_id: string | null
           reference_table: string | null
           review_notes: string | null
@@ -4323,6 +4387,7 @@ export type Database = {
           uploaded_by: string | null
         }
         Insert: {
+          caption?: string | null
           created_at?: string
           description?: string | null
           event_id: string
@@ -4330,7 +4395,11 @@ export type Database = {
           file_name: string
           file_url: string
           id?: string
+          location_name?: string | null
+          match_id?: string | null
           module: string
+          osc_category?: string | null
+          photo_at?: string | null
           reference_id?: string | null
           reference_table?: string | null
           review_notes?: string | null
@@ -4340,6 +4409,7 @@ export type Database = {
           uploaded_by?: string | null
         }
         Update: {
+          caption?: string | null
           created_at?: string
           description?: string | null
           event_id?: string
@@ -4347,7 +4417,11 @@ export type Database = {
           file_name?: string
           file_url?: string
           id?: string
+          location_name?: string | null
+          match_id?: string | null
           module?: string
+          osc_category?: string | null
+          photo_at?: string | null
           reference_id?: string | null
           reference_table?: string | null
           review_notes?: string | null
@@ -4363,6 +4437,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_evidence_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_evidence_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
           },
         ]
       }
