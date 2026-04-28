@@ -175,7 +175,7 @@ export default function PwaLayout({
                     ))}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
-                      onClick={() => navigate("/pwa/configuracao")}
+                      onClick={() => navigate("/pwa/configuracao", { state: { from: location } })}
                       className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-amber-600 dark:text-amber-400"
                     >
                       <Layers className="h-5 w-5" />
