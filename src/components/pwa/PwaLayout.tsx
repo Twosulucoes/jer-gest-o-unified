@@ -30,6 +30,7 @@ interface PwaLayoutProps {
   moduleIcon?: React.ElementType;
   backTo?: string;
   hideFooter?: boolean;
+  onBack?: () => void;
   children?: React.ReactNode;
 }
 
@@ -38,6 +39,7 @@ export default function PwaLayout({
   moduleIcon, 
   backTo,
   hideFooter = false,
+  onBack,
   children
 }: PwaLayoutProps) {
   const location = useLocation();
@@ -113,6 +115,7 @@ export default function PwaLayout({
         title={displayTitle} 
         icon={DisplayIcon} 
         backTo={backTo}
+        onBack={onBack}
         onSignOut={handleSignOut}
       />
       
