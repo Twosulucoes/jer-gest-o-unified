@@ -3,7 +3,8 @@ import { useBulletinDocuments } from "@/hooks/useBulletinDocuments";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, RefreshCw, Trophy, Loader2 } from "lucide-react";
+import { Download, RefreshCw, Trophy, Loader2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,18 @@ export default function FinalBulletinTab({ eventId }: { eventId: string }) {
   const finalBulletins = bulletins.filter(b => b.bulletin_type === 'final');
 
   const handleGenerate = () => {
+    if (!eventId) {
+      toast.error("Evento não identificado");
+      return;
+    }
+
+    if (!readiness?.allFinished) {
+      // Permitimos gerar, mas avisamos que o quadro de medalhas pode estar incompleto
+      toast.info("Atenção: Nem todas as etapas estão concluídas", {
+        description: "O boletim final será gerado com os resultados publicados até agora."
+      });
+    }
+
     generateBulletin.mutate({
       bulletinType: 'final'
     });

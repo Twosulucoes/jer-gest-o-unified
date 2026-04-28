@@ -20,8 +20,34 @@ Deno.serve(async (req) => {
 
     const { eventId, stageId, referenceDate, bulletinType, trigger } = await req.json();
 
-    if (!eventId || !bulletinType) {
-      throw new Error("Missing required fields: eventId and bulletinType are required.");
+    if (!eventId) {
+      return new Response(JSON.stringify({ 
+        error: "Evento não informado", 
+        details: "O ID do evento é obrigatório para gerar o boletim." 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!bulletinType || !['daily', 'final'].includes(bulletinType)) {
+      return new Response(JSON.stringify({ 
+        error: "Tipo de boletim inválido", 
+        details: "O tipo de boletim deve ser 'daily' ou 'final'." 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (bulletinType === 'daily' && !stageId) {
+      return new Response(JSON.stringify({ 
+        error: "Etapa não informada", 
+        details: "Para boletins diários, a seleção da etapa é obrigatória." 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // 1. Fetch Event and Branding
