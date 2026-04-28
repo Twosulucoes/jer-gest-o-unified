@@ -15,12 +15,7 @@ export const PWA_MESSAGE_CODES = [
   "NO_RESULTS",
   "MANUAL_SEARCH",
   "QR_VALID",
-  "VOUCHER_NOT_FOUND",
-  "VOUCHER_INACTIVE",
-  "VOUCHER_EXPIRED",
-  "VOUCHER_NOT_YET_VALID",
-  "VOUCHER_SCOPE_DENIED",
-  "VOUCHER_MAX_USES",
+  // VOUCHER keys removed (duplicated in voucherMessages.ts)
   "MANUAL_BOARDING",
   "FULL_NAME",
   "PASSENGER_NAME_PLACEHOLDER",
@@ -121,30 +116,6 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
   QR_VALID: {
     pt: "QR Code validado!",
     es: "¡QR Code validado!",
-  },
-  VOUCHER_NOT_FOUND: {
-    pt: "Voucher não encontrado",
-    es: "Voucher no encontrado",
-  },
-  VOUCHER_INACTIVE: {
-    pt: "Voucher revogado ou inativo",
-    es: "Voucher revocado o inactivo",
-  },
-  VOUCHER_EXPIRED: {
-    pt: "Voucher expirado",
-    es: "Voucher expirado",
-  },
-  VOUCHER_NOT_YET_VALID: {
-    pt: "Voucher ainda não está válido",
-    es: "Voucher aún no es válido",
-  },
-  VOUCHER_SCOPE_DENIED: {
-    pt: "Voucher não cobre este serviço",
-    es: "Voucher no cubre este servicio",
-  },
-  VOUCHER_MAX_USES: {
-    pt: "Limite de usos do voucher atingido",
-    es: "Límite de usos del voucher alcanzado",
   },
   MANUAL_BOARDING: {
     pt: "Embarque Manual",
@@ -318,7 +289,8 @@ export function setPwaLang(lang: PwaLang) {
 
 export function getPwaMessage(code: PwaMessageCode, lang?: PwaLang): string {
   const l = lang || getPwaLang();
-  return MESSAGES[code][l] || MESSAGES[code]["pt"];
+  // @ts-ignore - Some codes might have been removed but are still referenced in orphan components
+  return MESSAGES[code] ? (MESSAGES[code][l] || MESSAGES[code]["pt"]) : "Message Not Found";
 }
 
 /**

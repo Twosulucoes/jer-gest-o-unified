@@ -175,7 +175,7 @@ import PwaInstallPage from "./pages/pwa/PwaInstallPage";
 import AlojamentoHomePage from "./pages/pwa/alojamento/AlojamentoHomePage";
 import AlojamentoScanPage from "./pages/pwa/alojamento/AlojamentoScanPage";
 import AlojamentoBuscarPage from "./pages/pwa/alojamento/AlojamentoBuscarPage";
-import AlojamentoOcupacaoPage2 from "./pages/pwa/alojamento/AlojamentoOcupacaoPage";
+import AlojamentoOcupacaoPwaPage from "./pages/pwa/alojamento/AlojamentoOcupacaoPage";
 import AlojamentoPessoaPage from "./pages/pwa/alojamento/AlojamentoPessoaPage";
 import AlojamentoIncidentesPage from "./pages/pwa/alojamento/AlojamentoIncidentesPage";
 import AlojamentoNovoIncidentePage from "./pages/pwa/alojamento/AlojamentoNovoIncidentePage";
@@ -381,13 +381,13 @@ const App = () => (
               <Route path="parametros-evento" element={<Navigate to="/admin/regras" replace />} />
               <Route path="regras-evento" element={<Navigate to="/admin/regras" replace />} />
               <Route path="regras" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegrasPage /></ProtectedRoute>} />
-              <Route path="regras-legacy" element={<Navigate to="/admin/regras" replace />} />
+              {/* Legacy routes removed: regras-legacy, /admin/mapa */}
               {/* Irregularidades e Normalização */}
               <Route path="irregularidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><IrregularidadesPage /></ProtectedRoute>} />
               <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />
               {/* Schema Validator */}
               <Route path="schema/validador" element={<ProtectedRoute allowedRoles={["super_admin"]}><SchemaValidadorPage /></ProtectedRoute>} />
-              <Route path="mapa" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
+              {/* mapa legacy route removed */}
               <Route path="diagnostico-competicao" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
               <Route path="sistema/diagnostico" element={<ProtectedRoute allowedRoles={["super_admin"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
                <Route path="sistema/diagnostico/kpi" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><SistemaDiagnosticoKpiPage /></ProtectedRoute>} />
@@ -541,7 +541,7 @@ const App = () => (
               <Route path="/pwa/alojamento" element={<AlojamentoHomePage />} />
               <Route path="/pwa/alojamento/scan" element={<AlojamentoScanPage />} />
               <Route path="/pwa/alojamento/buscar" element={<AlojamentoBuscarPage />} />
-              <Route path="/pwa/alojamento/ocupacao" element={<AlojamentoOcupacaoPage2 />} />
+              <Route path="/pwa/alojamento/ocupacao" element={<AlojamentoOcupacaoPwaPage />} />
               <Route path="/pwa/alojamento/pessoa/:id" element={<AlojamentoPessoaPage />} />
               <Route path="/pwa/alojamento/incidentes" element={<AlojamentoIncidentesPage />} />
               <Route path="/pwa/alojamento/incidentes/nova" element={<AlojamentoNovoIncidentePage />} />
