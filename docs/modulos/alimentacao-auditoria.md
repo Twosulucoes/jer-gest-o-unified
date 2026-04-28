@@ -20,7 +20,7 @@ Esta auditoria reflete o estado final do módulo de Alimentação após a implem
 ### 2.2 Interfaces Administrativas (Web Admin)
 - **`AlimentacaoHubPage`**: Hub central com cards de acesso rápido.
 - **`AlimentacaoPrevisaoPage`**: **(NOVO)** Motor de previsão que calcula elegíveis vs consumos em tempo real, com barras de progresso e alertas de ocupação.
-- **`AlimentacaoJanelasPage`**: Gestão completa de janelas e suas regras.
+- **`AlimentacaoJanelasPage`**: Gestão completa de janelas, com **automação para geração de janelas padrão (Café/Almoço/Janta)** por data.
 - **`AlimentacaoConsumoPage`**: Monitoramento de consumos individuais.
 
 ### 2.3 Interface Operacional (PWA)

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, Pencil, Clock, Search, Filter, Copy, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Pencil, Clock, Search, Filter, Copy, Trash2, CheckCircle, XCircle, Calendar, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +32,8 @@ export default function AlimentacaoJanelasPage() {
   const [editing, setEditing] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [filterDate, setFilterDate] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const selectedEventId = useActiveEventId();
   const { stageId, isStageScoped } = useStageScope();
   const canWrite = hasRole("admin") || hasRole("secretaria");
@@ -145,6 +147,59 @@ export default function AlimentacaoJanelasPage() {
     onError: (e: Error) => toast.error("Erro ao alterar status: " + e.message),
   });
 
+  const generateDefaultWindows = async () => {
+    if (!selectedEventId) return;
+    const dateToUse = filterDate || new Date().toISOString().split('T')[0];
+    
+    setIsGenerating(true);
+    try {
+      const standards = [
+        { slug: 'cafe', start: '06:00', end: '09:00', label: 'Café da Manhã' },
+        { slug: 'almoco', start: '11:30', end: '14:30', label: 'Almoço' },
+        { slug: 'janta', start: '18:30', end: '21:30', label: 'Jantar' },
+      ];
+
+      const toInsert = [];
+      for (const std of standards) {
+        const mType = mealTypes.find(t => t.slug?.toLowerCase() === std.slug);
+        if (mType) {
+          const alreadyExists = windows?.some(w => 
+            w.service_date === dateToUse && 
+            w.meal_type_id === mType.id
+          );
+          
+          if (!alreadyExists) {
+            toInsert.push({
+              event_id: selectedEventId,
+              event_stage_id: stageId || null,
+              meal_type_id: mType.id,
+              label: std.label,
+              service_date: dateToUse,
+              start_time: std.start,
+              end_time: std.end,
+              is_active: true
+            });
+          }
+        }
+      }
+
+      if (toInsert.length === 0) {
+        toast.info("Janelas padrão já existem para esta data");
+        return;
+      }
+
+      const { error } = await supabase.from("meal_windows").insert(toInsert);
+      if (error) throw error;
+
+      toast.success(`${toInsert.length} janelas geradas para ${dateToUse}`);
+      qc.invalidateQueries({ queryKey: ["meal_windows"] });
+    } catch (e: any) {
+      toast.error("Erro: " + e.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const filteredWindows = useMemo(() => {
     if (!windows) return [];
     return windows.filter((w: any) => {
@@ -159,9 +214,11 @@ export default function AlimentacaoJanelasPage() {
         (statusFilter === "active" && w.is_active) ||
         (statusFilter === "inactive" && !w.is_active);
 
-      return matchesSearch && matchesStatus;
+      const matchesDate = !filterDate || w.service_date === filterDate;
+
+      return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [windows, searchTerm, statusFilter, mealTypesMap]);
+  }, [windows, searchTerm, statusFilter, filterDate, mealTypesMap]);
 
   const handleSubmit = (v: MealWindowFormValues) => {
     if (editing && !editing.isCopy) updateMut.mutate({ id: editing.id, ...v });
@@ -178,9 +235,14 @@ export default function AlimentacaoJanelasPage() {
           <p className="text-sm text-muted-foreground mt-1">Gestão de janelas de serviço de alimentação</p>
         </div>
         {canWrite && selectedEventId && (
-          <Button onClick={() => { setEditing(null); setDialogOpen(true); }} disabled={!mealTypes.length}>
-            <Plus className="mr-2 h-4 w-4" />Nova janela
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={generateDefaultWindows} disabled={!mealTypes.length || isGenerating || !filterDate}>
+              <Sparkles className="mr-2 h-4 w-4" />Gerar Padrão
+            </Button>
+            <Button onClick={() => { setEditing(null); setDialogOpen(true); }} disabled={!mealTypes.length}>
+              <Plus className="mr-2 h-4 w-4" />Nova janela
+            </Button>
+          </div>
         )}
       </div>
 
@@ -194,7 +256,14 @@ export default function AlimentacaoJanelasPage() {
             className="pl-9"
           />
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <Calendar className="h-4 w-4 text-muted-foreground hidden md:block" />
+          <Input 
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="w-full md:w-[150px] h-10"
+          />
           <Filter className="h-4 w-4 text-muted-foreground hidden md:block" />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full md:w-[150px]">
@@ -220,7 +289,11 @@ export default function AlimentacaoJanelasPage() {
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
           <Clock className="h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground font-medium">Nenhuma janela encontrada</p>
-          <p className="text-sm text-muted-foreground mt-1">Ajuste os filtros ou crie uma nova janela.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {filterDate 
+              ? `Não existem janelas para o dia ${filterDate.split('-').reverse().join('/')}. Clique em 'Gerar Padrão' para criá-las.`
+              : "Ajuste os filtros ou crie uma nova janela."}
+          </p>
         </div>
       ) : (
         <div className="rounded-lg border bg-card overflow-hidden">
