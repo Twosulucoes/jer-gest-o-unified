@@ -37,7 +37,7 @@ export default function AlimentacaoJanelasPage() {
   const [report, setReport] = useState<any>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const selectedEventId = useActiveEventId();
-  const { stageId, isStageScoped } = useStageScope();
+  const { stageId, isStageScoped, stage } = useStageScope();
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
   const { data: mealTypes = [] } = useQuery({
