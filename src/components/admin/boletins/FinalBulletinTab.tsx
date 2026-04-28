@@ -32,6 +32,18 @@ export default function FinalBulletinTab({ eventId }: { eventId: string }) {
   const finalBulletins = bulletins.filter(b => b.bulletin_type === 'final');
 
   const handleGenerate = () => {
+    if (!eventId) {
+      toast.error("Evento não identificado");
+      return;
+    }
+
+    if (!readiness?.allFinished) {
+      // Permitimos gerar, mas avisamos que o quadro de medalhas pode estar incompleto
+      toast.info("Atenção: Nem todas as etapas estão concluídas", {
+        description: "O boletim final será gerado com os resultados publicados até agora."
+      });
+    }
+
     generateBulletin.mutate({
       bulletinType: 'final'
     });
