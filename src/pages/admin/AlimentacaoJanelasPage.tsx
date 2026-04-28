@@ -34,6 +34,8 @@ export default function AlimentacaoJanelasPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [filterDate, setFilterDate] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [report, setReport] = useState<any>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   const selectedEventId = useActiveEventId();
   const { stageId, isStageScoped } = useStageScope();
   const canWrite = hasRole("admin") || hasRole("secretaria");
