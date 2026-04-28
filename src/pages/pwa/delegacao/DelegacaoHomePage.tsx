@@ -10,7 +10,7 @@ import {
   ClipboardList, Bus, Gavel, ChevronRight, AlertTriangle,
 } from "lucide-react";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
-import { PwaLayout } from "@/components/pwa/PwaLayout";
+import PwaLayout from "@/components/pwa/PwaLayout";
 
 interface AthleteRow {
   id: string;
