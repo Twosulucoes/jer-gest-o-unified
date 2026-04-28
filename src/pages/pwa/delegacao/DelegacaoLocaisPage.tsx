@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import PwaLayout from "@/components/pwa/PwaLayout";
 
 interface Venue {
   id: string;
@@ -24,9 +25,7 @@ export default function DelegacaoLocaisPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <PwaHeader title="Locais" icon={MapPin} backTo="/pwa/delegacao" />
-
+    <PwaLayout backTo="/pwa/delegacao" moduleTitle="Locais">
       <main className="p-4 max-w-md mx-auto space-y-3">
         {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
 
@@ -43,6 +42,6 @@ export default function DelegacaoLocaisPage() {
           </Card>
         ))}
       </main>
-    </div>
+    </PwaLayout>
   );
 }
