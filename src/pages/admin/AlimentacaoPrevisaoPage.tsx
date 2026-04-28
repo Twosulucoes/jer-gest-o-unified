@@ -12,22 +12,25 @@ import { Input } from "@/components/ui/input";
 import { 
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@/components/ui/select";
-import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
-} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
   Download, Calculator, FileDown, AlertTriangle, 
-  Users, Utensils, Calendar, MapPin, History
+  Users, Utensils, Calendar, MapPin, History, Clock
 } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+
+interface EligibilityTotals {
+  profiles: any[];
+  delegations: any[];
+  institutions: any[];
+  total: number;
+}
 
 export default function AlimentacaoPrevisaoPage() {
   const qc = useQueryClient();
@@ -117,52 +120,52 @@ export default function AlimentacaoPrevisaoPage() {
       return counts;
     },
     enabled: windows.length > 0,
-    refetchInterval: 30000, // Refresh every 30s
+    refetchInterval: 30000,
   });
 
-  // 5. Motor de Previsão (Calculated per window)
-  // This is complex because we need to count eligible participants
-  // For MVP, we'll fetch totals based on profiles/delegations
-  const { data: eligibilityTotals = {} } = useQuery({
+  // 5. Eligibility Totals Query
+  const { data: eligibilityTotals } = useQuery<EligibilityTotals>({
     queryKey: ["meal_eligibility_forecast", eventId, stageId],
     queryFn: async () => {
-      // Fetch participant counts grouped by profile, delegation and institution
       const [profileRes, delegationRes, institutionRes] = await Promise.all([
-        supabase.rpc("get_participant_counts_by_profile", { p_event_id: eventId, p_stage_id: stageId }),
-        supabase.rpc("get_participant_counts_by_delegation", { p_event_id: eventId, p_stage_id: stageId }),
-        supabase.rpc("get_participant_counts_by_institution", { p_event_id: eventId, p_stage_id: stageId }),
+        supabase.rpc("get_participant_counts_by_profile" as any, { p_event_id: eventId, p_stage_id: stageId }),
+        supabase.rpc("get_participant_counts_by_delegation" as any, { p_event_id: eventId, p_stage_id: stageId }),
+        supabase.rpc("get_participant_counts_by_institution" as any, { p_event_id: eventId, p_stage_id: stageId }),
       ]);
 
+      const profiles = (profileRes.data as any[]) || [];
+      const delegations = (delegationRes.data as any[]) || [];
+      const institutions = (institutionRes.data as any[]) || [];
+      
       return {
-        profiles: profileRes.data || [],
-        delegations: delegationRes.data || [],
-        institutions: institutionRes.data || [],
-        total: (profileRes.data || []).reduce((acc: number, curr: any) => acc + (curr.count || 0), 0)
+        profiles,
+        delegations,
+        institutions,
+        total: profiles.reduce((acc, curr) => acc + Number(curr.count || 0), 0)
       };
     },
     enabled: !!eventId,
+    initialData: { profiles: [], delegations: [], institutions: [], total: 0 }
   });
 
   const calculateForecast = (window: any) => {
-    // If no eligibility rules, forecast is the total of participants in the event/stage
     if (!window.meal_window_eligibility || window.meal_window_eligibility.length === 0) {
-      return eligibilityTotals.total || 0;
+      return eligibilityTotals.total;
     }
 
-    // Sum unique eligible groups
     let forecast = 0;
     const rules = window.meal_window_eligibility;
     
     rules.forEach((rule: any) => {
       if (rule.eligibility_type === "participant_type") {
-        const found = eligibilityTotals.profiles?.find((p: any) => p.type === rule.participant_type_value);
-        forecast += found?.count || 0;
+        const found = eligibilityTotals.profiles.find((p: any) => p.type === rule.participant_type_value);
+        forecast += Number(found?.count || 0);
       } else if (rule.eligibility_type === "delegation") {
-        const found = eligibilityTotals.delegations?.find((d: any) => d.id === rule.reference_id);
-        forecast += found?.count || 0;
+        const found = eligibilityTotals.delegations.find((d: any) => d.id === rule.reference_id);
+        forecast += Number(found?.count || 0);
       } else if (rule.eligibility_type === "institution") {
-        const found = eligibilityTotals.institutions?.find((i: any) => i.id === rule.reference_id);
-        forecast += found?.count || 0;
+        const found = eligibilityTotals.institutions.find((i: any) => i.id === rule.reference_id);
+        forecast += Number(found?.count || 0);
       }
     });
 
@@ -366,11 +369,10 @@ export default function AlimentacaoPrevisaoPage() {
               const forecast = calculateForecast(w);
               const consumed = consumptionCounts[w.id] || 0;
               const percent = forecast > 0 ? Math.min(100, (consumed / forecast) * 100) : 0;
-              const isEndingSoon = false; // Implement logic if needed
               
               return (
                 <Card key={w.id} className="overflow-hidden">
-                  <div className={`h-1 w-full ${percent >= 100 ? 'bg-amber-500' : 'bg-primary/20'}`} />
+                  <div className={`h-1 w-full ${percent >= 90 ? 'bg-amber-500' : 'bg-primary'}`} />
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <div>
