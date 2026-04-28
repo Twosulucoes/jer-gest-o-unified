@@ -3,6 +3,7 @@
 ## Status dos Módulos em Reformulação:
 - **Alojamento:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 1, 2 e 3 concluídas.
 - **Alimentação:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 1 e 2 concluídas.
+- **Navegação:** 🗺️ [Mapeamento Completo do Sistema](docs/navegacao-mapeamento-atual.md) (2026-04-28).
 
 ---
 
