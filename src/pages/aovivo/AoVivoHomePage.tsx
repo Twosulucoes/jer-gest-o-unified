@@ -33,9 +33,7 @@ export default function AoVivoHomePage() {
     setShowInstall(false);
   };
 
-  useEffect(() => {
-    if (!authLoading && !user) navigate("/aovivo/login");
-  }, [authLoading, user, navigate]);
+  // Protection is now handled by ProtectedRoute in App.tsx
 
   const { data: matches = [], isLoading, refetch } = useQuery({
     queryKey: ["aovivo_matches", user?.id, activeEvent?.id],
