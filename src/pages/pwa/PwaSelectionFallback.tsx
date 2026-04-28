@@ -8,6 +8,7 @@ import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getOfflineQueue } from "@/lib/offlineQueue";
 import { getVoucherQueue } from "@/lib/voucherOffline";
+import { getAlojamentoQueue } from "@/hooks/useAlojamentoOffline";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -22,11 +23,21 @@ const PwaSelectionFallback = () => {
   const [selectedStageId, setSelectedStageId] = useState<string | null>(activeStageId);
   const [isVoluntary] = useState(!!activeStageId);
   const [pendingItems, setPendingItems] = useState(0);
+  const [pendingBreakdown, setPendingBreakdown] = useState<{label: string, count: number}[]>([]);
 
   useEffect(() => {
     const offlineCount = getOfflineQueue().filter(i => i.status === "pending" || i.status === "failed").length;
     const voucherCount = getVoucherQueue().filter(v => v.status === "pending" || v.status === "failed").length;
-    setPendingItems(offlineCount + voucherCount);
+    const alojamentoCount = getAlojamentoQueue().filter(a => a.status === "pending" || a.status === "failed").length;
+    
+    const total = offlineCount + voucherCount + alojamentoCount;
+    setPendingItems(total);
+
+    const breakdown = [];
+    if (offlineCount > 0) breakdown.push({ label: "Operações (Alimentação/Transporte)", count: offlineCount });
+    if (voucherCount > 0) breakdown.push({ label: "Vouchers", count: voucherCount });
+    if (alojamentoCount > 0) breakdown.push({ label: "Alojamento", count: alojamentoCount });
+    setPendingBreakdown(breakdown);
   }, []);
 
   const handleConfirm = async () => {
@@ -54,6 +65,7 @@ const PwaSelectionFallback = () => {
             from_event_id: activeEventId,
             to_event_id: selectedEventId,
             is_voluntary: isVoluntary,
+            from_path: from,
             timestamp: new Date().toISOString()
           }
         });
@@ -105,8 +117,13 @@ const PwaSelectionFallback = () => {
               <div className="space-y-1">
                 <p className="text-sm font-bold text-destructive uppercase tracking-tight">Bloqueio de Segurança</p>
                 <p className="text-xs text-destructive/80 font-medium">
-                  Existem {pendingItems} registros pendentes na fila offline. Sincronize todos os dados antes de trocar de etapa para evitar perda de informações.
+                  Você tem {pendingItems} registros pendentes. Sincronize todos os dados antes de trocar de etapa para evitar perda de informações.
                 </p>
+                <ul className="text-[10px] text-destructive/70 list-disc pl-4 mt-1 font-bold uppercase tracking-tighter">
+                  {pendingBreakdown.map((item, idx) => (
+                    <li key={idx}>{item.label}: {item.count}</li>
+                  ))}
+                </ul>
               </div>
             </div>
           )}

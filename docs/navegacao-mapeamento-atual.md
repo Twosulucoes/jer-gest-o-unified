@@ -2,7 +2,7 @@
 
 Este documento descreve o estado real da navegação do sistema JER Gestão, consolidando rotas, menus, permissões e componentes de layout em 28 de abril de 2026.
 
-> **Status:** Fase 4 (Saneamento) em andamento. Passo 3 concluído.
+> **Status:** Fase 4 (Saneamento) em andamento. Passo 4 concluído com correções táticas.
 
 ## 1. Visão Geral da Arquitetura de Navegação
 
@@ -367,3 +367,32 @@ O Passo 4 da Fase 4 está funcional mas necessita de dois ajustes técnicos ante
 - **Troca Bloqueada:** Com fila offline populada, o botão de confirmação é desabilitado e um alerta vermelho é exibido.
 - **Retorno de Fluxo:** Após a troca voluntária, o operador retorna automaticamente para a tela onde estava, mantendo o fluxo operacional.
 - **Paridade:** O padrão visual segue rigorosamente o design system consolidado na Fase 2.
+370: 
+371: ---
+372: 
+373: ## 16. Correções Táticas Pós-Auditoria — Passo 4 (2026-04-28)
+374: 
+375: **Veredito Final:** ✅ CONFORME.
+376: 
+377: ### 16.1. Extensão da Trava Offline (Alojamento)
+378: - **Status:** ✅ CONFORME.
+379: - **Ação:** O mecanismo de fila offline do Alojamento (`useAlojamentoOffline`) foi integrado à trava de segurança global na troca de etapa.
+380: - **Evidência:** `PwaSelectionFallback.tsx` agora importa `getAlojamentoQueue` e inclui seus registros pendentes na soma total e no detalhamento visual (breakdown) do alerta de segurança. O rodapé do PWA (`OfflineFooterIndicator`) também foi atualizado para refletir pendências do alojamento.
+381: 
+382: ### 16.2. Preservação do Retorno Contextual
+383: - **Status:** ✅ CONFORME.
+384: - **Ação:** Implementada a passagem de estado de navegação (`location state`) nos pontos de acesso voluntário à configuração de etapa.
+385: - **Evidência:**
+386:   - `PwaHeader.tsx`: Agora passa o objeto `location` atual como `state.from` ao navegar para `/pwa/configuracao`.
+387:   - `PwaLayout.tsx`: O menu de troca de etapa agora também preserva o contexto de origem.
+388:   - `PwaSelectionFallback.tsx`: Após a confirmação bem-sucedida, o sistema utiliza o `navigate(from)` onde `from` é extraído do estado da rota, garantindo o retorno ao PWA de origem. Em casos de fallback automático (sem etapa), o comportamento padrão de retorno à landing page ou destino pretendido é preservado.
+389: 
+390: ### 16.3. Trilha de Auditoria
+391: - **Status:** ✅ CONFORME.
+392: - **Ação:** Incluído o campo `from_path` no payload de auditoria da troca de etapa para rastreabilidade completa.
+393: 
+394: ### 16.4. Arquivos Modificados
+395: - `src/hooks/useAlojamentoOffline.ts`: Exposição do método `getAlojamentoQueue`.
+396: - `src/pages/pwa/PwaSelectionFallback.tsx`: Lógica de trava expandida e retorno contextual.
+397: - `src/components/pwa/PwaHeader.tsx`: Passagem de estado na navegação.
+398: - `src/components/pwa/PwaLayout.tsx`: Passagem de estado no switcher e atualização do indicador visual de sincronização.

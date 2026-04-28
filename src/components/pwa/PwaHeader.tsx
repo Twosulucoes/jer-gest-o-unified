@@ -1,5 +1,5 @@
 import { ArrowLeft, LogOut, ArrowLeftRight, Layers } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -22,6 +22,7 @@ interface PwaHeaderProps {
 
 export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignOut, rightSlot, actionsBar }: PwaHeaderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { roles } = useAuth();
   const { activeStage } = useStageContext();
   const { navigateToPwa } = usePwaNavigation();
@@ -76,7 +77,7 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
             </p>
             {(subtitle || activeStage) && (
               <button 
-                onClick={() => navigate("/pwa/configuracao")}
+                onClick={() => navigate("/pwa/configuracao", { state: { from: location } })}
                 className="truncate text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors active:scale-95"
               >
                 {activeStage && (

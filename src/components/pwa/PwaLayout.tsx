@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getOfflineQueue } from "@/lib/offlineQueue";
 import { getVoucherQueue } from "@/lib/voucherOffline";
+import { getAlojamentoQueue } from "@/hooks/useAlojamentoOffline";
 
 interface PwaLayoutProps {
   moduleTitle?: string;
@@ -174,7 +175,7 @@ export default function PwaLayout({
                     ))}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
-                      onClick={() => navigate("/pwa/configuracao")}
+                      onClick={() => navigate("/pwa/configuracao", { state: { from: location } })}
                       className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-amber-600 dark:text-amber-400"
                     >
                       <Layers className="h-5 w-5" />
@@ -213,7 +214,8 @@ function OfflineFooterIndicator() {
   useEffect(() => {
     const update = () => {
       const c = getOfflineQueue().filter(i => i.status === "pending" || i.status === "failed").length + 
-                getVoucherQueue().filter(v => v.status === "pending" || v.status === "failed").length;
+                getVoucherQueue().filter(v => v.status === "pending" || v.status === "failed").length +
+                getAlojamentoQueue().filter(a => a.status === "pending" || a.status === "failed").length;
       setCount(c);
     };
     update();

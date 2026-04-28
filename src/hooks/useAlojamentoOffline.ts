@@ -14,7 +14,7 @@ export interface OfflineOp {
 
 const STORAGE_KEY = "jer_alj_offline_queue";
 
-function loadQueue(): OfflineOp[] {
+export function getAlojamentoQueue(): OfflineOp[] {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
   } catch {
@@ -27,7 +27,7 @@ function saveQueue(queue: OfflineOp[]) {
 }
 
 export function useAlojamentoOffline() {
-  const [queue, setQueue] = useState<OfflineOp[]>(loadQueue);
+  const [queue, setQueue] = useState<OfflineOp[]>(getAlojamentoQueue);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const syncingRef = useRef(false);
 
@@ -95,7 +95,7 @@ export function useAlojamentoOffline() {
     if (syncingRef.current || !navigator.onLine) return;
     syncingRef.current = true;
 
-    const pending = loadQueue().filter((o) => o.status === "pending" || o.status === "failed");
+    const pending = getAlojamentoQueue().filter((o) => o.status === "pending" || o.status === "failed");
 
     for (const op of pending) {
       const success = await syncOne(op);
