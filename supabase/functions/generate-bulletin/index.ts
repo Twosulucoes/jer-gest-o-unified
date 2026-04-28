@@ -22,6 +22,8 @@ Deno.serve(async (req) => {
 
     if (!eventId) {
       return new Response(JSON.stringify({ 
+        code: "MISSING_EVENT_ID",
+        field: "eventId",
         error: "Evento não informado", 
         details: "O ID do evento é obrigatório para gerar o boletim." 
       }), {
@@ -32,6 +34,8 @@ Deno.serve(async (req) => {
 
     if (!bulletinType || !['daily', 'final'].includes(bulletinType)) {
       return new Response(JSON.stringify({ 
+        code: "INVALID_BULLETIN_TYPE",
+        field: "bulletinType",
         error: "Tipo de boletim inválido", 
         details: "O tipo de boletim deve ser 'daily' ou 'final'." 
       }), {
@@ -42,6 +46,8 @@ Deno.serve(async (req) => {
 
     if (bulletinType === 'daily' && !stageId) {
       return new Response(JSON.stringify({ 
+        code: "MISSING_STAGE_ID",
+        field: "stageId",
         error: "Etapa não informada", 
         details: "Para boletins diários, a seleção da etapa é obrigatória." 
       }), {
@@ -86,6 +92,8 @@ Deno.serve(async (req) => {
     
     if (matches.length === 0) {
       return new Response(JSON.stringify({ 
+        code: "NO_RESULTS_FOUND",
+        field: "matches",
         error: "Nenhum resultado publicado foi encontrado para os filtros selecionados.",
         details: "O boletim só pode ser gerado para resultados com status 'publicado'. Certifique-se de validar e publicar os resultados na Central de Resultados antes de tentar novamente."
       }), {
@@ -268,6 +276,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("Error generating bulletin:", err);
     return new Response(JSON.stringify({ 
+      code: "INTERNAL_ERROR",
       error: err.message || "Erro interno ao gerar boletim",
       details: "Se o problema persistir, verifique as permissões de storage ou entre em contato com o suporte."
     }), {
