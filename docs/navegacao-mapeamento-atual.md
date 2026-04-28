@@ -131,3 +131,92 @@ A navegação PWA começa em `/pwa` (`PwaLandingPage`), onde o usuário selecion
 2. **Contexto Etapa:** Módulos PWA exigem `activeStageId` em `/pwa/configuracao` antes de permitir o acesso às ferramentas de campo.
 3. **Redirecionamento:** O `/` redireciona para `/admin` ou `/pwa` dependendo do perfil detectado no `Index.tsx`.
 4. **Duplicidade de Telas:** Existem telas com nomes similares como `AlojamentoOcupacaoPage` (Admin) e `AlojamentoOcupacaoPage2` (PWA).
+
+---
+
+## 8. Complemento PWAs Padrão de Navegação
+
+Este complemento detalha o padrão de navegação e componentes de layout dos PWAs operacionais (alimentação, transporte, alojamento, coordenação técnica, delegação e resultados).
+
+### 8.1. Inventário Detalhado por PWA
+
+#### PWA: Alimentação
+- **Home:** `src/pages/pwa/alimentacao/AlimentacaoHomePage.tsx`. Exibe dashboard com KPIs (refeições hoje, janelas ativas), card da janela atual com progresso de ocupação e grade de ações (Scan, Buscar, Janelas, Histórico, Lista).
+- **Header:** Utiliza `PwaHeader` compartilhado. Elementos: Ícone `UtensilsCrossed`, Título "Alimentação", Subtítulo (Etapa ativa via context), Switcher de Idioma (PT/ES), Botão Sair.
+- **Footer/Bottom Bar:** Não possui barra inferior fixa na home (usa grade de ações); Telas internas como Scan também não possuem footer fixo (botão de scan é central).
+- **Botão Voltar:** Presente em todas as telas internas via `PwaHeader` (prop `backTo`). No Scan, volta para a home do módulo.
+- **Atualizar Dados:** Integrado no `PwaHeader` via componente `PwaRefreshButton` (ícone de recarga). Limpa caches e recarrega a página.
+- **Indicadores de Estado:** `OfflineSyncStatus` visível no topo do container. Mostra contagem de consumos pendentes.
+- **Contexto Operacional:** Exibido no card "Janela atual" (Nome da refeição, horário e status "Aberta").
+
+#### PWA: Transporte
+- **Home:** `src/pages/pwa/transporte/TransporteHomePage.tsx`. Exibe KPIs (embarques, viagens, pendentes), busca de rotas e lista de viagens categorizadas (Minhas, Disponíveis, Outros).
+- **Header:** Utiliza `PwaHeader` compartilhado. Elementos: Ícone `Bus`, Título "Transporte", Switcher de Idioma, Botão Sair.
+- **Footer/Bottom Bar:** Possui `PwaBottomBar` na home com botão fixo "Escanear QR de Embarque".
+- **Botão Voltar:** Presente no `PwaHeader`. Na home, o `backTo` aponta para `/pwa` (Landing Page).
+- **Indicadores de Estado:** `OfflineSyncStatus` visível no dashboard.
+- **Contexto Operacional:** Cada card de viagem indica a rota, veículo e contagem de passageiros embarcados.
+
+#### PWA: Alojamento
+- **Home:** `src/pages/pwa/alojamento/AlojamentoHomePage.tsx`. Exibe seletor de local (lodging unit), KPIs (ocupados, livres, reservados), lista de blocos e grade de ações.
+- **Header:** Utiliza `PwaHeader` compartilhado. Ícone `Building`, Título "Alojamento".
+- **Footer/Bottom Bar:** Possui barra inferior fixa customizada (não usa `PwaBottomBar`) na tela de Ocupação (`AlojamentoOcupacaoPage.tsx`) com botões para Scanner e Lista.
+- **Indicadores de Estado:** Mostra status de conexão (ícone Wifi) e contagem de sincronização pendente explicitamente no topo da home.
+- **Contexto Operacional:** Seletor de local define o contexto da unidade de alojamento ativa.
+
+#### PWA: Coordenação Técnica
+- **Home:** `src/pages/pwa/coordenacao/CoordenacaoHomePage.tsx`. Dashboard de partidas (hoje, em curso, finalizadas), alertas de ocorrências pendentes, agenda do dia e grade de ações.
+- **Header:** `PwaHeader` com ícone `Trophy` e título "Coordenação".
+- **Contexto Operacional:** Indicadores de partidas "Em curso" com status "Live".
+
+#### PWA: Delegação
+- **Home:** `src/pages/pwa/delegacao/DelegacaoHomePage.tsx`. Identificação da delegação/escola, KPIs de atletas/credenciados, alertas de pendências e grade de ações.
+- **Header:** `PwaHeader` com ícone `Users` e título dinâmico com o nome da delegação.
+- **Contexto Operacional:** Subtítulo dinâmico exibindo nome do Chefe da Delegação.
+
+#### PWA: Resultados
+- **Home:** `src/pages/pwa/resultados/ResultadosHomePage.tsx`. Lista de modalidades vinculadas ao coordenador.
+- **Header:** `PwaHeader` com ícone `Trophy` e título "Lançamento de Resultados".
+- **Comportamento:** Redireciona automaticamente se houver apenas uma modalidade vinculada.
+
+---
+
+### 8.2. Tabela Comparativa de Padrões
+
+| Aspecto | Alimentação | Transporte | Alojamento | Coordenação | Delegação | Resultados |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Header (PwaHeader)** | Conforme | Conforme | Conforme | Conforme | Conforme | Conforme |
+| **Footer Fixo (Home)** | Ausente | Conforme | Ausente | Ausente | Ausente | Ausente |
+| **Botão Voltar Consistente**| Conforme | Conforme | Conforme | Conforme | Conforme | Parcial |
+| **Indicador Offline** | Conforme | Conforme | Conforme | Parcial | Ausente | Ausente |
+| **Switcher de Idioma** | Conforme | Conforme | Conforme | Conforme | Conforme | Conforme |
+| **Botão Sair (Header)** | Conforme | Conforme | Conforme | Conforme | Conforme | Conforme |
+| **Contexto Ativo Visível** | Conforme | Conforme | Conforme | Conforme | Conforme | Parcial |
+| **Botão Atualizar (Header)**| Conforme | Conforme | Conforme | Conforme | Conforme | Conforme |
+
+---
+
+### 8.3. Inconsistências de Padrão Observadas
+
+1. **Uso de Footer/Bottom Bar:** Apenas o PWA de Transporte utiliza o componente `PwaBottomBar` de forma consistente na home. O PWA de Alojamento implementa uma barra fixa customizada na tela de ocupação, enquanto os outros módulos usam apenas `PwaActionGrid` no corpo do scroll.
+2. **Indicador de Sincronização:** Alimentação e Transporte usam o componente `OfflineSyncStatus`, enquanto o Alojamento usa uma implementação manual de ícones de Wifi e contadores no topo da tela.
+3. **Navegação de Retorno:** A maioria dos PWAs usa `backTo="/pwa"` para retornar à Landing Page, mas o PWA de Resultados no `PwaHeader` não define `backTo` explicitamente na Home, dependendo do comportamento default do navegador ou do botão Sair.
+4. **Contexto de Etapa/Evento:** No `PwaHeader`, o nome da etapa é exibido automaticamente via context, mas alguns PWAs (como Alimentação) tentam passar `subtitle` manualmente, gerando duplicidade ou inconsistência visual na segunda linha do header.
+5. **Acesso ao Scanner:** Transporte coloca o Scanner em um botão fixo no rodapé. Alimentação e Alojamento colocam na grade de ações (`ActionGrid`) e também dentro de contextos específicos (card de janela ou barra customizada).
+
+---
+
+### 8.4. Mapeamento de Componentes de Layout PWA
+
+- **`PwaHeader.tsx` (`src/components/pwa/`):** Componente central de navegação superior. Gerencia título, ícone, botões de voltar, sair, switcher de idioma e o botão de refresh. É o componente mais unificado do sistema operacional.
+- **`PwaScreen.tsx` (`src/components/pwa/`):**
+  - `PwaScreen`: Wrapper raiz que aplica estilos de fundo e áreas seguras.
+  - `PwaContainer`: Gerencia largura máxima mobile-first (sm, md, lg) e paddings laterais.
+  - `PwaBottomBar`: Barra fixa no rodapé (usada principalmente no Transporte).
+- **`PwaDashboardPrimitives.tsx` (`src/components/pwa/`):** Contém `PwaStatTriplet` (os 3 cards de KPI do topo) e `PwaSectionLabel`.
+- **`PwaActionGrid.tsx` (`src/components/pwa/`):** Grade de ícones para navegação secundária dentro do módulo.
+- **`PwaListItem.tsx` (`src/components/pwa/`):** Padrão de linha de lista com avatar, título e badge de status.
+- **`PwaRefreshButton.tsx` (`src/components/pwa/`):** Botão de "hard refresh" integrado ao header para limpar caches.
+- **`OfflineSyncStatus.tsx` (`src/components/pwa/`):** Alerta de registros pendentes de sincronização.
+
+**Observação:** Não existe um `PwaLayout` único que envolva as rotas (como o `AdminLayout`). Cada página PWA importa e monta os componentes (`PwaHeader`, `PwaContainer`, etc.) individualmente, o que explica as pequenas variações de posicionamento de elementos como o `OfflineSyncStatus`.
