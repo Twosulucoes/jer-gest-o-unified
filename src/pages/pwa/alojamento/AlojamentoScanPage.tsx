@@ -27,7 +27,7 @@ import {
 import { extractQrToken } from "@/lib/resolveQrCredential";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
-import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
+import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { useAuth } from "@/hooks/useAuth";
 import { addToVoucherQueue } from "@/lib/voucherOffline";
@@ -121,7 +121,7 @@ export default function AlojamentoScanPage() {
     // Auto-detecção de voucher
     if (isVoucherQr(rawValue)) {
       if (!facilityId) {
-        toast.error(getPwaMessage("ERR_SELECT_FACILITY", lang));
+        toast.error(getSystemMessage("ERR_SELECT_FACILITY", lang));
         navigate("/pwa/alojamento");
         return;
       }
@@ -135,7 +135,7 @@ export default function AlojamentoScanPage() {
           participant_type: "Voucher",
           message: successMsg,
         });
-        toast.info(getPwaMessage("VOUCHER_OFFLINE_RECORDED", lang));
+        toast.info(getSystemMessage("VOUCHER_OFFLINE_RECORDED", lang));
         recordOutcome("ok");
         if (navigator.vibrate) navigator.vibrate(200);
         reopenIfContinuous();
@@ -172,12 +172,12 @@ export default function AlojamentoScanPage() {
 
     const token = extractQrToken(rawValue);
     if (!token) {
-      toast.error(getPwaMessage("ERR_INVALID_QR", lang));
+      toast.error(getSystemMessage("ERR_INVALID_QR", lang));
       return;
     }
 
     if (!facilityId) {
-      toast.error(getPwaMessage("ERR_SELECT_FACILITY", lang));
+      toast.error(getSystemMessage("ERR_SELECT_FACILITY", lang));
       navigate("/pwa/alojamento");
       return;
     }
@@ -252,35 +252,35 @@ export default function AlojamentoScanPage() {
       setResult(res);
 
       if (res.ok) {
-        const msg = mode === "validate" ? getPwaMessage("QR_VALID", lang) :
-                    mode === "checkin" ? getPwaMessage("CHECKIN_SUCCESS", lang) : 
-                    mode === "presence" ? getPwaMessage("PRESENCE_SUCCESS", lang) :
-                    getPwaMessage("CHECKOUT_SUCCESS", lang);
+        const msg = mode === "validate" ? getSystemMessage("QR_VALID", lang) :
+                    mode === "checkin" ? getSystemMessage("CHECKIN_SUCCESS", lang) : 
+                    mode === "presence" ? getSystemMessage("PRESENCE_SUCCESS", lang) :
+                    getSystemMessage("CHECKOUT_SUCCESS", lang);
         toast.success(msg);
         recordOutcome("ok");
         if (navigator.vibrate) navigator.vibrate(200);
         reopenIfContinuous();
       } else {
         const errorMessages: Record<string, string> = {
-          INVALID_TOKEN: getPwaMessage("ERR_INVALID_QR", lang),
-          NOT_A_PERSON: getPwaMessage("ERR_NOT_FOUND", lang),
-          UNDER_12: getPwaMessage("ERR_UNDER_12", lang),
-          ALREADY_CHECKED_IN: getPwaMessage("ERR_ALREADY_STAYING", lang),
-          NOT_CHECKED_IN: getPwaMessage("ERR_NOT_STAYING", lang),
-          GENDER_MISMATCH: getPwaMessage("GENDER_MISMATCH", lang),
-          UNIT_FULL: getPwaMessage("CAPACITY_FULL", lang),
-          CAPACITY_NOT_DEFINED: getPwaMessage("CAPACITY_NOT_DEFINED", lang),
+          INVALID_TOKEN: getSystemMessage("ERR_INVALID_QR", lang),
+          NOT_A_PERSON: getSystemMessage("ERR_NOT_FOUND", lang),
+          UNDER_12: getSystemMessage("ERR_UNDER_12", lang),
+          ALREADY_CHECKED_IN: getSystemMessage("ERR_ALREADY_STAYING", lang),
+          NOT_CHECKED_IN: getSystemMessage("ERR_NOT_STAYING", lang),
+          GENDER_MISMATCH: getSystemMessage("GENDER_MISMATCH", lang),
+          UNIT_FULL: getSystemMessage("CAPACITY_FULL", lang),
+          CAPACITY_NOT_DEFINED: getSystemMessage("CAPACITY_NOT_DEFINED", lang),
           PRESENCE_WITHOUT_CHECKIN: "Pessoa sem check-in ativo.",
           PRESENCE_WRONG_UNIT: "Pessoa em unidade divergente.",
           PRESENCE_ALREADY_REGISTERED: "Presença já registrada hoje.",
         };
-        toast.error(errorMessages[res.error] || res.message || res.error || getPwaMessage("ERR_UNKNOWN", lang));
+        toast.error(errorMessages[res.error] || res.message || res.error || getSystemMessage("ERR_UNKNOWN", lang));
         recordOutcome("error");
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         reopenIfContinuous();
       }
     } catch (err: any) {
-      toast.error(`${getPwaMessage("ERR_UNKNOWN", lang)}: ` + (err.message || "desconhecido"));
+      toast.error(`${getSystemMessage("ERR_UNKNOWN", lang)}: ` + (err.message || "desconhecido"));
       recordOutcome("error");
       reopenIfContinuous();
     }

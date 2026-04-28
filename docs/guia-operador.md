@@ -117,3 +117,15 @@ Qualquer pessoa pode acompanhar resultados em tempo real:
 | **QR Code não lê** | Tente aproximar ou afastar o celular. Se não funcionar, use "Digitar Código" manualmente |
 | **Tela travou** | Feche e abra o navegador novamente. Se persistir, limpe o cache |
 | **Sem internet** | Alguns módulos funcionam offline. Quando voltar a internet, os dados sincronizam automaticamente |
+
+---
+
+## Trocar Etapa ou Evento de Trabalho
+
+Se você precisar trocar de etapa (mudança de sede ou etapa encerrada):
+
+1. Toque no **nome da etapa** (ex: "Capital - 1ª Etapa") que aparece no topo da tela.
+2. Alternativamente, toque no botão de menu no canto inferior direito e selecione **"Trocar Etapa"**.
+3. Selecione o novo Evento e a nova Etapa.
+4. **Importante:** Se você tiver dados offline pendentes (contagem no botão "Sync"), o sistema **não permitirá** a troca. Sincronize todos os dados antes de prosseguir.
+5. Confirme a troca — o sistema recarrega com os novos dados.

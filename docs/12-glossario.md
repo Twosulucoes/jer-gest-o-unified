@@ -61,3 +61,4 @@
 | **combat_detail** | Campo JSONB em competition_match_results para detalhes de combate |
 | **PWA** | Progressive Web App — aplicação web instalável no celular |
 | **Ao Vivo** | PWA para mesários registrarem partidas em tempo real |
+| **System Messages** | Dicionário central de mensagens compartilhadas entre PWAs e Admin (`systemMessages.ts`) |

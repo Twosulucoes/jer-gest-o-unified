@@ -1,6 +1,6 @@
 import { voucherErrorMessage } from "./voucherMessages";
 
-export const PWA_MESSAGE_CODES = [
+export const SYSTEM_MESSAGE_CODES = [
   "ERR_NOT_FOUND",
   "ERR_ALREADY_REGISTERED",
   "ERR_SESSION_EXPIRED",
@@ -15,7 +15,6 @@ export const PWA_MESSAGE_CODES = [
   "NO_RESULTS",
   "MANUAL_SEARCH",
   "QR_VALID",
-  // VOUCHER keys removed (duplicated in voucherMessages.ts)
   "MANUAL_BOARDING",
   "FULL_NAME",
   "PASSENGER_NAME_PLACEHOLDER",
@@ -56,11 +55,11 @@ export const PWA_MESSAGE_CODES = [
   "PRESENCE_SUCCESS"
 ] as const;
 
-export type PwaMessageCode = typeof PWA_MESSAGE_CODES[number];
+export type SystemMessageCode = typeof SYSTEM_MESSAGE_CODES[number];
 
 export type PwaLang = "pt" | "es";
 
-const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
+const MESSAGES: Record<SystemMessageCode, Record<PwaLang, string>> = {
   ERR_NOT_FOUND: {
     pt: "Credencial não encontrada",
     es: "Credencial no encontrada",
@@ -163,7 +162,7 @@ const MESSAGES: Record<PwaMessageCode, Record<PwaLang, string>> = {
   },
   ERR_SELECT_FACILITY: {
     pt: "Selecione um local primeiro",
-    es: "Seleccione un local primero",
+    es: "Seleccione un local primeiro",
   },
   ERR_UNDER_12: {
     pt: "Pessoa com idade inferior a 12 anos",
@@ -276,7 +275,6 @@ export function getPwaLang(): PwaLang {
   const stored = localStorage.getItem("pwa_lang");
   if (stored === "es" || stored === "pt") return stored;
   
-  // Try browser language
   const browserLang = navigator.language.split("-")[0];
   if (browserLang === "es") return "es";
   
@@ -287,15 +285,19 @@ export function setPwaLang(lang: PwaLang) {
   localStorage.setItem("pwa_lang", lang);
 }
 
-export function getPwaMessage(code: PwaMessageCode, lang?: PwaLang): string {
+export function getSystemMessage(code: SystemMessageCode, lang?: PwaLang): string {
   const l = lang || getPwaLang();
-  // @ts-ignore - Some codes might have been removed but are still referenced in orphan components
-  return MESSAGES[code] ? (MESSAGES[code][l] || MESSAGES[code]["pt"]) : "Message Not Found";
+  // @ts-ignore
+  return MESSAGES[code] ? (MESSAGES[code][l] || MESSAGES[code]["pt"]) : code;
 }
 
 /**
- * @deprecated Prefira `voucherErrorMessage` de `@/lib/voucherMessages`
- * (dicionário único). Mantido como fachada para compatibilidade.
+ * @deprecated Use `getSystemMessage` instead.
+ */
+export const getPwaMessage = getSystemMessage;
+
+/**
+ * @deprecated Use `voucherErrorMessage` from `@/lib/voucherMessages`.
  */
 export function getVoucherMessage(reason: string | undefined, lang?: PwaLang): string {
   return voucherErrorMessage(reason, lang).text;

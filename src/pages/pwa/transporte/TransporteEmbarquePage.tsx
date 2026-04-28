@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
-import { getPwaMessage, getVoucherMessage, getPwaLang } from "@/lib/pwa-messages";
+import { getSystemMessage, getVoucherMessage, getPwaLang } from "@/lib/systemMessages";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -280,7 +280,7 @@ export default function TransporteEmbarquePage() {
       }
 
       if (!participantId) {
-        toast.error(getPwaMessage("ERR_NOT_FOUND", lang));
+        toast.error(getSystemMessage("ERR_NOT_FOUND", lang));
         return;
       }
 
@@ -319,7 +319,7 @@ export default function TransporteEmbarquePage() {
 
       if (passenger) {
         if (passenger.boarded) {
-          toast.info(`${name} ${getPwaMessage("ALREADY_BOARDED", lang)}`);
+          toast.info(`${name} ${getSystemMessage("ALREADY_BOARDED", lang)}`);
           return;
         }
         const { error } = await supabase
@@ -335,11 +335,11 @@ export default function TransporteEmbarquePage() {
       }
 
 
-      toast.success(`${viaVoucher ? "🎫 " : ""}${name} ${getPwaMessage("SUCCESS_BOARDING", lang)}`);
+      toast.success(`${viaVoucher ? "🎫 " : ""}${name} ${getSystemMessage("SUCCESS_BOARDING", lang)}`);
       if (navigator.vibrate) navigator.vibrate(200);
       await fetchPassengers();
     } catch (err: any) {
-      toast.error(`${getPwaMessage("ERR_UNKNOWN", lang)}: ` + (err.message || "desconhecido"));
+      toast.error(`${getSystemMessage("ERR_UNKNOWN", lang)}: ` + (err.message || "desconhecido"));
     }
   };
 
@@ -347,12 +347,12 @@ export default function TransporteEmbarquePage() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
         <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
-        <h2 className="text-lg font-bold text-foreground mb-2">{getPwaMessage("ACESSO_BLOQUEADO", lang)}</h2>
+        <h2 className="text-lg font-bold text-foreground mb-2">{getSystemMessage("ACESSO_BLOQUEADO", lang)}</h2>
         <p className="text-muted-foreground text-sm mb-6">
-          {getPwaMessage("APENAS_MOTORISTA", lang)}
+          {getSystemMessage("APENAS_MOTORISTA", lang)}
         </p>
         <Button variant="outline" onClick={() => navigate("/pwa/transporte", { replace: true })}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> {getPwaMessage("VOLTAR", lang)}
+          <ArrowLeft className="h-4 w-4 mr-2" /> {getSystemMessage("VOLTAR", lang)}
         </Button>
       </div>
     );
@@ -366,7 +366,7 @@ export default function TransporteEmbarquePage() {
             <button onClick={() => navigate("/pwa/transporte")} className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <span className="font-heading font-semibold tracking-tight text-sm">{getPwaMessage("EMBARQUE", lang)}</span>
+            <span className="font-heading font-semibold tracking-tight text-sm">{getSystemMessage("EMBARQUE", lang)}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 text-xs bg-[hsl(var(--module-accent)/0.16)] rounded-full px-2.5 py-1">
@@ -380,16 +380,16 @@ export default function TransporteEmbarquePage() {
         </div>
         <div className="flex items-center gap-2 mt-2">
           <Button size="sm" variant="module" className="h-8 text-xs flex-1" onClick={() => setManualOpen(true)}>
-            <UserPlus className="h-3.5 w-3.5 mr-1" /> {getPwaMessage("MANUAL", lang)}
+            <UserPlus className="h-3.5 w-3.5 mr-1" /> {getSystemMessage("MANUAL", lang)}
           </Button>
           <Button size="sm" variant="module" className="h-8 text-xs flex-1" onClick={() => setScannerOpen(true)}>
-            <ScanLine className="h-3.5 w-3.5 mr-1" /> {getPwaMessage("SCAN", lang)}
+            <ScanLine className="h-3.5 w-3.5 mr-1" /> {getSystemMessage("SCAN", lang)}
           </Button>
           <Button size="sm" variant="module" className="h-8 text-xs" onClick={() => navigate(`/pwa/transporte/viagem/${tripId}/passageiros`)}>
             <Users className="h-3.5 w-3.5" />
           </Button>
           <Button size="sm" variant="destructive" className="h-8 text-xs flex-1" onClick={() => setFinishOpen(true)}>
-            {getPwaMessage("FINALIZAR", lang)}
+            {getSystemMessage("FINALIZAR", lang)}
           </Button>
         </div>
       </header>
@@ -414,7 +414,7 @@ export default function TransporteEmbarquePage() {
         {loading && <div className="grid grid-cols-2 gap-2">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>}
 
         {!loading && passengers.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground text-sm">{getPwaMessage("NENHUM_PASSAGEIRO", lang)}</div>
+          <div className="text-center py-8 text-muted-foreground text-sm">{getSystemMessage("NENHUM_PASSAGEIRO", lang)}</div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -423,10 +423,10 @@ export default function TransporteEmbarquePage() {
               <CardContent className="p-2.5 flex items-center justify-between">
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate">{p.full_name}</span>
-                  {p.is_manual && <span className="text-[10px] text-muted-foreground">{getPwaMessage("MANUAL_BOARDING", lang)}</span>}
+                  {p.is_manual && <span className="text-[10px] text-muted-foreground">{getSystemMessage("MANUAL_BOARDING", lang)}</span>}
                 </div>
                 <Badge variant={p.boarded ? "module" : "outline"} className="text-[10px] shrink-0">
-                  {p.boarded ? getPwaMessage("EMBARCADO", lang) : getPwaMessage("PENDENTE", lang)}
+                  {p.boarded ? getSystemMessage("EMBARCADO", lang) : getSystemMessage("PENDENTE", lang)}
                 </Badge>
               </CardContent>
             </Card>
@@ -434,7 +434,7 @@ export default function TransporteEmbarquePage() {
         </div>
       </main>
 
-      <QrCodeScanner isOpen={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} title={getPwaMessage("SCAN_EMBARQUE", lang)} />
+      <QrCodeScanner isOpen={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} title={getSystemMessage("SCAN_EMBARQUE", lang)} />
 
       {tripId && (
         <>

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { getPwaLang, setPwaLang } from "@/lib/pwa-messages";
+import { getPwaLang, setPwaLang } from "@/lib/systemMessages";
 import { useStageContext } from "@/contexts/StageContext";
 import { usePwaNavigation, type PwaModule } from "@/hooks/pwa/usePwaNavigation";
 import { PwaRefreshButton } from "./PwaRefreshButton";
@@ -75,16 +75,19 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
               {title}
             </p>
             {(subtitle || activeStage) && (
-              <p className="truncate text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+              <button 
+                onClick={() => navigate("/pwa/configuracao")}
+                className="truncate text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors active:scale-95"
+              >
                 {activeStage && (
                   <>
                     <Layers className="h-2.5 w-2.5 inline shrink-0" />
-                    <span>{activeStage.name}</span>
+                    <span className="font-bold">{activeStage.name}</span>
                     {subtitle && <span className="mx-1 opacity-40">•</span>}
                   </>
                 )}
                 {subtitle}
-              </p>
+              </button>
             )}
           </div>
         </div>

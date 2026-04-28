@@ -12,7 +12,7 @@ import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
-import { getPwaMessage, getPwaLang } from "@/lib/pwa-messages";
+import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
 import {
   loadScanPreferences,
   saveScanPreferences,
@@ -327,7 +327,7 @@ export default function TransporteScanPage() {
               <div className="min-w-0">
                 {result.ok && (
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                    {result.source === "manual" ? getPwaMessage("MANUAL_SEARCH", lang) : getPwaMessage("QR_VALID", lang)}
+                    {result.source === "manual" ? getSystemMessage("MANUAL_SEARCH", lang) : getSystemMessage("QR_VALID", lang)}
                   </p>
                 )}
                 <span className="text-sm font-medium leading-snug">{result.message}</span>

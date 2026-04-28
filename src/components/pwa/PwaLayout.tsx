@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { 
   Home, Scan, Search, History, ClipboardList, Users, 
   Calendar, Bus, Trophy, LayoutDashboard, Radio, LogOut, 
-  Menu, ShieldCheck, AlertCircle, Settings
+  Menu, ShieldCheck, AlertCircle, Settings, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -172,6 +172,17 @@ export default function PwaLayout({
                         <span className="font-bold text-sm">{m.label}</span>
                       </DropdownMenuItem>
                     ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => navigate("/pwa/configuracao")}
+                      className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-amber-600 dark:text-amber-400"
+                    >
+                      <Layers className="h-5 w-5" />
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm">Trocar Etapa</span>
+                        <span className="text-[10px] opacity-80 uppercase font-black">{activeStage?.name || "Nenhuma Selecionada"}</span>
+                      </div>
+                    </DropdownMenuItem>
                     {(hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica")) && (
                       <>
                         <DropdownMenuSeparator />
