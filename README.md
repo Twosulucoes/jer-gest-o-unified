@@ -4,7 +4,7 @@
 - **Alojamento:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 1, 2 e 3 concluídas.
 - **Alimentação:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 1, 2 e 3 concluídas.
 - **Transporte:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 2 e 3 concluídas.
-- **Navegação:** ✅ FASE 4 — Passo 4 Concluído (Refator de Mensagens e Troca de Contexto) - 🗺️ [Mapeamento Atualizado](docs/navegacao-mapeamento-atual.md) (2026-04-28).
+- **Navegação:** ✅ FASE 4 — Passo 4 Concluído (Refator de Mensagens e Troca de Contexto) - ⚠️ [Mini-auditoria](docs/navegacao-mapeamento-atual.md#15-mini-auditoria-de-nao-regressao--fase-4-passo-4-2026-04-28) aponta ajustes necessários em travas e retorno contextual.
 
 ---
 
