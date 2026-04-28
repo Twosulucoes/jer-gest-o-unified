@@ -240,7 +240,7 @@ import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 // Ao Vivo PWA (lazy loaded)
 import StatusPage from "./pages/Status";
 
-const AoVivoLoginPage = lazy(() => import("./pages/aovivo/AoVivoLoginPage"));
+// AoVivoLoginPage removed — unified login at /login
 const AoVivoHomePage = lazy(() => import("./pages/aovivo/AoVivoHomePage"));
 const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
 
