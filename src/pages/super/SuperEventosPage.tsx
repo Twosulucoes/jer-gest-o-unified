@@ -243,16 +243,48 @@ export default function SuperEventosPage() {
                     </button>
                   </TableCell>
                   <TableCell className="text-center">
-                    <button 
-                      onClick={() => toggleRegistros(event.id, event.registros_mode_enabled)}
-                      className={cn(
-                        "p-2 rounded-lg transition-colors",
-                        event.registros_mode_enabled ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30" : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700"
-                      )}
-                      title={event.registros_mode_enabled ? "Desativar Modo Registros" : "Ativar Modo Registros"}
-                    >
-                      <ListChecks className="h-4 w-4" />
-                    </button>
+                    <div className="flex flex-col items-center gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-2 bg-zinc-800/50 px-3 py-1.5 rounded-full border border-zinc-700/50">
+                              <span className={cn(
+                                "text-[10px] font-bold uppercase tracking-wider",
+                                event.registros_mode_enabled ? "text-amber-400" : "text-zinc-500"
+                              )}>
+                                {event.registros_mode_enabled ? "Registros" : "Competição"}
+                              </span>
+                              <Switch 
+                                checked={event.registros_mode_enabled}
+                                onCheckedChange={() => setConfirmDialog({ 
+                                  open: true, 
+                                  eventId: event.id, 
+                                  current: event.registros_mode_enabled,
+                                  eventName: event.name 
+                                })}
+                                className="data-[state=checked]:bg-amber-500"
+                              />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs text-xs">
+                            <p>
+                              {event.registros_mode_enabled 
+                                ? "Modo Registros ATIVO: Caminho simplificado para registro de partidas e resultados." 
+                                : "Modo Competição COMPLEXO: Estrutura completa de fases, grupos e chaves."}
+                            </p>
+                            <p className="mt-1 opacity-70">Clique no toggle para alterar o modo do evento.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <button
+                        onClick={() => setHistorySheet({ open: true, eventId: event.id, eventName: event.name })}
+                        className="flex items-center gap-1 text-[9px] text-zinc-500 hover:text-zinc-300 transition-colors uppercase font-bold tracking-tighter"
+                      >
+                        <History className="h-3 w-3" />
+                        Ver Histórico
+                      </button>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={statusColors[event.status] || "text-zinc-400"}>
