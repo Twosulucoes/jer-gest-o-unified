@@ -49,6 +49,7 @@ export default function EventuaisPage() {
   const [search, setSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [involvementType, setInvolvementType] = useState("");
