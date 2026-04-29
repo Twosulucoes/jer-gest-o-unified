@@ -602,7 +602,7 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
 
   const mutation = useMutation({
     mutationFn: async () => {
-      // Validação coerente de voucher_type antes de emitir
+      console.log("DEBUG: Iniciando emissão de voucher individual...");
       const vType = isNominal ? "nominal" : "aggregate";
       
       const payload: any = {
@@ -614,7 +614,10 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
       };
       
       if (isNominal) {
-        if (!eventualId) throw new Error("ID da pessoa eventual é obrigatório para vouchers nominais.");
+        if (!eventualId) {
+          console.error("DEBUG: Erro de validação - eventualId ausente");
+          throw new Error("ID da pessoa eventual é obrigatório para vouchers nominais.");
+        }
         payload.eventual_person_id = eventualId;
       }
       
@@ -628,12 +631,17 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
         payload.target_facility_id = instanceId; 
         payload.scope_lodging = true; 
       } else {
+        console.error("DEBUG: Erro de validação - serviceType inválido:", serviceType);
         throw new Error("Tipo de serviço inválido.");
       }
       
-      if (!instanceId) throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
+      if (!instanceId) {
+        console.error("DEBUG: Erro de validação - instanceId ausente");
+        throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
+      }
 
-      // Payload sanitizado para auditoria (evita qr_code_value e campos sensíveis)
+      console.log("DEBUG: Enviando payload ao Supabase:", JSON.stringify(payload, null, 2));
+
       const sanitizedAuditPayload = {
         event_id: eventId,
         voucher_type: vType,
@@ -641,14 +649,18 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
         eventual_person_id: payload.eventual_person_id,
         service_type: serviceType,
         instance_id: instanceId,
-        qr_hash: btoa(payload.qr_code_value).slice(0, 10), // Hash reduzido para rastreio sem expor código
+        qr_hash: btoa(payload.qr_code_value).slice(0, 10),
         audit_info: "individual_emission"
       };
 
       try {
         const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
-        if (error) throw error;
+        if (error) {
+          console.error("DEBUG: Erro retornado pelo Supabase (vouchers):", error);
+          throw error;
+        }
         
+        console.log("DEBUG: Voucher inserido com sucesso. Gravando auditoria...");
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
@@ -659,13 +671,14 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
 
         return data;
       } catch (err: any) {
+        console.error("DEBUG: Exceção capturada no fluxo de emissão:", err);
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: vType,
           payload: { ...sanitizedAuditPayload, audit_info: "individual_failed" },
           status: 'error',
-          error_message: err.message
+          error_message: err.message || JSON.stringify(err)
         });
         throw err;
       }
@@ -758,10 +771,19 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      // Validação de tipo de serviço em lote
-      if (!serviceType) throw new Error("Selecione o tipo de serviço.");
-      if (!instanceId) throw new Error("Selecione a instância do serviço.");
-      if (quantity <= 0) throw new Error("A quantidade deve ser maior que zero.");
+      console.log("DEBUG: Iniciando emissão de lote...");
+      if (!serviceType) {
+        console.error("DEBUG: Erro de validação - serviceType ausente");
+        throw new Error("Selecione o tipo de serviço.");
+      }
+      if (!instanceId) {
+        console.error("DEBUG: Erro de validação - instanceId ausente");
+        throw new Error("Selecione a instância do serviço.");
+      }
+      if (quantity <= 0) {
+        console.error("DEBUG: Erro de validação - quantity <= 0");
+        throw new Error("A quantidade deve ser maior que zero.");
+      }
 
       const auditPayload = { 
         service_type: serviceType, 
@@ -772,6 +794,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
       };
 
       try {
+        console.log("DEBUG: Criando registro do lote...");
         const { data: batch, error: bErr } = await supabase.from("service_voucher_batches").insert({
           event_id: eventId,
           label,
@@ -782,13 +805,16 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           target_facility_id: serviceType === "lodging" ? instanceId : null,
         }).select().single();
         
-        if (bErr) throw bErr;
+        if (bErr) {
+          console.error("DEBUG: Erro ao criar lote (batches):", bErr);
+          throw bErr;
+        }
 
         const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
           event_id: eventId,
           batch_id: batch.id,
           participant_id: null,
-          voucher_type: "aggregate" as const, // Lote sempre cria agregado por padrão
+          voucher_type: "aggregate" as const,
           is_nominal: false,
           qr_code_value: genQrValue(),
           status: "active",
@@ -800,9 +826,14 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           target_facility_id: serviceType === "lodging" ? instanceId : null,
         }));
 
+        console.log(`DEBUG: Inserindo ${quantity} vouchers individuais...`);
         const { error: vErr } = await supabase.from("service_vouchers").insert(vouchersToInsert as any);
-        if (vErr) throw vErr;
+        if (vErr) {
+          console.error("DEBUG: Erro ao inserir vouchers do lote:", vErr);
+          throw vErr;
+        }
 
+        console.log("DEBUG: Lote concluído. Gravando auditoria...");
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
@@ -811,13 +842,14 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           status: 'success'
         });
       } catch (err: any) {
+        console.error("DEBUG: Exceção capturada no fluxo de lote:", err);
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: 'batch',
-          payload: { ...auditPayload, error: err.message, audit_info: "batch_failed" },
+          payload: { ...auditPayload, error: err.message || JSON.stringify(err), audit_info: "batch_failed" },
           status: 'error',
-          error_message: err.message
+          error_message: err.message || JSON.stringify(err)
         });
         throw err;
       }
