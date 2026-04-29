@@ -6541,6 +6541,7 @@ export type Database = {
           id: string
           is_nominal: boolean
           issued_by: string | null
+          label: string | null
           max_uses: number | null
           notes: string | null
           participant_id: string
@@ -6561,6 +6562,7 @@ export type Database = {
           updated_at: string
           valid_from: string
           valid_until: string | null
+          voucher_type: string | null
         }
         Insert: {
           batch_id?: string | null
@@ -6571,6 +6573,7 @@ export type Database = {
           id?: string
           is_nominal?: boolean
           issued_by?: string | null
+          label?: string | null
           max_uses?: number | null
           notes?: string | null
           participant_id: string
@@ -6591,6 +6594,7 @@ export type Database = {
           updated_at?: string
           valid_from?: string
           valid_until?: string | null
+          voucher_type?: string | null
         }
         Update: {
           batch_id?: string | null
@@ -6601,6 +6605,7 @@ export type Database = {
           id?: string
           is_nominal?: boolean
           issued_by?: string | null
+          label?: string | null
           max_uses?: number | null
           notes?: string | null
           participant_id?: string
@@ -6621,6 +6626,7 @@ export type Database = {
           updated_at?: string
           valid_from?: string
           valid_until?: string | null
+          voucher_type?: string | null
         }
         Relationships: [
           {
