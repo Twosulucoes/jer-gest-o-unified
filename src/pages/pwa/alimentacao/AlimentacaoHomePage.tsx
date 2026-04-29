@@ -57,8 +57,11 @@ export default function AlimentacaoHomePage() {
       let totalJanelasQ = supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("service_date", today);
       if (stageId) totalJanelasQ = totalJanelasQ.eq("event_stage_id", stageId);
 
+      let consumoQ = supabase.from("meal_consumptions").select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", { count: "exact", head: true }).eq("meal_windows.event_id", activeEventId).gte("consumed_at", today + "T00:00:00");
+      if (stageId) consumoQ = consumoQ.eq("meal_windows.event_stage_id", stageId);
+
       const [consumoRes, tiposRes, totalJanelasRes, windowsRes] = await Promise.all([
-        supabase.from("meal_consumptions").select("id, meal_windows!meal_window_id!inner(event_id)", { count: "exact", head: true }).eq("meal_windows.event_id", activeEventId).gte("consumed_at", today + "T00:00:00"),
+        consumoQ,
         supabase.from("meal_types").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
         totalJanelasQ,
         windowsQ,
@@ -98,7 +101,7 @@ export default function AlimentacaoHomePage() {
       });
       setLoading(false);
     })();
-  }, [navigate]);
+  }, [navigate, activeEventId, stageId]);
 
   return (
     <PwaLayout onBack={() => navigate(-1)} moduleTitle="Alimentação">

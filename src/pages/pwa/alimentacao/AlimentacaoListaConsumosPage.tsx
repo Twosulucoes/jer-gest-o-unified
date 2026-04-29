@@ -74,7 +74,7 @@ export default function AlimentacaoListaConsumosPage() {
   async function loadData() {
     setLoading(true);
 
-    // Step 1: windows (needed to filter voucher uses by window)
+    // Step 1: windows scoped to current event+stage
     let windowsQ = supabase
       .from("meal_windows")
       .select("id, label, start_time, end_time, service_date, meal_type_id, meal_types!inner(name)")
@@ -97,21 +97,24 @@ export default function AlimentacaoListaConsumosPage() {
     const windowIds = windowList.map(w => w.id);
 
     // Step 2: consumptions + voucher uses in parallel
+    let consQuery = supabase
+      .from("meal_consumptions")
+      .select(`
+        id, consumed_at, participant_id, meal_window_id,
+        participants!inner(
+          id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone, participant_type,
+          people!inner(full_name, cpf, photo_url),
+          delegations(institution_id, institutions(name))
+        ),
+        meal_windows!inner(id, label, start_time, end_time, service_date, event_id, event_stage_id, meal_types!inner(name))
+      `)
+      .eq("meal_windows.event_id", activeEventId)
+      .gte("consumed_at", today + "T00:00:00")
+      .lte("consumed_at", today + "T23:59:59");
+    if (stageId) consQuery = consQuery.eq("meal_windows.event_stage_id", stageId);
+
     const [consumptionsRes, voucherUsesRes] = await Promise.all([
-      supabase
-        .from("meal_consumptions")
-        .select(`
-          id, consumed_at, participant_id, meal_window_id,
-          participants!inner(
-            id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone, participant_type,
-            people!inner(full_name, cpf, photo_url),
-            delegations(institution_id, institutions(name))
-          ),
-          meal_windows!inner(label, start_time, end_time, service_date, meal_types!inner(name))
-        `)
-        .gte("consumed_at", today + "T00:00:00")
-        .lte("consumed_at", today + "T23:59:59")
-        .order("consumed_at", { ascending: false }),
+      consQuery.order("consumed_at", { ascending: false }),
 
       windowIds.length > 0
         ? supabase
@@ -194,7 +197,6 @@ export default function AlimentacaoListaConsumosPage() {
     return Array.from(m.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [consumptions]);
 
-  // Detect duplicates: same participant consumed the same meal window more than once
   const duplicateParticipantIds = useMemo(() => {
     const source = windowFilter !== "all"
       ? consumptions.filter(c => c.meal_window_id === windowFilter)

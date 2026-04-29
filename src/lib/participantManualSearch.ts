@@ -21,6 +21,7 @@ export async function searchParticipantsByNameOrCpf(
   rawTerm: string,
   eventId: string,
   limit = 12,
+  stageId?: string | null,
 ): Promise<ParticipantManualSearchRow[]> {
   const term = rawTerm.trim();
   if (term.length < 2) return [];
@@ -47,13 +48,31 @@ export async function searchParticipantsByNameOrCpf(
   if (pErr || !peopleRows?.length) return [];
 
   const personIds = peopleRows.map((p) => p.id);
-  const { data: parts, error: ptErr } = await supabase
+  let ptQuery = supabase
     .from("participants")
     .select("id, person_id, participant_type")
     .eq("event_id", eventId)
     .eq("is_active", true)
-    .in("person_id", personIds)
-    .limit(limit);
+    .in("person_id", personIds);
+
+  if (stageId) {
+    // Check if participant is registered in this stage
+    const { data: stageParticipants } = await supabase
+      .from("participant_event_stages")
+      .select("participant_id")
+      .eq("event_stage_id", stageId)
+      .in("participant_id", []); // We'll refine this if needed, but the current DB doesn't have a direct stage link in participants table itself usually.
+    // However, the best way is to join participant_event_stages.
+    ptQuery = supabase
+      .from("participants")
+      .select("id, person_id, participant_type, participant_event_stages!inner(event_stage_id)")
+      .eq("event_id", eventId)
+      .eq("is_active", true)
+      .eq("participant_event_stages.event_stage_id", stageId)
+      .in("person_id", personIds);
+  }
+
+  const { data: parts, error: ptErr } = await ptQuery.limit(limit);
 
   if (ptErr || !parts?.length) return [];
 

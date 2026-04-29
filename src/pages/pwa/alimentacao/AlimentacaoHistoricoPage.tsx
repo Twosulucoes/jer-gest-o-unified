@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useEventContext } from "@/contexts/EventContext";
+import { useStageContext } from "@/contexts/StageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,16 +18,25 @@ interface ConsumptionItem {
 }
 
 export default function AlimentacaoHistoricoPage() {
+  const { activeEventId } = useEventContext();
+  const { activeStageId } = useStageContext();
   const [items, setItems] = useState<ConsumptionItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase
+      let query = supabase
         .from("meal_consumptions")
-        .select("id, consumed_at, method, participant:participants(person:people(full_name)), meal_window:meal_windows(meal_type:meal_types(name))")
-        .gte("consumed_at", today + "T00:00:00")
+        .select("id, consumed_at, method, participant:participants(person:people(full_name)), meal_window:meal_windows!inner(event_id, event_stage_id, meal_type:meal_types(name))")
+        .eq("meal_windows.event_id", activeEventId)
+        .gte("consumed_at", today + "T00:00:00");
+      
+      if (activeStageId) {
+        query = query.eq("meal_windows.event_stage_id", activeStageId);
+      }
+
+      const { data } = await query
         .order("consumed_at", { ascending: false })
         .limit(50);
       setItems((data as any) || []);

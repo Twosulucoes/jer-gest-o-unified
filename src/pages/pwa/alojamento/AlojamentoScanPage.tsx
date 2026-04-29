@@ -91,6 +91,7 @@ export default function AlojamentoScanPage() {
         .eq("location_id", facilityId)
         .eq("is_active", true)
         .order("name");
+      
       if (data) setUnits(data);
     }
     loadUnits();
