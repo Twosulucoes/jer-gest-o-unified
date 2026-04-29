@@ -602,7 +602,7 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
 
   const mutation = useMutation({
     mutationFn: async () => {
-      // Validação coerente de voucher_type antes de emitir
+      console.log("DEBUG: Iniciando emissão de voucher individual...");
       const vType = isNominal ? "nominal" : "aggregate";
       
       const payload: any = {
@@ -614,7 +614,10 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
       };
       
       if (isNominal) {
-        if (!eventualId) throw new Error("ID da pessoa eventual é obrigatório para vouchers nominais.");
+        if (!eventualId) {
+          console.error("DEBUG: Erro de validação - eventualId ausente");
+          throw new Error("ID da pessoa eventual é obrigatório para vouchers nominais.");
+        }
         payload.eventual_person_id = eventualId;
       }
       
@@ -628,12 +631,17 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
         payload.target_facility_id = instanceId; 
         payload.scope_lodging = true; 
       } else {
+        console.error("DEBUG: Erro de validação - serviceType inválido:", serviceType);
         throw new Error("Tipo de serviço inválido.");
       }
       
-      if (!instanceId) throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
+      if (!instanceId) {
+        console.error("DEBUG: Erro de validação - instanceId ausente");
+        throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
+      }
 
-      // Payload sanitizado para auditoria (evita qr_code_value e campos sensíveis)
+      console.log("DEBUG: Enviando payload ao Supabase:", JSON.stringify(payload, null, 2));
+
       const sanitizedAuditPayload = {
         event_id: eventId,
         voucher_type: vType,
@@ -641,14 +649,18 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
         eventual_person_id: payload.eventual_person_id,
         service_type: serviceType,
         instance_id: instanceId,
-        qr_hash: btoa(payload.qr_code_value).slice(0, 10), // Hash reduzido para rastreio sem expor código
+        qr_hash: btoa(payload.qr_code_value).slice(0, 10),
         audit_info: "individual_emission"
       };
 
       try {
         const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
-        if (error) throw error;
+        if (error) {
+          console.error("DEBUG: Erro retornado pelo Supabase (vouchers):", error);
+          throw error;
+        }
         
+        console.log("DEBUG: Voucher inserido com sucesso. Gravando auditoria...");
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
@@ -659,13 +671,14 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
 
         return data;
       } catch (err: any) {
+        console.error("DEBUG: Exceção capturada no fluxo de emissão:", err);
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: vType,
           payload: { ...sanitizedAuditPayload, audit_info: "individual_failed" },
           status: 'error',
-          error_message: err.message
+          error_message: err.message || JSON.stringify(err)
         });
         throw err;
       }
