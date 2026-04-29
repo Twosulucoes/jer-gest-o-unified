@@ -307,7 +307,13 @@ export default function AlimentacaoScanPage() {
 
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
-    if (!rawValue.trim()) return;
+    let val = rawValue.trim();
+    if (!val) return;
+
+    // Normalização para entrada manual de código de voucher
+    if (!val.toLowerCase().startsWith("voucher:") && val.length >= 8 && /^[A-Z0-9-]+$/i.test(val)) {
+      val = `voucher:${val.toUpperCase()}`;
+    }
 
     if (!windowId) {
       toast.error(getSystemMessage("ERR_WINDOW_REQUIRED", lang));
@@ -320,10 +326,10 @@ export default function AlimentacaoScanPage() {
       const foodRestrictions: string | null = null;
       let method: "qr_scan" | "voucher" = "qr_scan";
 
-      if (isVoucherQr(rawValue)) {
+      if (isVoucherQr(val)) {
         if (!isOnline()) {
-          addToVoucherQueue(rawValue, "meals", windowId, userId || "", "Portador de Voucher");
-          const successMsg = `Voucher registrado offline: ${rawValue.replace("voucher:", "")}`;
+          addToVoucherQueue(val, "meals", windowId, userId || "", "Portador de Voucher");
+          const successMsg = `Voucher registrado offline: ${val.replace("voucher:", "")}`;
           setResult({ 
             ok: true, 
             source: "qr", 
@@ -338,7 +344,7 @@ export default function AlimentacaoScanPage() {
           return;
         }
 
-        const voucher = await tryRedeemVoucher(rawValue, "meals", windowId);
+        const voucher = await tryRedeemVoucher(val, "meals", windowId);
         if (!voucher || !voucher.ok) {
           const msg = voucherErrorMessage(voucher?.reason, lang);
           let extra = "";
@@ -375,7 +381,7 @@ export default function AlimentacaoScanPage() {
         reopenIfContinuous();
         return;
       } else {
-        const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
+        const resolved = await resolveQrCredential(val, { eventId: activeEventId });
         if (!resolved) {
           const errorMsg = getSystemMessage("ERR_NOT_FOUND", lang);
           setResult({ ok: false, message: errorMsg, source: "qr" });
@@ -496,9 +502,14 @@ export default function AlimentacaoScanPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome ou CPF…"
+              placeholder="Nome, CPF ou código do voucher…"
               value={manualQuery}
               onChange={(e) => setManualQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && manualQuery.length >= 8) {
+                  handleScan(manualQuery);
+                }
+              }}
               className="h-11 border-border/80 bg-card/90 pl-10"
             />
           </div>

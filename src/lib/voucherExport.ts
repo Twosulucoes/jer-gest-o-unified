@@ -241,12 +241,21 @@ const labelStyles = StyleSheet.create({
     marginBottom: 2,
   },
   details: {
-    fontSize: 8,
-    color: '#444',
+    fontSize: 7,
+    color: '#333',
+    marginTop: 1,
+  },
+  qrCodeText: {
+    fontSize: 6,
+    color: '#666',
+    marginTop: 2,
+    fontFamily: 'Courier',
+    textAlign: 'center',
+    width: 90,
   },
   batchLabel: {
     fontSize: 7,
-    marginTop: 4,
+    marginTop: 2,
     fontStyle: 'italic',
     color: '#666',
   },
@@ -273,7 +282,12 @@ export async function printVoucherLabelsPdf(
         createElement(
           View,
           { style: labelStyles.labelContainer, key: r.id },
-          r.qr_data_url && createElement(Image, { style: labelStyles.qrCode, src: r.qr_data_url }),
+          createElement(
+            View,
+            { style: { flexDirection: 'column', alignItems: 'center' } },
+            r.qr_data_url && createElement(Image, { style: labelStyles.qrCode, src: r.qr_data_url }),
+            createElement(Text, { style: labelStyles.qrCodeText }, r.qr_code_value.replace("voucher:", ""))
+          ),
           createElement(
             View,
             { style: labelStyles.infoContainer },

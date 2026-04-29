@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -46,7 +47,7 @@ import {
   type ScanTelemetry,
 } from "@/lib/pwaScan";
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
-import { ScanLine, CheckCircle2, XCircle, AlertTriangle, Moon } from "lucide-react";
+import { ScanLine, CheckCircle2, XCircle, AlertTriangle, Moon, Search } from "lucide-react";
 import { format } from "date-fns";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
@@ -117,9 +118,16 @@ export default function AlojamentoScanPage() {
 
   const handleScan = useCallback(async (rawValue: string) => {
     setScannerOpen(false);
+    let val = rawValue.trim();
+    if (!val) return;
+
+    // Normalização para entrada manual de código de voucher
+    if (!val.toLowerCase().startsWith("voucher:") && val.length >= 8 && /^[A-Z0-9-]+$/i.test(val)) {
+      val = `voucher:${val.toUpperCase()}`;
+    }
 
     // Auto-detecção de voucher
-    if (isVoucherQr(rawValue)) {
+    if (isVoucherQr(val)) {
       if (!facilityId) {
         toast.error(getSystemMessage("ERR_SELECT_FACILITY", lang));
         navigate("/pwa/alojamento");
@@ -127,8 +135,8 @@ export default function AlojamentoScanPage() {
       }
       setResult(null);
       if (!isOnline) {
-        addToVoucherQueue(rawValue, "lodging", facilityId, userId || "", "Portador de Voucher");
-        const successMsg = `Voucher registrado offline: ${rawValue.replace("voucher:", "")}`;
+        addToVoucherQueue(val, "lodging", facilityId, userId || "", "Portador de Voucher");
+        const successMsg = `Voucher registrado offline: ${val.replace("voucher:", "")}`;
         setResult({
           ok: true,
           full_name: "Portador de Voucher",
@@ -142,7 +150,7 @@ export default function AlojamentoScanPage() {
         return;
       }
 
-      const voucher = await tryRedeemVoucher(rawValue, "lodging", facilityId);
+      const voucher = await tryRedeemVoucher(val, "lodging", facilityId);
       if (!voucher || !voucher.ok) {
         const msg = voucherErrorMessage(voucher?.reason, lang);
         let extra = "";
@@ -170,7 +178,7 @@ export default function AlojamentoScanPage() {
       return;
     }
 
-    const token = extractQrToken(rawValue);
+    const token = extractQrToken(val);
     if (!token) {
       toast.error(getSystemMessage("ERR_INVALID_QR", lang));
       return;
@@ -344,6 +352,33 @@ export default function AlojamentoScanPage() {
           <ScanLine className="h-6 w-6 mr-3" />
           Escanear QR Code
         </Button>
+
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Entrada Manual (Voucher/CPF)</label>
+          <div className="flex gap-2">
+            <Input 
+              placeholder="Código do voucher ou CPF..." 
+              className="h-11 rounded-xl bg-card border-border/50"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleScan((e.target as HTMLInputElement).value);
+                  (e.target as HTMLInputElement).value = "";
+                }
+              }}
+            />
+            <Button 
+              variant="secondary" 
+              className="h-11 rounded-xl px-4"
+              onClick={(e) => {
+                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                handleScan(input.value);
+                input.value = "";
+              }}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
 
         {result && (
           <div className="space-y-3 animate-in zoom-in-95 duration-200">
