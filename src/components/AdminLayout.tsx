@@ -76,7 +76,7 @@ const navGroups: NavGroup[] = [
       { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Credencial (Modelos)", to: "/admin/credenciais/modelos", icon: <BadgeCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Vinculação de Credencial", to: "/admin/credenciamento-externo", icon: <ScanLine className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Validação Manual (Voucher)", to: "/admin/vouchers/validar-manual", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      
       { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
@@ -159,6 +159,15 @@ const navGroups: NavGroup[] = [
       { label: "Escala em Lote", to: "/admin/competicao/arbitragem?tab=lote", icon: <ClipboardList className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
       { label: "AOVivo (PWA)", to: "/aovivo", icon: <Radio className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde"] as AppRole[] },
+    ],
+  },
+  {
+    id: "vouchers", label: "Gestão de Vouchers", description: "Emissão, consulta e auditoria.",
+    icon: <ClipboardList className="h-4 w-4" />,
+    items: [
+      { label: "Listagem de Vouchers", to: "/admin/vouchers", icon: <ListTree className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Validação Manual", to: "/admin/vouchers/validar-manual", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Auditoria de Vouchers", to: "/admin/vouchers/auditoria", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
     ],
   },
   {
