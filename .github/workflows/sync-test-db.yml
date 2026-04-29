@@ -1,0 +1,39 @@
+name: Sync Test Database
+
+on:
+  push:
+    branches: [teste]
+    paths:
+      - 'supabase/migrations/**'
+
+jobs:
+  sync:
+    name: Apply migrations → BD Teste
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to test project
+        run: supabase link --project-ref pwsawrvxfdytrjmzeuxh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Push pending migrations
+        run: supabase db push --linked
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_TEST_DB_PASSWORD }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Sync BD Teste ${{ job.status == 'success' && '✅' || '❌' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Projeto:** pwsawrvxfdytrjmzeuxh" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** $(git rev-parse --short HEAD)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Migrations:** $(ls supabase/migrations/ | wc -l) arquivos no repositório" >> $GITHUB_STEP_SUMMARY
