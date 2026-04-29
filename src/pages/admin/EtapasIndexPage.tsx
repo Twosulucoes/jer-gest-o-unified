@@ -26,6 +26,8 @@ const KIND_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
 export default function EtapasIndexPage() {
   const eventId = useActiveEventId();
   const { activeEvent } = useEventContext();
+  const location = useLocation();
+  const fromPath = location.state?.from as string | undefined;
 
   const { data: stages = [], isLoading } = useQuery({
     queryKey: ["event_stages", eventId],
