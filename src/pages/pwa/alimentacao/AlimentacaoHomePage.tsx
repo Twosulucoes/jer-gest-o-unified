@@ -7,6 +7,7 @@ import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { PwaActionGrid } from "@/components/pwa/PwaActionGrid";
 import { Progress } from "@/components/ui/progress";
 import { useEventContext } from "@/contexts/EventContext";
+import { useStageContext } from "@/contexts/StageContext";
 import {
   ScanLine, Search,
   Clock, Plus, ListChecks,
@@ -50,31 +51,24 @@ export default function AlimentacaoHomePage() {
       const today = new Date().toLocaleDateString('fr-CA');
       const nowDate = new Date();
 
-      const baseQuery = (table: string) => {
-        let q = supabase.from(table).select("id").eq("event_id", activeEventId);
-        if (activeStageId) q = q.eq("event_stage_id", activeStageId);
-        return q;
-      };
-
       const [consumoRes, tiposRes, totalJanelasRes, windowsRes] = await Promise.all([
         supabase.from("meal_consumptions").select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", { count: "exact", head: true })
           .eq("meal_windows.event_id", activeEventId)
-          .eq(activeStageId ? "meal_windows.event_stage_id" : "id", activeStageId || "id") // Dummy if no stage
+          .eq(activeStageId ? "meal_windows.event_stage_id" : "meal_windows.event_id", activeStageId || activeEventId)
           .gte("consumed_at", today + "T00:00:00"),
         supabase.from("meal_types").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
-        baseQuery("meal_windows").select("id", { count: "exact", head: true }).eq("service_date", today),
-        baseQuery("meal_windows").select("id, start_time, end_time, service_date, label, meal_type:meal_types(name)").eq("service_date", today).order("start_time"),
+        supabase.from("meal_windows").select("id", { count: "exact", head: true })
+          .eq("event_id", activeEventId)
+          .eq(activeStageId ? "event_stage_id" : "event_id", activeStageId || activeEventId)
+          .eq("service_date", today),
+        supabase.from("meal_windows").select("id, start_time, end_time, service_date, label, meal_type:meal_types(name)")
+          .eq("event_id", activeEventId)
+          .eq(activeStageId ? "event_stage_id" : "event_id", activeStageId || activeEventId)
+          .eq("service_date", today)
+          .order("start_time"),
       ]);
 
-      // Refined consumption query if stage filter failed above
-      let finalConsumoCount = consumoRes.count || 0;
-      if (activeStageId) {
-        const { count } = await supabase.from("meal_consumptions")
-          .select("id, meal_windows!meal_window_id!inner(event_stage_id)", { count: "exact", head: true })
-          .eq("meal_windows.event_stage_id", activeStageId)
-          .gte("consumed_at", today + "T00:00:00");
-        finalConsumoCount = count || 0;
-      }
+      const finalConsumoCount = consumoRes.count || 0;
 
       const windows = (windowsRes.data as any[]) || [];
       const activeWindows = windows.filter((w) => {
