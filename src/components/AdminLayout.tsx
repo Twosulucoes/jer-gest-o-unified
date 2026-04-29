@@ -33,6 +33,7 @@ type AppRole = Database["public"]["Enums"]["app_role"];
 interface NavItem {
   label: string;
   to: string;
+  state?: Record<string, unknown>;
   icon: React.ReactNode;
   roles: AppRole[] | "all";
   hideIfRegistrosEnabled?: boolean;
@@ -155,9 +156,10 @@ const navGroups: NavGroup[] = [
     id: "arbitragem", label: "Arbitragem", description: "Equipe, escalas e operação ao vivo.",
     icon: <Gavel className="h-4 w-4" />,
     items: [
-      { label: "Equipe de Arbitragem", to: "/admin/competicao/arbitragem?tab=officials", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
-      { label: "Escalas por etapa", to: "/admin/competicao/arbitragem?tab=sports", icon: <ListTree className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
-      { label: "Escala em Lote", to: "/admin/competicao/arbitragem?tab=lote", icon: <ClipboardList className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
+      { label: "Árbitros", to: "/admin/etapas", state: { from: "/admin/competicao/arbitragem?tab=arbitros" }, icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
+      { label: "Escalas por oficial", to: "/admin/etapas", state: { from: "/admin/competicao/arbitragem?tab=officials" }, icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
+      { label: "Escalas por modalidade", to: "/admin/etapas", state: { from: "/admin/competicao/arbitragem?tab=sports" }, icon: <ListTree className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
+      { label: "Escala em Lote", to: "/admin/etapas", state: { from: "/admin/competicao/arbitragem?tab=lote" }, icon: <ClipboardList className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
       { label: "AOVivo (PWA)", to: "/aovivo", icon: <Radio className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde"] as AppRole[] },
     ],
@@ -229,6 +231,7 @@ function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: 
         <TooltipTrigger asChild>
           <NavLink
             to={item.to}
+            state={item.state}
             end={item.to === "/admin"}
             onClick={onClick}
             className={({ isActive }) =>
@@ -253,6 +256,7 @@ function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: 
     <div className="flex items-center group">
       <NavLink
         to={item.to}
+        state={item.state}
         end={item.to === "/admin"}
         onClick={onClick}
         className={({ isActive }) =>
