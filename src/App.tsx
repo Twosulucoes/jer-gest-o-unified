@@ -334,6 +334,7 @@ const App = () => (
                <Route path="vouchers" element={<RedirectToEtapas />} />
                <Route path="vouchers/auditoria" element={<RedirectToEtapas />} />
                <Route path="vouchers/validar-manual" element={<RedirectToEtapas />} />
+               <Route path="voucher/validar" element={<RedirectToEtapas />} />
               {/* Transporte — operacional, redireciona para Etapa */}
               <Route path="transporte" element={<RedirectToEtapas />} />
               <Route path="transporte/veiculos" element={<RedirectToEtapas />} />
