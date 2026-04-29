@@ -139,9 +139,9 @@ const STATUS_LABEL: Record<string, { label: string; variant: "default" | "second
 
 function genQrValue() {
   const alpha = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let suffix = "";
-  for (let i = 0; i < 20; i++) suffix += alpha[Math.floor(Math.random() * alpha.length)];
-  return `voucher:${Date.now().toString(36).toUpperCase()}-${suffix}`;
+  let code = "";
+  for (let i = 0; i < 6; i++) code += alpha[Math.floor(Math.random() * alpha.length)];
+  return `voucher:${code}`;
 }
 
 // -------- Helper: Format Instance Info --------

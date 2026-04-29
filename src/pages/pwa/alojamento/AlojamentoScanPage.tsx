@@ -121,8 +121,8 @@ export default function AlojamentoScanPage() {
     let val = rawValue.trim();
     if (!val) return;
 
-    // Normalização para entrada manual de código de voucher
-    if (!val.toLowerCase().startsWith("voucher:") && val.length >= 8 && /^[A-Z0-9-]+$/i.test(val)) {
+    // Normalização para entrada manual de código de voucher (6 caracteres)
+    if (!val.toLowerCase().startsWith("voucher:") && val.length === 6 && /^[A-Z0-9]+$/i.test(val)) {
       val = `voucher:${val.toUpperCase()}`;
     }
 
