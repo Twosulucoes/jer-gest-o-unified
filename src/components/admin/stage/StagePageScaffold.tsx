@@ -154,7 +154,7 @@ export function StagePageScaffold({
 
   // Filtra abas por permissão
   const visibleTabs = moduleCfg?.tabs.filter(tab => 
-    !tab.roles || tab.roles === "all" || (Array.isArray(tab.roles) && tab.roles.some(r => hasRole(r)))
+    !tab.roles || (typeof tab.roles === "string" && tab.roles === "all") || (Array.isArray(tab.roles) && tab.roles.some(r => hasRole(r)))
   ) ?? [];
 
   return (
