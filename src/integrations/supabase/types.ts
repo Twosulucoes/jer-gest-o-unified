@@ -8715,10 +8715,20 @@ export type Database = {
         }
         Returns: Json
       }
-      pwa_search_person: {
-        Args: { p_facility_id: string; p_limit?: number; p_query: string }
-        Returns: Json
-      }
+      pwa_search_person:
+        | {
+            Args: {
+              p_event_id?: string
+              p_facility_id?: string
+              p_limit?: number
+              p_query: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: { p_facility_id: string; p_limit?: number; p_query: string }
+            Returns: Json
+          }
       recompute_participation_irregularities: {
         Args: { p_event_id: string }
         Returns: Json
@@ -8734,25 +8744,16 @@ export type Database = {
         }
         Returns: string
       }
-      redeem_voucher:
-        | {
-            Args: {
-              p_context_id?: string
-              p_qr_value: string
-              p_service_kind: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_context_id?: string
-              p_is_offline?: boolean
-              p_offline_at?: string
-              p_qr_value: string
-              p_service_kind: string
-            }
-            Returns: Json
-          }
+      redeem_voucher: {
+        Args: {
+          p_context_id?: string
+          p_is_offline?: boolean
+          p_offline_at?: string
+          p_qr_value: string
+          p_service_kind: string
+        }
+        Returns: Json
+      }
       refresh_sport_event_prova_map: {
         Args: { p_event_id: string }
         Returns: Json
