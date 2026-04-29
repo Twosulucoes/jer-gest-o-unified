@@ -106,7 +106,7 @@ export default function AlimentacaoScanPage() {
       if (cached) {
         try {
           const { windows: cachedWindows } = JSON.parse(cached);
-          const today = new Date().toISOString().slice(0, 10);
+          const today = new Date().toLocaleDateString('fr-CA');
           const todaysWindows = cachedWindows.filter((w: any) => w.service_date === today);
           if (todaysWindows.length > 0) {
             setWindows(todaysWindows);
@@ -116,7 +116,7 @@ export default function AlimentacaoScanPage() {
       }
 
       // 2. Fetch fresh data
-      const today = new Date().toISOString().slice(0, 10);
+      const today = new Date().toLocaleDateString('fr-CA');
       let q = supabase
         .from("meal_windows")
         .select("id, meal_type:meal_types(name), service_date, start_time, end_time, capacity")

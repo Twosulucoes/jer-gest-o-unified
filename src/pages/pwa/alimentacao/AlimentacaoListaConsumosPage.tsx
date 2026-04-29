@@ -44,6 +44,7 @@ interface Consumption {
   participant_type: string | null;
   window_label: string;
   meal_type_name: string;
+  isVoucher?: boolean;
 }
 
 export default function AlimentacaoListaConsumosPage() {
@@ -60,7 +61,7 @@ export default function AlimentacaoListaConsumosPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('fr-CA');
 
   useEffect(() => {
     loadData();
@@ -69,12 +70,27 @@ export default function AlimentacaoListaConsumosPage() {
   async function loadData() {
     setLoading(true);
 
-    const [windowsRes, consumptionsRes] = await Promise.all([
-      supabase
-        .from("meal_windows")
-        .select("id, label, start_time, end_time, service_date, meal_type_id, meal_types!inner(name)")
-        .eq("service_date", today)
-        .order("start_time"),
+    // Step 1: windows (needed to filter voucher uses by window)
+    const windowsRes = await supabase
+      .from("meal_windows")
+      .select("id, label, start_time, end_time, service_date, meal_type_id, meal_types!inner(name)")
+      .eq("service_date", today)
+      .order("start_time");
+
+    const windowList: MealWindow[] = (windowsRes.data || []).map((w: any) => ({
+      id: w.id,
+      label: w.label,
+      start_time: w.start_time,
+      end_time: w.end_time,
+      service_date: w.service_date,
+      meal_type_name: w.meal_types?.name || "",
+    }));
+    setWindows(windowList);
+
+    const windowIds = windowList.map(w => w.id);
+
+    // Step 2: consumptions + voucher uses in parallel
+    const [consumptionsRes, voucherUsesRes] = await Promise.all([
       supabase
         .from("meal_consumptions")
         .select(`
@@ -89,40 +105,71 @@ export default function AlimentacaoListaConsumosPage() {
         .gte("consumed_at", today + "T00:00:00")
         .lte("consumed_at", today + "T23:59:59")
         .order("consumed_at", { ascending: false }),
+
+      windowIds.length > 0
+        ? supabase
+            .from("service_voucher_uses")
+            .select(`
+              id, used_at, context_id,
+              service_vouchers!inner(
+                label, voucher_type, is_nominal,
+                service_eventual_people(full_name)
+              )
+            `)
+            .eq("service_kind", "meals")
+            .in("context_id", windowIds)
+            .gte("used_at", today + "T00:00:00")
+            .lte("used_at", today + "T23:59:59")
+        : Promise.resolve({ data: [] as any[] }),
     ]);
 
-    if (windowsRes.data) {
-      setWindows(windowsRes.data.map((w: any) => ({
-        id: w.id,
-        label: w.label,
-        start_time: w.start_time,
-        end_time: w.end_time,
-        service_date: w.service_date,
-        meal_type_name: w.meal_types?.name || "",
-      })));
-    }
+    const regular: Consumption[] = (consumptionsRes.data as any[] || []).map((c: any) => ({
+      id: c.id,
+      consumed_at: c.consumed_at,
+      participant_id: c.participant_id,
+      meal_window_id: c.meal_window_id,
+      full_name: c.participants?.people?.full_name || "",
+      cpf: c.participants?.people?.cpf || null,
+      photo_url: c.participants?.people?.photo_url || null,
+      guardian_name: c.participants?.guardian_name,
+      guardian_phone: c.participants?.guardian_phone,
+      coach_name: c.participants?.coach_name,
+      coach_phone: c.participants?.coach_phone,
+      delegation_name: c.participants?.delegations?.institutions?.name || null,
+      delegation_id: c.participants?.delegation_id,
+      participant_type: c.participants?.participant_type || null,
+      window_label: c.meal_windows?.label || `${fmtTime(c.meal_windows?.start_time)}-${fmtTime(c.meal_windows?.end_time)}`,
+      meal_type_name: c.meal_windows?.meal_types?.name || "",
+    }));
 
-    if (consumptionsRes.data) {
-      setConsumptions((consumptionsRes.data as any[]).map((c: any) => ({
-        id: c.id,
-        consumed_at: c.consumed_at,
-        participant_id: c.participant_id,
-        meal_window_id: c.meal_window_id,
-        full_name: c.participants?.people?.full_name || "",
-        cpf: c.participants?.people?.cpf || null,
-        photo_url: c.participants?.people?.photo_url || null,
-        guardian_name: c.participants?.guardian_name,
-        guardian_phone: c.participants?.guardian_phone,
-        coach_name: c.participants?.coach_name,
-        coach_phone: c.participants?.coach_phone,
-        delegation_name: c.participants?.delegations?.institutions?.name || null,
-        delegation_id: c.participants?.delegation_id,
-        participant_type: c.participants?.participant_type || null,
-        window_label: c.meal_windows?.label || `${fmtTime(c.meal_windows?.start_time)}-${fmtTime(c.meal_windows?.end_time)}`,
-        meal_type_name: c.meal_windows?.meal_types?.name || "",
-      })));
-    }
+    const vouchers: Consumption[] = (voucherUsesRes.data || []).map((u: any) => {
+      const sv = u.service_vouchers;
+      const personName = sv?.service_eventual_people?.full_name || sv?.label || "Portador de Voucher";
+      const win = windowList.find(w => w.id === u.context_id);
+      return {
+        id: u.id,
+        consumed_at: u.used_at,
+        participant_id: `voucher:${u.id}`,
+        meal_window_id: u.context_id || "",
+        full_name: personName,
+        cpf: null,
+        photo_url: null,
+        guardian_name: null,
+        guardian_phone: null,
+        coach_name: null,
+        coach_phone: null,
+        delegation_name: null,
+        delegation_id: null,
+        participant_type: sv?.voucher_type === "aggregate" ? "voucher_anonimo" : "voucher_nominal",
+        window_label: win ? `${fmtTime(win.start_time)}-${fmtTime(win.end_time)}` : "",
+        meal_type_name: win?.meal_type_name || "",
+        isVoucher: true,
+      };
+    });
 
+    setConsumptions(
+      [...regular, ...vouchers].sort((a, b) => b.consumed_at.localeCompare(a.consumed_at))
+    );
     setLoading(false);
   }
 
@@ -283,6 +330,8 @@ export default function AlimentacaoListaConsumosPage() {
               <SelectItem value="tecnico">Técnico</SelectItem>
               <SelectItem value="arbitro">Árbitro</SelectItem>
               <SelectItem value="outro">Outro</SelectItem>
+              <SelectItem value="voucher_nominal">Voucher Nominal</SelectItem>
+              <SelectItem value="voucher_anonimo">Voucher Anônimo</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="ghost" size="sm" className="h-9 text-xs" onClick={clearFilters}>
@@ -336,7 +385,11 @@ export default function AlimentacaoListaConsumosPage() {
 
                   {/* Phone badges */}
                   <div className="pt-1 border-t border-border">
-                    {c.guardian_phone ? (
+                    {c.isVoucher ? (
+                      <Badge variant="secondary" className="text-[10px] px-1.5">
+                        {c.participant_type === "voucher_anonimo" ? "Voucher Anônimo" : "Voucher Nominal"}
+                      </Badge>
+                    ) : c.guardian_phone ? (
                       <a href={`tel:${c.guardian_phone}`} className="flex items-center gap-1.5 text-xs">
                         <Badge variant="success" className="text-[10px] px-1.5">Responsável</Badge>
                         <Phone className="h-3 w-3 text-success" />

@@ -46,7 +46,7 @@ export default function AlimentacaoHomePage() {
       const { data: profile } = await supabase.from("profiles").select("active").eq("id", session.user.id).single();
       if (!profile?.active) { navigate("/pwa", { replace: true }); return; }
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = new Date().toLocaleDateString('fr-CA');
       const nowDate = new Date();
 
       const [consumoRes, tiposRes, totalJanelasRes, windowsRes] = await Promise.all([
@@ -66,17 +66,17 @@ export default function AlimentacaoHomePage() {
 
       const openList: OpenWindowState[] = await Promise.all(
         activeWindows.map(async (w) => {
-          const { count } = await supabase
-            .from("meal_consumptions")
-            .select("id", { count: "exact", head: true })
-            .eq("meal_window_id", w.id);
+          const [{ count: mcCount }, { count: vuCount }] = await Promise.all([
+            supabase.from("meal_consumptions").select("id", { count: "exact", head: true }).eq("meal_window_id", w.id),
+            supabase.from("service_voucher_uses").select("id", { count: "exact", head: true }).eq("service_kind", "meals").eq("context_id", w.id),
+          ]);
           return {
             id: w.id,
             mealName: w.meal_type?.name || "Refeição",
             label: w.label,
             windowStart: `${w.service_date}T${w.start_time}`,
             windowEnd: `${w.service_date}T${w.end_time}`,
-            served: count || 0,
+            served: (mcCount || 0) + (vuCount || 0),
           };
         })
       );
