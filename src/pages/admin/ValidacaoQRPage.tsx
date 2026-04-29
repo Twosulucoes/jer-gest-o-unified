@@ -13,6 +13,7 @@ import {
   BadgeCheck,
   Maximize2,
   Settings2,
+  Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,9 @@ import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 import { cn } from "@/lib/utils";
 import { useStageModuleKpis } from "@/contexts/StageModuleKpisContext";
+import { isVoucherQr, tryRedeemVoucher, type ServiceKind } from "@/lib/voucherScan";
+import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
+import { getPwaLang } from "@/lib/systemMessages";
 
 interface ValidationResult {
   result: "valid" | "not_found" | "revoked" | "suspended" | "not_activated" | "wrong_event" | string;
@@ -49,6 +53,7 @@ interface ValidationResult {
 
 const RESULT_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   valid: { label: "VÁLIDO", icon: <CheckCircle2 className="h-8 w-8" />, color: "text-green-600 bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800" },
+  voucher_ok: { label: "VOUCHER OK", icon: <Receipt className="h-8 w-8" />, color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800" },
   not_found: { label: "NÃO ENCONTRADO", icon: <XCircle className="h-8 w-8" />, color: "text-destructive bg-destructive/10 border-destructive/30" },
   revoked: { label: "REVOGADO", icon: <XCircle className="h-8 w-8" />, color: "text-destructive bg-destructive/10 border-destructive/30" },
   suspended: { label: "SUSPENSO", icon: <AlertTriangle className="h-8 w-8" />, color: "text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800" },
@@ -83,6 +88,8 @@ export default function ValidacaoQRPage() {
     setValidating(true);
     setResult(null);
 
+    const lang = getPwaLang();
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -90,6 +97,53 @@ export default function ValidacaoQRPage() {
         return;
       }
 
+      // NOVO: Se for um voucher, segue fluxo específico de voucher
+      if (isVoucherQr(codeToValidate)) {
+        // Mapeia o scan_point para service_kind se possível
+        const serviceMap: Record<string, ServiceKind> = {
+          alimentacao: "meals",
+          transporte: "transport",
+          alojamento: "lodging",
+        };
+        const serviceKind = serviceMap[scanPoint] || "meals"; // fallback para meals se for general
+
+        const voucher = await tryRedeemVoucher(codeToValidate, serviceKind);
+        
+        if (!voucher || !voucher.ok) {
+          const msg = voucherErrorMessage(voucher?.reason, lang);
+          setResult({
+            result: "error",
+            message: msg.text,
+            participant: null,
+            timestamp: new Date().toISOString(),
+          });
+          toast.error(msg.text);
+          return;
+        }
+
+        const msg = voucherSuccessMessage(voucher, serviceKind, lang);
+        setResult({
+          result: "voucher_ok",
+          message: msg.text,
+          participant: voucher.participant_id ? {
+            participant_id: voucher.participant_id,
+            participant_type: voucher.voucher_type || "voucher",
+            full_name: voucher.person_name || voucher.label || "Portador de Voucher",
+            birth_date: "",
+            gender: "",
+            photo_url: null,
+            institution: null,
+            credential_code: codeToValidate,
+          } : null,
+          timestamp: new Date().toISOString(),
+        });
+        toast.success(msg.text);
+        setSessionCount(prev => prev + 1);
+        setShowConfirm(true);
+        return;
+      }
+
+      // Fluxo normal de credencial
       const { data: json, error: invokeError } = await supabase.functions.invoke("validate-qr", {
         body: {
           qr_code_value: codeToValidate,
