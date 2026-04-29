@@ -60,7 +60,8 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
   const activeStageId = routeStageId || persistedStageId;
 
   const setActiveStageId = useCallback((id: string | null) => {
-    if (id !== persistedStageId) {
+    const finalId = id === "none" ? null : id;
+    if (finalId !== persistedStageId) {
       handleContextChange(queryClient);
     }
     
