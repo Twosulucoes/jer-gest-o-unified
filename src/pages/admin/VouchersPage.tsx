@@ -602,18 +602,37 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
 
   const mutation = useMutation({
     mutationFn: async () => {
+      // Validação coerente de voucher_type antes de emitir
+      const vType = isNominal ? "nominal" : "aggregate";
+      
       const payload: any = {
         event_id: eventId,
-        voucher_type: isNominal ? "nominal" : "aggregate",
+        voucher_type: vType,
         is_nominal: isNominal,
         qr_code_value: genQrValue(),
         status: "active",
       };
-      if (isNominal) payload.eventual_person_id = eventualId;
-      if (serviceType === "meals") { payload.target_meal_window_id = instanceId; payload.scope_meals = true; }
-      if (serviceType === "transport") { payload.target_trip_id = instanceId; payload.scope_transport = true; }
-      if (serviceType === "lodging") { payload.target_facility_id = instanceId; payload.scope_lodging = true; }
       
+      if (isNominal) {
+        if (!eventualId) throw new Error("ID da pessoa eventual é obrigatório para vouchers nominais.");
+        payload.eventual_person_id = eventualId;
+      }
+      
+      if (serviceType === "meals") { 
+        payload.target_meal_window_id = instanceId; 
+        payload.scope_meals = true; 
+      } else if (serviceType === "transport") { 
+        payload.target_trip_id = instanceId; 
+        payload.scope_transport = true; 
+      } else if (serviceType === "lodging") { 
+        payload.target_facility_id = instanceId; 
+        payload.scope_lodging = true; 
+      } else {
+        throw new Error("Tipo de serviço inválido.");
+      }
+      
+      if (!instanceId) throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
+
       try {
         const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
         if (error) throw error;
@@ -621,8 +640,8 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
-          voucher_type: payload.voucher_type,
-          payload: payload,
+          voucher_type: vType,
+          payload: { ...payload, audit_info: "individual_emission" },
           status: 'success'
         });
 
@@ -631,8 +650,8 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
-          voucher_type: payload.voucher_type || 'individual',
-          payload: payload,
+          voucher_type: vType,
+          payload: { ...payload, audit_info: "individual_failed" },
           status: 'error',
           error_message: err.message
         });
