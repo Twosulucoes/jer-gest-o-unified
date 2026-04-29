@@ -53,6 +53,7 @@ interface ValidationResult {
 
 const RESULT_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   valid: { label: "VÁLIDO", icon: <CheckCircle2 className="h-8 w-8" />, color: "text-green-600 bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800" },
+  voucher_ok: { label: "VOUCHER OK", icon: <Receipt className="h-8 w-8" />, color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800" },
   not_found: { label: "NÃO ENCONTRADO", icon: <XCircle className="h-8 w-8" />, color: "text-destructive bg-destructive/10 border-destructive/30" },
   revoked: { label: "REVOGADO", icon: <XCircle className="h-8 w-8" />, color: "text-destructive bg-destructive/10 border-destructive/30" },
   suspended: { label: "SUSPENSO", icon: <AlertTriangle className="h-8 w-8" />, color: "text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800" },
