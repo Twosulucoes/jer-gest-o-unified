@@ -505,6 +505,11 @@ export default function AlimentacaoScanPage() {
               placeholder="Nome, CPF ou código do voucher…"
               value={manualQuery}
               onChange={(e) => setManualQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && manualQuery.length >= 8) {
+                  handleScan(manualQuery);
+                }
+              }}
               className="h-11 border-border/80 bg-card/90 pl-10"
             />
           </div>
