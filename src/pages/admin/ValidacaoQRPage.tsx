@@ -164,6 +164,7 @@ export default function ValidacaoQRPage() {
         } catch { /* ignore */ }
         throw new Error(detail || "Erro ao chamar validate-qr");
       }
+      if (!json) throw new Error("Resposta vazia do servidor");
 
       setResult(json);
       
