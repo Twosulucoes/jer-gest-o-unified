@@ -443,7 +443,7 @@ export default function AlimentacaoScanPage() {
               <span className="text-sm">Nenhuma janela de refeição aberta no momento</span>
             </CardContent>
           </Card>
-        ) : !preselectedWindowId ? (
+        ) : (
           <Select value={windowId} onValueChange={setWindowId}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione a janela" />
@@ -451,12 +451,12 @@ export default function AlimentacaoScanPage() {
             <SelectContent>
               {windows.map((w) => (
                 <SelectItem key={w.id} value={w.id}>
-                  {w.meal_type?.name || "Refeição"}
+                  {w.meal_type?.name || "Refeição"} — {w.start_time.slice(0, 5)}–{w.end_time.slice(0, 5)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        ) : null}
+        )}
 
         {windowId && (
           <div className="space-y-2">

@@ -33,7 +33,7 @@ export default function AlimentacaoHomePage() {
   const { activeEventId } = useEventContext();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ consumosHoje: 0, janelasAbertas: 0, tiposRefeicao: 0, totalJanelas: 0 });
-  const [openWindow, setOpenWindow] = useState<OpenWindowState | null>(null);
+  const [openWindows, setOpenWindows] = useState<OpenWindowState[]>([]);
   const [incidentOpen, setIncidentOpen] = useState(false);
 
   usePwaAudit("alimentacao");
@@ -57,34 +57,31 @@ export default function AlimentacaoHomePage() {
       ]);
 
       const windows = (windowsRes.data as any[]) || [];
-      const active = windows.find((w) => {
+      const activeWindows = windows.filter((w) => {
         const start = new Date(`${w.service_date}T${w.start_time}`);
         const end = new Date(`${w.service_date}T${w.end_time}`);
         return nowDate >= start && nowDate <= end;
       });
-      const janelasAbertas = windows.filter((w) => {
-        const start = new Date(`${w.service_date}T${w.start_time}`);
-        const end = new Date(`${w.service_date}T${w.end_time}`);
-        return nowDate >= start && nowDate <= end;
-      }).length;
+      const janelasAbertas = activeWindows.length;
 
-      let open: OpenWindowState | null = null;
-      if (active) {
-        const { count } = await supabase
-          .from("meal_consumptions")
-          .select("id", { count: "exact", head: true })
-          .eq("meal_window_id", active.id);
-        open = {
-          id: active.id,
-          mealName: active.meal_type?.name || "Refeição",
-          label: active.label,
-          windowStart: `${active.service_date}T${active.start_time}`,
-          windowEnd: `${active.service_date}T${active.end_time}`,
-          served: count || 0,
-        };
-      }
+      const openList: OpenWindowState[] = await Promise.all(
+        activeWindows.map(async (w) => {
+          const { count } = await supabase
+            .from("meal_consumptions")
+            .select("id", { count: "exact", head: true })
+            .eq("meal_window_id", w.id);
+          return {
+            id: w.id,
+            mealName: w.meal_type?.name || "Refeição",
+            label: w.label,
+            windowStart: `${w.service_date}T${w.start_time}`,
+            windowEnd: `${w.service_date}T${w.end_time}`,
+            served: count || 0,
+          };
+        })
+      );
 
-      setOpenWindow(open);
+      setOpenWindows(openList);
       setKpis({
         consumosHoje: consumoRes.count || 0,
         janelasAbertas,
@@ -109,40 +106,36 @@ export default function AlimentacaoHomePage() {
       />
 
       <PwaContainer>
-        {openWindow && (
-          <div className="op-card-elevated p-4 space-y-3">
+        {openWindows.map((ow) => (
+          <div key={ow.id} className="op-card-elevated p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <PwaSectionLabel>Janela atual</PwaSectionLabel>
+              <PwaSectionLabel>Janela aberta</PwaSectionLabel>
               <PwaStatusBadge tone="ok" pulse>Aberta</PwaStatusBadge>
             </div>
             <div>
-              <h3 className="text-xl font-extrabold text-foreground">{openWindow.mealName}</h3>
-              {openWindow.label && <p className="text-xs text-muted-foreground">{openWindow.label}</p>}
+              <h3 className="text-xl font-extrabold text-foreground">{ow.mealName}</h3>
+              {ow.label && <p className="text-xs text-muted-foreground">{ow.label}</p>}
               <p className="mt-1 text-sm font-medium text-foreground/80">
-                {format(new Date(openWindow.windowStart), "HH:mm")} – {format(new Date(openWindow.windowEnd), "HH:mm")}
+                {format(new Date(ow.windowStart), "HH:mm")} – {format(new Date(ow.windowEnd), "HH:mm")}
               </p>
             </div>
             <div className="space-y-1.5">
               <div className="flex justify-between text-[11px] text-muted-foreground">
-                <span><span className="font-bold text-module">{openWindow.served}</span> servidas nesta janela</span>
+                <span><span className="font-bold text-module">{ow.served}</span> servidas nesta janela</span>
                 <span><span className="font-bold text-foreground">{kpis.consumosHoje}</span> no dia</span>
               </div>
               <Progress
-                value={
-                  kpis.consumosHoje > 0
-                    ? Math.min(100, Math.round((openWindow.served / kpis.consumosHoje) * 100))
-                    : openWindow.served > 0 ? 100 : 0
-                }
+                value={kpis.consumosHoje > 0 ? Math.min(100, Math.round((ow.served / kpis.consumosHoje) * 100)) : ow.served > 0 ? 100 : 0}
                 className="h-2.5 bg-muted/40"
                 indicatorClassName="bg-module"
               />
             </div>
-            <Button className="op-btn-primary" onClick={() => navigate("/pwa/alimentacao/scan", { state: { windowId: openWindow.id } })}>
+            <Button className="op-btn-primary" onClick={() => navigate("/pwa/alimentacao/scan", { state: { windowId: ow.id } })}>
               <Plus className="h-5 w-5" />
               Registrar consumo
             </Button>
           </div>
-        )}
+        ))}
 
         <PwaActionGrid
           actions={[

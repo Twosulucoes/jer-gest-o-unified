@@ -157,3 +157,12 @@ BEGIN
 
 END;
 $$;
+
+-- Remove versão antiga de 3 parâmetros (ambiguidade e sem as correções)
+DROP FUNCTION IF EXISTS public.redeem_voucher(text, text, uuid);
+
+-- GRANT que estava faltando na versão de 5 parâmetros
+GRANT EXECUTE ON FUNCTION public.redeem_voucher(text, text, uuid, boolean, timestamp with time zone) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.redeem_voucher(text, text, uuid, boolean, timestamp with time zone) TO service_role;
+
+NOTIFY pgrst, 'reload schema';
