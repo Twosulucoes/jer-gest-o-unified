@@ -118,6 +118,13 @@ export default function AlojamentoScanPage() {
 
   const handleScan = useCallback(async (rawValue: string) => {
     setScannerOpen(false);
+    let val = rawValue.trim();
+    if (!val) return;
+
+    // Normalização para entrada manual de código de voucher
+    if (!val.toLowerCase().startsWith("voucher:") && val.length >= 8 && /^[A-Z0-9-]+$/i.test(val)) {
+      val = `voucher:${val.toUpperCase()}`;
+    }
 
     // Auto-detecção de voucher
     if (isVoucherQr(rawValue)) {
