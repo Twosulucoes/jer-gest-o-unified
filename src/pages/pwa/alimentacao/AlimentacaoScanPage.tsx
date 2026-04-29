@@ -326,7 +326,7 @@ export default function AlimentacaoScanPage() {
       const foodRestrictions: string | null = null;
       let method: "qr_scan" | "voucher" = "qr_scan";
 
-      if (isVoucherQr(rawValue)) {
+      if (isVoucherQr(val)) {
         if (!isOnline()) {
           addToVoucherQueue(rawValue, "meals", windowId, userId || "", "Portador de Voucher");
           const successMsg = `Voucher registrado offline: ${rawValue.replace("voucher:", "")}`;
