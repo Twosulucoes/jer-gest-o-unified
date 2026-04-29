@@ -85,13 +85,10 @@ export default function ValidacaoQRPage() {
     let codeToValidate = value || qrInput.trim();
     if (!codeToValidate || !selectedEventId) return;
 
-    // Normalização: se o código for apenas alfanumérico e não tiver o prefixo "voucher:",
-    // e o tamanho for compatível com o sufixo (ex: > 10 chars), tentamos prefixar.
-    if (!codeToValidate.toLowerCase().startsWith("voucher:") && codeToValidate.length >= 10) {
-      // Verifica se parece um código de voucher manual (sem espaços, apenas letras/números/hifen)
-      if (/^[A-Z0-9-]+$/i.test(codeToValidate)) {
-        codeToValidate = `voucher:${codeToValidate.toUpperCase()}`;
-      }
+    // Normalização: se o código for alfanumérico e não tiver o prefixo "voucher:",
+    // tentamos prefixar para facilitar a entrada manual.
+    if (!codeToValidate.toLowerCase().startsWith("voucher:") && /^[A-Z0-9-]+$/i.test(codeToValidate)) {
+      codeToValidate = `voucher:${codeToValidate.toUpperCase()}`;
     }
     
     setValidating(true);
