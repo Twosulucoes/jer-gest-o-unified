@@ -6419,6 +6419,39 @@ export type Database = {
           },
         ]
       }
+      service_voucher_audit: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_id: string
+          id: string
+          issuer_id: string
+          payload: Json
+          status: string
+          voucher_type: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_id: string
+          id?: string
+          issuer_id?: string
+          payload: Json
+          status: string
+          voucher_type: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_id?: string
+          id?: string
+          issuer_id?: string
+          payload?: Json
+          status?: string
+          voucher_type?: string
+        }
+        Relationships: []
+      }
       service_voucher_batches: {
         Row: {
           created_at: string
@@ -6541,6 +6574,7 @@ export type Database = {
           id: string
           is_nominal: boolean
           issued_by: string | null
+          label: string | null
           max_uses: number | null
           notes: string | null
           participant_id: string
@@ -6561,6 +6595,7 @@ export type Database = {
           updated_at: string
           valid_from: string
           valid_until: string | null
+          voucher_type: string | null
         }
         Insert: {
           batch_id?: string | null
@@ -6571,6 +6606,7 @@ export type Database = {
           id?: string
           is_nominal?: boolean
           issued_by?: string | null
+          label?: string | null
           max_uses?: number | null
           notes?: string | null
           participant_id: string
@@ -6591,6 +6627,7 @@ export type Database = {
           updated_at?: string
           valid_from?: string
           valid_until?: string | null
+          voucher_type?: string | null
         }
         Update: {
           batch_id?: string | null
@@ -6601,6 +6638,7 @@ export type Database = {
           id?: string
           is_nominal?: boolean
           issued_by?: string | null
+          label?: string | null
           max_uses?: number | null
           notes?: string | null
           participant_id?: string
@@ -6621,6 +6659,7 @@ export type Database = {
           updated_at?: string
           valid_from?: string
           valid_until?: string | null
+          voucher_type?: string | null
         }
         Relationships: [
           {
@@ -8410,6 +8449,7 @@ export type Database = {
         Args: { p_sport_event_id: string }
         Returns: Json
       }
+      check_voucher_schema_integrity: { Args: never; Returns: boolean }
       clear_logistics_seed_all_stages: {
         Args: { p_event_id: string }
         Returns: Json
@@ -8452,6 +8492,7 @@ export type Database = {
         }[]
       }
       generate_public_token: { Args: never; Returns: string }
+      get_alimentacao_duplicates: { Args: never; Returns: Json }
       get_alojamento_duplicates: {
         Args: { p_facility_id: string }
         Returns: Json

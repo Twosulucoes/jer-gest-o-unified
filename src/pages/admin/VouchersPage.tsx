@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import QRCode from "qrcode";
 import { toast } from "sonner";
@@ -518,7 +519,7 @@ export default function VouchersPage() {
         </TabsContent>
       </Tabs>
 
-      <IssueVoucherWizard open={issueOpen} onOpenChange={setIssueOpen} eventId={eventId} instances={instances} />
+      <IssueVoucherWizard open={issueOpen} onOpenChange={setIssueOpen} eventId={eventId} instances={instances} handlePrintIndividual={handlePrintIndividual} />
       <IssueBatchWizard open={batchIssueOpen} onOpenChange={setBatchIssueOpen} eventId={eventId} instances={instances} />
       <UsageHistoryDialog voucher={historyVoucher} onClose={() => setHistoryVoucher(null)} />
       
@@ -580,7 +581,8 @@ export default function VouchersPage() {
 }
 
 // -------- Emission Wizards --------
-function IssueVoucherWizard({ open, onOpenChange, eventId, instances }: any) {
+function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrintIndividual }: any) {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState<string>("");
   const [instanceId, setInstanceId] = useState<string>("");
@@ -600,25 +602,117 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances }: any) {
 
   const mutation = useMutation({
     mutationFn: async () => {
+      console.log("DEBUG: Iniciando emissão de voucher individual...");
+      const vType = isNominal ? "nominal" : "aggregate";
+      
       const payload: any = {
         event_id: eventId,
-        voucher_type: isNominal ? "nominal" : "aggregate",
+        voucher_type: vType,
         is_nominal: isNominal,
         qr_code_value: genQrValue(),
         status: "active",
       };
-      if (isNominal) payload.eventual_person_id = eventualId;
-      if (serviceType === "meals") { payload.target_meal_window_id = instanceId; payload.scope_meals = true; }
-      if (serviceType === "transport") { payload.target_trip_id = instanceId; payload.scope_transport = true; }
-      if (serviceType === "lodging") { payload.target_facility_id = instanceId; payload.scope_lodging = true; }
       
-      const { error } = await supabase.from("service_vouchers").insert(payload);
-      if (error) throw error;
+      if (isNominal) {
+        if (!eventualId) {
+          console.error("DEBUG: Erro de validação - eventualId ausente");
+          throw new Error("ID da pessoa eventual é obrigatório para vouchers nominais.");
+        }
+        payload.eventual_person_id = eventualId;
+      }
+      
+      if (serviceType === "meals") { 
+        payload.target_meal_window_id = instanceId; 
+        payload.scope_meals = true; 
+      } else if (serviceType === "transport") { 
+        payload.target_trip_id = instanceId; 
+        payload.scope_transport = true; 
+      } else if (serviceType === "lodging") { 
+        payload.target_facility_id = instanceId; 
+        payload.scope_lodging = true; 
+      } else {
+        console.error("DEBUG: Erro de validação - serviceType inválido:", serviceType);
+        throw new Error("Tipo de serviço inválido.");
+      }
+      
+      if (!instanceId) {
+        console.error("DEBUG: Erro de validação - instanceId ausente");
+        throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
+      }
+
+      console.log("DEBUG: Enviando payload ao Supabase:", JSON.stringify(payload, null, 2));
+
+      const sanitizedAuditPayload = {
+        event_id: eventId,
+        voucher_type: vType,
+        is_nominal: isNominal,
+        eventual_person_id: payload.eventual_person_id,
+        service_type: serviceType,
+        instance_id: instanceId,
+        qr_hash: btoa(payload.qr_code_value).slice(0, 10),
+        audit_info: "individual_emission"
+      };
+
+      try {
+        const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
+        if (error) {
+          console.error("DEBUG: Erro retornado pelo Supabase (vouchers):", error);
+          throw error;
+        }
+        
+        console.log("DEBUG: Voucher inserido com sucesso. Gravando auditoria...");
+        await supabase.from("service_voucher_audit").insert({
+          event_id: eventId,
+          issuer_id: user?.id,
+          voucher_type: vType,
+          payload: sanitizedAuditPayload,
+          status: 'success'
+        });
+
+        return data;
+      } catch (err: any) {
+        console.error("DEBUG: Exceção capturada no fluxo de emissão:", err);
+        await supabase.from("service_voucher_audit").insert({
+          event_id: eventId,
+          issuer_id: user?.id,
+          voucher_type: vType,
+          payload: { ...sanitizedAuditPayload, audit_info: "individual_failed" },
+          status: 'error',
+          error_message: err.message || JSON.stringify(err)
+        });
+        throw err;
+      }
     },
-    onSuccess: () => {
-      toast.success("Voucher emitido");
+    onSuccess: (newV) => {
+      toast.success("Voucher emitido com sucesso");
       onOpenChange(false);
       qc.invalidateQueries({ queryKey: ["vouchers"] });
+      // Tenta imprimir automaticamente se for individual
+      if (newV) {
+        handlePrintIndividual(newV as unknown as VoucherRow);
+      }
+    },
+    onError: (err: any) => {
+      console.error("DEBUG: Erro detalhado na emissão:", err);
+      let errorMsg = err.message || "Erro desconhecido";
+      
+      // Mapeamento de erros técnicos para mensagens amigáveis e específicas
+      if (errorMsg.includes("voucher_type") || errorMsg.includes("column \"voucher_type\"")) {
+        errorMsg = "Erro: Coluna 'voucher_type' não encontrada. O banco de dados precisa ser sincronizado.";
+      } else if (errorMsg.includes("permission denied") || errorMsg.includes("new row violates row-level security")) {
+        errorMsg = "Erro de Permissão (RLS): Seu usuário não tem autorização para gravar nesta tabela ou a política de acesso falhou.";
+      } else if (errorMsg.includes("DATABASE_SCHEMA_INCONSISTENT")) {
+        errorMsg = `Inconsistência Crítica: ${errorMsg.split(':').pop()?.trim() || "Colunas obrigatórias ausentes no banco."}`;
+      } else if (errorMsg.includes("NOMINAL_VOUCHER_REQUIRED_HOLDER")) {
+        errorMsg = "Erro de Negócio: Vouchers nominais exigem a seleção de um portador (participante ou eventual).";
+      } else if (errorMsg.includes("404") || errorMsg.includes("not found")) {
+        errorMsg = "Erro 404: Endpoint ou recurso de banco de dados não localizado. Tente atualizar a página.";
+      }
+
+      toast.error("Falha na emissão", {
+        description: errorMsg,
+        duration: 10000,
+      });
     }
   });
 
@@ -675,6 +769,7 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances }: any) {
 }
 
 function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState<string>("");
   const [instanceId, setInstanceId] = useState<string>("");
@@ -684,44 +779,111 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      // 1. Criar o lote
-      const { data: batch, error: bErr } = await supabase.from("service_voucher_batches").insert({
-        event_id: eventId,
-        label,
-        service_type: serviceType,
-        quantity,
-        target_meal_window_id: serviceType === "meals" ? instanceId : null,
-        target_trip_id: serviceType === "transport" ? instanceId : null,
-        target_facility_id: serviceType === "lodging" ? instanceId : null,
-      }).select().single();
-      
-      if (bErr) throw bErr;
+      console.log("DEBUG: Iniciando emissão de lote...");
+      if (!serviceType) {
+        console.error("DEBUG: Erro de validação - serviceType ausente");
+        throw new Error("Selecione o tipo de serviço.");
+      }
+      if (!instanceId) {
+        console.error("DEBUG: Erro de validação - instanceId ausente");
+        throw new Error("Selecione a instância do serviço.");
+      }
+      if (quantity <= 0) {
+        console.error("DEBUG: Erro de validação - quantity <= 0");
+        throw new Error("A quantidade deve ser maior que zero.");
+      }
 
-      // 2. Criar vouchers anônimos em massa
-      const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
-        event_id: eventId,
-        batch_id: batch.id,
-        participant_id: null,
-        voucher_type: "aggregate" as const,
-        is_nominal: false,
-        qr_code_value: genQrValue(),
-        status: "active",
-        scope_meals: serviceType === "meals",
-        scope_transport: serviceType === "transport",
-        scope_lodging: serviceType === "lodging",
-        target_meal_window_id: serviceType === "meals" ? instanceId : null,
-        target_trip_id: serviceType === "transport" ? instanceId : null,
-        target_facility_id: serviceType === "lodging" ? instanceId : null,
-      }));
+      const auditPayload = { 
+        service_type: serviceType, 
+        quantity, 
+        label, 
+        instance_id: instanceId,
+        audit_info: "batch_emission"
+      };
 
-      const { error: vErr } = await supabase.from("service_vouchers").insert(vouchersToInsert as any);
-      if (vErr) throw vErr;
+      try {
+        console.log("DEBUG: Criando registro do lote...");
+        const { data: batch, error: bErr } = await supabase.from("service_voucher_batches").insert({
+          event_id: eventId,
+          label,
+          service_type: serviceType,
+          quantity,
+          target_meal_window_id: serviceType === "meals" ? instanceId : null,
+          target_trip_id: serviceType === "transport" ? instanceId : null,
+          target_facility_id: serviceType === "lodging" ? instanceId : null,
+        }).select().single();
+        
+        if (bErr) {
+          console.error("DEBUG: Erro ao criar lote (batches):", bErr);
+          throw bErr;
+        }
+
+        const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
+          event_id: eventId,
+          batch_id: batch.id,
+          participant_id: null,
+          voucher_type: "aggregate" as const,
+          is_nominal: false,
+          qr_code_value: genQrValue(),
+          status: "active",
+          scope_meals: serviceType === "meals",
+          scope_transport: serviceType === "transport",
+          scope_lodging: serviceType === "lodging",
+          target_meal_window_id: serviceType === "meals" ? instanceId : null,
+          target_trip_id: serviceType === "transport" ? instanceId : null,
+          target_facility_id: serviceType === "lodging" ? instanceId : null,
+        }));
+
+        console.log(`DEBUG: Inserindo ${quantity} vouchers individuais...`);
+        const { error: vErr } = await supabase.from("service_vouchers").insert(vouchersToInsert as any);
+        if (vErr) {
+          console.error("DEBUG: Erro ao inserir vouchers do lote:", vErr);
+          throw vErr;
+        }
+
+        console.log("DEBUG: Lote concluído. Gravando auditoria...");
+        await supabase.from("service_voucher_audit").insert({
+          event_id: eventId,
+          issuer_id: user?.id,
+          voucher_type: 'batch',
+          payload: { ...auditPayload, batch_id: batch.id, created_count: quantity },
+          status: 'success'
+        });
+      } catch (err: any) {
+        console.error("DEBUG: Exceção capturada no fluxo de lote:", err);
+        await supabase.from("service_voucher_audit").insert({
+          event_id: eventId,
+          issuer_id: user?.id,
+          voucher_type: 'batch',
+          payload: { ...auditPayload, error: err.message || JSON.stringify(err), audit_info: "batch_failed" },
+          status: 'error',
+          error_message: err.message || JSON.stringify(err)
+        });
+        throw err;
+      }
     },
     onSuccess: () => {
       toast.success("Lote emitido com sucesso");
       onOpenChange(false);
       qc.invalidateQueries({ queryKey: ["vouchers"] });
       qc.invalidateQueries({ queryKey: ["voucher-batches"] });
+    },
+    onError: (err: any) => {
+      console.error("DEBUG: Erro detalhado no lote:", err);
+      let errorMsg = err.message || "Erro desconhecido";
+      
+      if (errorMsg.includes("service_type") || errorMsg.includes("column \"service_type\"")) {
+        errorMsg = "Erro no Lote: Coluna 'service_type' não encontrada no banco de dados.";
+      } else if (errorMsg.includes("permission denied") || errorMsg.includes("row-level security")) {
+        errorMsg = "Permissão Negada: Falha nas políticas de segurança (RLS) ao tentar criar lotes.";
+      } else if (errorMsg.includes("foreign key constraint")) {
+        errorMsg = "Erro de Integridade: Referência a evento ou usuário inválida.";
+      }
+
+      toast.error("Erro ao emitir lote", {
+        description: errorMsg,
+        duration: 10000,
+      });
     }
   });
 

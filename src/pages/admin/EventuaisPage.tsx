@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { Search, UserPlus, Users, Loader2, ShieldAlert, Trash2 } from "lucide-react";
+import { Search, UserPlus, Users, Loader2, ShieldAlert, Trash2, FileUp } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import EventuaisImportDialog from "@/components/admin/eventuais/EventuaisImportDialog";
 
 interface EventualPerson {
   id: string;
@@ -48,6 +49,7 @@ export default function EventuaisPage() {
   const [search, setSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [involvementType, setInvolvementType] = useState("");
@@ -174,9 +176,14 @@ export default function EventuaisPage() {
             Gestão de pessoas sem credencial oficial para emissão de vouchers.
           </p>
         </div>
-        <Button onClick={() => { resetForm(); setFormOpen(true); }}>
-          <UserPlus className="mr-2 h-4 w-4" /> Novo eventual
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <FileUp className="mr-2 h-4 w-4" /> Importar Excel
+          </Button>
+          <Button onClick={() => { resetForm(); setFormOpen(true); }}>
+            <UserPlus className="mr-2 h-4 w-4" /> Novo eventual
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -321,6 +328,13 @@ export default function EventuaisPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EventuaisImportDialog 
+        open={importOpen} 
+        onOpenChange={setImportOpen} 
+        eventId={activeEventId || ""} 
+        onSuccess={() => qc.invalidateQueries({ queryKey: ["eventual-people"] })}
+      />
     </div>
   );
 }
