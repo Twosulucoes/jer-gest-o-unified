@@ -518,7 +518,7 @@ export default function VouchersPage() {
         </TabsContent>
       </Tabs>
 
-      <IssueVoucherWizard open={issueOpen} onOpenChange={setIssueOpen} eventId={eventId} instances={instances} />
+      <IssueVoucherWizard open={issueOpen} onOpenChange={setIssueOpen} eventId={eventId} instances={instances} handlePrintIndividual={handlePrintIndividual} />
       <IssueBatchWizard open={batchIssueOpen} onOpenChange={setBatchIssueOpen} eventId={eventId} instances={instances} />
       <UsageHistoryDialog voucher={historyVoucher} onClose={() => setHistoryVoucher(null)} />
       
