@@ -275,7 +275,17 @@ export default function TransporteScanPage() {
             <Input
               placeholder="Nome, CPF ou código do voucher…"
               value={manualQuery}
-              onChange={(e) => setManualQuery(e.target.value)}
+              onChange={(e) => {
+                setManualQuery(e.target.value);
+                // Se o usuário digitar algo que pareça um código de voucher e apertar enter (ou após debounce),
+                // poderíamos disparar o handleScan. Mas por enquanto, apenas permitimos que ele
+                // use o campo de busca que já existe.
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && manualQuery.length >= 8) {
+                  handleScan(manualQuery);
+                }
+              }}
               className="h-11 border-border/80 bg-card/90 pl-10"
             />
           </div>
