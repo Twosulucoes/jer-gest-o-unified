@@ -127,7 +127,7 @@ export default function AlojamentoScanPage() {
     }
 
     // Auto-detecção de voucher
-    if (isVoucherQr(rawValue)) {
+    if (isVoucherQr(val)) {
       if (!facilityId) {
         toast.error(getSystemMessage("ERR_SELECT_FACILITY", lang));
         navigate("/pwa/alojamento");
