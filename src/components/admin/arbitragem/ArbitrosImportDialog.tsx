@@ -50,7 +50,7 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
         nome: nomeIdx >= 0 ? cols[nomeIdx] || "" : "",
         email: cols[emailIdx] || "",
         telefone: telIdx >= 0 ? cols[telIdx] || undefined : undefined,
-        status: "pending",
+        status: "pending" as const,
       };
     }).filter(r => r.email);
   }
