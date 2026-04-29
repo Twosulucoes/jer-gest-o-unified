@@ -4,6 +4,7 @@ import {
   AlertTriangle, ClipboardList, FileBarChart,
   LayoutDashboard, ListChecks, GitBranch, Users, CalendarClock, Layers,
   ScanLine, KeyRound, ChartBar, Navigation, Route, Settings, Filter,
+  ShieldCheck,
 } from "lucide-react";
 import { StageMiniDash, type StageMiniDashKpi } from "./StageMiniDash";
 import { StageModuleTabs, type StageTabItem } from "./StageModuleTabs";
