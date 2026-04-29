@@ -138,44 +138,75 @@ export default function PesquisaNovaPage() {
     setScannerOpen(false);
     setIdentifying(true);
     try {
+      // NOVO: Verifica se é um voucher
+      if (payload.trim().toLowerCase().startsWith("voucher:")) {
+        // Vouchers podem conter informações do portador
+        // Usamos 'label' em vez de 'person_name' (que não existe)
+        const { data: voucher, error: vErr } = await supabase
+          .from("service_vouchers")
+          .select("label, participant_id, voucher_type")
+          .eq("qr_code_value", payload.trim())
+          .maybeSingle();
+
+        if (vErr || !voucher) {
+          toast.error("Voucher não encontrado ou inválido para identificação.");
+          return;
+        }
+
+        const typedVoucher = voucher as any;
+        if (typedVoucher.participant_id) {
+          // Se tiver participant_id, segue o fluxo de carregar dados do participante
+          await loadParticipantData(typedVoucher.participant_id, typedVoucher.label || "Portador de Voucher");
+        } else {
+          // Voucher avulso/agregado
+          setRespondentType(typedVoucher.voucher_type === 'nominal' ? 'atleta' : 'outro');
+          toast.success(`Identificado via Voucher: ${typedVoucher.label || 'Portador'}`);
+        }
+        return;
+      }
+
       const resolved = await resolveQrCredential(payload, { eventId: session?.researcher?.event_id });
       if (!resolved) {
         toast.error("Participante não encontrado");
         return;
       }
-
-      // Fetch more details (age, gender)
-      const { data: part, error } = await supabase
-        .from("participants")
-        .select("birth_date, biological_sex, participant_type")
-        .eq("id", resolved.participant_id)
-        .single();
-
-      if (error) throw error;
-
-      if (part) {
-        setRespondentType(part.participant_type === 'athlete' ? 'atleta' : 
-                          part.participant_type === 'coach' ? 'tecnico' : 'outro');
-        
-        if (part.biological_sex) {
-          setRespondentGender(part.biological_sex === 'male' ? 'masculino' : 'feminino');
-        }
-
-        if (part.birth_date) {
-          const age = differenceInYears(new Date(), parseISO(part.birth_date));
-          if (age <= 12) setRespondentAge('ate_12');
-          else if (age <= 17) setRespondentAge('13_17');
-          else if (age <= 30) setRespondentAge('18_30');
-          else setRespondentAge('acima_30');
-        }
-
-        toast.success(`Identificado: ${resolved.full_name}`);
-      }
+      
+      await loadParticipantData(resolved.participant_id, resolved.full_name);
     } catch (err) {
       console.error(err);
       toast.error("Erro ao identificar participante");
     } finally {
       setIdentifying(false);
+    }
+  };
+
+  const loadParticipantData = async (participantId: string, name: string) => {
+    // Fetch more details (age, gender)
+    const { data: part, error } = await supabase
+      .from("participants")
+      .select("birth_date, biological_sex, participant_type")
+      .eq("id", participantId)
+      .single();
+
+    if (error) throw error;
+
+    if (part) {
+      setRespondentType(part.participant_type === 'athlete' ? 'atleta' : 
+                        part.participant_type === 'coach' ? 'tecnico' : 'outro');
+      
+      if (part.biological_sex) {
+        setRespondentGender(part.biological_sex === 'male' ? 'masculino' : 'feminino');
+      }
+
+      if (part.birth_date) {
+        const age = differenceInYears(new Date(), parseISO(part.birth_date));
+        if (age <= 12) setRespondentAge('ate_12');
+        else if (age <= 17) setRespondentAge('13_17');
+        else if (age <= 30) setRespondentAge('18_30');
+        else setRespondentAge('acima_30');
+      }
+
+      toast.success(`Identificado: ${name}`);
     }
   };
 
