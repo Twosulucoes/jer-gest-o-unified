@@ -112,20 +112,8 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Páginas e Links", to: "/admin/links", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Identidade Visual", to: "/admin/configuracoes/identidade-visual", icon: <BadgeCheck className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
-      { label: "Pesquisa de Satisfação", to: "/admin/pesquisa", icon: <ClipboardList className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Pesquisa (Dashboard)", to: "/admin/pesquisa", icon: <ClipboardList className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
-    subGroups: [
-      {
-        label: "Links PWA (Mobile)",
-        items: [
-          { label: "Transporte", to: "/pwa/transporte", icon: <Bus className="h-4 w-4" />, roles: ["transporte", "admin", "super_admin"] },
-          { label: "Alimentação", to: "/pwa/alimentacao", icon: <UtensilsCrossed className="h-4 w-4" />, roles: ["alimentacao", "admin", "super_admin"] },
-          { label: "Alojamento", to: "/pwa/alojamento", icon: <Building2 className="h-4 w-4" />, roles: ["alojamento", "admin", "super_admin"] },
-          { label: "Coord. Técnica", to: "/pwa/coordenacao-tecnica", icon: <Trophy className="h-4 w-4" />, roles: ["coordenacao_tecnica", "admin", "super_admin"] },
-          { label: "Delegação", to: "/pwa/delegacao", icon: <Users className="h-4 w-4" />, roles: ["delegacao", "admin", "super_admin"] },
-        ]
-      }
-    ]
   },
   {
     id: "acessos", label: "Acessos e Segurança", description: "Usuários e permissões.",
@@ -149,37 +137,11 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    id: "competicao", label: "Competição", description: "Operação das modalidades e confrontos.",
-    icon: <Trophy className="h-4 w-4" />,
-    items: [
-      { label: "Painel da Competição", to: "/admin/competicao/painel", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES, hideIfRegistrosEnabled: true },
-      { label: "Publicação de Resultados", to: "/admin/competicao/publicacao", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria"] },
-      { label: "Central da Competição", to: "/admin/competicao/central", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES, hideIfRegistrosEnabled: true },
-      { label: "Registros de Partidas", to: "/admin/registros", icon: <ClipboardList className="h-4 w-4" />, roles: ADMIN_ROLES, showOnlyIfRegistrosEnabled: true },
-      { label: "Boletins Oficiais", to: "/admin/competicao/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Regras por Prova", to: "/admin/competicao/regras", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
-    ],
-  },
-  {
-    id: "arbitragem", label: "Arbitragem", description: "Equipe, escalas e operação ao vivo.",
+    id: "arbitragem", label: "Arbitragem", description: "Equipe de oficiais e base de árbitros.",
     icon: <Gavel className="h-4 w-4" />,
     items: [
-      { label: "Árbitros", to: "/admin/arbitragem", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
-      { label: "Escalas por oficial", to: "/admin/etapas", state: { from: "/admin/competicao/arbitragem?tab=officials" }, icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
-      { label: "Escalas por modalidade", to: "/admin/etapas", state: { from: "/admin/competicao/arbitragem?tab=sports" }, icon: <ListTree className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
-      { label: "Escala em Lote", to: "/admin/etapas", state: { from: "/admin/competicao/arbitragem?tab=lote" }, icon: <ClipboardList className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
-      { label: "AOVivo (PWA)", to: "/aovivo", icon: <Radio className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
+      { label: "Árbitros (Base)", to: "/admin/arbitragem", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde"] as AppRole[] },
-    ],
-  },
-  {
-    id: "vouchers", label: "Gestão de Vouchers", description: "Emissão, consulta e auditoria.",
-    icon: <ClipboardList className="h-4 w-4" />,
-    items: [
-      { label: "Listagem de Vouchers", to: "/admin/vouchers", icon: <ListTree className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Validação Manual", to: "/admin/voucher/validar", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Auditoria de Vouchers", to: "/admin/vouchers/auditoria", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
     ],
   },
   {
