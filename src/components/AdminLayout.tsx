@@ -96,7 +96,7 @@ const navGroups: NavGroup[] = [
     icon: <Layers className="h-4 w-4" />,
     items: [
       { label: "Logística Consolidada", to: "/admin/etapas", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Clonar Logística entre Etapas", to: "/admin/clonar-logistica", icon: <Layers className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Clonar Logística entre Etapas", to: "/admin/clonar-logistica", icon: <Layers className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
     ],
   },
   {
@@ -104,7 +104,7 @@ const navGroups: NavGroup[] = [
     icon: <Radio className="h-4 w-4" />,
     items: [
       { label: "Páginas e Links", to: "/admin/links", icon: <ExternalLink className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Identidade Visual", to: "/admin/configuracoes/identidade-visual", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
+      { label: "Identidade Visual", to: "/admin/configuracoes/identidade-visual", icon: <BadgeCheck className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
       { label: "Pesquisa de Satisfação", to: "/admin/pesquisa", icon: <ClipboardList className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
     subGroups: [
@@ -116,7 +116,6 @@ const navGroups: NavGroup[] = [
           { label: "Alojamento", to: "/pwa/alojamento", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
           { label: "Coord. Técnica", to: "/pwa/coordenacao-tecnica", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
           { label: "Delegação", to: "/pwa/delegacao", icon: <Users className="h-4 w-4" />, roles: ADMIN_ROLES },
-          { label: "JER Ao Vivo", to: "/aovivo", icon: <Radio className="h-4 w-4" />, roles: ADMIN_ROLES },
         ]
       }
     ]
@@ -127,13 +126,13 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Acessos e Vínculos", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Auditoria de Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Auditoria do Sistema", to: "/admin/auditoria", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Auditoria de Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
+      { label: "Auditoria do Sistema", to: "/admin/auditoria", icon: <Shield className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
       { label: "Evidências OSC", to: "/admin/evidencias-osc", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "alimentacao", "alojamento", "transporte", "coordenacao_tecnica"] as AppRole[] },
-      { label: "Monitoramento DB", to: "/admin/monitoramento-db", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
-      { label: "Conexão Supabase", to: "/admin/configuracoes/supabase", icon: <Cloud className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
+      { label: "Monitoramento DB", to: "/admin/monitoramento-db", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
+      { label: "Conexão Supabase", to: "/admin/configuracoes/supabase", icon: <Cloud className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
 
-      { label: "Status do PWA", to: "/admin/pwa-status", icon: <Cloud className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Status do PWA", to: "/admin/pwa-status", icon: <Cloud className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
 
       { label: "Resultados (Coord. Modalidade)", to: "/pwa/resultados", icon: <Trophy className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as AppRole[] },
     ],
@@ -167,8 +166,7 @@ const navGroups: NavGroup[] = [
     icon: <Settings className="h-4 w-4" />,
     items: [
       { label: "Regras do Evento", to: "/admin/regras", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Normalização de Provas", to: "/admin/normalizacao-provas", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Locais de Competição", to: "/admin/locais", icon: <MapPin className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Normalização de Provas", to: "/admin/normalizacao-provas", icon: <Layers className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
       { label: "Modalidades", to: "/admin/modalidades", icon: <Dumbbell className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Categorias", to: "/admin/categorias", icon: <ListTree className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
