@@ -345,6 +345,33 @@ export default function AlojamentoScanPage() {
           Escanear QR Code
         </Button>
 
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Entrada Manual (Voucher/CPF)</label>
+          <div className="flex gap-2">
+            <Input 
+              placeholder="Código do voucher ou CPF..." 
+              className="h-11 rounded-xl bg-card border-border/50"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleScan((e.target as HTMLInputElement).value);
+                  (e.target as HTMLInputElement).value = "";
+                }
+              }}
+            />
+            <Button 
+              variant="secondary" 
+              className="h-11 rounded-xl px-4"
+              onClick={(e) => {
+                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                handleScan(input.value);
+                input.value = "";
+              }}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
         {result && (
           <div className="space-y-3 animate-in zoom-in-95 duration-200">
             {/* Divergence Alert above Success Card */}
