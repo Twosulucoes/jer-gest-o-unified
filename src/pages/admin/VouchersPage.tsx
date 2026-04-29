@@ -693,17 +693,25 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
       }
     },
     onError: (err: any) => {
-      console.error("Erro na mutação de voucher:", err);
+      console.error("DEBUG: Erro detalhado na emissão:", err);
       let errorMsg = err.message || "Erro desconhecido";
       
-      // Detecção de divergência de schema (PostgREST ou erro 404/400 de coluna)
-      if (errorMsg.includes("voucher_type") || errorMsg.includes("column") || errorMsg.includes("not found")) {
-        errorMsg = "Divergência de esquema detectada no banco de dados. Por favor, execute as migrações mais recentes ou limpe o cache do sistema.";
+      // Mapeamento de erros técnicos para mensagens amigáveis e específicas
+      if (errorMsg.includes("voucher_type") || errorMsg.includes("column \"voucher_type\"")) {
+        errorMsg = "Erro: Coluna 'voucher_type' não encontrada. O banco de dados precisa ser sincronizado.";
+      } else if (errorMsg.includes("permission denied") || errorMsg.includes("new row violates row-level security")) {
+        errorMsg = "Erro de Permissão (RLS): Seu usuário não tem autorização para gravar nesta tabela ou a política de acesso falhou.";
+      } else if (errorMsg.includes("DATABASE_SCHEMA_INCONSISTENT")) {
+        errorMsg = `Inconsistência Crítica: ${errorMsg.split(':').pop()?.trim() || "Colunas obrigatórias ausentes no banco."}`;
+      } else if (errorMsg.includes("NOMINAL_VOUCHER_REQUIRED_HOLDER")) {
+        errorMsg = "Erro de Negócio: Vouchers nominais exigem a seleção de um portador (participante ou eventual).";
+      } else if (errorMsg.includes("404") || errorMsg.includes("not found")) {
+        errorMsg = "Erro 404: Endpoint ou recurso de banco de dados não localizado. Tente atualizar a página.";
       }
 
-      toast.error("Erro ao emitir voucher", {
+      toast.error("Falha na emissão", {
         description: errorMsg,
-        duration: 8000,
+        duration: 10000,
       });
     }
   });
@@ -861,16 +869,20 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
       qc.invalidateQueries({ queryKey: ["voucher-batches"] });
     },
     onError: (err: any) => {
-      console.error("Erro ao emitir lote:", err);
+      console.error("DEBUG: Erro detalhado no lote:", err);
       let errorMsg = err.message || "Erro desconhecido";
       
-      if (errorMsg.includes("service_type") || errorMsg.includes("column") || errorMsg.includes("not found")) {
-        errorMsg = "Divergência de esquema detectada (tabela de lotes). Verifique as migrações de banco de dados.";
+      if (errorMsg.includes("service_type") || errorMsg.includes("column \"service_type\"")) {
+        errorMsg = "Erro no Lote: Coluna 'service_type' não encontrada no banco de dados.";
+      } else if (errorMsg.includes("permission denied") || errorMsg.includes("row-level security")) {
+        errorMsg = "Permissão Negada: Falha nas políticas de segurança (RLS) ao tentar criar lotes.";
+      } else if (errorMsg.includes("foreign key constraint")) {
+        errorMsg = "Erro de Integridade: Referência a evento ou usuário inválida.";
       }
 
       toast.error("Erro ao emitir lote", {
         description: errorMsg,
-        duration: 8000,
+        duration: 10000,
       });
     }
   });
