@@ -139,6 +139,7 @@ import SuperConfigPage from "./pages/super/SuperConfigPage";
 import SuperMonitorPage from "./pages/super/SuperMonitorPage";
 import SuperInspectorPage from "./pages/super/SuperInspectorPage";
 import SistemaDiagnosticoKpiPage from "./pages/admin/SistemaDiagnosticoKpiPage";
+import SuperFamiliasInferidasPage from "./pages/super/SuperFamiliasInferidasPage";
 import EmailTemplatesPage from "./pages/admin/EmailTemplatesPage";
 import LinksPage from "./pages/admin/LinksPage";
 import LinkFormPage from "./pages/admin/LinkFormPage";
@@ -289,6 +290,7 @@ const App = () => (
               <Route path="logs" element={<SuperLogsPage />} />
               <Route path="config" element={<SuperConfigPage />} />
               <Route path="monitor" element={<SuperMonitorPage />} />
+              <Route path="registros/familias-inferidas" element={<SuperFamiliasInferidasPage />} />
               <Route path="manual" element={<SuperManualPage />} />
               <Route path="chamados" element={<SuperChamadosPage />} />
                <Route path="validador" element={<SchemaValidadorPage />} />

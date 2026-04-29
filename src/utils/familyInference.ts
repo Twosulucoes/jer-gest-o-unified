@@ -1,5 +1,5 @@
 import { SPORT_PRESET_CATALOG } from "@/config/sportPresetCatalog";
-import type { RulesFamily } from "@/types/competition";
+import type { RulesFamily } from "@/types/sportEventRules";
 
 /**
  * Infece a família de uma prova baseada no nome da modalidade e da prova.
