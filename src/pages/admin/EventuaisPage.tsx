@@ -176,9 +176,14 @@ export default function EventuaisPage() {
             Gestão de pessoas sem credencial oficial para emissão de vouchers.
           </p>
         </div>
-        <Button onClick={() => { resetForm(); setFormOpen(true); }}>
-          <UserPlus className="mr-2 h-4 w-4" /> Novo eventual
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <FileUp className="mr-2 h-4 w-4" /> Importar Excel
+          </Button>
+          <Button onClick={() => { resetForm(); setFormOpen(true); }}>
+            <UserPlus className="mr-2 h-4 w-4" /> Novo eventual
+          </Button>
+        </div>
       </div>
 
       <Card>
