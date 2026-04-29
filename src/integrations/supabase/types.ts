@@ -389,6 +389,7 @@ export type Database = {
           score: string | null
           seed_batch_id: string | null
           seed_tag: string | null
+          sets_score_json: Json | null
           time_ms: number | null
           transport_exception_confirmed: boolean | null
           updated_at: string
@@ -425,6 +426,7 @@ export type Database = {
           score?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
+          sets_score_json?: Json | null
           time_ms?: number | null
           transport_exception_confirmed?: boolean | null
           updated_at?: string
@@ -461,6 +463,7 @@ export type Database = {
           score?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
+          sets_score_json?: Json | null
           time_ms?: number | null
           transport_exception_confirmed?: boolean | null
           updated_at?: string
@@ -6979,6 +6982,50 @@ export type Database = {
             columns: ["sport_id"]
             isOneToOne: false
             referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sport_family_inferences: {
+        Row: {
+          applied_at: string | null
+          applied_by: string | null
+          created_at: string
+          id: string
+          inferred_family: string
+          reason: string | null
+          sport_event_rule_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_by?: string | null
+          created_at?: string
+          id?: string
+          inferred_family: string
+          reason?: string | null
+          sport_event_rule_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          applied_at?: string | null
+          applied_by?: string | null
+          created_at?: string
+          id?: string
+          inferred_family?: string
+          reason?: string | null
+          sport_event_rule_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sport_family_inferences_sport_event_rule_id_fkey"
+            columns: ["sport_event_rule_id"]
+            isOneToOne: false
+            referencedRelation: "sport_event_rules"
             referencedColumns: ["id"]
           },
         ]
