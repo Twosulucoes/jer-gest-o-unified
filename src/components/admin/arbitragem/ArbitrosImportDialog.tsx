@@ -12,7 +12,7 @@ interface CsvRow {
   nome: string;
   email: string;
   telefone?: string;
-  status?: "pending" | "ok" | "error" | "duplicate";
+  status: "pending" | "ok" | "error" | "duplicate";
   error?: string;
 }
 
