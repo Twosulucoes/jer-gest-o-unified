@@ -7,6 +7,7 @@ import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { PwaActionGrid } from "@/components/pwa/PwaActionGrid";
 import { Progress } from "@/components/ui/progress";
 import { useEventContext } from "@/contexts/EventContext";
+import { useActiveStageId } from "@/contexts/StageContext";
 import {
   ScanLine, Search,
   Clock, Plus, ListChecks,
@@ -31,6 +32,7 @@ interface OpenWindowState {
 export default function AlimentacaoHomePage() {
   const navigate = useNavigate();
   const { activeEventId } = useEventContext();
+  const stageId = useActiveStageId();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ consumosHoje: 0, janelasAbertas: 0, tiposRefeicao: 0, totalJanelas: 0 });
   const [openWindows, setOpenWindows] = useState<OpenWindowState[]>([]);
@@ -49,11 +51,17 @@ export default function AlimentacaoHomePage() {
       const today = new Date().toLocaleDateString('fr-CA');
       const nowDate = new Date();
 
+      let windowsQ = supabase.from("meal_windows").select("id, start_time, end_time, service_date, label, meal_type:meal_types(name)").eq("event_id", activeEventId).eq("service_date", today).order("start_time");
+      if (stageId) windowsQ = windowsQ.eq("event_stage_id", stageId);
+
+      let totalJanelasQ = supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("service_date", today);
+      if (stageId) totalJanelasQ = totalJanelasQ.eq("event_stage_id", stageId);
+
       const [consumoRes, tiposRes, totalJanelasRes, windowsRes] = await Promise.all([
         supabase.from("meal_consumptions").select("id, meal_windows!meal_window_id!inner(event_id)", { count: "exact", head: true }).eq("meal_windows.event_id", activeEventId).gte("consumed_at", today + "T00:00:00"),
         supabase.from("meal_types").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
-        supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("service_date", today),
-        supabase.from("meal_windows").select("id, start_time, end_time, service_date, label, meal_type:meal_types(name)").eq("event_id", activeEventId).eq("service_date", today).order("start_time"),
+        totalJanelasQ,
+        windowsQ,
       ]);
 
       const windows = (windowsRes.data as any[]) || [];

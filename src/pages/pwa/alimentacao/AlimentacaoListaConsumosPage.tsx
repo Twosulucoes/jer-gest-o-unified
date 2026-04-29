@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useEventContext } from "@/contexts/EventContext";
+import { useActiveStageId } from "@/contexts/StageContext";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,8 @@ interface Consumption {
 }
 
 export default function AlimentacaoListaConsumosPage() {
+  const { activeEventId } = useEventContext();
+  const stageId = useActiveStageId();
   const [consumptions, setConsumptions] = useState<Consumption[]>([]);
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,17 +69,20 @@ export default function AlimentacaoListaConsumosPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [activeEventId, stageId]);
 
   async function loadData() {
     setLoading(true);
 
     // Step 1: windows (needed to filter voucher uses by window)
-    const windowsRes = await supabase
+    let windowsQ = supabase
       .from("meal_windows")
       .select("id, label, start_time, end_time, service_date, meal_type_id, meal_types!inner(name)")
+      .eq("event_id", activeEventId)
       .eq("service_date", today)
       .order("start_time");
+    if (stageId) windowsQ = windowsQ.eq("event_stage_id", stageId);
+    const windowsRes = await windowsQ;
 
     const windowList: MealWindow[] = (windowsRes.data || []).map((w: any) => ({
       id: w.id,
