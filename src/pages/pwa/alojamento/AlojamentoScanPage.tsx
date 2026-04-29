@@ -337,7 +337,7 @@ export default function AlojamentoScanPage() {
                 <SelectItem value="none">Nenhuma selecionada</SelectItem>
                 {units.map(u => (
                   <SelectItem key={u.id} value={u.id}>
-                    {u.name} {u.capacity ? `(${u.capacity} lug.)` : ""}
+                    {u.name}{u.gender_restriction && u.gender_restriction !== "misto" ? ` — ${u.gender_restriction === "masculino" ? "Masc." : "Fem."}` : ""}{u.capacity ? ` (${u.capacity} lug.)` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>

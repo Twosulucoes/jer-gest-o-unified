@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import { rpcSearchPerson, getSelectedFacility } from "@/lib/alojamentoRpc";
 import { Search, Loader2 } from "lucide-react";
-import { PwaHeader } from "@/components/pwa/PwaHeader";
+import PwaLayout from "@/components/pwa/PwaLayout";
 
 interface PersonResult {
   participant_id: string;
@@ -29,7 +30,12 @@ export default function AlojamentoBuscarPage() {
   const facilityId = getSelectedFacility();
 
   const handleSearch = async () => {
-    if (!query.trim() || !facilityId) return;
+    if (!query.trim()) return;
+    if (!facilityId) {
+      toast.error("Selecione um local de alojamento antes de buscar.");
+      navigate("/pwa/alojamento");
+      return;
+    }
     setLoading(true);
     setSearched(true);
     try {
@@ -43,10 +49,8 @@ export default function AlojamentoBuscarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <PwaHeader title="Buscar Pessoa" icon={Search} backTo="/pwa/alojamento" />
-
-      <main className="p-4 max-w-md mx-auto space-y-4">
+    <PwaLayout backTo="/pwa/alojamento" moduleTitle="Buscar Pessoa">
+      <div className="p-4 max-w-md mx-auto space-y-4">
         <div className="flex gap-2">
           <Input
             placeholder="Nome ou CPF"
@@ -93,7 +97,7 @@ export default function AlojamentoBuscarPage() {
             </Card>
           ))}
         </div>
-      </main>
-    </div>
+      </div>
+    </PwaLayout>
   );
 }

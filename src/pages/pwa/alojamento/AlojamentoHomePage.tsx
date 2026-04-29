@@ -68,10 +68,27 @@ export default function AlojamentoHomePage() {
 
       if (!error) {
         const list = (data || []) as Facility[];
-        setFacilities(list);
-        if (!facilityId && list.length > 0) {
-          setFacilityId(list[0].id);
-          setSelectedFacility(list[0].id);
+
+        const kpiResults = await Promise.all(
+          list.map(f => supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: f.id }))
+        );
+
+        const enriched: Facility[] = list.map((f, i) => {
+          const kpi = (kpiResults[i].data as any) || {};
+          const total = kpi.total_beds || 0;
+          const occupied = kpi.assigned_beds || 0;
+          return {
+            ...f,
+            occupied,
+            total,
+            occupancy_pct: total > 0 ? Math.round((occupied / total) * 100) : 0,
+          };
+        });
+
+        setFacilities(enriched);
+        if (!facilityId && enriched.length > 0) {
+          setFacilityId(enriched[0].id);
+          setSelectedFacility(enriched[0].id);
         }
       }
       setLoading(false);
@@ -142,7 +159,7 @@ export default function AlojamentoHomePage() {
             <span className="op-label">Locais de alojamento</span>
           </div>
           <div className="space-y-2">
-            {facilities.slice(0, 5).map((f) => {
+            {facilities.map((f) => {
               const pct = Math.round(f.occupancy_pct ?? 0);
               return (
                 <button

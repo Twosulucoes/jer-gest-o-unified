@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { usePersistedState } from "@/hooks/usePersistedState";
 
 import { supabase } from "@/integrations/supabase/client";
-import { PwaHeader } from "@/components/pwa/PwaHeader";
+import PwaLayout from "@/components/pwa/PwaLayout";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 // AlojamentoNavHeader removed for consistency
@@ -195,10 +195,8 @@ export default function AlojamentoListaCompletaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <PwaHeader title="Lista de Hóspedes" icon={Users} backTo="/pwa/alojamento" />
-
-      <main className="p-4 max-w-4xl mx-auto space-y-4">
+    <PwaLayout backTo="/pwa/alojamento" moduleTitle="Lista de Hóspedes">
+      <div className="p-4 max-w-4xl mx-auto space-y-4">
         {/* Counter + Export */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
@@ -325,7 +323,7 @@ export default function AlojamentoListaCompletaPage() {
             ))}
           </div>
         )}
-      </main>
+      </div>
 
       {/* Detail Drawer */}
       <Drawer open={!!selectedGuest} onOpenChange={open => { if (!open) setSelectedGuest(null); }}>
@@ -434,6 +432,6 @@ export default function AlojamentoListaCompletaPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PwaLayout>
   );
 }
