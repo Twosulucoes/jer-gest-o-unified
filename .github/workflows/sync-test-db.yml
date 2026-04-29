@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: teste
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
