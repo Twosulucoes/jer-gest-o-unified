@@ -7,6 +7,7 @@ import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { PwaActionGrid } from "@/components/pwa/PwaActionGrid";
 import { Progress } from "@/components/ui/progress";
 import { useEventContext } from "@/contexts/EventContext";
+import { useStageContext } from "@/contexts/StageContext";
 import {
   ScanLine, Search,
   Clock, Plus, ListChecks,
@@ -31,6 +32,7 @@ interface OpenWindowState {
 export default function AlimentacaoHomePage() {
   const navigate = useNavigate();
   const { activeEventId } = useEventContext();
+  const { activeStageId } = useStageContext();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ consumosHoje: 0, janelasAbertas: 0, tiposRefeicao: 0, totalJanelas: 0 });
   const [openWindows, setOpenWindows] = useState<OpenWindowState[]>([]);
@@ -50,11 +52,23 @@ export default function AlimentacaoHomePage() {
       const nowDate = new Date();
 
       const [consumoRes, tiposRes, totalJanelasRes, windowsRes] = await Promise.all([
-        supabase.from("meal_consumptions").select("id, meal_windows!meal_window_id!inner(event_id)", { count: "exact", head: true }).eq("meal_windows.event_id", activeEventId).gte("consumed_at", today + "T00:00:00"),
+        supabase.from("meal_consumptions").select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", { count: "exact", head: true })
+          .eq("meal_windows.event_id", activeEventId)
+          .eq(activeStageId ? "meal_windows.event_stage_id" : "meal_windows.event_id", activeStageId || activeEventId)
+          .gte("consumed_at", today + "T00:00:00"),
         supabase.from("meal_types").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
-        supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("service_date", today),
-        supabase.from("meal_windows").select("id, start_time, end_time, service_date, label, meal_type:meal_types(name)").eq("event_id", activeEventId).eq("service_date", today).order("start_time"),
+        supabase.from("meal_windows").select("id", { count: "exact", head: true })
+          .eq("event_id", activeEventId)
+          .eq(activeStageId ? "event_stage_id" : "event_id", activeStageId || activeEventId)
+          .eq("service_date", today),
+        supabase.from("meal_windows").select("id, start_time, end_time, service_date, label, meal_type:meal_types(name)")
+          .eq("event_id", activeEventId)
+          .eq(activeStageId ? "event_stage_id" : "event_id", activeStageId || activeEventId)
+          .eq("service_date", today)
+          .order("start_time"),
       ]);
+
+      const finalConsumoCount = consumoRes.count || 0;
 
       const windows = (windowsRes.data as any[]) || [];
       const activeWindows = windows.filter((w) => {
@@ -83,14 +97,14 @@ export default function AlimentacaoHomePage() {
 
       setOpenWindows(openList);
       setKpis({
-        consumosHoje: consumoRes.count || 0,
+        consumosHoje: finalConsumoCount,
         janelasAbertas,
         tiposRefeicao: tiposRes.count || 0,
         totalJanelas: totalJanelasRes.count || 0,
       });
       setLoading(false);
     })();
-  }, [navigate]);
+  }, [navigate, activeEventId, activeStageId]);
 
   return (
     <PwaLayout onBack={() => navigate(-1)} moduleTitle="Alimentação">
