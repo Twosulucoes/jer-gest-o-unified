@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import EventSwitcher from "@/components/admin/EventSwitcher";
+import StageSwitcher from "@/components/admin/StageSwitcher";
 import { useEventContext } from "@/contexts/EventContext";
 
 import RequireActiveEvent from "@/components/admin/RequireActiveEvent";
@@ -363,9 +364,14 @@ export default function AdminLayout() {
             </div>
           </div>
 
-          {/* Event Switcher */}
-          <div className={`border-b border-sidebar-border ${collapsed ? "px-2 py-2" : "px-3 py-3"}`}>
-            {!collapsed && <EventSwitcher />}
+          {/* Event & Stage Switchers */}
+          <div className="border-b border-sidebar-border space-y-0.5">
+            {!collapsed && (
+              <>
+                <EventSwitcher />
+                <StageSwitcher />
+              </>
+            )}
           </div>
 
           {/* Navigation */}

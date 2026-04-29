@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Layers, ChevronRight, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,8 @@ const KIND_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
 export default function EtapasIndexPage() {
   const eventId = useActiveEventId();
   const { activeEvent } = useEventContext();
+  const location = useLocation();
+  const fromPath = location.state?.from as string | undefined;
 
   const { data: stages = [], isLoading } = useQuery({
     queryKey: ["event_stages", eventId],
@@ -77,8 +79,13 @@ export default function EtapasIndexPage() {
             (s) => !["classificatoria", "regional", "semifinal", "final"].includes(s.kind),
           );
 
-          const renderCard = (stage: EventStage) => (
-            <Link key={stage.id} to={`/admin/etapa/${stage.id}`} className="group">
+          const renderCard = (stage: EventStage) => {
+            const targetUrl = fromPath 
+              ? `/admin/etapa/${stage.id}${fromPath.replace(/^\/admin/, "")}`
+              : `/admin/etapa/${stage.id}`;
+
+            return (
+              <Link key={stage.id} to={targetUrl} className="group">
               <Card className="h-full hover:border-primary hover:shadow-app-md transition-all">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
@@ -102,8 +109,9 @@ export default function EtapasIndexPage() {
                   )}
                 </CardContent>
               </Card>
-            </Link>
-          );
+              </Link>
+            );
+          };
 
           const Section = ({
             title,
