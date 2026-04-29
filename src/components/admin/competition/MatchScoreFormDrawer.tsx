@@ -74,8 +74,9 @@ export function MatchScoreFormDrawer({
 }: Props) {
   const qc = useQueryClient();
   const eventId = useActiveEventId();
+  const { user } = useAuth();
   const isEditing = !!match;
-  
+
   const { rules, isLoading: loadingRules } = useSportEventRules(eventId, sportEventId || null);
   
   const { data: schools = [] } = useModalitySchools(sportEventId);
@@ -531,7 +532,82 @@ export function MatchScoreFormDrawer({
             </SheetFooter>
           </form>
         </Form>
+          </TabsContent>
+
+          {isEditing && (
+            <TabsContent value="resultado" className="flex-1 flex flex-col min-h-0 mt-0">
+              <ScrollArea className="flex-1 p-6">
+                <MatchResultTab 
+                  match={match} 
+                  rules={rules} 
+                  isLoading={loadingRules} 
+                  eventId={eventId} 
+                  userId={user?.id}
+                  onSuccess={() => {
+                    qc.invalidateQueries({ queryKey: ["score-matches", sportEventId] });
+                    onOpenChange(false);
+                  }}
+                />
+              </ScrollArea>
+            </TabsContent>
+          )}
+        </Tabs>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function MatchResultTab({ match, rules, isLoading, eventId, userId, onSuccess }: { match: any; rules: any; isLoading: boolean; eventId?: string; userId?: string; onSuccess: () => void }) {
+  const family = rules?.family || "generic";
+  
+  const handleSaveResult = async (payload: any) => {
+    try {
+      const { data, error } = await supabase.rpc("rpc_launch_match_result", {
+        p_event_id: eventId,
+        p_match_id: match.id,
+        p_payload: {
+          family: family,
+          entries: payload.map((p: any) => ({
+            match_entry_id: p.entryId,
+            score: p.scoreFinal,
+            outcome: p.outcome,
+            score_detail: p.scoreDetail
+          }))
+        } as any
+      });
+      if (error) throw error;
+      toast.success("Resultado salvo com sucesso");
+      onSuccess();
+    } catch (err: any) {
+      toast.error("Erro ao salvar resultado: " + err.message);
+    }
+  };
+
+  if (isLoading) return <Skeleton className="h-40 w-full rounded-xl" />;
+
+  const entries = match.match_entries?.map((me: any) => ({
+    id: me.id,
+    side: me.side === "A" ? "home" : "away",
+    team: { name: me.teams?.name },
+    score: match.match_results?.find((mr: any) => mr.match_entry_id === me.id)
+  })) || [];
+
+  if (family === "score") {
+    return <ScoreLauncher entries={entries} onSave={handleSaveResult} rules={rules} />;
+  }
+
+  if (family === "sets") {
+    return <SetsLauncher entries={entries} onSave={handleSaveResult} rules={rules} />;
+  }
+
+  return (
+    <div className="space-y-4">
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          Esta modalidade (família {family}) ainda não possui interface dedicada de lançamento no Admin.
+        </AlertDescription>
+      </Alert>
+    </div>
   );
 }
