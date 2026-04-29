@@ -282,7 +282,12 @@ export async function printVoucherLabelsPdf(
         createElement(
           View,
           { style: labelStyles.labelContainer, key: r.id },
-          r.qr_data_url && createElement(Image, { style: labelStyles.qrCode, src: r.qr_data_url }),
+          createElement(
+            View,
+            { style: { flexDirection: 'column', alignItems: 'center' } },
+            r.qr_data_url && createElement(Image, { style: labelStyles.qrCode, src: r.qr_data_url }),
+            createElement(Text, { style: labelStyles.qrCodeText }, r.qr_code_value.replace("voucher:", ""))
+          ),
           createElement(
             View,
             { style: labelStyles.infoContainer },
