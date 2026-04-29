@@ -609,3 +609,41 @@ Confirmado que o Super Admin mantém acesso total à funcionalidade via menu e q
 
 ---
 *Correção tática concluída em 2026-04-29.*
+
+---
+
+## IMPLEMENTAÇÃO — SUB-FASE 4.2.A (2026-04-29)
+
+### Resumo da Entrega
+Entrega da interface de lançamento de resultados adaptada para as famílias `score` (placar simples/gols) e `sets` (vôlei/tênis de mesa), disponível tanto no PWA Registros (operação em campo) quanto no Admin (backoffice).
+
+### Alterações Realizadas
+- **Componentes de Lançamento Dedicados:**
+  - `ScoreLauncher.tsx`: UI otimizada para modalidades de placar simples, com suporte a períodos e derivação automática de vencedor/empate.
+  - `SetsLauncher.tsx`: UI estruturada para modalidades best-of, com adição dinâmica de sets, cálculo automático de sets ganhos e persistência em JSONB estruturado.
+- **Integração PWA Registros:**
+  - Página `ResultadosPartidaFormPage.tsx` reformulada para usar um seletor de interface baseado na família da prova.
+  - Bloqueio preventivo da interface genérica para famílias ainda não suportadas (time, mark, combat, ranking) com aviso ao operador.
+- **Integração Web Admin:**
+  - `MatchScoreFormDrawer.tsx` expandido com sistema de abas: "Confronto" (configuração original) e "Resultado" (nova interface adaptada).
+  - Unificação da lógica de persistência entre PWA e Admin via novos componentes.
+- **Estrutura de Dados:**
+  - Implementação da gravação estruturada no campo `sets_score_json` (JSONB) para a família `sets`, garantindo fidelidade total ao placar set a set.
+
+### Arquivos Tocados
+- **Novos Componentes:** `src/components/registros/launchers/ScoreLauncher.tsx`, `src/components/registros/launchers/SetsLauncher.tsx`.
+- **PWA:** `src/pages/pwa/resultados/ResultadosPartidaFormPage.tsx`.
+- **Admin:** `src/components/admin/competition/MatchScoreFormDrawer.tsx`.
+
+### Decisões de Produto
+- **Empate em Score:** Tratado como "resultado normal" selecionável e derivável, respeitando regras de empate configuradas.
+- **Best-of em Sets:** Interface limita a adição de sets conforme o `best_of` definido na regra da prova.
+- **Source Agnostic:** A UI administrativa funciona tanto para partidas criadas via Módulo Registros (`source = simple`) quanto via Competição Complexa.
+
+### Verificação de Não-Regressão
+- Confirmado que o fluxo de homologação e publicação (Fase 3) permanece funcional consumindo os dados gerados pelas novas UIs.
+- O boletim oficial (`BulletinSets.tsx`) renderiza corretamente os dados salvos via `SetsLauncher`.
+- Modalidades de famílias não tratadas nesta sub-fase mantêm fluxo bloqueado com aviso, evitando lançamentos inconsistentes na estrutura legada.
+
+---
+*Implementação da Sub-fase 4.2.A concluída em 2026-04-29.*
