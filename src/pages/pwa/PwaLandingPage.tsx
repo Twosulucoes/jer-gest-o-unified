@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers, IdCard, Download, Calendar } from "lucide-react";
+import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers, IdCard, Download, Calendar, Settings } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -102,7 +102,9 @@ export default function PwaLandingPage() {
   if (!profile) return null;
 
   const visibleCards = MODULE_CARDS.filter((c) => 
-    profile.roles.includes(c.role) || (c.role === "secretaria" && profile.roles.includes("admin"))
+    profile.roles.includes(c.role) || 
+    profile.roles.includes("admin") || 
+    profile.roles.includes("super_admin")
   );
 
   return (
@@ -128,6 +130,17 @@ export default function PwaLandingPage() {
           </div>
           <div className="flex items-center gap-2">
             <PwaRefreshButton />
+            {(profile.roles.includes("admin") || profile.roles.includes("super_admin") || profile.roles.includes("secretaria") || profile.roles.includes("coordenacao_tecnica")) && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate("/admin")} 
+                className="h-11 w-11 text-white/80 hover:text-white hover:bg-white/10 rounded-full"
+                title="Painel Admin"
+              >
+                <Settings className="h-6 w-6" />
+              </Button>
+            )}
             <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-11 w-11 text-white/80 hover:text-white hover:bg-white/10 rounded-full">
               <LogOut className="h-6 w-6" />
             </Button>
