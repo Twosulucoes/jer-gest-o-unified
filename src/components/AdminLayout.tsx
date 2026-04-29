@@ -524,6 +524,9 @@ export default function AdminLayout() {
               JER Gestão
             </h2>
 
+            <div className="hidden sm:block">
+              <EtapaSwitcher />
+            </div>
             <div className="flex-1" />
 
             <GlobalRefreshButton />
