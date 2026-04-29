@@ -4,6 +4,7 @@ import {
   AlertTriangle, ClipboardList, FileBarChart,
   LayoutDashboard, ListChecks, GitBranch, Users, CalendarClock, Layers,
   ScanLine, KeyRound, ChartBar, Navigation, Route, Settings, Filter,
+  ShieldCheck,
 } from "lucide-react";
 import { StageMiniDash, type StageMiniDashKpi } from "./StageMiniDash";
 import { StageModuleTabs, type StageTabItem } from "./StageModuleTabs";
@@ -89,6 +90,15 @@ const MODULES: ModuleConfig[] = [
       { label: "Dashboard", to: "pesquisa", icon: <LayoutDashboard className="h-3.5 w-3.5" />, end: true, roles: ALL_OPS },
       { label: "Eventos", to: "pesquisa/eventos", icon: <ClipboardList className="h-3.5 w-3.5" />, roles: ALL_OPS },
       { label: "Pesquisadores", to: "pesquisa/pesquisadores", icon: <Users className="h-3.5 w-3.5" />, roles: ALL_OPS },
+    ],
+  },
+  {
+    prefix: "vouchers",
+    aliases: ["voucher"],
+    tabs: [
+      { label: "Listagem", to: "vouchers", icon: <ClipboardList className="h-3.5 w-3.5" />, end: true, roles: ALL_OPS },
+      { label: "Validar", to: "voucher/validar", icon: <BadgeCheck className="h-3.5 w-3.5" />, roles: ALL_OPS },
+      { label: "Auditoria", to: "vouchers/auditoria", icon: <ShieldCheck className="h-3.5 w-3.5" />, roles: ALL_OPS },
     ],
   },
 ];

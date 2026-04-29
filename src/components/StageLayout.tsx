@@ -50,6 +50,7 @@ const STAGE_NAV: StageNavItem[] = [
   { label: "Ocorrências", to: "ocorrencias", icon: <AlertTriangle className="h-4 w-4" />, roles: ALL_OPS },
   { label: "Pesquisa de Satisfação", to: "pesquisa", icon: <ClipboardList className="h-4 w-4" />, roles: ALL_OPS },
   { label: "Relatórios da Etapa", to: "relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ALL_OPS },
+  { label: "Vouchers", to: "vouchers", icon: <ClipboardList className="h-4 w-4" />, roles: ALL_OPS },
 ];
 
 const KIND_LABELS: Record<string, string> = {
