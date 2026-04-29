@@ -187,8 +187,8 @@ export default function TransporteScanPage() {
         }
 
         if (!isOnline()) {
-          addToVoucherQueue(rawValue, "transport", tripId, userId || "", "Portador de Voucher");
-          const successMsg = `Voucher registrado offline: ${rawValue.replace("voucher:", "")}`;
+          addToVoucherQueue(val, "transport", tripId, userId || "", "Portador de Voucher");
+          const successMsg = `Voucher registrado offline: ${val.replace("voucher:", "")}`;
           setResult({ ok: true, source: "qr", message: successMsg });
           toast.info("Voucher registrado offline. Sincronize quando houver internet.");
           recordOutcome("ok");
