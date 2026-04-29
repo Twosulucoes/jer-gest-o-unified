@@ -39,7 +39,10 @@ export default function AlojamentoIncidentesPage() {
   const facilityId = getSelectedFacility();
 
   useEffect(() => {
-    if (!facilityId) return;
+    if (!facilityId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     (async () => {
       const { data } = await supabase.rpc("get_alojamento_incidents" as any, {

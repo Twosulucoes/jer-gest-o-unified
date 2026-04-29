@@ -47,28 +47,26 @@ export default function AlimentacaoHomePage() {
       if (!profile?.active) { navigate("/pwa", { replace: true }); return; }
 
       const today = new Date().toISOString().slice(0, 10);
-      const now = new Date().toISOString();
+      const nowDate = new Date();
 
-      const [consumoRes, janelasAbertasRes, tiposRes, totalJanelasRes, windowsRes] = await Promise.all([
-        supabase.from("meal_consumptions").select("id, meal_window!inner(event_id)", { count: "exact", head: true }).eq("meal_window.event_id", activeEventId).gte("consumed_at", today + "T00:00:00"),
-        supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).lte("window_start", now).gte("window_end", now),
+      const [consumoRes, tiposRes, totalJanelasRes, windowsRes] = await Promise.all([
+        supabase.from("meal_consumptions").select("id, meal_windows!meal_window_id!inner(event_id)", { count: "exact", head: true }).eq("meal_windows.event_id", activeEventId).gte("consumed_at", today + "T00:00:00"),
         supabase.from("meal_types").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
-        supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).gte("window_start", today + "T00:00:00"),
-        supabase
-          .from("meal_windows")
-          .select("id, window_start, window_end, label, meal_type:meal_types(name)")
-          .eq("event_id", activeEventId)
-          .gte("window_start", today + "T00:00:00")
-          .order("window_start"),
+        supabase.from("meal_windows").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("service_date", today),
+        supabase.from("meal_windows").select("id, start_time, end_time, service_date, label, meal_type:meal_types(name)").eq("event_id", activeEventId).eq("service_date", today).order("start_time"),
       ]);
 
       const windows = (windowsRes.data as any[]) || [];
-      const nowDate = new Date();
       const active = windows.find((w) => {
-        const start = new Date(w.window_start);
-        const end = new Date(w.window_end);
+        const start = new Date(`${w.service_date}T${w.start_time}`);
+        const end = new Date(`${w.service_date}T${w.end_time}`);
         return nowDate >= start && nowDate <= end;
       });
+      const janelasAbertas = windows.filter((w) => {
+        const start = new Date(`${w.service_date}T${w.start_time}`);
+        const end = new Date(`${w.service_date}T${w.end_time}`);
+        return nowDate >= start && nowDate <= end;
+      }).length;
 
       let open: OpenWindowState | null = null;
       if (active) {
@@ -80,8 +78,8 @@ export default function AlimentacaoHomePage() {
           id: active.id,
           mealName: active.meal_type?.name || "Refeição",
           label: active.label,
-          windowStart: active.window_start,
-          windowEnd: active.window_end,
+          windowStart: `${active.service_date}T${active.start_time}`,
+          windowEnd: `${active.service_date}T${active.end_time}`,
           served: count || 0,
         };
       }
@@ -89,7 +87,7 @@ export default function AlimentacaoHomePage() {
       setOpenWindow(open);
       setKpis({
         consumosHoje: consumoRes.count || 0,
-        janelasAbertas: janelasAbertasRes.count || 0,
+        janelasAbertas,
         tiposRefeicao: tiposRes.count || 0,
         totalJanelas: totalJanelasRes.count || 0,
       });

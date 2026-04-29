@@ -80,7 +80,7 @@ export default function AlimentacaoListaConsumosPage() {
         .select(`
           id, consumed_at, participant_id, meal_window_id,
           participants!inner(
-            id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone, role,
+            id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone, participant_type,
             people!inner(full_name, cpf, photo_url),
             delegations(institution_id, institutions(name))
           ),
@@ -117,7 +117,7 @@ export default function AlimentacaoListaConsumosPage() {
         coach_phone: c.participants?.coach_phone,
         delegation_name: c.participants?.delegations?.institutions?.name || null,
         delegation_id: c.participants?.delegation_id,
-        participant_type: c.participants?.role || null,
+        participant_type: c.participants?.participant_type || null,
         window_label: c.meal_windows?.label || `${fmtTime(c.meal_windows?.start_time)}-${fmtTime(c.meal_windows?.end_time)}`,
         meal_type_name: c.meal_windows?.meal_types?.name || "",
       })));

@@ -12,8 +12,9 @@ import PwaLayout from "@/components/pwa/PwaLayout";
 
 interface WindowItem {
   id: string;
-  window_start: string;
-  window_end: string;
+  start_time: string;
+  end_time: string;
+  service_date?: string;
   meal_type: { name: string } | null;
   consumption_count?: number;
   capacity?: number;
@@ -29,16 +30,16 @@ export default function AlimentacaoJanelasPage() {
 
   useEffect(() => {
     (async () => {
-      // Fetch all windows for the current stage to ensure offline availability
       let query = supabase
         .from("meal_windows")
         .select(`
-          id, 
-          window_start, 
-          window_end, 
+          id,
+          start_time,
+          end_time,
+          service_date,
           capacity,
           location,
-          meal_locations(name),
+          meal_locations!meal_window_location_id(name),
           meal_type:meal_types(name)
         `)
         .eq("event_id", eventId);
@@ -47,11 +48,10 @@ export default function AlimentacaoJanelasPage() {
         query = query.eq("event_stage_id", stageId);
       }
 
-      const { data } = await query.order("window_start");
+      const { data } = await query.order("start_time");
       setWindows((data as any) || []);
       setLoading(false);
 
-      // Persist to local storage for offline use
       if (data) {
         localStorage.setItem("pwa_meal_windows_cache", JSON.stringify({
           updated_at: new Date().toISOString(),
@@ -77,9 +77,11 @@ export default function AlimentacaoJanelasPage() {
   }, []);
 
   const getStatus = (w: WindowItem) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const date = w.service_date || today;
+    const start = new Date(`${date}T${w.start_time}`);
+    const end = new Date(`${date}T${w.end_time}`);
     const now = new Date();
-    const start = new Date(w.window_start);
-    const end = new Date(w.window_end);
     if (now < start) return { label: "Agendada", variant: "outline" as const };
     if (now >= start && now <= end) return { label: "Aberta", variant: "default" as const };
     return { label: "Encerrada", variant: "secondary" as const };
@@ -108,6 +110,8 @@ export default function AlimentacaoJanelasPage() {
 
         {windows.map((w) => {
           const status = getStatus(w);
+          const today = new Date().toISOString().slice(0, 10);
+          const date = w.service_date || today;
           return (
             <Card key={w.id}>
               <CardContent className="p-3 space-y-1">
@@ -116,7 +120,7 @@ export default function AlimentacaoJanelasPage() {
                   <Badge variant={status.variant}>{status.label}</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {format(new Date(w.window_start), "dd/MM")} • {format(new Date(w.window_start), "HH:mm")} — {format(new Date(w.window_end), "HH:mm")}
+                  {format(new Date(`${date}T${w.start_time}`), "dd/MM")} • {w.start_time.slice(0, 5)} — {w.end_time.slice(0, 5)}
                 </p>
                 {(w.meal_locations?.name || w.location) && (
                   <p className="text-[10px] text-muted-foreground italic">

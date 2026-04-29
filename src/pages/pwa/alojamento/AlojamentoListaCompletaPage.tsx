@@ -58,7 +58,7 @@ export default function AlojamentoListaCompletaPage() {
         checked_in_at,
         checked_out_at,
         unit_id,
-        lodging_units!inner(name, location_id, lodging_locations!inner(name, event_id, event_stage_id)),
+        lodging_units!unit_id!inner(name, location_id, lodging_locations!inner(name, event_id, event_stage_id)),
         participants!inner(
           id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone,
           person_id, people!inner(full_name, cpf, birth_date, photo_url, gender),

@@ -105,7 +105,7 @@ export default function AlimentacaoScanPage() {
         try {
           const { windows: cachedWindows } = JSON.parse(cached);
           const today = new Date().toISOString().slice(0, 10);
-          const todaysWindows = cachedWindows.filter((w: any) => w.service_date === today || w.window_start.startsWith(today));
+          const todaysWindows = cachedWindows.filter((w: any) => w.service_date === today);
           if (todaysWindows.length > 0) {
             setWindows(todaysWindows);
             if (todaysWindows.length === 1) setWindowId(todaysWindows[0].id);

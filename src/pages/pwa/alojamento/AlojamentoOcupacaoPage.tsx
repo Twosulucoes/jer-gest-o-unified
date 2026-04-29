@@ -58,7 +58,11 @@ export default function AlojamentoOcupacaoPage() {
   const facilityId = getSelectedFacility();
 
   useEffect(() => {
-    if (!facilityId) return;
+    if (!facilityId) {
+      setLoading(false);
+      setKpiLoading(false);
+      return;
+    }
     (async () => {
       const [{ data: occ }, { data: kpi }] = await Promise.all([
         supabase.rpc("get_alojamento_ocupacao" as any, { p_facility_id: facilityId }),
