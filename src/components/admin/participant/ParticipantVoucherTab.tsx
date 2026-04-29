@@ -25,10 +25,11 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
   active: "default", revoked: "destructive", expired: "outline",
 };
 
-function generateQrValue(eventId: string, participantId: string): string {
-  const ts = Date.now().toString(36).toUpperCase();
-  const rnd = Math.random().toString(36).substring(2, 8).toUpperCase();
-  return `voucher:${eventId}:${participantId}:${ts}-${rnd}`;
+function generateQrValue(): string {
+  const alpha = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += alpha[Math.floor(Math.random() * alpha.length)];
+  return `voucher:${code}`;
 }
 
 export default function ParticipantVoucherTab({ participantId, eventId }: Props) {
@@ -68,7 +69,7 @@ export default function ParticipantVoucherTab({ participantId, eventId }: Props)
     mutationFn: async () => {
       if (!user) throw new Error("Sessão inválida");
       if (!scopeT && !scopeM && !scopeL) throw new Error("Selecione pelo menos um serviço");
-      const qr = generateQrValue(eventId, participantId);
+      const qr = generateQrValue();
       const { data, error } = await (supabase.from("service_vouchers" as never) as any).insert({
         event_id: eventId,
         participant_id: participantId,
