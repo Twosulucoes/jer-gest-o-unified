@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -575,7 +576,7 @@ function MatchResultTab({ match, rules, isLoading, eventId, userId, onSuccess }:
   
   const handleSaveResult = async (payload: any) => {
     try {
-      const { data, error } = await supabase.rpc("rpc_launch_match_result", {
+      const { error } = await supabase.rpc("rpc_launch_match_result", {
         p_event_id: eventId,
         p_match_id: match.id,
         p_payload: {
