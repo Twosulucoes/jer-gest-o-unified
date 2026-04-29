@@ -322,7 +322,7 @@ export default function ValidacaoQRPage() {
                   <div className="flex gap-2">
                     <Input
                       id="qr-input-field"
-                      placeholder="Cole ou digite o código..."
+                      placeholder="Cole, digite CPF ou código do voucher..."
                       value={qrInput}
                       onChange={(e) => setQrInput(e.target.value)}
                       onKeyDown={handleKeyDown}
