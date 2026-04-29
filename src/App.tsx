@@ -331,7 +331,9 @@ const App = () => (
               <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
               <Route path="credenciamento" element={<RedirectToEtapas />} />
               <Route path="credenciamento-externo" element={<RedirectToEtapas />} />
-              <Route path="vouchers/validar-manual" element={<RedirectToEtapas />} />
+               <Route path="vouchers" element={<RedirectToEtapas />} />
+               <Route path="vouchers/auditoria" element={<RedirectToEtapas />} />
+               <Route path="vouchers/validar-manual" element={<RedirectToEtapas />} />
               {/* Transporte — operacional, redireciona para Etapa */}
               <Route path="transporte" element={<RedirectToEtapas />} />
               <Route path="transporte/veiculos" element={<RedirectToEtapas />} />
