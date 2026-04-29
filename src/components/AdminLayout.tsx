@@ -15,6 +15,7 @@ import {
   Info, ExternalLink, ChevronsLeft,
   ChevronsRight, User, FolderOpen, Cloud,
   Home, Bot, BookOpen, HelpCircle, LifeBuoy, ClipboardList, Radio, Layers,
+  LayoutDashboard,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import StageFilterBanner from "@/components/admin/StageFilterBanner";
@@ -142,6 +143,14 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Árbitros (Base)", to: "/admin/arbitragem", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde"] as AppRole[] },
+    ],
+  },
+  {
+    id: "operacao", label: "Operação por Etapa", description: "Módulos de campo filtrados por fase.",
+    icon: <Layers className="h-4 w-4" />,
+    items: [
+      { label: "Central de Etapas", to: "/admin/etapas", icon: <Layers className="h-4 w-4" />, roles: "all" },
+      { label: "Registros de Partidas", to: "/admin/registros", icon: <ClipboardList className="h-4 w-4" />, roles: ADMIN_ROLES, showOnlyIfRegistrosEnabled: true },
     ],
   },
   {
