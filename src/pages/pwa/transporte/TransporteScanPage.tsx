@@ -216,7 +216,7 @@ export default function TransporteScanPage() {
         return;
       }
 
-      const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
+      const resolved = await resolveQrCredential(val, { eventId: activeEventId });
       if (!resolved) {
         const errorMsg = "Credencial não encontrada ou inativa";
         setResult({ ok: false, message: errorMsg });
