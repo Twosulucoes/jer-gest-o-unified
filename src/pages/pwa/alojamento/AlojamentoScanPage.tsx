@@ -414,6 +414,8 @@ export default function AlojamentoScanPage() {
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleScan}
+        continuous={prefs.continuousMode}
+        allowedPrefixes={["JER", "jer", "voucher:"]}
         title={`Scanner — ${mode === "checkin" ? "Check-in" : mode === "checkout" ? "Check-out" : mode === "presence" ? "Presença Noturna" : "Validar"}`}
       />
     </div>

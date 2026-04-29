@@ -573,6 +573,8 @@ export default function AlimentacaoScanPage() {
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleScan}
+        continuous={prefs.continuousMode}
+        allowedPrefixes={["JER", "jer", "voucher:"]}
         title="Escanear QR"
       />
     </PwaLayout>

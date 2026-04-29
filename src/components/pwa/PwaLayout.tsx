@@ -160,8 +160,8 @@ export default function PwaLayout({
   }
 
   return (
-    <PwaLayoutCtx.Provider value={ownCtxValue}>
     <PwaScreen noPadding className="min-h-[100dvh]">
+      {/* PwaHeader fora do provider — não pode ver isActive=true ou retorna null */}
       <PwaHeader
         title={displayTitle}
         icon={DisplayIcon}
@@ -169,7 +169,7 @@ export default function PwaLayout({
         onBack={onBackOverride ?? onBack}
         onSignOut={handleSignOut}
       />
-      
+      <PwaLayoutCtx.Provider value={ownCtxValue}>
       <main className={cn("flex-1 overflow-auto", !hideFooter && "pb-24")}>
         {children || <Outlet />}
       </main>
@@ -254,8 +254,8 @@ export default function PwaLayout({
       )}
       
       <VersionBadge />
+      </PwaLayoutCtx.Provider>
     </PwaScreen>
-    </PwaLayoutCtx.Provider>
   );
 }
 
