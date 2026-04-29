@@ -25,14 +25,18 @@ jobs:
         with:
           version: latest
 
-      - name: Autenticar no Supabase
-        run: supabase login --token "$SUPABASE_ACCESS_TOKEN"
+      - name: Debug token
+        run: echo "Token length: ${#SUPABASE_ACCESS_TOKEN} | First 4 chars: ${SUPABASE_ACCESS_TOKEN:0:4}"
 
       - name: Link to test project
         run: supabase link --project-ref wiwvpokdbklathfkjmzl --password "$SUPABASE_DB_PASSWORD"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Push pending migrations
         run: supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Summary
         if: always()
