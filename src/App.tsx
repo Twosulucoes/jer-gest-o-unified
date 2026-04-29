@@ -121,6 +121,7 @@ import RegrasLotePage from "./pages/admin/RegrasLotePage";
 // RegrasEventoPage removed — consolidated into RegrasPage
 import RegrasPage from "./pages/admin/RegrasPage";
 import ArbitragemEquipePage from "./pages/admin/ArbitragemEquipePage";
+import ArbitrosPage from "./pages/admin/ArbitrosPage";
 import RefereeRemunerationConfigPage from "./pages/admin/referees/RefereeRemunerationConfigPage";
 import RefereeReportingPage from "./pages/admin/referees/RefereeReportingPage";
 import ImportacaoAliasesPage from "./pages/admin/ImportacaoAliasesPage";
@@ -313,6 +314,7 @@ const App = () => (
               <Route path="eventos/etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventStagesPage /></ProtectedRoute>} />
               <Route path="etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapasIndexPage /></ProtectedRoute>} />
               <Route path="etapas/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapaHubPage /></ProtectedRoute>} />
+              <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitrosPage /></ProtectedRoute>} />
               <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
               <Route path="categorias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CategoriasPage /></ProtectedRoute>} />
               <Route path="locais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><LocaisPage /></ProtectedRoute>} />
