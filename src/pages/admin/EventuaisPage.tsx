@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { Search, UserPlus, Users, Loader2, ShieldAlert, Trash2 } from "lucide-react";
+import { Search, UserPlus, Users, Loader2, ShieldAlert, Trash2, FileUp } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import EventuaisImportDialog from "@/components/admin/eventuais/EventuaisImportDialog";
 
 interface EventualPerson {
   id: string;
