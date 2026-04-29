@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { useEventContext } from "@/contexts/EventContext";
+import { useStageContext } from "@/contexts/StageContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -48,6 +50,8 @@ interface Consumption {
 }
 
 export default function AlimentacaoListaConsumosPage() {
+  const { activeEventId } = useEventContext();
+  const { activeStageId } = useStageContext();
   const [consumptions, setConsumptions] = useState<Consumption[]>([]);
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,17 +69,23 @@ export default function AlimentacaoListaConsumosPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [activeEventId, activeStageId]);
 
   async function loadData() {
     setLoading(true);
 
     // Step 1: windows (needed to filter voucher uses by window)
-    const windowsRes = await supabase
+    let winQuery = supabase
       .from("meal_windows")
       .select("id, label, start_time, end_time, service_date, meal_type_id, meal_types!inner(name)")
       .eq("service_date", today)
-      .order("start_time");
+      .eq("event_id", activeEventId);
+
+    if (activeStageId) {
+      winQuery = winQuery.eq("event_stage_id", activeStageId);
+    }
+
+    const windowsRes = await winQuery.order("start_time");
 
     const windowList: MealWindow[] = (windowsRes.data || []).map((w: any) => ({
       id: w.id,
@@ -90,8 +100,7 @@ export default function AlimentacaoListaConsumosPage() {
     const windowIds = windowList.map(w => w.id);
 
     // Step 2: consumptions + voucher uses in parallel
-    const [consumptionsRes, voucherUsesRes] = await Promise.all([
-      supabase
+    let consQuery = supabase
         .from("meal_consumptions")
         .select(`
           id, consumed_at, participant_id, meal_window_id,
@@ -100,11 +109,18 @@ export default function AlimentacaoListaConsumosPage() {
             people!inner(full_name, cpf, photo_url),
             delegations(institution_id, institutions(name))
           ),
-          meal_windows!inner(label, start_time, end_time, service_date, meal_types!inner(name))
+          meal_windows!inner(id, label, start_time, end_time, service_date, event_id, event_stage_id, meal_types!inner(name))
         `)
+        .eq("meal_windows.event_id", activeEventId)
         .gte("consumed_at", today + "T00:00:00")
-        .lte("consumed_at", today + "T23:59:59")
-        .order("consumed_at", { ascending: false }),
+        .lte("consumed_at", today + "T23:59:59");
+
+    if (activeStageId) {
+      consQuery = consQuery.eq("meal_windows.event_stage_id", activeStageId);
+    }
+
+    const [consumptionsRes, voucherUsesRes] = await Promise.all([
+      consQuery.order("consumed_at", { ascending: false }),
 
       windowIds.length > 0
         ? supabase

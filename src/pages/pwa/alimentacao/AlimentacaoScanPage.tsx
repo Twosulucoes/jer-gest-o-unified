@@ -121,8 +121,8 @@ export default function AlimentacaoScanPage() {
         .from("meal_windows")
         .select("id, meal_type:meal_types(name), service_date, start_time, end_time, capacity")
         .eq("service_date", today)
+        .eq("event_id", activeEventId)
         .order("start_time");
-      if (activeEventId) q = q.eq("event_id", activeEventId);
       if (stageId) q = q.eq("event_stage_id", stageId);
       const { data } = await q;
       const list = (data ?? []) as unknown as MealWindow[];
