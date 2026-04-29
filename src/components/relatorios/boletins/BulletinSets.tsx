@@ -5,18 +5,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { BulletinDataset } from "./useBulletinData";
 import { getGroupPoints, statusBadgeLabel } from "./useBulletinData";
 
-/** Tenta extrair sets do combat_detail ou do score textual ("3x1 (25-20, 22-25, 25-18, 25-21)"). */
-function extractSets(detail: any, score: string | null): { sets: Array<[number, number]>; setsWon: number; setsLost: number; pp: number; pc: number } {
+/** Tenta extrair sets do sets_score_json, combat_detail ou do score textual ("3x1 (25-20, 22-25, 25-18, 25-21)"). */
+function extractSets(matchResult: any): { sets: Array<[number, number]>; setsWon: number; setsLost: number; pp: number; pc: number } {
   let sets: Array<[number, number]> = [];
-  if (detail && Array.isArray(detail.sets)) {
-    sets = detail.sets.map((s: any) => [Number(s.home ?? s.a ?? 0), Number(s.away ?? s.b ?? 0)] as [number, number]);
+  const { sets_score_json, combat_detail, score } = matchResult || {};
+
+  if (sets_score_json && Array.isArray(sets_score_json.sets_a)) {
+    // Novo formato JSONB estruturado
+    sets = sets_score_json.sets_a.map((ptsA: number, i: number) => [
+      Number(ptsA), 
+      Number(sets_score_json.sets_b?.[i] || 0)
+    ] as [number, number]);
+  } else if (combat_detail && Array.isArray(combat_detail.sets)) {
+    // Formato legado em combat_detail
+    sets = combat_detail.sets.map((s: any) => [Number(s.home ?? s.a ?? 0), Number(s.away ?? s.b ?? 0)] as [number, number]);
   } else if (score && score.includes("(")) {
+    // Fallback para parse de texto
     const inner = score.match(/\(([^)]+)\)/)?.[1] ?? "";
-    sets = inner.split(",").map((s) => {
+    sets = inner.split(",").map((s: string) => {
       const [a, b] = s.trim().split(/[-x×]/).map((n) => parseInt(n, 10));
       return [a, b] as [number, number];
-    }).filter(([a, b]) => !Number.isNaN(a) && !Number.isNaN(b));
+    }).filter(([a, b]: [number, number]) => !Number.isNaN(a) && !Number.isNaN(b));
   }
+  
   let setsWon = 0, setsLost = 0, pp = 0, pc = 0;
   for (const [a, b] of sets) {
     if (a > b) setsWon++; else if (b > a) setsLost++;
@@ -51,7 +62,7 @@ export default function BulletinSets({ data }: { data: BulletinDataset }) {
         if (!r) continue;
         const otherEnt = ents.find((x) => x.id !== e.id);
         const otherR = otherEnt ? rByE.get(otherEnt.id) : undefined;
-        const my = extractSets(r.combat_detail, r.score);
+        const my = extractSets(r);
         s.J += 1;
         s.SP += my.setsWon; s.SC += my.setsLost;
         s.PP += my.pp; s.PC += my.pc;
@@ -138,8 +149,8 @@ export default function BulletinSets({ data }: { data: BulletinDataset }) {
                   const b = ents.find((e) => e.side === "away") || ents[1];
                   const ar = a ? resultByEntry.get(a.id) : undefined;
                   const br = b ? resultByEntry.get(b.id) : undefined;
-                  const aSets = extractSets(ar?.combat_detail, ar?.score ?? null);
-                  const bSets = extractSets(br?.combat_detail, br?.score ?? null);
+                  const aSets = extractSets(ar);
+                  const bSets = extractSets(br);
                   const setDetails = aSets.sets.map(([x, y], i) => `${x}-${bSets.sets[i]?.[0] ?? y}`).join(", ");
                   const sb = statusBadgeLabel(ar?.result_status || m.status);
                   return (

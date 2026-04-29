@@ -45,11 +45,18 @@ export default function RegrasProvaPage() {
 
   const validationErrors = useMemo(() => {
     const errs: string[] = [];
-    if (!draft.family) errs.push("Família é obrigatória");
-    if (!draft.format) errs.push("Formato é obrigatório");
-    const validFormats = VALID_FORMATS_BY_FAMILY[draft.family] ?? [];
-    if (draft.format && !validFormats.includes(draft.format)) {
-      errs.push(`Formato "${draft.format}" incompatível com família "${draft.family}"`);
+    if (!draft.family) {
+      errs.push("Família é obrigatória (Selecione uma categoria de resultado)");
+    }
+    if (!draft.format) {
+      errs.push("Formato é obrigatório (Selecione como a competição é organizada)");
+    }
+    
+    if (draft.family) {
+      const validFormats = VALID_FORMATS_BY_FAMILY[draft.family] ?? [];
+      if (draft.format && !validFormats.includes(draft.format)) {
+        errs.push(`Formato "${draft.format}" incompatível com família "${draft.family}"`);
+      }
     }
     return errs;
   }, [draft]);
