@@ -11,6 +11,7 @@ import { StageModuleTabs, type StageTabItem } from "./StageModuleTabs";
 import { useStageContext } from "@/contexts/StageContext";
 import { useStageModuleKpisContext } from "@/contexts/StageModuleKpisContext";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -130,6 +131,7 @@ export function StagePageScaffold({
   const { stageId } = useParams<{ stageId: string }>();
   const { activeStage } = useStageContext();
   const moduleCtx = useStageModuleKpisContext();
+  const { hasRole } = useAuth();
 
   // Identifica módulo pela rota: /admin/etapa/:stageId/<prefix>[/...]
   const base = `/admin/etapa/${stageId}/`;
@@ -150,10 +152,15 @@ export function StagePageScaffold({
     || (moduleCtx?.hideGlobal ?? false)
     || !!(effectiveModuleKpis && effectiveModuleKpis.length);
 
+  // Filtra abas por permissão
+  const visibleTabs = moduleCfg?.tabs.filter(tab => 
+    !tab.roles || (typeof tab.roles === "string" && tab.roles === "all") || (Array.isArray(tab.roles) && tab.roles.some(r => hasRole(r)))
+  ) ?? [];
+
   return (
     <div className="space-y-4">
       <StageMiniDash moduleKpis={effectiveModuleKpis} hideGlobal={effectiveHideGlobal} />
-      {!hideTabs && moduleCfg && <StageModuleTabs items={moduleCfg.tabs} />}
+      {!hideTabs && visibleTabs.length > 0 && <StageModuleTabs items={visibleTabs} />}
       <div className="pt-1">{children}</div>
     </div>
   );
