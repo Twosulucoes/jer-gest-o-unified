@@ -150,7 +150,7 @@ export default function AlojamentoScanPage() {
         return;
       }
 
-      const voucher = await tryRedeemVoucher(rawValue, "lodging", facilityId);
+      const voucher = await tryRedeemVoucher(val, "lodging", facilityId);
       if (!voucher || !voucher.ok) {
         const msg = voucherErrorMessage(voucher?.reason, lang);
         let extra = "";
