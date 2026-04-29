@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Trophy, Users, Paperclip, Send,
   Trash2, Plus, Upload, FileText, Image, CheckCircle2,
+  AlertTriangle
 } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import PwaLayout from "@/components/pwa/PwaLayout";
@@ -27,6 +28,10 @@ import {
   TIPOS_ANEXO,
   type EntradaPartida,
 } from "@/hooks/useLancamentoResultados";
+import { useSportEventRules } from "@/hooks/useSportEventRules";
+import { useActiveEventId } from "@/contexts/EventContext";
+import ScoreLauncher from "@/components/registros/launchers/ScoreLauncher";
+import SetsLauncher from "@/components/registros/launchers/SetsLauncher";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -52,26 +57,26 @@ const STATUS_COLORS: Record<string, string> = {
 
 // ─── Tab Placar ───────────────────────────────────────────────────────────────
 
-function TabPlacar({ matchId, entries }: { matchId: string; entries: EntradaPartida[] }) {
+function TabPlacar({ matchId, entries, sportEventId }: { matchId: string; entries: EntradaPartida[]; sportEventId: string | null }) {
+  const eventId = useActiveEventId();
+  const { rules, isLoading: loadingRules } = useSportEventRules(eventId, sportEventId);
   const salvar = useSalvarPlacar(matchId);
 
-  const [scores, setScores] = useState<Record<string, { scoreFinal: string; outcome: string; shootoutScore: string }>>(() =>
-    Object.fromEntries(entries.map((e) => [e.id, {
-      scoreFinal: e.score?.score_final ?? "",
-      outcome: e.score?.outcome ?? "",
-      shootoutScore: e.score?.score_detail?.shootout ?? "",
-    }]))
-  );
+  const family = rules?.family || "generic";
 
-  const handleSave = () => {
-    const payload = entries.map((e) => ({
-      entryId: e.id,
-      scoreFinal: scores[e.id]?.scoreFinal ?? "",
-      outcome: scores[e.id]?.outcome ?? "",
-      shootoutScore: scores[e.id]?.shootoutScore ?? "",
-    }));
+  const handleSave = (payload: any) => {
     salvar.mutate(payload);
   };
+
+  if (loadingRules) return <Skeleton className="h-40 w-full rounded-xl" />;
+
+  if (family === "score") {
+    return <ScoreLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
+  }
+
+  if (family === "sets") {
+    return <SetsLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
+  }
 
   return (
     <div className="space-y-4">
@@ -530,7 +535,7 @@ export default function ResultadosPartidaFormPage() {
 
         <div className="flex-1 overflow-y-auto">
           <TabsContent value="placar" className="p-4 mt-0">
-            <TabPlacar matchId={matchId} entries={match.entries} />
+            <TabPlacar matchId={matchId} entries={match.entries} sportEventId={match.sport_event_id} />
           </TabsContent>
 
           <TabsContent value="arbitros" className="p-4 mt-0">
