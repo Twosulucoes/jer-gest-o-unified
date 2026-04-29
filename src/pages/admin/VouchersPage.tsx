@@ -602,18 +602,37 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
 
   const mutation = useMutation({
     mutationFn: async () => {
+      // Validação coerente de voucher_type antes de emitir
+      const vType = isNominal ? "nominal" : "aggregate";
+      
       const payload: any = {
         event_id: eventId,
-        voucher_type: isNominal ? "nominal" : "aggregate",
+        voucher_type: vType,
         is_nominal: isNominal,
         qr_code_value: genQrValue(),
         status: "active",
       };
-      if (isNominal) payload.eventual_person_id = eventualId;
-      if (serviceType === "meals") { payload.target_meal_window_id = instanceId; payload.scope_meals = true; }
-      if (serviceType === "transport") { payload.target_trip_id = instanceId; payload.scope_transport = true; }
-      if (serviceType === "lodging") { payload.target_facility_id = instanceId; payload.scope_lodging = true; }
       
+      if (isNominal) {
+        if (!eventualId) throw new Error("ID da pessoa eventual é obrigatório para vouchers nominais.");
+        payload.eventual_person_id = eventualId;
+      }
+      
+      if (serviceType === "meals") { 
+        payload.target_meal_window_id = instanceId; 
+        payload.scope_meals = true; 
+      } else if (serviceType === "transport") { 
+        payload.target_trip_id = instanceId; 
+        payload.scope_transport = true; 
+      } else if (serviceType === "lodging") { 
+        payload.target_facility_id = instanceId; 
+        payload.scope_lodging = true; 
+      } else {
+        throw new Error("Tipo de serviço inválido.");
+      }
+      
+      if (!instanceId) throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
+
       try {
         const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
         if (error) throw error;
@@ -621,8 +640,8 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
-          voucher_type: payload.voucher_type,
-          payload: payload,
+          voucher_type: vType,
+          payload: { ...payload, audit_info: "individual_emission" },
           status: 'success'
         });
 
@@ -631,8 +650,8 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
-          voucher_type: payload.voucher_type || 'individual',
-          payload: payload,
+          voucher_type: vType,
+          payload: { ...payload, audit_info: "individual_failed" },
           status: 'error',
           error_message: err.message
         });
@@ -717,6 +736,11 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
 
   const mutation = useMutation({
     mutationFn: async () => {
+      // Validação de tipo de serviço em lote
+      if (!serviceType) throw new Error("Selecione o tipo de serviço.");
+      if (!instanceId) throw new Error("Selecione a instância do serviço.");
+      if (quantity <= 0) throw new Error("A quantidade deve ser maior que zero.");
+
       const auditPayload = { serviceType, quantity, label, instanceId };
       try {
         const { data: batch, error: bErr } = await supabase.from("service_voucher_batches").insert({
@@ -735,7 +759,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           event_id: eventId,
           batch_id: batch.id,
           participant_id: null,
-          voucher_type: "aggregate" as const,
+          voucher_type: "aggregate" as const, // Lote sempre cria agregado por padrão
           is_nominal: false,
           qr_code_value: genQrValue(),
           status: "active",
@@ -754,7 +778,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: 'batch',
-          payload: auditPayload,
+          payload: { ...auditPayload, created_count: quantity },
           status: 'success'
         });
       } catch (err: any) {
@@ -762,7 +786,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: 'batch',
-          payload: auditPayload,
+          payload: { ...auditPayload, error: err.message },
           status: 'error',
           error_message: err.message
         });
