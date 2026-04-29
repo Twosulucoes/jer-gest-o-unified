@@ -8,9 +8,11 @@ import { Search, Loader2 } from "lucide-react";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useEventContext } from "@/contexts/EventContext";
+import { useStageContext } from "@/contexts/StageContext";
 
 export default function AlimentacaoBuscarPage() {
   const { activeEventId } = useEventContext();
+  const { activeStageId } = useStageContext();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ParticipantManualSearchRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,7 @@ export default function AlimentacaoBuscarPage() {
     setLoading(true);
     setSearched(true);
     try {
-      const data = await searchParticipantsByNameOrCpf(query.trim(), activeEventId);
+      const data = await searchParticipantsByNameOrCpf(query.trim(), activeEventId, 12, activeStageId);
       setResults(data);
     } catch {
       setResults([]);

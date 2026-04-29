@@ -89,8 +89,14 @@ export default function AlojamentoScanPage() {
         .from("lodging_units")
         .select("id, name, capacity, gender_restriction")
         .eq("location_id", facilityId)
-        .eq("is_active", true)
-        .order("name");
+        .eq("is_active", true);
+      
+      if (stageId) {
+        // Since lodging_units doesn't have event_stage_id, we filter by the location's stage
+        // but units are already filtered by facilityId which is stage-filtered in the home page.
+      }
+      
+      const { data } = await query.order("name");
       if (data) setUnits(data);
     }
     loadUnits();
