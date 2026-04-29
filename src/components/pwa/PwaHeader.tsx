@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { getPwaLang, setPwaLang } from "@/lib/systemMessages";
+import { getPwaLang } from "@/lib/systemMessages";
 import { useStageContext } from "@/contexts/StageContext";
 import { usePwaNavigation, type PwaModule } from "@/hooks/pwa/usePwaNavigation";
 import { PwaRefreshButton } from "./PwaRefreshButton";
@@ -113,21 +112,8 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <ThemeToggle />
           <PwaRefreshButton />
           {rightSlot}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const current = getPwaLang();
-              setPwaLang(current === "pt" ? "es" : "pt");
-              window.location.reload();
-            }}
-            className="h-9 px-2 text-[11px] font-bold uppercase text-muted-foreground hover:text-foreground"
-          >
-            {getPwaLang() === "pt" ? "PT" : "ES"}
-          </Button>
           {showSwitcher && (
             <Button
               variant="ghost"
