@@ -612,13 +612,26 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances }: any) {
       if (serviceType === "transport") { payload.target_trip_id = instanceId; payload.scope_transport = true; }
       if (serviceType === "lodging") { payload.target_facility_id = instanceId; payload.scope_lodging = true; }
       
-      const { error } = await supabase.from("service_vouchers").insert(payload);
-      if (error) throw error;
+      console.log("Emitindo voucher com payload:", payload);
+      const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
+      if (error) {
+        console.error("Erro ao inserir voucher:", error);
+        throw error;
+      }
+      return data;
     },
-    onSuccess: () => {
-      toast.success("Voucher emitido");
+    onSuccess: (newV) => {
+      toast.success("Voucher emitido com sucesso");
       onOpenChange(false);
       qc.invalidateQueries({ queryKey: ["vouchers"] });
+      // Tenta imprimir automaticamente se for individual
+      if (newV) {
+        handlePrintIndividual(newV as unknown as VoucherRow);
+      }
+    },
+    onError: (err: any) => {
+      console.error("Erro na mutação de voucher:", err);
+      toast.error("Erro ao emitir voucher: " + (err.message || "Erro desconhecido"));
     }
   });
 
