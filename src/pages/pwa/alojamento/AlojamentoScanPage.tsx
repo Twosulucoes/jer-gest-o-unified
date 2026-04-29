@@ -178,7 +178,7 @@ export default function AlojamentoScanPage() {
       return;
     }
 
-    const token = extractQrToken(rawValue);
+    const token = extractQrToken(val);
     if (!token) {
       toast.error(getSystemMessage("ERR_INVALID_QR", lang));
       return;
