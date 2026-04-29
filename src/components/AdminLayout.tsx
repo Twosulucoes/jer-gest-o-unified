@@ -311,6 +311,9 @@ export default function AdminLayout() {
   };
 
   const isGroupVisible = (group: NavGroup) => {
+    // Esconde o grupo "Logística Global" se uma etapa estiver selecionada no contexto global
+    // para forçar o uso da navegação interna da etapa, ou vice-versa.
+    // Mas para manter simples agora, apenas filtramos por papéis.
     if (group.items.some(isItemVisible)) return true;
     if (group.subGroups?.some((sg) => sg.items.some(isItemVisible))) return true;
     return false;
