@@ -344,7 +344,7 @@ export default function AlimentacaoScanPage() {
           return;
         }
 
-        const voucher = await tryRedeemVoucher(rawValue, "meals", windowId);
+        const voucher = await tryRedeemVoucher(val, "meals", windowId);
         if (!voucher || !voucher.ok) {
           const msg = voucherErrorMessage(voucher?.reason, lang);
           let extra = "";
