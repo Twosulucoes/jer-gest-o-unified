@@ -736,14 +736,22 @@ function normalizeHeaders(rows: RawRow[]): RawRow[] {
 function deriveParticipantType(userType: string, funcao: string): string {
   const ut = (userType || "").toLowerCase();
   const fn = (funcao || "").toLowerCase();
+  
   // Atleta sempre vence (mesmo se TIPO USUARIO vier composto)
   if (ut.includes("atleta")) return "athlete";
+  
+  // Árbitros (Arbitro ou Arbitrador)
+  if (ut.includes("arbitro") || ut.includes("arbitrador") || fn.includes("arbitro") || fn.includes("arbitrador")) return "referee";
+
   // Chefe de delegação tem prioridade sobre técnico/prestador
   if (fn.includes("chefe de delegação") || fn.includes("chefe de delegacao") || ut.includes("chefe de delegação") || ut.includes("chefe de delegacao")) return "head_of_delegation";
+  
   // Comissão técnica / técnico antes de prestador (para casos compostos do SIGECOM
   // como "Prestador de serviço, Comissão técnica")
   if (ut.includes("comissão técnica") || ut.includes("comissao tecnica") || fn.includes("técnico") || fn.includes("tecnico")) return "coach";
+  
   if (ut.includes("prestador")) return "staff";
+  
   return "staff";
 }
 
