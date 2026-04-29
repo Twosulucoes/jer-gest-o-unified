@@ -47,11 +47,16 @@ export default function VoucherValidarPage() {
 
   const redeem = async (qrValue: string) => {
     if (!qrValue) return;
+    let normalizedValue = qrValue.trim();
+    if (!normalizedValue.toLowerCase().startsWith("voucher:")) {
+      normalizedValue = `voucher:${normalizedValue.toUpperCase()}`;
+    }
+    
     setLoading(true);
     setResult(null);
     try {
       const { data, error } = await supabase.rpc("redeem_voucher" as any, {
-        p_qr_value: qrValue,
+        p_qr_value: normalizedValue,
         p_service_kind: serviceKind,
       });
       if (error) throw error;
