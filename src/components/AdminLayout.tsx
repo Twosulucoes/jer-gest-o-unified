@@ -117,11 +117,11 @@ const navGroups: NavGroup[] = [
       {
         label: "Links PWA (Mobile)",
         items: [
-          { label: "Transporte", to: "/pwa/transporte", icon: <Bus className="h-4 w-4" />, roles: ADMIN_ROLES },
-          { label: "Alimentação", to: "/pwa/alimentacao", icon: <UtensilsCrossed className="h-4 w-4" />, roles: ADMIN_ROLES },
-          { label: "Alojamento", to: "/pwa/alojamento", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
-          { label: "Coord. Técnica", to: "/pwa/coordenacao-tecnica", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
-          { label: "Delegação", to: "/pwa/delegacao", icon: <Users className="h-4 w-4" />, roles: ADMIN_ROLES },
+          { label: "Transporte", to: "/pwa/transporte", icon: <Bus className="h-4 w-4" />, roles: ["transporte", "admin", "super_admin"] },
+          { label: "Alimentação", to: "/pwa/alimentacao", icon: <UtensilsCrossed className="h-4 w-4" />, roles: ["alimentacao", "admin", "super_admin"] },
+          { label: "Alojamento", to: "/pwa/alojamento", icon: <Building2 className="h-4 w-4" />, roles: ["alojamento", "admin", "super_admin"] },
+          { label: "Coord. Técnica", to: "/pwa/coordenacao-tecnica", icon: <Trophy className="h-4 w-4" />, roles: ["coordenacao_tecnica", "admin", "super_admin"] },
+          { label: "Delegação", to: "/pwa/delegacao", icon: <Users className="h-4 w-4" />, roles: ["delegacao", "admin", "super_admin"] },
         ]
       }
     ]
