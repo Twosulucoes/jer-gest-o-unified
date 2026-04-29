@@ -171,7 +171,13 @@ export default function TransporteScanPage() {
 
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
-    if (!rawValue.trim()) return;
+    let val = rawValue.trim();
+    if (!val) return;
+
+    // Normalização para entrada manual de código de voucher
+    if (!val.toLowerCase().startsWith("voucher:") && val.length >= 8 && /^[A-Z0-9-]+$/i.test(val)) {
+      val = `voucher:${val.toUpperCase()}`;
+    }
 
     try {
       if (isVoucherQr(rawValue)) {
