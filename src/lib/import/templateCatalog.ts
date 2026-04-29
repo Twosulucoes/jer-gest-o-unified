@@ -40,13 +40,14 @@ export const CATEGORIAS_CATALOGO = CATEGORIAS_JER2026.map((c) => {
 export const NAIPES = ["Masculino", "Feminino", "Misto"] as const;
 
 export const TIPOS_USUARIO = [
-  "Atleta", "Técnico", "Chefe de Delegação",
+  "Atleta", "Técnico", "Chefe de Delegação", "Árbitro",
   "Auxiliar", "Dirigente", "Médico", "Fisioterapeuta", "Massagista",
 ] as const;
 
 export const TIPO_USUARIO_MAP: Record<string, string> = {
   "Atleta": "athlete",
   "Técnico": "coach",
+  "Árbitro": "referee",
   "Chefe de Delegação": "head_of_delegation",
   "Auxiliar": "staff",
   "Dirigente": "staff",

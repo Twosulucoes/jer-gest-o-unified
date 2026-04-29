@@ -82,8 +82,17 @@ export default function ValidacaoQRPage() {
   });
 
   const handleValidate = async (value?: string) => {
-    const codeToValidate = value || qrInput.trim();
+    let codeToValidate = value || qrInput.trim();
     if (!codeToValidate || !selectedEventId) return;
+
+    // Normalização: se o código for apenas alfanumérico e não tiver o prefixo "voucher:",
+    // e o tamanho for compatível com o sufixo (ex: > 10 chars), tentamos prefixar.
+    if (!codeToValidate.toLowerCase().startsWith("voucher:") && codeToValidate.length >= 10) {
+      // Verifica se parece um código de voucher manual (sem espaços, apenas letras/números/hifen)
+      if (/^[A-Z0-9-]+$/i.test(codeToValidate)) {
+        codeToValidate = `voucher:${codeToValidate.toUpperCase()}`;
+      }
+    }
     
     setValidating(true);
     setResult(null);
@@ -313,7 +322,7 @@ export default function ValidacaoQRPage() {
                   <div className="flex gap-2">
                     <Input
                       id="qr-input-field"
-                      placeholder="Cole ou digite o código..."
+                      placeholder="Cole, digite CPF ou código do voucher..."
                       value={qrInput}
                       onChange={(e) => setQrInput(e.target.value)}
                       onKeyDown={handleKeyDown}

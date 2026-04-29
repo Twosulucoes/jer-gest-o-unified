@@ -171,18 +171,24 @@ export default function TransporteScanPage() {
 
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
-    if (!rawValue.trim()) return;
+    let val = rawValue.trim();
+    if (!val) return;
+
+    // Normalização para entrada manual de código de voucher
+    if (!val.toLowerCase().startsWith("voucher:") && val.length >= 8 && /^[A-Z0-9-]+$/i.test(val)) {
+      val = `voucher:${val.toUpperCase()}`;
+    }
 
     try {
-      if (isVoucherQr(rawValue)) {
+      if (isVoucherQr(val)) {
         if (!tripId) {
           toast.error("Selecione uma viagem primeiro");
           return;
         }
 
         if (!isOnline()) {
-          addToVoucherQueue(rawValue, "transport", tripId, userId || "", "Portador de Voucher");
-          const successMsg = `Voucher registrado offline: ${rawValue.replace("voucher:", "")}`;
+          addToVoucherQueue(val, "transport", tripId, userId || "", "Portador de Voucher");
+          const successMsg = `Voucher registrado offline: ${val.replace("voucher:", "")}`;
           setResult({ ok: true, source: "qr", message: successMsg });
           toast.info("Voucher registrado offline. Sincronize quando houver internet.");
           recordOutcome("ok");
@@ -191,7 +197,7 @@ export default function TransporteScanPage() {
           return;
         }
 
-        const voucher = await tryRedeemVoucher(rawValue, "transport", tripId);
+        const voucher = await tryRedeemVoucher(val, "transport", tripId);
         if (!voucher || !voucher.ok) {
           const msg = voucherErrorMessage(voucher?.reason, lang);
           setResult({ ok: false, message: msg.text, source: "qr" });
@@ -210,7 +216,7 @@ export default function TransporteScanPage() {
         return;
       }
 
-      const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
+      const resolved = await resolveQrCredential(val, { eventId: activeEventId });
       if (!resolved) {
         const errorMsg = "Credencial não encontrada ou inativa";
         setResult({ ok: false, message: errorMsg });
@@ -267,9 +273,19 @@ export default function TransporteScanPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome ou CPF…"
+              placeholder="Nome, CPF ou código do voucher…"
               value={manualQuery}
-              onChange={(e) => setManualQuery(e.target.value)}
+              onChange={(e) => {
+                setManualQuery(e.target.value);
+                // Se o usuário digitar algo que pareça um código de voucher e apertar enter (ou após debounce),
+                // poderíamos disparar o handleScan. Mas por enquanto, apenas permitimos que ele
+                // use o campo de busca que já existe.
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && manualQuery.length >= 8) {
+                  handleScan(manualQuery);
+                }
+              }}
               className="h-11 border-border/80 bg-card/90 pl-10"
             />
           </div>

@@ -28,7 +28,7 @@ export const TARGET_FIELDS: TargetField[] = [
   { key: "RG", label: "RG", required: false, aliases: ["RG"] },
   { key: "EMAIL", label: "E-mail", required: false, aliases: ["EMAIL", "E-MAIL"] },
   { key: "TELEFONE", label: "Telefone", required: false, aliases: ["TELEFONE", "TEL", "CELULAR"] },
-  { key: "TIPO USUARIO", label: "Tipo de usuário", required: false, aliases: ["TIPO USUARIO", "TIPO_USUARIO", "TIPO"] },
+  { key: "TIPO USUARIO", label: "Tipo de usuário", required: false, aliases: ["TIPO USUARIO", "TIPO_USUARIO", "TIPO", "TIPO DE USUARIO"] },
   { key: "STATUS DA INSCRIÇÃO", label: "Status da inscrição", required: false, aliases: ["STATUS DA INSCRIÇÃO", "STATUS DA INSCRICAO", "STATUS_INSCRICAO", "STATUS"] },
   { key: "FUNCAO", label: "Função", required: false, aliases: ["FUNCAO", "FUNÇÃO"] },
   { key: "DELEGAÇÃO", label: "Delegação", required: false, aliases: ["DELEGAÇÃO", "DELEGACAO"] },
