@@ -6419,6 +6419,39 @@ export type Database = {
           },
         ]
       }
+      service_voucher_audit: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_id: string
+          id: string
+          issuer_id: string
+          payload: Json
+          status: string
+          voucher_type: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_id: string
+          id?: string
+          issuer_id: string
+          payload: Json
+          status: string
+          voucher_type: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_id?: string
+          id?: string
+          issuer_id?: string
+          payload?: Json
+          status?: string
+          voucher_type?: string
+        }
+        Relationships: []
+      }
       service_voucher_batches: {
         Row: {
           created_at: string
