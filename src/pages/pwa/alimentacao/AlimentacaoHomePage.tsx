@@ -98,7 +98,7 @@ export default function AlimentacaoHomePage() {
   }, [navigate]);
 
   return (
-    <PwaLayout backTo="/pwa" moduleTitle="Alimentação">
+    <PwaLayout onBack={() => navigate(-1)} moduleTitle="Alimentação">
       <AlimentacaoDuplicateAlert />
 
       <PwaStatTriplet

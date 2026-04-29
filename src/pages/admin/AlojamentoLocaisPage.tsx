@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useStageScope } from "@/hooks/useStageScope";
+import { useStageInfo, useLodgingLocations } from "@/hooks/useLodgingAdmin";
 import { toast } from "sonner";
 import { Plus, Pencil, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,32 +21,12 @@ export default function AlojamentoLocaisPage() {
   const [editing, setEditing] = useState<any>(null);
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
-  const { data: stageInfo } = useQuery({
-    queryKey: ["stage_info", stageId],
-    queryFn: async () => {
-      if (!stageId) return null;
-      const { data } = await supabase.from("event_stages").select("id, name, kind, event_id").eq("id", stageId).maybeSingle();
-      return data;
-    },
-    enabled: !!stageId,
-  });
-
+  const { data: stageInfo } = useStageInfo(stageId);
   const stageContext: StageContext | undefined = stageInfo
     ? { id: stageInfo.id, name: stageInfo.name, kind: stageInfo.kind, event_id: stageInfo.event_id }
     : undefined;
 
-  const { data: locations, isLoading } = useQuery({
-    queryKey: ["lodging_locations", stageId],
-    queryFn: async () => {
-      if (!stageId) return [];
-      const { data, error } = await (supabase.from("lodging_locations") as any)
-        .select("*, units:lodging_units(id)")
-        .eq("event_stage_id", stageId).order("name");
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-    enabled: !!stageId,
-  });
+  const { data: locations, isLoading } = useLodgingLocations(stageId);
 
   const createMut = useMutation({
     mutationFn: async (v: LodgingLocationFormValues) => {

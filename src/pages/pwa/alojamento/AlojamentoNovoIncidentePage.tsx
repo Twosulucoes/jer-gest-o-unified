@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { getSelectedFacility } from "@/hooks/useAlojamento";
+import { getSelectedFacility } from "@/lib/alojamentoRpc";
 import { AlertTriangle, Loader2, Plus } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 

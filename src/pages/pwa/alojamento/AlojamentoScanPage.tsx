@@ -23,7 +23,7 @@ import {
   getSelectedFacility,
   getSelectedUnit,
   setSelectedUnit
-} from "@/hooks/useAlojamento";
+} from "@/lib/alojamentoRpc";
 import { extractQrToken } from "@/lib/resolveQrCredential";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";

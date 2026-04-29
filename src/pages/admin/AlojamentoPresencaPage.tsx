@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -25,7 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
+import { downloadXlsx } from "@/lib/reportExport";
 
 export default function AlojamentoPresencaPage() {
   const eventId = useActiveEventId();
@@ -149,11 +149,7 @@ export default function AlojamentoPresencaPage() {
       "Presente na Noite": item.isPresent ? "SIM" : "NÃO",
       "Horário Registro": item.recordedAt ? format(new Date(item.recordedAt), "HH:mm") : "-"
     }));
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Presença");
-    XLSX.writeFile(wb, `presenca_alojamento_${selectedNight}.xlsx`);
+    downloadXlsx(data, `presenca_alojamento_${selectedNight}.xlsx`, "Presença");
   };
 
   return (
@@ -320,5 +316,3 @@ export default function AlojamentoPresencaPage() {
   );
 }
 
-import { useMemo } from "react";
-import { Input } from "@/components/ui/input";

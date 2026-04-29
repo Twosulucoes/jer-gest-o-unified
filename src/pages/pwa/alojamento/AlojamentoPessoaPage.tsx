@@ -6,25 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/hooks/useAlojamento";
+import { rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/lib/alojamentoRpc";
 import { ArrowLeft, User, LogIn, LogOut, Bed, ScanLine, AlertCircle, Building, Loader2 } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useEventContext } from "@/contexts/EventContext";
-
-interface PersonDetail {
-  id: string;
-  full_name: string;
-  birth_date: string | null;
-  gender: string;
-  participant_type: string;
-  delegation_name: string | null;
-  is_checked_in: boolean;
-  stay_checkin_at: string | null;
-  facility_name: string | null;
-  bed_code: string | null;
-  room_code: string | null;
-  block_name: string | null;
-}
+import type { PersonDetail } from "@/types/alojamento";
 
 export default function AlojamentoPessoaPage() {
   const { id } = useParams<{ id: string }>();

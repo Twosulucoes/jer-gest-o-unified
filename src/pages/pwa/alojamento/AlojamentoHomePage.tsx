@@ -6,7 +6,7 @@ import { useActiveStageId } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
-import { getSelectedFacility, setSelectedFacility } from "@/hooks/useAlojamento";
+import { getSelectedFacility, setSelectedFacility } from "@/lib/alojamentoRpc";
 import { AlojamentoDuplicateAlert } from "@/components/pwa/alojamento/AlojamentoDuplicateAlert";
 import { PwaContainer } from "@/components/pwa/PwaScreen";
 import { PwaStatTriplet, occupancyBarClass } from "@/components/pwa/PwaDashboardPrimitives";
@@ -109,7 +109,7 @@ export default function AlojamentoHomePage() {
   }, [facilityId]);
 
   return (
-    <PwaLayout backTo="/pwa" moduleTitle="Alojamento">
+    <PwaLayout onBack={() => navigate(-1)} moduleTitle="Alojamento">
       <PwaStatTriplet
         loading={loading}
         items={[

@@ -1,38 +1,28 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Loader2 } from "lucide-react";
-import { PwaHeader } from "@/components/pwa/PwaHeader";
 import PwaLayout from "@/components/pwa/PwaLayout";
-
-interface PersonResult {
-  id: string;
-  full_name: string;
-  participant_type: string;
-  food_restrictions: string | null;
-}
+import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
+import { useEventContext } from "@/contexts/EventContext";
 
 export default function AlimentacaoBuscarPage() {
+  const { activeEventId } = useEventContext();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<PersonResult[]>([]);
+  const [results, setResults] = useState<ParticipantManualSearchRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
   const handleSearch = async () => {
-    if (!query.trim()) return;
+    if (!query.trim() || !activeEventId) return;
     setLoading(true);
     setSearched(true);
     try {
-      const { data } = await supabase
-        .from("participants")
-        .select("id, full_name, participant_type, food_restrictions")
-        .or(`full_name.ilike.%${query.trim()}%,cpf.ilike.%${query.trim()}%`)
-        .limit(20);
-      setResults((data as any) || []);
+      const data = await searchParticipantsByNameOrCpf(query.trim(), activeEventId);
+      setResults(data);
     } catch {
       setResults([]);
     } finally {
@@ -63,14 +53,14 @@ export default function AlimentacaoBuscarPage() {
 
         <div className="space-y-2">
           {results.map((p) => (
-            <Card key={p.id} className="cursor-pointer hover:bg-accent/50 active:scale-[0.98] transition-all">
+            <Card key={p.participant_id} className="cursor-pointer hover:bg-accent/50 active:scale-[0.98] transition-all">
               <CardContent className="p-3 flex items-center justify-between">
                 <div>
                   <p className="font-medium text-sm">{p.full_name}</p>
                   <p className="text-xs text-muted-foreground">{p.participant_type}</p>
                 </div>
-                {p.food_restrictions && (
-                  <Badge variant="outline" className="text-xs text-amber-600">Restrição</Badge>
+                {p.cpf && (
+                  <Badge variant="outline" className="text-xs text-muted-foreground">{p.cpf}</Badge>
                 )}
               </CardContent>
             </Card>

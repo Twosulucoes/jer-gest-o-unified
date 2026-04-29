@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
+import { downloadXlsx } from "@/lib/reportExport";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -227,10 +227,7 @@ export default function AlimentacaoPrevisaoPage() {
         };
       });
 
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, "Previsão Cozinha");
-      XLSX.writeFile(wb, `previsao_cozinha_${filterDate}.xlsx`);
+      downloadXlsx(data, `previsao_cozinha_${filterDate}.xlsx`, "Previsão Cozinha");
       
       auditExportMut.mutate({ format: "xlsx", filters: { date: filterDate, mealType: filterMealType, location: filterLocation } });
       toast.success("Exportação XLSX gerada com sucesso");

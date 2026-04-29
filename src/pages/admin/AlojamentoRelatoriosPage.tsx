@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+import { downloadCsv, downloadXlsxSheets } from "@/lib/reportExport";
 
 export default function AlojamentoRelatoriosPage() {
   const eventId = useActiveEventId();
@@ -111,13 +111,7 @@ export default function AlojamentoRelatoriosPage() {
         o.checked_out_at ? format(new Date(o.checked_out_at), "dd/MM/yyyy HH:mm") : "",
       ].join(","));
     }
-    const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "relatorio_alojamento.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(rows, "relatorio_alojamento.csv");
     toast.success("CSV exportado com sucesso");
   };
 
@@ -142,15 +136,8 @@ export default function AlojamentoRelatoriosPage() {
         "Ocupação %": d.capacidade > 0 ? ((d.ocupado / d.capacidade) * 100).toFixed(1) + "%" : "0%"
       }));
 
-      const wb = XLSX.utils.book_new();
-      const wsSummary = XLSX.utils.json_to_sheet(summaryData);
-      const wsDetail = XLSX.utils.json_to_sheet(detailData);
-
-      XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo");
-      XLSX.utils.book_append_sheet(wb, wsDetail, "Detalhe");
-
       const filename = `relatorio_alojamento_${signature ? signature : "geral"}.xlsx`;
-      XLSX.writeFile(wb, filename);
+      downloadXlsxSheets([{ name: "Resumo", rows: summaryData }, { name: "Detalhe", rows: detailData }], filename);
       toast.success("XLSX exportado com sucesso");
     } catch (e) {
       toast.error("Erro ao exportar XLSX");

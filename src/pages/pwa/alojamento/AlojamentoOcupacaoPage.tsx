@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { getSelectedFacility } from "@/hooks/useAlojamento";
+import { getSelectedFacility } from "@/lib/alojamentoRpc";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { PwaHeader } from "@/components/pwa/PwaHeader";

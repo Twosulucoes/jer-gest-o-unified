@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
+import { downloadXlsx } from "@/lib/reportExport";
 
 type DivergenceType = "missing_consumption" | "incident_attempt" | "all";
 
@@ -196,10 +196,7 @@ export default function AlimentacaoDivergenciasPage() {
       });
     }
 
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Divergências Alimentação");
-    XLSX.writeFile(wb, `divergencias_alimentacao_${filterDate}.xlsx`);
+    downloadXlsx(data, `divergencias_alimentacao_${filterDate}.xlsx`, "Divergências Alimentação");
     toast.success("Relatório exportado");
   };
 

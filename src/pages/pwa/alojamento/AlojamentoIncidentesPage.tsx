@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getSelectedFacility } from "@/hooks/useAlojamento";
+import { getSelectedFacility } from "@/lib/alojamentoRpc";
 import { AlertTriangle, Plus } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 

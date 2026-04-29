@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { rpcSearchPerson, getSelectedFacility } from "@/hooks/useAlojamento";
+import { rpcSearchPerson, getSelectedFacility } from "@/lib/alojamentoRpc";
 import { Search, Loader2 } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { rpcCheckin, rpcCheckout, rpcAssignBed, rpcRegisterPresence, getDeviceId } from "./useAlojamento";
+import { rpcCheckin, rpcCheckout, rpcAssignBed, rpcRegisterPresence, getDeviceId } from "@/lib/alojamentoRpc";
 import { toast } from "sonner";
 
 export interface OfflineOp {

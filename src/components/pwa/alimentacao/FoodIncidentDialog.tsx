@@ -20,14 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
 import { type IncidentModule, type IncidentStatus } from "@/types/incidents";
-
-
-interface MealWindowOption {
-  id: string;
-  label: string;
-  event_id: string;
-  event_stage_id: string | null;
-}
+import { useTodayMealWindows } from "@/hooks/useTodayMealWindows";
 
 interface FoodIncidentDialogProps {
   open: boolean;
@@ -40,7 +33,7 @@ export function FoodIncidentDialog({
   onOpenChange,
   preselectedWindowId,
 }: FoodIncidentDialogProps) {
-  const [windows, setWindows] = useState<MealWindowOption[]>([]);
+  const { windows } = useTodayMealWindows(open);
   const [selectedWindow, setSelectedWindow] = useState<string>("none");
   const [description, setDescription] = useState("");
   const [sending, setSending] = useState(false);
@@ -49,30 +42,6 @@ export function FoodIncidentDialog({
     if (!open) return;
     setDescription("");
     setSelectedWindow(preselectedWindowId ?? "none");
-
-    const today = new Date().toISOString().slice(0, 10);
-    supabase
-      .from("meal_windows")
-      .select("id, service_date, start_time, end_time, event_id, event_stage_id, meal_type:meal_types(name)")
-      .eq("service_date", today)
-      .order("start_time")
-      .then(({ data }) => {
-        if (data) {
-          setWindows(
-            data.map((w: any) => {
-              const start = (w.start_time ?? "").slice(0, 5);
-              const end = (w.end_time ?? "").slice(0, 5);
-              const typeName = w.meal_type?.name ?? "Refeição";
-              return {
-                id: w.id,
-                label: `${typeName} ${start}–${end}`,
-                event_id: w.event_id,
-                event_stage_id: w.event_stage_id ?? null,
-              };
-            })
-          );
-        }
-      });
   }, [open, preselectedWindowId]);
 
   const handleSubmit = async () => {

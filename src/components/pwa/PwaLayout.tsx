@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useContext } from "react";
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useStageContext } from "@/contexts/StageContext";
@@ -10,11 +10,11 @@ import { PwaScreen } from "./PwaScreen";
 import { OfflineSyncStatus } from "./OfflineSyncStatus";
 import { VersionBadge } from "@/components/VersionBadge";
 import { cn } from "@/lib/utils";
-import { 
-  Home, Scan, Search, History, ClipboardList, Users, 
-  Calendar, Bus, Trophy, LayoutDashboard, Radio, LogOut, 
-  Menu, ShieldCheck, AlertCircle, Settings, Layers, Plus
-
+import {
+  Home, Scan, Search, History, ClipboardList, Users,
+  Calendar, Bus, Trophy, LayoutDashboard, Radio, LogOut,
+  Menu, ShieldCheck, AlertCircle, Settings, Layers, Plus,
+  UtensilsCrossed, Building, IdCard, Award
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -28,6 +28,7 @@ import {
 import { getOfflineQueue } from "@/lib/offlineQueue";
 import { getVoucherQueue } from "@/lib/voucherOffline";
 import { getAlojamentoQueue } from "@/hooks/useAlojamentoOffline";
+import { PwaLayoutCtx, type PwaLayoutCtxValue } from "./PwaLayoutContext";
 
 interface PwaLayoutProps {
   moduleTitle?: string;
@@ -38,16 +39,23 @@ interface PwaLayoutProps {
   children?: React.ReactNode;
 }
 
-export default function PwaLayout({ 
-  moduleTitle, 
-  moduleIcon, 
+export default function PwaLayout({
+  moduleTitle,
+  moduleIcon,
   backTo,
   hideFooter = false,
   onBack,
   children
 }: PwaLayoutProps) {
+  const parentCtx = useContext(PwaLayoutCtx);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Override state for when a nested layout/header pushes config up
+  const [titleOverride, setTitleOverride] = useState<string | undefined>(undefined);
+  const [iconOverride, setIconOverride] = useState<React.ElementType | undefined>(undefined);
+  const [backToOverride, setBackToOverride] = useState<string | undefined>(undefined);
+  const [onBackOverride, setOnBackOverride] = useState<(() => void) | undefined>(undefined);
   const { user, roles, profile, signOut, hasRole } = useAuth();
   const { activeStage } = useStageContext();
   const { activeEvent } = useEventContext();
@@ -82,8 +90,8 @@ export default function PwaLayout({
   };
 
   const config = currentModule ? moduleConfig[currentModule as keyof typeof moduleConfig] : null;
-  const displayTitle = moduleTitle || config?.title || "JER Gestão";
-  const DisplayIcon = moduleIcon || config?.icon;
+  const displayTitle = titleOverride ?? moduleTitle ?? config?.title ?? "JER Gestão";
+  const DisplayIcon = iconOverride ?? moduleIcon ?? config?.icon;
 
   // Calculate available modules for switcher
   const availableModules = useMemo(() => {
@@ -122,13 +130,43 @@ export default function PwaLayout({
     navigate("/login", { replace: true });
   };
 
+  // If we're nested inside another PwaLayout, communicate our config upward and skip chrome
+  const outerCtx = useContext(PwaLayoutCtx);
+  useEffect(() => {
+    if (!outerCtx.isActive) return;
+    outerCtx.setTitle(moduleTitle);
+    outerCtx.setIcon(moduleIcon);
+    outerCtx.setBackTo(backTo);
+    outerCtx.setOnBack(onBack);
+    return () => {
+      outerCtx.setTitle(undefined);
+      outerCtx.setIcon(undefined);
+      outerCtx.setBackTo(undefined);
+      outerCtx.setOnBack(undefined);
+    };
+  }, [outerCtx.isActive, moduleTitle, moduleIcon, backTo, onBack]);
+
+  const ownCtxValue = useMemo<PwaLayoutCtxValue>(() => ({
+    isActive: true,
+    setTitle: setTitleOverride,
+    setIcon: setIconOverride,
+    setBackTo: setBackToOverride,
+    setOnBack: (f) => setOnBackOverride(() => f),
+  }), []);
+
+  if (outerCtx.isActive) {
+    // Already inside a PwaLayout — skip chrome, just render content
+    return <PwaLayoutCtx.Provider value={ownCtxValue}>{children || <Outlet />}</PwaLayoutCtx.Provider>;
+  }
+
   return (
+    <PwaLayoutCtx.Provider value={ownCtxValue}>
     <PwaScreen noPadding className="min-h-[100dvh]">
-      <PwaHeader 
-        title={displayTitle} 
-        icon={DisplayIcon} 
-        backTo={backTo}
-        onBack={onBack}
+      <PwaHeader
+        title={displayTitle}
+        icon={DisplayIcon}
+        backTo={backToOverride ?? backTo}
+        onBack={onBackOverride ?? onBack}
         onSignOut={handleSignOut}
       />
       
@@ -217,6 +255,7 @@ export default function PwaLayout({
       
       <VersionBadge />
     </PwaScreen>
+    </PwaLayoutCtx.Provider>
   );
 }
 
@@ -301,6 +340,3 @@ function PrimaryActionButton({ config }: { config: any }) {
   );
 }
 
-// Re-export required icons that were imported but might be needed by other files using this component's config
-const UtensilsCrossed = (props: any) => <UtensilsCrossedIcon {...props} />;
-import { UtensilsCrossed as UtensilsCrossedIcon, Building, IdCard, Award } from "lucide-react";

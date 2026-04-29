@@ -22,28 +22,9 @@ import { toast } from "sonner";
 import {
   Users, Building, Search, Phone, Clock, Download, X, DoorOpen, User, PhoneCall, AlertTriangle, Filter, LayoutDashboard,
 } from "lucide-react";
-
-interface Guest {
-  occupancy_id: string;
-  participant_id: string;
-  status: string;
-  checked_in_at: string | null;
-  checked_out_at: string | null;
-  unit_name: string;
-  unit_id: string;
-  location_name: string;
-  full_name: string;
-  cpf: string | null;
-  birth_date: string | null;
-  photo_url: string | null;
-  gender: string;
-  guardian_name: string | null;
-  guardian_phone: string | null;
-  coach_name: string | null;
-  coach_phone: string | null;
-  delegation_name: string | null;
-  delegation_id: string | null;
-}
+import { formatPhone, phoneMask } from "@/lib/phoneUtils";
+import { downloadCsv } from "@/lib/reportExport";
+import type { Guest } from "@/types/alojamento";
 
 export default function AlojamentoListaCompletaPage() {
   const eventId = useActiveEventId();
@@ -173,28 +154,7 @@ export default function AlojamentoListaCompletaPage() {
         g.guardian_name || "", g.guardian_phone || "", g.coach_name || "", g.coach_phone || ""
       ].map(v => `"${v}"`).join(",")
     );
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `alojamento-hospedes-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function formatPhone(p: string) {
-    const d = p.replace(/\D/g, "");
-    if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-    if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-    return p;
-  }
-
-  function phoneMask(val: string) {
-    const d = val.replace(/\D/g, "").slice(0, 11);
-    if (d.length <= 2) return d;
-    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+    downloadCsv([header, ...rows], `alojamento-hospedes-${new Date().toISOString().slice(0, 10)}.csv`);
   }
 
   async function saveContact() {

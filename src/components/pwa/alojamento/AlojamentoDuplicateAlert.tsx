@@ -4,12 +4,7 @@ import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-
-interface DuplicateStay {
-  person_id: string;
-  person_name: string;
-  rooms: string[];
-}
+import type { DuplicateStay } from "@/types/alojamento";
 
 interface Props {
   facilityId: string;

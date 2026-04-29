@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useStageInfo, useLodgingLocations, useLodgingUnits, useLodgingOccupancyCounts } from "@/hooks/useLodgingAdmin";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,58 +31,14 @@ export default function AlojamentoHubPage() {
   const [unitDialog, setUnitDialog] = useState(false);
   const [editingUnit, setEditingUnit] = useState<any>(null);
 
-  // Stage info for form context
-  const { data: stageInfo } = useQuery({
-    queryKey: ["stage_info", stageId],
-    queryFn: async () => {
-      if (!stageId) return null;
-      const { data } = await supabase
-        .from("event_stages").select("id, name, kind, event_id")
-        .eq("id", stageId).maybeSingle();
-      return data;
-    },
-    enabled: !!stageId,
-  });
-
+  const { data: stageInfo } = useStageInfo(stageId);
   const stageContext: StageContext | undefined = stageInfo
     ? { id: stageInfo.id, name: stageInfo.name, kind: stageInfo.kind, event_id: stageInfo.event_id }
     : undefined;
 
-  const { data: locations = [], isLoading: loadingLocations } = useQuery({
-    queryKey: ["lodging_locations", stageId],
-    queryFn: async () => {
-      if (!stageId) return [];
-      const { data, error } = await (supabase.from("lodging_locations") as any)
-        .select("*").eq("event_stage_id", stageId).order("name");
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-    enabled: !!stageId,
-  });
-
-  const { data: units = [], isLoading: loadingUnits } = useQuery({
-    queryKey: ["lodging_units", stageId],
-    queryFn: async () => {
-      if (!stageId) return [];
-      const { data, error } = await (supabase.from("lodging_units") as any)
-        .select("*").eq("event_stage_id", stageId).order("name");
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-    enabled: !!stageId,
-  });
-
-  const { data: occupancyCounts = [] } = useQuery({
-    queryKey: ["lodging_occupancy_counts", stageId],
-    queryFn: async () => {
-      if (!stageId) return [];
-      const { data, error } = await (supabase.from("lodging_occupancies") as any)
-        .select("unit_id").eq("event_stage_id", stageId).in("status", ["allocated", "checked_in"]);
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-    enabled: !!stageId,
-  });
+  const { data: locations = [], isLoading: loadingLocations } = useLodgingLocations(stageId);
+  const { data: units = [], isLoading: loadingUnits } = useLodgingUnits(stageId);
+  const { data: occupancyCounts = [] } = useLodgingOccupancyCounts(stageId);
 
   const occCountMap = new Map<string, number>();
   occupancyCounts.forEach((o: any) => {

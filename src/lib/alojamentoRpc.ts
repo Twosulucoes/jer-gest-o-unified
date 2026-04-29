@@ -68,7 +68,6 @@ export async function rpcGenerateQr(qrType: string, entityId: string) {
   return data as Record<string, any>;
 }
 
-// Device ID helper
 export function getDeviceId(): string {
   const KEY = "jer_alj_device_id";
   let id = localStorage.getItem(KEY);
@@ -79,7 +78,6 @@ export function getDeviceId(): string {
   return id;
 }
 
-// Facility persistence
 export function getSelectedFacility(): string | null {
   return localStorage.getItem("jer_alj_facility_id");
 }

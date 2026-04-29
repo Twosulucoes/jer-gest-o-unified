@@ -1,5 +1,6 @@
 import { ArrowLeft, LogOut, ArrowLeftRight, Layers } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -7,6 +8,7 @@ import { getPwaLang, setPwaLang } from "@/lib/systemMessages";
 import { useStageContext } from "@/contexts/StageContext";
 import { usePwaNavigation, type PwaModule } from "@/hooks/pwa/usePwaNavigation";
 import { PwaRefreshButton } from "./PwaRefreshButton";
+import { PwaLayoutCtx } from "./PwaLayoutContext";
 
 interface PwaHeaderProps {
   title: string;
@@ -26,7 +28,25 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
   const { roles } = useAuth();
   const { activeStage } = useStageContext();
   const { navigateToPwa } = usePwaNavigation();
-  const showSwitcher = false; // Layout Switcher will be in the Footer
+  const showSwitcher = false;
+  const parentLayout = useContext(PwaLayoutCtx);
+
+  // If inside a PwaLayout shell, push our config up and skip rendering
+  useEffect(() => {
+    if (!parentLayout.isActive) return;
+    parentLayout.setTitle(title);
+    parentLayout.setIcon(Icon as React.ElementType | undefined);
+    parentLayout.setBackTo(backTo);
+    parentLayout.setOnBack(onBack);
+    return () => {
+      parentLayout.setTitle(undefined);
+      parentLayout.setIcon(undefined);
+      parentLayout.setBackTo(undefined);
+      parentLayout.setOnBack(undefined);
+    };
+  }, [parentLayout.isActive, title, Icon, backTo, onBack]);
+
+  if (parentLayout.isActive) return null;
 
   const handleBack = () => {
     if (onBack) onBack();

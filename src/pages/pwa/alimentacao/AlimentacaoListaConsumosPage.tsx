@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import {
   UtensilsCrossed, Search, Phone, Clock, Download, X, AlertTriangle, List,
 } from "lucide-react";
+import { formatPhone, phoneMask } from "@/lib/phoneUtils";
+import { downloadCsv } from "@/lib/reportExport";
 
 interface MealWindow {
   id: string;
@@ -138,15 +140,18 @@ export default function AlimentacaoListaConsumosPage() {
     return Array.from(m.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [consumptions]);
 
-  // Detect duplicates: participants appearing >1 time in selected window (or all windows)
+  // Detect duplicates: same participant consumed the same meal window more than once
   const duplicateParticipantIds = useMemo(() => {
     const source = windowFilter !== "all"
       ? consumptions.filter(c => c.meal_window_id === windowFilter)
       : consumptions;
-    const countMap = new Map<string, number>();
-    source.forEach(c => countMap.set(c.participant_id, (countMap.get(c.participant_id) || 0) + 1));
+    const pairCount = new Map<string, number>();
+    source.forEach(c => {
+      const key = `${c.participant_id}|${c.meal_window_id}`;
+      pairCount.set(key, (pairCount.get(key) || 0) + 1);
+    });
     const dups = new Set<string>();
-    countMap.forEach((count, pid) => { if (count > 1) dups.add(pid); });
+    pairCount.forEach((count, key) => { if (count > 1) dups.add(key.split("|")[0]); });
     return dups;
   }, [consumptions, windowFilter]);
 
@@ -174,20 +179,6 @@ export default function AlimentacaoListaConsumosPage() {
     return name.split(" ").filter(Boolean).slice(0, 2).map(n => n[0]).join("").toUpperCase();
   }
 
-  function formatPhone(p: string) {
-    const d = p.replace(/\D/g, "");
-    if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-    if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-    return p;
-  }
-
-  function phoneMask(val: string) {
-    const d = val.replace(/\D/g, "").slice(0, 11);
-    if (d.length <= 2) return d;
-    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  }
-
   function exportCSV() {
     const header = "Nome,CPF,Delegação,Tipo,Janela,Horário Consumo,Responsável,Tel Responsável,Professor,Tel Professor";
     const rows = filtered.map(c =>
@@ -197,15 +188,8 @@ export default function AlimentacaoListaConsumosPage() {
         c.guardian_name || "", c.guardian_phone || "", c.coach_name || "", c.coach_phone || ""
       ].map(v => `"${v}"`).join(",")
     );
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
     const windowName = windowFilter !== "all" ? windows.find(w => w.id === windowFilter)?.meal_type_name || "janela" : "todas";
-    a.download = `alimentacao-consumos-${windowName}-${today}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv([header, ...rows], `alimentacao-consumos-${windowName}-${today}.csv`);
   }
 
   async function saveContact() {

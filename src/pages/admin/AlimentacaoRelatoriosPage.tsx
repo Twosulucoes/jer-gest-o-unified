@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+import { downloadCsv, downloadXlsxSheets, downloadXlsx } from "@/lib/reportExport";
 
 export default function AlimentacaoRelatoriosPage() {
   const eventId = useActiveEventId();
@@ -119,13 +119,7 @@ export default function AlimentacaoRelatoriosPage() {
     rows.push("TOTAIS POR DELEGAÇÃO");
     totalByDelegation.forEach((v, k) => rows.push(`"${k}",${v}`));
 
-    const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `relatorio_alimentacao_${startDate || "todos"}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(rows, `relatorio_alimentacao_${startDate || "todos"}.csv`);
     toast.success("CSV exportado com sucesso");
   };
 
@@ -148,15 +142,8 @@ export default function AlimentacaoRelatoriosPage() {
       summaryData.push({ "Categoria": "TOTAIS POR DELEGAÇÃO", "Valor": "" });
       totalByDelegation.forEach((v, k) => summaryData.push({ "Categoria": k, "Valor": v }));
 
-      const wb = XLSX.utils.book_new();
-      const wsSummary = XLSX.utils.json_to_sheet(summaryData);
-      const wsDetail = XLSX.utils.json_to_sheet(detailData);
-
-      XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo");
-      XLSX.utils.book_append_sheet(wb, wsDetail, "Detalhe");
-
       const filename = `relatorio_alimentacao_${startDate || "geral"}${signature ? "_" + signature : ""}.xlsx`;
-      XLSX.writeFile(wb, filename);
+      downloadXlsxSheets([{ name: "Resumo", rows: summaryData }, { name: "Detalhe", rows: detailData }], filename);
       toast.success("XLSX exportado com sucesso");
     } catch (e) {
       toast.error("Erro ao exportar XLSX");
@@ -274,10 +261,7 @@ export default function AlimentacaoRelatoriosPage() {
         data.push({}); // Empty line between windows
       });
 
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Realizado Buffet");
-      XLSX.writeFile(wb, `realizado_buffet_${startDate || "geral"}.xlsx`);
+      downloadXlsx(data, `realizado_buffet_${startDate || "geral"}.xlsx`, "Realizado Buffet");
       toast.success("Exportação Buffet gerada");
     } catch (e) {
       toast.error("Falha ao exportar");

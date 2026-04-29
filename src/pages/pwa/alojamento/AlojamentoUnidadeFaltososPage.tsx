@@ -6,12 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { Building, Users, Calendar, AlertTriangle } from "lucide-react";
-
-interface MissingPerson {
-  id: string;
-  full_name: string;
-  delegation_name: string;
-}
+import type { MissingPerson } from "@/types/alojamento";
 
 export default function AlojamentoUnidadeFaltososPage() {
   const navigate = useNavigate();

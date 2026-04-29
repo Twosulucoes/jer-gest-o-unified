@@ -20,7 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
+import { downloadXlsx } from "@/lib/reportExport";
 
 type DivergenceType = "unit_divergence" | "missing_checkin" | "missing_presence" | "all";
 
@@ -79,11 +79,7 @@ export default function AlojamentoDivergenciasPage() {
       "Divergência": item.divergence_notes || (item.status === 'allocated' ? "Check-in Pendente" : "Nenhuma"),
       "Status": item.status
     }));
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Divergências");
-    XLSX.writeFile(wb, "relatorio_divergencias_alojamento.xlsx");
+    downloadXlsx(data, "relatorio_divergencias_alojamento.xlsx", "Divergências");
   };
 
   return (
