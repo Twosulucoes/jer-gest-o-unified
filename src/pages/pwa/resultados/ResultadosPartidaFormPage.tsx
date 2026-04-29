@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Trophy, Users, Paperclip, Send,
   Trash2, Plus, Upload, FileText, Image, CheckCircle2,
+  AlertTriangle
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import {
@@ -27,6 +29,10 @@ import {
   TIPOS_ANEXO,
   type EntradaPartida,
 } from "@/hooks/useLancamentoResultados";
+import { useSportEventRules } from "@/hooks/useSportEventRules";
+import { useActiveEventId } from "@/contexts/EventContext";
+import ScoreLauncher from "@/components/registros/launchers/ScoreLauncher";
+import SetsLauncher from "@/components/registros/launchers/SetsLauncher";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -52,116 +58,36 @@ const STATUS_COLORS: Record<string, string> = {
 
 // ─── Tab Placar ───────────────────────────────────────────────────────────────
 
-function TabPlacar({ matchId, entries }: { matchId: string; entries: EntradaPartida[] }) {
+function TabPlacar({ matchId, entries, sportEventId }: { matchId: string; entries: EntradaPartida[]; sportEventId: string | null }) {
+  const eventId = useActiveEventId();
+  const { rules, isLoading: loadingRules } = useSportEventRules(eventId, sportEventId);
   const salvar = useSalvarPlacar(matchId);
 
-  const [scores, setScores] = useState<Record<string, { scoreFinal: string; outcome: string; shootoutScore: string }>>(() =>
-    Object.fromEntries(entries.map((e) => [e.id, {
-      scoreFinal: e.score?.score_final ?? "",
-      outcome: e.score?.outcome ?? "",
-      shootoutScore: e.score?.score_detail?.shootout ?? "",
-    }]))
-  );
+  const family = rules?.family || "generic";
 
-  const handleSave = () => {
-    const payload = entries.map((e) => ({
-      entryId: e.id,
-      scoreFinal: scores[e.id]?.scoreFinal ?? "",
-      outcome: scores[e.id]?.outcome ?? "",
-      shootoutScore: scores[e.id]?.shootoutScore ?? "",
-    }));
+  const handleSave = (payload: any) => {
     salvar.mutate(payload);
   };
 
+  if (loadingRules) return <Skeleton className="h-40 w-full rounded-xl" />;
+
+  if (family === "score") {
+    return <ScoreLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
+  }
+
+  if (family === "sets") {
+    return <SetsLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
+  }
+
   return (
     <div className="space-y-4">
-      {entries.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-8">
-          Nenhum participante cadastrado nesta partida.
-        </p>
-      )}
-
-      {entries.map((entry, idx) => (
-        <div key={entry.id} className="bg-card border rounded-xl p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
-              {idx + 1}
-            </div>
-            <span className="font-semibold text-sm flex-1 truncate">{nomeEntrada(entry)}</span>
-            {entry.side === "home" && (
-              <Badge variant="outline" className="text-[10px]">Mandante</Badge>
-            )}
-            {entry.side === "away" && (
-              <Badge variant="outline" className="text-[10px]">Visitante</Badge>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Placar</Label>
-              <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="0"
-                value={scores[entry.id]?.scoreFinal ?? ""}
-                onChange={(e) =>
-                  setScores((prev) => ({ ...prev, [entry.id]: { ...prev[entry.id], scoreFinal: e.target.value } }))
-                }
-                className="h-11 text-lg font-bold text-center"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Resultado</Label>
-              <Select
-                value={scores[entry.id]?.outcome ?? ""}
-                onValueChange={(v) =>
-                  setScores((prev) => ({ ...prev, [entry.id]: { ...prev[entry.id], outcome: v } }))
-                }
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vitoria">Vitória</SelectItem>
-                  <SelectItem value="derrota">Derrota</SelectItem>
-                  <SelectItem value="empate">Empate</SelectItem>
-                  <SelectItem value="wo">W.O.</SelectItem>
-                  <SelectItem value="dq">Desclassificado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {(scores[entry.id]?.outcome === "empate" || scores[entry.id]?.shootoutScore) && (
-            <div className="pt-2 border-t border-dashed">
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Disputa de Pênaltis (Shootout)</Label>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Gols nos pênaltis"
-                  value={scores[entry.id]?.shootoutScore ?? ""}
-                  onChange={(e) =>
-                    setScores((prev) => ({ ...prev, [entry.id]: { ...prev[entry.id], shootoutScore: e.target.value } }))
-                  }
-                  className="h-11 text-center font-bold border-primary/30 focus:border-primary"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      ))}
-
-      {entries.length > 0 && (
-        <Button
-          className="w-full h-12 text-base font-semibold"
-          onClick={handleSave}
-          disabled={salvar.isPending}
-        >
-          {salvar.isPending ? "Salvando..." : "Salvar Placar"}
-        </Button>
-      )}
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          Esta modalidade (família {family}) ainda não possui interface dedicada de lançamento no PWA.
+          O uso da interface genérica foi desativado para esta fase.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }
@@ -530,7 +456,7 @@ export default function ResultadosPartidaFormPage() {
 
         <div className="flex-1 overflow-y-auto">
           <TabsContent value="placar" className="p-4 mt-0">
-            <TabPlacar matchId={matchId} entries={match.entries} />
+            <TabPlacar matchId={matchId} entries={match.entries} sportEventId={match.sport_event_id} />
           </TabsContent>
 
           <TabsContent value="arbitros" className="p-4 mt-0">
