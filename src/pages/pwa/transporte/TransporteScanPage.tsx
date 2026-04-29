@@ -180,7 +180,7 @@ export default function TransporteScanPage() {
     }
 
     try {
-      if (isVoucherQr(rawValue)) {
+      if (isVoucherQr(val)) {
         if (!tripId) {
           toast.error("Selecione uma viagem primeiro");
           return;
