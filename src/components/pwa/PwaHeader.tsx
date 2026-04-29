@@ -1,4 +1,4 @@
-import { ArrowLeft, LogOut, ArrowLeftRight, Layers } from "lucide-react";
+import { ArrowLeft, LogOut, ArrowLeftRight, Layers, Settings } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
@@ -24,10 +24,10 @@ interface PwaHeaderProps {
 export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignOut, rightSlot, actionsBar }: PwaHeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { roles } = useAuth();
+  const { roles, hasRole } = useAuth();
   const { activeStage } = useStageContext();
   const { navigateToPwa } = usePwaNavigation();
-  const showSwitcher = false;
+  const isAdmin = hasRole("admin") || hasRole("super_admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
   const parentLayout = useContext(PwaLayoutCtx);
 
   // If inside a PwaLayout shell, push our config up and skip rendering
@@ -114,15 +114,15 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
         <div className="flex items-center gap-1">
           <PwaRefreshButton />
           {rightSlot}
-          {showSwitcher && (
+          {isAdmin && (
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/pwa")}
-              className="h-9 w-9 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-              title="Ir para o Início"
+              onClick={() => navigate("/admin")}
+              className="h-9 w-9 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              title="Painel Admin"
             >
-              <ArrowLeftRight className="h-5 w-5" />
+              <Settings className="h-5 w-5" />
             </Button>
           )}
           {onSignOut && (

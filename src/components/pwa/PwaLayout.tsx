@@ -109,7 +109,7 @@ export default function PwaLayout({
     
     const accessible = all.filter(m => {
       if ((m as any).showOnlyIfRegistrosEnabled && !registrosMode) return false;
-      return hasRole(m.role as any) || (m.role === "secretaria" && hasRole("admin"));
+      return hasRole(m.role as any) || hasRole("admin") || hasRole("super_admin");
     });
     // Remove duplicates (like Ao Vivo having two roles)
     const unique = [];
@@ -123,7 +123,7 @@ export default function PwaLayout({
     return unique;
   }, [roles, hasRole]);
 
-  const showSwitcher = availableModules.length > 1 || hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
+  const showSwitcher = availableModules.length > 1 || hasRole("admin") || hasRole("super_admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   const handleSignOut = async () => {
     await signOut();
@@ -234,7 +234,7 @@ export default function PwaLayout({
                         <span className="text-[10px] opacity-80 uppercase font-black">{activeStage?.name || "Nenhuma Selecionada"}</span>
                       </div>
                     </DropdownMenuItem>
-                    {(hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica")) && (
+                    {(hasRole("admin") || hasRole("super_admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica")) && (
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => navigate("/admin")} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-blue-600 dark:text-blue-400">
