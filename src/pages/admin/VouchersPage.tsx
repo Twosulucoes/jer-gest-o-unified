@@ -633,6 +633,18 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
       
       if (!instanceId) throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
 
+      // Payload sanitizado para auditoria (evita qr_code_value e campos sensíveis)
+      const sanitizedAuditPayload = {
+        event_id: eventId,
+        voucher_type: vType,
+        is_nominal: isNominal,
+        eventual_person_id: payload.eventual_person_id,
+        service_type: serviceType,
+        instance_id: instanceId,
+        qr_hash: btoa(payload.qr_code_value).slice(0, 10), // Hash reduzido para rastreio sem expor código
+        audit_info: "individual_emission"
+      };
+
       try {
         const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
         if (error) throw error;
@@ -641,7 +653,7 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: vType,
-          payload: { ...payload, audit_info: "individual_emission" },
+          payload: sanitizedAuditPayload,
           status: 'success'
         });
 
@@ -651,7 +663,7 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: vType,
-          payload: { ...payload, audit_info: "individual_failed" },
+          payload: { ...sanitizedAuditPayload, audit_info: "individual_failed" },
           status: 'error',
           error_message: err.message
         });
