@@ -88,6 +88,8 @@ export default function ValidacaoQRPage() {
     setValidating(true);
     setResult(null);
 
+    const lang = getPwaLang();
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -95,6 +97,53 @@ export default function ValidacaoQRPage() {
         return;
       }
 
+      // NOVO: Se for um voucher, segue fluxo específico de voucher
+      if (isVoucherQr(codeToValidate)) {
+        // Mapeia o scan_point para service_kind se possível
+        const serviceMap: Record<string, ServiceKind> = {
+          alimentacao: "meals",
+          transporte: "transport",
+          alojamento: "lodging",
+        };
+        const serviceKind = serviceMap[scanPoint] || "meals"; // fallback para meals se for general
+
+        const voucher = await tryRedeemVoucher(codeToValidate, serviceKind);
+        
+        if (!voucher || !voucher.ok) {
+          const msg = voucherErrorMessage(voucher?.reason, lang);
+          setResult({
+            result: "error",
+            message: msg.text,
+            participant: null,
+            timestamp: new Date().toISOString(),
+          });
+          toast.error(msg.text);
+          return;
+        }
+
+        const msg = voucherSuccessMessage(voucher, serviceKind, lang);
+        setResult({
+          result: "voucher_ok",
+          message: msg.text,
+          participant: voucher.participant_id ? {
+            participant_id: voucher.participant_id,
+            participant_type: voucher.voucher_type || "voucher",
+            full_name: voucher.person_name || voucher.label || "Portador de Voucher",
+            birth_date: "",
+            gender: "",
+            photo_url: null,
+            institution: null,
+            credential_code: codeToValidate,
+          } : null,
+          timestamp: new Date().toISOString(),
+        });
+        toast.success(msg.text);
+        setSessionCount(prev => prev + 1);
+        setShowConfirm(true);
+        return;
+      }
+
+      // Fluxo normal de credencial
       const { data: json, error: invokeError } = await supabase.functions.invoke("validate-qr", {
         body: {
           qr_code_value: codeToValidate,
@@ -104,17 +153,7 @@ export default function ValidacaoQRPage() {
       });
 
       if (invokeError) {
-        // Tenta extrair mensagem de erro detalhada do contexto da function
-        let detail = invokeError.message;
-        try {
-          const ctx = (invokeError as any).context;
-          if (ctx && typeof ctx.json === "function") {
-            const body = await ctx.json();
-            if (body?.error) detail = body.error;
-          }
-        } catch { /* ignore */ }
-        throw new Error(detail || "Erro ao chamar validate-qr");
-      }
+...
       if (!json) throw new Error("Resposta vazia do servidor");
 
       setResult(json);
