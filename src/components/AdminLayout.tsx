@@ -162,6 +162,15 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    id: "vouchers", label: "Gestão de Vouchers", description: "Emissão, consulta e auditoria.",
+    icon: <ClipboardList className="h-4 w-4" />,
+    items: [
+      { label: "Listagem de Vouchers", to: "/admin/vouchers", icon: <ListTree className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Validação Manual", to: "/admin/vouchers/validar-manual", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Auditoria de Vouchers", to: "/admin/vouchers/auditoria", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+    ],
+  },
+  {
     id: "configuracoes", label: "Configurações", description: "Regras e cadastros técnicos.",
     icon: <Settings className="h-4 w-4" />,
     items: [
