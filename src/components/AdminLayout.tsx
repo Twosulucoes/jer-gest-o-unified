@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import EventSwitcher from "@/components/admin/EventSwitcher";
 import StageSwitcher from "@/components/admin/StageSwitcher";
+import EtapaSwitcher from "@/components/navigation/EtapaSwitcher";
 import { useEventContext } from "@/contexts/EventContext";
 
 import RequireActiveEvent from "@/components/admin/RequireActiveEvent";
