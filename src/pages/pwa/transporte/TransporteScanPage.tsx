@@ -197,7 +197,7 @@ export default function TransporteScanPage() {
           return;
         }
 
-        const voucher = await tryRedeemVoucher(rawValue, "transport", tripId);
+        const voucher = await tryRedeemVoucher(val, "transport", tripId);
         if (!voucher || !voucher.ok) {
           const msg = voucherErrorMessage(voucher?.reason, lang);
           setResult({ ok: false, message: msg.text, source: "qr" });
