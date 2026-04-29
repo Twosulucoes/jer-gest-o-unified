@@ -381,7 +381,7 @@ export default function AlimentacaoScanPage() {
         reopenIfContinuous();
         return;
       } else {
-        const resolved = await resolveQrCredential(rawValue, { eventId: activeEventId });
+        const resolved = await resolveQrCredential(val, { eventId: activeEventId });
         if (!resolved) {
           const errorMsg = getSystemMessage("ERR_NOT_FOUND", lang);
           setResult({ ok: false, message: errorMsg, source: "qr" });
