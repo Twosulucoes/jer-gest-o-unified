@@ -518,7 +518,7 @@ export default function VouchersPage() {
         </TabsContent>
       </Tabs>
 
-      <IssueVoucherWizard open={issueOpen} onOpenChange={setIssueOpen} eventId={eventId} instances={instances} />
+      <IssueVoucherWizard open={issueOpen} onOpenChange={setIssueOpen} eventId={eventId} instances={instances} handlePrintIndividual={handlePrintIndividual} />
       <IssueBatchWizard open={batchIssueOpen} onOpenChange={setBatchIssueOpen} eventId={eventId} instances={instances} />
       <UsageHistoryDialog voucher={historyVoucher} onClose={() => setHistoryVoucher(null)} />
       
@@ -580,7 +580,7 @@ export default function VouchersPage() {
 }
 
 // -------- Emission Wizards --------
-function IssueVoucherWizard({ open, onOpenChange, eventId, instances }: any) {
+function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrintIndividual }: any) {
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState<string>("");
   const [instanceId, setInstanceId] = useState<string>("");
@@ -612,13 +612,26 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances }: any) {
       if (serviceType === "transport") { payload.target_trip_id = instanceId; payload.scope_transport = true; }
       if (serviceType === "lodging") { payload.target_facility_id = instanceId; payload.scope_lodging = true; }
       
-      const { error } = await supabase.from("service_vouchers").insert(payload);
-      if (error) throw error;
+      console.log("Emitindo voucher com payload:", payload);
+      const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
+      if (error) {
+        console.error("Erro ao inserir voucher:", error);
+        throw error;
+      }
+      return data;
     },
-    onSuccess: () => {
-      toast.success("Voucher emitido");
+    onSuccess: (newV) => {
+      toast.success("Voucher emitido com sucesso");
       onOpenChange(false);
       qc.invalidateQueries({ queryKey: ["vouchers"] });
+      // Tenta imprimir automaticamente se for individual
+      if (newV) {
+        handlePrintIndividual(newV as unknown as VoucherRow);
+      }
+    },
+    onError: (err: any) => {
+      console.error("Erro na mutação de voucher:", err);
+      toast.error("Erro ao emitir voucher: " + (err.message || "Erro desconhecido"));
     }
   });
 
@@ -714,6 +727,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
         target_facility_id: serviceType === "lodging" ? instanceId : null,
       }));
 
+      console.log(`Inserindo lote de ${quantity} vouchers para o batch ${batch.id}`);
       const { error: vErr } = await supabase.from("service_vouchers").insert(vouchersToInsert as any);
       if (vErr) throw vErr;
     },
@@ -722,6 +736,10 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
       onOpenChange(false);
       qc.invalidateQueries({ queryKey: ["vouchers"] });
       qc.invalidateQueries({ queryKey: ["voucher-batches"] });
+    },
+    onError: (err: any) => {
+      console.error("Erro ao emitir lote:", err);
+      toast.error("Erro ao emitir lote: " + (err.message || "Erro desconhecido"));
     }
   });
 
