@@ -763,7 +763,14 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
       if (!instanceId) throw new Error("Selecione a instância do serviço.");
       if (quantity <= 0) throw new Error("A quantidade deve ser maior que zero.");
 
-      const auditPayload = { serviceType, quantity, label, instanceId };
+      const auditPayload = { 
+        service_type: serviceType, 
+        quantity, 
+        label, 
+        instance_id: instanceId,
+        audit_info: "batch_emission"
+      };
+
       try {
         const { data: batch, error: bErr } = await supabase.from("service_voucher_batches").insert({
           event_id: eventId,
@@ -800,7 +807,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: 'batch',
-          payload: { ...auditPayload, created_count: quantity },
+          payload: { ...auditPayload, batch_id: batch.id, created_count: quantity },
           status: 'success'
         });
       } catch (err: any) {
@@ -808,7 +815,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: 'batch',
-          payload: { ...auditPayload, error: err.message },
+          payload: { ...auditPayload, error: err.message, audit_info: "batch_failed" },
           status: 'error',
           error_message: err.message
         });
