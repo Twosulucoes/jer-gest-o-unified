@@ -581,6 +581,7 @@ export default function VouchersPage() {
 
 // -------- Emission Wizards --------
 function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrintIndividual }: any) {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState<string>("");
   const [instanceId, setInstanceId] = useState<string>("");
@@ -612,13 +613,30 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
       if (serviceType === "transport") { payload.target_trip_id = instanceId; payload.scope_transport = true; }
       if (serviceType === "lodging") { payload.target_facility_id = instanceId; payload.scope_lodging = true; }
       
-      console.log("Emitindo voucher com payload:", payload);
-      const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
-      if (error) {
-        console.error("Erro ao inserir voucher:", error);
-        throw error;
+      try {
+        const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
+        if (error) throw error;
+        
+        await supabase.from("service_voucher_audit").insert({
+          event_id: eventId,
+          issuer_id: user?.id,
+          voucher_type: payload.voucher_type,
+          payload: payload,
+          status: 'success'
+        });
+
+        return data;
+      } catch (err: any) {
+        await supabase.from("service_voucher_audit").insert({
+          event_id: eventId,
+          issuer_id: user?.id,
+          voucher_type: payload.voucher_type || 'individual',
+          payload: payload,
+          status: 'error',
+          error_message: err.message
+        });
+        throw err;
       }
-      return data;
     },
     onSuccess: (newV) => {
       toast.success("Voucher emitido com sucesso");
@@ -688,6 +706,7 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
 }
 
 function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState<string>("");
   const [instanceId, setInstanceId] = useState<string>("");
@@ -697,39 +716,57 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      // 1. Criar o lote
-      const { data: batch, error: bErr } = await supabase.from("service_voucher_batches").insert({
-        event_id: eventId,
-        label,
-        service_type: serviceType,
-        quantity,
-        target_meal_window_id: serviceType === "meals" ? instanceId : null,
-        target_trip_id: serviceType === "transport" ? instanceId : null,
-        target_facility_id: serviceType === "lodging" ? instanceId : null,
-      }).select().single();
-      
-      if (bErr) throw bErr;
+      const auditPayload = { serviceType, quantity, label, instanceId };
+      try {
+        const { data: batch, error: bErr } = await supabase.from("service_voucher_batches").insert({
+          event_id: eventId,
+          label,
+          service_type: serviceType,
+          quantity,
+          target_meal_window_id: serviceType === "meals" ? instanceId : null,
+          target_trip_id: serviceType === "transport" ? instanceId : null,
+          target_facility_id: serviceType === "lodging" ? instanceId : null,
+        }).select().single();
+        
+        if (bErr) throw bErr;
 
-      // 2. Criar vouchers anônimos em massa
-      const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
-        event_id: eventId,
-        batch_id: batch.id,
-        participant_id: null,
-        voucher_type: "aggregate" as const,
-        is_nominal: false,
-        qr_code_value: genQrValue(),
-        status: "active",
-        scope_meals: serviceType === "meals",
-        scope_transport: serviceType === "transport",
-        scope_lodging: serviceType === "lodging",
-        target_meal_window_id: serviceType === "meals" ? instanceId : null,
-        target_trip_id: serviceType === "transport" ? instanceId : null,
-        target_facility_id: serviceType === "lodging" ? instanceId : null,
-      }));
+        const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
+          event_id: eventId,
+          batch_id: batch.id,
+          participant_id: null,
+          voucher_type: "aggregate" as const,
+          is_nominal: false,
+          qr_code_value: genQrValue(),
+          status: "active",
+          scope_meals: serviceType === "meals",
+          scope_transport: serviceType === "transport",
+          scope_lodging: serviceType === "lodging",
+          target_meal_window_id: serviceType === "meals" ? instanceId : null,
+          target_trip_id: serviceType === "transport" ? instanceId : null,
+          target_facility_id: serviceType === "lodging" ? instanceId : null,
+        }));
 
-      console.log(`Inserindo lote de ${quantity} vouchers para o batch ${batch.id}`);
-      const { error: vErr } = await supabase.from("service_vouchers").insert(vouchersToInsert as any);
-      if (vErr) throw vErr;
+        const { error: vErr } = await supabase.from("service_vouchers").insert(vouchersToInsert as any);
+        if (vErr) throw vErr;
+
+        await supabase.from("service_voucher_audit").insert({
+          event_id: eventId,
+          issuer_id: user?.id,
+          voucher_type: 'batch',
+          payload: auditPayload,
+          status: 'success'
+        });
+      } catch (err: any) {
+        await supabase.from("service_voucher_audit").insert({
+          event_id: eventId,
+          issuer_id: user?.id,
+          voucher_type: 'batch',
+          payload: auditPayload,
+          status: 'error',
+          error_message: err.message
+        });
+        throw err;
+      }
     },
     onSuccess: () => {
       toast.success("Lote emitido com sucesso");
