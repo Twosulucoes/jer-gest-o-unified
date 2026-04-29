@@ -6572,12 +6572,13 @@ export type Database = {
           event_id: string
           eventual_person_id: string | null
           id: string
+          is_contingency: boolean
           is_nominal: boolean
           issued_by: string | null
           label: string | null
           max_uses: number | null
           notes: string | null
-          participant_id: string
+          participant_id: string | null
           qr_code_value: string
           reissued_at: string | null
           replaces_voucher_id: string | null
@@ -6604,12 +6605,13 @@ export type Database = {
           event_id: string
           eventual_person_id?: string | null
           id?: string
+          is_contingency?: boolean
           is_nominal?: boolean
           issued_by?: string | null
           label?: string | null
           max_uses?: number | null
           notes?: string | null
-          participant_id: string
+          participant_id?: string | null
           qr_code_value: string
           reissued_at?: string | null
           replaces_voucher_id?: string | null
@@ -6636,12 +6638,13 @@ export type Database = {
           event_id?: string
           eventual_person_id?: string | null
           id?: string
+          is_contingency?: boolean
           is_nominal?: boolean
           issued_by?: string | null
           label?: string | null
           max_uses?: number | null
           notes?: string | null
-          participant_id?: string
+          participant_id?: string | null
           qr_code_value?: string
           reissued_at?: string | null
           replaces_voucher_id?: string | null
