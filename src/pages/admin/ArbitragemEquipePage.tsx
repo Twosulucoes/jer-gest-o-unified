@@ -26,6 +26,7 @@ import { format, parse } from "date-fns";
 import { EscalaLoteDialog, formatMatchLabel } from "@/components/admin/arbitragem/EscalaLoteDialog";
 import { downloadCsv, downloadPdf, type EscalaExportRow, type EscalaColumnKey } from "@/components/admin/arbitragem/escalaExport";
 import { ExportColumnsDialog } from "@/components/admin/arbitragem/ExportColumnsDialog";
+import { ArbitrosTab } from "@/components/admin/arbitragem/ArbitrosTab";
 
 const ROLE_LABELS: Record<string, string> = {
   mesario: "Mesário",
@@ -72,7 +73,7 @@ export default function ArbitragemEquipePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = (() => {
     const t = searchParams.get("tab");
-    return t === "sports" || t === "lote" || t === "officials" ? t : "officials";
+    return t === "sports" || t === "lote" || t === "officials" || t === "arbitros" ? t : "arbitros";
   })();
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   useEffect(() => {
@@ -526,6 +527,9 @@ export default function ArbitragemEquipePage() {
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
+            <TabsTrigger value="arbitros" className="gap-2">
+              <UserPlus className="h-4 w-4" />Árbitros
+            </TabsTrigger>
             <TabsTrigger value="officials" className="gap-2">
               <Users className="h-4 w-4" />Por oficial
             </TabsTrigger>
@@ -536,6 +540,11 @@ export default function ArbitragemEquipePage() {
               <ListChecks className="h-4 w-4" />Escala em lote
             </TabsTrigger>
           </TabsList>
+
+          {/* Gestão da equipe de árbitros */}
+          <TabsContent value="arbitros" className="mt-4">
+            <ArbitrosTab />
+          </TabsContent>
 
           {/* Lista por oficial */}
           <TabsContent value="officials" className="mt-4">
