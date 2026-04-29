@@ -12,6 +12,7 @@ import {
   Trash2, Plus, Upload, FileText, Image, CheckCircle2,
   AlertTriangle
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import {
