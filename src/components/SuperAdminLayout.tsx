@@ -26,8 +26,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", to: "/super", icon: <LayoutDashboard className="h-4 w-4" /> },
   { label: "Eventos", to: "/super/eventos", icon: <Calendar className="h-4 w-4" /> },
+  { label: "Inferência de Famílias", to: "/super/registros/familias-inferidas", icon: <Layers className="h-4 w-4" /> },
   { label: "Monitor (PWA)", to: "/super/monitor", icon: <Activity className="h-4 w-4" /> },
-  { label: "Chamados", to: "/super/chamados", icon: <LifeBuoy className="h-4 w-4" /> },
   { label: "Manual de Instruções", to: "/super/manual", icon: <BookOpen className="h-4 w-4" /> },
   { label: "Inspetor de Dados", to: "/super/inspector", icon: <DatabaseZap className="h-4 w-4" /> },
   { label: "Logs do Sistema", to: "/super/logs", icon: <ScrollText className="h-4 w-4" /> },

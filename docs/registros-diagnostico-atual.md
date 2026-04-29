@@ -579,3 +579,33 @@ Entrega da fundação estrutural para Famílias de Modalidade, garantindo integr
 
 ---
 *Implementação da Sub-fase 4.1 concluída em 2026-04-29.*
+
+---
+
+## CORREÇÃO TÁTICA — SUB-FASE 4.1 (2026-04-29)
+
+### Resumo dos Ajustes
+Implementação das correções táticas para as pendências de descobribilidade e segurança identificadas na mini-auditoria da Sub-fase 4.1.
+
+### 1. Descobribilidade: Menu do Super Admin
+- **Problema:** A tela de revisão de inferências (`/super/registros/familias-inferidas`) estava inacessível via interface, exigindo URL direta.
+- **Solução:** Adicionado item "Inferência de Famílias" ao menu lateral do `SuperAdminLayout`.
+- **Posicionamento:** Inserido no topo do menu, logo após "Dashboard" e "Eventos", refletindo a prioridade da tarefa de auditoria para o módulo de Registros.
+- **Ícone:** Utilizado o ícone `Layers` (Lucide), consistente com o propósito de organização estrutural das provas.
+
+### 2. Segurança: Restrição de RLS para Inferências
+- **Problema:** A tabela `sport_family_inferences` possuía políticas permissivas demais, permitindo INSERT/UPDATE para qualquer usuário autenticado.
+- **Solução:** Políticas RLS reformuladas.
+  - **SELECT:** Permanece acessível a todos os usuários autenticados para consulta de estado.
+  - **INSERT/UPDATE:** Restrito exclusivamente ao perfil `super_admin` via função `has_role(auth.uid(), 'super_admin')`.
+- **Impacto:** Bloqueio de elevação de privilégio teórica, garantindo que apenas a autoridade máxima do sistema possa validar inferências de famílias de modalidade.
+
+### Arquivos Tocados
+- **Layout:** `src/components/SuperAdminLayout.tsx` (Menu lateral).
+- **Banco:** Migração de RLS para `sport_family_inferences`.
+
+### Verificação de Não-Regressão
+Confirmado que o Super Admin mantém acesso total à funcionalidade via menu e que a segurança do banco foi elevada sem quebrar a leitura dos dados para os demais perfis administrativos.
+
+---
+*Correção tática concluída em 2026-04-29.*
