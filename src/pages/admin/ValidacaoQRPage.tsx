@@ -153,8 +153,17 @@ export default function ValidacaoQRPage() {
       });
 
       if (invokeError) {
-...
-      if (!json) throw new Error("Resposta vazia do servidor");
+        // Tenta extrair mensagem de erro detalhada do contexto da function
+        let detail = invokeError.message;
+        try {
+          const ctx = (invokeError as any).context;
+          if (ctx && typeof ctx.json === "function") {
+            const body = await ctx.json();
+            if (body?.error) detail = body.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(detail || "Erro ao chamar validate-qr");
+      }
 
       setResult(json);
       
