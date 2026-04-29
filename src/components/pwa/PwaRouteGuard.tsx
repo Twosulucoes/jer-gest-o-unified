@@ -94,7 +94,7 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
 
   // If specific roles required, check. Admin/secretaria always pass.
   if (allowedRoles && allowedRoles.length > 0) {
-    const authorized = hasRole("admin") || hasRole("secretaria") || allowedRoles.some((r) => hasRole(r));
+    const authorized = hasRole("admin") || hasRole("super_admin") || hasRole("secretaria") || allowedRoles.some((r) => hasRole(r));
     if (!authorized) {
       return <Navigate to="/acesso-negado" replace />;
     }
