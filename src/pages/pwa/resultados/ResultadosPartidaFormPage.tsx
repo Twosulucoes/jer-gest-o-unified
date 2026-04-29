@@ -80,93 +80,13 @@ function TabPlacar({ matchId, entries, sportEventId }: { matchId: string; entrie
 
   return (
     <div className="space-y-4">
-      {entries.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-8">
-          Nenhum participante cadastrado nesta partida.
-        </p>
-      )}
-
-      {entries.map((entry, idx) => (
-        <div key={entry.id} className="bg-card border rounded-xl p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
-              {idx + 1}
-            </div>
-            <span className="font-semibold text-sm flex-1 truncate">{nomeEntrada(entry)}</span>
-            {entry.side === "home" && (
-              <Badge variant="outline" className="text-[10px]">Mandante</Badge>
-            )}
-            {entry.side === "away" && (
-              <Badge variant="outline" className="text-[10px]">Visitante</Badge>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Placar</Label>
-              <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="0"
-                value={scores[entry.id]?.scoreFinal ?? ""}
-                onChange={(e) =>
-                  setScores((prev) => ({ ...prev, [entry.id]: { ...prev[entry.id], scoreFinal: e.target.value } }))
-                }
-                className="h-11 text-lg font-bold text-center"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Resultado</Label>
-              <Select
-                value={scores[entry.id]?.outcome ?? ""}
-                onValueChange={(v) =>
-                  setScores((prev) => ({ ...prev, [entry.id]: { ...prev[entry.id], outcome: v } }))
-                }
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vitoria">Vitória</SelectItem>
-                  <SelectItem value="derrota">Derrota</SelectItem>
-                  <SelectItem value="empate">Empate</SelectItem>
-                  <SelectItem value="wo">W.O.</SelectItem>
-                  <SelectItem value="dq">Desclassificado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {(scores[entry.id]?.outcome === "empate" || scores[entry.id]?.shootoutScore) && (
-            <div className="pt-2 border-t border-dashed">
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Disputa de Pênaltis (Shootout)</Label>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Gols nos pênaltis"
-                  value={scores[entry.id]?.shootoutScore ?? ""}
-                  onChange={(e) =>
-                    setScores((prev) => ({ ...prev, [entry.id]: { ...prev[entry.id], shootoutScore: e.target.value } }))
-                  }
-                  className="h-11 text-center font-bold border-primary/30 focus:border-primary"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      ))}
-
-      {entries.length > 0 && (
-        <Button
-          className="w-full h-12 text-base font-semibold"
-          onClick={handleSave}
-          disabled={salvar.isPending}
-        >
-          {salvar.isPending ? "Salvando..." : "Salvar Placar"}
-        </Button>
-      )}
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          Esta modalidade (família {family}) ainda não possui interface dedicada de lançamento no PWA.
+          O uso da interface genérica foi desativado para esta fase.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }
