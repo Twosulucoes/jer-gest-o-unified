@@ -135,8 +135,8 @@ export default function AlojamentoScanPage() {
       }
       setResult(null);
       if (!isOnline) {
-        addToVoucherQueue(rawValue, "lodging", facilityId, userId || "", "Portador de Voucher");
-        const successMsg = `Voucher registrado offline: ${rawValue.replace("voucher:", "")}`;
+        addToVoucherQueue(val, "lodging", facilityId, userId || "", "Portador de Voucher");
+        const successMsg = `Voucher registrado offline: ${val.replace("voucher:", "")}`;
         setResult({
           ok: true,
           full_name: "Portador de Voucher",
