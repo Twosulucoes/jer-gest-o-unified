@@ -5,6 +5,7 @@ on:
     branches: [teste]
     paths:
       - 'supabase/migrations/**'
+  workflow_dispatch:
 
 jobs:
   sync:
