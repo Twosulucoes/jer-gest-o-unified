@@ -580,7 +580,7 @@ export default function VouchersPage() {
 }
 
 // -------- Emission Wizards --------
-function IssueVoucherWizard({ open, onOpenChange, eventId, instances }: any) {
+function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrintIndividual }: any) {
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState<string>("");
   const [instanceId, setInstanceId] = useState<string>("");
