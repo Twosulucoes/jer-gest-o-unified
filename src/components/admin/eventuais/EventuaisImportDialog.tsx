@@ -180,8 +180,8 @@ export default function EventuaisImportDialog({ open, onOpenChange, eventId, onS
                     <TableRow key={i}>
                       <TableCell>
                         {r.status === "ok" && <CheckCircle className="h-4 w-4 text-green-500" />}
-                        {r.status === "error" && <XCircle className="h-4 w-4 text-destructive" title={r.error} />}
-                        {r.status === "duplicate" && <AlertTriangle className="h-4 w-4 text-amber-500" title="Já cadastrado" />}
+                        {r.status === "error" && <XCircle className="h-4 w-4 text-destructive" />}
+                        {r.status === "duplicate" && <AlertTriangle className="h-4 w-4 text-amber-500" />}
                         {r.status === "pending" && <div className="h-2 w-2 rounded-full bg-slate-300 animate-pulse" />}
                       </TableCell>
                       <TableCell className="font-medium">{r.full_name}</TableCell>
