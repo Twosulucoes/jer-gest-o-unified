@@ -377,14 +377,9 @@ export default function AdminLayout() {
             </div>
           </div>
 
-          {/* Event & Stage Switchers */}
-          <div className="border-b border-sidebar-border space-y-0.5">
-            {!collapsed && (
-              <>
-                <EventSwitcher />
-                <StageSwitcher />
-              </>
-            )}
+          {/* Event Switcher (Global) */}
+          <div className="border-b border-sidebar-border">
+            {!collapsed && <EventSwitcher />}
           </div>
 
           {/* Navigation */}
