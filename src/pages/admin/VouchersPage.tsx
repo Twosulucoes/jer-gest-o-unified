@@ -736,6 +736,11 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
 
   const mutation = useMutation({
     mutationFn: async () => {
+      // Validação de tipo de serviço em lote
+      if (!serviceType) throw new Error("Selecione o tipo de serviço.");
+      if (!instanceId) throw new Error("Selecione a instância do serviço.");
+      if (quantity <= 0) throw new Error("A quantidade deve ser maior que zero.");
+
       const auditPayload = { serviceType, quantity, label, instanceId };
       try {
         const { data: batch, error: bErr } = await supabase.from("service_voucher_batches").insert({
@@ -754,7 +759,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           event_id: eventId,
           batch_id: batch.id,
           participant_id: null,
-          voucher_type: "aggregate" as const,
+          voucher_type: "aggregate" as const, // Lote sempre cria agregado por padrão
           is_nominal: false,
           qr_code_value: genQrValue(),
           status: "active",
@@ -773,7 +778,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: 'batch',
-          payload: auditPayload,
+          payload: { ...auditPayload, created_count: quantity },
           status: 'success'
         });
       } catch (err: any) {
@@ -781,7 +786,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: 'batch',
-          payload: auditPayload,
+          payload: { ...auditPayload, error: err.message },
           status: 'error',
           error_message: err.message
         });
