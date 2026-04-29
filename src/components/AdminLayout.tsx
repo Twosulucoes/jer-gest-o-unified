@@ -49,8 +49,11 @@ interface NavGroup {
   subGroups?: { label: string; items: NavItem[] }[];
 }
 
-const ADMIN_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "super_admin"];
-const SUPER_ONLY_ROLES: AppRole[] = ["super_admin"];
+const PROPRIETARIO_ROLES: AppRole[] = ["super_admin"];
+const ADMINISTRADOR_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "super_admin"];
+const OPERACIONAL_ROLES: AppRole[] = ["transporte", "alimentacao", "alojamento", "mesario", "arbitragem", "coordenador_modalidade", "super_admin", "admin"];
+const ADMIN_ROLES = ADMINISTRADOR_ROLES; // Alias for backward compatibility in the file
+const SUPER_ONLY_ROLES = PROPRIETARIO_ROLES;
 
 const dashboardItem: NavItem = {
   label: "Painel de Gestão",
