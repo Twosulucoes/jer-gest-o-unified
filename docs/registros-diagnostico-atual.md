@@ -548,3 +548,34 @@ Análise da tabela `competition_match_results` frente às necessidades de cada f
 
 ---
 *Diagnóstico de Famílias de Modalidade concluído em 2026-04-28.*
+
+## IMPLEMENTAÇÃO — SUB-FASE 4.1 (2026-04-29)
+
+### Resumo da Entrega
+Entrega da fundação estrutural para Famílias de Modalidade, garantindo integridade dos dados por prova e preparando o sistema para UI adaptada e boletins por família.
+
+### Alterações Realizadas
+- **Schema Evolutivo:** 
+  - Adicionada coluna `sets_score_json` (JSONB) em `competition_match_results` para placar estruturado set a set.
+  - Nova tabela `sport_family_inferences` para gestão do processo de auditoria de famílias em provas legadas.
+- **Auditoria de Famílias:** 
+  - Novo motor de inferência automática (`familyInference.ts`) baseado empresets e heurísticas de nomes.
+  - Interface administrativa em `/super/registros/familias-inferidas` para revisão e aplicação em massa pelo Super Admin.
+- **Validação de Cadastro:**
+  - Cadastro de provas (`RegrasProvaPage.tsx`) agora exige a seleção de Família como campo obrigatório.
+  - Bloqueio de gravação com mensagens de erro claras para garantir que nenhuma prova nova fique "órfã" de família.
+- **Compatibilidade de Boletins:**
+  - Componente `BulletinSets.tsx` adaptado para consumir prioritariamente o novo JSONB, com fallback transparente para o formato textual e legado (combat_detail).
+
+### Arquivos Tocados
+- **Banco:** Migração de schema e RLS.
+- **Componentes:** `src/components/relatorios/boletins/BulletinSets.tsx`.
+- **Páginas:** `src/pages/admin/RegrasProvaPage.tsx`, `src/pages/super/SuperFamiliasInferidasPage.tsx`.
+- **Utils/Tipagem:** `src/utils/familyInference.ts`, `src/types/sportEventRules.ts`.
+
+### Decisões Técnicas
+- **JSONB de Sets:** Estruturado como `{sets_a: number[], sets_b: number[]}` para permitir extensibilidade futura e cálculos precisos em boletins.
+- **Fallback:** O placar textual (`score`) é mantido preenchido para compatibilidade com consumidores legados e portais externos que ainda não processam o JSONB.
+
+---
+*Implementação da Sub-fase 4.1 concluída em 2026-04-29.*

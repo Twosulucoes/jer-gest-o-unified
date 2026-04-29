@@ -5,7 +5,7 @@
 - **Alimentação:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 1, 2 e 3 concluídas.
 - **Transporte:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 2 e 3 concluídas.
 - **Navegação:** ✅ FASE 4 — Passo 4 Confirmado (Mini-auditoria de não regressão concluída). Ver [Mapeamento de Navegação](docs/navegacao-mapeamento-atual.md).
-- **Registros:** ✅ FASE 3 — Mini-auditoria confirmada. Correção de Descobribilidade aplicada (Etapa A). Ver [Diagnóstico e Implementação](docs/registros-diagnostico-atual.md).
+- **Registros:** ✅ FASE 4 — Sub-fase 4.1 entregue (Fundação das Famílias e Auditoria de Inferência). Ver [Diagnóstico e Implementação](docs/registros-diagnostico-atual.md).
 
 ---
 
