@@ -23,6 +23,20 @@ jobs:
         with:
           version: latest
 
+      - name: Verificar secrets
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "❌ SUPABASE_ACCESS_TOKEN está vazio — secret não encontrado no GitHub"
+            exit 1
+          else
+            echo "✅ SUPABASE_ACCESS_TOKEN está definido (${#SUPABASE_ACCESS_TOKEN} caracteres)"
+          fi
+          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "⚠️  SUPABASE_TEST_DB_PASSWORD está vazio"
+          else
+            echo "✅ SUPABASE_TEST_DB_PASSWORD está definido"
+          fi
+
       - name: Link to test project
         run: supabase link --project-ref wiwvpokdbklathfkjmzl
 
