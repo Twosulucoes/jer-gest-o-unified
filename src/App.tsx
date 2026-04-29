@@ -198,7 +198,6 @@ import AlimentacaoHomePage from "./pages/pwa/alimentacao/AlimentacaoHomePage";
 import AlimentacaoScanPage from "./pages/pwa/alimentacao/AlimentacaoScanPage";
 import AlimentacaoBuscarPwaPage from "./pages/pwa/alimentacao/AlimentacaoBuscarPage";
 import AlimentacaoJanelasPwaPage from "./pages/pwa/alimentacao/AlimentacaoJanelasPage";
-import AlimentacaoHistoricoPage from "./pages/pwa/alimentacao/AlimentacaoHistoricoPage";
 import AlimentacaoListaConsumosPage from "./pages/pwa/alimentacao/AlimentacaoListaConsumosPage";
 import AlimentacaoDivergenciasPage from "./pages/admin/AlimentacaoDivergenciasPage";
 // PWA Coordenação Técnica pages
@@ -571,7 +570,6 @@ const App = () => (
               <Route path="/pwa/alimentacao/scan" element={<AlimentacaoScanPage />} />
               <Route path="/pwa/alimentacao/buscar" element={<AlimentacaoBuscarPwaPage />} />
               <Route path="/pwa/alimentacao/janelas" element={<AlimentacaoJanelasPwaPage />} />
-              <Route path="/pwa/alimentacao/historico" element={<AlimentacaoHistoricoPage />} />
               <Route path="/pwa/alimentacao/lista-consumos" element={<AlimentacaoListaConsumosPage />} />
               
               {/* PWA Coordenação Técnica */}

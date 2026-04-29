@@ -1,7 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   LayoutDashboard, Calendar, LogOut, Menu, X, ScrollText, Settings,
   ChevronsLeft, ChevronsRight, User, ChevronLeft, Activity, BookOpen, LifeBuoy, DatabaseZap,
@@ -212,8 +211,6 @@ export default function SuperAdminLayout() {
             <div className="flex-1" />
 
             <GlobalRefreshButton className="mr-2" />
-
-            <ThemeToggle className="text-muted-foreground" />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,8 @@ const MODULE = "alimentacao" as const;
 
 export default function AlimentacaoScanPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const preselectedWindowId = (location.state as any)?.windowId as string | undefined;
   const { user } = useAuth();
   const { activeEventId } = useEventContext();
   usePwaAudit("alimentacao/escanear", activeEventId);
@@ -57,7 +59,7 @@ export default function AlimentacaoScanPage() {
   const userId = user?.id ?? null;
   const lang = getPwaLang();
   const [windows, setWindows] = useState<MealWindow[]>([]);
-  const [windowId, setWindowId] = useState("");
+  const [windowId, setWindowId] = useState(preselectedWindowId ?? "");
   const [consumptionCount, setConsumptionCount] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [prefs, setPrefs] = useState<ScanPreferences>(() => loadScanPreferences(MODULE, userId));
@@ -435,7 +437,7 @@ export default function AlimentacaoScanPage() {
               <span className="text-sm">Nenhuma janela de refeição aberta no momento</span>
             </CardContent>
           </Card>
-        ) : (
+        ) : !preselectedWindowId ? (
           <Select value={windowId} onValueChange={setWindowId}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione a janela" />
@@ -448,7 +450,7 @@ export default function AlimentacaoScanPage() {
               ))}
             </SelectContent>
           </Select>
-        )}
+        ) : null}
 
         {windowId && (
           <div className="space-y-2">

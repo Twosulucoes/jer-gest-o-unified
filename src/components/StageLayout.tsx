@@ -16,7 +16,6 @@ import { StageModuleKpisProvider } from "@/contexts/StageModuleKpisContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -314,8 +313,6 @@ export default function StageLayout() {
               <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="hidden lg:inline-flex">
                 <ArrowLeft className="mr-1.5 h-4 w-4" /> Geral
               </Button>
-
-              <ThemeToggle className="text-muted-foreground" />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

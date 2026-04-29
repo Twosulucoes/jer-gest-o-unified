@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { useEventContext } from "@/contexts/EventContext";
 import {
   ScanLine, Search,
-  Clock, BarChart3, Plus, ListChecks,
+  Clock, Plus, ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FoodIncidentDialog } from "@/components/pwa/alimentacao/FoodIncidentDialog";
@@ -137,7 +137,7 @@ export default function AlimentacaoHomePage() {
                 indicatorClassName="bg-module"
               />
             </div>
-            <Button className="op-btn-primary" onClick={() => navigate("/pwa/alimentacao/scan")}>
+            <Button className="op-btn-primary" onClick={() => navigate("/pwa/alimentacao/scan", { state: { windowId: openWindow.id } })}>
               <Plus className="h-5 w-5" />
               Registrar consumo
             </Button>
@@ -149,7 +149,6 @@ export default function AlimentacaoHomePage() {
             { label: "Scan QR", icon: ScanLine, to: "/pwa/alimentacao/scan" },
             { label: "Buscar", icon: Search, to: "/pwa/alimentacao/buscar" },
             { label: "Janelas", icon: Clock, to: "/pwa/alimentacao/janelas" },
-            { label: "Histórico", icon: BarChart3, to: "/pwa/alimentacao/historico" },
             { label: "Lista de Consumos", icon: ListChecks, to: "/pwa/alimentacao/lista-consumos" },
           ]}
         />

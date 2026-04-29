@@ -5,7 +5,6 @@ import { useEventContext } from "@/contexts/EventContext";
 import RequireActiveEvent from "@/components/admin/RequireActiveEvent";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   Calendar, LogOut, Menu, X, MapPin, Dumbbell, ListTree, Trophy, Bus, UtensilsCrossed, Building2,
   Users, Upload, KeyRound, BadgeCheck, Gavel, ScanLine,
@@ -351,7 +350,6 @@ export default function AdminLayout() {
               </div>
             )}
             <div className="flex items-center gap-1">
-              <ThemeToggle />
               <button onClick={closeSidebar} className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground">
                 <X className="h-5 w-5" />
               </button>
@@ -503,8 +501,6 @@ export default function AdminLayout() {
             <div className="flex-1" />
 
             <GlobalRefreshButton className="mr-2" />
-
-            <ThemeToggle className="text-muted-foreground" />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
