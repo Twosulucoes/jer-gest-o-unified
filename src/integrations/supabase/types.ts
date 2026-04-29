@@ -6435,7 +6435,7 @@ export type Database = {
           error_message?: string | null
           event_id: string
           id?: string
-          issuer_id: string
+          issuer_id?: string
           payload: Json
           status: string
           voucher_type: string
