@@ -141,9 +141,10 @@ export default function PesquisaNovaPage() {
       // NOVO: Verifica se é um voucher
       if (payload.trim().toLowerCase().startsWith("voucher:")) {
         // Vouchers podem conter informações do portador
+        // Usamos 'label' em vez de 'person_name' (que não existe)
         const { data: voucher, error: vErr } = await supabase
           .from("service_vouchers")
-          .select("person_name, participant_id, voucher_type")
+          .select("label, participant_id, voucher_type")
           .eq("qr_code_value", payload.trim())
           .maybeSingle();
 
@@ -152,13 +153,14 @@ export default function PesquisaNovaPage() {
           return;
         }
 
-        if (voucher.participant_id) {
+        const typedVoucher = voucher as any;
+        if (typedVoucher.participant_id) {
           // Se tiver participant_id, segue o fluxo de carregar dados do participante
-          await loadParticipantData(voucher.participant_id, voucher.person_name || "Portador de Voucher");
+          await loadParticipantData(typedVoucher.participant_id, typedVoucher.label || "Portador de Voucher");
         } else {
           // Voucher avulso/agregado
-          setRespondentType(voucher.voucher_type === 'nominal' ? 'atleta' : 'outro');
-          toast.success(`Identificado via Voucher: ${voucher.person_name || 'Portador'}`);
+          setRespondentType(typedVoucher.voucher_type === 'nominal' ? 'atleta' : 'outro');
+          toast.success(`Identificado via Voucher: ${typedVoucher.label || 'Portador'}`);
         }
         return;
       }
