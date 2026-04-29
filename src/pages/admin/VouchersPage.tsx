@@ -727,6 +727,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
         target_facility_id: serviceType === "lodging" ? instanceId : null,
       }));
 
+      console.log(`Inserindo lote de ${quantity} vouchers para o batch ${batch.id}`);
       const { error: vErr } = await supabase.from("service_vouchers").insert(vouchersToInsert as any);
       if (vErr) throw vErr;
     },
@@ -735,6 +736,10 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
       onOpenChange(false);
       qc.invalidateQueries({ queryKey: ["vouchers"] });
       qc.invalidateQueries({ queryKey: ["voucher-batches"] });
+    },
+    onError: (err: any) => {
+      console.error("Erro ao emitir lote:", err);
+      toast.error("Erro ao emitir lote: " + (err.message || "Erro desconhecido"));
     }
   });
 
