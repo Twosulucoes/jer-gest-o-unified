@@ -92,6 +92,15 @@ const MODULES: ModuleConfig[] = [
       { label: "Pesquisadores", to: "pesquisa/pesquisadores", icon: <Users className="h-3.5 w-3.5" />, roles: ALL_OPS },
     ],
   },
+  {
+    prefix: "vouchers",
+    aliases: ["voucher"],
+    tabs: [
+      { label: "Listagem", to: "vouchers", icon: <ClipboardList className="h-3.5 w-3.5" />, end: true, roles: ALL_OPS },
+      { label: "Validar", to: "voucher/validar", icon: <BadgeCheck className="h-3.5 w-3.5" />, roles: ALL_OPS },
+      { label: "Auditoria", to: "vouchers/auditoria", icon: <ShieldCheck className="h-3.5 w-3.5" />, roles: ALL_OPS },
+    ],
+  },
 ];
 
 interface StagePageScaffoldProps {
