@@ -109,8 +109,9 @@ export default function EtapasIndexPage() {
                   )}
                 </CardContent>
               </Card>
-            </Link>
-          );
+              </Link>
+            );
+          };
 
           const Section = ({
             title,
