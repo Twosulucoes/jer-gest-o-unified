@@ -328,6 +328,13 @@ export default function EventuaisPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EventuaisImportDialog 
+        open={importOpen} 
+        onOpenChange={setImportOpen} 
+        eventId={activeEventId || ""} 
+        onSuccess={() => qc.invalidateQueries({ queryKey: ["eventual-people"] })}
+      />
     </div>
   );
 }
