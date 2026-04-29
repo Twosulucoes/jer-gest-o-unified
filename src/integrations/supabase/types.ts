@@ -8449,6 +8449,7 @@ export type Database = {
         Args: { p_sport_event_id: string }
         Returns: Json
       }
+      check_voucher_schema_integrity: { Args: never; Returns: boolean }
       clear_logistics_seed_all_stages: {
         Args: { p_event_id: string }
         Returns: Json
