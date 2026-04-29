@@ -669,7 +669,17 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
     },
     onError: (err: any) => {
       console.error("Erro na mutação de voucher:", err);
-      toast.error("Erro ao emitir voucher: " + (err.message || "Erro desconhecido"));
+      let errorMsg = err.message || "Erro desconhecido";
+      
+      // Detecção de divergência de schema (PostgREST ou erro 404/400 de coluna)
+      if (errorMsg.includes("voucher_type") || errorMsg.includes("column") || errorMsg.includes("not found")) {
+        errorMsg = "Divergência de esquema detectada no banco de dados. Por favor, execute as migrações mais recentes ou limpe o cache do sistema.";
+      }
+
+      toast.error("Erro ao emitir voucher", {
+        description: errorMsg,
+        duration: 8000,
+      });
     }
   });
 
@@ -801,7 +811,16 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
     },
     onError: (err: any) => {
       console.error("Erro ao emitir lote:", err);
-      toast.error("Erro ao emitir lote: " + (err.message || "Erro desconhecido"));
+      let errorMsg = err.message || "Erro desconhecido";
+      
+      if (errorMsg.includes("service_type") || errorMsg.includes("column") || errorMsg.includes("not found")) {
+        errorMsg = "Divergência de esquema detectada (tabela de lotes). Verifique as migrações de banco de dados.";
+      }
+
+      toast.error("Erro ao emitir lote", {
+        description: errorMsg,
+        duration: 8000,
+      });
     }
   });
 
