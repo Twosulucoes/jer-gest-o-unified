@@ -328,8 +328,8 @@ export default function AlimentacaoScanPage() {
 
       if (isVoucherQr(val)) {
         if (!isOnline()) {
-          addToVoucherQueue(rawValue, "meals", windowId, userId || "", "Portador de Voucher");
-          const successMsg = `Voucher registrado offline: ${rawValue.replace("voucher:", "")}`;
+          addToVoucherQueue(val, "meals", windowId, userId || "", "Portador de Voucher");
+          const successMsg = `Voucher registrado offline: ${val.replace("voucher:", "")}`;
           setResult({ 
             ok: true, 
             source: "qr", 
