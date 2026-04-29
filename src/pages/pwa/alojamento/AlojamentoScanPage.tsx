@@ -47,7 +47,7 @@ import {
   type ScanTelemetry,
 } from "@/lib/pwaScan";
 import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
-import { ScanLine, CheckCircle2, XCircle, AlertTriangle, Moon } from "lucide-react";
+import { ScanLine, CheckCircle2, XCircle, AlertTriangle, Moon, Search } from "lucide-react";
 import { format } from "date-fns";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
