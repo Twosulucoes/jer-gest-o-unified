@@ -109,7 +109,7 @@ export default function PwaLayout({
     
     const accessible = all.filter(m => {
       if ((m as any).showOnlyIfRegistrosEnabled && !registrosMode) return false;
-      return hasRole(m.role as any) || (m.role === "secretaria" && hasRole("admin")) || hasRole("super_admin");
+      return hasRole(m.role as any) || hasRole("admin") || hasRole("super_admin");
     });
     // Remove duplicates (like Ao Vivo having two roles)
     const unique = [];
