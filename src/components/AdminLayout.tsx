@@ -49,7 +49,8 @@ interface NavGroup {
   subGroups?: { label: string; items: NavItem[] }[];
 }
 
-const ADMIN_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"];
+const ADMIN_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "super_admin"];
+const SUPER_ONLY_ROLES: AppRole[] = ["super_admin"];
 
 const dashboardItem: NavItem = {
   label: "Painel de Gestão",
@@ -123,20 +124,24 @@ const navGroups: NavGroup[] = [
     ]
   },
   {
-    id: "acessos", label: "Acessos", description: "Usuários e permissões.",
+    id: "acessos", label: "Acessos e Segurança", description: "Usuários e permissões.",
     icon: <Users className="h-4 w-4" />,
     items: [
-      { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Acessos e Vínculos", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Auditoria de Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
-      { label: "Auditoria do Sistema", to: "/admin/auditoria", icon: <Shield className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
-      { label: "Evidências OSC", to: "/admin/evidencias-osc", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "alimentacao", "alojamento", "transporte", "coordenacao_tecnica"] as AppRole[] },
-      { label: "Monitoramento DB", to: "/admin/monitoramento-db", icon: <DatabaseIcon className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
-      { label: "Conexão Supabase", to: "/admin/configuracoes/supabase", icon: <Cloud className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
-
-      { label: "Status do PWA", to: "/admin/pwa-status", icon: <Cloud className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
-
-      { label: "Resultados (Coord. Modalidade)", to: "/pwa/resultados", icon: <Trophy className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"] as AppRole[] },
+      { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria", "super_admin"] as AppRole[] },
+      { label: "Acessos e Vínculos", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria", "super_admin"] as AppRole[] },
+      { label: "Resultados (Coord. Modalidade)", to: "/pwa/resultados", icon: <Trophy className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", "super_admin"] as AppRole[] },
+      { label: "Evidências OSC", to: "/admin/evidencias-osc", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "alimentacao", "alojamento", "transporte", "coordenacao_tecnica", "super_admin"] as AppRole[] },
+    ],
+  },
+  {
+    id: "proprietario", label: "Sistema (Proprietário)", description: "Ferramentas de assistência e banco de dados.",
+    icon: <DatabaseIcon className="h-4 w-4" />,
+    items: [
+      { label: "Auditoria de Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" />, roles: SUPER_ONLY_ROLES },
+      { label: "Auditoria do Sistema", to: "/admin/auditoria", icon: <Shield className="h-4 w-4" />, roles: SUPER_ONLY_ROLES },
+      { label: "Monitoramento DB", to: "/admin/monitoramento-db", icon: <DatabaseIcon className="h-4 w-4" />, roles: SUPER_ONLY_ROLES },
+      { label: "Conexão Supabase", to: "/admin/configuracoes/supabase", icon: <Cloud className="h-4 w-4" />, roles: SUPER_ONLY_ROLES },
+      { label: "Status do PWA", to: "/admin/pwa-status", icon: <Cloud className="h-4 w-4" />, roles: SUPER_ONLY_ROLES },
     ],
   },
   {
