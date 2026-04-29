@@ -8452,6 +8452,7 @@ export type Database = {
         }[]
       }
       generate_public_token: { Args: never; Returns: string }
+      get_alimentacao_duplicates: { Args: never; Returns: Json }
       get_alojamento_duplicates: {
         Args: { p_facility_id: string }
         Returns: Json
