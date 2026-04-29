@@ -633,6 +633,18 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
       
       if (!instanceId) throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
 
+      // Payload sanitizado para auditoria (evita qr_code_value e campos sensíveis)
+      const sanitizedAuditPayload = {
+        event_id: eventId,
+        voucher_type: vType,
+        is_nominal: isNominal,
+        eventual_person_id: payload.eventual_person_id,
+        service_type: serviceType,
+        instance_id: instanceId,
+        qr_hash: btoa(payload.qr_code_value).slice(0, 10), // Hash reduzido para rastreio sem expor código
+        audit_info: "individual_emission"
+      };
+
       try {
         const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
         if (error) throw error;
@@ -641,7 +653,7 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: vType,
-          payload: { ...payload, audit_info: "individual_emission" },
+          payload: sanitizedAuditPayload,
           status: 'success'
         });
 
@@ -651,7 +663,7 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: vType,
-          payload: { ...payload, audit_info: "individual_failed" },
+          payload: { ...sanitizedAuditPayload, audit_info: "individual_failed" },
           status: 'error',
           error_message: err.message
         });
@@ -669,7 +681,17 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
     },
     onError: (err: any) => {
       console.error("Erro na mutação de voucher:", err);
-      toast.error("Erro ao emitir voucher: " + (err.message || "Erro desconhecido"));
+      let errorMsg = err.message || "Erro desconhecido";
+      
+      // Detecção de divergência de schema (PostgREST ou erro 404/400 de coluna)
+      if (errorMsg.includes("voucher_type") || errorMsg.includes("column") || errorMsg.includes("not found")) {
+        errorMsg = "Divergência de esquema detectada no banco de dados. Por favor, execute as migrações mais recentes ou limpe o cache do sistema.";
+      }
+
+      toast.error("Erro ao emitir voucher", {
+        description: errorMsg,
+        duration: 8000,
+      });
     }
   });
 
@@ -741,7 +763,14 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
       if (!instanceId) throw new Error("Selecione a instância do serviço.");
       if (quantity <= 0) throw new Error("A quantidade deve ser maior que zero.");
 
-      const auditPayload = { serviceType, quantity, label, instanceId };
+      const auditPayload = { 
+        service_type: serviceType, 
+        quantity, 
+        label, 
+        instance_id: instanceId,
+        audit_info: "batch_emission"
+      };
+
       try {
         const { data: batch, error: bErr } = await supabase.from("service_voucher_batches").insert({
           event_id: eventId,
@@ -778,7 +807,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: 'batch',
-          payload: { ...auditPayload, created_count: quantity },
+          payload: { ...auditPayload, batch_id: batch.id, created_count: quantity },
           status: 'success'
         });
       } catch (err: any) {
@@ -786,7 +815,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           event_id: eventId,
           issuer_id: user?.id,
           voucher_type: 'batch',
-          payload: { ...auditPayload, error: err.message },
+          payload: { ...auditPayload, error: err.message, audit_info: "batch_failed" },
           status: 'error',
           error_message: err.message
         });
@@ -801,7 +830,16 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
     },
     onError: (err: any) => {
       console.error("Erro ao emitir lote:", err);
-      toast.error("Erro ao emitir lote: " + (err.message || "Erro desconhecido"));
+      let errorMsg = err.message || "Erro desconhecido";
+      
+      if (errorMsg.includes("service_type") || errorMsg.includes("column") || errorMsg.includes("not found")) {
+        errorMsg = "Divergência de esquema detectada (tabela de lotes). Verifique as migrações de banco de dados.";
+      }
+
+      toast.error("Erro ao emitir lote", {
+        description: errorMsg,
+        duration: 8000,
+      });
     }
   });
 
