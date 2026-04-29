@@ -65,9 +65,9 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
       handleContextChange(queryClient);
     }
     
-    setPersistedStageId(id);
-    if (id) {
-      localStorage.setItem(STORAGE_KEY, id);
+    setPersistedStageId(finalId);
+    if (finalId) {
+      localStorage.setItem(STORAGE_KEY, finalId);
     } else {
       localStorage.removeItem(STORAGE_KEY);
     }
