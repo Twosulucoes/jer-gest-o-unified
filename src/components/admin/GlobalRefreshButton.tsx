@@ -67,13 +67,12 @@ export function GlobalRefreshButton({ className }: { className?: string }) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon"
             disabled={isRefreshing}
-            className="h-9 px-3 border-amber-500/20 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 gap-2 font-medium"
+            className="h-10 w-10 rounded-lg text-muted-foreground hover:bg-muted/70 hover:text-foreground"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span>Refresh</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">

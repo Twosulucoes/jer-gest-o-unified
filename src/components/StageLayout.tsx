@@ -308,8 +308,6 @@ export default function StageLayout() {
 
               <div className="flex-1" />
 
-              <div className="flex-1" />
-
               <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="hidden lg:inline-flex">
                 <ArrowLeft className="mr-1.5 h-4 w-4" /> Geral
               </Button>

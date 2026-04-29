@@ -485,22 +485,22 @@ export default function AdminLayout() {
         {/* Main area */}
         <div className="flex flex-1 flex-col min-w-0">
           {/* Top bar */}
-          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-card/80 backdrop-blur-md px-3 sm:px-4 lg:h-14 lg:px-6">
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border bg-card/80 backdrop-blur-md px-3 sm:px-4 lg:px-6">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/70 hover:text-foreground lg:hidden transition-colors"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/70 hover:text-foreground lg:hidden transition-colors"
               aria-label="Abrir menu"
             >
               <Menu className="h-5 w-5" />
             </button>
 
             <h2 className="font-heading text-sm font-semibold text-foreground truncate">
-              Plataforma de Gestão do JERs
+              JER Gestão
             </h2>
 
             <div className="flex-1" />
 
-            <GlobalRefreshButton className="mr-2" />
+            <GlobalRefreshButton />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
