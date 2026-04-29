@@ -13,6 +13,7 @@ import {
   BadgeCheck,
   Maximize2,
   Settings2,
+  Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,9 @@ import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { ParticipantReviewDialog } from "@/components/admin/ParticipantReviewDialog";
 import { cn } from "@/lib/utils";
 import { useStageModuleKpis } from "@/contexts/StageModuleKpisContext";
+import { isVoucherQr, tryRedeemVoucher, type ServiceKind } from "@/lib/voucherScan";
+import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
+import { getPwaLang } from "@/lib/systemMessages";
 
 interface ValidationResult {
   result: "valid" | "not_found" | "revoked" | "suspended" | "not_activated" | "wrong_event" | string;
