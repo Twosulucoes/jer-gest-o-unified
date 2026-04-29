@@ -502,7 +502,7 @@ export default function AlimentacaoScanPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome ou CPF…"
+              placeholder="Nome, CPF ou código do voucher…"
               value={manualQuery}
               onChange={(e) => setManualQuery(e.target.value)}
               className="h-11 border-border/80 bg-card/90 pl-10"
