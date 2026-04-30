@@ -14,14 +14,15 @@ export function createSupabaseFetchInterceptor(originalFetch: typeof fetch) {
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     let lastError: any;
     const url = typeof input === 'string' ? input : (input instanceof URL ? input.toString() : input.url);
+    const isRestCall = url.includes('/rest/v1/');
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
         const response = await originalFetch(input, init);
 
-        // Somente faz o log de telemetria para chamadas REST v1
-        if (url.includes('/rest/v1/')) {
-          handleRestTelemetry(url, init, response.clone()).catch(err => {
+        // Process telemetry in the background
+        if (isRestCall) {
+          handleRestTelemetry(url, init, response.clone(), attempt).catch(err => {
             console.error('[Telemetry] Failed to process REST telemetry:', err);
           });
         }
@@ -50,7 +51,7 @@ export function createSupabaseFetchInterceptor(originalFetch: typeof fetch) {
   };
 }
 
-async function handleRestTelemetry(url: string, init: RequestInit | undefined, response: Response) {
+async function handleRestTelemetry(url: string, init: RequestInit | undefined, response: Response, retryCount: number = 0) {
   try {
     // 1. Extract table name
     // URL format: .../rest/v1/table_name?query_params
@@ -114,6 +115,8 @@ async function handleRestTelemetry(url: string, init: RequestInit | undefined, r
       metadata: {
         method,
         timestamp: new Date().toISOString(),
+        retry_count: retryCount,
+        was_retried: retryCount > 0
       }
     });
   } catch (_error) {
