@@ -644,6 +644,49 @@ export default function OscAccountabilityModule() {
         <TabsContent value="report" className="mt-6">
           <PrestacaoContasOscPage />
         </TabsContent>
+        {/* Templates da IA */}
+        <TabsContent value="templates" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Templates de Prestação de Contas</CardTitle>
+                <CardDescription>Configure a estrutura dos textos gerados pela IA</CardDescription>
+              </div>
+              <Button size="sm" className="gap-2" onClick={() => toast.info("Em breve: Criação de templates personalizada")}>
+                <Plus className="h-4 w-4" /> Novo Template
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {templates?.map((template) => (
+                  <div key={template.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted/30 transition-colors">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold">{template.name}</h4>
+                        {template.is_default && <Badge variant="secondary">Padrão</Badge>}
+                        <Badge variant="outline" className="capitalize">{template.category}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{template.description}</p>
+                      <pre className="mt-2 text-xs bg-muted p-2 rounded max-h-24 overflow-y-auto whitespace-pre-wrap font-mono">
+                        {template.prompt_structure}
+                      </pre>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => toast.info("Em breve: Edição de templates")}>
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      {!template.is_default && (
+                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => toast.info("Em breve: Remoção de templates")}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
