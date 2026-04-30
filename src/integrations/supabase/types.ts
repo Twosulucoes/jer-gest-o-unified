@@ -6412,6 +6412,60 @@ export type Database = {
         }
         Relationships: []
       }
+      pwa_telemetry: {
+        Row: {
+          action: string
+          created_at: string
+          event_id: string | null
+          id: string
+          metadata: Json | null
+          path: string | null
+          reason: string | null
+          stage_id: string | null
+          target_path: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          metadata?: Json | null
+          path?: string | null
+          reason?: string | null
+          stage_id?: string | null
+          target_path?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          metadata?: Json | null
+          path?: string | null
+          reason?: string | null
+          stage_id?: string | null
+          target_path?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pwa_telemetry_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pwa_telemetry_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referee_remuneration_configs: {
         Row: {
           created_at: string
