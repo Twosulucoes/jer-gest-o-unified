@@ -132,7 +132,6 @@ const SuperPermissionsPage = lazy(() => import("../pages/super/SuperPermissionsP
 const SuperFamiliasInferidasPage = lazy(() => import("../pages/super/SuperFamiliasInferidasPage"));
 const DocumentationPage = lazy(() => import("../pages/super/DocumentationPage"));
 
-
 // PWA Pages
 const PwaLayout = lazy(() => import("../components/pwa/PwaLayout"));
 const PwaLandingPage = lazy(() => import("../pages/pwa/PwaLandingPage"));
@@ -183,7 +182,6 @@ const QrDiagnosticoPage = lazy(() => import("../pages/pwa/diagnostico/QrDiagnost
 const VincularCredencialPage = lazy(() => import("../pages/pwa/credenciamento/VincularCredencialPage"));
 const PwaSelectionFallback = lazy(() => import("../pages/pwa/PwaSelectionFallback"));
 const PwaNotFoundHandler = lazy(() => import("../components/pwa/PwaNotFoundHandler"));
-
 
 // Public Pages
 const PublicResultsPage = lazy(() => import("../pages/public/PublicResultsPage"));
@@ -313,7 +311,6 @@ export const AppRoutes = () => (
         <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
         <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
         <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
-        {/* Rotas removidas */}
         <Route path="clonar-logistica" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ClonarLogisticaPage /></ProtectedRoute>} />
         <Route path="debug-publicados" element={<Navigate to="/super/debug-publicados" replace />} />
         <Route path="auth/email-templates" element={<Navigate to="/admin" replace />} />
