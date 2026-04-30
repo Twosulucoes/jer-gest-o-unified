@@ -14,6 +14,11 @@ function rewriteToStagePath(pathname: string, stageId: string): string | null {
     return `/admin/etapa/${stageId}/competicao/partidas-agenda`;
   }
 
+  // Redireciona resultados globais para os boletins por modalidade da etapa
+  if (pathname === `/admin/competicao/resultados`) {
+    return `/admin/etapa/${stageId}/competicao/resultados`;
+  }
+
   // /admin/credenciamento[/...] → /admin/etapa/:stageId/credenciamento[/...]
   const match = pathname.match(
     /^\/admin\/(credenciamento(?:-externo)?|validacao-qr|competicao(?:\/.*)?|alojamento(?:\/.*)?|alimentacao(?:\/.*)?|transporte(?:\/.*)?|ocorrencias|protestos|pesquisa(?:\/.*)?|vouchers(?:\/.*)?|voucher(?:\/.*)?)$/,

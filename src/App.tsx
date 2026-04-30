@@ -309,6 +309,7 @@ const App = () => (
                         <Route path="competicao/publicacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><CompeticaoPublicacaoPage /></ProtectedRoute>} />
                         <Route path="competicao/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "delegacao"]}><CompeticaoBoletinsPage /></ProtectedRoute>} />
                         <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />
+                        <Route path="competicao/resultados" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />
                         <Route path="competicao/painel-score/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoScorePage /></ProtectedRoute>} />
                         <Route path="competicao/painel-sets/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoSetsPage /></ProtectedRoute>} />
                         <Route path="competicao/painel-combat/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoCombatPage /></ProtectedRoute>} />
