@@ -76,7 +76,7 @@ Importação (SIGECOM) → Credenciamento/QR → Logística → Competição (Re
 9. **Mesários lançam resultados** — via PWA Ao Vivo durante partidas
 10. **Coordenador valida e publica** — resultado oficial com boletim
 
-### Status dos módulos (Auditoria 2026-04-14)
+### Status dos módulos (Auditoria 2026-04-30)
 
 | Módulo | Status | Notas |
 |--------|--------|-------|
@@ -90,13 +90,15 @@ Importação (SIGECOM) → Credenciamento/QR → Logística → Competição (Re
 | Combate (Judô, Karatê, etc.) | ✅ Pronto | combat_detail JSONB, CombatResultForm, auto-detecção |
 | Transporte | ✅ Pronto | CRUD + embarque + relatórios |
 | Alimentação | ✅ Pronto | CRUD + consumo + dashboard + relatórios |
-| Alojamento | 🟡 Parcial | CRUD + ocupação com trigger, falta mapa visual |
-| PWA Operacional | ✅ Pronto | 6 módulos isolados por perfil |
+| Alojamento | ✅ Pronto | CRUD + ocupação com trigger, mapa de unidades |
+| PWA Operacional | ✅ Pronto | 6 módulos isolados, navegação corrigida (2026-04-30) |
 | PWA Ao Vivo | ✅ Pronto | Interface touch-friendly, dark mode, offline |
-| Super Admin | ✅ Pronto | Dashboard global, logs, config |
-| Publicação Oficial | 🟡 Parcial | RLS anon funcional, sem portal público |
-| Evidências / OSC | ⛔ Não iniciado | Apenas match-attachments existem |
+| Super Admin | ✅ Pronto | Dashboard global, logs, config, manual editor |
+| Manual e Ajuda | ✅ Pronto | Jornada "Primeiros Passos" interativa entregue |
+| Publicação Oficial | 🟡 Parcial | RLS anon funcional, sem portal público completo |
+| Evidências / OSC | ✅ Pronto | Modelo unificado com metadados de auditoria |
 | Configurações | ✅ Pronto | Parâmetros, irregularidades, normalização, validador, mapa |
+
 
 ## O que NÃO faz
 
