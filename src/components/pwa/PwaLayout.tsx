@@ -35,6 +35,8 @@ import { getOfflineQueue } from "@/lib/offlineQueue";
 import { getVoucherQueue } from "@/lib/voucherOffline";
 import { getAlojamentoQueue } from "@/hooks/useAlojamentoOffline";
 import { PwaLayoutCtx, type PwaLayoutCtxValue } from "./PwaLayoutContext";
+import { logPwaEvent } from "@/utils/pwaTelemetry";
+
 
 interface PwaLayoutProps {
   moduleTitle?: string;
@@ -140,6 +142,23 @@ export default function PwaLayout({
   // If we're nested inside another PwaLayout, communicate our config upward and skip chrome
   const outerCtx = useContext(PwaLayoutCtx);
   useEffect(() => {
+    // Telemetry: Log if we are in a /pwa route but no module was identified
+    // (Excluding landing page and common pages)
+    if (path.startsWith("/pwa") && 
+        path !== "/pwa" && 
+        path !== "/pwa/" && 
+        !path.startsWith("/pwa/configuracao") && 
+        !path.startsWith("/pwa/install") && 
+        !currentModule) {
+      logPwaEvent({
+        action: "route_not_found",
+        reason: "Module not identified in PwaLayout",
+        metadata: { path },
+        event_id: activeEventId,
+        stage_id: activeStageId?.id
+      });
+    }
+
     if (!outerCtx.isActive) return;
     outerCtx.setTitle(moduleTitle);
     outerCtx.setIcon(moduleIcon);
@@ -151,7 +170,8 @@ export default function PwaLayout({
       outerCtx.setBackTo(undefined);
       outerCtx.setOnBack(undefined);
     };
-  }, [outerCtx.isActive, moduleTitle, moduleIcon, backTo, onBack]);
+  }, [outerCtx.isActive, moduleTitle, moduleIcon, backTo, onBack, path, currentModule]);
+
 
   const ownCtxValue = useMemo<PwaLayoutCtxValue>(() => ({
     isActive: true,
