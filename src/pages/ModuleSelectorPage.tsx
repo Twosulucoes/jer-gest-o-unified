@@ -10,6 +10,7 @@ import {
   Loader2, UtensilsCrossed, Users, Clipboard, Shield, LogOut,
   LayoutDashboard, Bus, Bed, Trophy, ScanLine, IdCard, Search
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ModuleOption {
   roles: string[];
@@ -244,63 +245,82 @@ export default function ModuleSelectorPage() {
   }
 
   return (
-    <div
-      className="min-h-screen px-4 py-8"
-      style={{
-        background:
-          "linear-gradient(135deg, rgba(11,43,90,0.06) 0%, rgba(15,90,166,0.06) 35%, rgba(11,163,163,0.04) 65%, rgba(51,178,73,0.04) 100%), hsl(var(--background))",
-      }}
-    >
-      <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
-        <div className="text-center">
-          <img src="/brand/logo.png" alt="JER Gestão" className="mx-auto mb-4 h-16 object-contain dark:hidden" />
-          <img src="/brand/logo-dark.png" alt="JER Gestão" className="mx-auto mb-4 h-16 object-contain hidden dark:block" />
-          <h1 className="font-heading text-xl font-bold text-foreground">Selecione o módulo</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Olá, <span className="font-medium">{userName}</span>! Você tem acesso a múltiplos módulos. Escolha onde deseja trabalhar:
-          </p>
+    <div className="op-screen flex flex-col items-center justify-center p-6 min-h-[100dvh]">
+      <div className="w-full max-w-2xl space-y-8 animate-fade-in">
+        <div className="text-center space-y-4">
+          <div className="inline-block p-4 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl mb-2">
+            <img src="/brand/logo.png" alt="JER Gestão" className="h-16 w-auto object-contain dark:hidden" />
+            <img src="/brand/logo-dark.png" alt="JER Gestão" className="h-16 w-auto object-contain hidden dark:block" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="font-heading text-3xl font-black text-foreground tracking-tight">Painel de Módulos</h1>
+            <p className="text-sm text-muted-foreground">
+              Olá, <span className="font-bold text-primary">{userName.split(' ')[0]}</span>! Escolha seu ambiente de trabalho:
+            </p>
+          </div>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative group max-w-md mx-auto w-full">
+          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+          </div>
           <Input
-            placeholder="Buscar função do sistema..."
-            className="pl-9 h-11 bg-background/50 backdrop-blur-sm border-muted-foreground/20 focus-visible:ring-primary/30"
+            placeholder="Filtrar por função ou área..."
+            className="pl-12 h-14 bg-card/50 backdrop-blur-md border-border/50 rounded-2xl focus-visible:ring-primary/20 focus-visible:border-primary/40 transition-all text-base"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Filtrar módulos"
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filteredModules.length > 0 ? (
             filteredModules.map((mod, idx) => (
               <Card
                 key={`${mod.label}-${idx}`}
-                className="cursor-pointer hover:shadow-app-md active:scale-[0.98] transition-all border-2 hover:border-primary/30"
+                className="op-card group cursor-pointer transition-all hover:scale-[1.02] hover:shadow-accent-glow hover:border-primary/30 animate-fade-in"
+                style={{ animationDelay: `${idx * 40}ms` }}
                 onClick={() => handleModuleClick(mod)}
               >
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${mod.gradient} text-white shadow-app-sm shrink-0`}>
-                    <mod.icon className="h-6 w-6" />
+                <CardContent className="p-5 flex items-center gap-5">
+                  <div className={cn(
+                    "flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform duration-300",
+                    mod.gradient
+                  )}>
+                    <mod.icon className="h-7 w-7" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{mod.label}</p>
-                    <p className="text-xs text-muted-foreground truncate">{mod.description}</p>
+                    <p className="text-base font-black text-foreground group-hover:text-primary transition-colors tracking-tight">{mod.label}</p>
+                    <p className="text-xs text-muted-foreground font-medium leading-snug line-clamp-2">{mod.description}</p>
                   </div>
                 </CardContent>
               </Card>
             ))
           ) : (
-            <div className="col-span-full py-8 text-center text-muted-foreground">
-              Nenhuma função encontrada para "{searchTerm}"
+            <div className="col-span-full py-16 text-center space-y-3">
+              <div className="bg-muted/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto opacity-50">
+                <Search className="h-8 w-8" />
+              </div>
+              <p className="text-muted-foreground font-medium">Nenhum módulo encontrado para "{searchTerm}"</p>
             </div>
           )}
         </div>
 
-        <div className="text-center pt-2">
-          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={handleSignOut}>
-            <LogOut className="h-4 w-4 mr-1" /> Sair
+        <div className="flex flex-col items-center gap-6 pt-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-xl px-6 transition-all font-bold uppercase tracking-widest text-[10px]"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-3.5 w-3.5 mr-2" /> Encerrar Sessão
           </Button>
+          
+          <div className="flex items-center gap-2 opacity-30 grayscale hover:opacity-100 hover:grayscale-0 transition-all">
+            <span className="text-[10px] font-bold text-foreground">Governo de Roraima</span>
+            <div className="h-1 w-1 bg-foreground rounded-full" />
+            <span className="text-[10px] font-bold text-foreground italic">Esporte que Transforma</span>
+          </div>
         </div>
       </div>
     </div>
