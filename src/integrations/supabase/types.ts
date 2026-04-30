@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_manual_progress: {
+        Row: {
+          completed: boolean
+          created_at: string
+          id: string
+          section_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          section_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          section_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_manual_progress_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "help_manual_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -1956,36 +1991,42 @@ export type Database = {
       }
       help_manual_sections: {
         Row: {
+          action_label: string | null
           category: string
           content_md: string
           created_at: string
           created_by: string | null
           id: string
           is_published: boolean
+          link_path: string | null
           sort_order: number
           title: string
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          action_label?: string | null
           category?: string
           content_md?: string
           created_at?: string
           created_by?: string | null
           id?: string
           is_published?: boolean
+          link_path?: string | null
           sort_order?: number
           title: string
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          action_label?: string | null
           category?: string
           content_md?: string
           created_at?: string
           created_by?: string | null
           id?: string
           is_published?: boolean
+          link_path?: string | null
           sort_order?: number
           title?: string
           updated_at?: string

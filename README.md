@@ -6,6 +6,7 @@
 - **Transporte:** ✅ FECHADO PARA OPERAÇÃO (2026-04-28) - Fases 2 e 3 concluídas.
 - **Navegação:** ✅ FASE 4 — Passo 4 Confirmado (Mini-auditoria de não regressão concluída). Ver [Mapeamento de Navegação](docs/navegacao-mapeamento-atual.md).
 - **Registros:** ✅ FASE 4 — Sub-fase 4.2.A entregue (UI adaptada para score e sets). Ver [Diagnóstico e Implementação](docs/registros-diagnostico-atual.md).
+- **Manual e Ajuda:** ✅ FASE 5 — "Primeiros Passos" para Admin entregue (2026-04-30). Guia interativo com 8 cards e progresso por usuário.
 
 ---
 

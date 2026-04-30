@@ -20,6 +20,8 @@ interface Section {
   sort_order: number;
   is_published: boolean;
   updated_at: string;
+  link_path?: string;
+  action_label?: string;
 }
 
 const EMPTY: Partial<Section> = {
@@ -28,6 +30,8 @@ const EMPTY: Partial<Section> = {
   content_md: "",
   sort_order: 100,
   is_published: true,
+  link_path: "",
+  action_label: "",
 };
 
 export default function SuperManualPage() {
@@ -62,10 +66,12 @@ export default function SuperManualPage() {
       content_md: editing.content_md ?? "",
       sort_order: editing.sort_order ?? 100,
       is_published: editing.is_published ?? true,
+      link_path: editing.link_path ?? "",
+      action_label: editing.action_label ?? "",
     };
     const { error } = editing.id
-      ? await (supabase as any).from("help_manual_sections").update(payload).eq("id", editing.id)
-      : await (supabase as any).from("help_manual_sections").insert(payload);
+      ? await supabase.from("help_manual_sections").update(payload).eq("id", editing.id)
+      : await supabase.from("help_manual_sections").insert(payload);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Seção salva");
@@ -170,6 +176,16 @@ export default function SuperManualPage() {
                 <div className="space-y-1.5">
                   <Label>Título</Label>
                   <Input value={editing.title ?? ""} onChange={(e) => setEditing({ ...editing, title: e.target.value })} placeholder="Ex.: 3.5 Credenciamento" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Link Interno (opcional)</Label>
+                    <Input value={editing.link_path ?? ""} onChange={(e) => setEditing({ ...editing, link_path: e.target.value })} placeholder="Ex.: /admin/eventos" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Rótulo do Botão</Label>
+                    <Input value={editing.action_label ?? ""} onChange={(e) => setEditing({ ...editing, action_label: e.target.value })} placeholder="Ex.: Ir para Eventos" />
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Conteúdo (Markdown)</Label>

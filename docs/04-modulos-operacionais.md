@@ -1,6 +1,6 @@
 # 04 — Módulos Operacionais
 
-> Auditoria atualizada em 2026-04-26 (Interfaces Administrativas, Lote e OSC)
+> Auditoria atualizada em 2026-04-30 (Manual e Ajuda Interativa Admin)
 
 ## 1. Importação / Espelhamento SIGECOM (✅ Pronto)
 - **Página**: `/admin/importacao`
@@ -171,3 +171,15 @@
 
 ### Etapa 4 — Prestação de Contas OSC (🟡 Em breve)
 - Relatório formal consolidado para Governo RR, IDJUV e Acolher
+
+## 20. Manual e Ajuda Interativa (✅ Pronto)
+- **Páginas**: `/admin/ajuda/manual` (usuário), `/super/manual` (editor super_admin)
+- **Features**:
+  - ✅ **Primeiros Passos (Admin)**: Jornada cronológica com 8 cards interativos para novos administradores.
+  - ✅ **Progresso Individual**: Barra de progresso visual e marcação de conclusão por card, persistida por usuário na tabela `admin_manual_progress`.
+  - ✅ **Cards Inteligentes**: Cada card possui descrição, link interno direto para a ferramenta e rótulo de ação customizável.
+  - ✅ **Editor Super Admin**: Suporte completo para criação de novas categorias de cards, edição de links e labels de ação.
+  - ✅ **Markdown**: Suporte a GFM (GitHub Flavored Markdown) em todas as seções do manual.
+- **Tabelas**: `help_manual_sections` (conteúdo), `admin_manual_progress` (tracking).
+- **Perfis**: Admin (visualiza jornada e manual), Super Admin (edita conteúdo), Secretaria/Coordenadores (visualizam manual).
+- **Diagnóstico (2026-04-30)**: Mapeamento de rotas reais concluído, garantindo que nenhum card da jornada de "Primeiros Passos" possua links quebrados.
