@@ -181,10 +181,9 @@ export default function OscAccountabilityModule() {
       
       if (!reader) throw new Error('Falha ao iniciar stream');
 
-      // Paramos o loading principal assim que o stream começa a chegar
-      setIsAiLoading(false);
-      
       let fullContent = "";
+      let hasStarted = false;
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -194,21 +193,24 @@ export default function OscAccountabilityModule() {
         
         for (const line of lines) {
           const trimmedLine = line.trim();
-          if (!trimmedLine) continue;
+          if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
           
-          if (trimmedLine.startsWith('data: ')) {
-            const dataStr = trimmedLine.slice(6).trim();
-            if (dataStr === '[DONE]') break;
-            
-            try {
-              const data = JSON.parse(dataStr);
-              const content = data.choices?.[0]?.delta?.content || "";
+          const dataStr = trimmedLine.slice(6).trim();
+          if (dataStr === '[DONE]') break;
+          
+          try {
+            const data = JSON.parse(dataStr);
+            const content = data.choices?.[0]?.delta?.content || "";
+            if (content) {
+              if (!hasStarted) {
+                hasStarted = true;
+                setIsAiLoading(false);
+              }
               fullContent += content;
               setAiReport(fullContent);
-            } catch (e) {
-              // Algumas vezes o chunk pode vir incompleto se o JSON for grande ou quebrado
-              console.warn("Could not parse JSON chunk:", dataStr);
             }
+          } catch (e) {
+            console.warn("Could not parse JSON chunk:", dataStr);
           }
         }
       }
