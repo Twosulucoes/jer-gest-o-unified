@@ -49,14 +49,19 @@ const CONTEXT_QUERY_WHITELIST = [
 ];
 
 export const handleContextChange = (queryClient: QueryClient) => {
-  logger.log("Context change detected. Clearing filters and invalidating whitelisted queries...");
-  
-  // 1. Clear all persisted UI filters/states
-  clearPersistedFilters();
-  
-  // 2. Selectively invalidate queries from the whitelist
-  // This ensures fresh data for the new context without refetching global data
-  CONTEXT_QUERY_WHITELIST.forEach(queryKeyPrefix => {
-    queryClient.invalidateQueries({ queryKey: [queryKeyPrefix] });
-  });
+  try {
+    logger.log("Context change detected. Clearing filters and invalidating whitelisted queries...");
+    
+    // 1. Clear all persisted UI filters/states
+    clearPersistedFilters();
+    
+    // 2. Selectively invalidate queries from the whitelist
+    CONTEXT_QUERY_WHITELIST.forEach(queryKeyPrefix => {
+      queryClient.invalidateQueries({ queryKey: [queryKeyPrefix] }).catch(err => {
+        logger.warn(`Failed to invalidate query prefix: ${queryKeyPrefix}`, err);
+      });
+    });
+  } catch (err) {
+    logger.error("Failed to handle context change", err);
+  }
 };

@@ -249,11 +249,34 @@ import StatusPage from "./pages/Status";
 const AoVivoHomePage = lazy(() => import("./pages/aovivo/AoVivoHomePage"));
 const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
 
-const queryClient = new QueryClient();
+import { MonitoringErrorBoundary } from "@/components/MonitoringErrorBoundary";
+import { installErrorReporter } from "@/lib/monitoring/errorReporter";
 
+// Inicializa o monitoramento global
+installErrorReporter();
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error: any) => {
+        // Não tenta novamente em erros 404 ou 403
+        if (error?.status === 404 || error?.status === 403) return false;
+        return failureCount < 2;
+      },
+      staleTime: 1000 * 60 * 5, // 5 minutos
+      gcTime: 1000 * 60 * 30, // 30 minutos
+    },
+    mutations: {
+      onError: (error: any) => {
+        console.error("Mutation error:", error);
+      }
+    }
+  },
+});
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <MonitoringErrorBoundary>
+    <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
       <Toaster />
@@ -640,7 +663,8 @@ const App = () => (
       </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
-  </QueryClientProvider>
+    </QueryClientProvider>
+  </MonitoringErrorBoundary>
 );
 
 export default App;

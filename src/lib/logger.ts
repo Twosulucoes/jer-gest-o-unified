@@ -1,3 +1,5 @@
+import { reportError } from "@/lib/monitoring/errorReporter";
+
 const isProd = import.meta.env.PROD;
 
 export const logger = {
@@ -11,9 +13,24 @@ export const logger = {
       console.warn(...args);
     }
   },
-  error: (...args: any[]) => {
-    // Errors are usually logged even in production, or sent to a monitoring service
-    console.error(...args);
+  error: (message: string, context?: any) => {
+    console.error(message, context);
+    
+    // In production, we report every call to logger.error
+    reportError({
+      message: `[Logger] ${message}`,
+      severity: "error",
+      context: context ? { details: context } : undefined
+    });
+  },
+  critical: (message: string, context?: any) => {
+    console.error(`[CRITICAL] ${message}`, context);
+    
+    reportError({
+      message: `[CRITICAL] ${message}`,
+      severity: "critical",
+      context: context ? { details: context } : undefined
+    });
   },
   info: (...args: any[]) => {
     if (!isProd) {
