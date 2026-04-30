@@ -347,6 +347,38 @@ export default function PrestacaoContasOscPage() {
         </CardContent>
       </Card>
 
+      {/* Registros Complementares */}
+      {data && data.oscRegistros && data.oscRegistros.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Registros Operacionais Complementares</CardTitle>
+            <CardDescription>Eventos e indicadores manuais registrados para fins de prestação de contas.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.oscRegistros.map((reg) => (
+                  <TableRow key={reg.id}>
+                    <TableCell className="text-xs">{new Date(reg.recorded_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="capitalize text-xs font-medium">{reg.type.replace('_', ' ')}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{reg.description || "—"}</TableCell>
+                    <TableCell className="text-right font-bold">{reg.value_numeric} {reg.unit}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Delegações */}
       <Card>
         <CardHeader>
