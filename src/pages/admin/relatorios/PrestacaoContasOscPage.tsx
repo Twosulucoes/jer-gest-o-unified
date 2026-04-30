@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useEventContext } from "@/contexts/EventContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import {
   Receipt, Download, FileSpreadsheet, Users, BadgeCheck, UtensilsCrossed,
-  Bed, Bus, Trophy, Award, Building2, Sparkles, Settings
+  Bed, Bus, Trophy, Award, Building2, Sparkles, Settings, ShieldCheck,
+  AlertCircle, CheckCircle2, Calendar
 } from "lucide-react";
 import { useOscData } from "./useOscData";
 import { useEventBranding } from "@/hooks/useEventBranding";
@@ -167,39 +169,68 @@ export default function PrestacaoContasOscPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Receipt className="h-5 w-5 text-primary" />
+    <div className="container mx-auto py-6 space-y-8 max-w-7xl animate-fade-in">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-muted/30 p-6 rounded-xl border">
+        <div className="flex items-start gap-4">
+          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <ShieldCheck className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="font-heading text-2xl font-bold">Prestação de Contas (OSC)</h1>
-            <p className="text-sm text-muted-foreground">Período: {periodLabel}</p>
+            <h1 className="font-heading text-3xl font-bold tracking-tight">Relatório Formal da OSC</h1>
+            <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm font-medium">{periodLabel}</span>
+              <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+                Auditoria Integrada
+              </Badge>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchAuditHistory(); }}>
-            <FileSpreadsheet className="h-4 w-4 mr-1.5" />
+            <Clock className="h-4 w-4 mr-2" />
             Histórico
           </Button>
           <Link to="/admin/registros/configuracao-osc">
             <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-1.5" />
-              Configurar Convênio
+              <Settings className="h-4 w-4 mr-2" />
+              Convênio
             </Button>
           </Link>
-          <ReportPresetsButton reportId="prestacao-contas-osc" eventId={eventId} currentFilters={{}} onApply={() => {}} />
           <Button variant="outline" size="sm" onClick={onXlsx} disabled={!data || exporting !== null}>
-            <FileSpreadsheet className="h-4 w-4 mr-1.5" />
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
             {exporting === "xlsx" ? "Gerando…" : "XLSX"}
           </Button>
-          <Button size="sm" onClick={onPdf} disabled={!data || exporting !== null}>
-            <Download className="h-4 w-4 mr-1.5" />
-            {exporting === "pdf" ? "Gerando…" : "PDF Oficial"}
+          <Button size="sm" onClick={onPdf} disabled={!data || exporting !== null} className="shadow-lg shadow-primary/20">
+            <Download className="h-4 w-4 mr-2" />
+            {exporting === "pdf" ? "Gerando…" : "Gerar PDF Oficial"}
           </Button>
         </div>
       </header>
+
+      {/* Alerta de Conformidade */}
+      <Card className="bg-blue-50/50 border-blue-100">
+        <CardContent className="p-4 flex flex-col md:flex-row items-center gap-4">
+          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+            <ShieldCheck className="h-5 w-5 text-blue-600" />
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h4 className="font-semibold text-blue-900">Status de Prontidão para Publicação</h4>
+            <p className="text-sm text-blue-700/80">O relatório consolida evidências operacionais aprovadas e indicadores de execução para envio aos órgãos fiscalizadores.</p>
+          </div>
+          <div className="flex items-center gap-4 bg-white/50 p-2 px-4 rounded-lg border border-blue-100 shrink-0">
+            <div className="text-right">
+              <p className="text-[10px] uppercase font-bold text-blue-600">Última Publicação</p>
+              <p className="text-xs font-medium">{auditHistory[0] ? new Date(auditHistory[0].created_at).toLocaleDateString("pt-BR") : "Nenhuma"}</p>
+            </div>
+            <Separator orientation="vertical" className="h-8 bg-blue-200" />
+            <div className="text-right">
+              <p className="text-[10px] uppercase font-bold text-blue-600">Data Limite</p>
+              <p className="text-xs font-medium">15/05/2026</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {showHistory && (
         <Card className="animate-in fade-in slide-in-from-top-4">
