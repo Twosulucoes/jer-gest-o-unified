@@ -2,12 +2,13 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate, useSearchParams, Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, XCircle, User, Layers, X, Plus, Edit, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown } from "lucide-react";
+import { Search, Users, XCircle, User, Layers, X, Plus, Edit, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, UserX } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";

@@ -10,7 +10,8 @@ import { ptBR } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -181,19 +182,18 @@ export default function EventosPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full rounded-md" />
-          ))}
-        </div>
+        <TableSkeleton columns={canWrite ? 7 : 6} rows={6} />
       ) : !events?.length ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-          <CalendarDays className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhum evento cadastrado</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Crie o primeiro evento para começar.
-          </p>
-        </div>
+        <EmptyState
+          icon={CalendarDays}
+          title="Nenhum evento cadastrado"
+          description="Crie o primeiro evento para começar a gerenciar os Jogos Escolares."
+          action={canWrite && (
+            <Button onClick={openCreate} size="sm">
+              <Plus className="mr-2 h-4 w-4" /> Criar Primeiro Evento
+            </Button>
+          )}
+        />
       ) : (
         <div className="rounded-lg border bg-card">
           <Table>
