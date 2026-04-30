@@ -102,6 +102,27 @@ const PesquisaDashboardPage = lazy(() => import("../pages/admin/PesquisaDashboar
 const VouchersPage = lazy(() => import("../pages/admin/VouchersPage"));
 const ProtestosFilaPage = lazy(() => import("../pages/admin/ProtestosFilaPage"));
 
+// Transporte Subpages
+const TransporteViagensPage = lazy(() => import("../pages/admin/TransporteViagensPage"));
+const TransporteRotasPage = lazy(() => import("../pages/admin/TransporteRotasPage"));
+const TransporteEmbarquePage = lazy(() => import("../pages/admin/TransporteEmbarquePage"));
+const TransporteVeiculosPage = lazy(() => import("../pages/admin/TransporteVeiculosPage"));
+
+// Alimentacao Subpages
+const AlimentacaoJanelasPage = lazy(() => import("../pages/admin/AlimentacaoJanelasPage"));
+const AlimentacaoConsumoPage = lazy(() => import("../pages/admin/AlimentacaoConsumoPage"));
+const AlimentacaoPrevisaoPage = lazy(() => import("../pages/admin/AlimentacaoPrevisaoPage"));
+
+// Alojamento Subpages
+const AlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
+const AlojamentoUnidadesPage = lazy(() => import("../pages/admin/AlojamentoUnidadesPage"));
+const AlojamentoPresencaPage = lazy(() => import("../pages/admin/AlojamentoPresencaPage"));
+
+// Competicao Subpages
+const CompeticaoPainelPage = lazy(() => import("../pages/admin/CompeticaoPainelPage"));
+const CompeticaoEquipesPage = lazy(() => import("../pages/admin/CompeticaoEquipesPage"));
+
+
 
 // Super Pages
 const SuperDashboardPage = lazy(() => import("../pages/super/SuperDashboardPage"));
