@@ -47,7 +47,7 @@ const DatabaseMonitoringPage = lazy(() => import("../pages/admin/DatabaseMonitor
 const SistemaDiagnosticoPage = lazy(() => import("../pages/admin/SistemaDiagnosticoPage"));
 const SistemaDiagnosticoKpiPage = lazy(() => import("../pages/admin/SistemaDiagnosticoKpiPage"));
 const CentralDadosPage = lazy(() => import("../pages/admin/CentralDadosPage"));
-const CentralControlePage = lazy(() => import("../pages/admin/CentralControlePage"));
+// const CentralControlePage = lazy(() => import("../pages/admin/CentralControlePage"));
 const SchemaValidadorPage = lazy(() => import("../pages/admin/SchemaValidadorPage"));
 const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
 const ModuleSelectorPage = lazy(() => import("../pages/ModuleSelectorPage"));
@@ -82,10 +82,10 @@ const LinkPreviewPage = lazy(() => import("../pages/admin/LinkPreviewPage"));
 const RegistrosPage = lazy(() => import("../pages/admin/registros/RegistrosPage"));
 const ConfigOscPage = lazy(() => import("../pages/admin/registros/ConfigOscPage"));
 const OscAccountabilityModule = lazy(() => import("../pages/admin/registros/OscAccountabilityModule"));
-const SeedLogisticaEtapaPage = lazy(() => import("../pages/admin/SeedLogisticaEtapaPage"));
+// const SeedLogisticaEtapaPage = lazy(() => import("../pages/admin/SeedLogisticaEtapaPage"));
 const ClonarLogisticaPage = lazy(() => import("../pages/admin/ClonarLogisticaPage"));
 const DebugPublicadosPage = lazy(() => import("../pages/admin/DebugPublicadosPage"));
-const EmailTemplatesPage = lazy(() => import("../pages/admin/EmailTemplatesPage"));
+// const EmailTemplatesPage = lazy(() => import("../pages/admin/EmailTemplatesPage"));
 const StageHomePage = lazy(() => import("../pages/admin/StageHomePage"));
 const StageReportsPage = lazy(() => import("../pages/admin/StageReportsPage"));
 
@@ -234,6 +234,9 @@ export const AppRoutes = () => (
         <Route path="dados" element={<CentralDadosPage />} />
         <Route path="diagnostico" element={<SistemaDiagnosticoPage />} />
         <Route path="documentacao" element={<DocumentationPage />} />
+        <Route path="acessos/pwa" element={<AcessosPwaAuditPage />} />
+        <Route path="importacao/aliases" element={<ImportacaoAliasesPage />} />
+        <Route path="debug-publicados" element={<DebugPublicadosPage />} />
       </Route>
 
       <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
@@ -287,7 +290,7 @@ export const AppRoutes = () => (
         <Route path="importacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ImportacaoPage /></ProtectedRoute>} />
         <Route path="importacao/modelo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoModeloPage /></ProtectedRoute>} />
         <Route path="importacao/pendencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPendenciasPage /></ProtectedRoute>} />
-        <Route path="importacao/aliases" element={<ProtectedRoute allowedRoles={["super_admin"]}><ImportacaoAliasesPage /></ProtectedRoute>} />
+        <Route path="importacao/aliases" element={<Navigate to="/super/importacao/aliases" replace />} />
         <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipantesPage /></ProtectedRoute>} />
         <Route path="participantes/historico" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><HistoricoBuscaPage /></ProtectedRoute>} />
         <Route path="participantes/duplicidades" element={<Navigate to="/admin/pessoas/duplicidades" replace />} />
@@ -299,8 +302,8 @@ export const AppRoutes = () => (
         <Route path="credenciais/modelos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredencialModelosPage /></ProtectedRoute>} />
         <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
         <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
-        <Route path="acessos/pwa" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosPwaAuditPage /></ProtectedRoute>} />
-        <Route path="central-controle" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralControlePage /></ProtectedRoute>} />
+        <Route path="acessos/pwa" element={<Navigate to="/super/acessos/pwa" replace />} />
+        <Route path="central-controle" element={<Navigate to="/admin" replace />} />
         <Route path="auditoria" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AuditoriaPage /></ProtectedRoute>} />
         <Route path="conformidade" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "super_admin"]}><ComplianceDashboardPage /></ProtectedRoute>} />
         <Route path="regras" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegrasPage /></ProtectedRoute>} />
@@ -318,10 +321,10 @@ export const AppRoutes = () => (
         <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
         <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
         <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
-        <Route path="seed-logistica" element={<ProtectedRoute allowedRoles={["super_admin"]}><SeedLogisticaEtapaPage /></ProtectedRoute>} />
+        {/* Rotas removidas */}
         <Route path="clonar-logistica" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ClonarLogisticaPage /></ProtectedRoute>} />
-        <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["super_admin"]}><DebugPublicadosPage /></ProtectedRoute>} />
-        <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["super_admin"]}><EmailTemplatesPage /></ProtectedRoute>} />
+        <Route path="debug-publicados" element={<Navigate to="/super/debug-publicados" replace />} />
+        <Route path="auth/email-templates" element={<Navigate to="/admin" replace />} />
         <Route path="competicao/publicacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><CompeticaoPublicacaoPage /></ProtectedRoute>} />
         <Route path="competicao/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "delegacao"]}><CompeticaoBoletinsPage /></ProtectedRoute>} />
         <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />

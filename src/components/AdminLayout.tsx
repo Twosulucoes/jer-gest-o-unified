@@ -91,7 +91,7 @@ const navGroups: NavGroup[] = [
       { label: "Vinculação de Credencial", to: "/admin/credenciamento-externo", icon: <ScanLine className="h-4 w-4" />, roles: ADMIN_ROLES },
       
       { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Mapeamento de Aliases", to: "/admin/importacao/aliases", icon: <BadgeCheck className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
+      // { label: "Mapeamento de Aliases", to: "/admin/importacao/aliases", icon: <BadgeCheck className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
@@ -137,7 +137,7 @@ const navGroups: NavGroup[] = [
     id: "proprietario", label: "Sistema (Proprietário)", description: "Ferramentas de assistência e banco de dados.",
     icon: <DatabaseIcon className="h-4 w-4" />,
     items: [
-      { label: "Auditoria de Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" />, roles: SUPER_ONLY_ROLES },
+      // { label: "Auditoria de Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" />, roles: SUPER_ONLY_ROLES },
       { label: "Auditoria do Sistema", to: "/admin/auditoria", icon: <Shield className="h-4 w-4" />, roles: SUPER_ONLY_ROLES },
       { label: "Monitoramento DB", to: "/admin/monitoramento-db", icon: <DatabaseIcon className="h-4 w-4" />, roles: SUPER_ONLY_ROLES },
       { label: "Conexão Supabase", to: "/admin/configuracoes/supabase", icon: <Cloud className="h-4 w-4" />, roles: SUPER_ONLY_ROLES },

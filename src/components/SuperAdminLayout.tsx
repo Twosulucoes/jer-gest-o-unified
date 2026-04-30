@@ -39,6 +39,8 @@ const navItems = [
       { label: "Inferência de Famílias", to: "/super/registros/familias-inferidas", icon: <Layers className="h-4 w-4" /> },
       { label: "Validador de Schema", to: "/super/validador", icon: <CheckCircle className="h-4 w-4" /> },
       { label: "Central de Dados", to: "/super/dados", icon: <DatabaseIcon className="h-4 w-4" /> },
+      { label: "Mapeamento de Aliases", to: "/super/importacao/aliases", icon: <Upload className="h-4 w-4" /> },
+      { label: "Debug de Publicações", to: "/super/debug-publicados", icon: <Activity className="h-4 w-4" /> },
     ]
   },
   {
@@ -46,7 +48,7 @@ const navItems = [
     items: [
       { label: "Permissões", to: "/super/permissoes", icon: <ShieldCheck className="h-4 w-4" /> },
       { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" /> },
-      { label: "Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" /> },
+      { label: "Acessos PWA", to: "/super/acessos/pwa", icon: <Monitor className="h-4 w-4" /> },
       { label: "Configurações Super", to: "/super/config", icon: <Settings className="h-4 w-4" /> },
       { label: "Manual do Desenvolvedor", to: "/super/manual", icon: <BookOpen className="h-4 w-4" /> },
     ]
