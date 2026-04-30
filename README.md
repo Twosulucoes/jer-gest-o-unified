@@ -10,15 +10,18 @@ O **JER Gestão** é uma plataforma robusta de gestão operacional para os Jogos
 
 ## 🚀 Novidades Recentes (Abril 2026)
 
+### Documentação Técnica
+- Implementada a área **/super/documentacao** utilizando o modelo "Docs-as-Code". 
+- Todo o conjunto de arquivos `.md` do repositório agora é renderizado automaticamente no painel super admin.
+- O sistema audita todas as aberturas de documentação para fins de monitoramento.
+- Adicionado link condicional no manual de ajuda do administrador para acesso rápido à documentação técnica.
+
 ### Telemetria e Monitoramento PWA
-Implementado sistema de telemetria em tempo real para o PWA (tabela `pwa_telemetry`). O sistema agora registra:
-- Redirecionamentos de "Módulo Único" para facilitar o suporte.
-- Tentativas de acesso a rotas inexistentes (404 no PWA).
-- Redirecionamentos forçados por falta de contexto (Evento/Etapa).
-- Erros de permissão e acesso a recursos de outros eventos.
+- Sistema de telemetria em tempo real para o PWA (tabela `pwa_telemetry`).
+- Registro detalhado de fluxos de redirecionamento, erros de rota e contexto de módulo.
 
 ### Jornada do Administrador
-Nova seção **"Primeiros Passos"** no manual, guiando novos administradores na configuração inicial do JER com cards interativos e barra de progresso individual.
+- Nova seção **"Primeiros Passos"** no manual, guiando novos administradores na configuração inicial do JER com cards interativos e barra de progresso individual.
 
 ---
 
