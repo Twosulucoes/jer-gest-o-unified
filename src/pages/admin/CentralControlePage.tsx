@@ -28,7 +28,7 @@ export default function CentralControlePage() {
           created_at,
           profiles:created_by (full_name)
         `)
-        .or("action.eq.scope_violation,table_name.eq.pwa_scope_violation,action.eq.error")
+        .or("action.eq.scope_violation,table_name.eq.pwa_scope_violation,action.eq.error,action.ilike.REMEDIATION_%")
         .order("created_at", { ascending: false })
         .limit(5);
       

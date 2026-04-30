@@ -1,7 +1,7 @@
 import { useQueries } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-const STALE = 60_000 * 5; // 5 minutes instead of 30 seconds for non-critical data
+const STALE = 30_000; // Reduzido de 5min para 30s para sincronia com auditoria realtime
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {

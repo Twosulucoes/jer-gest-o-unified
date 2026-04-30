@@ -73,19 +73,31 @@ export function RemediationDialog({
   const handleExecute = async () => {
     setIsPending(true);
     try {
-      // 1. Criar trilha de auditoria
-      const { error: auditError } = await supabase.from("audit_events").insert({
-        action: `REMEDIATION_${action.toUpperCase()}`,
-        table_name: "system_remediation",
-        record_id: targetId || "global",
-        payload: { 
+      // 1. Criar trilha de auditoria e log de remediação
+      await Promise.all([
+        supabase.from("audit_events").insert({
+          action: `REMEDIATION_${action.toUpperCase()}`,
+          table_name: "system_remediation",
+          record_id: targetId || "global",
+          payload: { 
+            target_name: targetName,
+            executed_at: new Date().toISOString(),
+            context: "Super Admin Remediation UI",
+            status: "executed"
+          }
+        }),
+        supabase.from("remediation_logs").insert({
+          action_key: action,
+          target_id: targetId,
           target_name: targetName,
-          executed_at: new Date().toISOString(),
-          context: "Super Admin Remediation UI"
-        }
-      });
-
-      if (auditError) throw new Error(`Falha ao registrar auditoria: ${auditError.message}`);
+          severity: config.severity,
+          status: "success",
+          payload: {
+            context: "Super Admin Remediation UI",
+            timestamp: new Date().toISOString()
+          }
+        })
+      ]);
 
       // 2. Executar lógica específica (simulada por enquanto, integrável com RPCs)
       // Exemplo de integração: await supabase.rpc('remediate_' + action, { id: targetId });

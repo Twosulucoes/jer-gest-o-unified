@@ -14,6 +14,7 @@ export function TechnicalAuditSummary() {
   const { data: audit, isLoading: loadingAudit } = useQuery({
     queryKey: ["kpi-audit-summary", eventId],
     enabled: !!eventId,
+    refetchInterval: 30000, // Sync with dashboard refresh
     queryFn: async () => {
       // Direct counts to compare with dashboard cache
       const results = await Promise.all([
