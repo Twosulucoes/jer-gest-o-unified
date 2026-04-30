@@ -47,7 +47,6 @@ const DatabaseMonitoringPage = lazy(() => import("../pages/admin/DatabaseMonitor
 const SistemaDiagnosticoPage = lazy(() => import("../pages/admin/SistemaDiagnosticoPage"));
 const SistemaDiagnosticoKpiPage = lazy(() => import("../pages/admin/SistemaDiagnosticoKpiPage"));
 const CentralDadosPage = lazy(() => import("../pages/admin/CentralDadosPage"));
-// const CentralControlePage = lazy(() => import("../pages/admin/CentralControlePage"));
 const SchemaValidadorPage = lazy(() => import("../pages/admin/SchemaValidadorPage"));
 const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
 const ModuleSelectorPage = lazy(() => import("../pages/ModuleSelectorPage"));
@@ -82,10 +81,8 @@ const LinkPreviewPage = lazy(() => import("../pages/admin/LinkPreviewPage"));
 const RegistrosPage = lazy(() => import("../pages/admin/registros/RegistrosPage"));
 const ConfigOscPage = lazy(() => import("../pages/admin/registros/ConfigOscPage"));
 const OscAccountabilityModule = lazy(() => import("../pages/admin/registros/OscAccountabilityModule"));
-// const SeedLogisticaEtapaPage = lazy(() => import("../pages/admin/SeedLogisticaEtapaPage"));
 const ClonarLogisticaPage = lazy(() => import("../pages/admin/ClonarLogisticaPage"));
 const DebugPublicadosPage = lazy(() => import("../pages/admin/DebugPublicadosPage"));
-// const EmailTemplatesPage = lazy(() => import("../pages/admin/EmailTemplatesPage"));
 const StageHomePage = lazy(() => import("../pages/admin/StageHomePage"));
 const StageReportsPage = lazy(() => import("../pages/admin/StageReportsPage"));
 
@@ -122,10 +119,6 @@ const AdminAlojamentoPresencaPage = lazy(() => import("../pages/admin/Alojamento
 // Competicao Subpages (Admin)
 const CompeticaoPainelPage = lazy(() => import("../pages/admin/CompeticaoPainelPage"));
 const CompeticaoEquipesPage = lazy(() => import("../pages/admin/CompeticaoEquipesPage"));
-
-
-
-
 // Super Pages
 const SuperDashboardPage = lazy(() => import("../pages/super/SuperDashboardPage"));
 const SuperEventosPage = lazy(() => import("../pages/super/SuperEventosPage"));
@@ -278,7 +271,6 @@ export const AppRoutes = () => (
            <Route path="protestos" element={<ProtestosFilaPage />} />
            <Route path="relatorios" element={<StageReportsPage />} />
         </Route>
-
 
         <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitrosPage /></ProtectedRoute>} />
         <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
