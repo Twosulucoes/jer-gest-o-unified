@@ -17,7 +17,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { event_id, prompt_type = "full_report" } = await req.json();
+    const { event_id, prompt_type = "full_report", stream = false } = await req.json();
 
     if (!event_id) {
       throw new Error("event_id is required");
@@ -36,7 +36,7 @@ serve(async (req) => {
       supabaseClient.from("participants").select("*", { count: 'exact', head: true }).eq("event_id", event_id)
     ]);
 
-    // 2. Fetch match summary separately to avoid large joins
+    // 2. Fetch match summary separately
     const { data: matches } = await supabaseClient
       .from("competition_matches")
       .select("status")
@@ -95,18 +95,32 @@ serve(async (req) => {
           { role: "user", content: userPrompt }
         ],
         temperature: 0.7,
+        stream: stream,
       }),
     });
 
-    const aiData = await response.json();
-    if (aiData.error) {
-      throw new Error(`AI Gateway Error: ${aiData.error.message}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`AI Gateway Error: ${errorData.error?.message || response.statusText}`);
     }
-    const result = aiData.choices?.[0]?.message?.content || "Não foi possível gerar o relatório.";
 
-    return new Response(JSON.stringify({ result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    if (stream) {
+      return new Response(response.body, {
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      });
+    } else {
+      const aiData = await response.json();
+      const result = aiData.choices?.[0]?.message?.content || "Não foi possível gerar o relatório.";
+      return new Response(JSON.stringify({ result }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
   } catch (error) {
     console.error("Function error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
