@@ -254,7 +254,21 @@ Publicação de Resultado (rpc_publish_match_result)
   → Registro criado em bulletin_documents (is_current=true, version incrementada)
   → Boletim vinculado automaticamente como Evidence OSC
   → Toast no admin informa "Boletim do dia atualizado" com link para download
+
+## 12. Manual e Ajuda Interativa (Primeiros Passos)
+
 ```
+Novo administrador acessa o sistema
+  → Navega até /admin/ajuda/manual
+  → Visualiza seção "Primeiros Passos" com jornada de 8 cards
+  → Cada card representa uma etapa cronológica da preparação do JER
+  → Clique no card redireciona para a ferramenta correspondente
+  → Ao concluir a ação, usuário marca card como concluído
+  → Progresso é persistido em admin_manual_progress e exibido em barra visual
+```
+
+**Cenário real**: Um coordenador recém-chegado usa os cards para garantir que não esqueceu de importar os participantes, configurar as regras ou gerar os boletins de exemplo antes da abertura oficial.
+
 
 **Cenário manual**: A coordenação acessa `/admin/competicao/boletins`, seleciona etapa/data e clica em "Gerar Boletim". O sistema executa o mesmo fluxo de background, criando uma nova versão oficial do documento.
 
