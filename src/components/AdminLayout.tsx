@@ -192,14 +192,15 @@ function getRoleLabel(role: AppRole): string {
   return labels[role] || role;
 }
 
-function getAllGroupRoutes(group: NavGroup): string[] {
-  const strip = (u: string) => u.split("?")[0];
-  const routes = group.items.map((i) => strip(i.to));
-  if (group.subGroups) {
-    group.subGroups.forEach((sg) => sg.items.forEach((i) => routes.push(strip(i.to))));
-  }
-  return routes;
-}
+const stripParams = (u: string) => u.split("?")[0];
+
+const groupRoutesMap = new Map(navGroups.map(group => [
+  group.id,
+  [
+    ...group.items.map(i => stripParams(i.to)),
+    ...(group.subGroups?.flatMap(sg => sg.items.map(i => stripParams(i.to))) || [])
+  ]
+]));
 
 function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: boolean; onClick?: () => void }) {
   const navigate = useNavigate();
@@ -292,9 +293,9 @@ export default function AdminLayout() {
 
   const activeGroupId = useMemo(() => {
     const path = location.pathname;
-    for (const group of navGroups) {
-      if (getAllGroupRoutes(group).some((r) => path === r || (r !== "/admin" && path.startsWith(r)))) {
-        return group.id;
+    for (const [groupId, routes] of groupRoutesMap.entries()) {
+      if (routes.some((r) => path === r || (r !== "/admin" && path.startsWith(r)))) {
+        return groupId;
       }
     }
     return null;
@@ -366,7 +367,7 @@ export default function AdminLayout() {
             )}
 
             {/* CTA único: Entrar na Etapa */}
-            {(hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica") || hasRole("transporte") || hasRole("alimentacao") || hasRole("coordenador_modalidade")) && (
+            {(hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica") || hasRole("transporte") || hasRole("alimentacao") || hasRole("coordenador_modalidade") || hasRole("super_admin")) && (
               collapsed ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -489,11 +490,11 @@ export default function AdminLayout() {
               <Menu className="h-5 w-5" />
             </button>
 
-            <h2 className="font-heading text-sm font-semibold text-foreground truncate">
+            <h2 className="font-heading text-sm font-semibold text-foreground truncate hidden xs:block">
               JER Gestão
             </h2>
 
-            <div className="hidden sm:block">
+            <div className="flex-1 sm:flex-none">
               <EtapaSwitcher />
             </div>
             <div className="flex-1" />
