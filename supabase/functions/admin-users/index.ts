@@ -165,12 +165,27 @@ Deno.serve(async (req) => {
 
         const redirectTo = `${req.headers.get("origin") || supabaseUrl}/pwa/set-password`;
 
+        let userId: string;
         const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
           redirectTo,
         });
-        if (inviteErr) return jsonResponse({ error: inviteErr.message }, 500);
 
-        const userId = inviteData.user.id;
+        if (inviteErr) {
+          // If user already exists, we just want to update their roles/profile
+          if (inviteErr.message.toLowerCase().includes("already") || inviteErr.message.toLowerCase().includes("existe")) {
+            const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers({
+              filter: `email:eq:${email}`
+            });
+            if (listErr || !users || users.length === 0) {
+              return jsonResponse({ error: `Usuário já existe mas não pôde ser recuperado: ${inviteErr.message}` }, 500);
+            }
+            userId = users[0].id;
+          } else {
+            return jsonResponse({ error: inviteErr.message }, 500);
+          }
+        } else {
+          userId = inviteData.user.id;
+        }
 
         // Upsert profile
         await adminClient.from("profiles").upsert({
