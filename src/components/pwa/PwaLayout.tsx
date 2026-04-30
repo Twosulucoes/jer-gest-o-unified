@@ -129,7 +129,8 @@ export default function PwaLayout({
     });
   }, [hasRole, registrosMode]);
 
-  const showSwitcher = availableModules.length > 1 || hasRole("admin") || hasRole("super_admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
+  // Show switcher if user has multiple modules OR if they need to be able to switch stages (always true in PWA)
+  const showSwitcher = true;
 
   const handleSignOut = async () => {
     await signOut();
