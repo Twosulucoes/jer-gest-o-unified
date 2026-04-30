@@ -316,9 +316,8 @@ export default function LoginPage() {
               </div>
             </div>
           </footer>
-        </div>
-        </div>
       </div>
+    </div>
 
       <Dialog open={recoverOpen} onOpenChange={(open) => { if (!open) closeRecover(); }}>
         <DialogContent className="max-w-[calc(100vw-1.5rem)] rounded-2xl sm:max-w-sm">
