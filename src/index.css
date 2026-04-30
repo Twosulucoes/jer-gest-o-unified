@@ -84,18 +84,16 @@
 
   .dark {
     /* === JER Design System — GitHub-dark tokens === */
-    --bg: #0d1117;
-    --surface: #161b22;
-    --surface2: #21262d;
-    --surface3: #2d333b;
-    --text: #e6edf3;
-    --muted-text: #8b949e;
-
-    /* === Cores semânticas de status === */
-    --blue: 212 100% 67%;     /* #58a6ff */
-    --green: 134 48% 49%;     /* #3fb950 */
-    --red: 4 92% 62%;         /* #f85149 */
-    --purple: 263 100% 78%;   /* #bc8cff */
+    --bg: #0b0e14;
+    --surface: #151921;
+    --surface2: #1c222d;
+    --surface3: #242b38;
+    
+    /* === Semantic Colors (Dark) === */
+    --blue: 217 91% 65%;
+    --green: 142 71% 50%;
+    --red: 0 84% 65%;
+    --purple: 263 100% 75%;
 
     /* === Paleta core === */
     --background: 213 26% 7%;        /* #0d1117 */
