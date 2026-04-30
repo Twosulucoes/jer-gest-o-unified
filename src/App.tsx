@@ -36,7 +36,7 @@ import ImportacaoPage from "./pages/admin/ImportacaoPage";
 import ImportacaoModeloPage from "./pages/admin/ImportacaoModeloPage";
 import ImportacaoPendenciasPage from "./pages/admin/ImportacaoPendenciasPage";
 // ImportacaoCatalogoPage removed — consolidated into RegrasPage
-// CredenciamentoPage and other large pages are now lazy-loaded
+// Large pages are lazy-loaded below
 import ValidacaoQRPage from "./pages/admin/ValidacaoQRPage";
 import TransporteHubPage from "./pages/admin/TransporteHubPage";
 import TransporteVeiculosPage from "./pages/admin/TransporteVeiculosPage";
@@ -64,7 +64,7 @@ import AlimentacaoRelatoriosPage from "./pages/admin/AlimentacaoRelatoriosPage";
 import AlojamentoRelatoriosPage from "./pages/admin/AlojamentoRelatoriosPage";
 import CompeticaoFasesPage from "./pages/admin/CompeticaoFasesPage";
 import CompeticaoPartidasAgendaPage from "./pages/admin/CompeticaoPartidasAgendaPage";
-// CompeticaoPartidaDetalhePage is now lazy loaded
+// CompeticaoPartidaDetalhePage is lazy-loaded below
 import CompeticaoLancamentoScorePage from "./pages/admin/CompeticaoLancamentoScorePage";
 import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
 import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
@@ -235,7 +235,7 @@ import AccessDeniedPage from "./pages/AccessDeniedPage";
 import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
 import PublicResultsPage from "./pages/public/PublicResultsPage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
-// EntregaTecnicaPage is now lazy loaded
+// EntregaTecnicaPage is lazy-loaded below
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 // Ao Vivo PWA (lazy loaded)
 import StatusPage from "./pages/Status";
@@ -243,9 +243,6 @@ import StatusPage from "./pages/Status";
 // AoVivoLoginPage removed — unified login at /login
 const AoVivoHomePage = lazy(() => import("./pages/aovivo/AoVivoHomePage"));
 const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
-const CredenciamentoPage = lazy(() => import("./pages/admin/CredenciamentoPage"));
-const EntregaTecnicaPage = lazy(() => import("./pages/public/EntregaTecnicaPage"));
-const CompeticaoPartidaDetalhePage = lazy(() => import("./pages/admin/CompeticaoPartidaDetalhePage"));
 const CredenciamentoPage = lazy(() => import("./pages/admin/CredenciamentoPage"));
 const EntregaTecnicaPage = lazy(() => import("./pages/public/EntregaTecnicaPage"));
 const CompeticaoPartidaDetalhePage = lazy(() => import("./pages/admin/CompeticaoPartidaDetalhePage"));
