@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { NetworkErrorState } from "@/components/ui/network-error-state";
 import {
   Table,
   TableBody,
@@ -185,16 +186,7 @@ export default function EventosPage() {
       {isLoading ? (
         <TableSkeleton columns={canWrite ? 7 : 6} rows={6} />
       ) : error ? (
-        <EmptyState
-          icon={AlertTriangle}
-          title="Erro ao carregar dados"
-          description="Não foi possível estabelecer conexão com o servidor após várias tentativas."
-          action={
-            <Button onClick={() => refetch()} size="sm">
-              <RefreshCw className="mr-2 h-4 w-4" /> Tentar Novamente
-            </Button>
-          }
-        />
+        <NetworkErrorState onRetry={() => refetch()} />
       ) : !events?.length ? (
         <EmptyState
           icon={CalendarDays}
