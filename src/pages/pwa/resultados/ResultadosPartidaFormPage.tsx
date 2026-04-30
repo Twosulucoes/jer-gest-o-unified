@@ -33,6 +33,8 @@ import { useSportEventRules } from "@/hooks/useSportEventRules";
 import { useActiveEventId } from "@/contexts/EventContext";
 import ScoreLauncher from "@/components/registros/launchers/ScoreLauncher";
 import SetsLauncher from "@/components/registros/launchers/SetsLauncher";
+import CombatLauncher from "@/components/registros/launchers/CombatLauncher";
+import TimeMarkLauncher from "@/components/registros/launchers/TimeMarkLauncher";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -77,6 +79,14 @@ function TabPlacar({ matchId, entries, sportEventId }: { matchId: string; entrie
 
   if (family === "sets") {
     return <SetsLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
+  }
+
+  if (family === "combat") {
+    return <CombatLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
+  }
+
+  if (family === "time-mark" || family === "ranking") {
+    return <TimeMarkLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
   }
 
   return (
