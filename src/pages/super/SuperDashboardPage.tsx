@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppKPI } from "@/components/app/AppKPI";
@@ -8,8 +9,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+import { RemediationDialog, type RemediationAction } from "@/components/super/RemediationDialog";
+
 export default function SuperDashboardPage() {
   const navigate = useNavigate();
+  const [remediationOpen, setRemediationOpen] = useState(false);
+  const [activeRemediation, setRemediationAction] = useState<RemediationAction>("republish_results");
+
+  const openRemediation = (action: RemediationAction) => {
+    setRemediationAction(action);
+    setRemediationOpen(true);
+  };
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ["super-dashboard-stats"],
@@ -109,18 +119,18 @@ export default function SuperDashboardPage() {
             <Button 
               variant="outline" 
               className="w-full justify-start gap-2 bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
-              onClick={() => navigate("/super/inspector")}
+              onClick={() => openRemediation("fix_orphaned_records")}
             >
               <Database className="h-4 w-4 text-blue-400" />
-              Inspetor de Dados
+              Corrigir Órfãos
             </Button>
             <Button 
               variant="outline" 
               className="w-full justify-start gap-2 bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
-              onClick={() => navigate("/super/validador")}
+              onClick={() => openRemediation("reset_system_cache")}
             >
               <AlertTriangle className="h-4 w-4 text-amber-400" />
-              Validador de Schema
+              Reset Cache Global
             </Button>
             <Button 
               variant="outline" 
@@ -174,6 +184,12 @@ export default function SuperDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <RemediationDialog 
+        open={remediationOpen} 
+        onOpenChange={setRemediationOpen}
+        action={activeRemediation}
+      />
     </div>
   );
 }
