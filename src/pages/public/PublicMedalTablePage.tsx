@@ -278,5 +278,4 @@ export default function PublicMedalTablePage() {
       <PublicFooter />
     </div>
   );
-  );
 }
