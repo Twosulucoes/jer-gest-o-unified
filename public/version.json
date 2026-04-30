@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "edit/edt-d70a24aa-7f2a-4ed4-a921-c5fbb9574cbd",
-  "commit": "41adfbf3",
-  "commitFull": "41adfbf30599481ac3c82853120e10c63d8e653f",
-  "buildDate": "2026-04-28T15:28:32.148Z",
+  "branch": "edit/edt-580a2129-70dd-476e-a3cd-a61c9bf65331",
+  "commit": "bc8ff4f5",
+  "commitFull": "bc8ff4f50b76f1f92fe614c66d42259b5cd92c2c",
+  "buildDate": "2026-04-30T02:29:22.663Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
