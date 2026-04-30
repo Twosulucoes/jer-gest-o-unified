@@ -149,15 +149,71 @@ export default function OscAccountabilityModule() {
 
   const generateAiReport = async () => {
     setIsAiLoading(true);
-    setAiReport(null);
+    setAiReport("");
     setIsAiDialogOpen(true);
+    
     try {
-      const { data, error } = await supabase.functions.invoke("generate-osc-report", {
-        body: { event_id: eventId, prompt_type: "full_report" }
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-osc-report`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ 
+            event_id: eventId, 
+            prompt_type: "full_report",
+            stream: true 
+          }),
+        }
+      );
 
-      if (error) throw error;
-      setAiReport(data.result);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Falha ao conectar com o serviço de IA');
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (!reader) throw new Error('Falha ao iniciar stream');
+
+      let fullContent = "";
+      let hasStarted = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
+          
+          const dataStr = trimmedLine.slice(6).trim();
+          if (dataStr === '[DONE]') break;
+          
+          try {
+            const data = JSON.parse(dataStr);
+            const content = data.choices?.[0]?.delta?.content || "";
+            if (content) {
+              if (!hasStarted) {
+                hasStarted = true;
+                setIsAiLoading(false);
+              }
+              fullContent += content;
+              setAiReport(fullContent);
+            }
+          } catch (e) {
+            console.warn("Could not parse JSON chunk:", dataStr);
+          }
+        }
+      }
     } catch (error: any) {
       toast.error("Erro ao gerar relatório com IA: " + error.message);
       setIsAiDialogOpen(false);
