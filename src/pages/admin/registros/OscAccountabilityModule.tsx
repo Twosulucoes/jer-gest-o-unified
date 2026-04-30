@@ -228,17 +228,24 @@ export default function OscAccountabilityModule() {
                   </div>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" className="w-full justify-between">
+                <Button variant="outline" className="w-full justify-between" onClick={() => { setRecordType("refeicao_extra"); setIsRecordDialogOpen(true); }}>
                   <div className="flex items-center gap-2">
-                    <div className="p-2 bg-emerald-100 rounded-lg"><Plus className="h-4 w-4 text-emerald-600" /></div>
+                    <div className="p-2 bg-emerald-100 rounded-lg"><UtensilsCrossed className="h-4 w-4 text-emerald-600" /></div>
                     <span>Lançar Refeições Extraordinárias</span>
                   </div>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" className="w-full justify-between">
+                <Button variant="outline" className="w-full justify-between" onClick={() => { setRecordType("doacao_alimento"); setIsRecordDialogOpen(true); }}>
                   <div className="flex items-center gap-2">
-                    <div className="p-2 bg-amber-100 rounded-lg"><Plus className="h-4 w-4 text-amber-600" /></div>
+                    <div className="p-2 bg-amber-100 rounded-lg"><Sparkles className="h-4 w-4 text-amber-600" /></div>
                     <span>Registrar Doação de Alimentos</span>
+                  </div>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" className="w-full justify-between" onClick={() => { setRecordType("ocorrencia_gestao"); setIsRecordDialogOpen(true); }}>
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-blue-100 rounded-lg"><AlertCircle className="h-4 w-4 text-blue-600" /></div>
+                    <span>Registrar Ocorrência de Gestão</span>
                   </div>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -248,28 +255,123 @@ export default function OscAccountabilityModule() {
             <Card>
               <CardHeader>
                 <CardTitle>Conformidade do Relatório</CardTitle>
-                <CardDescription>Checklist para publicação do PDF oficial</CardDescription>
+                <CardDescription>Checklist automático para publicação</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Configuração do Convênio</span>
-                  <Badge variant="outline">OK</Badge>
+                  <span className="flex items-center gap-2">
+                    {hasConfig ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <AlertCircle className="h-4 w-4 text-amber-500" />}
+                    Configuração do Convênio
+                  </span>
+                  <Badge variant={hasConfig ? "outline" : "secondary"}>{hasConfig ? "OK" : "Pendente"}</Badge>
                 </div>
+                {categories.map(cat => (
+                  <div key={cat} className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 capitalize">
+                      {photoCounts[cat] >= 2 ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <AlertCircle className="h-4 w-4 text-amber-500" />}
+                      Fotos: {cat}
+                    </span>
+                    <Badge variant={photoCounts[cat] >= 2 ? "outline" : "secondary"}>
+                      {photoCounts[cat]}/4
+                    </Badge>
+                  </div>
+                ))}
                 <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Fotos: Atendimento</span>
-                  <Badge variant="outline">4/4</Badge>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2"><AlertCircle className="h-4 w-4 text-amber-500" /> Fotos: Infraestrutura</span>
-                  <Badge variant="secondary" className="bg-amber-100 text-amber-700">1/4</Badge>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Resultados de Partidas</span>
-                  <Badge variant="outline">100%</Badge>
+                  <span className="flex items-center gap-2">
+                    {resultsPct === 100 ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <AlertCircle className="h-4 w-4 text-amber-500" />}
+                    Resultados de Partidas
+                  </span>
+                  <Badge variant={resultsPct === 100 ? "outline" : "secondary"}>{resultsPct}%</Badge>
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Lista de Registros Manuais */}
+          {oscData?.oscRegistros && oscData.oscRegistros.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Últimos Registros Manuais</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {oscData.oscRegistros.slice(0, 5).map(reg => (
+                    <div key={reg.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${
+                          reg.type === 'doacao_alimento' ? 'bg-amber-100 text-amber-700' :
+                          reg.type === 'refeicao_extra' ? 'bg-emerald-100 text-emerald-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {reg.type === 'doacao_alimento' ? <Sparkles className="h-4 w-4" /> : 
+                           reg.type === 'refeicao_extra' ? <UtensilsCrossed className="h-4 w-4" /> :
+                           <AlertCircle className="h-4 w-4" />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium capitalize">{reg.type.replace('_', ' ')}</p>
+                          <p className="text-xs text-muted-foreground">{reg.description || 'Sem descrição'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-right">
+                        <div>
+                          <p className="text-sm font-bold">{reg.value_numeric} {reg.unit}</p>
+                          <p className="text-[10px] text-muted-foreground">{new Date(reg.recorded_at).toLocaleDateString()}</p>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => deleteRecordMutation.mutate(reg.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Dialog de Lançamento */}
+          <Dialog open={isRecordDialogOpen} onOpenChange={setIsRecordDialogOpen}>
+            <DialogContent>
+              <form onSubmit={handleCreateRecord}>
+                <DialogHeader>
+                  <DialogTitle className="capitalize">Lançar {recordType.replace('_', ' ')}</DialogTitle>
+                  <DialogDescription>Preencha os dados para compor o relatório da OSC.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <input type="hidden" name="type" value={recordType} />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Valor / Quantidade</Label>
+                      <Input name="value" type="number" step="0.01" required placeholder="0.00" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Unidade</Label>
+                      <Select name="unit" defaultValue={recordType === 'doacao_alimento' ? 'kg' : 'unidades'}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="kg">Quilogramas (kg)</SelectItem>
+                          <SelectItem value="unidades">Unidades</SelectItem>
+                          <SelectItem value="refeicoes">Refeições</SelectItem>
+                          <SelectItem value="outros">Outros</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Descrição / Observações</Label>
+                    <Textarea name="description" placeholder="Detalhes sobre este registro..." />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsRecordDialogOpen(false)}>Cancelar</Button>
+                  <Button type="submit" disabled={createRecordMutation.isPending}>
+                    {createRecordMutation.isPending ? "Salvando..." : "Salvar Registro"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* VALIDAÇÃO DE EVIDÊNCIAS */}
