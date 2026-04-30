@@ -93,6 +93,13 @@ export const PublicHeader = ({ subtitle, onBack, showBackButton }: PublicHeaderP
                     </Link>
                   </DropdownMenuItem>
                 )}
+                {user && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="gap-2 font-semibold text-indigo-600">
+                      <LayoutDashboard className="h-4 w-4" /> Painel Admin
+                    </Link>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
