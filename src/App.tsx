@@ -36,7 +36,8 @@ import ImportacaoPage from "./pages/admin/ImportacaoPage";
 import ImportacaoModeloPage from "./pages/admin/ImportacaoModeloPage";
 import ImportacaoPendenciasPage from "./pages/admin/ImportacaoPendenciasPage";
 // ImportacaoCatalogoPage removed — consolidated into RegrasPage
-// Large pages are lazy-loaded below
+import CredenciamentoExternoPage from "./pages/admin/CredenciamentoExternoPage";
+import CredenciamentoSeguroPage from "./pages/admin/CredenciamentoSeguroPage";
 import ValidacaoQRPage from "./pages/admin/ValidacaoQRPage";
 import TransporteHubPage from "./pages/admin/TransporteHubPage";
 import TransporteVeiculosPage from "./pages/admin/TransporteVeiculosPage";
@@ -66,6 +67,9 @@ import CompeticaoFasesPage from "./pages/admin/CompeticaoFasesPage";
 import CompeticaoPartidasAgendaPage from "./pages/admin/CompeticaoPartidasAgendaPage";
 // CompeticaoPartidaDetalhePage is lazy-loaded below
 import CompeticaoLancamentoScorePage from "./pages/admin/CompeticaoLancamentoScorePage";
+import CompeticaoLancamentoSetsPage from "./pages/admin/CompeticaoLancamentoSetsPage";
+import CompeticaoLancamentoCombatPage from "./pages/admin/CompeticaoLancamentoCombatPage";
+import CompeticaoLancamentoTimeMarkPage from "./pages/admin/CompeticaoLancamentoTimeMarkPage";
 import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
 import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
 import CompeticaoEquipesPage from "./pages/admin/CompeticaoEquipesPage";
@@ -653,11 +657,11 @@ const App = () => (
             {/* Evento Rules Center routes removed — consolidated into /admin/regras-evento */}
             <Route path="*" element={<NotFound />} />
                 </Routes>
-              </CompetitionProvider>
-            </StageProvider>
-          </EventProvider>
-        </VersionValidator>
-      </AuthProvider>
+                </CompetitionProvider>
+              </StageProvider>
+            </EventProvider>
+          </VersionValidator>
+        </AuthProvider>
       </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
