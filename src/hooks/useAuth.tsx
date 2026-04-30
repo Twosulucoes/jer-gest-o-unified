@@ -1,17 +1,30 @@
+/**
+ * Authentication Hook and Provider for JER Gestão.
+ * Handles Supabase session management, user profiling, and role-based access control (RBAC).
+ */
 import { useState, useEffect, useCallback, createContext, useContext, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
+/** Valid roles in the system from the Database schema */
 type AppRole = Database["public"]["Enums"]["app_role"];
 
+/** Public interface for the Auth state */
 interface AuthState {
+  /** The current Supabase user */
   user: User | null;
+  /** The current active session */
   session: Session | null;
+  /** List of roles assigned to the current user */
   roles: AppRole[];
+  /** User profile information (name and avatar) */
   profile: { full_name: string | null; avatar_url: string | null } | null;
+  /** Loading state during initial session check */
   loading: boolean;
+  /** Function to log out the user */
   signOut: () => Promise<void>;
+  /** Helper function to check if the user has a specific role */
   hasRole: (role: AppRole) => boolean;
 }
 

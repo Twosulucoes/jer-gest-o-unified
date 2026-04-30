@@ -1,3 +1,9 @@
+/**
+ * PWA Layout Component for JER Gestão.
+ * Provides the mobile-first shell for operational modules (Transport, Food, Lodging, etc.).
+ * Includes a contextual bottom navigation bar, header with module-specific actions,
+ * and offline synchronization indicators.
+ */
 import React, { useState, useMemo, useEffect, useContext } from "react";
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";

@@ -1,3 +1,8 @@
+/**
+ * Stage Context Management for JER Gestão.
+ * Handles the selection and persistence of event stages (fases/etapas).
+ * Supports automatic stage selection from URL parameters or localStorage.
+ */
 import { createContext, useContext, useMemo, useState, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
@@ -7,6 +12,7 @@ import { handleContextChange } from "@/lib/context-manager";
 
 const STORAGE_KEY = "jer_active_stage_id";
 
+/** Detailed stage information from the database */
 export interface EventStage {
   id: string;
   event_id: string;
@@ -19,11 +25,17 @@ export interface EventStage {
   status: string;
 }
 
+/** Interface for the Stage context value */
 interface StageContextValue {
+  /** All available stages for the active event */
   stages: EventStage[];
+  /** Loading state for the stages query */
   stagesLoading: boolean;
+  /** ID of the currently selected stage */
   activeStageId: string | null;
+  /** Full data of the active stage */
   activeStage: EventStage | null;
+  /** Function to manually update the active stage */
   setActiveStageId: (id: string | null) => void;
 }
 
