@@ -1,4 +1,4 @@
-import { Trophy, Calendar, Menu, LogIn, Award } from "lucide-react";
+import { Trophy, Calendar, Menu, LogIn, Award, LayoutDashboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { VisualIdentity } from "./VisualIdentity";
