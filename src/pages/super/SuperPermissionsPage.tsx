@@ -61,7 +61,7 @@ const PERMISSIONS: PermissionRow[] = [
   // Super Admin
   { page: "Super Dashboard", path: "/super", category: "super", allowedRoles: "super_admin_only" },
   { page: "Logs do Sistema", path: "/super/logs", category: "super", allowedRoles: "super_admin_only" },
-  { page: "Central de Dados", path: "/admin/dados", category: "super", allowedRoles: "super_admin_only" },
+  { page: "Central de Dados", path: "/super/dados", category: "super", allowedRoles: "super_admin_only" },
   { page: "Diagnóstico", path: "/admin/sistema/diagnostico", category: "super", allowedRoles: "super_admin_only" },
 ];
 

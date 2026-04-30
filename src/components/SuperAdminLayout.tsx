@@ -44,6 +44,7 @@ const navItems = [
   {
     group: "Gestão do Sistema",
     items: [
+      { label: "Permissões", to: "/super/permissoes", icon: <ShieldCheck className="h-4 w-4" /> },
       { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" /> },
       { label: "Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" /> },
       { label: "Configurações Super", to: "/super/config", icon: <Settings className="h-4 w-4" /> },

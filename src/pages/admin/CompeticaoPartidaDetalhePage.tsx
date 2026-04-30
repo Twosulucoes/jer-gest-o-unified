@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useVenuesByStage } from "@/hooks/useVenuesByStage";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,7 +98,7 @@ const formatDistanceCm = (cm: number): string => {
 };
 
 export default function CompeticaoPartidaDetalhePage() {
-  const { matchId } = useParams<{ matchId: string }>();
+  const { matchId, stageId } = useParams<{ matchId: string; stageId?: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { hasRole, user } = useAuth();
@@ -139,6 +139,20 @@ export default function CompeticaoPartidaDetalhePage() {
     },
     enabled: !!matchId,
   });
+
+  // Smart redirect to stage context if missing
+  useState(() => {
+    if (match?.event_id && !stageId) {
+      navigate(`/admin/etapa/${match.event_id}/competicao/partida/${matchId}${location.search}`, { replace: true });
+    }
+  });
+
+  // Also handle case where match is loaded later
+  useEffect(() => {
+    if (match?.event_id && !stageId) {
+      navigate(`/admin/etapa/${match.event_id}/competicao/partida/${matchId}${location.search}`, { replace: true });
+    }
+  }, [match?.event_id, stageId, matchId, navigate, location.search]);
 
   const { data: phase } = useQuery({
     queryKey: ["competition_phase", match?.phase_id],

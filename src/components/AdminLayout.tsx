@@ -91,6 +91,7 @@ const navGroups: NavGroup[] = [
       { label: "Vinculação de Credencial", to: "/admin/credenciamento-externo", icon: <ScanLine className="h-4 w-4" />, roles: ADMIN_ROLES },
       
       { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Mapeamento de Aliases", to: "/admin/importacao/aliases", icon: <BadgeCheck className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },
@@ -99,7 +100,7 @@ const navGroups: NavGroup[] = [
     icon: <FileBarChart className="h-4 w-4" />,
     items: [
       { label: "Central de Relatórios", to: "/admin/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Boletins por Modalidade", to: "/admin/relatorios/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Boletins Oficiais", to: "/admin/relatorios/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Quadro de Medalhas", to: "/admin/relatorios/quadro-medalhas", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Prestação de Contas (OSC)", to: "/admin/registros/prestacao-contas", icon: <ShieldCheck className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Painel de Conformidade", to: "/admin/conformidade", icon: <ShieldCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
@@ -128,7 +129,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria", "super_admin"] as AppRole[] },
       { label: "Acessos e Vínculos", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria", "super_admin"] as AppRole[] },
-      { label: "Resultados (Coord. Modalidade)", to: "/pwa/resultados", icon: <Trophy className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", "super_admin"] as AppRole[] },
+      { label: "Resultados (Ao Vivo)", to: "/pwa/resultados", icon: <Trophy className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", "super_admin"] as AppRole[] },
       { label: "Evidências OSC", to: "/admin/evidencias-osc", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "alimentacao", "alojamento", "transporte", "coordenacao_tecnica", "super_admin"] as AppRole[] },
     ],
   },

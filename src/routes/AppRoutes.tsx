@@ -53,6 +53,7 @@ const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
 const ModuleSelectorPage = lazy(() => import("../pages/ModuleSelectorPage"));
 const AccessDeniedPage = lazy(() => import("../pages/AccessDeniedPage"));
 const CoordenadorModalidadeDashboard = lazy(() => import("../pages/admin/CoordenadorModalidadeDashboard"));
+const AjudaIndexPage = lazy(() => import("../pages/admin/AjudaIndexPage"));
 const AjudaChamadosPage = lazy(() => import("../pages/admin/AjudaChamadosPage"));
 const AjudaChatPage = lazy(() => import("../pages/admin/AjudaChatPage"));
 const AjudaManualPage = lazy(() => import("../pages/admin/AjudaManualPage"));
@@ -289,7 +290,7 @@ export const AppRoutes = () => (
         <Route path="importacao/aliases" element={<ProtectedRoute allowedRoles={["super_admin"]}><ImportacaoAliasesPage /></ProtectedRoute>} />
         <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipantesPage /></ProtectedRoute>} />
         <Route path="participantes/historico" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><HistoricoBuscaPage /></ProtectedRoute>} />
-        <Route path="participantes/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
+        <Route path="participantes/duplicidades" element={<Navigate to="/admin/pessoas/duplicidades" replace />} />
         <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteDetalhePage /></ProtectedRoute>} />
         <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
         <Route path="pessoas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PessoasPage /></ProtectedRoute>} />
@@ -312,7 +313,7 @@ export const AppRoutes = () => (
         <Route path="pwa-status" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><PwaStatusPage /></ProtectedRoute>} />
         <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
         <Route path="sistema/debug-qr" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><QrDiagnosticoPage /></ProtectedRoute>} />
-        <Route path="dados" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralDadosPage /></ProtectedRoute>} />
+        <Route path="dados" element={<Navigate to="/super/dados" replace />} />
         <Route path="relatorios/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />
         <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
         <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
@@ -332,7 +333,7 @@ export const AppRoutes = () => (
         <Route path="competicao/painel-ranking/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelRankingPage /></ProtectedRoute>} />
         <Route path="competicao/painel-time-mark/:sportEventId/serie/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoTimeMarkPage /></ProtectedRoute>} />
 
-        <Route path="ajuda" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
+        <Route path="ajuda" element={<ProtectedRoute><AjudaIndexPage /></ProtectedRoute>} />
         <Route path="ajuda/chat" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
         <Route path="ajuda/manual" element={<ProtectedRoute><AjudaManualPage /></ProtectedRoute>} />
         <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><LinksPage /></ProtectedRoute>} />
