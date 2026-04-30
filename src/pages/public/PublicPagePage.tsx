@@ -3,33 +3,14 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { VisualIdentity } from "@/components/public/VisualIdentity";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
-// Simple markdown-to-HTML (headings, bold, italic, links, lists, paragraphs)
-function renderMarkdown(md: string): string {
-  let html = md
-    .replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold mt-6 mb-2 text-foreground">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold mt-8 mb-3 text-foreground">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold mt-8 mb-4 text-foreground">$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary underline hover:opacity-80">$1</a>')
-    .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-muted-foreground">$1</li>');
-
-  // Wrap consecutive <li> tags in <ul>
-  html = html.replace(/((?:<li[^>]*>.*?<\/li>\s*)+)/g, '<ul class="my-3 space-y-1">$1</ul>');
-
-  // Wrap remaining lines in paragraphs
-  html = html
-    .split("\n")
-    .map((line) => {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("<h") || trimmed.startsWith("<ul") || trimmed.startsWith("<li")) return line;
-      return `<p class="text-muted-foreground mb-3">${trimmed}</p>`;
-    })
-    .join("\n");
-
-  return html;
+interface PublicContent {
+  title: string;
+  content_md: string;
 }
+
 
 export default function PublicPagePage() {
   const { slug } = useParams<{ slug: string }>();
