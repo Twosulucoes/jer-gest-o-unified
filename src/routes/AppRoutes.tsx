@@ -88,6 +88,21 @@ const EmailTemplatesPage = lazy(() => import("../pages/admin/EmailTemplatesPage"
 const StageHomePage = lazy(() => import("../pages/admin/StageHomePage"));
 const StageReportsPage = lazy(() => import("../pages/admin/StageReportsPage"));
 
+// Operational Module Pages (Admin/Stage)
+const CredenciamentoPage = lazy(() => import("../pages/admin/CredenciamentoPage"));
+const CredenciamentoExternoPage = lazy(() => import("../pages/admin/CredenciamentoExternoPage"));
+const ValidacaoQRPage = lazy(() => import("../pages/admin/ValidacaoQRPage"));
+const CompeticaoPartidasAgendaPage = lazy(() => import("../pages/admin/CompeticaoPartidasAgendaPage"));
+const CompeticaoResultadosPage = lazy(() => import("../pages/admin/CompeticaoResultadosPage"));
+const AlojamentoHubPage = lazy(() => import("../pages/admin/AlojamentoHubPage"));
+const AlimentacaoHubPage = lazy(() => import("../pages/admin/AlimentacaoHubPage"));
+const TransporteHubPage = lazy(() => import("../pages/admin/TransporteHubPage"));
+const OcorrenciasPage = lazy(() => import("../pages/admin/OcorrenciasPage"));
+const PesquisaDashboardPage = lazy(() => import("../pages/admin/PesquisaDashboardPage"));
+const VouchersPage = lazy(() => import("../pages/admin/VouchersPage"));
+const ProtestosFilaPage = lazy(() => import("../pages/admin/ProtestosFilaPage"));
+
+
 // Super Pages
 const SuperDashboardPage = lazy(() => import("../pages/super/SuperDashboardPage"));
 const SuperEventosPage = lazy(() => import("../pages/super/SuperEventosPage"));
