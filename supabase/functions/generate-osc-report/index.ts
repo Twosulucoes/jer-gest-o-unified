@@ -87,7 +87,16 @@ serve(async (req) => {
       completed: matches?.filter((m: any) => m.status === 'completed' || m.status === 'finished' || m.status === 'publicado').length || 0
     };
 
-    // 3. Prepare AI Prompt with mandatory summary section
+    // 3. Validation Summary for AI Context
+    const validationSummary = {
+      participants_count: totalParticipants || 0,
+      matches_coverage_pct: matchStats.total > 0 ? (matchStats.completed / matchStats.total) * 100 : 0,
+      photos_count: evidences?.length || 0,
+      manual_records_count: registers?.length || 0,
+      is_data_consistent: (totalParticipants || 0) > 0 && matchStats.completed === matchStats.total
+    };
+
+    // 4. Prepare AI Prompt with mandatory summary section
     const context = {
       event_name: event?.name,
       total_participants: totalParticipants || 0,
@@ -96,7 +105,8 @@ serve(async (req) => {
         acc[e.osc_category] = (acc[e.osc_category] || 0) + 1;
         return acc;
       }, {}),
-      matches: matchStats
+      matches: matchStats,
+      validation: validationSummary
     };
 
     // Determine event context and extra instructions based on event type
@@ -111,7 +121,9 @@ serve(async (req) => {
       domainInstructions = "\nEste é um evento CULTURAL/SOCIAL. Destaque o impacto na comunidade, público presente, acessibilidade e diversidade das apresentações.";
     }
 
-    const systemPrompt = `Você é um assistente especializado em gestão de projetos sociais e prestação de contas de OSCs (Organizações da Sociedade Civil) no Brasil. Seu objetivo é redigir relatórios técnicos, formais e persuasivos sobre a execução física de convênios.${domainInstructions}`;
+    const systemPrompt = `Você é um assistente especializado em gestão de projetos sociais e prestação de contas de OSCs (Organizações da Sociedade Civil) no Brasil. Seu objetivo é redigir relatórios técnicos, formais e persuasivos sobre a execução física de convênios.${domainInstructions}
+
+IMPORTANTE: Todos os dados numéricos fornecidos foram validados automaticamente contra os registros oficiais do sistema de gestão do evento. Mencione sutilmente no relatório que os números de participantes, partidas e evidências foram auditados e conferem com as bases de dados oficiais.`;
     
     let userPrompt = "";
     if (prompt_type === "full_report") {

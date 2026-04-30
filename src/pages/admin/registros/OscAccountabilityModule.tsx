@@ -45,6 +45,15 @@ export default function OscAccountabilityModule() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [recordType, setRecordType] = useState<string>("doacao_alimento");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
+  const [validationReport, setValidationReport] = useState<{
+    id: string;
+    label: string;
+    current: number;
+    expected: number;
+    status: 'success' | 'warning' | 'error';
+    message: string;
+  }[]>([]);
 
   const { data: oscData, isLoading: isLoadingOsc } = useOscData(eventId);
   const { data: oscConfig } = useEventOscConfig(eventId);
@@ -218,7 +227,70 @@ export default function OscAccountabilityModule() {
     createRecordMutation.mutate(data);
   };
 
+  const runValidation = () => {
+    const checks: any[] = [];
+    const r = oscData?.resumo;
+    
+    // 1. Participantes
+    const hasParticipants = (r?.totalParticipants || 0) > 0;
+    checks.push({
+      id: 'participants',
+      label: 'Participantes Inscritos',
+      current: r?.totalParticipants || 0,
+      expected: 1, // Mínimo esperado
+      status: hasParticipants ? 'success' : 'error',
+      message: hasParticipants ? 'Base de participantes validada.' : 'Nenhum participante encontrado no evento.'
+    });
+
+    // 2. Partidas/Resultados
+    const matchesMatch = r?.totalMatches === r?.totalMatchesPublished;
+    const hasMatches = (r?.totalMatches || 0) > 0;
+    checks.push({
+      id: 'matches',
+      label: 'Publicação de Resultados',
+      current: r?.totalMatchesPublished || 0,
+      expected: r?.totalMatches || 0,
+      status: (matchesMatch && hasMatches) ? 'success' : 'warning',
+      message: !hasMatches ? 'Sem partidas registradas.' : 
+               matchesMatch ? 'Todos os resultados publicados.' : 'Existem partidas sem resultados publicados.'
+    });
+
+    // 3. Fotos por Categoria
+    const approvedPhotos = evidences?.filter(e => e.status === 'approved') || [];
+    const catCoverage = categories.filter(cat => approvedPhotos.some(p => p.osc_category === cat)).length;
+    checks.push({
+      id: 'photos',
+      label: 'Curadoria de Fotos',
+      current: catCoverage,
+      expected: categories.length,
+      status: catCoverage === categories.length ? 'success' : 'warning',
+      message: catCoverage === categories.length ? 'Todas as categorias têm fotos aprovadas.' : `Faltam fotos em ${categories.length - catCoverage} categorias.`
+    });
+
+    // 4. Registros Operacionais
+    const hasOscRegs = (r?.totalOscRegistros || 0) > 0;
+    checks.push({
+      id: 'registros',
+      label: 'Registros Operacionais',
+      current: r?.totalOscRegistros || 0,
+      expected: 1,
+      status: hasOscRegs ? 'success' : 'warning',
+      message: hasOscRegs ? 'Registros manuais detectados.' : 'Nenhum registro operacional manual (ex: refeições extras) lançado.'
+    });
+
+    setValidationReport(checks);
+    setShowValidation(true);
+    return checks.every(c => c.status !== 'error');
+  };
+
   const generateAiReport = async () => {
+    // Primeiro roda a validação
+    const isValid = runValidation();
+    if (!isValid) {
+      toast.error("Existem erros críticos nos dados do evento. Corrija-os antes de gerar o relatório.");
+      return;
+    }
+
     setIsAiLoading(true);
     setAiReport("");
     setIsAiDialogOpen(true);
@@ -410,14 +482,44 @@ export default function OscAccountabilityModule() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button size="sm" onClick={generateAiReport} className="gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      Gerar
+                    <Button size="sm" onClick={generateAiReport} className="gap-2" disabled={isAiLoading}>
+                      {isAiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      {showValidation ? "Regerar" : "Gerar"}
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                {showValidation && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    {validationReport.map(check => (
+                      <div key={check.id} className={`p-3 rounded-lg border flex items-start gap-3 ${
+                        check.status === 'success' ? 'bg-emerald-50 border-emerald-100' :
+                        check.status === 'warning' ? 'bg-amber-50 border-amber-100' :
+                        'bg-red-50 border-red-100'
+                      }`}>
+                        {check.status === 'success' ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+                        ) : check.status === 'warning' ? (
+                          <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                        ) : (
+                          <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                        )}
+                        <div>
+                          <p className={`text-xs font-bold ${
+                            check.status === 'success' ? 'text-emerald-700' :
+                            check.status === 'warning' ? 'text-amber-700' :
+                            'text-red-700'
+                          }`}>
+                            {check.label}: {check.current}/{check.expected}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground leading-tight">{check.message}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
                 <p className="text-sm text-muted-foreground">
                   Nossa IA analisa todos os registros operacionais, evidências fotográficas e resultados do evento para criar um rascunho completo da prestação de contas.
                 </p>
