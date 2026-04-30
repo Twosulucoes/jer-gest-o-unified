@@ -109,6 +109,7 @@ import SupabaseSetupPage from "./pages/admin/SupabaseSetupPage";
 
 import OcorrenciasPage from "./pages/admin/OcorrenciasPage";
 // MapaSistemaPage and DiagnosticoCompeticaoPage accessed only via SistemaDiagnosticoPage
+import CentralControlePage from "./pages/admin/CentralControlePage";
 import SistemaDiagnosticoPage from "./pages/admin/SistemaDiagnosticoPage";
 import CentralDadosPage from "./pages/admin/CentralDadosPage";
 import BoletinsPorModalidadePage from "./pages/admin/relatorios/BoletinsPorModalidadePage";
@@ -414,6 +415,7 @@ const App = () => (
               <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
               <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
               <Route path="acessos/pwa" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosPwaAuditPage /></ProtectedRoute>} />
+              <Route path="central-controle" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralControlePage /></ProtectedRoute>} />
               <Route path="auditoria" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AuditoriaPage /></ProtectedRoute>} />
 
               {/* Parâmetros e Regras — consolidados em /admin/regras */}
