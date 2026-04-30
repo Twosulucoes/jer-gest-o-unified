@@ -44,9 +44,29 @@ export default function OscAccountabilityModule() {
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [recordType, setRecordType] = useState<string>("doacao_alimento");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   const { data: oscData, isLoading: isLoadingOsc } = useOscData(eventId);
   const { data: oscConfig } = useEventOscConfig(eventId);
+
+  const { data: templates } = useQuery({
+    queryKey: ["osc-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("osc_accountability_templates")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      
+      // Auto-select default template
+      const defaultTpl = data.find(t => t.is_default);
+      if (defaultTpl && !selectedTemplateId) {
+        setSelectedTemplateId(defaultTpl.id);
+      }
+      
+      return data;
+    }
+  });
 
   const { data: evidences, isLoading: isLoadingEvidences } = useQuery({
     queryKey: ["osc-evidences", eventId],
@@ -166,7 +186,8 @@ export default function OscAccountabilityModule() {
           body: JSON.stringify({ 
             event_id: eventId, 
             prompt_type: "full_report",
-            stream: true 
+            stream: true,
+            template_id: selectedTemplateId
           }),
         }
       );
@@ -245,10 +266,11 @@ export default function OscAccountabilityModule() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 w-full max-w-md">
+        <TabsList className="grid grid-cols-4 w-full max-w-md">
           <TabsTrigger value="overview">Workflow</TabsTrigger>
           <TabsTrigger value="validation">Validação</TabsTrigger>
           <TabsTrigger value="report">Relatório</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
         </TabsList>
 
         {/* WORKFLOW / LANÇAMENTO */}
@@ -306,10 +328,24 @@ export default function OscAccountabilityModule() {
                     </CardTitle>
                     <CardDescription>Gerar rascunhos de relatórios e análises</CardDescription>
                   </div>
-                  <Button size="sm" onClick={generateAiReport} className="gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    Gerar Relatório
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Select value={selectedTemplateId || ""} onValueChange={setSelectedTemplateId}>
+                      <SelectTrigger className="w-[200px] h-9">
+                        <SelectValue placeholder="Selecione o template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates?.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button size="sm" onClick={generateAiReport} className="gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Gerar
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -614,6 +650,49 @@ export default function OscAccountabilityModule() {
         {/* RELATÓRIO FINAL */}
         <TabsContent value="report" className="mt-6">
           <PrestacaoContasOscPage />
+        </TabsContent>
+        {/* Templates da IA */}
+        <TabsContent value="templates" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Templates de Prestação de Contas</CardTitle>
+                <CardDescription>Configure a estrutura dos textos gerados pela IA</CardDescription>
+              </div>
+              <Button size="sm" className="gap-2" onClick={() => toast.info("Em breve: Criação de templates personalizada")}>
+                <Plus className="h-4 w-4" /> Novo Template
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {templates?.map((template) => (
+                  <div key={template.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted/30 transition-colors">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold">{template.name}</h4>
+                        {template.is_default && <Badge variant="secondary">Padrão</Badge>}
+                        <Badge variant="outline" className="capitalize">{template.category}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{template.description}</p>
+                      <pre className="mt-2 text-xs bg-muted p-2 rounded max-h-24 overflow-y-auto whitespace-pre-wrap font-mono">
+                        {template.prompt_structure}
+                      </pre>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => toast.info("Em breve: Edição de templates")}>
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      {!template.is_default && (
+                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => toast.info("Em breve: Remoção de templates")}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
