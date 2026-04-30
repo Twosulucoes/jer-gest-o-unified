@@ -23,7 +23,9 @@ export type Database = {
           id: string
           payload: Json | null
           record_id: string
+          report_id: string | null
           table_name: string
+          validation_token: string | null
         }
         Insert: {
           action: string
@@ -33,7 +35,9 @@ export type Database = {
           id?: string
           payload?: Json | null
           record_id: string
+          report_id?: string | null
           table_name: string
+          validation_token?: string | null
         }
         Update: {
           action?: string
@@ -43,7 +47,9 @@ export type Database = {
           id?: string
           payload?: Json | null
           record_id?: string
+          report_id?: string | null
           table_name?: string
+          validation_token?: string | null
         }
         Relationships: []
       }

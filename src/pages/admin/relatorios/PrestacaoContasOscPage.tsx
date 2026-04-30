@@ -107,16 +107,21 @@ export default function PrestacaoContasOscPage() {
         if (!proceed) return;
       }
 
+      // NOVO: Gerar identificador único para o relatório (UUID v4)
+      const reportId = crypto.randomUUID();
+      const validationToken = Math.random().toString(36).substring(2, 10).toUpperCase();
+
       await exportOscPdf(data, {
         eventName: activeEvent?.name || "Evento",
         branding: branding ?? null,
         oscConfig: oscConfig ?? null,
         generatedAt: new Date(),
         periodLabel,
-        evidences
+        evidences,
+        reportId // Passar o ID para o PDF gerado
       });
 
-      // Registrar auditoria
+      // Registrar auditoria com o vínculo do Relatório
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase.from("audit_events").insert({
@@ -124,6 +129,8 @@ export default function PrestacaoContasOscPage() {
           record_id: eventId,
           action: "generate_pdf",
           created_by: user.id,
+          report_id: reportId,
+          validation_token: validationToken,
           payload: {
             event_name: activeEvent?.name,
             photo_counts: counts,
@@ -132,12 +139,13 @@ export default function PrestacaoContasOscPage() {
               matches: data.resumo.totalMatches,
               meals: data.resumo.totalMeals
             },
-            config_used: oscConfig
+            config_used: oscConfig,
+            validation_url: `${window.location.origin}/admin/validar-qr?report=${reportId}`
           }
         } as any);
       }
 
-      toast.success("PDF gerado e registrado na auditoria");
+      toast.success("PDF Oficial gerado com selo de autenticidade");
       fetchAuditHistory();
     } catch (e: any) {
       toast.error("Erro ao gerar PDF", { description: e?.message });
@@ -243,12 +251,18 @@ export default function PrestacaoContasOscPage() {
                 {auditHistory.map((entry) => {
                   const status = getHistoryStatus(entry);
                   return (
-                    <div key={entry.id} className="p-3 border rounded-lg space-y-2 text-xs">
+                    <div key={entry.id} className="p-3 border rounded-lg space-y-2 text-xs bg-card hover:shadow-sm transition-shadow">
                       <div className="flex justify-between items-start">
                         <span className="font-medium">{new Date(entry.created_at).toLocaleString("pt-BR")}</span>
                         <span className={`font-semibold ${status.color}`}>{status.label}</span>
                       </div>
                       <div className="text-muted-foreground">
+                        {entry.report_id && (
+                          <div className="mb-2 p-1.5 bg-muted rounded border border-dashed text-[10px] font-mono break-all flex items-center gap-1.5">
+                            <ShieldCheck className="h-3 w-3 text-primary shrink-0" />
+                            ID: {entry.report_id}
+                          </div>
+                        )}
                         {Object.entries(entry.payload?.photo_counts || {}).map(([k, v]) => (
                           <div key={k} className="flex justify-between">
                             <span className="capitalize">{k}:</span>
