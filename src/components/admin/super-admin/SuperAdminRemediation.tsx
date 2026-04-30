@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function SuperAdminRemediation() {
-  const { profile, user } = useAuth();
+  const { profile, user, roles } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
 
   const logAction = async (action: string, payload: any) => {
@@ -41,7 +41,7 @@ export function SuperAdminRemediation() {
         execution_context: {
           browser: navigator.userAgent,
           location: window.location.href,
-          admin_role: profile?.role,
+          admin_roles: roles,
           full_payload: payload
         }
       });
