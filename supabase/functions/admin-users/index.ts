@@ -49,33 +49,17 @@ Deno.serve(async (req) => {
     let callerId: string | null = null;
     let callerEmail: string | undefined;
 
-    try {
-      const { data: claimsData } = await adminClient.auth.getClaims(token);
-      if (claimsData?.claims?.sub) {
-        callerId = claimsData.claims.sub as string;
-        callerEmail = claimsData.claims.email as string | undefined;
-      }
-    } catch (_) {
-      // ignore, fallback below
+    // Standard way to get user from token in Edge Functions
+    const { data: { user: callerUser }, error: callerErr } = await adminClient.auth.getUser(token);
+    if (callerErr || !callerUser) {
+      return jsonResponse({ error: "NOT_AUTHENTICATED" }, 401);
     }
-
-    if (!callerId) {
-      const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-      const userClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
-      const { data: userData, error: userErr } = await userClient.auth.getUser();
-      if (userErr || !userData?.user?.id) {
-        return jsonResponse({ error: "NOT_AUTHENTICATED" }, 401);
-      }
-      callerId = userData.user.id;
-      callerEmail = userData.user.email ?? undefined;
-    }
+    callerId = callerUser.id;
+    callerEmail = callerUser.email;
 
     const caller = { id: callerId, email: callerEmail };
 
-    // Check admin/secretaria role using admin client (bypasses JWT verification issues)
+    // Check permissions using admin client
     const { data: callerRoles } = await adminClient
       .from("user_roles")
       .select("role")
@@ -83,7 +67,11 @@ Deno.serve(async (req) => {
     
     const roles = (callerRoles || []).map((r: any) => r.role);
     const callerIsSuper = roles.includes("super_admin");
-    if (!roles.includes("admin") && !roles.includes("secretaria") && !callerIsSuper) {
+    const callerIsAdmin = roles.includes("admin");
+    const callerIsSecretaria = roles.includes("secretaria");
+    const callerIsCoordenacao = roles.includes("coordenacao_tecnica");
+
+    if (!callerIsAdmin && !callerIsSecretaria && !callerIsSuper && !callerIsCoordenacao) {
       return jsonResponse({ error: "NOT_AUTHORIZED" }, 403);
     }
 
