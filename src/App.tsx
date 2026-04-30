@@ -291,9 +291,9 @@ const App = () => (
         <PwaUpdateNotice />
         <PwaInstallNotice />
         <NetworkStatusBanner />
-        <OfflineSyncManager />
 
         <AuthProvider>
+          <OfflineSyncManager />
           <VersionValidator>
             <EventProvider>
               <StageProvider>
