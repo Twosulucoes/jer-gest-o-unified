@@ -1,4 +1,4 @@
-import { ArrowLeft, LogOut, ArrowLeftRight, Layers, Settings } from "lucide-react";
+import { ArrowLeft, LogOut, ArrowLeftRight, Layers, Settings, LayoutDashboard } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
