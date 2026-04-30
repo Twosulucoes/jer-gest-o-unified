@@ -391,8 +391,8 @@ export default function OscAccountabilityModule() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Select value={selectedTemplateId || ""} onValueChange={setSelectedTemplateId}>
-                      <SelectTrigger className="w-[200px] h-9">
-                        <SelectValue placeholder="Selecione o template" />
+                      <SelectTrigger className="w-[180px] h-9">
+                        <SelectValue placeholder="Template" />
                       </SelectTrigger>
                       <SelectContent>
                         {templates?.map((t) => (
@@ -409,10 +409,42 @@ export default function OscAccountabilityModule() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   Nossa IA analisa todos os registros operacionais, evidências fotográficas e resultados do evento para criar um rascunho completo da prestação de contas.
                 </p>
+                
+                {reportHistory && reportHistory.length > 0 && (
+                  <div className="pt-4 border-t border-primary/10">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-2">
+                      <Clock className="h-3 w-3" /> Histórico Recente
+                    </h4>
+                    <div className="space-y-2">
+                      {reportHistory.slice(0, 3).map((report) => (
+                        <div key={report.id} className="flex items-center justify-between text-sm p-2 bg-white/50 rounded-md border border-primary/5">
+                          <div className="truncate flex-1">
+                            <span className="font-medium">{(report as any).template?.name || "Padrão"}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {new Date(report.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 text-xs gap-1"
+                            onClick={() => {
+                              setAiReport(report.content);
+                              setSelectedTemplateId(report.template_id);
+                              setIsAiDialogOpen(true);
+                            }}
+                          >
+                            <FileText className="h-3 w-3" /> Abrir
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
