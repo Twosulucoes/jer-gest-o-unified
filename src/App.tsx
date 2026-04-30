@@ -658,6 +658,7 @@ const App = () => (
             {/* Public content routes */}
             <Route path="/tecnica" element={<EntregaTecnicaPage />} />
             <Route path="/public/results" element={<PublicResultsPage />} />
+            <Route path="/public/medals" element={<PublicMedalTablePage />} />
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
             <Route path="/a/:token" element={<AtletaPublicProfilePage />} />
