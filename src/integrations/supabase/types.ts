@@ -19,6 +19,7 @@ export type Database = {
           action: string
           created_at: string
           created_by: string | null
+          execution_context: Json | null
           id: string
           payload: Json | null
           record_id: string
@@ -28,6 +29,7 @@ export type Database = {
           action: string
           created_at?: string
           created_by?: string | null
+          execution_context?: Json | null
           id?: string
           payload?: Json | null
           record_id: string
@@ -37,6 +39,7 @@ export type Database = {
           action?: string
           created_at?: string
           created_by?: string | null
+          execution_context?: Json | null
           id?: string
           payload?: Json | null
           record_id?: string
@@ -7407,6 +7410,27 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: Json
+        }
+        Relationships: []
+      }
+      system_sync_status: {
+        Row: {
+          id: string
+          last_modified_at: string | null
+          row_count_cache: number | null
+          table_name: string
+        }
+        Insert: {
+          id?: string
+          last_modified_at?: string | null
+          row_count_cache?: number | null
+          table_name: string
+        }
+        Update: {
+          id?: string
+          last_modified_at?: string | null
+          row_count_cache?: number | null
+          table_name?: string
         }
         Relationships: []
       }
