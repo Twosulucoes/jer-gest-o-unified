@@ -50,40 +50,50 @@ export default function PublicMedalTablePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/50">
+    <div className="op-screen flex flex-col min-h-screen">
       <PublicHeader 
         subtitle={selectedEventId ? "Quadro de Medalhas" : "Resultados Oficiais"} 
         onBack={handleBack} 
         showBackButton={!!selectedEventId} 
       />
 
-      <main className="mx-auto w-full max-w-5xl p-4 space-y-6 flex-grow">
+      <main className="mx-auto w-full max-w-5xl p-4 space-y-6 flex-grow animate-fade-in">
         {!selectedEventId ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {loadingEvents ? (
-              <div className="col-span-full flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
+                <div className="h-12 w-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                <p className="text-sm font-medium text-muted-foreground animate-pulse">Carregando eventos...</p>
               </div>
             ) : events.length === 0 ? (
-              <Card className="col-span-full">
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  Nenhum evento com resultados publicados no momento.
+              <Card className="col-span-full op-card border-dashed">
+                <CardContent className="py-20 text-center space-y-3">
+                  <div className="bg-muted/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Trophy className="h-8 w-8 text-muted-foreground/50" />
+                  </div>
+                  <p className="font-bold text-lg text-muted-foreground">Nenhum evento com resultados</p>
                 </CardContent>
               </Card>
             ) : (
-              events.map((ev) => (
+              events.map((ev, idx) => (
                 <Card 
                   key={ev.id} 
-                  className="cursor-pointer hover:border-primary transition-colors group"
+                  className="op-card group cursor-pointer hover:scale-[1.02] hover:shadow-accent-glow animate-fade-in"
+                  style={{ animationDelay: `${idx * 50}ms` }}
                   onClick={() => setSelectedEventId(ev.id)}
                 >
-                  <CardHeader>
-                    <CardTitle className="group-hover:text-primary transition-colors">{ev.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{ev.year}</p>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="bg-primary/10 p-3 rounded-2xl group-hover:bg-primary/20 transition-all">
+                        <Trophy className="h-6 w-6 text-primary" />
+                      </div>
+                      <Badge variant="secondary" className="font-bold text-[10px]">{ev.year}</Badge>
+                    </div>
+                    <CardTitle className="pt-4 font-black tracking-tight text-xl group-hover:text-primary transition-colors leading-tight">{ev.name}</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center text-primary font-medium text-sm">
-                      Ver medalhas e ranking <Trophy className="ml-2 h-4 w-4" />
+                  <CardContent className="pt-2">
+                    <div className="flex items-center text-primary font-bold text-xs uppercase tracking-widest gap-2">
+                      Ver medalhas <ChevronRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </CardContent>
                 </Card>
@@ -91,38 +101,41 @@ export default function PublicMedalTablePage() {
             )}
           </div>
         ) : (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="space-y-6 animate-fade-in">
             {/* Filtros */}
-            <Card>
-              <CardContent className="p-4 grid gap-4 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Escopo</label>
+            <Card className="op-card overflow-hidden">
+              <div className="bg-muted/30 px-5 py-2.5 border-b border-border/50">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Filtros de Visualização</p>
+              </div>
+              <CardContent className="p-5 grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider ml-1">Escopo</label>
                   <Select value={scope} onValueChange={(v) => setScope(v as ScopeFilter)}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Geral</SelectItem>
+                    <SelectTrigger className="h-11 rounded-xl bg-background/50 border-border/50"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="all">Geral (JER + JERPA)</SelectItem>
                       <SelectItem value="jer">Somente JER</SelectItem>
                       <SelectItem value="jerpa">Somente JERPA</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Tipo</label>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider ml-1">Tipo</label>
                   <Select value={type} onValueChange={(v) => setType(v as TypeFilter)}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectTrigger className="h-11 rounded-xl bg-background/50 border-border/50"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-xl">
                       <SelectItem value="all">Todas as modalidades</SelectItem>
                       <SelectItem value="collective">Somente Coletivas</SelectItem>
                       <SelectItem value="individual">Somente Individuais</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Modalidade</label>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider ml-1">Modalidade</label>
                   <Select value={sportId} onValueChange={setSportId}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">Todas</SelectItem>
+                    <SelectTrigger className="h-11 rounded-xl bg-background/50 border-border/50"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="__all__">Todas as Modalidades</SelectItem>
                       {filteredSports.map((s) => (
                         <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                       ))}
@@ -134,58 +147,72 @@ export default function PublicMedalTablePage() {
 
             {/* Banner parcial */}
             {data?.partial.hasPartial && (
-              <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-3 text-sm">
-                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 animate-pulse">
+                <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
                 <div>
-                  <p className="font-semibold text-amber-900 dark:text-amber-200">Resultados Parciais</p>
-                  <p className="text-amber-800 dark:text-amber-300">
-                    Existem {data.partial.pendingSports} modalidades com resultados pendentes de publicação.
+                  <p className="font-black text-xs uppercase tracking-wider text-amber-800">Resultados Parciais</p>
+                  <p className="text-sm text-amber-800/80 font-medium">
+                    Existem {data.partial.pendingSports} modalidades com resultados em processamento. Os números podem mudar!
                   </p>
                 </div>
               </div>
             )}
 
-            <Tabs defaultValue="medalhas" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
-                <TabsTrigger value="medalhas"><Medal className="h-4 w-4 mr-2" /> Medalhas</TabsTrigger>
-                <TabsTrigger value="geral"><Trophy className="h-4 w-4 mr-2" /> Ranking</TabsTrigger>
-              </TabsList>
+            <Tabs defaultValue="medalhas" className="w-full space-y-6">
+              <div className="glass-panel p-1.5 rounded-2xl inline-flex w-full sm:w-auto">
+                <TabsList className="grid w-full sm:w-[400px] grid-cols-2 bg-transparent">
+                  <TabsTrigger value="medalhas" className="rounded-xl py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                    <Medal className="h-4 w-4 mr-2" /> Quadro de Medalhas
+                  </TabsTrigger>
+                  <TabsTrigger value="geral" className="rounded-xl py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                    <Trophy className="h-4 w-4 mr-2" /> Ranking Geral
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-              <TabsContent value="medalhas" className="mt-4">
-                <Card>
+              <TabsContent value="medalhas" className="mt-0 animate-fade-in">
+                <Card className="op-card overflow-hidden">
                   <CardContent className="p-0">
                     {loadingData ? (
-                      <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                      <div className="flex justify-center py-20"><div className="h-10 w-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" /></div>
                     ) : !data || data.medalsBySchool.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-12 text-center">Nenhum resultado oficial publicado.</p>
+                      <div className="py-20 text-center space-y-3">
+                        <Medal className="h-10 w-10 text-muted-foreground/30 mx-auto" />
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Nenhum resultado oficial publicado</p>
+                      </div>
                     ) : (
                       <div className="overflow-x-auto">
                         <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-16">Pos</TableHead>
-                              <TableHead>Instituição / Delegação</TableHead>
-                              <TableHead className="text-center w-20">Ouro</TableHead>
-                              <TableHead className="text-center w-20">Prata</TableHead>
-                              <TableHead className="text-center w-20">Bronze</TableHead>
-                              <TableHead className="text-center w-20">Total</TableHead>
+                          <TableHeader className="bg-muted/50">
+                            <TableRow className="hover:bg-transparent border-border/50">
+                              <TableHead className="w-16 font-black uppercase tracking-tighter text-[10px]">Pos</TableHead>
+                              <TableHead className="font-black uppercase tracking-tighter text-[10px]">Instituição / Delegação</TableHead>
+                              <TableHead className="text-center w-24 font-black uppercase tracking-tighter text-[10px]">Ouro</TableHead>
+                              <TableHead className="text-center w-24 font-black uppercase tracking-tighter text-[10px]">Prata</TableHead>
+                              <TableHead className="text-center w-24 font-black uppercase tracking-tighter text-[10px]">Bronze</TableHead>
+                              <TableHead className="text-center w-24 font-black uppercase tracking-tighter text-[10px]">Total</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {data.medalsBySchool.map((r) => (
-                              <TableRow key={r.schoolId}>
-                                <TableCell className="font-bold text-lg">{r.pos}º</TableCell>
-                                <TableCell className="font-medium">{r.schoolName}</TableCell>
-                                <TableCell className="text-center">
-                                  <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-yellow-400/20 text-yellow-700 font-bold">{r.ouro}</span>
+                              <TableRow key={r.schoolId} className="hover:bg-primary/5 transition-colors border-border/30">
+                                <TableCell className="font-black text-xl tabular-nums text-foreground/70">{r.pos}º</TableCell>
+                                <TableCell>
+                                  <p className="font-bold text-base tracking-tight leading-tight">{r.schoolName}</p>
+                                  <p className="text-[10px] text-muted-foreground font-medium uppercase mt-0.5">Escola Participante</p>
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-gray-400/20 text-gray-700 font-bold">{r.prata}</span>
+                                  <div className="inline-flex items-center justify-center h-10 w-10 rounded-2xl bg-amber-400 shadow-[0_4px_12px_-4px_rgba(251,191,36,0.5)] text-amber-950 font-black text-lg">{r.ouro}</div>
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-amber-700/20 text-amber-800 font-bold">{r.bronze}</span>
+                                  <div className="inline-flex items-center justify-center h-10 w-10 rounded-2xl bg-slate-300 shadow-[0_4px_12px_-4px_rgba(148,163,184,0.5)] text-slate-900 font-black text-lg">{r.prata}</div>
                                 </TableCell>
-                                <TableCell className="text-center font-black">{r.total}</TableCell>
+                                <TableCell className="text-center">
+                                  <div className="inline-flex items-center justify-center h-10 w-10 rounded-2xl bg-amber-700 shadow-[0_4px_12px_-4px_rgba(180,83,9,0.5)] text-amber-50 font-black text-lg">{r.bronze}</div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <span className="text-xl font-black text-foreground tabular-nums">{r.total}</span>
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -196,35 +223,44 @@ export default function PublicMedalTablePage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="geral" className="mt-4">
-                <Card>
+              <TabsContent value="geral" className="mt-0 animate-fade-in">
+                <Card className="op-card overflow-hidden">
                   <CardContent className="p-0">
                     {loadingData ? (
-                      <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                      <div className="flex justify-center py-20"><div className="h-10 w-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" /></div>
                     ) : !data || data.rankingGeral.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-12 text-center">Classificação não disponível.</p>
+                      <div className="py-20 text-center space-y-3">
+                        <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto" />
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Classificação não disponível</p>
+                      </div>
                     ) : (
                       <div className="overflow-x-auto">
                         <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-16">Pos</TableHead>
-                              <TableHead>Instituição</TableHead>
-                              <TableHead className="text-center">Pontos</TableHead>
-                              <TableHead className="text-center">Ouros</TableHead>
-                              <TableHead className="text-center">Pratas</TableHead>
-                              <TableHead className="text-center">Bronzes</TableHead>
+                          <TableHeader className="bg-muted/50">
+                            <TableRow className="hover:bg-transparent border-border/50">
+                              <TableHead className="w-16 font-black uppercase tracking-tighter text-[10px]">Pos</TableHead>
+                              <TableHead className="font-black uppercase tracking-tighter text-[10px]">Instituição</TableHead>
+                              <TableHead className="text-center font-black uppercase tracking-tighter text-[10px]">Pontuação Geral</TableHead>
+                              <TableHead className="text-center font-black uppercase tracking-tighter text-[10px]">Ouros</TableHead>
+                              <TableHead className="text-center font-black uppercase tracking-tighter text-[10px]">Pratas</TableHead>
+                              <TableHead className="text-center font-black uppercase tracking-tighter text-[10px]">Bronzes</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {data.rankingGeral.map((r) => (
-                              <TableRow key={r.schoolId}>
-                                <TableCell className="font-bold text-lg">{r.pos}º</TableCell>
-                                <TableCell className="font-medium">{r.schoolName}</TableCell>
-                                <TableCell className="text-center font-black text-primary">{r.totalGeral}</TableCell>
-                                <TableCell className="text-center">{r.ouros}</TableCell>
-                                <TableCell className="text-center">{r.pratas}</TableCell>
-                                <TableCell className="text-center">{r.bronzes}</TableCell>
+                              <TableRow key={r.schoolId} className="hover:bg-primary/5 transition-colors border-border/30">
+                                <TableCell className="font-black text-xl tabular-nums text-foreground/70">{r.pos}º</TableCell>
+                                <TableCell>
+                                  <p className="font-bold text-base tracking-tight">{r.schoolName}</p>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge className="bg-primary text-white font-black px-4 py-1 text-base rounded-lg shadow-glow border-none">
+                                    {r.totalGeral} pts
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center font-bold text-amber-600">{r.ouros}</TableCell>
+                                <TableCell className="text-center font-bold text-slate-500">{r.pratas}</TableCell>
+                                <TableCell className="text-center font-bold text-amber-800">{r.bronzes}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -241,5 +277,6 @@ export default function PublicMedalTablePage() {
 
       <PublicFooter />
     </div>
+  );
   );
 }
