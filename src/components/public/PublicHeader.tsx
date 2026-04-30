@@ -24,7 +24,7 @@ export const PublicHeader = ({ subtitle, onBack, showBackButton }: PublicHeaderP
   const isMedals = location.pathname.startsWith("/public/medals");
 
   return (
-    <header className="border-b bg-white px-4 py-3 sticky top-0 z-50 shadow-sm">
+    <header className="glass-panel-strong px-4 py-3 sticky top-0 z-50">
       <div className="mx-auto flex max-w-5xl items-center justify-between">
         <div className="flex items-center gap-2">
           {showBackButton && onBack && (
@@ -32,21 +32,25 @@ export const PublicHeader = ({ subtitle, onBack, showBackButton }: PublicHeaderP
               variant="ghost"
               size="icon"
               onClick={onBack}
-              className="h-8 w-8 rounded-full"
+              className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+              aria-label="Voltar"
             >
-              <Menu className="h-4 w-4 rotate-90" />
+              <ArrowLeft className="h-4 w-4" />
             </Button>
           )}
-          <Link to="/">
+          <Link to="/" className="transition-opacity hover:opacity-80">
             <VisualIdentity size="sm" subtitle={subtitle || "Portal Público"} />
           </Link>
           
-          <nav className="hidden md:flex items-center gap-1 ml-6 border-l pl-6">
+          <nav className="hidden md:flex items-center gap-1 ml-6 border-l pl-6 border-border/50">
             <Button
               variant={isResults ? "secondary" : "ghost"}
               size="sm"
               asChild
-              className="h-8 text-xs gap-2"
+              className={cn(
+                "h-9 text-xs gap-2 px-4 transition-all",
+                isResults && "bg-primary/10 text-primary hover:bg-primary/20"
+              )}
             >
               <Link to="/public/results">
                 <Calendar className="h-3.5 w-3.5" />
@@ -57,7 +61,10 @@ export const PublicHeader = ({ subtitle, onBack, showBackButton }: PublicHeaderP
               variant={isMedals ? "secondary" : "ghost"}
               size="sm"
               asChild
-              className="h-8 text-xs gap-2"
+              className={cn(
+                "h-9 text-xs gap-2 px-4 transition-all",
+                isMedals && "bg-primary/10 text-primary hover:bg-primary/20"
+              )}
             >
               <Link to="/public/medals">
                 <Trophy className="h-3.5 w-3.5" />
@@ -71,32 +78,36 @@ export const PublicHeader = ({ subtitle, onBack, showBackButton }: PublicHeaderP
           <div className="md:hidden">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all">
                   <Menu className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/public/results" className="gap-2">
-                    <Calendar className="h-4 w-4" /> Resultados
+              <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl shadow-xl animate-scale-in">
+                <DropdownMenuItem asChild className="rounded-xl">
+                  <Link to="/public/results" className="gap-3 py-2.5">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Resultados e Agenda</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/public/medals" className="gap-2">
-                    <Trophy className="h-4 w-4" /> Medalhas
+                <DropdownMenuItem asChild className="rounded-xl">
+                  <Link to="/public/medals" className="gap-3 py-2.5">
+                    <Trophy className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Quadro de Medalhas</span>
                   </Link>
                 </DropdownMenuItem>
-                {!user && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/login" className="gap-2 font-semibold text-primary">
-                      <LogIn className="h-4 w-4" /> Acesso Restrito
+                <div className="my-2 border-t border-border/50" />
+                {!user ? (
+                  <DropdownMenuItem asChild className="rounded-xl">
+                    <Link to="/login" className="gap-3 py-2.5 text-primary">
+                      <LogIn className="h-4 w-4" />
+                      <span className="font-bold">Acesso Restrito</span>
                     </Link>
                   </DropdownMenuItem>
-                )}
-                {user && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin" className="gap-2 font-semibold text-indigo-600">
-                      <LayoutDashboard className="h-4 w-4" /> Painel Admin
+                ) : (
+                  <DropdownMenuItem asChild className="rounded-xl">
+                    <Link to="/admin" className="gap-3 py-2.5 text-indigo-600">
+                      <LayoutDashboard className="h-4 w-4" />
+                      <span className="font-bold">Painel Admin</span>
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -105,16 +116,16 @@ export const PublicHeader = ({ subtitle, onBack, showBackButton }: PublicHeaderP
           </div>
 
           {!user && (
-            <Button variant="ghost" size="sm" asChild className="hidden md:flex text-muted-foreground hover:text-primary transition-colors">
-              <Link to="/login" className="gap-1.5">
-                <LogIn className="h-3.5 w-3.5" />
+            <Button variant="ghost" size="sm" asChild className="hidden md:flex text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all rounded-xl px-4">
+              <Link to="/login" className="gap-2 font-medium">
+                <LogIn className="h-4 w-4" />
                 Entrar
               </Link>
             </Button>
           )}
           {user && (
-            <Button variant="outline" size="sm" asChild className="h-8 text-xs border-primary/20 hover:bg-primary/5">
-              <Link to="/admin">Voltar ao Painel</Link>
+            <Button variant="outline" size="sm" asChild className="hidden md:flex h-9 text-xs border-primary/20 hover:bg-primary/5 rounded-xl px-4 transition-all">
+              <Link to="/admin">Painel Administrativo</Link>
             </Button>
           )}
         </div>
