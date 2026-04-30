@@ -289,7 +289,7 @@ export const AppRoutes = () => (
         <Route path="importacao/aliases" element={<ProtectedRoute allowedRoles={["super_admin"]}><ImportacaoAliasesPage /></ProtectedRoute>} />
         <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipantesPage /></ProtectedRoute>} />
         <Route path="participantes/historico" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><HistoricoBuscaPage /></ProtectedRoute>} />
-        <Route path="participantes/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
+        <Route path="participantes/duplicidades" element={<Navigate to="/admin/pessoas/duplicidades" replace />} />
         <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteDetalhePage /></ProtectedRoute>} />
         <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
         <Route path="pessoas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PessoasPage /></ProtectedRoute>} />
