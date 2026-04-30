@@ -42,13 +42,14 @@ serve(async (req) => {
       throw new Error("event_id is required");
     }
 
-    // 1. Fetch Core Data and Template
+    // 1. Fetch Core Data, Template and User Roles
     const [
       { data: registers }, 
       { data: evidences }, 
-      { data: event },
+      { data: event, error: eventError },
       { count: totalParticipants },
-      { data: template }
+      { data: template },
+      { data: userRoles }
     ] = await Promise.all([
       supabaseClient.from("osc_registros").select("*").eq("event_id", event_id),
       supabaseClient.from("operational_evidence").select("*").eq("event_id", event_id).eq("status", "approved"),
@@ -56,8 +57,24 @@ serve(async (req) => {
       supabaseClient.from("participants").select("*", { count: 'exact', head: true }).eq("event_id", event_id),
       template_id 
         ? supabaseClient.from("osc_accountability_templates").select("*").eq("id", template_id).single()
-        : supabaseClient.from("osc_accountability_templates").select("*").eq("is_default", true).maybeSingle()
+        : supabaseClient.from("osc_accountability_templates").select("*").eq("is_default", true).maybeSingle(),
+      supabaseClient.from("user_roles").select("role").eq("user_id", user.id)
     ]);
+
+    if (eventError || !event) {
+      console.error(`Access denied or event not found for user ${user.id} and event ${event_id}:`, eventError);
+      return new Response(JSON.stringify({ error: "Acesso negado: você não tem permissão para visualizar este evento ou ele não existe." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Optional: Strict role check if needed
+    const roles = userRoles?.map(r => r.role) || [];
+    const isAdmin = roles.includes('admin') || roles.includes('super_admin');
+    
+    // If we want to restrict this specifically to admins or certain roles
+    // if (!isAdmin) { ... }
 
     // 2. Fetch match summary separately
     const { data: matches } = await supabaseClient
