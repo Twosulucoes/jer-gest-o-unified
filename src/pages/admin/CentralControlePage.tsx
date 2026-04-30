@@ -71,7 +71,7 @@ export default function CentralControlePage() {
                 </CardTitle>
                 <CardDescription className="text-[10px]">
                   Estado atual das políticas de acesso e chaves.
-                </Description>
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-2 rounded-lg bg-green-500/5 border border-green-500/20">
