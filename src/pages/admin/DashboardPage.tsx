@@ -41,6 +41,7 @@ const TRANSPORT_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica"
 const FOOD_ROLES: AppRole[] = ["admin", "secretaria", "coordenacao_tecnica", "alimentacao"];
 
 const quickActions: QuickAction[] = [
+  { label: "Controle", to: "/admin/central-controle", icon: <ShieldCheck className="h-5 w-5" />, roles: ["super_admin"], group: "Super Admin" },
   { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-5 w-5" />, roles: ["admin", "secretaria"], group: "Preparação" },
   { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Preparação" },
   { label: "Credenciamento", to: "/admin/credenciamento", icon: <UserCheck className="h-5 w-5" />, roles: ADMIN_ROLES, group: "Credenciamento" },
