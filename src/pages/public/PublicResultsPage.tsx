@@ -142,8 +142,20 @@ export default function PublicResultsPage() {
               </Button>
             )}
             <VisualIdentity size="sm" subtitle={currentTitle} />
+            {!selectedSportEventId && !selectedEventId && (
+              <Button variant="outline" size="sm" asChild className="ml-4 h-8 text-xs">
+                <Link to="/public/medals">
+                  <Trophy className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
+                  Quadro de Medalhas
+                </Link>
+              </Button>
+            )}
           </div>
-        </div>
+          {!user && (
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
+              <Link to="/login">Entrar</Link>
+            </Button>
+          )}
       </header>
 
       <main className="mx-auto max-w-4xl p-4 space-y-4">
