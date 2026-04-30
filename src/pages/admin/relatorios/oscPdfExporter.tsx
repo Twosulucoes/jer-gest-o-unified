@@ -2,6 +2,7 @@ import { pdf, Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/r
 import type { OscData } from "./useOscData";
 import type { EventBrandingResolved } from "@/hooks/useEventBranding";
 import type { EventOscConfig } from "@/hooks/useEventOscConfig";
+import QRCode from "qrcode";
 
 const s = StyleSheet.create({
   page: { padding: 32, fontFamily: "Helvetica", fontSize: 9 },
@@ -26,8 +27,24 @@ const s = StyleSheet.create({
   th: { fontSize: 8, fontWeight: "bold", backgroundColor: "#f9fafb" },
   td: { fontSize: 8 },
   footer: { position: "absolute", bottom: 20, left: 32, right: 32, fontSize: 7, color: "#888", textAlign: "center", borderTopWidth: 0.5, borderTopColor: "#ccc", paddingTop: 4 },
-  signatureArea: { marginTop: 40, flexDirection: "row", justifyContent: "center" },
-  signatureBox: { width: 250, alignItems: "center", borderTopWidth: 0.5, borderTopColor: "#333", paddingTop: 4 },
+  signatureArea: { marginTop: 40, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
+  signatureBox: { width: 220, alignItems: "center", borderTopWidth: 0.5, borderTopColor: "#333", paddingTop: 4 },
+  qrBox: { width: 80, alignItems: "center" },
+  qrImg: { width: 60, height: 60 },
+  qrText: { fontSize: 6, color: "#666", marginTop: 2, textAlign: "center" },
+  statusBadge: { 
+    position: "absolute", 
+    top: 100, 
+    right: 32, 
+    borderWidth: 2, 
+    borderColor: "#059669", 
+    color: "#059669", 
+    padding: 8, 
+    borderRadius: 4, 
+    transform: "rotate(15deg)",
+    opacity: 0.8
+  },
+  statusText: { fontSize: 12, fontWeight: "bold", textTransform: "uppercase" }
 });
 
 interface Meta {
@@ -37,6 +54,8 @@ interface Meta {
   generatedAt: Date;
   periodLabel: string;
   evidences?: any[];
+  reportId?: string;
+  qrCodeDataUrl?: string;
 }
 
 function OscDocument({ data, meta }: { data: OscData; meta: Meta }) {
@@ -45,7 +64,7 @@ function OscDocument({ data, meta }: { data: OscData; meta: Meta }) {
   const evs = meta.evidences || [];
 
   return (
-    <Document>
+    <Document title={`Relatório OSC - ${meta.eventName}`} author="JER Gestão">
       <Page size="A4" style={s.page}>
         <View style={s.headerRow}>
           {meta.branding?.logos?.[0]?.url && <Image src={meta.branding.logos[0].url} style={s.logo} />}
@@ -55,6 +74,14 @@ function OscDocument({ data, meta }: { data: OscData; meta: Meta }) {
             <Text style={s.headerMeta}>Convênio nº {config?.contract_number || "—"} / {config?.contract_year || "2026"}</Text>
           </View>
         </View>
+
+        {/* Carimbo de Publicado se houver ReportId */}
+        {meta.reportId && (
+          <View style={s.statusBadge}>
+            <Text style={s.statusText}>PUBLICADO</Text>
+            <Text style={{ fontSize: 7, marginTop: 2 }}>VIA JER GESTÃO</Text>
+          </View>
+        )}
 
         <Text style={s.title}>Relatório de Prestação de Contas</Text>
         <Text style={s.subtitle}>Evento: {meta.eventName} | Período: {meta.periodLabel}</Text>
@@ -82,7 +109,7 @@ function OscDocument({ data, meta }: { data: OscData; meta: Meta }) {
           <View style={s.gridCol3}><Text style={s.label}>Alojamentos Ocup.</Text><Text style={s.value}>{r.totalLodgingOccupied}</Text></View>
         </View>
 
-        <Text style={s.footer} fixed>JER Gestão - Prestação de Contas Automática - {meta.generatedAt.toLocaleDateString("pt-BR")}</Text>
+        <Text style={s.footer} fixed>JER Gestão - Prestação de Contas Automática - {meta.generatedAt.toLocaleDateString("pt-BR")} - ID: {meta.reportId || "Draft"}</Text>
       </Page>
 
       {/* Evidências Fotográficas */}
@@ -102,17 +129,32 @@ function OscDocument({ data, meta }: { data: OscData; meta: Meta }) {
         </Page>
       )}
 
-      {/* Assinaturas */}
+      {/* Assinaturas e QR Code */}
       <Page size="A4" style={s.page}>
         <Text style={s.sectionTitle}>Declaração de Responsabilidade</Text>
         <Text style={[s.td, { marginTop: 10, lineHeight: 1.5 }]}>
-          Declaramos que os dados contidos neste relatório são expressão da verdade e foram extraídos diretamente do sistema JER Gestão.
+          Declaramos que os dados contidos neste relatório são expressão da verdade e foram extraídos diretamente do sistema JER Gestão, estando em conformidade com as evidências operacionais coletadas em campo.
         </Text>
+        
         <View style={s.signatureArea}>
+          {meta.qrCodeDataUrl ? (
+            <View style={s.qrBox}>
+              <Image src={meta.qrCodeDataUrl} style={s.qrImg} />
+              <Text style={s.qrText}>Validação Digital</Text>
+              <Text style={[s.qrText, { fontSize: 4 }]}>{meta.reportId}</Text>
+            </View>
+          ) : <View style={{ width: 80 }} />}
+
           <View style={s.signatureBox}>
             <Text style={s.value}>{config?.responsible_name || "________________________________"}</Text>
             <Text style={s.label}>Responsável Técnico</Text>
           </View>
+        </View>
+
+        <View style={{ marginTop: 40, borderTopWidth: 0.5, borderTopColor: "#eee", paddingTop: 10 }}>
+          <Text style={{ fontSize: 7, color: "#999" }}>
+            A autenticidade deste documento pode ser verificada através do QR Code acima ou informando o ID {meta.reportId} no portal de auditoria do sistema JER Gestão.
+          </Text>
         </View>
       </Page>
     </Document>
@@ -120,11 +162,27 @@ function OscDocument({ data, meta }: { data: OscData; meta: Meta }) {
 }
 
 export async function exportOscPdf(data: OscData, meta: Meta) {
-  const blob = await pdf(<OscDocument data={data} meta={meta} />).toBlob();
+  let qrCodeDataUrl = undefined;
+  if (meta.reportId) {
+    try {
+      // URL de validação (aponta para a página de validação QR do admin por enquanto, 
+      // mas passando o token como parâmetro para futura expansão)
+      const validationUrl = `${window.location.origin}/admin/validar-qr?report=${meta.reportId}`;
+      qrCodeDataUrl = await QRCode.toDataURL(validationUrl, {
+        margin: 1,
+        width: 200,
+        color: { dark: "#0B2B5A", light: "#FFFFFF" }
+      });
+    } catch (e) {
+      console.error("Erro ao gerar QR Code para o PDF", e);
+    }
+  }
+
+  const blob = await pdf(<OscDocument data={data} meta={{ ...meta, qrCodeDataUrl }} />).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `Relatorio_OSC_${meta.eventName.replace(/\s+/g, "_")}.pdf`;
+  a.download = `Relatorio_OSC_${meta.eventName.replace(/\s+/g, "_")}_${new Date().getTime()}.pdf`;
   a.click();
   URL.revokeObjectURL(url);
 }
