@@ -45,6 +45,15 @@ export default function OscAccountabilityModule() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [recordType, setRecordType] = useState<string>("doacao_alimento");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
+  const [validationReport, setValidationReport] = useState<{
+    id: string;
+    label: string;
+    current: number;
+    expected: number;
+    status: 'success' | 'warning' | 'error';
+    message: string;
+  }[]>([]);
 
   const { data: oscData, isLoading: isLoadingOsc } = useOscData(eventId);
   const { data: oscConfig } = useEventOscConfig(eventId);
