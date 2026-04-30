@@ -47,7 +47,7 @@ serve(async (req) => {
       completed: matches?.filter((m: any) => m.status === 'completed' || m.status === 'finished' || m.status === 'publicado').length || 0
     };
 
-    // 3. Prepare AI Prompt
+    // 3. Prepare AI Prompt with mandatory summary section
     const context = {
       event_name: event?.name,
       total_participants: totalParticipants || 0,
@@ -71,7 +71,13 @@ serve(async (req) => {
       - Registros Operacionais (Lançamentos): ${JSON.stringify(context.registers)}
       - Evidências Fotográficas (Curadoria): ${JSON.stringify(context.evidence_summary)}
       
-      ESTRUTURA DO RELATÓRIO:
+      REGRAS OBRIGATÓRIAS DE FORMATAÇÃO:
+      1. Use Markdown.
+      2. Comece com uma seção chamada "## TABELA RESUMO DE INDICADORES" contendo uma tabela Markdown com os principais números (Participantes, Partidas, Fotos por Categoria, Registros Operacionais).
+      3. Adicione uma seção "## DESTAQUES DA EXECUÇÃO" com bullet points das métricas mais relevantes.
+      4. Depois, siga com a estrutura narrativa.
+
+      ESTRUTURA NARRATIVA DO RELATÓRIO:
       1. INTRODUÇÃO: Contextualize o evento e a importância social.
       2. METAS ATINGIDAS: Relacione os números (participantes e partidas) com o sucesso do convênio.
       3. EXECUÇÃO OPERACIONAL: Descreva como os recursos foram aplicados (refeições extras, doações, logística) baseando-se nos registros fornecidos.
@@ -89,7 +95,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.0-flash-exp",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
