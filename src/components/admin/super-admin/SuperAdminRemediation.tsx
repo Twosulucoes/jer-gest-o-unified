@@ -104,7 +104,8 @@ export function SuperAdminRemediation() {
       fn: async () => {
         const { data, error } = await supabase.rpc('maintain_system_logs');
         if (error) throw error;
-        toast.info(`Limpeza concluída: ${data.ops_cleaned} logs de op, ${data.audit_cleaned} logs de auditoria removidos.`);
+        const result = data as any;
+        toast.info(`Limpeza concluída: ${result.ops_cleaned} logs de op, ${result.audit_cleaned} logs de auditoria removidos.`);
       }
     },
     {
@@ -117,7 +118,8 @@ export function SuperAdminRemediation() {
       fn: async () => {
         const { data, error } = await supabase.rpc('maintain_system_logs');
         if (error) throw error;
-        toast.info(`Manutenção finalizada. Registros limpos: ${data.ops_cleaned + data.audit_cleaned + data.perf_cleaned}`);
+        const result = data as any;
+        toast.info(`Manutenção finalizada. Registros limpos: ${result.ops_cleaned + result.audit_cleaned + result.perf_cleaned}`);
       }
     }
   ];
