@@ -1,4 +1,4 @@
-import { Trophy, Calendar, Menu, LogIn, Award } from "lucide-react";
+import { Trophy, Calendar, Menu, LogIn, Award, LayoutDashboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { VisualIdentity } from "./VisualIdentity";
@@ -90,6 +90,13 @@ export const PublicHeader = ({ subtitle, onBack, showBackButton }: PublicHeaderP
                   <DropdownMenuItem asChild>
                     <Link to="/login" className="gap-2 font-semibold text-primary">
                       <LogIn className="h-4 w-4" /> Acesso Restrito
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {user && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="gap-2 font-semibold text-indigo-600">
+                      <LayoutDashboard className="h-4 w-4" /> Painel Admin
                     </Link>
                   </DropdownMenuItem>
                 )}

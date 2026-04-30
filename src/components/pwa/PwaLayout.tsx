@@ -243,9 +243,9 @@ export default function PwaLayout({
                     {(hasRole("admin") || hasRole("super_admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica")) && (
                       <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => navigate("/admin")} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-blue-600 dark:text-blue-400">
-                          <Settings className="h-5 w-5" />
-                          <span className="font-bold text-sm">Painel Admin Web</span>
+                        <DropdownMenuItem onClick={() => navigate("/admin")} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-indigo-600 dark:text-indigo-400">
+                          <LayoutDashboard className="h-5 w-5" />
+                          <span className="font-bold text-sm">Painel Administrativo</span>
                         </DropdownMenuItem>
                       </>
                     )}
