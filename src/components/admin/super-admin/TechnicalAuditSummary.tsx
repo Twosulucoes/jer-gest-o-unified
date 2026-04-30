@@ -27,6 +27,7 @@ export function TechnicalAuditSummary() {
         participants_total: results[0].count || 0,
         matches_total: results[1].count || 0,
         credentials_active: results[2].count || 0,
+        db_logs_count: results[3].count || 0,
       };
     }
   });
