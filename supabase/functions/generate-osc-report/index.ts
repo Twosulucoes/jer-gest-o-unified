@@ -24,24 +24,37 @@ serve(async (req) => {
     }
 
     // 1. Fetch data
-    const [{ data: registers }, { data: evidences }, { data: event }] = await Promise.all([
+    const [
+      { data: registers }, 
+      { data: evidences }, 
+      { data: event },
+      { data: matchSummary },
+      { count: totalParticipants },
+      { count: totalMeals }
+    ] = await Promise.all([
       supabaseClient.from("osc_registros").select("*").eq("event_id", event_id),
       supabaseClient.from("operational_evidence").select("*").eq("event_id", event_id).eq("status", "approved"),
-      supabaseClient.from("events").select("*").eq("id", event_id).single()
+      supabaseClient.from("events").select("*").eq("id", event_id).single(),
+      supabaseClient.from("competition_matches").select("status").eq("event_id", event_id),
+      supabaseClient.from("participants").select("*", { count: 'exact', head: true }).eq("event_id", event_id),
+      supabaseClient.from("meal_consumptions").select("id", { count: 'exact', head: true }).eq("event_id", event_id) // This might not work if meal_consumptions doesn't have event_id, but usually it does or is linked. 
     ]);
 
-    // 2. Fetch match stats
-    const { data: matchStats } = await supabaseClient.rpc('get_event_match_stats', { p_event_id: event_id });
+    // Prepare match stats
+    const totalMatches = matchSummary?.length || 0;
+    const completedMatches = matchSummary?.filter((m: any) => m.status === 'completed' || m.status === 'finished').length || 0;
 
     // 3. Prepare AI Prompt
     const context = {
       event_name: event?.name,
+      total_participants: totalParticipants || 0,
+      total_meals: totalMeals || 0,
       registers: registers?.map(r => ({ type: r.type, value: `${r.value_numeric} ${r.unit}`, desc: r.description })),
       evidence_summary: evidences?.reduce((acc: any, e: any) => {
         acc[e.osc_category] = (acc[e.osc_category] || 0) + 1;
         return acc;
       }, {}),
-      match_stats: matchStats
+      matches: { total: totalMatches, completed: completedMatches }
     };
 
     const systemPrompt = "Você é um assistente especializado em gestão de projetos sociais e prestação de contas (OSC). Seu objetivo é transformar dados brutos de execução em relatórios narrativos profissionais, destacando o impacto social e a conformidade técnica.";
