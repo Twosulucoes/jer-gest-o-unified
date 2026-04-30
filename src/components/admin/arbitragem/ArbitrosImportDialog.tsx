@@ -37,19 +37,36 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
   const [done, setDone] = useState(false);
 
   function parseCsv(text: string): CsvRow[] {
+    // Remove BOM se existir
+    const cleanText = text.replace(/^\uFEFF/, "");
+    
+    const lines = cleanText.trim().split(/\r?\n/);
+    if (lines.length < 2) return [];
+
     // Tenta detectar o separador (vírgula ou ponto-e-vírgula)
-    const firstLine = text.trim().split(/\r?\n/)[0];
+    const firstLine = lines[0];
     const separator = firstLine.includes(";") ? ";" : ",";
     
-    const lines = text.trim().split(/\r?\n/);
-    if (lines.length < 2) return [];
+    const normalize = (s: string) => s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
     
-    const header = lines[0].toLowerCase().split(separator).map(h => h.trim().replace(/"/g, ""));
-    const nomeIdx = header.findIndex(h => h.includes("nome"));
-    const emailIdx = header.findIndex(h => h.includes("email") || h.includes("e-mail"));
-    const telIdx = header.findIndex(h => h.includes("tel") || h.includes("fone") || h.includes("celular"));
+    const header = lines[0].split(separator).map(h => h.trim().replace(/"/g, ""));
+    const nomeIdx = header.findIndex(h => {
+      const n = normalize(h);
+      return n.includes("nome") || n === "name" || n === "atleta" || n === "arbitro";
+    });
+    const emailIdx = header.findIndex(h => {
+      const n = normalize(h);
+      return n.includes("email") || n.includes("mail");
+    });
+    const telIdx = header.findIndex(h => {
+      const n = normalize(h);
+      return n.includes("tel") || n.includes("fone") || n.includes("celular") || n === "phone";
+    });
     
-    if (emailIdx === -1) return [];
+    if (emailIdx === -1) {
+      console.error("Header detectado:", header);
+      return [];
+    }
     
     return lines.slice(1).map(line => {
       const cols = line.split(separator).map(c => c.trim().replace(/"/g, ""));
