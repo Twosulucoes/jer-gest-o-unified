@@ -245,16 +245,30 @@ export const AppRoutes = () => (
            <Route path="validacao-qr" element={<ValidacaoQRPage />} />
            <Route path="competicao/partidas-agenda" element={<CompeticaoPartidasAgendaPage />} />
            <Route path="competicao/resultados" element={<CompeticaoResultadosPage />} />
+           <Route path="competicao/painel" element={<CompeticaoPainelPage />} />
+           <Route path="competicao/equipes" element={<CompeticaoEquipesPage />} />
+           <Route path="competicao/partida/:matchId" element={<CompeticaoPartidaDetalhePage />} />
            <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
            <Route path="alojamento" element={<AlojamentoHubPage />} />
+           <Route path="alojamento/ocupacao" element={<AdminAlojamentoOcupacaoPage />} />
+           <Route path="alojamento/unidades" element={<AdminAlojamentoUnidadesPage />} />
+           <Route path="alojamento/presenca" element={<AdminAlojamentoPresencaPage />} />
            <Route path="alimentacao" element={<AlimentacaoHubPage />} />
+           <Route path="alimentacao/janelas" element={<AdminAlimentacaoJanelasPage />} />
+           <Route path="alimentacao/consumos" element={<AdminAlimentacaoConsumoPage />} />
+           <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
            <Route path="transporte" element={<TransporteHubPage />} />
+           <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
+           <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
+           <Route path="transporte/veiculos" element={<AdminTransporteVeiculosPage />} />
+           <Route path="transporte/embarque/:tripId" element={<AdminTransporteEmbarquePage />} />
            <Route path="ocorrencias" element={<OcorrenciasPage />} />
            <Route path="pesquisa" element={<PesquisaDashboardPage />} />
            <Route path="vouchers" element={<VouchersPage />} />
            <Route path="protestos" element={<ProtestosFilaPage />} />
            <Route path="relatorios" element={<StageReportsPage />} />
         </Route>
+
 
         <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitrosPage /></ProtectedRoute>} />
         <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
