@@ -4565,6 +4565,8 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
+          event_id: string | null
+          event_type: string | null
           id: string
           is_default: boolean | null
           name: string
@@ -4575,6 +4577,8 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          event_id?: string | null
+          event_type?: string | null
           id?: string
           is_default?: boolean | null
           name: string
@@ -4585,13 +4589,23 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          event_id?: string | null
+          event_type?: string | null
           id?: string
           is_default?: boolean | null
           name?: string
           prompt_structure?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "osc_accountability_templates_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       osc_generated_reports: {
         Row: {

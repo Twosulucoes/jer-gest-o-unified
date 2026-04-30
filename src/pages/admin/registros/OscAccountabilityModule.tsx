@@ -68,21 +68,29 @@ export default function OscAccountabilityModule() {
   });
 
   const { data: templates } = useQuery({
-    queryKey: ["osc-templates"],
+    queryKey: ["osc-templates", activeEvent?.slug], // Refresh if event slug changes
     queryFn: async () => {
+      // Find event type from context or slug
+      const eventType = activeEvent?.slug?.includes('esport') ? 'esportivo' : 
+                        activeEvent?.slug?.includes('social') ? 'social' :
+                        activeEvent?.slug?.includes('cultur') ? 'cultural' : 'generic';
+
       const { data, error } = await supabase
         .from("osc_accountability_templates")
         .select("*")
+        .or(`event_type.eq.${eventType},event_type.eq.generic,event_id.eq.${eventId}`)
         .order("name");
+        
       if (error) throw error;
       
-      const defaultTpl = data.find(t => t.is_default);
+      const defaultTpl = data.find(t => t.is_default) || data[0];
       if (defaultTpl && !selectedTemplateId) {
         setSelectedTemplateId(defaultTpl.id);
       }
       
       return data;
-    }
+    },
+    enabled: !!eventId
   });
 
   const { data: evidences, isLoading: isLoadingEvidences } = useQuery({
