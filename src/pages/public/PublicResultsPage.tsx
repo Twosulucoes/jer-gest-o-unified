@@ -11,6 +11,7 @@ import { PublicHeader } from "@/components/public/PublicHeader";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 export default function PublicResultsPage() {
   const { user } = useAuth();
