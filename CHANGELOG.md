@@ -30,7 +30,11 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - `useCollectiveStepStatus` agora suporta bloqueio de passos para individuais time/mark
 - **[PWA]** Correção na navegação entre módulos: o seletor de contexto (switcher) agora está sempre visível no PWA, mesmo para usuários com apenas um módulo.
 - **[PWA]** Botão Home do PWA ajustado para levar sempre à landing page de seleção de módulos (`/pwa`).
+- **[Documentação]** Implementada área técnica em `/super/documentacao` com modelo Docs-as-Code (import.meta.glob).
+- **[Documentação]** Sistema de auditoria de visualização de documentos técnicos via `audit_events`.
+- **[Documentação]** Integração condicional (super_admin) no rodapé do Manual de Instruções.
 - **[Documentação]** Reformulação completa do `README.md` e atualização dos manuais operacionais (Fase "Documentação Opulenta").
+
 
 ### Changed
 - Labels de credenciamento padronizados ("Registrar presença", "Emitir credencial")
