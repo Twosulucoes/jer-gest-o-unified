@@ -8,7 +8,7 @@ import {
   DialogFooter 
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ShieldAlert, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, ShieldAlert, CheckCircle2, Loader2, RefreshCw, Layers, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,28 +34,28 @@ const ACTION_CONFIG = {
     description: "Esta ação forçará a atualização de todos os resultados públicos vinculados a este ID. Use apenas se houver divergência entre o sistema interno e o portal público.",
     confirmText: "Republicar Agora",
     severity: "warning",
-    icon: RefreshCw => <RefreshCw className="h-6 w-6" />,
+    icon: RefreshCw,
   },
   revalidate_credentials: {
     title: "Revalidar Credenciais",
     description: "Verifica e corrige o status de validade de todas as credenciais do evento. Útil caso algum participante relate bloqueio indevido.",
     confirmText: "Iniciar Revalidação",
     severity: "warning",
-    icon: ShieldAlert => <ShieldAlert className="h-6 w-6" />,
+    icon: ShieldAlert,
   },
   fix_orphaned_records: {
     title: "Corrigir Registros Órfãos",
     description: "Ação Crítica: Tenta vincular ou remover registros que perderam a referência de integridade. Pode afetar dados históricos.",
     confirmText: "Executar Correção",
     severity: "critical",
-    icon: AlertCircle => <AlertCircle className="h-6 w-6" />,
+    icon: AlertCircle,
   },
   reset_system_cache: {
     title: "Reset de Cache Global",
     description: "Força todas as máquinas (PWA e Admin) a limparem o cache local na próxima sincronização.",
     confirmText: "Confirmar Reset",
     severity: "critical",
-    icon: ShieldAlert => <ShieldAlert className="h-6 w-6" />,
+    icon: ShieldAlert,
   }
 };
 
@@ -111,7 +111,7 @@ export function RemediationDialog({
           <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
           <DialogHeader className="relative z-10">
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-              <ShieldAlert className="h-6 w-6" />
+              <config.icon className="h-6 w-6" />
             </div>
             <DialogTitle className="text-2xl font-bold tracking-tight">{config.title}</DialogTitle>
             <DialogDescription className="text-white/80 font-medium">
