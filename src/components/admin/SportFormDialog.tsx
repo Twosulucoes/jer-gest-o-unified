@@ -5,9 +5,6 @@ import { z } from "zod";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -32,6 +29,8 @@ import {
 import type { Tables } from "@/integrations/supabase/types";
 import MatchConfigEditor, { type MatchConfig } from "./MatchConfigEditor";
 import IndividualConfigEditor, { type IndividualConfig } from "./IndividualConfigEditor";
+import { ModalHeader } from "@/components/ui/modal-header";
+import { Dumbbell } from "lucide-react";
 
 const sportSchema = z.object({
   event_id: z.string().min(1, "Selecione um evento"),
@@ -117,17 +116,16 @@ export default function SportFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[540px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing ? "Editar Modalidade" : "Nova Modalidade"}
-          </DialogTitle>
-          <DialogDescription>
-            {isEditing
-              ? "Atualize os dados da modalidade."
-              : "Preencha os dados para criar uma nova modalidade."}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-3xl border-none shadow-2xl max-h-[95vh]">
+        <ModalHeader
+          title={isEditing ? "Editar Modalidade" : "Nova Modalidade"}
+          description={isEditing
+            ? "Ajuste os parâmetros técnicos e de pontuação desta modalidade."
+            : "Cadastre uma nova modalidade esportiva vinculada ao evento."}
+          icon={Dumbbell}
+        />
+
+        <div className="p-6 overflow-y-auto">
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -254,20 +252,26 @@ export default function SportFormDialog({
               )}
             />
 
-            <DialogFooter>
+            <DialogFooter className="gap-2 sm:gap-0 pt-6 border-t mt-6">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => onOpenChange(false)}
+                className="font-bold rounded-xl"
               >
-                Cancelar
+                Descartar
               </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? "Salvando..." : isEditing ? "Salvar" : "Criar"}
+              <Button 
+                type="submit" 
+                disabled={isPending}
+                className="bg-primary hover:bg-primary/90 font-bold px-8 shadow-lg shadow-primary/20 rounded-xl"
+              >
+                {isPending ? "Processando..." : isEditing ? "Salvar Alterações" : "Criar Modalidade"}
               </Button>
             </DialogFooter>
           </form>
         </Form>
+        </div>
       </DialogContent>
     </Dialog>
   );

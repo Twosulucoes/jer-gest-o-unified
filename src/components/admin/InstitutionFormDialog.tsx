@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Dialog, DialogContent, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
+import { ModalHeader } from "@/components/ui/modal-header";
+import { Building2 } from "lucide-react";
 
 const NETWORK_TYPE_OPTIONS = [
   { value: "municipal", label: "Municipal" },
@@ -105,13 +107,16 @@ export default function InstitutionFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar Instituição" : "Nova Instituição"}</DialogTitle>
-          <DialogDescription>
-            {isEditing ? "Atualize os dados da instituição." : "Preencha os dados para cadastrar uma nova instituição."}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[650px] p-0 overflow-hidden rounded-3xl border-none shadow-2xl max-h-[95vh]">
+        <ModalHeader
+          title={isEditing ? "Editar Instituição" : "Nova Instituição"}
+          description={isEditing 
+            ? "Atualize as informações cadastrais e de contato desta instituição." 
+            : "Cadastre uma nova instituição de ensino ou organização no sistema."}
+          icon={Building2}
+        />
+
+        <div className="p-6 overflow-y-auto">
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -270,14 +275,26 @@ export default function InstitutionFormDialog({
               )}
             />
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? "Salvando..." : isEditing ? "Salvar" : "Criar"}
+            <DialogFooter className="gap-2 sm:gap-0 pt-6 border-t mt-6">
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => onOpenChange(false)}
+                className="font-bold rounded-xl"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isPending}
+                className="bg-primary hover:bg-primary/90 font-bold px-8 shadow-lg shadow-primary/20 rounded-xl"
+              >
+                {isPending ? "Salvando..." : isEditing ? "Salvar Alterações" : "Confirmar Cadastro"}
               </Button>
             </DialogFooter>
           </form>
         </Form>
+        </div>
       </DialogContent>
     </Dialog>
   );

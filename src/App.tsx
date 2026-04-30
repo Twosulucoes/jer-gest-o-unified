@@ -19,6 +19,7 @@ import StageHomePage from "./pages/admin/StageHomePage";
 import StageReportsPage from "./pages/admin/StageReportsPage";
 import SuperAdminLayout from "@/components/SuperAdminLayout";
 import { NetworkStatusBanner } from "@/components/navigation/NetworkStatusBanner";
+import { OfflineSyncManager } from "@/components/pwa/OfflineSyncManager";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -290,6 +291,7 @@ const App = () => (
         <PwaUpdateNotice />
         <PwaInstallNotice />
         <NetworkStatusBanner />
+        <OfflineSyncManager />
 
         <AuthProvider>
           <VersionValidator>

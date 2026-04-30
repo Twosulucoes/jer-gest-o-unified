@@ -5,9 +5,6 @@ import { z } from "zod";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -28,6 +25,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
+import { ModalHeader } from "@/components/ui/modal-header";
+import { Layers } from "lucide-react";
 
 const GENDER_OPTIONS = [
   { value: "mixed", label: "Misto" },
@@ -130,15 +129,17 @@ export default function CategoryFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar Categoria" : "Nova Categoria"}</DialogTitle>
-          <DialogDescription>
-            {isEditing
-              ? "Atualize os dados da categoria."
-              : "Preencha os dados para criar uma nova categoria."}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-3xl border-none shadow-2xl">
+        <ModalHeader
+          title={isEditing ? "Editar Categoria" : "Nova Categoria"}
+          description={isEditing
+            ? "Ajuste os critérios de idade e gênero desta categoria."
+            : "Defina uma nova categoria de competição para os atletas."}
+          icon={Layers}
+          variant="info"
+        />
+
+        <div className="p-6">
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -254,16 +255,26 @@ export default function CategoryFormDialog({
               />
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <DialogFooter className="gap-2 sm:gap-0 pt-6 border-t mt-6">
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => onOpenChange(false)}
+                className="font-bold rounded-xl"
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? "Salvando..." : isEditing ? "Salvar" : "Criar"}
+              <Button 
+                type="submit" 
+                disabled={isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 shadow-lg shadow-blue-200 rounded-xl"
+              >
+                {isPending ? "Salvando..." : isEditing ? "Salvar Alterações" : "Confirmar Categoria"}
               </Button>
             </DialogFooter>
           </form>
         </Form>
+        </div>
       </DialogContent>
     </Dialog>
   );
