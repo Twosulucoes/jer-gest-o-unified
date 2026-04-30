@@ -44,9 +44,22 @@ export default function OscAccountabilityModule() {
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [recordType, setRecordType] = useState<string>("doacao_alimento");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   const { data: oscData, isLoading: isLoadingOsc } = useOscData(eventId);
   const { data: oscConfig } = useEventOscConfig(eventId);
+
+  const { data: templates } = useQuery({
+    queryKey: ["osc-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("osc_accountability_templates")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data;
+    }
+  });
 
   const { data: evidences, isLoading: isLoadingEvidences } = useQuery({
     queryKey: ["osc-evidences", eventId],
@@ -166,7 +179,8 @@ export default function OscAccountabilityModule() {
           body: JSON.stringify({ 
             event_id: eventId, 
             prompt_type: "full_report",
-            stream: true 
+            stream: true,
+            template_id: selectedTemplateId
           }),
         }
       );
@@ -249,6 +263,7 @@ export default function OscAccountabilityModule() {
           <TabsTrigger value="overview">Workflow</TabsTrigger>
           <TabsTrigger value="validation">Validação</TabsTrigger>
           <TabsTrigger value="report">Relatório</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
         </TabsList>
 
         {/* WORKFLOW / LANÇAMENTO */}
@@ -306,10 +321,24 @@ export default function OscAccountabilityModule() {
                     </CardTitle>
                     <CardDescription>Gerar rascunhos de relatórios e análises</CardDescription>
                   </div>
-                  <Button size="sm" onClick={generateAiReport} className="gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    Gerar Relatório
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Select value={selectedTemplateId || ""} onValueChange={setSelectedTemplateId}>
+                      <SelectTrigger className="w-[200px] h-9">
+                        <SelectValue placeholder="Selecione o template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates?.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button size="sm" onClick={generateAiReport} className="gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Gerar
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
