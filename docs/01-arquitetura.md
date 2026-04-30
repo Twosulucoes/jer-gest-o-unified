@@ -76,3 +76,5 @@ src/pages/admin/RelatoriosHubPage.tsx           → hub /admin/relatorios (cards
 6. **Motor de regras JSONB** — flexibilidade para campos extras por modalidade sem alterar schema
 7. **Presets como catálogo frontend** — fácil de expandir sem migração de banco
 8. **Seed heurístico** — detecta modalidade por nome para configuração automática em massa
+9. **Docs-as-Code** — documentação técnica (arquivos .md) integrada diretamente ao sistema para Super Admins em `/super/documentacao`. Adicionar ou alterar arquivos exige novo deploy.
+

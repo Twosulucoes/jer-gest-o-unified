@@ -136,6 +136,8 @@ const SuperChamadosPage = lazy(() => import("../pages/super/SuperChamadosPage"))
 const SuperInspectorPage = lazy(() => import("../pages/super/SuperInspectorPage"));
 const SuperPermissionsPage = lazy(() => import("../pages/super/SuperPermissionsPage"));
 const SuperFamiliasInferidasPage = lazy(() => import("../pages/super/SuperFamiliasInferidasPage"));
+const DocumentationPage = lazy(() => import("../pages/super/DocumentationPage"));
+
 
 // PWA Pages
 const PwaLayout = lazy(() => import("../components/pwa/PwaLayout"));
@@ -230,6 +232,7 @@ export const AppRoutes = () => (
         <Route path="permissoes" element={<SuperPermissionsPage />} />
         <Route path="dados" element={<CentralDadosPage />} />
         <Route path="diagnostico" element={<SistemaDiagnosticoPage />} />
+        <Route path="documentacao" element={<DocumentationPage />} />
       </Route>
 
       <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>

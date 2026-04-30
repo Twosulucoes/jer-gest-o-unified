@@ -89,6 +89,8 @@ Cada módulo PWA é protegido pelo componente `PwaModuleLayout`:
 | **Identidade Visual** (`event_branding` + bucket `report-assets`) | **CRUD** | — | — | — | — | — | — | — | — |
 | **Hub de Relatórios** (`/admin/relatorios`) | ✓ | ✓ | ✓ | — | — | — | — | — | — |
 | Cabeçalho/rodapé de relatórios (leitura de `event_branding`) | R | R | R | R | R | R | R | R | — |
+| **Documentação Técnica (Docs-as-Code)** | **R** | — | — | — | — | — | — | — | — |
+
 
 **Legenda**: ✓ = acesso completo ao módulo | R = somente leitura | CRUD = Create/Read/Update/Delete
 

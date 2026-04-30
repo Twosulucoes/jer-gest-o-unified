@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Search, BookOpen, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
+import { Search, BookOpen, CheckCircle2, ArrowRight, Loader2, FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Link } from "react-router-dom";
@@ -251,6 +251,25 @@ export default function AjudaManualPage() {
                 Nenhum resultado para "{query}".
               </CardContent></Card>
             )}
+          </div>
+        </div>
+      )}
+      {roles.includes("super_admin") && (
+        <div className="mt-12 pt-6 border-t flex flex-col items-center gap-4 text-center">
+          <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 max-w-2xl">
+            <h4 className="font-bold text-primary flex items-center justify-center gap-2 mb-1">
+              <FileText className="h-4 w-4" />
+              Área Técnica (Super Admin)
+            </h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Você tem acesso à documentação técnica do sistema, gerada diretamente dos arquivos do repositório (Docs-as-Code).
+            </p>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/super/documentacao">
+                Acessar Documentação Técnica
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </div>
       )}

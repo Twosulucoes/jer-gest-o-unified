@@ -24,6 +24,8 @@ O Super Admin é o nível mais alto de acesso no sistema JER Gestão, destinado 
 | `/super/config` | Configurações | Feature flags e parâmetros JSONB |
 | `/super/demo` | Demo Seeds | Geração de dados de demonstração |
 | `/super/validador` | Validador | Validação técnica de schema |
+| `/super/documentacao` | Documentação | Documentação técnica gerada automaticamente via Docs-as-Code |
+
 
 ## Como criar o primeiro Super Admin
 
