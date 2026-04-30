@@ -53,6 +53,7 @@ const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
 const ModuleSelectorPage = lazy(() => import("../pages/ModuleSelectorPage"));
 const AccessDeniedPage = lazy(() => import("../pages/AccessDeniedPage"));
 const CoordenadorModalidadeDashboard = lazy(() => import("../pages/admin/CoordenadorModalidadeDashboard"));
+const AjudaIndexPage = lazy(() => import("../pages/admin/AjudaIndexPage"));
 const AjudaChamadosPage = lazy(() => import("../pages/admin/AjudaChamadosPage"));
 const AjudaChatPage = lazy(() => import("../pages/admin/AjudaChatPage"));
 const AjudaManualPage = lazy(() => import("../pages/admin/AjudaManualPage"));
