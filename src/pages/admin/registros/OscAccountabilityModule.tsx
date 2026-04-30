@@ -482,14 +482,44 @@ export default function OscAccountabilityModule() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button size="sm" onClick={generateAiReport} className="gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      Gerar
+                    <Button size="sm" onClick={generateAiReport} className="gap-2" disabled={isAiLoading}>
+                      {isAiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      {showValidation ? "Regerar" : "Gerar"}
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                {showValidation && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    {validationReport.map(check => (
+                      <div key={check.id} className={`p-3 rounded-lg border flex items-start gap-3 ${
+                        check.status === 'success' ? 'bg-emerald-50 border-emerald-100' :
+                        check.status === 'warning' ? 'bg-amber-50 border-amber-100' :
+                        'bg-red-50 border-red-100'
+                      }`}>
+                        {check.status === 'success' ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+                        ) : check.status === 'warning' ? (
+                          <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                        ) : (
+                          <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                        )}
+                        <div>
+                          <p className={`text-xs font-bold ${
+                            check.status === 'success' ? 'text-emerald-700' :
+                            check.status === 'warning' ? 'text-amber-700' :
+                            'text-red-700'
+                          }`}>
+                            {check.label}: {check.current}/{check.expected}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground leading-tight">{check.message}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
                 <p className="text-sm text-muted-foreground">
                   Nossa IA analisa todos os registros operacionais, evidências fotográficas e resultados do evento para criar um rascunho completo da prestação de contas.
                 </p>
