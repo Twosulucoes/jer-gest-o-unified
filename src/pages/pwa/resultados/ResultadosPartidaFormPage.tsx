@@ -74,33 +74,48 @@ function TabPlacar({ matchId, entries, sportEventId }: { matchId: string; entrie
 
   if (loadingRules) return <Skeleton className="h-40 w-full rounded-xl" />;
 
-  if (family === "score") {
-    return <ScoreLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
-  }
-
-  if (family === "sets") {
-    return <SetsLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
-  }
-
-  if (family === "combat") {
-    return <CombatLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
-  }
-
-  if (family === "time" || family === "mark" || family === "ranking") {
-    return <TimeMarkLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
-  }
+  const isImage = (url: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+  const images = anexos.filter(a => isImage(a.file_url));
 
   return (
-    <div className="space-y-4">
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          Esta modalidade (família {family}) ainda não possui interface dedicada de lançamento no PWA.
-          O uso da interface genérica foi desativado para esta fase.
-        </AlertDescription>
-      </Alert>
+    <div className="space-y-6">
+      {images.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">
+            <Image className="h-3 w-3" /> Fotos dos Resultados / Súmulas
+          </Label>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+            {images.map((img) => (
+              <a 
+                key={img.id} 
+                href={img.file_url} 
+                target="_blank" 
+                rel="noreferrer"
+                className="shrink-0 w-24 h-24 rounded-lg overflow-hidden border bg-muted"
+              >
+                <img src={img.file_url} alt={img.file_name} className="w-full h-full object-cover" />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {family === "score" && <ScoreLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />}
+      {family === "sets" && <SetsLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />}
+      {family === "combat" && <CombatLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />}
+      {(family === "time" || family === "mark" || family === "ranking") && <TimeMarkLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />}
+      
+      {!["score", "sets", "combat", "time", "mark", "ranking"].includes(family) && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Esta modalidade (família {family}) ainda não possui interface dedicada de lançamento no PWA.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
+}
 }
 
 // ─── Tab Arbitragem ───────────────────────────────────────────────────────────
