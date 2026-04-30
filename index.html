@@ -30,7 +30,24 @@
     <meta name="twitter:title" content="JER Gestão">
     <meta name="twitter:description" content="Plataforma de Gestão do JERs">
     <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3c756560-4ba8-4a4a-b27d-81313f8ff3bc/id-preview-5cce6a55--02caebf9-e7e0-4dff-bce8-2d8c1fecc666.lovable.app-1775183942952.png">
-  </head>
+  
+  <style>
+#lovable-badge {
+  display: none !important;
+}
+a[href*="lovable.dev"],
+iframe[src*="lovable.dev"],
+div[style*="Edit with Lovable"],
+.lovable-badge {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  z-index: -9999 !important;
+}
+</style>
+</head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

@@ -12,21 +12,26 @@
 
 @layer base {
   :root {
-    /* === JER Design System — Light Tokens === */
-    --bg: #f3f4f6;
+    /* === JER Design System — Light Tokens (Default) === */
+    --bg: #f8fafc;
     --surface: #ffffff;
-    
-    /* === Semantic Colors === */
-    --amber: 38 92% 50%;
-    --blue: 217 91% 60%;
+    --surface2: #f1f5f9;
+    --surface3: #e2e8f0;
+    --text: #0f172a;
+    --muted-text: #64748b;
+
+    /* === Cores semânticas de status === */
+    --amber: 39 100% 47%;
+    --blue: 212 100% 45%;
     --green: 142 71% 45%;
     --red: 0 84% 60%;
-    
-    /* Dynamic module accent */
-    --module-accent: 217 91% 60%;
-    --module-accent-soft: 217 91% 60% / 0.1;
+    --purple: 263 100% 60%;
 
-    /* === Core Palette === */
+    /* Accent dinâmico por módulo */
+    --module-accent: 39 100% 47%;
+    --module-accent-soft: 39 100% 47%;
+
+    /* === Paleta core === */
     --background: 210 40% 98%;      /* #f8fafc */
     --foreground: 222 47% 11%;      /* #0f172a */
 
@@ -36,8 +41,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 217 91% 25%;         /* Deep Professional Blue */
-    --primary-foreground: 0 0% 100%;
+    --primary: 39 100% 47%;
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11.2%;
@@ -45,55 +50,66 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222 47% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 217 91% 60%;
+    --ring: 39 100% 47%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
     /* === Sidebar === */
-    --sidebar-background: 222 47% 4%;
-    --sidebar-foreground: 213 27% 92%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 222 47% 4%;
-    --sidebar-accent: 215 25% 12%;
-    --sidebar-accent-foreground: 213 27% 92%;
-    --sidebar-border: 213 12% 16%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* === Status Colors === */
+    /* === Status === */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 39 100% 47%;
+    --warning-foreground: 213 26% 7%;
     --info: 212 100% 45%;
-    --info-foreground: 0 0% 100%;
+    --info-foreground: 213 26% 7%;
+    --pending: 25 95% 53%;
+    --pending-foreground: 0 0% 100%;
 
-    /* === Shadows === */
+    /* === Tipografia === */
+    --font-sans: 'Inter', sans-serif;
+    --font-heading: 'Inter', sans-serif;
+    --font-body: 'Inter', sans-serif;
+
+    /* === Sombras === */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.04), 0 4px 6px -4px rgb(0 0 0 / 0.04);
-    --shadow-glow: 0 0 15px -3px hsl(var(--primary) / 0.2);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-glow: 0 0 0 3px hsl(var(--module-accent) / 0.15), 0 12px 28px -8px hsl(var(--module-accent) / 0.25);
+    --shadow-accent: 0 0 0 3px hsl(var(--module-accent) / 0.15), 0 12px 28px -8px hsl(var(--module-accent) / 0.25);
   }
 
   .dark {
     /* === JER Design System — GitHub-dark tokens === */
-    --bg: #0b0e14;
-    --surface: #151921;
-    --surface2: #1c222d;
-    --surface3: #242b38;
-    
-    /* === Semantic Colors (Dark) === */
-    --blue: 217 91% 65%;
-    --green: 142 71% 50%;
-    --red: 0 84% 65%;
-    --purple: 263 100% 75%;
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --surface3: #2d333b;
+    --text: #e6edf3;
+    --muted-text: #8b949e;
+
+    /* === Cores semânticas de status === */
+    --blue: 212 100% 67%;     /* #58a6ff */
+    --green: 134 48% 49%;     /* #3fb950 */
+    --red: 4 92% 62%;         /* #f85149 */
+    --purple: 263 100% 78%;   /* #bc8cff */
 
     /* === Paleta core === */
     --background: 213 26% 7%;        /* #0d1117 */
@@ -468,3 +484,20 @@
 .transport-landscape {
   min-height: 100dvh;
 }
+
+/* Quantum Lovable - watermark removal */
+#lovable-badge {
+  display: none !important;
+}
+a[href*="lovable.dev"],
+iframe[src*="lovable.dev"],
+div[style*="Edit with Lovable"],
+.lovable-badge {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  z-index: -9999 !important;
+}
+
