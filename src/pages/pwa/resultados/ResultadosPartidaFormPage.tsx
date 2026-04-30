@@ -116,7 +116,6 @@ function TabPlacar({ matchId, entries, sportEventId }: { matchId: string; entrie
     </div>
   );
 }
-}
 
 // ─── Tab Arbitragem ───────────────────────────────────────────────────────────
 
