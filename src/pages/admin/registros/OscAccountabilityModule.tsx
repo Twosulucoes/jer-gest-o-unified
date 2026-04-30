@@ -17,7 +17,10 @@ import {
   Image as ImageIcon,
   UtensilsCrossed,
   Sparkles,
-  Trash2
+  Trash2,
+  Wand2,
+  BrainCircuit,
+  Loader2
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +40,9 @@ export default function OscAccountabilityModule() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
   const [isRecordDialogOpen, setIsRecordDialogOpen] = useState(false);
+  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+  const [aiReport, setAiReport] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [recordType, setRecordType] = useState<string>("doacao_alimento");
 
   const { data: oscData, isLoading: isLoadingOsc } = useOscData(eventId);
@@ -141,6 +147,25 @@ export default function OscAccountabilityModule() {
     createRecordMutation.mutate(data);
   };
 
+  const generateAiReport = async () => {
+    setIsAiLoading(true);
+    setAiReport(null);
+    setIsAiDialogOpen(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-osc-report", {
+        body: { event_id: eventId, prompt_type: "full_report" }
+      });
+
+      if (error) throw error;
+      setAiReport(data.result);
+    } catch (error: any) {
+      toast.error("Erro ao gerar relatório com IA: " + error.message);
+      setIsAiDialogOpen(false);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -215,6 +240,29 @@ export default function OscAccountabilityModule() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <BrainCircuit className="h-5 w-5 text-primary" />
+                      Assistente de IA OSC
+                    </CardTitle>
+                    <CardDescription>Gerar rascunhos de relatórios e análises</CardDescription>
+                  </div>
+                  <Button size="sm" onClick={generateAiReport} className="gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Gerar Relatório
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Nossa IA analisa todos os registros operacionais, evidências fotográficas e resultados do evento para criar um rascunho completo da prestação de contas.
+                </p>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Ações de Lançamento</CardTitle>
@@ -370,6 +418,51 @@ export default function OscAccountabilityModule() {
                   </Button>
                 </DialogFooter>
               </form>
+            </DialogContent>
+          </Dialog>
+
+          {/* Dialog de IA */}
+          <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Wand2 className="h-5 w-5 text-primary" />
+                  Rascunho de Relatório Gerado por IA
+                </DialogTitle>
+                <DialogDescription>
+                  Este rascunho é baseado nos dados reais do evento. Revise e ajuste antes de publicar.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="flex-1 overflow-y-auto py-4">
+                {isAiLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-4">
+                    <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                    <p className="text-sm text-muted-foreground animate-pulse">
+                      Analisando dados e redigindo relatório...
+                    </p>
+                  </div>
+                ) : (
+                  <div className="prose prose-sm dark:prose-invert max-w-none bg-muted/50 p-6 rounded-lg border">
+                    <div className="whitespace-pre-wrap leading-relaxed text-zinc-300">
+                      {aiReport}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="gap-2 border-t pt-4">
+                <Button variant="outline" onClick={() => setIsAiDialogOpen(false)}>Fechar</Button>
+                <Button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(aiReport || "");
+                    toast.success("Copiado para a área de transferência!");
+                  }}
+                  disabled={!aiReport}
+                >
+                  Copiar Texto
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </TabsContent>
