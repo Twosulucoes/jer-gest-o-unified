@@ -136,13 +136,18 @@ export default function ComplianceDashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
+            <Link to="/admin/relatorios/osc">
+              <FileCheck className="mr-2 h-4 w-4" /> Relatório Formal (OSC)
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
             <Link to="/admin/auditoria">
               <Clock className="mr-2 h-4 w-4" /> Logs do Sistema
             </Link>
           </Button>
           <Button asChild>
             <Link to="/admin/evidencias-osc">
-              <FileCheck className="mr-2 h-4 w-4" /> Gerenciar Evidências
+              <Plus className="mr-2 h-4 w-4" /> Enviar Evidência
             </Link>
           </Button>
         </div>
@@ -347,4 +352,3 @@ export default function ComplianceDashboardPage() {
     </div>
   );
 }
-
