@@ -312,7 +312,7 @@ export const AppRoutes = () => (
         <Route path="pwa-status" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><PwaStatusPage /></ProtectedRoute>} />
         <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
         <Route path="sistema/debug-qr" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><QrDiagnosticoPage /></ProtectedRoute>} />
-        <Route path="dados" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralDadosPage /></ProtectedRoute>} />
+        <Route path="dados" element={<Navigate to="/super/dados" replace />} />
         <Route path="relatorios/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />
         <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
         <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
