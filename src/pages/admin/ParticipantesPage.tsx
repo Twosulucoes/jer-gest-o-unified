@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { NetworkErrorState } from "@/components/ui/network-error-state";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -193,7 +194,7 @@ export default function ParticipantesPage() {
     return null;
   }, [stageFilterId, stageParticipantIds, isSearching]);
 
-  const { data: pageData, isLoading, isFetching } = useQuery({
+  const { data: pageData, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: [
       "participants-page",
       selectedEventId,
@@ -805,6 +806,8 @@ export default function ParticipantesPage() {
           title="Selecione um evento"
           description="Para gerenciar participantes, você precisa selecionar um evento ativo no menu superior."
         />
+      ) : error ? (
+        <NetworkErrorState onRetry={() => refetch()} />
       ) : isLoading ? (
         <TableSkeleton columns={8} rows={10} />
       ) : rows.length === 0 ? (
