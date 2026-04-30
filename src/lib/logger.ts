@@ -3,17 +3,17 @@ import { reportError } from "@/lib/monitoring/errorReporter";
 const isProd = import.meta.env.PROD;
 
 export const logger = {
-  log: (...args: any[]) => {
+  log: (...args: unknown[]) => {
     if (!isProd) {
       console.log(...args);
     }
   },
-  warn: (...args: any[]) => {
+  warn: (...args: unknown[]) => {
     if (!isProd) {
       console.warn(...args);
     }
   },
-  error: (message: string, context?: any) => {
+  error: (message: string, context?: unknown) => {
     console.error(message, context);
     
     // In production, we report every call to logger.error
@@ -23,7 +23,7 @@ export const logger = {
       context: context ? { details: context } : undefined
     });
   },
-  critical: (message: string, context?: any) => {
+  critical: (message: string, context?: unknown) => {
     console.error(`[CRITICAL] ${message}`, context);
     
     reportError({
@@ -32,12 +32,12 @@ export const logger = {
       context: context ? { details: context } : undefined
     });
   },
-  info: (...args: any[]) => {
+  info: (...args: unknown[]) => {
     if (!isProd) {
       console.info(...args);
     }
   },
-  debug: (...args: any[]) => {
+  debug: (...args: unknown[]) => {
     if (!isProd) {
       console.debug(...args);
     }

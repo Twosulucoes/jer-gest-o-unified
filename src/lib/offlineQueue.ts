@@ -1,10 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 export type OfflineQueueItem = {
   id: string;
   module: "alimentacao" | "transporte";
-  data: any;
+  data: Record<string, unknown>;
   timestamp: string;
   participantName?: string;
   attempts: number;
@@ -23,7 +22,7 @@ export const saveOfflineQueue = (queue: OfflineQueueItem[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
 };
 
-export const addToOfflineQueue = (module: "alimentacao" | "transporte", data: any, participantName?: string) => {
+export const addToOfflineQueue = (module: "alimentacao" | "transporte", data: Record<string, unknown>, participantName?: string) => {
   const queue = getOfflineQueue();
   const newItem: OfflineQueueItem = {
     id: crypto.randomUUID(),
@@ -66,12 +65,14 @@ export const syncOfflineQueue = async () => {
 
   for (const item of pending) {
     const idx = updatedQueue.findIndex(i => i.id === item.id);
+    if (idx === -1) continue;
+    
     updatedQueue[idx].status = "syncing";
     saveOfflineQueue(updatedQueue);
 
     try {
       if (item.module === "alimentacao") {
-        const { error } = await supabase.from("meal_consumptions").insert(item.data);
+        const { error } = await supabase.from("meal_consumptions").insert(item.data as any);
         if (error) {
           if (error.code === "23505") { // Unique violation
              updatedQueue[idx].status = "conflict";
@@ -82,40 +83,39 @@ export const syncOfflineQueue = async () => {
           throw error;
         }
       } else if (item.module === "transporte") {
+        const transportData = item.data as { trip_id: string; participant_id: string; status: string; boarded_at: string; boarded_by: string };
         const { data: existing } = await supabase
           .from("transport_passengers")
           .select("id")
-          .eq("trip_id", item.data.trip_id)
-          .eq("participant_id", item.data.participant_id)
+          .eq("trip_id", transportData.trip_id)
+          .eq("participant_id", transportData.participant_id)
           .maybeSingle();
 
         if (existing) {
           const { error } = await supabase
             .from("transport_passengers")
             .update({ 
-              status: item.data.status, 
-              boarded_at: item.data.boarded_at, 
-              boarded_by: item.data.boarded_by 
+              status: transportData.status, 
+              boarded_at: transportData.boarded_at, 
+              boarded_by: transportData.boarded_by 
             })
             .eq("id", existing.id);
           if (error) throw error;
         } else {
-          const { error } = await supabase.from("transport_passengers").insert(item.data);
+          const { error } = await supabase.from("transport_passengers").insert(transportData as any);
           if (error) throw error;
         }
       }
       
-      updatedQueue[idx].status = "syncing"; // Final check before removal
       successCount++;
       // Remove success items
       const finalQueue = getOfflineQueue().filter(i => i.id !== item.id);
       saveOfflineQueue(finalQueue);
-      // Update local reference for the loop
-      updatedQueue.splice(idx, 1);
-    } catch (err: any) {
-      console.error(`Error syncing item ${item.id}:`, err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error(`Error syncing item ${item.id}:`, error);
       updatedQueue[idx].attempts += 1;
-      updatedQueue[idx].lastError = err.message || "Erro de conexão";
+      updatedQueue[idx].lastError = error.message || "Erro de conexão";
       
       if (updatedQueue[idx].attempts >= 5) {
         updatedQueue[idx].status = "conflict";
