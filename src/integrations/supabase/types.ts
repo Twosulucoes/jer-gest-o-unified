@@ -49,6 +49,138 @@ export type Database = {
           },
         ]
       }
+      athlete_substitutions: {
+        Row: {
+          context: string
+          delegation_id: string
+          event_id: string
+          id: string
+          in_jersey_number: number | null
+          in_role: string | null
+          out_jersey_number: number | null
+          out_role: string | null
+          participant_in_id: string
+          participant_out_id: string
+          performed_at: string
+          performed_by: string | null
+          reason: string | null
+          sport_event_id: string | null
+          team_id: string | null
+        }
+        Insert: {
+          context: string
+          delegation_id: string
+          event_id: string
+          id?: string
+          in_jersey_number?: number | null
+          in_role?: string | null
+          out_jersey_number?: number | null
+          out_role?: string | null
+          participant_in_id: string
+          participant_out_id: string
+          performed_at?: string
+          performed_by?: string | null
+          reason?: string | null
+          sport_event_id?: string | null
+          team_id?: string | null
+        }
+        Update: {
+          context?: string
+          delegation_id?: string
+          event_id?: string
+          id?: string
+          in_jersey_number?: number | null
+          in_role?: string | null
+          out_jersey_number?: number | null
+          out_role?: string | null
+          participant_in_id?: string
+          participant_out_id?: string
+          performed_at?: string
+          performed_by?: string | null
+          reason?: string | null
+          sport_event_id?: string | null
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_substitutions_delegation_id_fkey"
+            columns: ["delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_substitutions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_substitutions_participant_in_id_fkey"
+            columns: ["participant_in_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_substitutions_participant_in_id_fkey"
+            columns: ["participant_in_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+          {
+            foreignKeyName: "athlete_substitutions_participant_out_id_fkey"
+            columns: ["participant_out_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_substitutions_participant_out_id_fkey"
+            columns: ["participant_out_id"]
+            isOneToOne: false
+            referencedRelation: "vw_person_logistics_consumption"
+            referencedColumns: ["participant_id"]
+          },
+          {
+            foreignKeyName: "athlete_substitutions_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "athlete_substitutions_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_substitutions_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "athlete_substitutions_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_stage_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "athlete_substitutions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -9163,6 +9295,17 @@ export type Database = {
         Args: { p_content_md?: string; p_event_id: string; p_title: string }
         Returns: Json
       }
+      rpc_create_event_participant: {
+        Args: {
+          p_birth_date: string
+          p_cpf?: string
+          p_delegation_id: string
+          p_event_id: string
+          p_full_name: string
+          p_gender: string
+        }
+        Returns: string
+      }
       rpc_create_protest: {
         Args: {
           p_contact_email?: string
@@ -9352,6 +9495,18 @@ export type Database = {
       rpc_seed_sport_event_rules_for_event: {
         Args: { p_dry_run?: boolean; p_event_id: string; p_mode?: string }
         Returns: Json
+      }
+      rpc_substitute_athlete: {
+        Args: {
+          p_context: string
+          p_in_jersey_number?: number
+          p_in_role?: string
+          p_participant_in: string
+          p_participant_out: string
+          p_reason?: string
+          p_target_id: string
+        }
+        Returns: string
       }
       rpc_sync_collective_teams: {
         Args: { p_event_id: string; p_sport_event_id?: string }

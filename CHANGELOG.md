@@ -9,6 +9,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - **[Manual]** Tabela `admin_manual_progress` para rastreamento persistente de conclusão de etapas por usuário.
 - **[Manual]** Campos `link_path` e `action_label` em `help_manual_sections` para tornar o manual interativo.
 - **[Manual]** Interface de edição de cards interativos no `SuperManualPage`.
+- **[Manual]** Redação completa da Seção 4 (PWAs Mobile): inclusão de bloco transversal Offline (4.0), Vouchers (4.6) e reescrita estruturada das 5 PWAs operacionais.
+- **[Manual]** Padronização de terminologia: substituição total de "Incidentes" por "Ocorrências" no conteúdo do manual.
+- **[Manual]** Implementação de alerta LGPD na PWA Delegação devido ao acesso a dados de saúde (medical_notes).
 - Centro de Regras do Evento: 4 páginas públicas em `/eventos/:eventSlug/` (regras, modalidades, qualificação, assistente-inscrição)
 - Componentes compartilhados de badges regulatórios: `RuleStatusBadge`, `EligibilityBadge`, `SelectionMethodBadge`, `DisciplineTypeBadge`
 - `SportEventRuleDrawer`: drawer lateral com resumo regulatório, campos estruturados e JSON bruto
