@@ -162,7 +162,7 @@ export default function PessoasPage() {
         setErrors(errs);
         throw new Error("Validação falhou");
       }
-      const payload = {
+      const payload: any = {
         full_name: parsed.data.full_name,
         birth_date: parsed.data.birth_date,
         gender: parsed.data.gender,
@@ -174,6 +174,7 @@ export default function PessoasPage() {
         food_restrictions: parsed.data.food_restrictions || null,
         medical_notes: parsed.data.medical_notes || null,
         disability_type: parsed.data.disability_type || null,
+        kind: "participant", // Garante campo obrigatório
       };
       if (editingId) {
         const { error } = await supabase.from("people").update(payload).eq("id", editingId);
