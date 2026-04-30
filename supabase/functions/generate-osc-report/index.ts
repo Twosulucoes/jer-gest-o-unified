@@ -17,23 +17,27 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { event_id, prompt_type = "full_report", stream = false } = await req.json();
+    const { event_id, prompt_type = "full_report", stream = false, template_id } = await req.json();
 
     if (!event_id) {
       throw new Error("event_id is required");
     }
 
-    // 1. Fetch Core Data
+    // 1. Fetch Core Data and Template
     const [
       { data: registers }, 
       { data: evidences }, 
       { data: event },
-      { count: totalParticipants }
+      { count: totalParticipants },
+      { data: template }
     ] = await Promise.all([
       supabaseClient.from("osc_registros").select("*").eq("event_id", event_id),
       supabaseClient.from("operational_evidence").select("*").eq("event_id", event_id).eq("status", "approved"),
       supabaseClient.from("events").select("*").eq("id", event_id).single(),
-      supabaseClient.from("participants").select("*", { count: 'exact', head: true }).eq("event_id", event_id)
+      supabaseClient.from("participants").select("*", { count: 'exact', head: true }).eq("event_id", event_id),
+      template_id 
+        ? supabaseClient.from("osc_accountability_templates").select("*").eq("id", template_id).single()
+        : supabaseClient.from("osc_accountability_templates").select("*").eq("is_default", true).maybeSingle()
     ]);
 
     // 2. Fetch match summary separately
@@ -77,12 +81,12 @@ serve(async (req) => {
       3. Adicione uma seção "## DESTAQUES DA EXECUÇÃO" com bullet points das métricas mais relevantes.
       4. Depois, siga com a estrutura narrativa.
 
-      ESTRUTURA NARRATIVA DO RELATÓRIO:
+      ${template?.prompt_structure || `ESTRUTURA NARRATIVA DO RELATÓRIO:
       1. INTRODUÇÃO: Contextualize o evento e a importância social.
       2. METAS ATINGIDAS: Relacione os números (participantes e partidas) com o sucesso do convênio.
       3. EXECUÇÃO OPERACIONAL: Descreva como os recursos foram aplicados (refeições extras, doações, logística) baseando-se nos registros fornecidos.
       4. EVIDÊNCIAS FÍSICAS: Comente sobre a conformidade das fotos em categorias como infraestrutura e atendimento.
-      5. CONCLUSÃO: Parecer sobre a plena execução do objeto pactuado.
+      5. CONCLUSÃO: Parecer sobre a plena execução do objeto pactuado.`}
       
       Use uma linguagem extremamente profissional, adequada para órgãos governamentais.`;
     }
