@@ -1,3 +1,8 @@
+/**
+ * Admin Layout Component for JER Gestão.
+ * Provides the main dashboard structure, sidebar navigation, and global context headers.
+ * Implements role-based visibility for menu items.
+ */
 import { NavLink, Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import EventSwitcher from "@/components/admin/EventSwitcher";
 import StageSwitcher from "@/components/admin/StageSwitcher";
