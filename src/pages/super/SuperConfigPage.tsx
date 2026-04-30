@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { Settings, Plus, RefreshCw, Save, Trash2, BrainCircuit } from "lucide-react";
 import { brand } from "@/theme/brand";
 import { dispatchGlobalRefresh } from "@/lib/systemRefresh";
 import {
@@ -326,6 +326,36 @@ export default function SuperConfigPage() {
               Salvar personalização
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BrainCircuit className="h-5 w-5 text-amber-500" />
+            Integração com Inteligência Artificial
+          </CardTitle>
+          <CardDescription>
+            Configure provedores de IA para geração automática de relatórios e análises de dados.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-200">
+            O sistema está utilizando atualmente o <strong>Lovable AI Gateway</strong> (Google Gemini) para processamento de relatórios.
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Provedor Ativo</Label>
+              <Input disabled value="Google Gemini (via Lovable AI)" />
+            </div>
+            <div className="space-y-2">
+              <Label>Modelo Utilizado</Label>
+              <Input disabled value="gemini-3-flash-preview" />
+            </div>
+          </div>
+          <p className="text-xs text-zinc-500 italic">
+            Para utilizar chaves próprias (BYOK), adicione uma configuração com a chave <code className="bg-zinc-800 px-1 rounded">ai_config</code>.
+          </p>
         </CardContent>
       </Card>
 
