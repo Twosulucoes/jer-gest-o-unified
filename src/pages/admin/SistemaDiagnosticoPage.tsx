@@ -1,13 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Map, Info, ShieldCheck, CheckSquare } from "lucide-react";
 import MapaSistemaPage from "./MapaSistemaPage";
 import DiagnosticoCompeticaoPage from "./DiagnosticoCompeticaoPage";
 import SistemaDiagnosticoKpiPage from "./SistemaDiagnosticoKpiPage";
 import { RouteValidator } from "@/components/admin/RouteValidator";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function SistemaDiagnosticoPage() {
   const [tab, setTab] = useState("kpi");
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (user?.role === "super_admin") {
+      navigate("/super/diagnostico" + location.search, { replace: true });
+    }
+  }, [user, navigate, location.search]);
+
+  if (user?.role === "super_admin") return null;
 
   return (
     <div className="space-y-6">
