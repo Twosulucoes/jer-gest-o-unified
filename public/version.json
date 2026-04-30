@@ -2,8 +2,8 @@
   "appVersion": "0.4.0",
   "environment": "teste",
   "branch": "edit/edt-71e68740-9a7b-49e0-8637-9e9fde177489",
-  "commit": "11011261",
-  "commitFull": "110112615bc9b0aaaae483b28d60f8a81c671c4e",
-  "buildDate": "2026-04-30T03:24:18.323Z",
+  "commit": "f0dd537f",
+  "commitFull": "f0dd537f14ccb0dad4149982ab13f8e78446a6b7",
+  "buildDate": "2026-04-30T03:25:26.035Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
