@@ -34,22 +34,40 @@ export function AppStatePreserver() {
     
     const savedPath = localStorage.getItem(LAST_PATH_KEY);
     const currentPath = window.location.pathname;
+    const searchParams = new URLSearchParams(window.location.search);
     
+    // Explicit escape hatch to stop restoration
+    if (searchParams.has("no-restore")) {
+      console.log("[AppStatePreserver] Restoration skipped by query param");
+      localStorage.removeItem(LAST_PATH_KEY);
+      sessionStorage.setItem(RESTORED_FLAG, "true");
+      hasRestored.current = true;
+      return;
+    }
+
     // We only want to auto-restore if the user landed on the root or login page
-    // and we haven't already restored in this session (or if they explicitly refreshed)
+    // and we haven't already restored in this session
     const isAtEntryPoints = currentPath === "/" || currentPath === "/login";
     
     if (savedPath && isAtEntryPoints && !sessionStorage.getItem(RESTORED_FLAG)) {
+      // If we are at root, but the saved path is also root, do nothing
+      if (savedPath === "/" || savedPath === "/login") {
+        sessionStorage.setItem(RESTORED_FLAG, "true");
+        hasRestored.current = true;
+        return;
+      }
+
       console.log("[AppStatePreserver] Restoring last path:", savedPath);
       
-      // Mark as restored for this session to avoid hijacking intentional navigations to /
       sessionStorage.setItem(RESTORED_FLAG, "true");
       hasRestored.current = true;
       
-      // Small delay to let other providers initialize (Auth, etc.)
       const timer = setTimeout(() => {
-        navigate(savedPath, { replace: true });
-      }, 100);
+        // Double check we are still at the entry point before redirecting
+        if (window.location.pathname === "/" || window.location.pathname === "/login") {
+          navigate(savedPath, { replace: true });
+        }
+      }, 150);
       
       return () => clearTimeout(timer);
     }
