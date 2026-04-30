@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, Medal, Trophy, Loader2, ArrowLeft } from "lucide-react";
+import { AlertTriangle, Medal, Trophy, Loader2, ArrowLeft, ChevronRight } from "lucide-react";
 import { PublicHeader } from "@/components/public/PublicHeader";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useMedalTableData, type MedalTableFilters, type ScopeFilter, type TypeFilter } from "../admin/relatorios/useMedalTableData";
 
 export default function PublicMedalTablePage() {
