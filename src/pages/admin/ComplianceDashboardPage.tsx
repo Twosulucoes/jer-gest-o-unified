@@ -4,13 +4,14 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { 
   ShieldCheck, AlertTriangle, FileCheck, Gavel, 
   Search, Filter, ChevronRight, Activity,
-  Clock, CheckCircle2, XCircle, Info
+  Clock, CheckCircle2, XCircle, Info, Trophy, Plus, BadgeCheck
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -54,7 +55,7 @@ export default function ComplianceDashboardPage() {
         .from("participation_irregularities")
         .select("*")
         .eq("event_id", selectedEventId)
-        .eq("resolved", false);
+        .neq("status", "resolved");
       
       if (error) throw error;
       return data;
@@ -309,8 +310,7 @@ export default function ComplianceDashboardPage() {
               </div>
               <Progress 
                 value={isLoading ? 0 : Math.round((1 - (missingEvidence.length / (missingEvidence.length + (evidenceStats?.total || 1)))) * 100)} 
-                className="h-2" 
-                variant={missingEvidence.length > 10 ? "destructive" : "default"}
+                className={`h-2 ${missingEvidence.length > 10 ? "[&>div]:bg-red-500" : ""}`}
               />
             </div>
 
@@ -348,4 +348,3 @@ export default function ComplianceDashboardPage() {
   );
 }
 
-import { Plus, BadgeCheck, Separator } from "lucide-react";
