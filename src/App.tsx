@@ -241,6 +241,7 @@ import { VersionValidator } from "./components/pwa/VersionValidator";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
 import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
 import PublicResultsPage from "./pages/public/PublicResultsPage";
+import PublicMedalTablePage from "./pages/public/PublicMedalTablePage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
 // EntregaTecnicaPage is lazy-loaded below
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
