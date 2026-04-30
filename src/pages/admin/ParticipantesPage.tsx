@@ -800,34 +800,31 @@ export default function ParticipantesPage() {
       )}
 
       {!selectedEventId ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">
-          <Users className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium">Selecione um evento</p>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="Selecione um evento"
+          description="Para gerenciar participantes, você precisa selecionar um evento ativo no menu superior."
+        />
       ) : isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full rounded-md" />
-          ))}
-        </div>
+        <TableSkeleton columns={8} rows={10} />
       ) : rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center px-4">
-          <XCircle className="h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground font-medium text-lg">Nenhum participante encontrado</p>
-          <p className="text-sm text-muted-foreground mt-1 mb-6">
-            {searchTerm ? "Tente outro termo de busca." : "Importe ou cadastre participantes para começar a gerenciar seu evento."}
-          </p>
-          {!searchTerm && (
+        <EmptyState
+          icon={UserX}
+          title={searchTerm ? "Nenhum participante encontrado" : "Nenhum participante cadastrado"}
+          description={searchTerm 
+            ? "Não encontramos ninguém que combine com sua busca. Tente outros termos." 
+            : "Comece a gerenciar seu evento importando ou cadastrando novos participantes."}
+          action={!searchTerm && (
             <div className="flex flex-col sm:flex-row gap-3">
               <Button variant="outline" onClick={() => navigate("/admin/importacao")}>
                 Importar Participantes
               </Button>
               <Button onClick={() => { setEditingId(null); setInitialFormCategory("delegation"); setFormOpen(true); }}>
-                Cadastrar Novo
+                <Plus className="mr-2 h-4 w-4" /> Cadastrar Novo
               </Button>
             </div>
           )}
-        </div>
+        />
       ) : (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground sm:hidden">
