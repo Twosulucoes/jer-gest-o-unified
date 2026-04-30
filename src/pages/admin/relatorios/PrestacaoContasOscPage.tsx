@@ -107,16 +107,21 @@ export default function PrestacaoContasOscPage() {
         if (!proceed) return;
       }
 
+      // NOVO: Gerar identificador único para o relatório (UUID v4)
+      const reportId = crypto.randomUUID();
+      const validationToken = Math.random().toString(36).substring(2, 10).toUpperCase();
+
       await exportOscPdf(data, {
         eventName: activeEvent?.name || "Evento",
         branding: branding ?? null,
         oscConfig: oscConfig ?? null,
         generatedAt: new Date(),
         periodLabel,
-        evidences
+        evidences,
+        reportId // Passar o ID para o PDF gerado
       });
 
-      // Registrar auditoria
+      // Registrar auditoria com o vínculo do Relatório
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase.from("audit_events").insert({
@@ -124,6 +129,8 @@ export default function PrestacaoContasOscPage() {
           record_id: eventId,
           action: "generate_pdf",
           created_by: user.id,
+          report_id: reportId,
+          validation_token: validationToken,
           payload: {
             event_name: activeEvent?.name,
             photo_counts: counts,
@@ -132,12 +139,13 @@ export default function PrestacaoContasOscPage() {
               matches: data.resumo.totalMatches,
               meals: data.resumo.totalMeals
             },
-            config_used: oscConfig
+            config_used: oscConfig,
+            validation_url: `${window.location.origin}/admin/validar-qr?report=${reportId}`
           }
         } as any);
       }
 
-      toast.success("PDF gerado e registrado na auditoria");
+      toast.success("PDF Oficial gerado com selo de autenticidade");
       fetchAuditHistory();
     } catch (e: any) {
       toast.error("Erro ao gerar PDF", { description: e?.message });
