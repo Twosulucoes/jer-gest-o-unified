@@ -99,7 +99,19 @@ serve(async (req) => {
       matches: matchStats
     };
 
-    const systemPrompt = "Você é um assistente especializado em gestão de projetos sociais e prestação de contas de OSCs (Organizações da Sociedade Civil) no Brasil. Seu objetivo é redigir relatórios técnicos, formais e persuasivos sobre a execução física de convênios esportivos.";
+    // Determine event context and extra instructions based on event type
+    const eventType = event.slug?.includes('esport') ? 'esportivo' : 
+                      event.slug?.includes('social') ? 'social' :
+                      event.slug?.includes('cultur') ? 'cultural' : 'generic';
+
+    let domainInstructions = "";
+    if (eventType === 'esportivo') {
+      domainInstructions = "\nEste é um evento ESPORTIVO. Destaque resultados de competições, medalhas, participação de atletas e qualidade das praças esportivas.";
+    } else if (eventType === 'cultural' || eventType === 'social') {
+      domainInstructions = "\nEste é um evento CULTURAL/SOCIAL. Destaque o impacto na comunidade, público presente, acessibilidade e diversidade das apresentações.";
+    }
+
+    const systemPrompt = `Você é um assistente especializado em gestão de projetos sociais e prestação de contas de OSCs (Organizações da Sociedade Civil) no Brasil. Seu objetivo é redigir relatórios técnicos, formais e persuasivos sobre a execução física de convênios.${domainInstructions}`;
     
     let userPrompt = "";
     if (prompt_type === "full_report") {
@@ -107,7 +119,7 @@ serve(async (req) => {
       
       CONTEXTO DA EXECUÇÃO:
       - Público Atendido: ${context.total_participants} participantes inscritos.
-      - Execução Esportiva: ${context.matches.completed} partidas realizadas de um total de ${context.matches.total}.
+      - Execução Esportiva: ${context.matches.completed} partidas/atividades realizadas de um total de ${context.matches.total}.
       - Registros Operacionais (Lançamentos): ${JSON.stringify(context.registers)}
       - Evidências Fotográficas (Curadoria): ${JSON.stringify(context.evidence_summary)}
       
