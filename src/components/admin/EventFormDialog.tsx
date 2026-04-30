@@ -122,15 +122,20 @@ export default function EventFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar Evento" : "Novo Evento"}</DialogTitle>
-          <DialogDescription>
-            {isEditing
-              ? "Atualize os dados do evento."
-              : "Preencha os dados para criar um novo evento."}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden rounded-3xl border-none shadow-2xl">
+        <div className="bg-primary px-6 py-8 text-primary-foreground relative overflow-hidden">
+          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+          <DialogHeader className="relative z-10">
+            <DialogTitle className="text-2xl font-bold tracking-tight">{isEditing ? "Editar Evento" : "Novo Evento"}</DialogTitle>
+            <DialogDescription className="text-primary-foreground/80 font-medium">
+              {isEditing
+                ? "Ajuste os parâmetros globais do evento JER."
+                : "Preencha os campos abaixo para iniciar um novo evento no sistema."}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+
+        <div className="p-6">
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -281,20 +286,26 @@ export default function EventFormDialog({
               />
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="gap-2 sm:gap-0 pt-6 border-t mt-6">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => onOpenChange(false)}
+                className="font-bold"
               >
-                Cancelar
+                Descartar
               </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? "Salvando..." : isEditing ? "Salvar" : "Criar"}
+              <Button 
+                type="submit" 
+                disabled={isPending}
+                className="bg-primary hover:bg-primary/90 font-bold px-8 shadow-lg shadow-primary/20"
+              >
+                {isPending ? "Processando..." : isEditing ? "Salvar Alterações" : "Confirmar Criação"}
               </Button>
             </DialogFooter>
           </form>
         </Form>
+        </div>
       </DialogContent>
     </Dialog>
   );
