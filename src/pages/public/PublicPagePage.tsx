@@ -34,7 +34,7 @@ function renderMarkdown(md: string): string {
 export default function PublicPagePage() {
   const { slug } = useParams<{ slug: string }>();
   const [state, setState] = useState<"loading" | "found" | "notfound" | "restricted">("loading");
-  const [content, setContent] = useState<{ title: string; content_md: string } | null>(null);
+  const [content, setContent] = useState<PublicContent | null>(null);
 
   useEffect(() => {
     if (!slug) { setState("notfound"); return; }
@@ -115,10 +115,11 @@ export default function PublicPagePage() {
         </div>
       </header>
       <div className="mx-auto max-w-2xl px-4 py-12">
-        <div
-          className="prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(content.content_md) }}
-        />
+        <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {content.content_md}
+          </ReactMarkdown>
+        </div>
         <div className="mt-12 pt-6 border-t border-border">
           <Link to="/" className="text-sm text-muted-foreground hover:text-primary">
             ← JER Gestão
