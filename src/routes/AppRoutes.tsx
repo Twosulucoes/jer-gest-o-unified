@@ -102,25 +102,26 @@ const PesquisaDashboardPage = lazy(() => import("../pages/admin/PesquisaDashboar
 const VouchersPage = lazy(() => import("../pages/admin/VouchersPage"));
 const ProtestosFilaPage = lazy(() => import("../pages/admin/ProtestosFilaPage"));
 
-// Transporte Subpages
-const TransporteViagensPage = lazy(() => import("../pages/admin/TransporteViagensPage"));
-const TransporteRotasPage = lazy(() => import("../pages/admin/TransporteRotasPage"));
-const TransporteEmbarquePage = lazy(() => import("../pages/admin/TransporteEmbarquePage"));
-const TransporteVeiculosPage = lazy(() => import("../pages/admin/TransporteVeiculosPage"));
+// Transporte Subpages (Admin)
+const AdminTransporteViagensPage = lazy(() => import("../pages/admin/TransporteViagensPage"));
+const AdminTransporteRotasPage = lazy(() => import("../pages/admin/TransporteRotasPage"));
+const AdminTransporteEmbarquePage = lazy(() => import("../pages/admin/TransporteEmbarquePage"));
+const AdminTransporteVeiculosPage = lazy(() => import("../pages/admin/TransporteVeiculosPage"));
 
-// Alimentacao Subpages
-const AlimentacaoJanelasPage = lazy(() => import("../pages/admin/AlimentacaoJanelasPage"));
-const AlimentacaoConsumoPage = lazy(() => import("../pages/admin/AlimentacaoConsumoPage"));
-const AlimentacaoPrevisaoPage = lazy(() => import("../pages/admin/AlimentacaoPrevisaoPage"));
+// Alimentacao Subpages (Admin)
+const AdminAlimentacaoJanelasPage = lazy(() => import("../pages/admin/AlimentacaoJanelasPage"));
+const AdminAlimentacaoConsumoPage = lazy(() => import("../pages/admin/AlimentacaoConsumoPage"));
+const AdminAlimentacaoPrevisaoPage = lazy(() => import("../pages/admin/AlimentacaoPrevisaoPage"));
 
-// Alojamento Subpages
-const AlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
-const AlojamentoUnidadesPage = lazy(() => import("../pages/admin/AlojamentoUnidadesPage"));
-const AlojamentoPresencaPage = lazy(() => import("../pages/admin/AlojamentoPresencaPage"));
+// Alojamento Subpages (Admin)
+const AdminAlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
+const AdminAlojamentoUnidadesPage = lazy(() => import("../pages/admin/AlojamentoUnidadesPage"));
+const AdminAlojamentoPresencaPage = lazy(() => import("../pages/admin/AlojamentoPresencaPage"));
 
-// Competicao Subpages
+// Competicao Subpages (Admin)
 const CompeticaoPainelPage = lazy(() => import("../pages/admin/CompeticaoPainelPage"));
 const CompeticaoEquipesPage = lazy(() => import("../pages/admin/CompeticaoEquipesPage"));
+
 
 
 
