@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
 } from "recharts";
+import { DashboardQuickActions } from "@/components/admin/DashboardQuickActions";
+import { DashboardProgressCard } from "@/components/admin/DashboardProgressCard";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -119,29 +121,7 @@ export default function DashboardPage() {
         </div>
       </AppPageHeader>
 
-      {/* Quick Actions */}
-      {visibleActions.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Acesso Rápido
-          </h2>
-          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {visibleActions.map((action) => (
-              <Link
-                key={action.to}
-                to={action.to}
-                className="group flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center transition-all duration-150 hover:shadow-app-md hover:border-primary/30 active:scale-[0.98]"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  {action.icon}
-                </div>
-                <span className="text-xs font-medium text-foreground">{action.label}</span>
-                <span className="text-[10px] text-muted-foreground/60">{action.group}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      <DashboardQuickActions actions={visibleActions} />
 
       {/* KPI Resumo Principal */}
       <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
@@ -220,26 +200,18 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="py-3 px-4">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Top Delegações</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                {isLoading ? <div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /></div> : (
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                    {delegationsToShow.map((d) => (
-                      <div key={d.delegation_id} className="space-y-1">
-                        <div className="flex justify-between text-[11px]">
-                          <span className="truncate font-medium">{d.name}</span>
-                          <span className="text-muted-foreground tabular-nums">{d.credentialed}/{d.total} ({d.pct}%)</span>
-                        </div>
-                        <Progress value={d.pct} className="h-1" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <DashboardProgressCard
+              title="Top Delegações"
+              isLoading={isLoading}
+              items={data.credenciamento.by_delegation.map(d => ({
+                id: d.delegation_id,
+                name: d.name,
+                current: d.credentialed,
+                total: d.total,
+                percentage: d.pct
+              }))}
+              maxItems={showAllDel ? 999 : 10}
+            />
           </div>
         </section>
 
@@ -250,31 +222,17 @@ export default function DashboardPage() {
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
               <Trophy className="h-3.5 w-3.5" /> Competição
             </h2>
-            <Card>
-              <CardHeader className="py-3 px-4">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Andamento por Modalidade</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                {isLoading ? <div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /></div> : (
-                  <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
-                    {data.competicao.by_sport.slice(0, 8).map((row) => (
-                      <div key={row.sport_event_id} className="space-y-1">
-                        <div className="flex justify-between text-[11px] items-start gap-3">
-                          <span className="font-medium flex-1 leading-tight line-clamp-2" title={row.name}>
-                            {row.name}
-                          </span>
-                          <div className="flex gap-3 text-muted-foreground tabular-nums shrink-0">
-                            <span>{row.done}/{row.total}</span>
-                            <span className="w-8 text-right font-semibold text-foreground">{row.pct}%</span>
-                          </div>
-                        </div>
-                        <Progress value={row.pct} className="h-1" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <DashboardProgressCard
+              title="Andamento por Modalidade"
+              isLoading={isLoading}
+              items={data.competicao.by_sport.map(s => ({
+                id: s.sport_event_id,
+                name: s.name,
+                current: s.done,
+                total: s.total,
+                percentage: s.pct
+              }))}
+            />
           </div>
 
           {/* Alimentação */}
