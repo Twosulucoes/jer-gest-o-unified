@@ -200,7 +200,7 @@ export const AppRoutes = () => (
         <Route path="eventos/etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventStagesPage /></ProtectedRoute>} />
         <Route path="etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapasIndexPage /></ProtectedRoute>} />
         <Route path="etapas/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapaHubPage /></ProtectedRoute>} />
-        <Route path="etapas/:stageId/hub" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><StageLayout /></ProtectedRoute>}>
+        <Route path="etapa/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><StageLayout /></ProtectedRoute>}>
            <Route index element={<StageHomePage />} />
            <Route path="reports" element={<StageReportsPage />} />
         </Route>

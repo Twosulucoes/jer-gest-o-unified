@@ -81,8 +81,8 @@ export default function EtapasIndexPage() {
 
           const renderCard = (stage: EventStage) => {
             const targetUrl = fromPath 
-              ? `/admin/etapa/${stage.id}${fromPath.replace(/^\/admin/, "")}`
-              : `/admin/etapa/${stage.id}`;
+              ? `/admin/etapa/${stage.id}${fromPath.replace(/^\/admin\/etapa\/[^/]+/, "").replace(/^\/admin/, "")}`
+              : `/admin/etapas/${stage.id}`;
 
             return (
               <Link key={stage.id} to={targetUrl} className="group">
