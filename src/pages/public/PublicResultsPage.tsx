@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, parse } from "date-fns";
 import { VisualIdentity } from "@/components/public/VisualIdentity";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function PublicResultsPage() {
+  const { user } = useAuth();
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedSportEventId, setSelectedSportEventId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("results");
@@ -156,6 +159,7 @@ export default function PublicResultsPage() {
               <Link to="/login">Entrar</Link>
             </Button>
           )}
+        </div>
       </header>
 
       <main className="mx-auto max-w-4xl p-4 space-y-4">
