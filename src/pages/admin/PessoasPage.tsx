@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,7 +18,11 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { Search, UserPlus, Users, Loader2, ShieldAlert, Merge } from "lucide-react";
+import { Search, UserPlus, Users, Loader2, ShieldAlert, Merge, Filter, Download, FileSpreadsheet, Eye, Info } from "lucide-react";
+import { phoneMask } from "@/lib/phoneUtils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 
 const personSchema = z.object({
   full_name: z.string().trim().min(2, "Nome muito curto").max(200),
