@@ -49,6 +49,24 @@ export default function OscAccountabilityModule() {
   const { data: oscData, isLoading: isLoadingOsc } = useOscData(eventId);
   const { data: oscConfig } = useEventOscConfig(eventId);
 
+  // Histórico de relatórios
+  const { data: reportHistory } = useQuery({
+    queryKey: ["osc-report-history", eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("osc_generated_reports")
+        .select(`
+          *,
+          template:osc_accountability_templates(name)
+        `)
+        .eq("event_id", eventId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!eventId
+  });
+
   const { data: templates } = useQuery({
     queryKey: ["osc-templates"],
     queryFn: async () => {
@@ -58,7 +76,6 @@ export default function OscAccountabilityModule() {
         .order("name");
       if (error) throw error;
       
-      // Auto-select default template
       const defaultTpl = data.find(t => t.is_default);
       if (defaultTpl && !selectedTemplateId) {
         setSelectedTemplateId(defaultTpl.id);
@@ -80,6 +97,33 @@ export default function OscAccountabilityModule() {
       return data;
     },
     enabled: !!eventId
+  });
+
+  const saveReportMutation = useMutation({
+    mutationFn: async ({ content, promptType, templateId }: { content: string, promptType: string, templateId?: string | null }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { data, error } = await supabase
+        .from("osc_generated_reports")
+        .insert({
+          event_id: eventId,
+          user_id: user.id,
+          content,
+          prompt_type: promptType,
+          template_id: templateId,
+          metadata: { generated_at: new Date().toISOString() }
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["osc-report-history"] });
+      toast.success("Relatório salvo no histórico");
+    }
   });
 
   const updateStatusMutation = useMutation({
@@ -137,7 +181,6 @@ export default function OscAccountabilityModule() {
   const pendingCount = evidences?.filter(e => e.status === "pending").length || 0;
   const approvedCount = evidences?.filter(e => e.status === "approved").length || 0;
 
-  // Calculos de conformidade
   const r = oscData?.resumo;
   const categories = ["infraestrutura", "atendimento", "competicao", "cerimonial"];
   const photoCounts = categories.reduce((acc, cat) => {
@@ -207,7 +250,17 @@ export default function OscAccountabilityModule() {
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // Quando terminar o stream, salva automaticamente no banco
+          if (fullContent) {
+            saveReportMutation.mutate({
+              content: fullContent,
+              promptType: "full_report",
+              templateId: selectedTemplateId
+            });
+          }
+          break;
+        }
         
         const chunk = decoder.decode(value, { stream: true });
         const lines = chunk.split('\n');
@@ -240,6 +293,14 @@ export default function OscAccountabilityModule() {
       setIsAiDialogOpen(false);
     } finally {
       setIsAiLoading(false);
+    }
+  };
+
+  const handleOpenLastReport = () => {
+    if (reportHistory && reportHistory.length > 0) {
+      setAiReport(reportHistory[0].content);
+      setSelectedTemplateId(reportHistory[0].template_id);
+      setIsAiDialogOpen(true);
     }
   };
 
@@ -330,8 +391,8 @@ export default function OscAccountabilityModule() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Select value={selectedTemplateId || ""} onValueChange={setSelectedTemplateId}>
-                      <SelectTrigger className="w-[200px] h-9">
-                        <SelectValue placeholder="Selecione o template" />
+                      <SelectTrigger className="w-[180px] h-9">
+                        <SelectValue placeholder="Template" />
                       </SelectTrigger>
                       <SelectContent>
                         {templates?.map((t) => (
@@ -348,10 +409,42 @@ export default function OscAccountabilityModule() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   Nossa IA analisa todos os registros operacionais, evidências fotográficas e resultados do evento para criar um rascunho completo da prestação de contas.
                 </p>
+                
+                {reportHistory && reportHistory.length > 0 && (
+                  <div className="pt-4 border-t border-primary/10">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-2">
+                      <Clock className="h-3 w-3" /> Histórico Recente
+                    </h4>
+                    <div className="space-y-2">
+                      {reportHistory.slice(0, 3).map((report) => (
+                        <div key={report.id} className="flex items-center justify-between text-sm p-2 bg-white/50 rounded-md border border-primary/5">
+                          <div className="truncate flex-1">
+                            <span className="font-medium">{(report as any).template?.name || "Padrão"}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {new Date(report.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 text-xs gap-1"
+                            onClick={() => {
+                              setAiReport(report.content);
+                              setSelectedTemplateId(report.template_id);
+                              setIsAiDialogOpen(true);
+                            }}
+                          >
+                            <FileText className="h-3 w-3" /> Abrir
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

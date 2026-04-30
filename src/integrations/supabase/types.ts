@@ -4593,6 +4593,57 @@ export type Database = {
         }
         Relationships: []
       }
+      osc_generated_reports: {
+        Row: {
+          content: string
+          created_at: string
+          event_id: string
+          id: string
+          metadata: Json | null
+          prompt_type: string
+          template_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          event_id: string
+          id?: string
+          metadata?: Json | null
+          prompt_type: string
+          template_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          metadata?: Json | null
+          prompt_type?: string
+          template_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "osc_generated_reports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "osc_generated_reports_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "osc_accountability_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       osc_registros: {
         Row: {
           created_at: string
