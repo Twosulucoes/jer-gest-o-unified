@@ -100,4 +100,9 @@ export function useNome(id: string | undefined) {
 
   return { data: query.data, isLoading: query.isLoading, save: mutation.mutate };
 }
-```
+
+### 7. PWA Layout e Contextos
+- **PwaLayout**: Cabeçalho + Rodapé persistente com seletor de contexto (Etapa de Trabalho).
+- **PwaModuleLayout**: Wrapper para isolamento de módulos. Bloqueia acesso se o usuário não tiver o perfil requerido e remove o menu lateral para foco operacional.
+- **useEventContext** / **useStageContext**: Sempre utilizar para garantir que a operação está vinculada ao Evento e Etapa corretos. No PWA, a operação é bloqueada se não houver etapa selecionada.
+
