@@ -18,6 +18,7 @@ import StageLayout from "@/components/StageLayout";
 import StageHomePage from "./pages/admin/StageHomePage";
 import StageReportsPage from "./pages/admin/StageReportsPage";
 import SuperAdminLayout from "@/components/SuperAdminLayout";
+import { NetworkStatusBanner } from "@/components/navigation/NetworkStatusBanner";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -288,6 +289,7 @@ const App = () => (
         <AppStatePreserver />
         <PwaUpdateNotice />
         <PwaInstallNotice />
+        <NetworkStatusBanner />
 
         <AuthProvider>
           <VersionValidator>
