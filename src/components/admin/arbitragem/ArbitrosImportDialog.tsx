@@ -37,22 +37,29 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
   const [done, setDone] = useState(false);
 
   function parseCsv(text: string): CsvRow[] {
+    // Tenta detectar o separador (vírgula ou ponto-e-vírgula)
+    const firstLine = text.trim().split(/\r?\n/)[0];
+    const separator = firstLine.includes(";") ? ";" : ",";
+    
     const lines = text.trim().split(/\r?\n/);
     if (lines.length < 2) return [];
-    const header = lines[0].toLowerCase().split(/[,;]/).map(h => h.trim().replace(/"/g, ""));
+    
+    const header = lines[0].toLowerCase().split(separator).map(h => h.trim().replace(/"/g, ""));
     const nomeIdx = header.findIndex(h => h.includes("nome"));
     const emailIdx = header.findIndex(h => h.includes("email") || h.includes("e-mail"));
     const telIdx = header.findIndex(h => h.includes("tel") || h.includes("fone") || h.includes("celular"));
+    
     if (emailIdx === -1) return [];
+    
     return lines.slice(1).map(line => {
-      const cols = line.split(/[,;]/).map(c => c.trim().replace(/"/g, ""));
+      const cols = line.split(separator).map(c => c.trim().replace(/"/g, ""));
       return {
         nome: nomeIdx >= 0 ? cols[nomeIdx] || "" : "",
         email: cols[emailIdx] || "",
         telefone: telIdx >= 0 ? cols[telIdx] || undefined : undefined,
         status: "pending" as const,
       };
-    }).filter(r => r.email);
+    }).filter(r => r.email && r.email.includes("@"));
   }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
