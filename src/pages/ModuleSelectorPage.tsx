@@ -10,6 +10,7 @@ import {
   Loader2, UtensilsCrossed, Users, Clipboard, Shield, LogOut,
   LayoutDashboard, Bus, Bed, Trophy, ScanLine, IdCard, Search
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ModuleOption {
   roles: string[];
