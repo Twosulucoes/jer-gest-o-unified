@@ -65,7 +65,7 @@ export default function PwaLandingPage() {
       
       // Only auto-redirect if the user is not explicitly coming back to the landing page
       // to change event/stage settings (check if session is fresh or if there's no state)
-      const isReturningToMenu = window.history.state?.usr?.fromMenu === true;
+      const isReturningToMenu = location.state?.fromMenu === true;
 
       if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria") && activeEventId && activeStageId && !isReturningToMenu) {
         navigate(opCards[0].to, { replace: true });
