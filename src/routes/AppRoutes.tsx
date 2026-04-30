@@ -332,7 +332,7 @@ export const AppRoutes = () => (
         <Route path="competicao/painel-ranking/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelRankingPage /></ProtectedRoute>} />
         <Route path="competicao/painel-time-mark/:sportEventId/serie/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoTimeMarkPage /></ProtectedRoute>} />
 
-        <Route path="ajuda" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
+        <Route path="ajuda" element={<ProtectedRoute><AjudaIndexPage /></ProtectedRoute>} />
         <Route path="ajuda/chat" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
         <Route path="ajuda/manual" element={<ProtectedRoute><AjudaManualPage /></ProtectedRoute>} />
         <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><LinksPage /></ProtectedRoute>} />
