@@ -43,7 +43,7 @@ export default function CentralControlePage() {
       >
         <div className="flex gap-2">
           <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 font-mono">
-            V 2.5.0-STAGE3
+            V 2.6.0-STAGE4
           </Badge>
           <Button variant="outline" size="sm" asChild className="h-8 text-xs">
             <Link to="/admin/auditoria">
