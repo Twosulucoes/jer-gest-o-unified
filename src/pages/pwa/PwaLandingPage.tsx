@@ -8,6 +8,8 @@ import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VersionBadge } from "@/components/VersionBadge";
 import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { logPwaEvent } from "@/utils/pwaTelemetry";
+
 
 interface UserProfile {
   full_name: string | null;
@@ -69,9 +71,17 @@ export default function PwaLandingPage() {
       const isReturningToMenu = (location.state as any)?.fromMenu === true;
 
       if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria") && activeEventId && activeStageId && !isReturningToMenu) {
+        logPwaEvent({
+          action: "redirect_single_module",
+          target_path: opCards[0].to,
+          event_id: activeEventId,
+          stage_id: activeStageId,
+          reason: "User has only one module and session is fresh"
+        });
         navigate(opCards[0].to, { replace: true });
         return;
       }
+
 
       setLoading(false);
     })();
