@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppKPI } from "@/components/app/AppKPI";
-import { Calendar, Users, UserCheck, Activity, AlertTriangle, Cpu, Database } from "lucide-react";
+import { Calendar, Users, UserCheck, Activity, AlertTriangle, Cpu, Database, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import GlobalRefreshButton from "@/components/super/GlobalRefreshButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default function SuperDashboardPage() {
   const navigate = useNavigate();
