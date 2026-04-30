@@ -71,7 +71,9 @@ Deno.serve(async (req) => {
     const callerIsSecretaria = roles.includes("secretaria");
     const callerIsCoordenacao = roles.includes("coordenacao_tecnica");
 
-    if (!callerIsAdmin && !callerIsSecretaria && !callerIsSuper && !callerIsCoordenacao) {
+    const callerIsCoordModalidade = roles.includes("coordenador_modalidade");
+
+    if (!callerIsAdmin && !callerIsSecretaria && !callerIsSuper && !callerIsCoordenacao && !callerIsCoordModalidade) {
       return jsonResponse({ error: "NOT_AUTHORIZED" }, 403);
     }
 
