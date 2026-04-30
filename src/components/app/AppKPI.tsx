@@ -15,14 +15,14 @@ interface AppKPIProps {
 export function AppKPI({ label, value, icon: Icon, sub, alert, loading, className }: AppKPIProps) {
   if (loading) {
     return (
-      <div className={cn("rounded-xl border border-border bg-card p-4 shadow-app-sm", className)}>
+      <div className={cn("rounded-2xl border border-border/50 bg-card p-5 shadow-sm", className)}>
         <div className="flex items-start justify-between">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-7 w-14" />
+            <Skeleton className="h-8 w-14" />
             <Skeleton className="h-3 w-16" />
           </div>
-          <Skeleton className="h-9 w-9 rounded-lg" />
+          <Skeleton className="h-10 w-10 rounded-xl" />
         </div>
       </div>
     );
@@ -30,25 +30,30 @@ export function AppKPI({ label, value, icon: Icon, sub, alert, loading, classNam
 
   return (
     <div className={cn(
-      "rounded-xl border border-border bg-card p-4 shadow-app-sm transition-shadow hover:shadow-app-md",
+      "group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1",
       className
     )}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium text-muted-foreground tracking-wide">{label}</p>
+      {/* Decorative background element */}
+      <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary/5 transition-transform duration-500 group-hover:scale-150" />
+      
+      <div className="relative flex items-start justify-between">
+        <div className="space-y-1">
+          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{label}</p>
           <p className={cn(
-            "text-2xl font-bold mt-1 font-heading",
+            "text-3xl font-extrabold font-heading tabular-nums leading-none tracking-tight",
             alert ? "text-destructive" : "text-foreground"
           )}>
             {value}
           </p>
-          {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+          {sub && <p className="text-[11px] font-medium text-muted-foreground line-clamp-1">{sub}</p>}
         </div>
         <div className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-lg",
-          alert ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+          "flex h-10 w-10 items-center justify-center rounded-xl transition-colors duration-300 shadow-sm",
+          alert 
+            ? "bg-destructive/10 text-destructive group-hover:bg-destructive group-hover:text-white" 
+            : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white"
         )}>
-          <Icon className="h-4 w-4" />
+          <Icon className="h-5 w-5" />
         </div>
       </div>
     </div>
