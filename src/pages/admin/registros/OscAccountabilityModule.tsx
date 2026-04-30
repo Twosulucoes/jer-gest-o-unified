@@ -14,18 +14,33 @@ import {
   Plus,
   ArrowRight,
   TrendingUp,
-  Image as ImageIcon
+  Image as ImageIcon,
+  UtensilsCrossed,
+  Sparkles,
+  Trash2
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import PrestacaoContasOscPage from "../relatorios/PrestacaoContasOscPage";
+import { useOscData } from "../relatorios/useOscData";
+import { useEventOscConfig } from "@/hooks/useEventOscConfig";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function OscAccountabilityModule() {
   const { activeEvent } = useEventContext();
   const eventId = activeEvent?.id;
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
+  const [isRecordDialogOpen, setIsRecordDialogOpen] = useState(false);
+  const [recordType, setRecordType] = useState<string>("doacao_alimento");
+
+  const { data: oscData, isLoading: isLoadingOsc } = useOscData(eventId);
+  const { data: oscConfig } = useEventOscConfig(eventId);
 
   const { data: evidences, isLoading: isLoadingEvidences } = useQuery({
     queryKey: ["osc-evidences", eventId],
@@ -55,6 +70,34 @@ export default function OscAccountabilityModule() {
     }
   });
 
+  const createRecordMutation = useMutation({
+    mutationFn: async (record: any) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from("osc_registros").insert({
+        ...record,
+        event_id: eventId,
+        recorded_by: user?.id
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["osc-data"] });
+      toast.success("Registro adicionado com sucesso");
+      setIsRecordDialogOpen(false);
+    }
+  });
+
+  const deleteRecordMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("osc_registros").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["osc-data"] });
+      toast.success("Registro removido");
+    }
+  });
+
   if (!activeEvent) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -67,6 +110,36 @@ export default function OscAccountabilityModule() {
 
   const pendingCount = evidences?.filter(e => e.status === "pending").length || 0;
   const approvedCount = evidences?.filter(e => e.status === "approved").length || 0;
+
+  // Calculos de conformidade
+  const r = oscData?.resumo;
+  const categories = ["infraestrutura", "atendimento", "competicao", "cerimonial"];
+  const photoCounts = categories.reduce((acc, cat) => {
+    acc[cat] = evidences?.filter(e => e.osc_category === cat && e.status === 'approved').length || 0;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const hasConfig = !!oscConfig?.id;
+  const resultsPct = r && r.totalMatches > 0 ? Math.round((r.totalMatchesPublished / r.totalMatches) * 100) : 0;
+  
+  const executionPct = Math.round(
+    ((hasConfig ? 1 : 0) + 
+    (Object.values(photoCounts).filter(c => c >= 2).length / categories.length) +
+    (resultsPct / 100)) / 3 * 100
+  );
+
+  const handleCreateRecord = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      type: formData.get("type"),
+      value_numeric: Number(formData.get("value")),
+      unit: formData.get("unit"),
+      description: formData.get("description"),
+      status: "aprovado" // Por padrão admin lança já aprovado
+    };
+    createRecordMutation.mutate(data);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -123,20 +196,20 @@ export default function OscAccountabilityModule() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">84%</div>
-                <p className="text-xs text-muted-foreground mt-2">Meta de evidências por categoria</p>
+                <div className="text-3xl font-bold">{executionPct}%</div>
+                <p className="text-xs text-muted-foreground mt-2">Meta global de conformidade</p>
               </CardContent>
             </Card>
 
             <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setActiveTab("report")}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                  <FileText className="h-4 w-4" /> RELATÓRIOS GERADOS
+                  <FileText className="h-4 w-4" /> INDICADORES TOTAIS
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">12</div>
-                <p className="text-xs text-muted-foreground mt-2 text-emerald-600 font-medium">Último: 15/05/2026</p>
+                <div className="text-3xl font-bold">{oscData?.resumo.totalOscRegistros || 0}</div>
+                <p className="text-xs text-muted-foreground mt-2 text-emerald-600 font-medium">Registros operacionais manuais</p>
               </CardContent>
             </Card>
           </div>
