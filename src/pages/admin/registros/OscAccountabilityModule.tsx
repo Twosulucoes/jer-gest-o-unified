@@ -491,7 +491,7 @@ export default function OscAccountabilityModule() {
               </DialogHeader>
               
               <div className="flex-1 overflow-y-auto py-4">
-                {isAiLoading ? (
+                {isAiLoading && !aiReport ? (
                   <div className="flex flex-col items-center justify-center py-12 gap-4">
                     <Loader2 className="h-10 w-10 text-primary animate-spin" />
                     <p className="text-sm text-muted-foreground animate-pulse">
