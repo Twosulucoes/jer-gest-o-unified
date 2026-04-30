@@ -163,6 +163,8 @@ import AuditoriaPage from "./pages/admin/AuditoriaPage";
 import PwaStatusPage from "./pages/admin/PwaStatusPage";
 import RegistrosPage from "./pages/admin/registros/RegistrosPage";
 import ConfigOscPage from "./pages/admin/registros/ConfigOscPage";
+import ComplianceDashboardPage from "./pages/admin/ComplianceDashboardPage";
+
 
 
 // PWA pages
@@ -418,6 +420,8 @@ const App = () => (
               <Route path="acessos/pwa" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosPwaAuditPage /></ProtectedRoute>} />
               <Route path="central-controle" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralControlePage /></ProtectedRoute>} />
               <Route path="auditoria" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AuditoriaPage /></ProtectedRoute>} />
+              <Route path="conformidade" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "super_admin"]}><ComplianceDashboardPage /></ProtectedRoute>} />
+
 
               {/* Parâmetros e Regras — consolidados em /admin/regras */}
               <Route path="parametros-evento" element={<Navigate to="/admin/regras" replace />} />
