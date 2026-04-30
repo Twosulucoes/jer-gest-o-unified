@@ -63,7 +63,11 @@ export default function PwaLandingPage() {
 
       const opCards = MODULE_CARDS.filter((c) => roles.includes(c.role) || (c.role === "secretaria" && roles.includes("admin")));
       
-      if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria") && activeEventId && activeStageId) {
+      // Only auto-redirect if the user is not explicitly coming back to the landing page
+      // to change event/stage settings (check if session is fresh or if there's no state)
+      const isReturningToMenu = window.history.state?.usr?.fromMenu === true;
+
+      if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria") && activeEventId && activeStageId && !isReturningToMenu) {
         navigate(opCards[0].to, { replace: true });
         return;
       }
