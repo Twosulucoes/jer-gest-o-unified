@@ -8,8 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+import { RemediationDialog, type RemediationAction } from "@/components/super/RemediationDialog";
+
 export default function SuperDashboardPage() {
   const navigate = useNavigate();
+  const [remediationOpen, setRemediationOpen] = useState(false);
+  const [activeRemediation, setRemediationAction] = useState<RemediationAction>("republish_results");
+
+  const openRemediation = (action: RemediationAction) => {
+    setRemediationAction(action);
+    setRemediationOpen(true);
+  };
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ["super-dashboard-stats"],
@@ -174,6 +183,12 @@ export default function SuperDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <RemediationDialog 
+        open={remediationOpen} 
+        onOpenChange={setRemediationOpen}
+        action={activeRemediation}
+      />
     </div>
   );
 }
