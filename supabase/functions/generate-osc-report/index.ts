@@ -87,7 +87,16 @@ serve(async (req) => {
       completed: matches?.filter((m: any) => m.status === 'completed' || m.status === 'finished' || m.status === 'publicado').length || 0
     };
 
-    // 3. Prepare AI Prompt with mandatory summary section
+    // 3. Validation Summary for AI Context
+    const validationSummary = {
+      participants_count: totalParticipants || 0,
+      matches_coverage_pct: matchStats.total > 0 ? (matchStats.completed / matchStats.total) * 100 : 0,
+      photos_count: evidences?.length || 0,
+      manual_records_count: registers?.length || 0,
+      is_data_consistent: (totalParticipants || 0) > 0 && matchStats.completed === matchStats.total
+    };
+
+    // 4. Prepare AI Prompt with mandatory summary section
     const context = {
       event_name: event?.name,
       total_participants: totalParticipants || 0,
@@ -96,7 +105,8 @@ serve(async (req) => {
         acc[e.osc_category] = (acc[e.osc_category] || 0) + 1;
         return acc;
       }, {}),
-      matches: matchStats
+      matches: matchStats,
+      validation: validationSummary
     };
 
     // Determine event context and extra instructions based on event type
