@@ -105,23 +105,23 @@ export default function PwaLayout({
       { role: "mesario", label: "Ao Vivo", icon: Radio, to: "/aovivo" },
       { role: "mesario", label: "Registros", icon: Trophy, to: "/pwa/registros", showOnlyIfRegistrosEnabled: true },
       { role: "arbitragem", label: "Ao Vivo", icon: ShieldCheck, to: "/aovivo" },
-    ];
+    ] as const;
+    
+    const isSuperOrAdmin = hasRole("admin") || hasRole("super_admin");
     
     const accessible = all.filter(m => {
-      if ((m as any).showOnlyIfRegistrosEnabled && !registrosMode) return false;
-      return hasRole(m.role as any) || hasRole("admin") || hasRole("super_admin");
+      if ('showOnlyIfRegistrosEnabled' in m && m.showOnlyIfRegistrosEnabled && !registrosMode) return false;
+      return hasRole(m.role as any) || isSuperOrAdmin;
     });
-    // Remove duplicates (like Ao Vivo having two roles)
-    const unique = [];
-    const seen = new Set();
-    for (const m of accessible) {
-      if (!seen.has(m.to)) {
-        unique.push(m);
-        seen.add(m.to);
-      }
-    }
-    return unique;
-  }, [roles, hasRole]);
+
+    // Remove duplicates based on URL
+    const seen = new Set<string>();
+    return accessible.filter(m => {
+      if (seen.has(m.to)) return false;
+      seen.add(m.to);
+      return true;
+    });
+  }, [hasRole, registrosMode]);
 
   const showSwitcher = availableModules.length > 1 || hasRole("admin") || hasRole("super_admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
