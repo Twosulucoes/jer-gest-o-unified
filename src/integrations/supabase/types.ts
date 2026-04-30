@@ -4560,6 +4560,39 @@ export type Database = {
           },
         ]
       }
+      osc_accountability_templates: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          prompt_structure: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          prompt_structure: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          prompt_structure?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       osc_registros: {
         Row: {
           created_at: string
