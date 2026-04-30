@@ -88,6 +88,43 @@ const EmailTemplatesPage = lazy(() => import("../pages/admin/EmailTemplatesPage"
 const StageHomePage = lazy(() => import("../pages/admin/StageHomePage"));
 const StageReportsPage = lazy(() => import("../pages/admin/StageReportsPage"));
 
+// Operational Module Pages (Admin/Stage)
+const CredenciamentoPage = lazy(() => import("../pages/admin/CredenciamentoPage"));
+const CredenciamentoExternoPage = lazy(() => import("../pages/admin/CredenciamentoExternoPage"));
+const ValidacaoQRPage = lazy(() => import("../pages/admin/ValidacaoQRPage"));
+const CompeticaoPartidasAgendaPage = lazy(() => import("../pages/admin/CompeticaoPartidasAgendaPage"));
+const CompeticaoResultadosPage = lazy(() => import("../pages/admin/CompeticaoResultadosPage"));
+const AlojamentoHubPage = lazy(() => import("../pages/admin/AlojamentoHubPage"));
+const AlimentacaoHubPage = lazy(() => import("../pages/admin/AlimentacaoHubPage"));
+const TransporteHubPage = lazy(() => import("../pages/admin/TransporteHubPage"));
+const OcorrenciasPage = lazy(() => import("../pages/admin/OcorrenciasPage"));
+const PesquisaDashboardPage = lazy(() => import("../pages/admin/PesquisaDashboardPage"));
+const VouchersPage = lazy(() => import("../pages/admin/VouchersPage"));
+const ProtestosFilaPage = lazy(() => import("../pages/admin/ProtestosFilaPage"));
+
+// Transporte Subpages (Admin)
+const AdminTransporteViagensPage = lazy(() => import("../pages/admin/TransporteViagensPage"));
+const AdminTransporteRotasPage = lazy(() => import("../pages/admin/TransporteRotasPage"));
+const AdminTransporteEmbarquePage = lazy(() => import("../pages/admin/TransporteEmbarquePage"));
+const AdminTransporteVeiculosPage = lazy(() => import("../pages/admin/TransporteVeiculosPage"));
+
+// Alimentacao Subpages (Admin)
+const AdminAlimentacaoJanelasPage = lazy(() => import("../pages/admin/AlimentacaoJanelasPage"));
+const AdminAlimentacaoConsumoPage = lazy(() => import("../pages/admin/AlimentacaoConsumoPage"));
+const AdminAlimentacaoPrevisaoPage = lazy(() => import("../pages/admin/AlimentacaoPrevisaoPage"));
+
+// Alojamento Subpages (Admin)
+const AdminAlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
+const AdminAlojamentoUnidadesPage = lazy(() => import("../pages/admin/AlojamentoUnidadesPage"));
+const AdminAlojamentoPresencaPage = lazy(() => import("../pages/admin/AlojamentoPresencaPage"));
+
+// Competicao Subpages (Admin)
+const CompeticaoPainelPage = lazy(() => import("../pages/admin/CompeticaoPainelPage"));
+const CompeticaoEquipesPage = lazy(() => import("../pages/admin/CompeticaoEquipesPage"));
+
+
+
+
 // Super Pages
 const SuperDashboardPage = lazy(() => import("../pages/super/SuperDashboardPage"));
 const SuperEventosPage = lazy(() => import("../pages/super/SuperEventosPage"));
@@ -198,12 +235,41 @@ export const AppRoutes = () => (
         <Route path="ajuda/chamados" element={<AjudaChamadosPage />} />
         <Route path="eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventosPage /></ProtectedRoute>} />
         <Route path="eventos/etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventStagesPage /></ProtectedRoute>} />
-        <Route path="etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapasIndexPage /></ProtectedRoute>} />
-        <Route path="etapas/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapaHubPage /></ProtectedRoute>} />
+        <Route path="etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><EtapasIndexPage /></ProtectedRoute>} />
+        <Route path="etapas/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><EtapaHubPage /></ProtectedRoute>} />
         <Route path="etapa/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><StageLayout /></ProtectedRoute>}>
            <Route index element={<StageHomePage />} />
            <Route path="reports" element={<StageReportsPage />} />
+           <Route path="credenciamento" element={<CredenciamentoPage />} />
+           <Route path="credenciamento-externo" element={<CredenciamentoExternoPage />} />
+           <Route path="validacao-qr" element={<ValidacaoQRPage />} />
+           <Route path="competicao/partidas-agenda" element={<CompeticaoPartidasAgendaPage />} />
+           <Route path="competicao/resultados" element={<CompeticaoResultadosPage />} />
+           <Route path="competicao/painel" element={<CompeticaoPainelPage />} />
+           <Route path="competicao/equipes" element={<CompeticaoEquipesPage />} />
+           <Route path="competicao/partida/:matchId" element={<CompeticaoPartidaDetalhePage />} />
+           <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
+           <Route path="alojamento" element={<AlojamentoHubPage />} />
+           <Route path="alojamento/ocupacao" element={<AdminAlojamentoOcupacaoPage />} />
+           <Route path="alojamento/unidades" element={<AdminAlojamentoUnidadesPage />} />
+           <Route path="alojamento/presenca" element={<AdminAlojamentoPresencaPage />} />
+           <Route path="alimentacao" element={<AlimentacaoHubPage />} />
+           <Route path="alimentacao/janelas" element={<AdminAlimentacaoJanelasPage />} />
+           <Route path="alimentacao/consumos" element={<AdminAlimentacaoConsumoPage />} />
+           <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
+           <Route path="transporte" element={<TransporteHubPage />} />
+           <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
+           <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
+           <Route path="transporte/veiculos" element={<AdminTransporteVeiculosPage />} />
+           <Route path="transporte/embarque/:tripId" element={<AdminTransporteEmbarquePage />} />
+           <Route path="ocorrencias" element={<OcorrenciasPage />} />
+           <Route path="pesquisa" element={<PesquisaDashboardPage />} />
+           <Route path="vouchers" element={<VouchersPage />} />
+           <Route path="protestos" element={<ProtestosFilaPage />} />
+           <Route path="relatorios" element={<StageReportsPage />} />
         </Route>
+
+
         <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitrosPage /></ProtectedRoute>} />
         <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
         <Route path="categorias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CategoriasPage /></ProtectedRoute>} />
