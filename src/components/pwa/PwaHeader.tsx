@@ -119,10 +119,10 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
               variant="ghost"
               size="icon"
               onClick={() => navigate("/admin")}
-              className="h-9 w-9 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              title="Painel Admin"
+              className="h-9 w-9 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+              title="Voltar ao Painel Admin"
             >
-              <Settings className="h-5 w-5" />
+              <LayoutDashboard className="h-5 w-5" />
             </Button>
           )}
           {onSignOut && (
