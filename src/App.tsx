@@ -364,6 +364,9 @@ const App = () => (
               <Route path="participantes/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
               <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteDetalhePage /></ProtectedRoute>} />
               <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
+              <Route path="pessoas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PessoasPage /></ProtectedRoute>} />
+              <Route path="pessoas/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
+              <Route path="pessoas/eventuais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><EventuaisPage /></ProtectedRoute>} />
               <Route path="credenciamento" element={<RedirectToEtapas />} />
               <Route path="credenciamento-externo" element={<RedirectToEtapas />} />
                <Route path="vouchers" element={<RedirectToEtapas />} />
