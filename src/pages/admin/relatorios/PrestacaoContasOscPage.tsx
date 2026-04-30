@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Receipt, Download, FileSpreadsheet, Users, BadgeCheck, UtensilsCrossed,
   Bed, Bus, Trophy, Award, Building2, Sparkles, Settings, ShieldCheck,
-  AlertCircle, CheckCircle2, Calendar
+  AlertCircle, CheckCircle2, Calendar, Clock
 } from "lucide-react";
 import { useOscData } from "./useOscData";
 import { useEventBranding } from "@/hooks/useEventBranding";
