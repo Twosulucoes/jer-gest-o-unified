@@ -22,24 +22,34 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-const navItems: NavItem[] = [
-  { label: "Dashboard", to: "/super", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Eventos", to: "/super/eventos", icon: <Calendar className="h-4 w-4" /> },
-  { label: "Inferência de Famílias", to: "/super/registros/familias-inferidas", icon: <Layers className="h-4 w-4" /> },
-  { label: "Monitor (PWA)", to: "/super/monitor", icon: <Activity className="h-4 w-4" /> },
-  { label: "Manual de Instruções", to: "/super/manual", icon: <BookOpen className="h-4 w-4" /> },
-  { label: "Inspetor de Dados", to: "/super/inspector", icon: <DatabaseZap className="h-4 w-4" /> },
-  { label: "Logs do Sistema", to: "/super/logs", icon: <ScrollText className="h-4 w-4" /> },
-  { label: "Configurações", to: "/super/config", icon: <Settings className="h-4 w-4" /> },
-  { label: "Permissões", to: "/super/permissoes", icon: <ShieldCheck className="h-4 w-4" /> },
-  { label: "Central de Dados", to: "/super/dados", icon: <DatabaseIcon className="h-4 w-4" /> },
-  { label: "Diagnóstico Sistema", to: "/super/diagnostico", icon: <Info className="h-4 w-4" /> },
-  { label: "Validador de Schema", to: "/super/validador", icon: <CheckCircle className="h-4 w-4" /> },
-  { label: "Clonar Logística", to: "/admin/clonar-logistica", icon: <Layers className="h-4 w-4" /> },
-  { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" /> },
-  { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" /> },
-  { label: "Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" /> },
-  { label: "Vínculos de Importação", to: "/admin/importacao/aliases", icon: <Layers className="h-4 w-4" /> },
+const navItems = [
+  {
+    group: "Monitoramento Global",
+    items: [
+      { label: "Dashboard Geral", to: "/super", icon: <LayoutDashboard className="h-4 w-4" /> },
+      { label: "Eventos & Clientes", to: "/super/eventos", icon: <Calendar className="h-4 w-4" /> },
+      { label: "Logs de Auditoria", to: "/super/logs", icon: <ScrollText className="h-4 w-4" /> },
+      { label: "Monitor PWA (Realtime)", to: "/super/monitor", icon: <Activity className="h-4 w-4" /> },
+    ]
+  },
+  {
+    group: "Ferramentas & Dados",
+    items: [
+      { label: "Inspetor de Dados", to: "/super/inspector", icon: <DatabaseZap className="h-4 w-4" /> },
+      { label: "Inferência de Famílias", to: "/super/registros/familias-inferidas", icon: <Layers className="h-4 w-4" /> },
+      { label: "Validador de Schema", to: "/super/validador", icon: <CheckCircle className="h-4 w-4" /> },
+      { label: "Central de Dados", to: "/super/dados", icon: <DatabaseIcon className="h-4 w-4" /> },
+    ]
+  },
+  {
+    group: "Gestão do Sistema",
+    items: [
+      { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" /> },
+      { label: "Acessos PWA", to: "/admin/acessos/pwa", icon: <Monitor className="h-4 w-4" /> },
+      { label: "Configurações Super", to: "/super/config", icon: <Settings className="h-4 w-4" /> },
+      { label: "Manual do Desenvolvedor", to: "/super/manual", icon: <BookOpen className="h-4 w-4" /> },
+    ]
+  }
 ];
 
 function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: boolean; onClick?: () => void }) {
@@ -131,9 +141,18 @@ export default function SuperAdminLayout() {
           </div>
 
           {/* Navigation */}
-          <nav className={`flex-1 overflow-y-auto py-4 space-y-1 ${collapsed ? "px-2" : "px-3"}`}>
-            {navItems.map((item) => (
-              <NavItemLink key={item.to} item={item} collapsed={collapsed} onClick={closeSidebar} />
+          <nav className={`flex-1 overflow-y-auto py-4 space-y-6 ${collapsed ? "px-2" : "px-3"}`}>
+            {navItems.map((group) => (
+              <div key={group.group} className="space-y-1">
+                {!collapsed && (
+                  <h3 className="px-3 text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/30 mb-2">
+                    {group.group}
+                  </h3>
+                )}
+                {group.items.map((item) => (
+                  <NavItemLink key={item.to} item={item} collapsed={collapsed} onClick={closeSidebar} />
+                ))}
+              </div>
             ))}
           </nav>
 
