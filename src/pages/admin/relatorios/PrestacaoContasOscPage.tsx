@@ -234,7 +234,11 @@ export default function PrestacaoContasOscPage() {
             <Separator orientation="vertical" className="h-8 bg-blue-200" />
             <div className="text-right">
               <p className="text-[10px] uppercase font-bold text-blue-600">Data Limite</p>
-              <p className="text-xs font-medium">15/05/2026</p>
+              <p className="text-xs font-medium">
+                {data?.event?.endDate 
+                  ? new Date(new Date(data.event.endDate).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-BR")
+                  : "15/05/2026"}
+              </p>
             </div>
           </div>
         </CardContent>
