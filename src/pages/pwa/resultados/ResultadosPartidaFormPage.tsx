@@ -63,6 +63,7 @@ const STATUS_COLORS: Record<string, string> = {
 function TabPlacar({ matchId, entries, sportEventId }: { matchId: string; entries: EntradaPartida[]; sportEventId: string | null }) {
   const eventId = useActiveEventId();
   const { rules, isLoading: loadingRules } = useSportEventRules(eventId, sportEventId);
+  const { data: anexos = [] } = useAnexosPartida(matchId);
   const salvar = useSalvarPlacar(matchId);
 
   const family = rules?.family || "generic";
