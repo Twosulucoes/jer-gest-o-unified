@@ -86,6 +86,7 @@ import CompeticaoPainelCombatPage from "./pages/admin/CompeticaoPainelCombatPage
 import CompeticaoPainelTimeMarkPage from "./pages/admin/CompeticaoPainelTimeMarkPage";
 import CompeticaoPainelRankingPage from "./pages/admin/CompeticaoPainelRankingPage";
 import ParticipantesPage from "./pages/admin/ParticipantesPage";
+import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 import VoucherValidarPage from "./pages/admin/VoucherValidarPage";
 import DuplicidadesPessoasPage from "./pages/admin/DuplicidadesPessoasPage";
 import PessoasPage from "./pages/admin/PessoasPage";
@@ -246,7 +247,7 @@ import PublicResultsPage from "./pages/public/PublicResultsPage";
 import PublicMedalTablePage from "./pages/public/PublicMedalTablePage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
 // EntregaTecnicaPage is lazy-loaded below
-import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
+// AtletaQrCodePage imported above
 // Ao Vivo PWA (lazy loaded)
 import StatusPage from "./pages/Status";
 
@@ -364,6 +365,9 @@ const App = () => (
               <Route path="participantes/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
               <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteDetalhePage /></ProtectedRoute>} />
               <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
+              <Route path="pessoas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PessoasPage /></ProtectedRoute>} />
+              <Route path="pessoas/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
+              <Route path="pessoas/eventuais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><EventuaisPage /></ProtectedRoute>} />
               <Route path="credenciamento" element={<RedirectToEtapas />} />
               <Route path="credenciamento-externo" element={<RedirectToEtapas />} />
                <Route path="vouchers" element={<RedirectToEtapas />} />
