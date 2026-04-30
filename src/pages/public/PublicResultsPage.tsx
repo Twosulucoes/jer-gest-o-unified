@@ -136,85 +136,118 @@ export default function PublicResultsPage() {
     : "Portal Público";
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/50">
+    <div className="op-screen flex flex-col">
       <PublicHeader 
         subtitle={currentTitle} 
         onBack={handleBack} 
         showBackButton={!!selectedEventId || !!selectedSportEventId} 
       />
 
-      <main className="mx-auto w-full max-w-4xl p-4 space-y-4 flex-grow">
+      <main className="mx-auto w-full max-w-4xl p-4 space-y-6 flex-grow animate-fade-in">
         {/* Event listing */}
         {!selectedEventId && (
           <div className="grid gap-4">
             {loadingEvents ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="relative">
+                  <div className="h-12 w-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                  <Trophy className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-5 w-5 text-primary/50" />
+                </div>
+                <p className="text-sm font-medium text-muted-foreground animate-pulse">Carregando competições...</p>
               </div>
             ) : events.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  Nenhum evento em fase de divulgação no momento.
+              <Card className="op-card-elevated border-dashed">
+                <CardContent className="py-16 text-center space-y-3">
+                  <div className="bg-muted/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Calendar className="h-8 w-8 text-muted-foreground/50" />
+                  </div>
+                  <p className="font-bold text-lg">Nenhum evento ativo</p>
+                  <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                    Não há eventos em fase de divulgação no momento. Volte em breve!
+                  </p>
                 </CardContent>
               </Card>
             ) : (
-              events.map((ev) => (
-                <Card
-                  key={ev.id}
-                  className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group"
-                  onClick={() => setSelectedEventId(ev.id)}
-                >
-                  <CardContent className="flex items-center justify-between py-6">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-primary/10 p-3 rounded-xl group-hover:bg-primary/20 transition-colors">
-                        <Trophy className="h-6 w-6 text-primary" />
+              <div className="grid gap-4 sm:grid-cols-1">
+                {events.map((ev, idx) => (
+                  <Card
+                    key={ev.id}
+                    className="op-card group cursor-pointer transition-all hover:scale-[1.01] hover:shadow-accent-glow animate-fade-in"
+                    style={{ animationDelay: `${idx * 50}ms` }}
+                    onClick={() => setSelectedEventId(ev.id)}
+                  >
+                    <CardContent className="flex items-center justify-between py-6 px-6">
+                      <div className="flex items-center gap-5">
+                        <div className="bg-primary/10 p-4 rounded-2xl group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
+                          <Trophy className="h-7 w-7 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-extrabold text-xl tracking-tight group-hover:text-primary transition-colors">{ev.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="font-bold px-2 py-0 text-[10px] uppercase tracking-wider">
+                              EDIÇÃO {ev.year}
+                            </Badge>
+                            {ev.status === 'ativo' && (
+                              <span className="flex items-center gap-1 text-[10px] font-bold text-success uppercase">
+                                <span className="pulse-dot" /> EM ANDAMENTO
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-lg">{ev.name}</p>
-                        <p className="text-sm text-muted-foreground">{ev.year}</p>
+                      <div className="bg-muted/50 p-2 rounded-full group-hover:bg-primary/10 transition-colors">
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </div>
         )}
 
         {/* Sport events listing */}
         {selectedEventId && !selectedSportEventId && (
-          <div className="grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {loadingSportEvents ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
+                <div className="h-10 w-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-sm font-medium text-muted-foreground">Listando modalidades...</p>
               </div>
             ) : sportEvents.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  Nenhuma prova encontrada para este evento.
-                </CardContent>
-              </Card>
+              <div className="col-span-full">
+                <Card className="op-card border-dashed">
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    Nenhuma prova encontrada para este evento.
+                  </CardContent>
+                </Card>
+              </div>
             ) : (
-              sportEvents.map((se: any) => (
+              sportEvents.map((se: any, idx: number) => (
                 <Card
                   key={se.id}
-                  className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group"
+                  className="op-card group cursor-pointer transition-all hover:border-primary/50 hover:shadow-md animate-fade-in"
+                  style={{ animationDelay: `${idx * 30}ms` }}
                   onClick={() => setSelectedSportEventId(se.id)}
                 >
-                  <CardContent className="flex items-center justify-between py-4">
-                    <div>
-                      <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {se.sports?.name} — {se.categories?.name}
+                  <CardContent className="flex items-center justify-between p-5">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                        {se.sports?.name}
                       </p>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant="outline" className="text-[10px]">
+                      <p className="text-xs text-muted-foreground font-medium mb-2">{se.categories?.name}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <Badge variant="outline" className="text-[9px] font-bold uppercase py-0 px-2 bg-background/50">
                           {se.gender === "M" ? "Masculino" : se.gender === "F" ? "Feminino" : "Misto"}
                         </Badge>
-                        {se.sports?.is_collective && <Badge variant="secondary" className="text-[10px]">Coletiva</Badge>}
+                        {se.sports?.is_collective && (
+                          <Badge variant="secondary" className="text-[9px] font-bold uppercase py-0 px-2 bg-blue-500/10 text-blue-600 border-none">
+                            Coletiva
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                   </CardContent>
                 </Card>
               ))
@@ -224,152 +257,218 @@ export default function PublicResultsPage() {
 
         {/* Prova Detail with Tabs */}
         {selectedSportEventId && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="flex items-center justify-between mb-4">
-              <TabsList className="grid grid-cols-2 w-[300px]">
-                <TabsTrigger value="results" className="gap-2">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-panel p-2 rounded-2xl">
+              <TabsList className="grid grid-cols-2 w-full sm:w-[320px] bg-background/50 rounded-xl p-1">
+                <TabsTrigger value="results" className="gap-2 rounded-lg py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
                   <Trophy className="h-4 w-4" /> Resultados
                 </TabsTrigger>
-                <TabsTrigger value="agenda" className="gap-2" disabled={!selectedEvent?.public_agenda_published}>
+                <TabsTrigger value="agenda" className="gap-2 rounded-lg py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all" disabled={!selectedEvent?.public_agenda_published}>
                   <Calendar className="h-4 w-4" /> Agenda
                 </TabsTrigger>
               </TabsList>
               {!selectedEvent?.public_agenda_published && activeTab === "agenda" && (
-                <p className="text-[10px] text-destructive font-medium italic">Agenda ainda não divulgada</p>
+                <Badge variant="destructive" className="animate-pulse font-bold text-[10px] uppercase py-1">
+                   Não Divulgado
+                </Badge>
               )}
             </div>
 
-            <TabsContent value="results" className="space-y-3 mt-0">
+            <TabsContent value="results" className="space-y-4 mt-0 animate-fade-in">
               {loadingResults ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div className="flex justify-center py-20">
+                  <div className="h-10 w-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
                 </div>
               ) : resultsError ? (
-                <Card className="border-destructive/40 bg-destructive/5">
-                  <CardContent className="py-12 text-center space-y-2">
-                    <p className="font-semibold text-destructive">Não foi possível carregar os resultados.</p>
-                    <p className="text-xs text-muted-foreground">
-                      {(resultsError as Error).message}
+                <Card className="border-destructive/20 bg-destructive/5 rounded-2xl">
+                  <CardContent className="py-12 text-center space-y-3">
+                    <p className="font-bold text-destructive text-lg">Erro ao carregar resultados</p>
+                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                      Não foi possível conectar ao servidor de resultados. Tente novamente em instantes.
                     </p>
+                    <Button variant="outline" size="sm" onClick={() => window.location.reload()} className="mt-2 rounded-xl">
+                      Tentar Novamente
+                    </Button>
                   </CardContent>
                 </Card>
               ) : results.length === 0 ? (
-                <Card>
-                  <CardContent className="py-12 text-center text-muted-foreground space-y-2">
-                    <p className="font-medium">Nenhum resultado publicado para esta prova.</p>
-                    <p className="text-xs">
-                      Resultados só aparecem aqui após serem <strong>validados</strong> pela
-                      coordenação técnica e <strong>vinculados a um Boletim Oficial publicado</strong>.
-                    </p>
+                <Card className="op-card border-dashed">
+                  <CardContent className="py-20 text-center space-y-4">
+                    <div className="bg-amber-500/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+                      <Trophy className="h-8 w-8 text-amber-600/50" />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="font-bold text-xl">Nenhum resultado publicado</p>
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+                        Resultados aparecem aqui após a validação oficial e publicação em boletim oficial. 
+                        Fique atento às atualizações!
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               ) : (
-                results.map((r: any) => {
-                  const entry = r.competition_match_entries;
-                  const match = r.competition_matches;
-                  const name =
-                    entry?.teams?.name ??
-                    entry?.participant_sport_events?.participants?.people?.full_name ??
-                    "—";
+                <div className="grid gap-3">
+                  {results.map((r: any, idx: number) => {
+                    const entry = r.competition_match_entries;
+                    const match = r.competition_matches;
+                    const name =
+                      entry?.teams?.name ??
+                      entry?.participant_sport_events?.participants?.people?.full_name ??
+                      "—";
 
-                  return (
-                    <Card key={r.id}>
-                      <CardContent className="py-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-bold text-foreground">{name}</p>
-                            <p className="text-[11px] text-muted-foreground mt-1">
-                              Partida #{match?.match_number ?? "—"} · {match?.competition_phases?.name ?? ""}
-                              {match?.competition_groups?.name ? ` · ${match.competition_groups.name}` : ""}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            {r.score && (
-                              <p className="text-xl font-black text-primary">
-                                {r.score}
-                                {r.combat_detail?.shootout && (
-                                  <span className="text-sm font-bold text-muted-foreground ml-1">
-                                    ({r.combat_detail.shootout})
+                    return (
+                      <Card key={r.id} className="op-card group hover:shadow-md transition-all animate-fade-in" style={{ animationDelay: `${idx * 40}ms` }}>
+                        <CardContent className="py-5 px-6">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="font-extrabold text-lg text-foreground group-hover:text-primary transition-colors truncate">{name}</p>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <Badge variant="secondary" className="text-[9px] font-bold uppercase tracking-tight py-0">
+                                  PARTIDA #{match?.match_number ?? "—"}
+                                </Badge>
+                                <span className="text-[11px] text-muted-foreground font-medium">
+                                  {match?.competition_phases?.name ?? ""}
+                                  {match?.competition_groups?.name ? ` · ${match.competition_groups.name}` : ""}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              {r.score && (
+                                <div className="flex flex-col items-end">
+                                  <span className="text-2xl font-black text-primary tabular-nums leading-none tracking-tighter">
+                                    {r.score}
                                   </span>
-                                )}
-                              </p>
-                            )}
-                            {r.position && (
-                              <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 font-bold">
-                                {r.position}º lugar
-                              </Badge>
-                            )}
+                                  {r.combat_detail?.shootout && (
+                                    <span className="text-[10px] font-bold text-muted-foreground/70 mt-1 uppercase">
+                                      Decisão: {r.combat_detail.shootout}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {r.position && (
+                                <div className="relative">
+                                  <Badge className={cn(
+                                    "font-black text-sm px-3 py-1 rounded-lg shadow-sm border-none",
+                                    r.position === 1 ? "bg-amber-500 text-white" : 
+                                    r.position === 2 ? "bg-slate-300 text-slate-800" :
+                                    r.position === 3 ? "bg-amber-700 text-white" :
+                                    "bg-primary/10 text-primary"
+                                  )}>
+                                    {r.position}º LUGAR
+                                  </Badge>
+                                  {r.position <= 3 && (
+                                    <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-white animate-ping" />
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               )}
             </TabsContent>
 
-            <TabsContent value="agenda" className="space-y-3 mt-0">
+            <TabsContent value="agenda" className="space-y-4 mt-0 animate-fade-in">
               {!selectedEvent?.public_agenda_published ? (
-                <Card className="border-dashed border-destructive/50 bg-destructive/5">
-                  <CardContent className="py-12 text-center">
-                    <Calendar className="h-10 w-10 text-destructive/40 mx-auto mb-3" />
-                    <p className="text-destructive font-medium">A agenda oficial desta prova ainda não foi liberada para divulgação.</p>
+                <Card className="op-card border-dashed border-destructive/30 bg-destructive/5">
+                  <CardContent className="py-16 text-center space-y-4">
+                    <div className="bg-destructive/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+                      <Calendar className="h-8 w-8 text-destructive/50" />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-destructive font-bold text-xl uppercase tracking-tight">Agenda Privada</p>
+                      <p className="text-sm text-muted-foreground max-w-sm mx-auto">A agenda oficial desta prova ainda não foi liberada para divulgação pública.</p>
+                    </div>
                   </CardContent>
                 </Card>
               ) : loadingMatches ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div className="flex justify-center py-20">
+                  <div className="h-10 w-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
                 </div>
               ) : matches.length === 0 ? (
-                <Card>
-                  <CardContent className="py-12 text-center text-muted-foreground">
-                    Nenhuma partida agendada no momento.
+                <Card className="op-card">
+                  <CardContent className="py-16 text-center text-muted-foreground space-y-2">
+                    <p className="font-bold text-lg">Nenhum confronto agendado</p>
+                    <p className="text-sm">Os confrontos serão listados assim que forem sorteados.</p>
                   </CardContent>
                 </Card>
               ) : (
-                matches.map((m: any) => {
-                  const entries = m.competition_match_entries || [];
-                  const sideA = entries.find((e: any) => e.side === "A");
-                  const sideB = entries.find((e: any) => e.side === "B");
-                  const nameA = sideA?.teams?.name || sideA?.participant_sport_events?.participants?.people?.full_name || "A definir";
-                  const nameB = sideB?.teams?.name || sideB?.participant_sport_events?.participants?.people?.full_name || "A definir";
+                <div className="grid gap-4">
+                  {matches.map((m: any, idx: number) => {
+                    const entries = m.competition_match_entries || [];
+                    const sideA = entries.find((e: any) => e.side === "A");
+                    const sideB = entries.find((e: any) => e.side === "B");
+                    const nameA = sideA?.teams?.name || sideA?.participant_sport_events?.participants?.people?.full_name || "A definir";
+                    const nameB = sideB?.teams?.name || sideB?.participant_sport_events?.participants?.people?.full_name || "A definir";
 
-                  return (
-                    <Card key={m.id} className="overflow-hidden">
-                      <div className="bg-muted/50 px-4 py-2 border-b flex justify-between items-center">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                          {m.competition_phases?.name} {m.competition_groups?.name ? `· ${m.competition_groups.name}` : ""}
-                        </span>
-                        <Badge variant="outline" className="text-[10px] bg-background">
-                          #{m.match_number}
-                        </Badge>
-                      </div>
-                      <CardContent className="py-4">
-                        <div className="flex flex-col gap-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1 text-center font-bold text-sm sm:text-base">{nameA}</div>
-                            <div className="px-4 text-[10px] font-black text-muted-foreground/30">VS</div>
-                            <div className="flex-1 text-center font-bold text-sm sm:text-base">{nameB}</div>
+                    return (
+                      <Card key={m.id} className="op-card overflow-hidden group hover:shadow-md transition-all animate-fade-in" style={{ animationDelay: `${idx * 40}ms` }}>
+                        <div className="bg-muted/40 px-5 py-2.5 border-b border-border/50 flex justify-between items-center group-hover:bg-primary/5 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[10px] font-bold bg-background/80 border-primary/20 text-primary">
+                              #{m.match_number}
+                            </Badge>
+                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                              {m.competition_phases?.name} {m.competition_groups?.name ? `· ${m.competition_groups.name}` : ""}
+                            </span>
                           </div>
-                          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t pt-3">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Calendar className="h-3.5 w-3.5 text-primary" />
-                              {m.match_date ? format(parse(m.match_date, "yyyy-MM-dd", new Date()), "dd/MM/yyyy") : "—"}
-                            </div>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Loader2 className="h-3.5 w-3.5 text-primary" />
-                              {m.start_time?.slice(0, 5) || "—"}
-                            </div>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Swords className="h-3.5 w-3.5 text-primary" />
-                              {m.venues && m.venues.is_active && !m.venues.deleted_at ? m.venues.name : "Local a definir"}
-                            </div>
-                          </div>
+                          {m.status === 'finished' && (
+                            <Badge className="bg-success/10 text-success border-none text-[9px] font-bold uppercase">Finalizado</Badge>
+                          )}
+                          {m.status === 'live' && (
+                            <span className="flex items-center gap-1.5 text-[9px] font-black text-red-500 animate-pulse">
+                              <span className="h-1.5 w-1.5 rounded-full bg-red-500" /> AO VIVO
+                            </span>
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
+                        <CardContent className="p-6">
+                          <div className="flex flex-col gap-6">
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex-1 text-center">
+                                <div className="font-black text-sm sm:text-lg leading-tight group-hover:text-primary transition-colors">{nameA}</div>
+                                <div className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Lado A</div>
+                              </div>
+                              <div className="flex flex-col items-center gap-1">
+                                <div className="text-[11px] font-black text-primary/30 uppercase tracking-tighter">VERSUS</div>
+                                <div className="h-8 w-[1px] bg-border/50" />
+                              </div>
+                              <div className="flex-1 text-center">
+                                <div className="font-black text-sm sm:text-lg leading-tight group-hover:text-primary transition-colors">{nameB}</div>
+                                <div className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Lado B</div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 pt-5 border-t border-border/40">
+                              <div className="flex items-center gap-2 text-xs font-bold text-foreground/80">
+                                <div className="bg-primary/10 p-1.5 rounded-lg text-primary">
+                                  <Calendar className="h-3.5 w-3.5" />
+                                </div>
+                                {m.match_date ? format(parse(m.match_date, "yyyy-MM-dd", new Date()), "dd 'de' MMMM", { locale: undefined }) : "—"}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs font-bold text-foreground/80">
+                                <div className="bg-primary/10 p-1.5 rounded-lg text-primary">
+                                  <Loader2 className="h-3.5 w-3.5" />
+                                </div>
+                                {m.start_time?.slice(0, 5) || "—"}h
+                              </div>
+                              <div className="flex items-center gap-2 text-xs font-bold text-foreground/80">
+                                <div className="bg-primary/10 p-1.5 rounded-lg text-primary">
+                                  <Swords className="h-3.5 w-3.5" />
+                                </div>
+                                <span className="truncate max-w-[140px]">
+                                  {m.venues && m.venues.is_active && !m.venues.deleted_at ? m.venues.name : "Local a definir"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               )}
             </TabsContent>
           </Tabs>
