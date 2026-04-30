@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers, IdCard, Download, Calendar, Settings } from "lucide-react";
@@ -29,6 +29,7 @@ const MODULE_CARDS = [
 
 export default function PwaLandingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { events, activeEventId, setActiveEventId } = useEventContext();
   const { stages, activeStageId, setActiveStageId } = useStageContext();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -63,14 +64,18 @@ export default function PwaLandingPage() {
 
       const opCards = MODULE_CARDS.filter((c) => roles.includes(c.role) || (c.role === "secretaria" && roles.includes("admin")));
       
-      if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria") && activeEventId && activeStageId) {
+      // Only auto-redirect if the user is not explicitly coming back to the landing page
+      // to change event/stage settings (check if session is fresh or if there's no state)
+      const isReturningToMenu = (location.state as any)?.fromMenu === true;
+
+      if (opCards.length === 1 && !roles.includes("admin") && !roles.includes("secretaria") && activeEventId && activeStageId && !isReturningToMenu) {
         navigate(opCards[0].to, { replace: true });
         return;
       }
 
       setLoading(false);
     })();
-  }, [navigate, activeStageId]);
+  }, [navigate, location.state, activeStageId, activeEventId]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

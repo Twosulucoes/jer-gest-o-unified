@@ -185,6 +185,7 @@ const DelegacaoProtestoDetalhePage = lazy(() => import("../pages/pwa/delegacao/D
 const PwaDebugPage = lazy(() => import("../pages/pwa/PwaDebugPage"));
 const QrDiagnosticoPage = lazy(() => import("../pages/pwa/diagnostico/QrDiagnosticoPage"));
 const VincularCredencialPage = lazy(() => import("../pages/pwa/credenciamento/VincularCredencialPage"));
+const PwaSelectionFallback = lazy(() => import("../pages/pwa/PwaSelectionFallback"));
 
 // Public Pages
 const PublicResultsPage = lazy(() => import("../pages/public/PublicResultsPage"));
@@ -351,9 +352,10 @@ export const AppRoutes = () => (
 
       <Route path="/pwa" element={<PwaRouteGuard><PwaLayout /></PwaRouteGuard>}>
         <Route index element={<PwaLandingPage />} />
-        <Route path=":module" element={<PwaModulePage />} />
+        <Route path="configuracao" element={<PwaSelectionFallback />} />
         <Route path="install" element={<PwaInstallPage />} />
-        
+        <Route path=":module" element={<PwaModulePage />} />
+
         <Route path="alojamento" element={<AlojamentoHomePage />} />
         <Route path="alojamento/scan" element={<AlojamentoScanPage />} />
         <Route path="alojamento/buscar" element={<AlojamentoBuscarPage />} />
