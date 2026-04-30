@@ -37,7 +37,16 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 
 ### Changed
+- **[Roteamento]** Conclusão da Fase 2 do Saneamento de Rotas: normalização e segregação de escopos Admin (negócio) vs Super (infraestrutura).
+- **[Roteamento]** Movimentação de rotas críticas para escopo Super: `/admin/acessos/pwa`, `/admin/importacao/aliases`, `/admin/debug-publicados`.
+- **[Roteamento]** Implementação de redirecionamentos permanentes para manter retrocompatibilidade de links antigos.
 - Labels de credenciamento padronizados ("Registrar presença", "Emitir credencial")
+
+### Removed
+- **[Dívida Técnica]** Remoção definitiva de código comentado e importações mortas em `AppRoutes.tsx` e `AdminLayout.tsx`.
+- **[Roteamento]** Remoção da rota redundante `/admin/dados` (unificada em `/super/dados`).
+- **[Roteamento]** Remoção da rota órfã `/admin/central-controle` (redirecionada para `/admin`).
+- **[Roteamento]** Remoção da rota órfã `/admin/auth/email-templates` (redirecionada para `/admin`).
 
 ### Fixed
 - Unificação de `credential_code` e `qr_code_value` em utilitário centralizado
