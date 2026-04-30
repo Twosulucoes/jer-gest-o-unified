@@ -37,6 +37,7 @@ export function EtapaSwitcher({ subPath, className }: EtapaSwitcherProps) {
 
   const handleSelect = (stageId: string) => {
     const base = `/admin/etapa/${stageId}`;
+    // If we are currently in a stage, preserve the subpath relative to it
     navigate(subPath ? `${base}/${subPath}` : base);
   };
 

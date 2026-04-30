@@ -33,14 +33,14 @@ const MODULES: ModuleCard[] = [
     label: "Participantes",
     description: "Atletas, técnicos e staff inscritos nesta etapa.",
     icon: <UsersRound className="h-5 w-5" />,
-    to: (id) => `/admin/etapa/${id}/participantes`,
+    to: (id) => `/admin/participantes?stageId=${id}`,
     color: "text-blue-600",
   },
   {
     label: "Delegações (Escolas)",
     description: "Escolas com participantes nesta etapa.",
     icon: <Users className="h-5 w-5" />,
-    to: (id) => `/admin/etapa/${id}/delegacoes`,
+    to: (id) => `/admin/delegacoes?stageId=${id}`,
     color: "text-indigo-600",
   },
   {
