@@ -35,6 +35,7 @@ import ScoreLauncher from "@/components/registros/launchers/ScoreLauncher";
 import SetsLauncher from "@/components/registros/launchers/SetsLauncher";
 import CombatLauncher from "@/components/registros/launchers/CombatLauncher";
 import TimeMarkLauncher from "@/components/registros/launchers/TimeMarkLauncher";
+import RankingLauncher from "@/components/registros/launchers/RankingLauncher";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -103,7 +104,8 @@ function TabPlacar({ matchId, entries, sportEventId }: { matchId: string; entrie
       {family === "score" && <ScoreLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />}
       {family === "sets" && <SetsLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />}
       {family === "combat" && <CombatLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />}
-      {(family === "time" || family === "mark" || family === "ranking") && <TimeMarkLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />}
+      {(family === "time" || family === "mark") && <TimeMarkLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />}
+      {family === "ranking" && <RankingLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />}
       
       {!["score", "sets", "combat", "time", "mark", "ranking"].includes(family) && (
         <Alert variant="destructive">
