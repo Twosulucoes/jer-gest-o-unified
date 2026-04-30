@@ -9,6 +9,8 @@ import type { AppRole } from "@/config/accessControl";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { VersionBadge } from "../VersionBadge";
+import { logPwaEvent } from "@/utils/pwaTelemetry";
+
 
 interface PwaRouteGuardProps {
   children: React.ReactNode;
@@ -48,9 +50,22 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
           setResourceError("Ocorreu um erro ao validar o acesso ao incidente.");
         } else if (!data) {
           setResourceError("Incidente não encontrado.");
+          logPwaEvent({
+            action: "invalid_resource_access",
+            reason: "Incident not found",
+            metadata: { incidentId },
+            event_id: activeEventId
+          });
         } else if (data.event_id !== activeEventId) {
           setResourceError("Este incidente não pertence ao evento selecionado.");
+          logPwaEvent({
+            action: "invalid_resource_access",
+            reason: "Incident belongs to different event",
+            metadata: { incidentId, incidentEventId: data.event_id },
+            event_id: activeEventId
+          });
         } else {
+
           setResourceError(null);
         }
       } catch (err) {
@@ -85,19 +100,39 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
 
   if (isPwaInternalRoute) {
     if (!activeEventId) {
+      logPwaEvent({
+        action: "forced_config_redirect",
+        target_path: "/pwa/configuracao",
+        reason: "missing_event"
+      });
       return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_event" }} replace />;
     }
     if (requireStage && !activeStageId) {
+      logPwaEvent({
+        action: "forced_config_redirect",
+        target_path: "/pwa/configuracao",
+        reason: "missing_stage",
+        event_id: activeEventId
+      });
       return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_stage" }} replace />;
     }
+
   }
 
   // If specific roles required, check. Admin/secretaria always pass.
   if (allowedRoles && allowedRoles.length > 0) {
     const authorized = hasRole("admin") || hasRole("super_admin") || hasRole("secretaria") || allowedRoles.some((r) => hasRole(r));
     if (!authorized) {
+      logPwaEvent({
+        action: "access_denied",
+        reason: "User lacks required roles",
+        metadata: { allowedRoles },
+        event_id: activeEventId,
+        stage_id: activeStageId
+      });
       return <Navigate to="/acesso-negado" replace />;
     }
+
   }
 
   // Resource Ownership Check: For specific routes like incidents, ensure it belongs to the active event
