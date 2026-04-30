@@ -6301,6 +6301,45 @@ export type Database = {
           },
         ]
       }
+      remediation_logs: {
+        Row: {
+          action_key: string
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          payload: Json | null
+          severity: string | null
+          status: string | null
+          target_id: string | null
+          target_name: string | null
+        }
+        Insert: {
+          action_key: string
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          severity?: string | null
+          status?: string | null
+          target_id?: string | null
+          target_name?: string | null
+        }
+        Update: {
+          action_key?: string
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          severity?: string | null
+          status?: string | null
+          target_id?: string | null
+          target_name?: string | null
+        }
+        Relationships: []
+      }
       report_presets: {
         Row: {
           columns: Json | null
