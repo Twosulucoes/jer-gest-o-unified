@@ -135,7 +135,6 @@ const SuperManualPage = lazy(() => import("../pages/super/SuperManualPage"));
 const SuperChamadosPage = lazy(() => import("../pages/super/SuperChamadosPage"));
 const SuperInspectorPage = lazy(() => import("../pages/super/SuperInspectorPage"));
 const SuperPermissionsPage = lazy(() => import("../pages/super/SuperPermissionsPage"));
-const SuperPermissionsPage = lazy(() => import("../pages/super/SuperPermissionsPage"));
 const SuperFamiliasInferidasPage = lazy(() => import("../pages/super/SuperFamiliasInferidasPage"));
 const DocumentationPage = lazy(() => import("../pages/super/DocumentationPage"));
 
