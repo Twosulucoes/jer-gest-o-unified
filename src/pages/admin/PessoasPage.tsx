@@ -218,9 +218,7 @@ export default function PessoasPage() {
     ], timestampedName("central_pessoas"));
   };
 
-  const duplicidadesLink = stageId 
-    ? `/admin/etapa/${stageId}/pessoas/duplicidades`
-    : "/admin/participantes/duplicidades";
+  const duplicidadesLink = "/admin/pessoas/duplicidades";
 
   if (!canManage) {
     return (
