@@ -1,7 +1,7 @@
 import { useQueries } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-const STALE = 30_000;
+const STALE = 60_000 * 5; // 5 minutes instead of 30 seconds for non-critical data
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
@@ -93,7 +93,7 @@ export function useDashboardData(eventId?: string | null) {
       {
         queryKey: ["dash3", "participants", eventId],
         enabled,
-        staleTime: 0,
+        staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("participants")
             .select("id, credentialed_at, delegation_id", { count: "exact" })
@@ -109,7 +109,7 @@ export function useDashboardData(eventId?: string | null) {
       {
         queryKey: ["dash3", "credentials", eventId],
         enabled,
-        staleTime: 0,
+        staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("participant_credentials")
             .select("id, status, issued_at, created_at, participant_id", { count: "exact" })
@@ -236,7 +236,7 @@ export function useDashboardData(eventId?: string | null) {
       {
         queryKey: ["dash3", "matches", eventId],
         enabled,
-        staleTime: 0,
+        staleTime: 60_000, // 1 minute stale for matches
         queryFn: () => safe(async () => {
           const query = supabase.from("competition_matches")
             .select("id, status, sport_event_id, match_date, start_time", { count: "exact" })

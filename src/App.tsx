@@ -36,7 +36,6 @@ import ImportacaoPage from "./pages/admin/ImportacaoPage";
 import ImportacaoModeloPage from "./pages/admin/ImportacaoModeloPage";
 import ImportacaoPendenciasPage from "./pages/admin/ImportacaoPendenciasPage";
 // ImportacaoCatalogoPage removed — consolidated into RegrasPage
-import CredenciamentoPage from "./pages/admin/CredenciamentoPage";
 import CredenciamentoExternoPage from "./pages/admin/CredenciamentoExternoPage";
 import CredenciamentoSeguroPage from "./pages/admin/CredenciamentoSeguroPage";
 import ValidacaoQRPage from "./pages/admin/ValidacaoQRPage";
@@ -66,7 +65,7 @@ import AlimentacaoRelatoriosPage from "./pages/admin/AlimentacaoRelatoriosPage";
 import AlojamentoRelatoriosPage from "./pages/admin/AlojamentoRelatoriosPage";
 import CompeticaoFasesPage from "./pages/admin/CompeticaoFasesPage";
 import CompeticaoPartidasAgendaPage from "./pages/admin/CompeticaoPartidasAgendaPage";
-import CompeticaoPartidaDetalhePage from "./pages/admin/CompeticaoPartidaDetalhePage";
+// CompeticaoPartidaDetalhePage is lazy-loaded below
 import CompeticaoLancamentoScorePage from "./pages/admin/CompeticaoLancamentoScorePage";
 import CompeticaoLancamentoSetsPage from "./pages/admin/CompeticaoLancamentoSetsPage";
 import CompeticaoLancamentoCombatPage from "./pages/admin/CompeticaoLancamentoCombatPage";
@@ -240,7 +239,7 @@ import AccessDeniedPage from "./pages/AccessDeniedPage";
 import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
 import PublicResultsPage from "./pages/public/PublicResultsPage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
-import EntregaTecnicaPage from "./pages/public/EntregaTecnicaPage";
+// EntregaTecnicaPage is lazy-loaded below
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 // Ao Vivo PWA (lazy loaded)
 import StatusPage from "./pages/Status";
@@ -248,6 +247,9 @@ import StatusPage from "./pages/Status";
 // AoVivoLoginPage removed — unified login at /login
 const AoVivoHomePage = lazy(() => import("./pages/aovivo/AoVivoHomePage"));
 const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
+const CredenciamentoPage = lazy(() => import("./pages/admin/CredenciamentoPage"));
+const EntregaTecnicaPage = lazy(() => import("./pages/public/EntregaTecnicaPage"));
+const CompeticaoPartidaDetalhePage = lazy(() => import("./pages/admin/CompeticaoPartidaDetalhePage"));
 
 import { MonitoringErrorBoundary } from "@/components/MonitoringErrorBoundary";
 import { installErrorReporter } from "@/lib/monitoring/errorReporter";
@@ -655,11 +657,11 @@ const App = () => (
             {/* Evento Rules Center routes removed — consolidated into /admin/regras-evento */}
             <Route path="*" element={<NotFound />} />
                 </Routes>
-              </CompetitionProvider>
-            </StageProvider>
-          </EventProvider>
-        </VersionValidator>
-      </AuthProvider>
+                </CompetitionProvider>
+              </StageProvider>
+            </EventProvider>
+          </VersionValidator>
+        </AuthProvider>
       </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
