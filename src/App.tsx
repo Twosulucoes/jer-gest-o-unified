@@ -36,9 +36,7 @@ import ImportacaoPage from "./pages/admin/ImportacaoPage";
 import ImportacaoModeloPage from "./pages/admin/ImportacaoModeloPage";
 import ImportacaoPendenciasPage from "./pages/admin/ImportacaoPendenciasPage";
 // ImportacaoCatalogoPage removed — consolidated into RegrasPage
-import CredenciamentoPage from "./pages/admin/CredenciamentoPage";
-import CredenciamentoExternoPage from "./pages/admin/CredenciamentoExternoPage";
-import CredenciamentoSeguroPage from "./pages/admin/CredenciamentoSeguroPage";
+// CredenciamentoPage and other large pages are now lazy-loaded
 import ValidacaoQRPage from "./pages/admin/ValidacaoQRPage";
 import TransporteHubPage from "./pages/admin/TransporteHubPage";
 import TransporteVeiculosPage from "./pages/admin/TransporteVeiculosPage";
@@ -66,11 +64,8 @@ import AlimentacaoRelatoriosPage from "./pages/admin/AlimentacaoRelatoriosPage";
 import AlojamentoRelatoriosPage from "./pages/admin/AlojamentoRelatoriosPage";
 import CompeticaoFasesPage from "./pages/admin/CompeticaoFasesPage";
 import CompeticaoPartidasAgendaPage from "./pages/admin/CompeticaoPartidasAgendaPage";
-import CompeticaoPartidaDetalhePage from "./pages/admin/CompeticaoPartidaDetalhePage";
+// CompeticaoPartidaDetalhePage is now lazy loaded
 import CompeticaoLancamentoScorePage from "./pages/admin/CompeticaoLancamentoScorePage";
-import CompeticaoLancamentoSetsPage from "./pages/admin/CompeticaoLancamentoSetsPage";
-import CompeticaoLancamentoCombatPage from "./pages/admin/CompeticaoLancamentoCombatPage";
-import CompeticaoLancamentoTimeMarkPage from "./pages/admin/CompeticaoLancamentoTimeMarkPage";
 import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
 import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
 import CompeticaoEquipesPage from "./pages/admin/CompeticaoEquipesPage";
@@ -240,7 +235,7 @@ import AccessDeniedPage from "./pages/AccessDeniedPage";
 import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
 import PublicResultsPage from "./pages/public/PublicResultsPage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
-import EntregaTecnicaPage from "./pages/public/EntregaTecnicaPage";
+// EntregaTecnicaPage is now lazy loaded
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 // Ao Vivo PWA (lazy loaded)
 import StatusPage from "./pages/Status";
@@ -248,6 +243,12 @@ import StatusPage from "./pages/Status";
 // AoVivoLoginPage removed — unified login at /login
 const AoVivoHomePage = lazy(() => import("./pages/aovivo/AoVivoHomePage"));
 const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
+const CredenciamentoPage = lazy(() => import("./pages/admin/CredenciamentoPage"));
+const EntregaTecnicaPage = lazy(() => import("./pages/public/EntregaTecnicaPage"));
+const CompeticaoPartidaDetalhePage = lazy(() => import("./pages/admin/CompeticaoPartidaDetalhePage"));
+const CredenciamentoPage = lazy(() => import("./pages/admin/CredenciamentoPage"));
+const EntregaTecnicaPage = lazy(() => import("./pages/public/EntregaTecnicaPage"));
+const CompeticaoPartidaDetalhePage = lazy(() => import("./pages/admin/CompeticaoPartidaDetalhePage"));
 
 import { MonitoringErrorBoundary } from "@/components/MonitoringErrorBoundary";
 import { installErrorReporter } from "@/lib/monitoring/errorReporter";
