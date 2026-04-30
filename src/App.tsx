@@ -86,7 +86,7 @@ import CompeticaoPainelCombatPage from "./pages/admin/CompeticaoPainelCombatPage
 import CompeticaoPainelTimeMarkPage from "./pages/admin/CompeticaoPainelTimeMarkPage";
 import CompeticaoPainelRankingPage from "./pages/admin/CompeticaoPainelRankingPage";
 import ParticipantesPage from "./pages/admin/ParticipantesPage";
-import AtletasQrCodePage from "./pages/admin/AtletasQrCodePage";
+import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
 import VoucherValidarPage from "./pages/admin/VoucherValidarPage";
 import DuplicidadesPessoasPage from "./pages/admin/DuplicidadesPessoasPage";
 import PessoasPage from "./pages/admin/PessoasPage";
@@ -483,7 +483,7 @@ const App = () => (
               <Route path="configuracoes/identidade-visual" element={<ProtectedRoute allowedRoles={["admin"]}><IdentidadeVisualPage /></ProtectedRoute>} />
               <Route path="configuracoes/supabase" element={<ProtectedRoute allowedRoles={["admin"]}><SupabaseSetupPage /></ProtectedRoute>} />
 
-              <Route path="atletas/qrcode" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AtletasQrCodePage /></ProtectedRoute>} />
+              <Route path="atletas/qrcode" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AtletaQrCodePage /></ProtectedRoute>} />
               {/* Ocorrências — operacional, redireciona para Etapa */}
               <Route path="ocorrencias" element={<RedirectToEtapas />} />
             </Route>
