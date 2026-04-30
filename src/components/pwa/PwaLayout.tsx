@@ -154,9 +154,10 @@ export default function PwaLayout({
         action: "route_not_found",
         reason: "Module not identified in PwaLayout",
         metadata: { path },
-        event_id: activeEventId,
-        stage_id: activeStageId?.id
+        event_id: activeEvent?.id,
+        stage_id: activeStage?.id
       });
+
     }
 
     if (!outerCtx.isActive) return;
