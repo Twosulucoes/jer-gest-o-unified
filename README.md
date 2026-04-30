@@ -62,7 +62,7 @@ Para navegar pela complexidade do sistema, utilize os guias detalhados abaixo:
 | **🏆 Competição** | ✅ | Motor de regras JSONB e suporte a 6 famílias de modalidades. |
 | **📄 Boletins** | ✅ | Geração automática de PDF e XLSX oficial. |
 | **📱 PWA Operacional** | ✅ | Módulos isolados por perfil com suporte a contexto de etapa. |
-| **💡 Manual e Ajuda** | ✅ | **Novo!** Jornada de "Primeiros Passos" interativa para Admins. |
+| **💡 Manual e Ajuda** | ✅ | **Atualizado!** Guia completo de PWAs com operação offline e vouchers. |
 
 ---
 
