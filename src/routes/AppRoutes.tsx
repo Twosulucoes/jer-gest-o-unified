@@ -186,6 +186,8 @@ const PwaDebugPage = lazy(() => import("../pages/pwa/PwaDebugPage"));
 const QrDiagnosticoPage = lazy(() => import("../pages/pwa/diagnostico/QrDiagnosticoPage"));
 const VincularCredencialPage = lazy(() => import("../pages/pwa/credenciamento/VincularCredencialPage"));
 const PwaSelectionFallback = lazy(() => import("../pages/pwa/PwaSelectionFallback"));
+const PwaNotFoundHandler = lazy(() => import("../components/pwa/PwaNotFoundHandler"));
+
 
 // Public Pages
 const PublicResultsPage = lazy(() => import("../pages/public/PublicResultsPage"));
@@ -405,7 +407,11 @@ export const AppRoutes = () => (
         <Route path="debug" element={<PwaDebugPage />} />
         <Route path="qr-diagnostico" element={<QrDiagnosticoPage />} />
         <Route path="vincular-credencial" element={<VincularCredencialPage />} />
+        
+        {/* Catch-all for /pwa/* routes */}
+        <Route path="*" element={<PwaNotFoundHandler />} />
       </Route>
+
 
       <Route path="/resultados-publicos" element={<PublicResultsPage />} />
       <Route path="/public/results" element={<Navigate to="/resultados-publicos" replace />} />
