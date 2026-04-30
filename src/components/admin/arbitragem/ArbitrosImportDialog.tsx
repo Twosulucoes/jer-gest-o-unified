@@ -117,6 +117,9 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
           updated[globalIdx] = { ...row, status: "ok" };
         } catch (err: any) {
           const msg: string = err.message || "Erro";
+          // If the message says the user already exists, it might be that the Edge Function 
+          // failed to handle it OR it returned a 500. But with my update, it should return success.
+          // However, we keep a check here just in case.
           const isDup = msg.toLowerCase().includes("already") || msg.toLowerCase().includes("existe") || msg.toLowerCase().includes("duplicate");
           updated[globalIdx] = { ...row, status: isDup ? "duplicate" : "error", error: msg };
         }
