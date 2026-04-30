@@ -2,14 +2,15 @@ import { useState } from "react";
 import { useRegistros } from "@/hooks/useRegistros";
 import { useEventContext } from "@/contexts/EventContext";
 import { Button } from "@/components/ui/button";
-import { Plus, Trophy, Calendar, MapPin, Filter, Pencil, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Trophy, Calendar, MapPin, Filter, Pencil, Trash2, ShieldCheck, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import RegistroFormDialog from "./RegistroFormDialog";
+import { Link } from "react-router-dom";
 
 export default function RegistrosPage() {
   const { activeEvent } = useEventContext();
@@ -46,6 +47,26 @@ export default function RegistrosPage() {
           </Button>
         </div>
       </div>
+
+      <Card className="bg-primary/5 border-primary/20 shadow-none">
+        <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-center md:text-left">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-bold text-primary">Módulo de Prestação de Contas (OSC)</h3>
+              <p className="text-xs text-muted-foreground">Validação de evidências, lançamentos operacionais e relatório formal.</p>
+            </div>
+          </div>
+          <Link to="/admin/registros/prestacao-contas">
+            <Button size="sm" className="gap-2">
+              Acessar Módulo OSC
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
