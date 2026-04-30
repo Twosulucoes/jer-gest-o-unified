@@ -183,30 +183,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-[#0B1220] selection:bg-primary/30 selection:text-white">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div 
-          className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full blur-[120px] opacity-20"
-          style={{ background: brand.colors.accentBlue }}
-        />
-        <div 
-          className="absolute -bottom-[10%] -right-[10%] w-[45%] h-[45%] rounded-full blur-[120px] opacity-15"
-          style={{ background: brand.colors.accentTeal }}
-        />
-        <div 
-          className="absolute top-[20%] right-[5%] w-[30%] h-[30%] rounded-full blur-[100px] opacity-10"
-          style={{ background: brand.colors.accentGreen }}
-        />
-        <div className="absolute inset-0 bg-grid opacity-[0.03]" />
-      </div>
-
+    <div className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-background selection:bg-primary/30 selection:text-foreground op-screen">
       <div className="relative z-10 flex min-h-[100dvh] flex-col px-6">
-        <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-12 animate-in fade-in zoom-in-95 duration-700">
+        <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center py-12 animate-fade-in">
           
-          {/* Brand Header */}
           <header className="mb-10 text-center space-y-6">
-            <div className="inline-flex items-center justify-center p-4 rounded-[2rem] bg-white/5 backdrop-blur-xl ring-1 ring-white/10 shadow-2xl">
+            <div className="inline-flex items-center justify-center p-5 rounded-[2.5rem] bg-white/5 backdrop-blur-xl ring-1 ring-white/10 shadow-2xl transition-transform hover:scale-105 duration-500">
               <img
                 src="/brand/logo.png"
                 alt="JER Gestão"
@@ -219,45 +201,46 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium text-slate-400 max-w-[280px] mx-auto leading-relaxed">
-                Entre com as credenciais da sua instituição para acessar a plataforma.
+              <h1 className="text-3xl font-black tracking-tighter text-foreground">
+                Portal <span className="text-primary italic">Operacional</span>
+              </h1>
+              <p className="text-sm font-medium text-muted-foreground max-w-[300px] mx-auto leading-relaxed">
+                Bem-vindo ao sistema oficial dos Jogos Escolares. Identifique-se para continuar.
               </p>
             </div>
           </header>
 
-          {/* Login Card */}
           <main className="relative group">
-            {/* Card Glow Effect */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-accentTeal to-accentGreen rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
             
-            <Card className="relative glass-panel-strong border-0 shadow-2xl rounded-3xl overflow-hidden">
+            <Card className="op-card-elevated relative border-0 shadow-2xl rounded-[2rem] overflow-hidden glass-panel-strong">
               <CardContent className="p-8 sm:p-10">
                 <form onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-2.5">
-                    <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">
-                      Identificação
+                    <Label htmlFor="email" className="op-label ml-1">
+                      Identificação (E-mail)
                     </Label>
-                    <div className="relative">
+                    <div className="relative group/input">
                       <Input
                         id="email"
                         type="email"
                         inputMode="email"
-                        placeholder="nome@instituicao.gov.br"
+                        placeholder="exemplo@seed.rr.gov.br"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="h-14 rounded-2xl border-white/10 bg-white/5 px-5 text-white placeholder:text-slate-500 focus:ring-primary/50 focus:border-primary/50 transition-all"
+                        className="h-14 rounded-2xl border-border/50 bg-background/50 px-5 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-primary/30 focus-visible:border-primary/50 transition-all text-base"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between ml-1">
-                      <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                      <Label htmlFor="password" className="op-label">
                         Senha de Acesso
                       </Label>
                     </div>
-                    <div className="relative">
+                    <div className="relative group/input">
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
@@ -265,37 +248,24 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="h-14 rounded-2xl border-white/10 bg-white/5 px-5 text-white placeholder:text-slate-500 focus:ring-primary/50 focus:border-primary/50 transition-all"
+                        className="h-14 rounded-2xl border-border/50 bg-background/50 px-5 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-primary/30 focus-visible:border-primary/50 transition-all text-base"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-0 top-0 flex h-14 w-14 items-center justify-center text-slate-400 hover:text-white transition-colors"
+                        className="absolute right-0 top-0 flex h-14 w-14 items-center justify-center text-muted-foreground hover:text-primary transition-colors"
                         tabIndex={-1}
+                        aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
                       >
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
-                  <ul className="ml-1 mt-2 space-y-1 text-[11px] text-slate-500">
-                    <li className="flex items-center gap-1.5">
-                      <span className="h-1 w-1 rounded-full bg-slate-500" />
-                      Mínimo de 8 caracteres
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <span className="h-1 w-1 rounded-full bg-slate-500" />
-                      Uma letra maiúscula e uma minúscula
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <span className="h-1 w-1 rounded-full bg-slate-500" />
-                      Um número e um caractere especial
-                    </li>
-                  </ul>
                   </div>
 
                   {error && (
-                    <div className="animate-in fade-in slide-in-from-top-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400 flex items-center gap-2">
-                      <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                      {error}
+                    <div className="animate-in fade-in slide-in-from-top-2 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive flex items-center gap-3">
+                      <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                      <span className="font-semibold">{error}</span>
                     </div>
                   )}
 
@@ -303,23 +273,22 @@ export default function LoginPage() {
                     <Button
                       type="submit"
                       disabled={loading}
-                      className="h-14 w-full rounded-2xl bg-primary text-white font-bold text-lg shadow-[0_8px_30px_rgb(var(--primary-rgb),0.3)] hover:shadow-[0_8px_30px_rgb(var(--primary-rgb),0.5)] transition-all active:scale-[0.98] btn-shine"
-                      style={{ background: brand.gradients.brandGradient }}
+                      className="op-btn-primary h-14 shadow-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
                     >
                       {loading ? (
                         <Loader2 className="mr-2 h-6 w-6 animate-spin" />
                       ) : (
-                        "Acessar Plataforma JER"
+                        <span className="tracking-tight uppercase font-black text-sm">Entrar no Sistema</span>
                       )}
                     </Button>
                     
                     <button
                       type="button"
                       onClick={() => setRecoverOpen(true)}
-                      className="group flex w-full items-center justify-center py-2 text-sm font-semibold text-slate-400 transition-colors hover:text-white"
+                      className="group flex w-full items-center justify-center py-2 text-xs font-black uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
                     >
                       <span>Esqueceu sua senha?</span>
-                      <div className="ml-2 h-px w-0 bg-white transition-all group-hover:w-8" />
+                      <div className="ml-2 h-px w-0 bg-primary transition-all group-hover:w-8" />
                     </button>
                   </div>
                 </form>
@@ -327,28 +296,28 @@ export default function LoginPage() {
             </Card>
           </main>
 
-          {/* Footer Info */}
-          <footer className="mt-12 text-center space-y-6">
-            <div className="space-y-1">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest leading-relaxed max-w-[300px] mx-auto">
+          <footer className="mt-12 text-center space-y-8">
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] leading-relaxed max-w-[300px] mx-auto">
                 Acesso restrito e monitorado • Sistema de Gestão Esportiva
               </p>
-              <p className="text-[9px] text-slate-600/50 font-mono">
-                v{APP_VERSION}
-              </p>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted/30 border border-border/50 text-[9px] font-mono text-muted-foreground">
+                <span className="w-1.5 h-1.5 rounded-full bg-success opacity-50" />
+                BUILD v{APP_VERSION}
+              </div>
             </div>
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">Desenvolvido por</span>
-              <a
-                href={brand.developer.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="opacity-50 hover:opacity-100 transition-opacity"
-              >
-                <img src="/brand/logo.png" alt="Two Soluções" className="h-6 grayscale invert" />
-              </a>
+            
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-tighter">Powered by</span>
+              <div className="opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all cursor-help flex items-center gap-3">
+                <span className="text-xs font-black text-foreground tracking-tighter">JER GESTÃO</span>
+                <div className="w-px h-4 bg-border" />
+                <span className="text-[10px] font-bold text-foreground">GOVERNO DE RORAIMA</span>
+              </div>
             </div>
           </footer>
+        </div>
+      </div>
         </div>
       </div>
 
