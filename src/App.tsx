@@ -98,6 +98,7 @@ const LinkFormPage = lazy(() => import("./pages/admin/LinkFormPage"));
 const LinkPreviewPage = lazy(() => import("./pages/admin/LinkPreviewPage"));
 const RegistrosPage = lazy(() => import("./pages/admin/registros/RegistrosPage"));
 const ConfigOscPage = lazy(() => import("./pages/admin/registros/ConfigOscPage"));
+const OscAccountabilityModule = lazy(() => import("./pages/admin/registros/OscAccountabilityModule"));
 const SeedLogisticaEtapaPage = lazy(() => import("./pages/admin/SeedLogisticaEtapaPage"));
 const ClonarLogisticaPage = lazy(() => import("./pages/admin/ClonarLogisticaPage"));
 const DebugPublicadosPage = lazy(() => import("./pages/admin/DebugPublicadosPage"));
