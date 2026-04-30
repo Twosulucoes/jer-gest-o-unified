@@ -49,6 +49,24 @@ export default function OscAccountabilityModule() {
   const { data: oscData, isLoading: isLoadingOsc } = useOscData(eventId);
   const { data: oscConfig } = useEventOscConfig(eventId);
 
+  // Histórico de relatórios
+  const { data: reportHistory } = useQuery({
+    queryKey: ["osc-report-history", eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("osc_generated_reports")
+        .select(`
+          *,
+          template:osc_accountability_templates(name)
+        `)
+        .eq("event_id", eventId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!eventId
+  });
+
   const { data: templates } = useQuery({
     queryKey: ["osc-templates"],
     queryFn: async () => {
@@ -58,7 +76,6 @@ export default function OscAccountabilityModule() {
         .order("name");
       if (error) throw error;
       
-      // Auto-select default template
       const defaultTpl = data.find(t => t.is_default);
       if (defaultTpl && !selectedTemplateId) {
         setSelectedTemplateId(defaultTpl.id);
@@ -80,6 +97,33 @@ export default function OscAccountabilityModule() {
       return data;
     },
     enabled: !!eventId
+  });
+
+  const saveReportMutation = useMutation({
+    mutationFn: async ({ content, promptType, templateId }: { content: string, promptType: string, templateId?: string | null }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { data, error } = await supabase
+        .from("osc_generated_reports")
+        .insert({
+          event_id: eventId,
+          user_id: user.id,
+          content,
+          prompt_type: promptType,
+          template_id: templateId,
+          metadata: { generated_at: new Date().toISOString() }
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["osc-report-history"] });
+      toast.success("Relatório salvo no histórico");
+    }
   });
 
   const updateStatusMutation = useMutation({
@@ -137,7 +181,6 @@ export default function OscAccountabilityModule() {
   const pendingCount = evidences?.filter(e => e.status === "pending").length || 0;
   const approvedCount = evidences?.filter(e => e.status === "approved").length || 0;
 
-  // Calculos de conformidade
   const r = oscData?.resumo;
   const categories = ["infraestrutura", "atendimento", "competicao", "cerimonial"];
   const photoCounts = categories.reduce((acc, cat) => {
@@ -207,7 +250,17 @@ export default function OscAccountabilityModule() {
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // Quando terminar o stream, salva automaticamente no banco
+          if (fullContent) {
+            saveReportMutation.mutate({
+              content: fullContent,
+              promptType: "full_report",
+              templateId: selectedTemplateId
+            });
+          }
+          break;
+        }
         
         const chunk = decoder.decode(value, { stream: true });
         const lines = chunk.split('\n');
@@ -240,6 +293,14 @@ export default function OscAccountabilityModule() {
       setIsAiDialogOpen(false);
     } finally {
       setIsAiLoading(false);
+    }
+  };
+
+  const handleOpenLastReport = () => {
+    if (reportHistory && reportHistory.length > 0) {
+      setAiReport(reportHistory[0].content);
+      setSelectedTemplateId(reportHistory[0].template_id);
+      setIsAiDialogOpen(true);
     }
   };
 
