@@ -251,12 +251,18 @@ export default function PrestacaoContasOscPage() {
                 {auditHistory.map((entry) => {
                   const status = getHistoryStatus(entry);
                   return (
-                    <div key={entry.id} className="p-3 border rounded-lg space-y-2 text-xs">
+                    <div key={entry.id} className="p-3 border rounded-lg space-y-2 text-xs bg-card hover:shadow-sm transition-shadow">
                       <div className="flex justify-between items-start">
                         <span className="font-medium">{new Date(entry.created_at).toLocaleString("pt-BR")}</span>
                         <span className={`font-semibold ${status.color}`}>{status.label}</span>
                       </div>
                       <div className="text-muted-foreground">
+                        {entry.report_id && (
+                          <div className="mb-2 p-1.5 bg-muted rounded border border-dashed text-[10px] font-mono break-all flex items-center gap-1.5">
+                            <ShieldCheck className="h-3 w-3 text-primary shrink-0" />
+                            ID: {entry.report_id}
+                          </div>
+                        )}
                         {Object.entries(entry.payload?.photo_counts || {}).map(([k, v]) => (
                           <div key={k} className="flex justify-between">
                             <span className="capitalize">{k}:</span>
