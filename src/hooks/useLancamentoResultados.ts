@@ -285,7 +285,7 @@ export function useSalvarPlacar(matchId: string) {
 
   return useMutation({
     mutationFn: async (
-      scores: Array<{ entryId: string; scoreFinal: string; outcome: string; shootoutScore?: string }>
+      scores: Array<{ entryId: string; scoreFinal: string; outcome: string; shootoutScore?: string; scoreDetail?: any }>
     ) => {
       for (const s of scores) {
         const scoreDetail = s.shootoutScore ? { shootout: s.shootoutScore } : null;
@@ -309,7 +309,7 @@ export function useSalvarPlacar(matchId: string) {
               match_entry_id: s.entryId,
               score: s.scoreFinal,
               outcome: s.outcome,
-              combat_detail: scoreDetail as any,
+              combat_detail: { ...s.scoreDetail, ...scoreDetail },
               result_status: "resultado_lancado",
               recorded_by: user.id,
             },
