@@ -10,6 +10,11 @@ O **JER Gestão** é uma plataforma robusta de gestão operacional para os Jogos
 
 ## 🚀 Novidades Recentes (Abril 2026)
 
+### Saneamento de Rotas (Fase 2 Concluída)
+- **Normalização de Escopos:** Separação clara entre rotas administrativas (negócio) e rotas do sistema/infraestrutura (Super Admin).
+- **Consolidação:** Remoção de rotas redundantes, órfãs e limpeza total de dívida técnica (código comentado).
+- **Segurança:** Rotas de auditoria PWA e mapeamento de importação movidas definitivamente para o escopo restrito do Super Admin.
+
 ### Documentação Técnica
 - Implementada a área **/super/documentacao** utilizando o modelo "Docs-as-Code". 
 - Todo o conjunto de arquivos `.md` do repositório agora é renderizado automaticamente no painel super admin.
