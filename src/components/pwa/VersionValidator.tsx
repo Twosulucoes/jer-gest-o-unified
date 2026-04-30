@@ -43,7 +43,7 @@ export function VersionValidator({ children }: { children: React.ReactNode }) {
       // Pequeno delay para garantir que recursos críticos carregaram (estético)
       const timer = setTimeout(() => {
         setIsSyncing(false);
-      }, 800);
+      }, 300);
 
       return () => clearTimeout(timer);
     };

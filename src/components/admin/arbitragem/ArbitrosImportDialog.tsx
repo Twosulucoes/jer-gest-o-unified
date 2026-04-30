@@ -83,23 +83,31 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
     if (rows.length === 0) return;
     setImporting(true);
     const updated = [...rows];
-    for (let i = 0; i < updated.length; i++) {
-      const row = updated[i];
-      if (row.status === "ok") continue;
-      try {
-        await callAdminUsers("invite_user", {
-          email: row.email,
-          full_name: row.nome || undefined,
-          roles: ["arbitragem"],
-        });
-        updated[i] = { ...row, status: "ok" };
-      } catch (err: any) {
-        const msg: string = err.message || "Erro";
-        const isDup = msg.toLowerCase().includes("already") || msg.toLowerCase().includes("existe") || msg.toLowerCase().includes("duplicate");
-        updated[i] = { ...row, status: isDup ? "duplicate" : "error", error: msg };
-      }
+    
+    // Batch in groups of 3 to avoid overloading Edge Functions
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < updated.length; i += BATCH_SIZE) {
+      const batch = updated.slice(i, i + BATCH_SIZE);
+      const promises = batch.map(async (row, idx) => {
+        const globalIdx = i + idx;
+        if (row.status === "ok") return;
+        try {
+          await callAdminUsers("invite_user", {
+            email: row.email,
+            full_name: row.nome || undefined,
+            roles: ["arbitragem"],
+          });
+          updated[globalIdx] = { ...row, status: "ok" };
+        } catch (err: any) {
+          const msg: string = err.message || "Erro";
+          const isDup = msg.toLowerCase().includes("already") || msg.toLowerCase().includes("existe") || msg.toLowerCase().includes("duplicate");
+          updated[globalIdx] = { ...row, status: isDup ? "duplicate" : "error", error: msg };
+        }
+      });
+      await Promise.all(promises);
       setRows([...updated]);
     }
+
     const ok = updated.filter(r => r.status === "ok").length;
     const dups = updated.filter(r => r.status === "duplicate").length;
     const errs = updated.filter(r => r.status === "error").length;

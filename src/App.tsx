@@ -15,265 +15,184 @@ import { CompetitionProvider } from "@/contexts/CompetitionContext";
 import AdminLayout from "@/components/AdminLayout";
 import RedirectToEtapas from "@/components/admin/RedirectToEtapas";
 import StageLayout from "@/components/StageLayout";
-import StageHomePage from "./pages/admin/StageHomePage";
-import StageReportsPage from "./pages/admin/StageReportsPage";
 import SuperAdminLayout from "@/components/SuperAdminLayout";
+import PwaRouteGuard from "@/components/pwa/PwaRouteGuard";
 import { NetworkStatusBanner } from "@/components/navigation/NetworkStatusBanner";
 import { OfflineSyncManager } from "@/components/pwa/OfflineSyncManager";
-import Index from "./pages/Index";
-import LoginPage from "./pages/LoginPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import ModuleSelectorPage from "./pages/ModuleSelectorPage";
-import DashboardPage from "./pages/admin/DashboardPage";
-import EventosPage from "./pages/admin/EventosPage";
-import EventStagesPage from "./pages/admin/EventStagesPage";
-import EtapasIndexPage from "./pages/admin/EtapasIndexPage";
-import EtapaHubPage from "./pages/admin/EtapaHubPage";
-import ModalidadesPage from "./pages/admin/ModalidadesPage";
-import CategoriasPage from "./pages/admin/CategoriasPage";
-import LocaisPage from "./pages/admin/LocaisPage";
-import InstituicoesPage from "./pages/admin/InstituicoesPage";
-import DelegacoesPage from "./pages/admin/DelegacoesPage";
-import ImportacaoPage from "./pages/admin/ImportacaoPage";
-import ImportacaoModeloPage from "./pages/admin/ImportacaoModeloPage";
-import ImportacaoPendenciasPage from "./pages/admin/ImportacaoPendenciasPage";
-// ImportacaoCatalogoPage removed — consolidated into RegrasPage
-import CredenciamentoExternoPage from "./pages/admin/CredenciamentoExternoPage";
-import CredenciamentoSeguroPage from "./pages/admin/CredenciamentoSeguroPage";
-import ValidacaoQRPage from "./pages/admin/ValidacaoQRPage";
-import TransporteHubPage from "./pages/admin/TransporteHubPage";
-import TransporteVeiculosPage from "./pages/admin/TransporteVeiculosPage";
-import TransporteRotasPage from "./pages/admin/TransporteRotasPage";
-import TransporteViagensPage from "./pages/admin/TransporteViagensPage";
-import TransporteEmbarquePage from "./pages/admin/TransporteEmbarquePage";
-import AlimentacaoHubPage from "./pages/admin/AlimentacaoHubPage";
-import AlimentacaoTiposPage from "./pages/admin/AlimentacaoTiposPage";
-import AlimentacaoLocaisPage from "./pages/admin/AlimentacaoLocaisPage";
-import AlimentacaoJanelasPage from "./pages/admin/AlimentacaoJanelasPage";
-import AlimentacaoConsumoPage from "./pages/admin/AlimentacaoConsumoPage";
-import AlimentacaoDashboardPage from "./pages/admin/AlimentacaoDashboardPage";
-import AlimentacaoPrevisaoPage from "./pages/admin/AlimentacaoPrevisaoPage";
-import AlimentacaoPadroesPage from "./pages/admin/AlimentacaoPadroesPage";
-import AlojamentoHubPage from "./pages/admin/AlojamentoHubPage";
-import AlojamentoPresencaPage from "./pages/admin/AlojamentoPresencaPage";
-import AlojamentoDivergenciasPage from "./pages/admin/AlojamentoDivergenciasPage";
-import AlojamentoLocaisPage from "./pages/admin/AlojamentoLocaisPage";
-import AlojamentoUnidadesPage from "./pages/admin/AlojamentoUnidadesPage";
-import AlojamentoOcupacaoPage from "./pages/admin/AlojamentoOcupacaoPage";
-import AlocacaoLotePage from "./pages/admin/alojamento/AlocacaoLotePage";
-import EvidenciasOSCPage from "./pages/admin/evidencias/EvidenciasOSCPage";
-import TransporteRelatoriosPage from "./pages/admin/TransporteRelatoriosPage";
-import AlimentacaoRelatoriosPage from "./pages/admin/AlimentacaoRelatoriosPage";
-import AlojamentoRelatoriosPage from "./pages/admin/AlojamentoRelatoriosPage";
-import CompeticaoFasesPage from "./pages/admin/CompeticaoFasesPage";
-import CompeticaoPartidasAgendaPage from "./pages/admin/CompeticaoPartidasAgendaPage";
-// CompeticaoPartidaDetalhePage is lazy-loaded below
-import CompeticaoLancamentoScorePage from "./pages/admin/CompeticaoLancamentoScorePage";
-import CompeticaoLancamentoSetsPage from "./pages/admin/CompeticaoLancamentoSetsPage";
-import CompeticaoLancamentoCombatPage from "./pages/admin/CompeticaoLancamentoCombatPage";
-import CompeticaoLancamentoTimeMarkPage from "./pages/admin/CompeticaoLancamentoTimeMarkPage";
-import CompeticaoResultadosPage from "./pages/admin/CompeticaoResultadosPage";
-import CompeticaoGruposPage from "./pages/admin/CompeticaoGruposPage";
-import CompeticaoEquipesPage from "./pages/admin/CompeticaoEquipesPage";
-// NOTE: CompeticaoPartidasPage and CompeticaoAgendaPage removed — consolidated into CompeticaoPartidasAgendaPage
-import CompeticaoCentralPage from "./pages/admin/CompeticaoCentralPage";
-import SincronizarEquipesPage from "./pages/admin/SincronizarEquipesPage";
-import PreValidacaoPage from "./pages/admin/PreValidacaoPage";
-import CompeticaoPainelPage from "./pages/admin/CompeticaoPainelPage";
-import CompeticaoPainelScorePage from "./pages/admin/CompeticaoPainelScorePage";
-import CompeticaoPainelSetsPage from "./pages/admin/CompeticaoPainelSetsPage";
-import CompeticaoPainelCombatPage from "./pages/admin/CompeticaoPainelCombatPage";
-import CompeticaoPainelTimeMarkPage from "./pages/admin/CompeticaoPainelTimeMarkPage";
-import CompeticaoPainelRankingPage from "./pages/admin/CompeticaoPainelRankingPage";
-import ParticipantesPage from "./pages/admin/ParticipantesPage";
-import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
-import VoucherValidarPage from "./pages/admin/VoucherValidarPage";
-import DuplicidadesPessoasPage from "./pages/admin/DuplicidadesPessoasPage";
-import PessoasPage from "./pages/admin/PessoasPage";
-import EventuaisPage from "./pages/admin/EventuaisPage";
-import VouchersPage from "./pages/admin/VouchersPage";
-import VoucherAuditoriaPage from "./pages/admin/VoucherAuditoriaPage";
-import LogisticaConsolidadaPage from "./pages/admin/LogisticaConsolidadaPage";
-import ParticipanteHistoricoPage from "./pages/admin/ParticipanteHistoricoPage";
-import HistoricoBuscaPage from "./pages/admin/HistoricoBuscaPage.tsx";
-import ParticipanteDetalhePage from "./pages/admin/ParticipanteDetalhePage";
-import DelegacaoDetalhePage from "./pages/admin/DelegacaoDetalhePage";
-import CredencialModelosPage from "./pages/admin/CredencialModelosPage";
-import AcessosDelegacoesPage from "./pages/admin/AcessosDelegacoesPage";
-import AcessosUsuariosPage from "./pages/admin/AcessosUsuariosPage";
-import AcessosPwaAuditPage from "./pages/admin/AcessosPwaAuditPage";
-// ParametrosEventoPage removed — consolidated into RegrasEventoPage
-import IrregularidadesPage from "./pages/admin/IrregularidadesPage";
-import NormalizacaoProvasPage from "./pages/admin/NormalizacaoProvasPage";
-import SchemaValidadorPage from "./pages/admin/SchemaValidadorPage";
-import SupabaseSetupPage from "./pages/admin/SupabaseSetupPage";
-
-import OcorrenciasPage from "./pages/admin/OcorrenciasPage";
-// MapaSistemaPage and DiagnosticoCompeticaoPage accessed only via SistemaDiagnosticoPage
-import CentralControlePage from "./pages/admin/CentralControlePage";
-import SistemaDiagnosticoPage from "./pages/admin/SistemaDiagnosticoPage";
-import CentralDadosPage from "./pages/admin/CentralDadosPage";
-import BoletinsPorModalidadePage from "./pages/admin/relatorios/BoletinsPorModalidadePage";
-import DashboardOperacionalPage from "./pages/admin/relatorios/DashboardOperacionalPage";
-import QuadroMedalhasPage from "./pages/admin/relatorios/QuadroMedalhasPage";
-import PrestacaoContasOscPage from "./pages/admin/relatorios/PrestacaoContasOscPage";
-import CompeticaoPublicacaoPage from "./pages/admin/CompeticaoPublicacaoPage";
-import CompeticaoBoletinsPage from "./pages/admin/CompeticaoBoletinsPage";
-import RegrasProvaPage from "./pages/admin/RegrasProvaPage";
-import RegrasLotePage from "./pages/admin/RegrasLotePage";
-// RegrasEventoPage removed — consolidated into RegrasPage
-import RegrasPage from "./pages/admin/RegrasPage";
-import ArbitragemEquipePage from "./pages/admin/ArbitragemEquipePage";
-import ArbitrosPage from "./pages/admin/ArbitrosPage";
-import RefereeRemunerationConfigPage from "./pages/admin/referees/RefereeRemunerationConfigPage";
-import RefereeReportingPage from "./pages/admin/referees/RefereeReportingPage";
-import ImportacaoAliasesPage from "./pages/admin/ImportacaoAliasesPage";
-import AjudaChatPage from "./pages/admin/AjudaChatPage";
-import AjudaManualPage from "./pages/admin/AjudaManualPage";
-import SuperManualPage from "./pages/super/SuperManualPage";
-import SuperChamadosPage from "./pages/super/SuperChamadosPage";
-import AjudaChamadosPage from "./pages/admin/AjudaChamadosPage";
-import SeedLogisticaEtapaPage from "./pages/admin/SeedLogisticaEtapaPage";
-import ClonarLogisticaPage from "./pages/admin/ClonarLogisticaPage";
-import DebugPublicadosPage from "./pages/admin/DebugPublicadosPage";
-import SuperDashboardPage from "./pages/super/SuperDashboardPage";
-import SuperEventosPage from "./pages/super/SuperEventosPage";
-import SuperLogsPage from "./pages/super/SuperLogsPage";
-import SuperConfigPage from "./pages/super/SuperConfigPage";
-import SuperMonitorPage from "./pages/super/SuperMonitorPage";
-import SuperInspectorPage from "./pages/super/SuperInspectorPage";
-import SistemaDiagnosticoKpiPage from "./pages/admin/SistemaDiagnosticoKpiPage";
-import SuperFamiliasInferidasPage from "./pages/super/SuperFamiliasInferidasPage";
-import EmailTemplatesPage from "./pages/admin/EmailTemplatesPage";
-import LinksPage from "./pages/admin/LinksPage";
-import LinkFormPage from "./pages/admin/LinkFormPage";
-import ReportCenterPage from "./reports/ui/ReportCenterPage";
-import RelatoriosHubPage from "./pages/admin/RelatoriosHubPage";
-import IdentidadeVisualPage from "./pages/admin/IdentidadeVisualPage";
-import LinkPreviewPage from "./pages/admin/LinkPreviewPage";
-import CoordenadorModalidadeDashboard from "./pages/admin/CoordenadorModalidadeDashboard";
-import GoRedirectPage from "./pages/public/GoRedirectPage";
-// Evento Rules Center pages removed — consolidated into RegrasEventoPage
-import PublicPagePage from "./pages/public/PublicPagePage";
-import PesquisaDashboardPage from "./pages/admin/PesquisaDashboardPage";
-import PesquisaEventosPage from "./pages/admin/PesquisaEventosPage";
-import PesquisaFormEditorPage from "./pages/admin/PesquisaFormEditorPage";
-import PesquisaPesquisadoresPage from "./pages/admin/PesquisaPesquisadoresPage";
-import DatabaseMonitoringPage from "./pages/admin/DatabaseMonitoringPage";
-import AuditoriaPage from "./pages/admin/AuditoriaPage";
-import PwaStatusPage from "./pages/admin/PwaStatusPage";
-import RegistrosPage from "./pages/admin/registros/RegistrosPage";
-import ConfigOscPage from "./pages/admin/registros/ConfigOscPage";
-import ComplianceDashboardPage from "./pages/admin/ComplianceDashboardPage";
-
-
-
-// PWA pages
-import PesquisaLoginPage from "./pages/pwa/PesquisaLoginPage";
-import PwaLayout from "./components/pwa/PwaLayout";
-import PwaRegistrosPage from "./pages/pwa/registros/PwaRegistrosPage";
-
-import PesquisaHomePage from "./pages/pwa/PesquisaHomePage";
-import PesquisaNovaPage from "./pages/pwa/PesquisaNovaPage";
-import PesquisaConfirmacaoPage from "./pages/pwa/PesquisaConfirmacaoPage";
-// PwaLoginPage removed — unified login at /login
-import PwaSetPasswordPage from "./pages/pwa/PwaSetPasswordPage";
-import PwaLandingPage from "./pages/pwa/PwaLandingPage";
-import PwaModulePage from "./pages/pwa/PwaModulePage";
-import PwaSelectionFallback from "./pages/pwa/PwaSelectionFallback";
-import PwaInstallPage from "./pages/pwa/PwaInstallPage";
-// PWA Alojamento pages
-import AlojamentoHomePage from "./pages/pwa/alojamento/AlojamentoHomePage";
-import AlojamentoScanPage from "./pages/pwa/alojamento/AlojamentoScanPage";
-import AlojamentoBuscarPage from "./pages/pwa/alojamento/AlojamentoBuscarPage";
-import AlojamentoOcupacaoPwaPage from "./pages/pwa/alojamento/AlojamentoOcupacaoPage";
-import AlojamentoPessoaPage from "./pages/pwa/alojamento/AlojamentoPessoaPage";
-import AlojamentoIncidentesPage from "./pages/pwa/alojamento/AlojamentoIncidentesPage";
-import AlojamentoNovoIncidentePage from "./pages/pwa/alojamento/AlojamentoNovoIncidentePage";
-import AlojamentoListaCompletaPage from "./pages/pwa/alojamento/AlojamentoListaCompletaPage";
-import AlojamentoUnidadeFaltososPage from "./pages/pwa/alojamento/AlojamentoUnidadeFaltososPage";
-// PWA Transporte pages
-import TransporteHomePage from "./pages/pwa/transporte/TransporteHomePage";
-import TransporteViagensPwaPage from "./pages/pwa/transporte/TransporteViagensPage";
-import TransporteScanPage from "./pages/pwa/transporte/TransporteScanPage";
-import TransporteEmbarquePwaPage from "./pages/pwa/transporte/TransporteEmbarquePage";
-import TransporteRotasPwaPage from "./pages/pwa/transporte/TransporteRotasPage";
-import TransportePassageirosPage from "./pages/pwa/transporte/TransportePassageirosPage";
-// PWA Alimentação pages
-import AlimentacaoHomePage from "./pages/pwa/alimentacao/AlimentacaoHomePage";
-import AlimentacaoScanPage from "./pages/pwa/alimentacao/AlimentacaoScanPage";
-import AlimentacaoBuscarPwaPage from "./pages/pwa/alimentacao/AlimentacaoBuscarPage";
-import AlimentacaoJanelasPwaPage from "./pages/pwa/alimentacao/AlimentacaoJanelasPage";
-import AlimentacaoListaConsumosPage from "./pages/pwa/alimentacao/AlimentacaoListaConsumosPage";
-import AlimentacaoDivergenciasPage from "./pages/admin/AlimentacaoDivergenciasPage";
-// PWA Coordenação Técnica pages
-import CoordenacaoHomePage from "./pages/pwa/coordenacao/CoordenacaoHomePage";
-import CoordenacaoAgendaPage from "./pages/pwa/coordenacao/CoordenacaoAgendaPage";
-import CoordenacaoPartidasPage from "./pages/pwa/coordenacao/CoordenacaoPartidasPage";
-import CoordenacaoPartidaDetalhePage from "./pages/pwa/coordenacao/CoordenacaoPartidaDetalhePage";
-import CoordenacaoResultadosPwaPage from "./pages/pwa/coordenacao/CoordenacaoResultadosPage";
-import CoordenacaoEstatisticasPage from "./pages/pwa/coordenacao/CoordenacaoEstatisticasPage";
-import CoordenacaoConsultaPage from "./pages/pwa/coordenacao/CoordenacaoConsultaPage";
-import CoordenacaoIncidentePage from "./pages/pwa/coordenacao/CoordenacaoIncidentePage";
-import CoordenacaoIncidentesPage from "./pages/pwa/coordenacao/CoordenacaoIncidentesPage";
-// PWA Resultados (Lançamento Manual — coordenador_modalidade)
-import ResultadosHomePage from "./pages/pwa/resultados/ResultadosHomePage";
-import ResultadosPartidasPage from "./pages/pwa/resultados/ResultadosPartidasPage";
-import ResultadosPartidaFormPage from "./pages/pwa/resultados/ResultadosPartidaFormPage";
-// PWA Delegação pages
-import DelegacaoHomePage from "./pages/pwa/delegacao/DelegacaoHomePage";
-import DelegacaoParticipantesPage from "./pages/pwa/delegacao/DelegacaoParticipantesPage";
-import DelegacaoAgendaPage from "./pages/pwa/delegacao/DelegacaoAgendaPage";
-import DelegacaoLogisticaPage from "./pages/pwa/delegacao/DelegacaoLogisticaPage";
-import DelegacaoLocaisPage from "./pages/pwa/delegacao/DelegacaoLocaisPage";
-import DelegacaoProtestosPage from "./pages/pwa/delegacao/DelegacaoProtestosPage";
-import DelegacaoProtestoNovoPage from "./pages/pwa/delegacao/DelegacaoProtestoNovoPage";
-import DelegacaoProtestoDetalhePage from "./pages/pwa/delegacao/DelegacaoProtestoDetalhePage";
-import ProtestosFilaPage from "./pages/admin/ProtestosFilaPage";
-import QrDiagnosticoPage from "./pages/pwa/diagnostico/QrDiagnosticoPage";
-import VincularCredencialPage from "./pages/pwa/credenciamento/VincularCredencialPage";
-import SuperPermissionsPage from "./pages/super/SuperPermissionsPage";
-import PwaDebugPage from "./pages/pwa/PwaDebugPage";
-import NotFound from "./pages/NotFound";
-import PwaRouteGuard from "./components/pwa/PwaRouteGuard";
+import { MonitoringErrorBoundary } from "@/components/MonitoringErrorBoundary";
+import { installErrorReporter } from "@/lib/monitoring/errorReporter";
 import { PwaUpdateNotice } from "./components/pwa/PwaUpdateNotice";
 import { PwaInstallNotice } from "./components/pwa/PwaInstallNotice";
 import { AppStatePreserver } from "./components/pwa/AppStatePreserver";
 import { VersionValidator } from "./components/pwa/VersionValidator";
+import { COMPETITION_ROLES } from "@/config/accessControl";
+import { Skeleton } from "./components/ui/skeleton";
 
-import AccessDeniedPage from "./pages/AccessDeniedPage";
-import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
-import PublicResultsPage from "./pages/public/PublicResultsPage";
-import PublicMedalTablePage from "./pages/public/PublicMedalTablePage";
-import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
-// EntregaTecnicaPage is lazy-loaded below
-// AtletaQrCodePage imported above
-// Ao Vivo PWA (lazy loaded)
+// Core Pages
+import Index from "./pages/Index";
+import LoginPage from "./pages/LoginPage";
 import StatusPage from "./pages/Status";
 
-// AoVivoLoginPage removed — unified login at /login
-const AoVivoHomePage = lazy(() => import("./pages/aovivo/AoVivoHomePage"));
-const AoVivoMatchPage = lazy(() => import("./pages/aovivo/AoVivoMatchPage"));
-const CredenciamentoPage = lazy(() => import("./pages/admin/CredenciamentoPage"));
-const EntregaTecnicaPage = lazy(() => import("./pages/public/EntregaTecnicaPage"));
+// Admin Pages
+const DashboardPage = lazy(() => import("./pages/admin/DashboardPage"));
+const EventosPage = lazy(() => import("./pages/admin/EventosPage"));
+const EventStagesPage = lazy(() => import("./pages/admin/EventStagesPage"));
+const EtapasIndexPage = lazy(() => import("./pages/admin/EtapasIndexPage"));
+const EtapaHubPage = lazy(() => import("./pages/admin/EtapaHubPage"));
+const ModalidadesPage = lazy(() => import("./pages/admin/ModalidadesPage"));
+const CategoriasPage = lazy(() => import("./pages/admin/CategoriasPage"));
+const LocaisPage = lazy(() => import("./pages/admin/LocaisPage"));
+const InstituicoesPage = lazy(() => import("./pages/admin/InstituicoesPage"));
+const DelegacoesPage = lazy(() => import("./pages/admin/DelegacoesPage"));
+const DelegacaoDetalhePage = lazy(() => import("./pages/admin/DelegacaoDetalhePage"));
+const ImportacaoPage = lazy(() => import("./pages/admin/ImportacaoPage"));
+const ImportacaoModeloPage = lazy(() => import("./pages/admin/ImportacaoModeloPage"));
+const ImportacaoPendenciasPage = lazy(() => import("./pages/admin/ImportacaoPendenciasPage"));
+const ImportacaoAliasesPage = lazy(() => import("./pages/admin/ImportacaoAliasesPage"));
+const ParticipantesPage = lazy(() => import("./pages/admin/ParticipantesPage"));
+const HistoricoBuscaPage = lazy(() => import("./pages/admin/HistoricoBuscaPage"));
+const DuplicidadesPessoasPage = lazy(() => import("./pages/admin/DuplicidadesPessoasPage"));
+const ParticipanteDetalhePage = lazy(() => import("./pages/admin/ParticipanteDetalhePage"));
+const ParticipanteHistoricoPage = lazy(() => import("./pages/admin/ParticipanteHistoricoPage"));
+const PessoasPage = lazy(() => import("./pages/admin/PessoasPage"));
+const EventuaisPage = lazy(() => import("./pages/admin/EventuaisPage"));
+const ArbitrosPage = lazy(() => import("./pages/admin/ArbitrosPage"));
+const RegrasPage = lazy(() => import("./pages/admin/RegrasPage"));
+const ComplianceDashboardPage = lazy(() => import("./pages/admin/ComplianceDashboardPage"));
+const AuditoriaPage = lazy(() => import("./pages/admin/AuditoriaPage"));
+const PwaStatusPage = lazy(() => import("./pages/admin/PwaStatusPage"));
+const DatabaseMonitoringPage = lazy(() => import("./pages/admin/DatabaseMonitoringPage"));
+const SistemaDiagnosticoPage = lazy(() => import("./pages/admin/SistemaDiagnosticoPage"));
+const SistemaDiagnosticoKpiPage = lazy(() => import("./pages/admin/SistemaDiagnosticoKpiPage"));
+const CentralDadosPage = lazy(() => import("./pages/admin/CentralDadosPage"));
+const CentralControlePage = lazy(() => import("./pages/admin/CentralControlePage"));
+const SchemaValidadorPage = lazy(() => import("./pages/admin/SchemaValidadorPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const ModuleSelectorPage = lazy(() => import("./pages/ModuleSelectorPage"));
+const AccessDeniedPage = lazy(() => import("./pages/AccessDeniedPage"));
+const CoordenadorModalidadeDashboard = lazy(() => import("./pages/admin/CoordenadorModalidadeDashboard"));
+const AjudaChamadosPage = lazy(() => import("./pages/admin/AjudaChamadosPage"));
+const AjudaChatPage = lazy(() => import("./pages/admin/AjudaChatPage"));
+const AjudaManualPage = lazy(() => import("./pages/admin/AjudaManualPage"));
 const CompeticaoPartidaDetalhePage = lazy(() => import("./pages/admin/CompeticaoPartidaDetalhePage"));
+const CompeticaoLancamentoScorePage = lazy(() => import("./pages/admin/CompeticaoLancamentoScorePage"));
+const CompeticaoLancamentoSetsPage = lazy(() => import("./pages/admin/CompeticaoLancamentoSetsPage"));
+const CompeticaoLancamentoCombatPage = lazy(() => import("./pages/admin/CompeticaoLancamentoCombatPage"));
+const CompeticaoLancamentoTimeMarkPage = lazy(() => import("./pages/admin/CompeticaoLancamentoTimeMarkPage"));
+const CompeticaoPainelTimeMarkPage = lazy(() => import("./pages/admin/CompeticaoPainelTimeMarkPage"));
+const CompeticaoPainelRankingPage = lazy(() => import("./pages/admin/CompeticaoPainelRankingPage"));
+const CredencialModelosPage = lazy(() => import("./pages/admin/CredencialModelosPage"));
+const AcessosDelegacoesPage = lazy(() => import("./pages/admin/AcessosDelegacoesPage"));
+const AcessosUsuariosPage = lazy(() => import("./pages/admin/AcessosUsuariosPage"));
+const AcessosPwaAuditPage = lazy(() => import("./pages/admin/AcessosPwaAuditPage"));
+const IrregularidadesPage = lazy(() => import("./pages/admin/IrregularidadesPage"));
+const NormalizacaoProvasPage = lazy(() => import("./pages/admin/NormalizacaoProvasPage"));
+const BoletinsPorModalidadePage = lazy(() => import("./pages/admin/relatorios/BoletinsPorModalidadePage"));
+const DashboardOperacionalPage = lazy(() => import("./pages/admin/relatorios/DashboardOperacionalPage"));
+const QuadroMedalhasPage = lazy(() => import("./pages/admin/relatorios/QuadroMedalhasPage"));
+const PrestacaoContasOscPage = lazy(() => import("./pages/admin/relatorios/PrestacaoContasOscPage"));
+const CompeticaoPublicacaoPage = lazy(() => import("./pages/admin/CompeticaoPublicacaoPage"));
+const CompeticaoBoletinsPage = lazy(() => import("./pages/admin/CompeticaoBoletinsPage"));
+const LinksPage = lazy(() => import("./pages/admin/LinksPage"));
+const LinkFormPage = lazy(() => import("./pages/admin/LinkFormPage"));
+const LinkPreviewPage = lazy(() => import("./pages/admin/LinkPreviewPage"));
+const RegistrosPage = lazy(() => import("./pages/admin/registros/RegistrosPage"));
+const ConfigOscPage = lazy(() => import("./pages/admin/registros/ConfigOscPage"));
+const SeedLogisticaEtapaPage = lazy(() => import("./pages/admin/SeedLogisticaEtapaPage"));
+const ClonarLogisticaPage = lazy(() => import("./pages/admin/ClonarLogisticaPage"));
+const DebugPublicadosPage = lazy(() => import("./pages/admin/DebugPublicadosPage"));
+const EmailTemplatesPage = lazy(() => import("./pages/admin/EmailTemplatesPage"));
+const StageHomePage = lazy(() => import("./pages/admin/StageHomePage"));
+const StageReportsPage = lazy(() => import("./pages/admin/StageReportsPage"));
 
-import { MonitoringErrorBoundary } from "@/components/MonitoringErrorBoundary";
-import { installErrorReporter } from "@/lib/monitoring/errorReporter";
+// Super Pages
+const SuperDashboardPage = lazy(() => import("./pages/super/SuperDashboardPage"));
+const SuperEventosPage = lazy(() => import("./pages/super/SuperEventosPage"));
+const SuperLogsPage = lazy(() => import("./pages/super/SuperLogsPage"));
+const SuperConfigPage = lazy(() => import("./pages/super/SuperConfigPage"));
+const SuperMonitorPage = lazy(() => import("./pages/super/SuperMonitorPage"));
+const SuperManualPage = lazy(() => import("./pages/super/SuperManualPage"));
+const SuperChamadosPage = lazy(() => import("./pages/super/SuperChamadosPage"));
+const SuperInspectorPage = lazy(() => import("./pages/super/SuperInspectorPage"));
+const SuperPermissionsPage = lazy(() => import("./pages/super/SuperPermissionsPage"));
+const SuperFamiliasInferidasPage = lazy(() => import("./pages/super/SuperFamiliasInferidasPage"));
 
-// Inicializa o monitoramento global
+// PWA Pages
+const PwaLayout = lazy(() => import("./components/pwa/PwaLayout"));
+const PwaLandingPage = lazy(() => import("./pages/pwa/PwaLandingPage"));
+const PwaModulePage = lazy(() => import("./pages/pwa/PwaModulePage"));
+const PwaInstallPage = lazy(() => import("./pages/pwa/PwaInstallPage"));
+const AlojamentoHomePage = lazy(() => import("./pages/pwa/alojamento/AlojamentoHomePage"));
+const AlojamentoScanPage = lazy(() => import("./pages/pwa/alojamento/AlojamentoScanPage"));
+const AlojamentoBuscarPage = lazy(() => import("./pages/pwa/alojamento/AlojamentoBuscarPage"));
+const AlojamentoOcupacaoPage = lazy(() => import("./pages/pwa/alojamento/AlojamentoOcupacaoPage"));
+const AlojamentoPessoaPage = lazy(() => import("./pages/pwa/alojamento/AlojamentoPessoaPage"));
+const AlojamentoIncidentesPage = lazy(() => import("./pages/pwa/alojamento/AlojamentoIncidentesPage"));
+const AlojamentoNovoIncidentePage = lazy(() => import("./pages/pwa/alojamento/AlojamentoNovoIncidentePage"));
+const AlojamentoListaCompletaPage = lazy(() => import("./pages/pwa/alojamento/AlojamentoListaCompletaPage"));
+const AlojamentoUnidadeFaltososPage = lazy(() => import("./pages/pwa/alojamento/AlojamentoUnidadeFaltososPage"));
+const TransporteHomePage = lazy(() => import("./pages/pwa/transporte/TransporteHomePage"));
+const TransporteViagensPage = lazy(() => import("./pages/pwa/transporte/TransporteViagensPage"));
+const TransporteScanPage = lazy(() => import("./pages/pwa/transporte/TransporteScanPage"));
+const TransporteEmbarquePage = lazy(() => import("./pages/pwa/transporte/TransporteEmbarquePage"));
+const TransporteRotasPage = lazy(() => import("./pages/pwa/transporte/TransporteRotasPage"));
+const TransportePassageirosPage = lazy(() => import("./pages/pwa/transporte/TransportePassageirosPage"));
+const AlimentacaoHomePage = lazy(() => import("./pages/pwa/alimentacao/AlimentacaoHomePage"));
+const AlimentacaoScanPage = lazy(() => import("./pages/pwa/alimentacao/AlimentacaoScanPage"));
+const AlimentacaoBuscarPage = lazy(() => import("./pages/pwa/alimentacao/AlimentacaoBuscarPage"));
+const AlimentacaoJanelasPage = lazy(() => import("./pages/pwa/alimentacao/AlimentacaoJanelasPage"));
+const AlimentacaoListaConsumosPage = lazy(() => import("./pages/pwa/alimentacao/AlimentacaoListaConsumosPage"));
+const CoordenacaoHomePage = lazy(() => import("./pages/pwa/coordenacao/CoordenacaoHomePage"));
+const CoordenacaoAgendaPage = lazy(() => import("./pages/pwa/coordenacao/CoordenacaoAgendaPage"));
+const CoordenacaoPartidasPage = lazy(() => import("./pages/pwa/coordenacao/CoordenacaoPartidasPage"));
+const CoordenacaoPartidaDetalhePage = lazy(() => import("./pages/pwa/coordenacao/CoordenacaoPartidaDetalhePage"));
+const CoordenacaoResultadosPage = lazy(() => import("./pages/pwa/coordenacao/CoordenacaoResultadosPage"));
+const CoordenacaoEstatisticasPage = lazy(() => import("./pages/pwa/coordenacao/CoordenacaoEstatisticasPage"));
+const CoordenacaoConsultaPage = lazy(() => import("./pages/pwa/coordenacao/CoordenacaoConsultaPage"));
+const CoordenacaoIncidentePage = lazy(() => import("./pages/pwa/coordenacao/CoordenacaoIncidentePage"));
+const CoordenacaoIncidentesPage = lazy(() => import("./pages/pwa/coordenacao/CoordenacaoIncidentesPage"));
+const ResultadosHomePage = lazy(() => import("./pages/pwa/resultados/ResultadosHomePage"));
+const ResultadosPartidasPage = lazy(() => import("./pages/pwa/resultados/ResultadosPartidasPage"));
+const ResultadosPartidaFormPage = lazy(() => import("./pages/pwa/resultados/ResultadosPartidaFormPage"));
+const DelegacaoHomePage = lazy(() => import("./pages/pwa/delegacao/DelegacaoHomePage"));
+const DelegacaoParticipantesPage = lazy(() => import("./pages/pwa/delegacao/DelegacaoParticipantesPage"));
+const DelegacaoAgendaPage = lazy(() => import("./pages/pwa/delegacao/DelegacaoAgendaPage"));
+const DelegacaoLogisticaPage = lazy(() => import("./pages/pwa/delegacao/DelegacaoLogisticaPage"));
+const DelegacaoLocaisPage = lazy(() => import("./pages/pwa/delegacao/DelegacaoLocaisPage"));
+const DelegacaoProtestosPage = lazy(() => import("./pages/pwa/delegacao/DelegacaoProtestosPage"));
+const DelegacaoProtestoNovoPage = lazy(() => import("./pages/pwa/delegacao/DelegacaoProtestoNovoPage"));
+const DelegacaoProtestoDetalhePage = lazy(() => import("./pages/pwa/delegacao/DelegacaoProtestoDetalhePage"));
+const PwaDebugPage = lazy(() => import("./pages/pwa/PwaDebugPage"));
+const QrDiagnosticoPage = lazy(() => import("./pages/pwa/diagnostico/QrDiagnosticoPage"));
+const VincularCredencialPage = lazy(() => import("./pages/pwa/credenciamento/VincularCredencialPage"));
+
+// Public Pages
+const PublicResultsPage = lazy(() => import("./pages/public/PublicResultsPage"));
+const PublicMedalTablePage = lazy(() => import("./pages/public/PublicMedalTablePage"));
+const AtletaPublicProfilePage = lazy(() => import("./pages/public/AtletaPublicProfilePage"));
+const EntregaTecnicaPage = lazy(() => import("./pages/public/EntregaTecnicaPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[50vh]">
+    <div className="space-y-4 text-center">
+      <Skeleton className="h-8 w-48 mx-auto" />
+      <Skeleton className="h-4 w-64 mx-auto" />
+    </div>
+  </div>
+);
+
 installErrorReporter();
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount, error: any) => {
-        // Não tenta novamente em erros 404 ou 403
         if (error?.status === 404 || error?.status === 403) return false;
         return failureCount < 2;
       },
-      staleTime: 1000 * 60 * 5, // 5 minutos
-      gcTime: 1000 * 60 * 30, // 30 minutos
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 30,
     },
     mutations: {
       onError: (error: any) => {
@@ -303,376 +222,185 @@ const App = () => (
             <EventProvider>
               <StageProvider>
                 <CompetitionProvider>
-                  <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/status" element={<StatusPage />} />
-            <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
-            <Route path="/selecionar-modulo" element={<ModuleSelectorPage />} />
-            <Route path="/acesso-negado" element={<AccessDeniedPage />} />
-            {/* Super Admin routes */}
-            <Route
-              path="/super"
-              element={
-                <SuperAdminRoute>
-                  <SuperAdminLayout />
-                </SuperAdminRoute>
-              }
-            >
-              <Route index element={<SuperDashboardPage />} />
-              <Route path="eventos" element={<SuperEventosPage />} />
-              <Route path="logs" element={<SuperLogsPage />} />
-              <Route path="config" element={<SuperConfigPage />} />
-              <Route path="monitor" element={<SuperMonitorPage />} />
-              <Route path="registros/familias-inferidas" element={<SuperFamiliasInferidasPage />} />
-              <Route path="manual" element={<SuperManualPage />} />
-              <Route path="chamados" element={<SuperChamadosPage />} />
-               <Route path="validador" element={<SchemaValidadorPage />} />
-               <Route path="inspector" element={<SuperInspectorPage />} />
-               <Route path="permissoes" element={<SuperPermissionsPage />} />
-               <Route path="dados" element={<CentralDadosPage />} />
-               <Route path="diagnostico" element={<SistemaDiagnosticoPage />} />
-            </Route>
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<DashboardPage />} />
-              <Route path="coordenador-modalidade" element={<ProtectedRoute allowedRoles={["coordenador_modalidade"]}><CoordenadorModalidadeDashboard /></ProtectedRoute>} />
-              <Route path="ajuda/chamados" element={<AjudaChamadosPage />} />
-              <Route path="eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventosPage /></ProtectedRoute>} />
-              <Route path="eventos/etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventStagesPage /></ProtectedRoute>} />
-              <Route path="etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapasIndexPage /></ProtectedRoute>} />
-              <Route path="etapas/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapaHubPage /></ProtectedRoute>} />
-              <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitrosPage /></ProtectedRoute>} />
-              <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
-              <Route path="categorias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CategoriasPage /></ProtectedRoute>} />
-              <Route path="locais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><LocaisPage /></ProtectedRoute>} />
-              <Route path="instituicoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><InstituicoesPage /></ProtectedRoute>} />
-              <Route path="delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacoesPage /></ProtectedRoute>} />
-              <Route path="delegacoes/:delegationId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacaoDetalhePage /></ProtectedRoute>} />
-              <Route path="importacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ImportacaoPage /></ProtectedRoute>} />
-              <Route path="importacao/modelo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoModeloPage /></ProtectedRoute>} />
-              <Route path="importacao/pendencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPendenciasPage /></ProtectedRoute>} />
-              <Route path="importacao/catalogo" element={<Navigate to="/admin/regras" replace />} />
-              <Route path="importacao/aliases" element={<ProtectedRoute allowedRoles={["super_admin"]}><ImportacaoAliasesPage /></ProtectedRoute>} />
-              <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipantesPage /></ProtectedRoute>} />
-              <Route path="participantes/historico" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><HistoricoBuscaPage /></ProtectedRoute>} />
-              <Route path="participantes/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
-              <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteDetalhePage /></ProtectedRoute>} />
-              <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
-              <Route path="pessoas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PessoasPage /></ProtectedRoute>} />
-              <Route path="pessoas/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
-              <Route path="pessoas/eventuais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><EventuaisPage /></ProtectedRoute>} />
-              <Route path="credenciamento" element={<RedirectToEtapas />} />
-              <Route path="credenciamento-externo" element={<RedirectToEtapas />} />
-               <Route path="vouchers" element={<RedirectToEtapas />} />
-               <Route path="vouchers/auditoria" element={<RedirectToEtapas />} />
-               <Route path="vouchers/validar-manual" element={<RedirectToEtapas />} />
-               <Route path="voucher/validar" element={<RedirectToEtapas />} />
-              {/* Transporte — operacional, redireciona para Etapa */}
-              <Route path="transporte" element={<RedirectToEtapas />} />
-              <Route path="transporte/veiculos" element={<RedirectToEtapas />} />
-              <Route path="transporte/rotas" element={<RedirectToEtapas />} />
-              <Route path="transporte/viagens" element={<RedirectToEtapas />} />
-              <Route path="transporte/embarque/:tripId" element={<RedirectToEtapas />} />
-              <Route path="logistica/consolidada" element={<RedirectToEtapas />} />
-              <Route path="transporte/relatorios" element={<RedirectToEtapas />} />
-              {/* Alimentação — operacional, redireciona para Etapa */}
-              <Route path="alimentacao" element={<RedirectToEtapas />} />
-              <Route path="alimentacao/tipos" element={<RedirectToEtapas />} />
-              <Route path="alimentacao/janelas" element={<RedirectToEtapas />} />
-              <Route path="alimentacao/consumo" element={<RedirectToEtapas />} />
-              <Route path="alimentacao/dashboard" element={<RedirectToEtapas />} />
-              <Route path="alimentacao/relatorios" element={<RedirectToEtapas />} />
-              {/* Alojamento — operacional, redireciona para Etapa */}
-              <Route path="alojamento" element={<RedirectToEtapas />} />
-              <Route path="alojamento/locais" element={<RedirectToEtapas />} />
-              <Route path="alojamento/unidades" element={<RedirectToEtapas />} />
-              <Route path="alojamento/ocupacao" element={<RedirectToEtapas />} />
-              <Route path="alojamento/relatorios" element={<RedirectToEtapas />} />
-              {/* Competição — operacional, redireciona para Etapa */}
-              <Route path="competicao/painel" element={<RedirectToEtapas />} />
-              <Route path="competicao/pre-validacao" element={<RedirectToEtapas />} />
-              <Route path="competicao/central" element={<RedirectToEtapas />} />
-              <Route path="competicao/fases" element={<RedirectToEtapas />} />
-              <Route path="competicao/grupos" element={<RedirectToEtapas />} />
-              <Route path="competicao/partidas" element={<RedirectToEtapas />} />
-              <Route path="competicao/agenda" element={<RedirectToEtapas />} />
-              <Route path="competicao/partidas-agenda" element={<RedirectToEtapas />} />
-              <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />
-              <Route path="competicao/painel-score/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoScorePage /></ProtectedRoute>} />
-              <Route path="competicao/painel-sets/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoSetsPage /></ProtectedRoute>} />
-              <Route path="competicao/painel-combat/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoCombatPage /></ProtectedRoute>} />
-              <Route path="competicao/painel-time-mark/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelTimeMarkPage /></ProtectedRoute>} />
-              <Route path="competicao/painel-ranking/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelRankingPage /></ProtectedRoute>} />
-              <Route path="competicao/painel-time-mark/:sportEventId/serie/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoTimeMarkPage /></ProtectedRoute>} />
-              <Route path="competicao/equipes" element={<RedirectToEtapas />} />
-              <Route path="competicao/resultados" element={<RedirectToEtapas />} />
-              <Route path="competicao/sincronizar-equipes" element={<RedirectToEtapas />} />
-              <Route path="competicao/regras" element={<RedirectToEtapas />} />
-              <Route path="competicao/regras/lote" element={<RedirectToEtapas />} />
-              {/* Credenciais */}
-              <Route path="credenciais/modelos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredencialModelosPage /></ProtectedRoute>} />
-              {/* Acessos */}
-              <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
-              <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
-              <Route path="acessos/pwa" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosPwaAuditPage /></ProtectedRoute>} />
-              <Route path="central-controle" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralControlePage /></ProtectedRoute>} />
-              <Route path="auditoria" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AuditoriaPage /></ProtectedRoute>} />
-              <Route path="conformidade" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "super_admin"]}><ComplianceDashboardPage /></ProtectedRoute>} />
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/status" element={<StatusPage />} />
+                      <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+                      <Route path="/selecionar-modulo" element={<ModuleSelectorPage />} />
+                      <Route path="/acesso-negado" element={<AccessDeniedPage />} />
 
+                      {/* Super Admin routes */}
+                      <Route path="/super" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>
+                        <Route index element={<SuperDashboardPage />} />
+                        <Route path="eventos" element={<SuperEventosPage />} />
+                        <Route path="logs" element={<SuperLogsPage />} />
+                        <Route path="config" element={<SuperConfigPage />} />
+                        <Route path="monitor" element={<SuperMonitorPage />} />
+                        <Route path="registros/familias-inferidas" element={<SuperFamiliasInferidasPage />} />
+                        <Route path="manual" element={<SuperManualPage />} />
+                        <Route path="chamados" element={<SuperChamadosPage />} />
+                        <Route path="validador" element={<SchemaValidadorPage />} />
+                        <Route path="inspector" element={<SuperInspectorPage />} />
+                        <Route path="permissoes" element={<SuperPermissionsPage />} />
+                        <Route path="dados" element={<CentralDadosPage />} />
+                        <Route path="diagnostico" element={<SistemaDiagnosticoPage />} />
+                      </Route>
 
-              {/* Parâmetros e Regras — consolidados em /admin/regras */}
-              <Route path="parametros-evento" element={<Navigate to="/admin/regras" replace />} />
-              <Route path="regras-evento" element={<Navigate to="/admin/regras" replace />} />
-              <Route path="regras" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegrasPage /></ProtectedRoute>} />
-              {/* Legacy routes removed: regras-legacy, /admin/mapa */}
-              {/* Irregularidades e Normalização */}
-              <Route path="irregularidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><IrregularidadesPage /></ProtectedRoute>} />
-              <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />
-              {/* Schema Validator */}
-              <Route path="schema/validador" element={<ProtectedRoute allowedRoles={["super_admin"]}><SchemaValidadorPage /></ProtectedRoute>} />
-              {/* mapa legacy route removed */}
-              <Route path="diagnostico-competicao" element={<Navigate to="/admin/sistema/diagnostico" replace />} />
-              <Route path="sistema/diagnostico" element={<ProtectedRoute allowedRoles={["super_admin"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
-               <Route path="sistema/diagnostico/kpi" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><SistemaDiagnosticoKpiPage /></ProtectedRoute>} />
-               <Route path="monitoramento-db" element={<ProtectedRoute allowedRoles={["super_admin", "admin"]}><DatabaseMonitoringPage /></ProtectedRoute>} />
-               <Route path="pwa-status" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><PwaStatusPage /></ProtectedRoute>} />
-               <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
-               <Route path="sistema/debug-qr" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><QrDiagnosticoPage /></ProtectedRoute>} />
+                      <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                        <Route index element={<DashboardPage />} />
+                        <Route path="coordenador-modalidade" element={<ProtectedRoute allowedRoles={["coordenador_modalidade"]}><CoordenadorModalidadeDashboard /></ProtectedRoute>} />
+                        <Route path="ajuda/chamados" element={<AjudaChamadosPage />} />
+                        <Route path="eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventosPage /></ProtectedRoute>} />
+                        <Route path="eventos/etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventStagesPage /></ProtectedRoute>} />
+                        <Route path="etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapasIndexPage /></ProtectedRoute>} />
+                        <Route path="etapas/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapaHubPage /></ProtectedRoute>} />
+                        <Route path="etapas/:stageId/hub" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><StageLayout /></ProtectedRoute>}>
+                           <Route index element={<StageHomePage />} />
+                           <Route path="reports" element={<StageReportsPage />} />
+                        </Route>
+                        <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitrosPage /></ProtectedRoute>} />
+                        <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
+                        <Route path="categorias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CategoriasPage /></ProtectedRoute>} />
+                        <Route path="locais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><LocaisPage /></ProtectedRoute>} />
+                        <Route path="instituicoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><InstituicoesPage /></ProtectedRoute>} />
+                        <Route path="delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacoesPage /></ProtectedRoute>} />
+                        <Route path="delegacoes/:delegationId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacaoDetalhePage /></ProtectedRoute>} />
+                        <Route path="importacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ImportacaoPage /></ProtectedRoute>} />
+                        <Route path="importacao/modelo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoModeloPage /></ProtectedRoute>} />
+                        <Route path="importacao/pendencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ImportacaoPendenciasPage /></ProtectedRoute>} />
+                        <Route path="importacao/aliases" element={<ProtectedRoute allowedRoles={["super_admin"]}><ImportacaoAliasesPage /></ProtectedRoute>} />
+                        <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipantesPage /></ProtectedRoute>} />
+                        <Route path="participantes/historico" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><HistoricoBuscaPage /></ProtectedRoute>} />
+                        <Route path="participantes/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
+                        <Route path="participantes/:participantId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteDetalhePage /></ProtectedRoute>} />
+                        <Route path="participantes/:participantId/esportivo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipanteHistoricoPage /></ProtectedRoute>} />
+                        <Route path="pessoas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PessoasPage /></ProtectedRoute>} />
+                        <Route path="pessoas/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
+                        <Route path="pessoas/eventuais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><EventuaisPage /></ProtectedRoute>} />
+                        <Route path="credenciais/modelos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredencialModelosPage /></ProtectedRoute>} />
+                        <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
+                        <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
+                        <Route path="acessos/pwa" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosPwaAuditPage /></ProtectedRoute>} />
+                        <Route path="central-controle" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralControlePage /></ProtectedRoute>} />
+                        <Route path="auditoria" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AuditoriaPage /></ProtectedRoute>} />
+                        <Route path="conformidade" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "super_admin"]}><ComplianceDashboardPage /></ProtectedRoute>} />
+                        <Route path="regras" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegrasPage /></ProtectedRoute>} />
+                        <Route path="irregularidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><IrregularidadesPage /></ProtectedRoute>} />
+                        <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />
+                        <Route path="sistema/diagnostico" element={<ProtectedRoute allowedRoles={["super_admin"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
+                        <Route path="sistema/diagnostico/kpi" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><SistemaDiagnosticoKpiPage /></ProtectedRoute>} />
+                        <Route path="monitoramento-db" element={<ProtectedRoute allowedRoles={["super_admin", "admin"]}><DatabaseMonitoringPage /></ProtectedRoute>}>
+                        </Route>
+                        <Route path="pwa-status" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><PwaStatusPage /></ProtectedRoute>} />
+                        <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
+                        <Route path="sistema/debug-qr" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><QrDiagnosticoPage /></ProtectedRoute>} />
+                        <Route path="dados" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralDadosPage /></ProtectedRoute>} />
+                        <Route path="relatorios/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />
+                        <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
+                        <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
+                        <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
+                        <Route path="seed-logistica" element={<ProtectedRoute allowedRoles={["super_admin"]}><SeedLogisticaEtapaPage /></ProtectedRoute>} />
+                        <Route path="clonar-logistica" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ClonarLogisticaPage /></ProtectedRoute>} />
+                        <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["super_admin"]}><DebugPublicadosPage /></ProtectedRoute>} />
+                        <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["super_admin"]}><EmailTemplatesPage /></ProtectedRoute>} />
+                        <Route path="competicao/publicacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><CompeticaoPublicacaoPage /></ProtectedRoute>} />
+                        <Route path="competicao/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "delegacao"]}><CompeticaoBoletinsPage /></ProtectedRoute>} />
+                        <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />
+                        <Route path="competicao/painel-score/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoScorePage /></ProtectedRoute>} />
+                        <Route path="competicao/painel-sets/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoSetsPage /></ProtectedRoute>} />
+                        <Route path="competicao/painel-combat/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoCombatPage /></ProtectedRoute>} />
+                        <Route path="competicao/painel-time-mark/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelTimeMarkPage /></ProtectedRoute>} />
+                        <Route path="competicao/painel-ranking/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelRankingPage /></ProtectedRoute>} />
+                        <Route path="competicao/painel-time-mark/:sportEventId/serie/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoTimeMarkPage /></ProtectedRoute>} />
 
-              <Route path="dados" element={<ProtectedRoute allowedRoles={["super_admin"]}><CentralDadosPage /></ProtectedRoute>} />
-              <Route path="boletins" element={<Navigate to="/admin/relatorios/boletins" replace />} />
-              <Route path="relatorios/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />
-              <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
-              <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
-              <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
-              <Route path="seed-logistica" element={<ProtectedRoute allowedRoles={["super_admin"]}><SeedLogisticaEtapaPage /></ProtectedRoute>} />
-              <Route path="clonar-logistica" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ClonarLogisticaPage /></ProtectedRoute>} />
-              <Route path="debug-publicados" element={<ProtectedRoute allowedRoles={["super_admin"]}><DebugPublicadosPage /></ProtectedRoute>} />
-              <Route path="auth/email-templates" element={<ProtectedRoute allowedRoles={["super_admin"]}><EmailTemplatesPage /></ProtectedRoute>} />
-              {/* Protestos / Ocorrências — operacionais, redirecionam para Etapa */}
-              <Route path="protestos" element={<RedirectToEtapas />} />
-              <Route path="ocorrencias" element={<RedirectToEtapas />} />
-              {/* Pesquisa de Satisfação — operacional, redireciona para Etapa */}
-              <Route path="pesquisa" element={<RedirectToEtapas />} />
-              <Route path="competicao/publicacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><CompeticaoPublicacaoPage /></ProtectedRoute>} />
-              <Route path="competicao/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "delegacao"]}><CompeticaoBoletinsPage /></ProtectedRoute>} />
-              <Route path="pesquisa/eventos" element={<RedirectToEtapas />} />
-              <Route path="pesquisa/eventos/:eventId/form" element={<RedirectToEtapas />} />
-              <Route path="pesquisa/pesquisadores" element={<RedirectToEtapas />} />
-              {/* Links & Páginas */}
-              <Route path="ajuda" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
-              <Route path="ajuda/chat" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
-              <Route path="ajuda/manual" element={<ProtectedRoute><AjudaManualPage /></ProtectedRoute>} />
-              <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><LinksPage /></ProtectedRoute>} />
-              <Route path="links/novo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
-              <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
-              <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
-               <Route path="registros" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegistrosPage /></ProtectedRoute>} />
-               <Route path="registros/configuracao-osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ConfigOscPage /></ProtectedRoute>} />
+                        <Route path="ajuda" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
+                        <Route path="ajuda/chat" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><AjudaChatPage /></ProtectedRoute>} />
+                        <Route path="ajuda/manual" element={<ProtectedRoute><AjudaManualPage /></ProtectedRoute>} />
+                        <Route path="links" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><LinksPage /></ProtectedRoute>} />
+                        <Route path="links/novo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
+                        <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
+                        <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
+                        <Route path="registros" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegistrosPage /></ProtectedRoute>} />
+                        <Route path="registros/configuracao-osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ConfigOscPage /></ProtectedRoute>} />
+                        
+                        {/* Redirecionamentos operacionais */}
+                        <Route path="credenciamento" element={<RedirectToEtapas />} />
+                        <Route path="vouchers" element={<RedirectToEtapas />} />
+                        <Route path="transporte" element={<RedirectToEtapas />} />
+                        <Route path="alimentacao" element={<RedirectToEtapas />} />
+                        <Route path="alojamento" element={<RedirectToEtapas />} />
+                        <Route path="competicao" element={<RedirectToEtapas />} />
+                        <Route path="protestos" element={<RedirectToEtapas />} />
+                        <Route path="ocorrencias" element={<RedirectToEtapas />} />
+                        <Route path="pesquisa" element={<RedirectToEtapas />} />
+                      </Route>
 
-              {/* Relatórios Globais */}
-              <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><RelatoriosHubPage /></ProtectedRoute>} />
-              <Route path="relatorios/central" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ReportCenterPage /></ProtectedRoute>} />
-              <Route path="configuracoes/identidade-visual" element={<ProtectedRoute allowedRoles={["admin"]}><IdentidadeVisualPage /></ProtectedRoute>} />
-              <Route path="configuracoes/supabase" element={<ProtectedRoute allowedRoles={["admin"]}><SupabaseSetupPage /></ProtectedRoute>} />
+                      <Route path="/pwa" element={<PwaRouteGuard><PwaLayout /></PwaRouteGuard>}>
+                        <Route index element={<PwaLandingPage />} />
+                        <Route path=":module" element={<PwaModulePage />} />
+                        <Route path="install" element={<PwaInstallPage />} />
+                        
+                        <Route path="alojamento" element={<AlojamentoHomePage />} />
+                        <Route path="alojamento/scan" element={<AlojamentoScanPage />} />
+                        <Route path="alojamento/buscar" element={<AlojamentoBuscarPage />} />
+                        <Route path="alojamento/ocupacao" element={<AlojamentoOcupacaoPage />} />
+                        <Route path="alojamento/pessoa/:id" element={<AlojamentoPessoaPage />} />
+                        <Route path="alojamento/incidentes" element={<AlojamentoIncidentesPage />} />
+                        <Route path="alojamento/incidentes/novo" element={<AlojamentoNovoIncidentePage />} />
+                        <Route path="alojamento/lista-completa" element={<AlojamentoListaCompletaPage />} />
+                        <Route path="alojamento/unidade/:id/faltosos" element={<AlojamentoUnidadeFaltososPage />} />
 
-              <Route path="atletas/qrcode" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><AtletaQrCodePage /></ProtectedRoute>} />
-              {/* Ocorrências — operacional, redireciona para Etapa */}
-              <Route path="ocorrencias" element={<RedirectToEtapas />} />
-            </Route>
+                        <Route path="transporte" element={<TransporteHomePage />} />
+                        <Route path="transporte/viagens" element={<TransporteViagensPage />} />
+                        <Route path="transporte/scan" element={<TransporteScanPage />} />
+                        <Route path="transporte/embarque/:tripId" element={<TransporteEmbarquePage />} />
+                        <Route path="transporte/rotas" element={<TransporteRotasPage />} />
+                        <Route path="transporte/passageiros/:tripId" element={<TransportePassageirosPage />} />
 
-            {/* ======================================================== */}
-            {/* CONTEXTO DA ETAPA — layout dedicado, sem itens do Global  */}
-            {/* ======================================================== */}
-            <Route
-              path="/admin/etapa/:stageId"
-              element={
-                <ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento", "coordenador_modalidade"]}>
-                  <StageLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<StageHomePage />} />
-              <Route path="relatorios" element={<StageReportsPage />} />
-              {/* Credenciamento */}
-              <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoPage /></ProtectedRoute>} />
-              <Route path="credenciamento/seguro" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoSeguroPage /></ProtectedRoute>} />
-              <Route path="credenciamento-externo" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredenciamentoExternoPage /></ProtectedRoute>} />
-              <Route path="validacao-qr" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ValidacaoQRPage /></ProtectedRoute>} />
-              {/* Participantes e Delegações no contexto da etapa */}
-              <Route path="participantes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><ParticipantesPage /></ProtectedRoute>} />
-              <Route path="delegacoes" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><DelegacoesPage /></ProtectedRoute>} />
-              <Route path="voucher/validar" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><VoucherValidarPage /></ProtectedRoute>} />
-              <Route path="pessoas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PessoasPage /></ProtectedRoute>} />
-              <Route path="pessoas/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
-              <Route path="pessoas/eventuais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><EventuaisPage /></ProtectedRoute>} />
-              <Route path="vouchers" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><VouchersPage /></ProtectedRoute>} />
-              <Route path="vouchers/auditoria" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><VoucherAuditoriaPage /></ProtectedRoute>} />
-              <Route path="logistica/consolidada" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento"]}><LogisticaConsolidadaPage /></ProtectedRoute>} />
-              {/* Competição */}
-              <Route path="competicao" element={<Navigate to="painel" replace />} />
-              <Route path="competicao/painel" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelPage /></ProtectedRoute>} />
-              <Route path="competicao/publicacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><CompeticaoPublicacaoPage /></ProtectedRoute>} />
-              <Route path="competicao/painel-score/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelScorePage /></ProtectedRoute>} />
-              <Route path="competicao/painel-sets/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelSetsPage /></ProtectedRoute>} />
-              <Route path="competicao/painel-combat/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelCombatPage /></ProtectedRoute>} />
-              <Route path="competicao/painel-time-mark/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelTimeMarkPage /></ProtectedRoute>} />
-              <Route path="competicao/painel-ranking/:sportEventId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPainelRankingPage /></ProtectedRoute>} />
-              <Route path="competicao/painel-time-mark/:sportEventId/serie/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoTimeMarkPage /></ProtectedRoute>} />
-              <Route path="competicao/pre-validacao" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><PreValidacaoPage /></ProtectedRoute>} />
-              <Route path="competicao/central" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoCentralPage /></ProtectedRoute>} />
-              <Route path="competicao/fases" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoFasesPage /></ProtectedRoute>} />
-              <Route path="competicao/grupos" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoGruposPage /></ProtectedRoute>} />
-              <Route path="competicao/partidas" element={<Navigate to="../partidas-agenda" replace />} />
-              <Route path="competicao/agenda" element={<Navigate to="../partidas-agenda" replace />} />
-              <Route path="competicao/partidas-agenda" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoPartidasAgendaPage /></ProtectedRoute>} />
-              <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />
-              <Route path="competicao/painel-score/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoScorePage /></ProtectedRoute>} />
-              <Route path="competicao/painel-sets/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoSetsPage /></ProtectedRoute>} />
-              <Route path="competicao/painel-combat/:sportEventId/confronto/:matchId/resultado" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoLancamentoCombatPage /></ProtectedRoute>} />
-              <Route path="competicao/equipes" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoEquipesPage /></ProtectedRoute>} />
-              <Route path="competicao/resultados" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><CompeticaoResultadosPage /></ProtectedRoute>} />
-              <Route path="competicao/sincronizar-equipes" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><SincronizarEquipesPage /></ProtectedRoute>} />
-              <Route path="competicao/regras" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><RegrasProvaPage /></ProtectedRoute>} />
-              <Route path="competicao/regras/lote" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES]}><RegrasLotePage /></ProtectedRoute>} />
-              <Route path="competicao/arbitragem" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "arbitragem"]}><ArbitragemEquipePage /></ProtectedRoute>} />
-              <Route path="competicao/arbitragem/remuneracao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RefereeRemunerationConfigPage /></ProtectedRoute>} />
-              <Route path="competicao/arbitragem/apuracao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RefereeReportingPage /></ProtectedRoute>} />
-              {/* Alojamento */}
-              <Route path="alojamento" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoHubPage /></ProtectedRoute>} />
-              <Route path="alojamento/locais" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoLocaisPage /></ProtectedRoute>} />
-              <Route path="alojamento/unidades" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoUnidadesPage /></ProtectedRoute>} />
-              <Route path="alojamento/ocupacao" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoOcupacaoPage /></ProtectedRoute>} />
-              <Route path="alojamento/alocacao-lote" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlocacaoLotePage /></ProtectedRoute>} />
-              <Route path="alojamento/relatorios" element={<ProtectedRoute allowedRoles={[...LODGING_ROLES]}><AlojamentoRelatoriosPage /></ProtectedRoute>} />
-              <Route path="evidencias-osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao", "alojamento", "transporte", "coordenacao_tecnica"]}><EvidenciasOSCPage /></ProtectedRoute>} />
-              {/* Alimentação */}
-              <Route path="alimentacao" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoHubPage /></ProtectedRoute>} />
-              <Route path="alimentacao/tipos" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoTiposPage /></ProtectedRoute>} />
-              <Route path="alimentacao/locais" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoLocaisPage /></ProtectedRoute>} />
-              <Route path="alimentacao/janelas" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoJanelasPage /></ProtectedRoute>} />
-              <Route path="alimentacao/consumo" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoConsumoPage /></ProtectedRoute>} />
-              <Route path="alimentacao/dashboard" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoDashboardPage /></ProtectedRoute>} />
-              <Route path="alimentacao/previsao" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoPrevisaoPage /></ProtectedRoute>} />
-              <Route path="alimentacao/divergencias" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoDivergenciasPage /></ProtectedRoute>} />
-              <Route path="alimentacao/padroes" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoPadroesPage /></ProtectedRoute>} />
-              <Route path="alimentacao/relatorios" element={<ProtectedRoute allowedRoles={[...FOOD_ROLES]}><AlimentacaoRelatoriosPage /></ProtectedRoute>} />
-              {/* Transporte */}
-              <Route path="transporte" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteHubPage /></ProtectedRoute>} />
-              <Route path="transporte/veiculos" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteVeiculosPage /></ProtectedRoute>} />
-              <Route path="transporte/rotas" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteRotasPage /></ProtectedRoute>} />
-              <Route path="transporte/viagens" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteViagensPage /></ProtectedRoute>} />
-              <Route path="transporte/embarque/:tripId" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteEmbarquePage /></ProtectedRoute>} />
-              <Route path="transporte/relatorios" element={<ProtectedRoute allowedRoles={[...TRANSPORT_ROLES]}><TransporteRelatoriosPage /></ProtectedRoute>} />
-              {/* Ocorrências */}
-              <Route path="ocorrencias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><OcorrenciasPage /></ProtectedRoute>} />
-              <Route path="protestos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "cde", "super_admin"]}><ProtestosFilaPage /></ProtectedRoute>} />
-              {/* Pesquisa */}
-              <Route path="pesquisa" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><PesquisaDashboardPage /></ProtectedRoute>} />
-              <Route path="pesquisa/eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><PesquisaEventosPage /></ProtectedRoute>} />
-              <Route path="pesquisa/eventos/:eventId/form" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><PesquisaFormEditorPage /></ProtectedRoute>} />
-              <Route path="pesquisa/pesquisadores" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><PesquisaPesquisadoresPage /></ProtectedRoute>} />
-            </Route>
-            {/* PWA Auth — redirect old login paths to unified login */}
-            <Route path="/pwa/login" element={<Navigate to="/login" replace />} />
-            <Route path="/pwa/recover" element={<Navigate to="/login" replace />} />
-            <Route path="/pwa/set-password" element={<PwaSetPasswordPage />} />
-            <Route path="/pwa/configuracao" element={<PwaSelectionFallback />} />
-            {/* PWA Landing (requires auth) */}
-            <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLandingPage /></PwaRouteGuard>} />
-            
-            {/* PWAs operacionais envoltos no PwaLayout */}
-            <Route element={<PwaRouteGuard requireStage={true}><PwaLayout backTo="/pwa" /></PwaRouteGuard>}>
-              {/* PWA Alojamento */}
-              <Route path="/pwa/alojamento" element={<AlojamentoHomePage />} />
-              <Route path="/pwa/alojamento/scan" element={<AlojamentoScanPage />} />
-              <Route path="/pwa/alojamento/buscar" element={<AlojamentoBuscarPage />} />
-              <Route path="/pwa/alojamento/ocupacao" element={<AlojamentoOcupacaoPwaPage />} />
-              <Route path="/pwa/alojamento/pessoa/:id" element={<AlojamentoPessoaPage />} />
-              <Route path="/pwa/alojamento/incidentes" element={<AlojamentoIncidentesPage />} />
-              <Route path="/pwa/alojamento/incidentes/nova" element={<AlojamentoNovoIncidentePage />} />
-              <Route path="/pwa/alojamento/lista-completa" element={<AlojamentoListaCompletaPage />} />
-              <Route path="/pwa/alojamento/unidade/:unitId/faltosos" element={<AlojamentoUnidadeFaltososPage />} />
-              
-              {/* PWA Transporte */}
-              <Route path="/pwa/transporte" element={<TransporteHomePage />} />
-              <Route path="/pwa/transporte/viagens" element={<TransporteViagensPwaPage />} />
-              <Route path="/pwa/transporte/scan" element={<TransporteScanPage />} />
-              <Route path="/pwa/transporte/embarque" element={<TransporteEmbarquePwaPage />} />
-              <Route path="/pwa/transporte/embarque/:tripId" element={<TransporteEmbarquePwaPage />} />
-              <Route path="/pwa/transporte/rotas" element={<TransporteRotasPwaPage />} />
-              <Route path="/pwa/transporte/viagem/:tripId/passageiros" element={<TransportePassageirosPage />} />
-              
-              {/* PWA Alimentação */}
-              <Route path="/pwa/alimentacao" element={<AlimentacaoHomePage />} />
-              <Route path="/pwa/alimentacao/scan" element={<AlimentacaoScanPage />} />
-              <Route path="/pwa/alimentacao/buscar" element={<AlimentacaoBuscarPwaPage />} />
-              <Route path="/pwa/alimentacao/janelas" element={<AlimentacaoJanelasPwaPage />} />
-              <Route path="/pwa/alimentacao/lista-consumos" element={<AlimentacaoListaConsumosPage />} />
-              
-              {/* PWA Coordenação Técnica */}
-              <Route path="/pwa/coordenacao-tecnica" element={<CoordenacaoHomePage />} />
-              <Route path="/pwa/registros" element={<PwaRegistrosPage />} />
-              <Route path="/pwa/coordenacao-tecnica/agenda" element={<CoordenacaoAgendaPage />} />
-              <Route path="/pwa/coordenacao-tecnica/partidas" element={<CoordenacaoPartidasPage />} />
-              <Route path="/pwa/coordenacao-tecnica/partida/:matchId" element={<CoordenacaoPartidaDetalhePage />} />
-              <Route path="/pwa/coordenacao-tecnica/resultados" element={<CoordenacaoResultadosPwaPage />} />
-              <Route path="/pwa/coordenacao-tecnica/estatisticas" element={<CoordenacaoEstatisticasPage />} />
-              <Route path="/pwa/coordenacao-tecnica/consulta" element={<CoordenacaoConsultaPage />} />
-              <Route path="/pwa/coordenacao-tecnica/incidentes" element={<CoordenacaoIncidentesPage />} />
-              <Route path="/pwa/coordenacao-tecnica/incidente/:incidentId" element={<CoordenacaoIncidentePage />} />
+                        <Route path="alimentacao" element={<AlimentacaoHomePage />} />
+                        <Route path="alimentacao/scan" element={<AlimentacaoScanPage />} />
+                        <Route path="alimentacao/buscar" element={<AlimentacaoBuscarPage />} />
+                        <Route path="alimentacao/janelas" element={<AlimentacaoJanelasPage />} />
+                        <Route path="alimentacao/consumos" element={<AlimentacaoListaConsumosPage />} />
 
-              {/* PWA Resultados (coordenador_modalidade) */}
-              <Route path="/pwa/resultados" element={<ResultadosHomePage />} />
-              <Route path="/pwa/resultados/partidas" element={<ResultadosPartidasPage />} />
-              <Route path="/pwa/resultados/partida/:matchId" element={<ResultadosPartidaFormPage />} />
+                        <Route path="coordenacao" element={<CoordenacaoHomePage />} />
+                        <Route path="coordenacao/agenda" element={<CoordenacaoAgendaPage />} />
+                        <Route path="coordenacao/partidas" element={<CoordenacaoPartidasPage />} />
+                        <Route path="coordenacao/partida/:id" element={<CoordenacaoPartidaDetalhePage />} />
+                        <Route path="coordenacao/resultados" element={<CoordenacaoResultadosPage />} />
+                        <Route path="coordenacao/estatisticas" element={<CoordenacaoEstatisticasPage />} />
+                        <Route path="coordenacao/consulta" element={<CoordenacaoConsultaPage />} />
+                        <Route path="coordenacao/incidentes" element={<CoordenacaoIncidentesPage />} />
+                        <Route path="coordenacao/incidentes/novo" element={<CoordenacaoIncidentePage />} />
 
-              {/* PWA Delegação */}
-              <Route path="/pwa/delegacao" element={<DelegacaoHomePage />} />
-              <Route path="/pwa/delegacao/participantes" element={<DelegacaoParticipantesPage />} />
-              <Route path="/pwa/delegacao/agenda" element={<DelegacaoAgendaPage />} />
-              <Route path="/pwa/delegacao/logistica" element={<DelegacaoLogisticaPage />} />
-              <Route path="/pwa/delegacao/locais" element={<DelegacaoLocaisPage />} />
-              <Route path="/pwa/delegacao/protestos" element={<DelegacaoProtestosPage />} />
-              <Route path="/pwa/delegacao/protestos/novo" element={<DelegacaoProtestoNovoPage />} />
-              <Route path="/pwa/delegacao/protestos/:id" element={<DelegacaoProtestoDetalhePage />} />
+                        <Route path="resultados" element={<ResultadosHomePage />} />
+                        <Route path="resultados/partidas" element={<ResultadosPartidasPage />} />
+                        <Route path="resultados/partida/:id" element={<ResultadosPartidaFormPage />} />
 
-              {/* Credenciamento */}
-              <Route path="/pwa/credenciamento" element={<VincularCredencialPage />} />
-              <Route path="/pwa/credenciamento/vincular" element={<VincularCredencialPage />} />
+                        <Route path="delegacao" element={<DelegacaoHomePage />} />
+                        <Route path="delegacao/participantes" element={<DelegacaoParticipantesPage />} />
+                        <Route path="delegacao/agenda" element={<DelegacaoAgendaPage />} />
+                        <Route path="delegacao/logistica" element={<DelegacaoLogisticaPage />} />
+                        <Route path="delegacao/locais" element={<DelegacaoLocaisPage />} />
+                        <Route path="delegacao/protestos" element={<DelegacaoProtestosPage />} />
+                        <Route path="delegacao/protestos/novo" element={<DelegacaoProtestoNovoPage />} />
+                        <Route path="delegacao/protestos/:id" element={<DelegacaoProtestoDetalhePage />} />
 
-              {/* PWA Ao Vivo */}
-              <Route path="/aovivo" element={<ProtectedRoute allowedRoles={["mesario", "arbitragem", "admin", "coordenacao_tecnica"]}><Suspense fallback={null}><AoVivoHomePage /></Suspense></ProtectedRoute>} />
-              <Route path="/aovivo/partida/:matchId" element={<ProtectedRoute allowedRoles={["mesario", "arbitragem", "admin", "coordenacao_tecnica"]}><Suspense fallback={null}><AoVivoMatchPage /></Suspense></ProtectedRoute>} />
-            </Route>
+                        <Route path="debug" element={<PwaDebugPage />} />
+                        <Route path="qr-diagnostico" element={<QrDiagnosticoPage />} />
+                        <Route path="vincular-credencial" element={<VincularCredencialPage />} />
+                      </Route>
 
-            {/* Rotas fora do layout operacional padrão */}
-            <Route path="/pwa/install" element={<PwaRouteGuard requireStage={false}><PwaInstallPage /></PwaRouteGuard>} />
-            <Route path="/aovivo/login" element={<Navigate to="/login" state={{ from: { pathname: "/aovivo" } }} replace />} />
-            
-            {/* PWA Pesquisa (PIN auth, no layout operacional padrão) */}
-            <Route path="/pwa/pesquisa/login" element={<PesquisaLoginPage />} />
-            <Route path="/pwa/pesquisa/home" element={<PesquisaHomePage />} />
-            <Route path="/pwa/pesquisa/nova" element={<PesquisaNovaPage />} />
-            <Route path="/pwa/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
-
-            {/* Public content routes */}
-            <Route path="/tecnica" element={<EntregaTecnicaPage />} />
-            <Route path="/public/results" element={<PublicResultsPage />} />
-            <Route path="/public/medals" element={<PublicMedalTablePage />} />
-            <Route path="/go/:slug" element={<GoRedirectPage />} />
-            <Route path="/p/:slug" element={<PublicPagePage />} />
-            <Route path="/a/:token" element={<AtletaPublicProfilePage />} />
-            {/* Evento Rules Center routes removed — consolidated into /admin/regras-evento */}
-            <Route path="*" element={<NotFound />} />
-                </Routes>
+                      <Route path="/resultados-publicos" element={<PublicResultsPage />} />
+                      <Route path="/quadro-medalhas" element={<PublicMedalTablePage />} />
+                      <Route path="/atleta/:id" element={<AtletaPublicProfilePage />} />
+                      <Route path="/entrega-tecnica" element={<EntregaTecnicaPage />} />
+                      
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
                 </CompetitionProvider>
               </StageProvider>
             </EventProvider>
@@ -686,4 +414,3 @@ const App = () => (
 );
 
 export default App;
-
