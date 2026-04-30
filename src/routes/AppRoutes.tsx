@@ -213,12 +213,27 @@ export const AppRoutes = () => (
         <Route path="ajuda/chamados" element={<AjudaChamadosPage />} />
         <Route path="eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventosPage /></ProtectedRoute>} />
         <Route path="eventos/etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventStagesPage /></ProtectedRoute>} />
-        <Route path="etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapasIndexPage /></ProtectedRoute>} />
-        <Route path="etapas/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EtapaHubPage /></ProtectedRoute>} />
+        <Route path="etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><EtapasIndexPage /></ProtectedRoute>} />
+        <Route path="etapas/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><EtapaHubPage /></ProtectedRoute>} />
         <Route path="etapa/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><StageLayout /></ProtectedRoute>}>
            <Route index element={<StageHomePage />} />
            <Route path="reports" element={<StageReportsPage />} />
+           <Route path="credenciamento" element={<CredenciamentoPage />} />
+           <Route path="credenciamento-externo" element={<CredenciamentoExternoPage />} />
+           <Route path="validacao-qr" element={<ValidacaoQRPage />} />
+           <Route path="competicao/partidas-agenda" element={<CompeticaoPartidasAgendaPage />} />
+           <Route path="competicao/resultados" element={<CompeticaoResultadosPage />} />
+           <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
+           <Route path="alojamento" element={<AlojamentoHubPage />} />
+           <Route path="alimentacao" element={<AlimentacaoHubPage />} />
+           <Route path="transporte" element={<TransporteHubPage />} />
+           <Route path="ocorrencias" element={<OcorrenciasPage />} />
+           <Route path="pesquisa" element={<PesquisaDashboardPage />} />
+           <Route path="vouchers" element={<VouchersPage />} />
+           <Route path="protestos" element={<ProtestosFilaPage />} />
+           <Route path="relatorios" element={<StageReportsPage />} />
         </Route>
+
         <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitrosPage /></ProtectedRoute>} />
         <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
         <Route path="categorias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CategoriasPage /></ProtectedRoute>} />
