@@ -109,6 +109,7 @@ import SupabaseSetupPage from "./pages/admin/SupabaseSetupPage";
 
 import OcorrenciasPage from "./pages/admin/OcorrenciasPage";
 // MapaSistemaPage and DiagnosticoCompeticaoPage accessed only via SistemaDiagnosticoPage
+import CentralControlePage from "./pages/admin/CentralControlePage";
 import SistemaDiagnosticoPage from "./pages/admin/SistemaDiagnosticoPage";
 import CentralDadosPage from "./pages/admin/CentralDadosPage";
 import BoletinsPorModalidadePage from "./pages/admin/relatorios/BoletinsPorModalidadePage";
