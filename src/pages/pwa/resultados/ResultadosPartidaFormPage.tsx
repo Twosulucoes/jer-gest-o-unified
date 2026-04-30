@@ -85,7 +85,7 @@ function TabPlacar({ matchId, entries, sportEventId }: { matchId: string; entrie
     return <CombatLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
   }
 
-  if (family === "time-mark" || family === "ranking") {
+  if (family === "time" || family === "mark" || family === "ranking") {
     return <TimeMarkLauncher entries={entries} onSave={handleSave} isSaving={salvar.isPending} rules={rules} />;
   }
 
