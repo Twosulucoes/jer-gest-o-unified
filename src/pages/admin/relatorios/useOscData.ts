@@ -14,6 +14,16 @@ export interface OscDelegationStat {
   medalsBronze: number;
 }
 
+export interface OscRegistro {
+  id: string;
+  type: string;
+  description: string | null;
+  value_numeric: number | null;
+  unit: string | null;
+  status: string;
+  recorded_at: string;
+}
+
 export interface OscData {
   event: { name: string; startDate: string | null; endDate: string | null } | null;
   resumo: {
@@ -33,9 +43,11 @@ export interface OscData {
     totalMedalsSilver: number;
     totalMedalsBronze: number;
     foodDonationKg: number;
+    totalOscRegistros: number;
   };
   delegations: OscDelegationStat[];
   sports: Array<{ id: string; name: string; matches: number; published: number }>;
+  oscRegistros: OscRegistro[];
 }
 
 const EMPTY: OscData = {
@@ -45,9 +57,11 @@ const EMPTY: OscData = {
     totalSports: 0, totalMatches: 0, totalMatchesPublished: 0, totalMeals: 0,
     totalLodgingOccupied: 0, totalLodgingCapacity: 0, totalTrips: 0, totalPassengers: 0,
     totalMedalsGold: 0, totalMedalsSilver: 0, totalMedalsBronze: 0, foodDonationKg: 0,
+    totalOscRegistros: 0,
   },
   delegations: [],
   sports: [],
+  oscRegistros: [],
 };
 
 export function useOscData(eventId: string | null | undefined) {
@@ -238,6 +252,18 @@ export function useOscData(eventId: string | null | undefined) {
         .maybeSingle();
       const foodDonationPerDel = (rules?.food_donation_kg as number) || 0;
 
+      // 9. Registros OSC
+      const { data: oscRegs } = await supabase
+        .from("osc_registros")
+        .select("*")
+        .eq("event_id", eventId)
+        .order("recorded_at", { ascending: false });
+      const oscRegistros = (oscRegs || []) as OscRegistro[];
+
+      const foodDonations = oscRegistros
+        .filter(r => r.type === "doacao_alimento" && r.status === "aprovado")
+        .reduce((acc, r) => acc + (Number(r.value_numeric) || 0), 0);
+
       const delegationsStats: OscDelegationStat[] = delegations.map((d) => {
         const m = medalsByDel.get(d.id) || { g: 0, s: 0, b: 0 };
         return {
@@ -274,10 +300,12 @@ export function useOscData(eventId: string | null | undefined) {
           totalMedalsGold: totG,
           totalMedalsSilver: totS,
           totalMedalsBronze: totB,
-          foodDonationKg: foodDonationPerDel * delegations.length,
+          foodDonationKg: (foodDonationPerDel * delegations.length) + foodDonations,
+          totalOscRegistros: oscRegistros.length,
         },
         delegations: delegationsStats,
         sports,
+        oscRegistros,
       };
     },
   });

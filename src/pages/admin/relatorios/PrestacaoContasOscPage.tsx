@@ -234,7 +234,11 @@ export default function PrestacaoContasOscPage() {
             <Separator orientation="vertical" className="h-8 bg-blue-200" />
             <div className="text-right">
               <p className="text-[10px] uppercase font-bold text-blue-600">Data Limite</p>
-              <p className="text-xs font-medium">15/05/2026</p>
+              <p className="text-xs font-medium">
+                {data?.event?.endDate 
+                  ? new Date(new Date(data.event.endDate).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-BR")
+                  : "15/05/2026"}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -346,6 +350,38 @@ export default function PrestacaoContasOscPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Registros Complementares */}
+      {data && data.oscRegistros && data.oscRegistros.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Registros Operacionais Complementares</CardTitle>
+            <CardDescription>Eventos e indicadores manuais registrados para fins de prestação de contas.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.oscRegistros.map((reg) => (
+                  <TableRow key={reg.id}>
+                    <TableCell className="text-xs">{new Date(reg.recorded_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="capitalize text-xs font-medium">{reg.type.replace('_', ' ')}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{reg.description || "—"}</TableCell>
+                    <TableCell className="text-right font-bold">{reg.value_numeric} {reg.unit}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Delegações */}
       <Card>

@@ -4560,6 +4560,56 @@ export type Database = {
           },
         ]
       }
+      osc_registros: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_id: string
+          id: string
+          recorded_at: string
+          recorded_by: string | null
+          status: string
+          type: string
+          unit: string | null
+          updated_at: string
+          value_numeric: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_id: string
+          id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          status?: string
+          type: string
+          unit?: string | null
+          updated_at?: string
+          value_numeric?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_id?: string
+          id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          status?: string
+          type?: string
+          unit?: string | null
+          updated_at?: string
+          value_numeric?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "osc_registros_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_credentials: {
         Row: {
           activated_at: string | null
