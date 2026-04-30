@@ -396,6 +396,7 @@ const App = () => (
                       </Route>
 
                       <Route path="/resultados-publicos" element={<PublicResultsPage />} />
+                      <Route path="/public/results" element={<Navigate to="/resultados-publicos" replace />} />
                       <Route path="/quadro-medalhas" element={<PublicMedalTablePage />} />
                       <Route path="/atleta/:id" element={<AtletaPublicProfilePage />} />
                       <Route path="/entrega-tecnica" element={<EntregaTecnicaPage />} />
