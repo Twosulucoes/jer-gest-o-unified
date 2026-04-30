@@ -227,7 +227,70 @@ export default function OscAccountabilityModule() {
     createRecordMutation.mutate(data);
   };
 
+  const runValidation = () => {
+    const checks: any[] = [];
+    const r = oscData?.resumo;
+    
+    // 1. Participantes
+    const hasParticipants = (r?.totalParticipants || 0) > 0;
+    checks.push({
+      id: 'participants',
+      label: 'Participantes Inscritos',
+      current: r?.totalParticipants || 0,
+      expected: 1, // Mínimo esperado
+      status: hasParticipants ? 'success' : 'error',
+      message: hasParticipants ? 'Base de participantes validada.' : 'Nenhum participante encontrado no evento.'
+    });
+
+    // 2. Partidas/Resultados
+    const matchesMatch = r?.totalMatches === r?.totalMatchesPublished;
+    const hasMatches = (r?.totalMatches || 0) > 0;
+    checks.push({
+      id: 'matches',
+      label: 'Publicação de Resultados',
+      current: r?.totalMatchesPublished || 0,
+      expected: r?.totalMatches || 0,
+      status: (matchesMatch && hasMatches) ? 'success' : 'warning',
+      message: !hasMatches ? 'Sem partidas registradas.' : 
+               matchesMatch ? 'Todos os resultados publicados.' : 'Existem partidas sem resultados publicados.'
+    });
+
+    // 3. Fotos por Categoria
+    const approvedPhotos = evidences?.filter(e => e.status === 'approved') || [];
+    const catCoverage = categories.filter(cat => approvedPhotos.some(p => p.osc_category === cat)).length;
+    checks.push({
+      id: 'photos',
+      label: 'Curadoria de Fotos',
+      current: catCoverage,
+      expected: categories.length,
+      status: catCoverage === categories.length ? 'success' : 'warning',
+      message: catCoverage === categories.length ? 'Todas as categorias têm fotos aprovadas.' : `Faltam fotos em ${categories.length - catCoverage} categorias.`
+    });
+
+    // 4. Registros Operacionais
+    const hasOscRegs = (r?.totalOscRegistros || 0) > 0;
+    checks.push({
+      id: 'registros',
+      label: 'Registros Operacionais',
+      current: r?.totalOscRegistros || 0,
+      expected: 1,
+      status: hasOscRegs ? 'success' : 'warning',
+      message: hasOscRegs ? 'Registros manuais detectados.' : 'Nenhum registro operacional manual (ex: refeições extras) lançado.'
+    });
+
+    setValidationReport(checks);
+    setShowValidation(true);
+    return checks.every(c => c.status !== 'error');
+  };
+
   const generateAiReport = async () => {
+    // Primeiro roda a validação
+    const isValid = runValidation();
+    if (!isValid) {
+      toast.error("Existem erros críticos nos dados do evento. Corrija-os antes de gerar o relatório.");
+      return;
+    }
+
     setIsAiLoading(true);
     setAiReport("");
     setIsAiDialogOpen(true);
