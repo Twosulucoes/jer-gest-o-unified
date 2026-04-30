@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function SuperAdminRemediation() {
-  const { profile, user } = useAuth();
+  const { profile, user, roles } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
 
   const logAction = async (action: string, payload: any) => {
@@ -38,6 +38,12 @@ export function SuperAdminRemediation() {
           timestamp: new Date().toISOString(),
           admin_name: profile?.full_name,
         },
+        execution_context: {
+          browser: navigator.userAgent,
+          location: window.location.href,
+          admin_roles: roles,
+          full_payload: payload
+        }
       });
     } catch (err) {
       console.error("Failed to log remediation action:", err);
