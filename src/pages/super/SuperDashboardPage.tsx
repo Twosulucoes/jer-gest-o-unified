@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppKPI } from "@/components/app/AppKPI";
@@ -118,18 +119,18 @@ export default function SuperDashboardPage() {
             <Button 
               variant="outline" 
               className="w-full justify-start gap-2 bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
-              onClick={() => navigate("/super/inspector")}
+              onClick={() => openRemediation("fix_orphaned_records")}
             >
               <Database className="h-4 w-4 text-blue-400" />
-              Inspetor de Dados
+              Corrigir Órfãos
             </Button>
             <Button 
               variant="outline" 
               className="w-full justify-start gap-2 bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
-              onClick={() => navigate("/super/validador")}
+              onClick={() => openRemediation("reset_system_cache")}
             >
               <AlertTriangle className="h-4 w-4 text-amber-400" />
-              Validador de Schema
+              Reset Cache Global
             </Button>
             <Button 
               variant="outline" 
