@@ -15,6 +15,8 @@
 | `/super/eventos` | `SuperEventosPage.tsx` | Lista todos os eventos de todos os clientes | super_admin | Completo |
 | `/super/logs` | `SuperLogsPage.tsx` | Audit_events global com filtros | super_admin | Completo |
 | `/super/config` | `SuperConfigPage.tsx` | Feature flags e parâmetros globais | super_admin | Completo |
+| `/super/manual` | `SuperManualPage.tsx` | Editor de seções e cards do manual | super_admin | Completo |
+
 
 **Total de rotas super admin: 4**
 
@@ -90,11 +92,12 @@
 | `/admin/demo` | `DemoSeedsPage.tsx` | Seeds de demonstração | admin, coord_tecnica | Completo | — |
 | `/admin/relatorios` | `ReportCenterPage.tsx` | Central de relatórios (PDF/Excel) | admin, secretaria, coord_tecnica | Completo | — |
 
-### 1.8 Acessos, Pesquisa, Configurações
+### 1.8 Acessos, Pesquisa, Ajuda e Configurações
 | Rota | Componente | Descrição | Perfis | Status |
 |------|-----------|-----------|--------|--------|
 | `/admin/acessos/usuarios` | `AcessosUsuariosPage.tsx` | Gestão de usuários operacionais | admin, secretaria | Completo |
 | `/admin/acessos/delegacoes` | `AcessosDelegacoesPage.tsx` | Vínculos usuário-delegação | admin, secretaria | Parcial |
+| `/admin/ajuda/manual` | `ManualPage.tsx` | Manual do usuário + Primeiros Passos | Todos autenticados | Completo |
 | `/admin/links` | `LinksPage.tsx` | Links externos com wizard e QR | admin, secretaria | Completo |
 | `/admin/pesquisa` | `PesquisaDashboardPage.tsx` | Dashboard de pesquisas | admin, secretaria | Completo |
 | `/admin/pesquisa/eventos` | `PesquisaEventosPage.tsx` | Eventos de pesquisa | admin, secretaria | Completo |
@@ -103,6 +106,8 @@
 | `/admin/locais` | `LocaisPage.tsx` | Locais de competição | admin, secretaria, coord_tecnica | Completo |
 | `/admin/modalidades` | `ModalidadesPage.tsx` | CRUD de modalidades | admin, secretaria, coord_tecnica | Completo |
 | `/admin/categorias` | `CategoriasPage.tsx` | CRUD de categorias | admin, secretaria, coord_tecnica | Completo |
+| `/admin/configuracoes/identidade-visual` | `IdentidadeVisualPage.tsx` | Logos e branding do evento | admin, secretaria | Completo |
+
 
 ### Rotas acessíveis via URL (sem link no menu)
 | Rota | Componente | Status |
@@ -136,8 +141,19 @@ Cada módulo PWA é protegido por `PwaModuleLayout` que:
 | `/pwa` | `PwaLandingPage.tsx` | Landing — redireciona por perfil | Completo |
 | `/pwa/acesso-negado` | `PwaAcessoNegadoPage.tsx` | Tela de acesso negado | Completo |
 
-### 2.2–2.8 Módulos Operacionais (sem alteração de rotas)
-Transporte (5 rotas), Alimentação (5 rotas), Alojamento (7 rotas), Coordenação (6 rotas), Delegação (5 rotas), Pesquisa (4 rotas), Diagnóstico (1 rota).
+### 2.2–2.9 Módulos Operacionais
+Os módulos abaixo são acessíveis via `/pwa` e possuem navegação unificada via `PwaLayout`. O seletor de contexto (Etapa de Trabalho) é obrigatório para operação.
+
+| Módulo | Perfil Requerido | Descrição |
+|--------|------------------|-----------|
+| **Transporte** | `transporte`, `admin` | Embarque e viagens |
+| **Alimentação** | `alimentacao`, `admin` | Consumo e locais de refeição |
+| **Alojamento** | `alojamento`, `admin` | Ocupação e unidades |
+| **Coord. Técnica** | `coordenacao_tecnica`, `admin` | Agenda e resultados |
+| **Delegação** | `delegacao`, `admin` | Consulta de atletas da própria delegação |
+| **Credenciamento** | `secretaria`, `admin` | Scan e check-in |
+| **Pesquisa** | `pesquisa`, `admin` | Coleta de dados de satisfação |
+| **Ao Vivo** | `mesario`, `arbitragem`, `admin` | Lançamento em tempo real (`/aovivo`) |
 
 ### 2.9 Ao Vivo (prefixo /aovivo)
 | Rota | Componente | Descrição | Status |

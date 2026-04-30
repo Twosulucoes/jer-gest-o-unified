@@ -28,7 +28,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - Geração automática de baterias (heats) para modalidades individuais de família time e mark (Atletismo, Natação, etc.)
 - Componente `CentralStructureHeatsTab` com wizard de 3 sub-etapas (Definir → Revisar → Confirmar)
 - `useCollectiveStepStatus` agora suporta bloqueio de passos para individuais time/mark
-- Documentação completa do projeto (README, /docs, CHANGELOG, CONTRIBUTING)
+- **[PWA]** Correção na navegação entre módulos: o seletor de contexto (switcher) agora está sempre visível no PWA, mesmo para usuários com apenas um módulo.
+- **[PWA]** Botão Home do PWA ajustado para levar sempre à landing page de seleção de módulos (`/pwa`).
+- **[Documentação]** Reformulação completa do `README.md` e atualização dos manuais operacionais (Fase "Documentação Opulenta").
 
 ### Changed
 - Labels de credenciamento padronizados ("Registrar presença", "Emitir credencial")
