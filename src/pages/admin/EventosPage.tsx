@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Plus, Pencil, CalendarDays } from "lucide-react";
+import { Plus, Pencil, CalendarDays, AlertTriangle, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -37,7 +37,7 @@ export default function EventosPage() {
 
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
-  const { data: events, isLoading } = useQuery({
+  const { data: events, isLoading, error, refetch } = useQuery({
     queryKey: ["events"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -47,6 +47,7 @@ export default function EventosPage() {
       if (error) throw error;
       return data;
     },
+    retry: 1, // Let the global interceptor handle the multiple attempts
   });
 
   const createMutation = useMutation({
@@ -183,6 +184,17 @@ export default function EventosPage() {
 
       {isLoading ? (
         <TableSkeleton columns={canWrite ? 7 : 6} rows={6} />
+      ) : error ? (
+        <EmptyState
+          icon={AlertTriangle}
+          title="Erro ao carregar dados"
+          description="Não foi possível estabelecer conexão com o servidor após várias tentativas."
+          action={
+            <Button onClick={() => refetch()} size="sm">
+              <RefreshCw className="mr-2 h-4 w-4" /> Tentar Novamente
+            </Button>
+          }
+        />
       ) : !events?.length ? (
         <EmptyState
           icon={CalendarDays}
