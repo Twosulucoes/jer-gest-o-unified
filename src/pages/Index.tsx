@@ -25,7 +25,7 @@ const Index = () => {
     return <Navigate to="/admin" replace />;
   }
 
-  return <Navigate to="/login" replace />;
+  return <Navigate to="/public/results" replace />;
 };
 
 export default Index;

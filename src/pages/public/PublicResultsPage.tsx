@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, parse } from "date-fns";
 import { VisualIdentity } from "@/components/public/VisualIdentity";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function PublicResultsPage() {
+  const { user } = useAuth();
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedSportEventId, setSelectedSportEventId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("results");
@@ -142,7 +145,20 @@ export default function PublicResultsPage() {
               </Button>
             )}
             <VisualIdentity size="sm" subtitle={currentTitle} />
+            {!selectedSportEventId && !selectedEventId && (
+              <Button variant="outline" size="sm" asChild className="ml-4 h-8 text-xs">
+                <Link to="/public/medals">
+                  <Trophy className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
+                  Quadro de Medalhas
+                </Link>
+              </Button>
+            )}
           </div>
+          {!user && (
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
+              <Link to="/login">Entrar</Link>
+            </Button>
+          )}
         </div>
       </header>
 

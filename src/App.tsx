@@ -241,6 +241,7 @@ import { VersionValidator } from "./components/pwa/VersionValidator";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
 import { COMPETITION_ROLES, FOOD_ROLES, LODGING_ROLES, TRANSPORT_ROLES } from "@/config/accessControl";
 import PublicResultsPage from "./pages/public/PublicResultsPage";
+import PublicMedalTablePage from "./pages/public/PublicMedalTablePage";
 import AtletaPublicProfilePage from "./pages/public/AtletaPublicProfilePage";
 // EntregaTecnicaPage is lazy-loaded below
 import AtletaQrCodePage from "./pages/admin/AtletaQrCodePage";
@@ -657,6 +658,7 @@ const App = () => (
             {/* Public content routes */}
             <Route path="/tecnica" element={<EntregaTecnicaPage />} />
             <Route path="/public/results" element={<PublicResultsPage />} />
+            <Route path="/public/medals" element={<PublicMedalTablePage />} />
             <Route path="/go/:slug" element={<GoRedirectPage />} />
             <Route path="/p/:slug" element={<PublicPagePage />} />
             <Route path="/a/:token" element={<AtletaPublicProfilePage />} />
