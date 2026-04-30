@@ -29,7 +29,8 @@ interface ProgressRecord {
 }
 
 export default function AjudaManualPage() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const isAdmin = roles.includes("admin") || roles.includes("super_admin");
   const [sections, setSections] = useState<Section[]>([]);
   const [progress, setProgress] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -46,7 +47,14 @@ export default function AjudaManualPage() {
       .order("category", { ascending: true })
       .order("sort_order", { ascending: true });
     
-    if (!error) setSections((data ?? []) as Section[]);
+    let fetchedSections = (data ?? []) as Section[];
+    
+    // Filtro de perfil para a categoria Primeiros Passos
+    if (!isAdmin) {
+      fetchedSections = fetchedSections.filter(s => s.category !== "0. Primeiros Passos");
+    }
+
+    setSections(fetchedSections);
     
     if (user) {
       const { data: progData, error: progError } = await supabase
