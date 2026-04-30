@@ -20,12 +20,14 @@ export function TechnicalAuditSummary() {
         supabase.from("participants").select("id", { count: "exact", head: true }).eq("event_id", eventId),
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", eventId),
         supabase.from("participant_credentials").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("status", "active"),
+        supabase.from("db_operation_logs").select("id", { count: "exact", head: true }),
       ]);
 
       return {
         participants_total: results[0].count || 0,
         matches_total: results[1].count || 0,
         credentials_active: results[2].count || 0,
+        db_logs_count: results[3].count || 0,
       };
     }
   });
@@ -36,6 +38,7 @@ export function TechnicalAuditSummary() {
     { label: "Participantes", dash: dashboard?.resumo.participants_total, audit: audit?.participants_total },
     { label: "Partidas", dash: dashboard?.resumo.matches_total, audit: audit?.matches_total },
     { label: "Credenciais", dash: dashboard?.resumo.credentials_active, audit: audit?.credentials_active },
+    { label: "Logs de Operação", dash: null, audit: audit?.db_logs_count },
   ];
 
   return (
@@ -75,7 +78,7 @@ export function TechnicalAuditSummary() {
               </TableRow>
             ) : (
               metrics.map((m) => {
-                const isOk = m.dash === m.audit;
+                const isOk = m.dash === null || m.dash === m.audit;
                 return (
                   <TableRow key={m.label} className="group transition-colors">
                     <TableCell className="py-2 px-4 text-xs font-medium">{m.label}</TableCell>

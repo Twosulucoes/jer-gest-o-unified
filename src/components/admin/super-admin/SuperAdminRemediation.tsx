@@ -102,7 +102,24 @@ export function SuperAdminRemediation() {
       color: "text-destructive",
       bg: "bg-destructive/10",
       fn: async () => {
-        await new Promise(r => setTimeout(r, 1000));
+        const { data, error } = await supabase.rpc('maintain_system_logs');
+        if (error) throw error;
+        const result = data as any;
+        toast.info(`Limpeza concluída: ${result.ops_cleaned} logs de op, ${result.audit_cleaned} logs de auditoria removidos.`);
+      }
+    },
+    {
+      id: "housekeeping_infra",
+      label: "Manutenção de Infraestrutura",
+      description: "Executa rotinas de limpeza de logs antigos e otimização de espaço em disco no banco de dados.",
+      icon: Database,
+      color: "text-indigo-500",
+      bg: "bg-indigo-500/10",
+      fn: async () => {
+        const { data, error } = await supabase.rpc('maintain_system_logs');
+        if (error) throw error;
+        const result = data as any;
+        toast.info(`Manutenção finalizada. Registros limpos: ${result.ops_cleaned + result.audit_cleaned + result.perf_cleaned}`);
       }
     }
   ];

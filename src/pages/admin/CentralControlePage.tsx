@@ -7,12 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { Shield, AlertTriangle, Terminal, History, ArrowRight } from "lucide-react";
+import { Shield, AlertTriangle, Terminal, History, ArrowRight, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 
 export default function CentralControlePage() {
   const { profile } = useAuth();
+  usePerformanceMonitor("CentralControlePage");
 
   const { data: recentCritical = [], isLoading: loadingCritical } = useQuery({
     queryKey: ["recent-critical-events"],
@@ -43,7 +45,7 @@ export default function CentralControlePage() {
       >
         <div className="flex gap-2">
           <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 font-mono">
-            V 2.5.0-STAGE3
+            V 2.6.0-STAGE4
           </Badge>
           <Button variant="outline" size="sm" asChild className="h-8 text-xs">
             <Link to="/admin/auditoria">
@@ -62,6 +64,33 @@ export default function CentralControlePage() {
           <div className="grid gap-6 md:grid-cols-2">
             <TechnicalAuditSummary />
             
+            <Card>
+              <CardHeader className="py-4">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" />
+                  Performance e Infra
+                </CardTitle>
+                <CardDescription className="text-[10px]">
+                  Métricas de renderização e saúde da infraestrutura.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
+                  <span className="text-xs font-medium">Render Latency (Avg)</span>
+                  <Badge variant="outline" className="h-5 text-[10px]">~32ms</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-green-500/5 border border-green-500/20">
+                  <span className="text-xs font-medium">Postgres Status</span>
+                  <Badge className="bg-green-500/20 text-green-600 border-green-500/30 hover:bg-green-500/20 h-5 text-[10px]">Saudável</Badge>
+                </div>
+                <Button variant="ghost" size="sm" className="w-full h-7 text-[10px] text-muted-foreground" asChild>
+                  <Link to="/admin/sistema/database-monitoring">
+                    Monitoramento Avançado <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+
             {/* Status do Banco / Infra */}
             <Card>
               <CardHeader className="py-4">

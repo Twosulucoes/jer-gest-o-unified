@@ -5368,6 +5368,39 @@ export type Database = {
           },
         ]
       }
+      performance_logs: {
+        Row: {
+          component_name: string
+          created_at: string | null
+          id: string
+          interaction_type: string | null
+          metadata: Json | null
+          path: string | null
+          render_time_ms: number
+          user_id: string | null
+        }
+        Insert: {
+          component_name: string
+          created_at?: string | null
+          id?: string
+          interaction_type?: string | null
+          metadata?: Json | null
+          path?: string | null
+          render_time_ms: number
+          user_id?: string | null
+        }
+        Update: {
+          component_name?: string
+          created_at?: string | null
+          id?: string
+          interaction_type?: string | null
+          metadata?: Json | null
+          path?: string | null
+          render_time_ms?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       pesquisa_events: {
         Row: {
           active: boolean
@@ -8638,6 +8671,7 @@ export type Database = {
           participant_id: string
         }[]
       }
+      maintain_system_logs: { Args: never; Returns: Json }
       merge_people: {
         Args: { p_drop_id: string; p_keep_id: string }
         Returns: Json
