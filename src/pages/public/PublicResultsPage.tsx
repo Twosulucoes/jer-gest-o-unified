@@ -7,7 +7,8 @@ import { Loader2, Trophy, ChevronRight, ArrowLeft, Calendar, Swords } from "luci
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, parse } from "date-fns";
-import { VisualIdentity } from "@/components/public/VisualIdentity";
+import { PublicHeader } from "@/components/public/PublicHeader";
+import { PublicFooter } from "@/components/public/PublicFooter";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -135,34 +136,14 @@ export default function PublicResultsPage() {
     : "Portal Público";
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-white px-4 py-3 sticky top-0 z-10 shadow-sm">
-        <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <div className="flex items-center gap-2">
-            {(selectedEventId || selectedSportEventId) && (
-              <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8 rounded-full">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
-            <VisualIdentity size="sm" subtitle={currentTitle} />
-            {!selectedSportEventId && !selectedEventId && (
-              <Button variant="outline" size="sm" asChild className="ml-4 h-8 text-xs">
-                <Link to="/public/medals">
-                  <Trophy className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
-                  Quadro de Medalhas
-                </Link>
-              </Button>
-            )}
-          </div>
-          {!user && (
-            <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
-              <Link to="/login">Entrar</Link>
-            </Button>
-          )}
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-slate-50/50">
+      <PublicHeader 
+        subtitle={currentTitle} 
+        onBack={handleBack} 
+        showBackButton={!!selectedEventId || !!selectedSportEventId} 
+      />
 
-      <main className="mx-auto max-w-4xl p-4 space-y-4">
+      <main className="mx-auto w-full max-w-4xl p-4 space-y-4 flex-grow">
         {/* Event listing */}
         {!selectedEventId && (
           <div className="grid gap-4">
@@ -395,10 +376,7 @@ export default function PublicResultsPage() {
         )}
       </main>
 
-      <footer className="border-t py-8 text-center text-sm text-muted-foreground bg-muted/20 mt-12">
-        <p className="font-bold">JER Gestão</p>
-        <p className="text-xs">Plataforma de Gestão dos Jogos Escolares de Roraima</p>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertTriangle, Medal, Trophy, Loader2, ArrowLeft } from "lucide-react";
-import { VisualIdentity } from "@/components/public/VisualIdentity";
+import { PublicHeader } from "@/components/public/PublicHeader";
+import { PublicFooter } from "@/components/public/PublicFooter";
 import { Button } from "@/components/ui/button";
 import { useMedalTableData, type MedalTableFilters, type ScopeFilter, type TypeFilter } from "../admin/relatorios/useMedalTableData";
 
@@ -49,21 +50,14 @@ export default function PublicMedalTablePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-white px-4 py-3 sticky top-0 z-10 shadow-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <div className="flex items-center gap-2">
-            {selectedEventId && (
-              <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8 rounded-full">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
-            <VisualIdentity size="sm" subtitle={selectedEventId ? "Quadro de Medalhas" : "Resultados Oficiais"} />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-slate-50/50">
+      <PublicHeader 
+        subtitle={selectedEventId ? "Quadro de Medalhas" : "Resultados Oficiais"} 
+        onBack={handleBack} 
+        showBackButton={!!selectedEventId} 
+      />
 
-      <main className="mx-auto max-w-5xl p-4 space-y-6">
+      <main className="mx-auto w-full max-w-5xl p-4 space-y-6 flex-grow">
         {!selectedEventId ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {loadingEvents ? (
@@ -245,10 +239,7 @@ export default function PublicMedalTablePage() {
         )}
       </main>
 
-      <footer className="border-t py-8 text-center text-sm text-muted-foreground bg-muted/20 mt-12">
-        <p className="font-bold">JER Gestão</p>
-        <p className="text-xs">Plataforma de Gestão dos Jogos Escolares de Roraima</p>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }
