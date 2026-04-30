@@ -57,6 +57,13 @@ export default function OscAccountabilityModule() {
         .select("*")
         .order("name");
       if (error) throw error;
+      
+      // Auto-select default template
+      const defaultTpl = data.find(t => t.is_default);
+      if (defaultTpl && !selectedTemplateId) {
+        setSelectedTemplateId(defaultTpl.id);
+      }
+      
       return data;
     }
   });
