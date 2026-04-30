@@ -232,6 +232,7 @@ export const AppRoutes = () => (
         <Route path="permissoes" element={<SuperPermissionsPage />} />
         <Route path="dados" element={<CentralDadosPage />} />
         <Route path="diagnostico" element={<SistemaDiagnosticoPage />} />
+        <Route path="documentacao" element={<DocumentationPage />} />
       </Route>
 
       <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
