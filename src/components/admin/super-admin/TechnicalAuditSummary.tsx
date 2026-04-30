@@ -22,6 +22,7 @@ export function TechnicalAuditSummary() {
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", eventId),
         supabase.from("participant_credentials").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("status", "active"),
         supabase.from("db_operation_logs").select("id", { count: "exact", head: true }),
+        supabase.from("system_sync_status").select("*"),
       ]);
 
       return {
@@ -29,6 +30,7 @@ export function TechnicalAuditSummary() {
         matches_total: results[1].count || 0,
         credentials_active: results[2].count || 0,
         db_logs_count: results[3].count || 0,
+        sync_status: results[4].data || [],
       };
     }
   });
@@ -40,6 +42,11 @@ export function TechnicalAuditSummary() {
     { label: "Partidas", dash: dashboard?.resumo.matches_total, audit: audit?.matches_total },
     { label: "Credenciais", dash: dashboard?.resumo.credentials_active, audit: audit?.credentials_active },
     { label: "Logs de Operação", dash: null, audit: audit?.db_logs_count },
+    { 
+      label: "Sync: Participantes", 
+      dash: audit?.sync_status?.find((s: any) => s.table_name === 'participants')?.last_modified_at ? "Sync OK" : "Pendente", 
+      audit: "Sync OK" 
+    },
   ];
 
   return (

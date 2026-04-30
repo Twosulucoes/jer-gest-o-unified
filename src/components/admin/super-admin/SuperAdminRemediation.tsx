@@ -38,6 +38,12 @@ export function SuperAdminRemediation() {
           timestamp: new Date().toISOString(),
           admin_name: profile?.full_name,
         },
+        execution_context: {
+          browser: navigator.userAgent,
+          location: window.location.href,
+          admin_role: profile?.role,
+          full_payload: payload
+        }
       });
     } catch (err) {
       console.error("Failed to log remediation action:", err);
