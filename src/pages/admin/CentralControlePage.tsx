@@ -10,9 +10,11 @@ import { format } from "date-fns";
 import { Shield, AlertTriangle, Terminal, History, ArrowRight, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 
 export default function CentralControlePage() {
   const { profile } = useAuth();
+  usePerformanceMonitor("CentralControlePage");
 
   const { data: recentCritical = [], isLoading: loadingCritical } = useQuery({
     queryKey: ["recent-critical-events"],
