@@ -2,13 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
 import { useCallback } from "react";
+import { type ModuleId } from "@/constants/modules";
 
-export type PwaModule = 
-  | "coordenacao-tecnica" 
-  | "secretaria" 
-  | "comissao-tecnica" 
-  | "administrativo" 
-  | "configuracao";
+export type PwaModule = ModuleId | "configuracao" | "comissao-tecnica" | "administrativo" | "secretaria";
 
 interface PwaNavigationOptions {
   /** If true, validation for activeStageId will be skipped. Only activeEventId is required. */
