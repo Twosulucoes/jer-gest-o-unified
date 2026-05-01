@@ -252,7 +252,7 @@ export default function PessoasPage() {
             <Users className="h-6 w-6 text-primary" /> Central de Pessoas
           </h1>
           <p className="text-sm text-muted-foreground">
-            Gestão unificada do cadastro de participantes e equipe.
+            Gestão unificada do cadastro de inscrições e equipe.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -295,7 +295,7 @@ export default function PessoasPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos Tipos</SelectItem>
-                  <SelectItem value="participant">Participantes</SelectItem>
+                  <SelectItem value="participant">Inscrições</SelectItem>
                   <SelectItem value="eventual">Pessoas Eventuais</SelectItem>
                 </SelectContent>
               </Select>
@@ -375,7 +375,7 @@ export default function PessoasPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-[10px] uppercase">
-                          {p.kind === "eventual" ? "Eventual" : "Participante"}
+                          {p.kind === "eventual" ? "Eventual" : "Inscrição"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs space-y-0.5">
