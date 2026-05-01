@@ -50,7 +50,6 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
-        <AppStatePreserver />
         <PwaUpdateNotice />
         <PwaInstallNotice />
         <NetworkStatusBanner />
@@ -60,6 +59,7 @@ const App = () => (
           <VersionValidator>
             <EventProvider>
               <StageProvider>
+                <AppStatePreserver />
                 <ContextLockGuard />
                 <CompetitionProvider>
                   <AppRoutes />
