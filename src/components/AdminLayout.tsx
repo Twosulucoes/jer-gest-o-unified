@@ -385,7 +385,13 @@ export default function AdminLayout() {
 
                 <CollapsibleContent className="space-y-0.5">
                   {group.items.filter(isItemVisible).map((item) => (
-                    <NavItemLink key={item.to} item={item} collapsed={collapsed} onClick={closeSidebar} />
+                    <NavItemLink 
+                      key={item.to} 
+                      item={item} 
+                      collapsed={collapsed} 
+                      onClick={closeSidebar} 
+                      highlighted={group.id === "operacao" && item.to === "/admin/etapas"}
+                    />
                   ))}
 
                   {group.subGroups?.map((subGroup) => {
