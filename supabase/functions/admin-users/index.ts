@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
       }
 
       case "invite_user": {
-        const { email, full_name, role: singleRole, roles: multiRoles } = body;
+        const { email, full_name, role: singleRole, roles: multiRoles, phone } = body;
         // Support both single role (legacy) and multiple roles
         const targetRoles: string[] = multiRoles && Array.isArray(multiRoles) && multiRoles.length > 0
           ? multiRoles
