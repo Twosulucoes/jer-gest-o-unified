@@ -88,6 +88,7 @@ export default function PessoasPage() {
   const [foodRestrictions, setFoodRestrictions] = useState("");
   const [medicalNotes, setMedicalNotes] = useState("");
   const [disabilityType, setDisabilityType] = useState("");
+  const [personKind, setPersonKind] = useState<"participant" | "eventual">("participant");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: people = [], isLoading } = useQuery({
