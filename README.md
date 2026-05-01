@@ -69,6 +69,7 @@ Para navegar pela complexidade do sistema, utilize os guias detalhados abaixo:
 | **📄 Boletins** | ✅ | Geração automática de PDF e XLSX oficial. |
 | **📱 PWA Operacional** | ✅ | Módulos isolados por perfil com suporte a contexto de etapa. |
 | **💡 Manual e Ajuda** | ✅ | **Atualizado!** Guia completo de PWAs com operação offline e vouchers. |
+| **⚖️ Arbitragem** | ✅ | **Novo!** Gestão completa de cadastro, pagamentos e apuração de partidas. |
 
 ---
 
