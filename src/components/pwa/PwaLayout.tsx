@@ -199,9 +199,26 @@ export default function PwaLayout({
         onSignOut={handleSignOut}
       />
       <PwaLayoutCtx.Provider value={ownCtxValue}>
-      <main className={cn("flex-1 overflow-auto", !hideFooter && "pb-24")}>
-        {children || <Outlet />}
-      </main>
+        {/* Banner de Etapa Ativa para segurança operacional (Alojamento/Alimentação) */}
+        {(currentModule === "alojamento" || currentModule === "alimentacao") && activeStage && (
+          <div className="sticky top-14 z-10 bg-amber-500/20 dark:bg-amber-500/10 border-b border-amber-500/40 px-4 py-2.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-amber-800 dark:text-amber-400 backdrop-blur-md shadow-sm">
+            <div className="flex items-center gap-2 truncate mr-3">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-500">
+                <Layers className="h-3 w-3" />
+              </div>
+              <span className="truncate">
+                ETAPA: <span className="font-black text-amber-900 dark:text-amber-300">{activeStage.name}</span>
+              </span>
+            </div>
+            <div className="shrink-0 flex items-center gap-1 font-mono text-[9px] font-bold opacity-90 bg-background/60 dark:bg-black/30 px-2 py-0.5 rounded border border-amber-500/30 tabular-nums text-amber-900 dark:text-amber-200">
+              <span className="opacity-50 font-normal">ID:</span>
+              <span>{activeStage.id.slice(0, 8)}</span>
+            </div>
+          </div>
+        )}
+        <main className={cn("flex-1 overflow-auto", !hideFooter && "pb-24")}>
+          {children || <Outlet />}
+        </main>
 
       {!hideFooter && (
         <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_10px_rgba(0,0,0,0.1)]">
