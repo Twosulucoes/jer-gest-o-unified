@@ -149,6 +149,7 @@ export default function PessoasPage() {
     setFoodRestrictions(p.food_restrictions ?? "");
     setMedicalNotes(p.medical_notes ?? "");
     setDisabilityType(p.disability_type ?? "");
+    setPersonKind(p.kind);
     setErrors({});
     setFormOpen(true);
   };
