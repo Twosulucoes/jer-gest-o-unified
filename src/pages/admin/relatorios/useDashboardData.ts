@@ -238,6 +238,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           const query = supabase.from("transport_vehicles")
             .select("id", { count: "exact", head: true });
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { count } = await query;
           return count ?? 0;
         }, 0),
