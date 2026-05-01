@@ -44,6 +44,7 @@ export function ArbitrosTab() {
   const [inviteName, setInviteName] = useState("");
   const [inviting, setInviting] = useState(false);
   const [removeConfirm, setRemoveConfirm] = useState<Arbitro | null>(null);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
   const { data: arbitros = [], isLoading } = useQuery({
     queryKey: ["arbitros-list", activeEventId],
