@@ -86,7 +86,8 @@ export default function DashboardPage() {
     },
   });
 
-  const { data, isLoading, refetchAll, lastUpdated } = useDashboardData(eventId);
+  const { activeStageId } = useEventContext() as any; // Using context to get possible stage ID if any
+  const { data, isLoading, refetchAll, lastUpdated } = useDashboardData(eventId, activeStageId);
 
   const selectedEvent = events.find(e => e.id === eventId);
   const r = data.resumo;
