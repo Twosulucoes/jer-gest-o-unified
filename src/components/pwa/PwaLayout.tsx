@@ -9,6 +9,7 @@ import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useStageContext } from "@/contexts/StageContext";
 import { useEventContext } from "@/contexts/EventContext";
+import { getModuleByPath, APP_MODULES } from "@/constants/modules";
 
 import { usePwaNavigation } from "@/hooks/pwa/usePwaNavigation";
 import { PwaHeader } from "./PwaHeader";
@@ -71,18 +72,10 @@ export default function PwaLayout({
 
   const path = location.pathname;
 
-  // Detect which PWA module we are in based on path
+  // Detect which PWA module we are in based on central mapping
   const currentModule = useMemo(() => {
-    if (path.startsWith("/pwa/transporte")) return "transporte";
-    if (path.startsWith("/pwa/alimentacao")) return "alimentacao";
-    if (path.startsWith("/pwa/alojamento")) return "alojamento";
-    if (path.startsWith("/pwa/coordenacao-tecnica")) return "coordenacao-tecnica";
-    if (path.startsWith("/pwa/delegacao")) return "delegacao";
-    if (path.startsWith("/pwa/credenciamento")) return "credenciamento";
-    if (path.startsWith("/pwa/resultados")) return "resultados";
-    if (path.startsWith("/pwa/registros")) return "registros";
-    if (path.startsWith("/aovivo")) return "aovivo";
-    return null;
+    const moduleId = getModuleByPath(path);
+    return moduleId === "other" ? null : moduleId;
   }, [path]);
 
   const moduleConfig = {
