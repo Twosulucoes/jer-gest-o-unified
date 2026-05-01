@@ -96,12 +96,18 @@ const CredenciamentoExternoPage = lazy(() => import("../pages/admin/Credenciamen
 const ValidacaoQRPage = lazy(() => import("../pages/admin/ValidacaoQRPage"));
 const CompeticaoPartidasAgendaPage = lazy(() => import("../pages/admin/CompeticaoPartidasAgendaPage"));
 const CompeticaoResultadosPage = lazy(() => import("../pages/admin/CompeticaoResultadosPage"));
+const CompeticaoCentralPage = lazy(() => import("../pages/admin/CompeticaoCentralPage"));
+const CompeticaoFasesPage = lazy(() => import("../pages/admin/CompeticaoFasesPage"));
+const CompeticaoGruposPage = lazy(() => import("../pages/admin/CompeticaoGruposPage"));
+const CompeticaoPreValidacaoPage = lazy(() => import("../pages/admin/PreValidacaoPage"));
 const AlojamentoHubPage = lazy(() => import("../pages/admin/AlojamentoHubPage"));
 const AlimentacaoHubPage = lazy(() => import("../pages/admin/AlimentacaoHubPage"));
 const TransporteHubPage = lazy(() => import("../pages/admin/TransporteHubPage"));
 const OcorrenciasPage = lazy(() => import("../pages/admin/OcorrenciasPage"));
 const PesquisaDashboardPage = lazy(() => import("../pages/admin/PesquisaDashboardPage"));
 const VouchersPage = lazy(() => import("../pages/admin/VouchersPage"));
+const VoucherValidarPage = lazy(() => import("../pages/admin/VoucherValidarPage"));
+const VoucherAuditoriaPage = lazy(() => import("../pages/admin/VoucherAuditoriaPage"));
 const ProtestosFilaPage = lazy(() => import("../pages/admin/ProtestosFilaPage"));
 
 // Transporte Subpages (Admin)
@@ -109,16 +115,22 @@ const AdminTransporteViagensPage = lazy(() => import("../pages/admin/TransporteV
 const AdminTransporteRotasPage = lazy(() => import("../pages/admin/TransporteRotasPage"));
 const AdminTransporteEmbarquePage = lazy(() => import("../pages/admin/TransporteEmbarquePage"));
 const AdminTransporteVeiculosPage = lazy(() => import("../pages/admin/TransporteVeiculosPage"));
+const AdminTransporteRelatoriosPage = lazy(() => import("../pages/admin/TransporteRelatoriosPage"));
 
 // Alimentacao Subpages (Admin)
 const AdminAlimentacaoJanelasPage = lazy(() => import("../pages/admin/AlimentacaoJanelasPage"));
 const AdminAlimentacaoConsumoPage = lazy(() => import("../pages/admin/AlimentacaoConsumoPage"));
 const AdminAlimentacaoPrevisaoPage = lazy(() => import("../pages/admin/AlimentacaoPrevisaoPage"));
+const AdminAlimentacaoTiposPage = lazy(() => import("../pages/admin/AlimentacaoTiposPage"));
+const AdminAlimentacaoDashboardPage = lazy(() => import("../pages/admin/AlimentacaoDashboardPage"));
+const AdminAlimentacaoRelatoriosPage = lazy(() => import("../pages/admin/AlimentacaoRelatoriosPage"));
 
 // Alojamento Subpages (Admin)
 const AdminAlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
 const AdminAlojamentoUnidadesPage = lazy(() => import("../pages/admin/AlojamentoUnidadesPage"));
 const AdminAlojamentoPresencaPage = lazy(() => import("../pages/admin/AlojamentoPresencaPage"));
+const AdminAlojamentoLocaisPage = lazy(() => import("../pages/admin/AlojamentoLocaisPage"));
+const AdminAlojamentoRelatoriosPage = lazy(() => import("../pages/admin/AlojamentoRelatoriosPage"));
 
 // Competicao Subpages (Admin)
 const CompeticaoPainelPage = lazy(() => import("../pages/admin/CompeticaoPainelPage"));
@@ -249,28 +261,41 @@ export const AppRoutes = () => (
            <Route path="credenciamento" element={<CredenciamentoPage />} />
            <Route path="credenciamento-externo" element={<CredenciamentoExternoPage />} />
            <Route path="validacao-qr" element={<ValidacaoQRPage />} />
-           <Route path="competicao/partidas-agenda" element={<CompeticaoPartidasAgendaPage />} />
-           <Route path="competicao/resultados" element={<CompeticaoResultadosPage />} />
-           <Route path="competicao/painel" element={<CompeticaoPainelPage />} />
-           <Route path="competicao/equipes" element={<CompeticaoEquipesPage />} />
-           <Route path="competicao/partida/:matchId" element={<CompeticaoPartidaDetalhePage />} />
-           <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
-           <Route path="alojamento" element={<AlojamentoHubPage />} />
-           <Route path="alojamento/ocupacao" element={<AdminAlojamentoOcupacaoPage />} />
-           <Route path="alojamento/unidades" element={<AdminAlojamentoUnidadesPage />} />
-           <Route path="alojamento/presenca" element={<AdminAlojamentoPresencaPage />} />
-           <Route path="alimentacao" element={<AlimentacaoHubPage />} />
-           <Route path="alimentacao/janelas" element={<AdminAlimentacaoJanelasPage />} />
-           <Route path="alimentacao/consumos" element={<AdminAlimentacaoConsumoPage />} />
-           <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
-           <Route path="transporte" element={<TransporteHubPage />} />
-           <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
-           <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
-           <Route path="transporte/veiculos" element={<AdminTransporteVeiculosPage />} />
-           <Route path="transporte/embarque/:tripId" element={<AdminTransporteEmbarquePage />} />
+            <Route path="competicao/partidas-agenda" element={<CompeticaoPartidasAgendaPage />} />
+            <Route path="competicao/resultados" element={<CompeticaoResultadosPage />} />
+            <Route path="competicao/painel" element={<CompeticaoPainelPage />} />
+            <Route path="competicao/equipes" element={<CompeticaoEquipesPage />} />
+            <Route path="competicao/central" element={<CompeticaoCentralPage />} />
+            <Route path="competicao/fases" element={<CompeticaoFasesPage />} />
+            <Route path="competicao/grupos" element={<CompeticaoGruposPage />} />
+            <Route path="competicao/pre-validacao" element={<CompeticaoPreValidacaoPage />} />
+            <Route path="competicao/regras" element={<RegrasPage />} />
+            <Route path="competicao/partida/:matchId" element={<CompeticaoPartidaDetalhePage />} />
+            <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
+            <Route path="alojamento" element={<AlojamentoHubPage />} />
+            <Route path="alojamento/ocupacao" element={<AdminAlojamentoOcupacaoPage />} />
+            <Route path="alojamento/unidades" element={<AdminAlojamentoUnidadesPage />} />
+            <Route path="alojamento/locais" element={<AdminAlojamentoLocaisPage />} />
+            <Route path="alojamento/presenca" element={<AdminAlojamentoPresencaPage />} />
+            <Route path="alojamento/relatorios" element={<AdminAlojamentoRelatoriosPage />} />
+            <Route path="alimentacao" element={<AlimentacaoHubPage />} />
+            <Route path="alimentacao/tipos" element={<AdminAlimentacaoTiposPage />} />
+            <Route path="alimentacao/janelas" element={<AdminAlimentacaoJanelasPage />} />
+            <Route path="alimentacao/consumo" element={<AdminAlimentacaoConsumoPage />} />
+            <Route path="alimentacao/dashboard" element={<AdminAlimentacaoDashboardPage />} />
+            <Route path="alimentacao/relatorios" element={<AdminAlimentacaoRelatoriosPage />} />
+            <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
+            <Route path="transporte" element={<TransporteHubPage />} />
+            <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
+            <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
+            <Route path="transporte/veiculos" element={<AdminTransporteVeiculosPage />} />
+            <Route path="transporte/relatorios" element={<AdminTransporteRelatoriosPage />} />
+            <Route path="transporte/embarque/:tripId" element={<AdminTransporteEmbarquePage />} />
            <Route path="ocorrencias" element={<OcorrenciasPage />} />
            <Route path="pesquisa" element={<PesquisaDashboardPage />} />
-           <Route path="vouchers" element={<VouchersPage />} />
+            <Route path="vouchers" element={<VouchersPage />} />
+            <Route path="voucher/validar" element={<VoucherValidarPage />} />
+            <Route path="vouchers/auditoria" element={<VoucherAuditoriaPage />} />
            <Route path="protestos" element={<ProtestosFilaPage />} />
            <Route path="relatorios" element={<StageReportsPage />} />
         </Route>
