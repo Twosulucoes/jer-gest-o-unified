@@ -88,7 +88,7 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
                             <>Ao clicar, o sistema redireciona automaticamente para a <strong>última etapa que você acessou</strong> (armazenada no seu navegador).</>
                           )}
                           {isConsumo && (
-                            <>Exibe o relatório de consumos da <strong>etapa atualmente selecionada</strong> no topo da tela.</>
+                            <>Estes módulos operam com base na <strong>etapa atualmente selecionada</strong> no topo da tela.</>
                           )}
                         </p>
                       </div>
