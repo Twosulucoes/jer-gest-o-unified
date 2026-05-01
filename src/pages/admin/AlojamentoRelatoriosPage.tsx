@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useStageScope } from "@/hooks/useStageScope";
 import { format } from "date-fns";
 import { Download, Building2, AlertCircle, ArrowLeft, FileText, Table as TableIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
