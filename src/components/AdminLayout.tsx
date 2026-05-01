@@ -87,7 +87,6 @@ const navGroups: NavGroup[] = [
       { label: "Histórico do Participante", to: "/admin/participantes/historico", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Credencial (Modelos)", to: "/admin/credenciais/modelos", icon: <BadgeCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Vinculação de Credencial", to: "/admin/credenciamento-externo", icon: <ScanLine className="h-4 w-4" />, roles: ADMIN_ROLES },
       
       { label: "Importação", to: "/admin/importacao", icon: <Upload className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Irregularidades", to: "/admin/irregularidades", icon: <AlertTriangle className="h-4 w-4" />, roles: ADMIN_ROLES },
@@ -102,14 +101,6 @@ const navGroups: NavGroup[] = [
       { label: "Quadro de Medalhas", to: "/admin/relatorios/quadro-medalhas", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Prestação de Contas (OSC)", to: "/admin/registros/prestacao-contas", icon: <ShieldCheck className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Painel de Conformidade", to: "/admin/conformidade", icon: <ShieldCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
-    ],
-  },
-  {
-    id: "logistica-global", label: "Logística Global", description: "Visão e ferramentas de logística entre etapas.",
-    icon: <Layers className="h-4 w-4" />,
-    items: [
-      { label: "Logística Consolidada", to: "/admin/etapas", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Clonar Logística entre Etapas", to: "/admin/clonar-logistica", icon: <Layers className="h-4 w-4" />, roles: ["super_admin"] as AppRole[] },
     ],
   },
   {
@@ -149,14 +140,6 @@ const navGroups: NavGroup[] = [
       { label: "Regras de Pagamento", to: "/admin/arbitragem/config", icon: <Settings className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
       { label: "Apuração / Pagamentos", to: "/admin/arbitragem/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde"] as AppRole[] },
-    ],
-  },
-  {
-    id: "operacao", label: "Operação por Etapa", description: "Módulos de campo filtrados por fase.",
-    icon: <Layers className="h-4 w-4" />,
-    items: [
-      { label: "Central de Etapas", to: "/admin/etapas", icon: <Layers className="h-4 w-4" />, roles: "all" },
-      { label: "Registros de Partidas", to: "/admin/registros", icon: <ClipboardList className="h-4 w-4" />, roles: ADMIN_ROLES, showOnlyIfRegistrosEnabled: true },
     ],
   },
   {
@@ -372,32 +355,6 @@ export default function AdminLayout() {
               <NavItemLink item={coordDashboardItem} collapsed={collapsed} onClick={closeSidebar} />
             )}
 
-            {/* CTA único: Entrar na Etapa */}
-            {(hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica") || hasRole("transporte") || hasRole("alimentacao") || hasRole("coordenador_modalidade") || hasRole("super_admin")) && (
-              collapsed ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <NavLink
-                      to="/admin/etapas"
-                      onClick={closeSidebar}
-                      className="mt-2 flex items-center justify-center rounded-lg p-2.5 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-app-sm"
-                    >
-                      <ListTree className="h-4 w-4" />
-                    </NavLink>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">Entrar na Etapa</TooltipContent>
-                </Tooltip>
-              ) : (
-                <NavLink
-                  to="/admin/etapas"
-                  onClick={closeSidebar}
-                  className="mt-2 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-app-sm"
-                >
-                  <ListTree className="h-4 w-4" />
-                  Entrar na Etapa
-                </NavLink>
-              )
-            )}
 
             {navGroups.filter(isGroupVisible).map((group) => (
               <Collapsible key={group.id} defaultOpen={activeGroupId === group.id}>
