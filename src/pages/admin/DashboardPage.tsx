@@ -122,6 +122,16 @@ export default function DashboardPage() {
         </div>
       </AppPageHeader>
 
+      {/* Botão de Operação por Etapa adicionado conforme solicitado */}
+      <div className="flex justify-start px-1">
+        <Link to="/admin/etapas">
+          <Button variant="default" className="gap-2 shadow-app-sm">
+            <Layers className="h-4 w-4" />
+            Operação por Etapa
+          </Button>
+        </Link>
+      </div>
+
       {/* DashboardQuickActions removido conforme solicitado para manter apenas o dashboard visual */}
 
       {/* KPI Resumo Principal */}
