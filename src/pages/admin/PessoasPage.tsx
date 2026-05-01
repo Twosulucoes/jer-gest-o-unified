@@ -71,6 +71,7 @@ export default function PessoasPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [kindFilter, setKindFilter] = useState<"all" | "participant" | "eventual">("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
