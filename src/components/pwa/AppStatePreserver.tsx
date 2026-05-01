@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useStageContext } from "@/contexts/StageContext";
 
 const LAST_PATH_KEY = "jer_last_pwa_path";
 const RESTORED_FLAG = "jer_pwa_path_restored";
@@ -13,6 +14,7 @@ export function AppStatePreserver() {
   const location = useLocation();
   const navigate = useNavigate();
   const hasRestored = useRef(false);
+  const { activeStageId, stages } = useStageContext();
 
   // Save current path on every change
   useEffect(() => {
@@ -27,6 +29,25 @@ export function AppStatePreserver() {
       localStorage.setItem(LAST_PATH_KEY, fullPath);
     }
   }, [location]);
+
+  // Sync stage ID into URL if missing in PWA routes
+  useEffect(() => {
+    const isPwaModule = location.pathname.startsWith("/pwa/");
+    const hasStageIdInPath = /\/pwa\/[^/]+\/([^/]+)/.test(location.pathname);
+    
+    if (isPwaModule && !hasStageIdInPath && activeStageId && stages.length > 0) {
+      const stage = stages.find(s => s.id === activeStageId);
+      if (stage) {
+        // Construct the new path with stage ID: /pwa/module -> /pwa/module/stageId
+        const pathParts = location.pathname.split("/").filter(Boolean);
+        if (pathParts.length === 2) { // e.g., ["pwa", "alojamento"]
+          const newPath = `/${pathParts[0]}/${pathParts[1]}/${activeStageId}${location.search}${location.hash}`;
+          console.log("[AppStatePreserver] Syncing stage to URL:", newPath);
+          navigate(newPath, { replace: true });
+        }
+      }
+    }
+  }, [location.pathname, activeStageId, stages, navigate, location.search, location.hash]);
 
   // Restore path on initial mount
   useEffect(() => {

@@ -5,12 +5,13 @@
  */
 import { createContext, useContext, useMemo, useState, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { handleContextChange } from "@/lib/context-manager";
 
 const STORAGE_KEY = "jer_active_stage_id";
+const MODULE_STORAGE_KEY = "jer_active_module";
 
 /** Detailed stage information from the database */
 export interface EventStage {
@@ -45,14 +46,43 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const eventId = useActiveEventId();
   const { stageId: routeStageId } = useParams<{ stageId?: string }>();
+  const location = useLocation();
   
+  // Identify current module based on path
+  const currentModule = useMemo(() => {
+    if (location.pathname.startsWith("/pwa/alojamento")) return "alojamento";
+    if (location.pathname.startsWith("/pwa/alimentacao")) return "alimentacao";
+    if (location.pathname.startsWith("/pwa/credenciamento")) return "credenciamento";
+    if (location.pathname.startsWith("/pwa/transporte")) return "transporte";
+    if (location.pathname.startsWith("/admin")) return "admin";
+    return "other";
+  }, [location.pathname]);
+
   const [persistedStageId, setPersistedStageId] = useState<string | null>(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY);
+      const lastModule = localStorage.getItem(MODULE_STORAGE_KEY);
+      const lastStageId = localStorage.getItem(STORAGE_KEY);
+      
+      // If we are changing modules, we might want to reset or validate, 
+      // but for now let's just ensure we have the last known stage.
+      return lastStageId;
     } catch {
       return null;
     }
   });
+
+  // Track module changes and sync context
+  useEffect(() => {
+    const lastModule = localStorage.getItem(MODULE_STORAGE_KEY);
+    if (lastModule && lastModule !== currentModule && currentModule !== "other") {
+      console.log(`[StageContext] Module changed from ${lastModule} to ${currentModule}. Syncing context...`);
+      // When changing modules, we force a query invalidation to ensure data consistency
+      handleContextChange(queryClient);
+    }
+    if (currentModule !== "other") {
+      localStorage.setItem(MODULE_STORAGE_KEY, currentModule);
+    }
+  }, [currentModule, queryClient]);
 
   const { data: stages = [], isLoading: stagesLoading } = useQuery({
     queryKey: ["event_stages", eventId],
