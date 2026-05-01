@@ -183,6 +183,7 @@ const DelegacaoProtestoNovoPage = lazy(() => import("../pages/pwa/delegacao/Dele
 const DelegacaoProtestoDetalhePage = lazy(() => import("../pages/pwa/delegacao/DelegacaoProtestoDetalhePage"));
 const PwaDebugPage = lazy(() => import("../pages/pwa/PwaDebugPage"));
 const QrDiagnosticoPage = lazy(() => import("../pages/pwa/diagnostico/QrDiagnosticoPage"));
+const RefereePwaProfilePage = lazy(() => import("../pages/pwa/arbitragem/RefereeProfilePage"));
 const VincularCredencialPage = lazy(() => import("../pages/pwa/credenciamento/VincularCredencialPage"));
 const PwaSelectionFallback = lazy(() => import("../pages/pwa/PwaSelectionFallback"));
 const PwaNotFoundHandler = lazy(() => import("../components/pwa/PwaNotFoundHandler"));
