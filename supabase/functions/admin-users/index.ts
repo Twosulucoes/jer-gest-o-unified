@@ -175,13 +175,15 @@ Deno.serve(async (req) => {
         if (inviteErr) {
           // If user already exists, we just want to update their roles/profile
           if (inviteErr.message.toLowerCase().includes("already") || inviteErr.message.toLowerCase().includes("existe")) {
-            const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers({
-              filter: `email:eq:${email}`
-            });
-            if (listErr || !users || users.length === 0) {
+            const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers();
+            if (listErr || !users) {
               return jsonResponse({ error: `Usuário já existe mas não pôde ser recuperado: ${inviteErr.message}` }, 500);
             }
-            userId = users[0].id;
+            const existingUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+            if (!existingUser) {
+              return jsonResponse({ error: `Usuário já existe no Auth mas não foi encontrado na listagem.` }, 404);
+            }
+            userId = existingUser.id;
           } else {
             return jsonResponse({ error: inviteErr.message }, 500);
           }
