@@ -27,7 +27,7 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
   if (actions.length === 0) return null;
 
   const isSpecialHelpAction = (label: string) => 
-    label === "Credenciamento" || label === "Vinculação" || label === "Consumo";
+    ["Credenciamento", "Vinculação", "Consumo", "Ocupação", "Viagens", "Agenda", "Resultados", "Importação", "Participantes", "Validação QR"].includes(label);
 
   return (
     <div className="space-y-3">
@@ -39,8 +39,8 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {actions.map((action) => {
           const isSpecialHelp = isSpecialHelpAction(action.label);
-          const isCredenciamento = action.label === "Credenciamento" || action.label === "Vinculação";
-          const isConsumo = action.label === "Consumo";
+          const isCredenciamento = action.label === "Credenciamento" || action.label === "Vinculação" || action.label === "Validação QR";
+          const isConsumo = action.label === "Consumo" || action.label === "Ocupação" || action.label === "Viagens" || action.label === "Agenda" || action.label === "Resultados" || action.label === "Importação" || action.label === "Participantes";
           
           return (
             <div key={action.to} className="relative group flex">
@@ -88,7 +88,7 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
                             <>Ao clicar, o sistema redireciona automaticamente para a <strong>última etapa que você acessou</strong> (armazenada no seu navegador).</>
                           )}
                           {isConsumo && (
-                            <>Exibe o relatório de consumos da <strong>etapa atualmente selecionada</strong> no topo da tela.</>
+                            <>Estes módulos operam com base na <strong>etapa atualmente selecionada</strong> no topo da tela.</>
                           )}
                         </p>
                       </div>
