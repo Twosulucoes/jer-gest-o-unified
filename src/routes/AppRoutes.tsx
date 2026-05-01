@@ -293,7 +293,9 @@ export const AppRoutes = () => (
             <Route path="transporte/embarque/:tripId" element={<AdminTransporteEmbarquePage />} />
            <Route path="ocorrencias" element={<OcorrenciasPage />} />
            <Route path="pesquisa" element={<PesquisaDashboardPage />} />
-           <Route path="vouchers" element={<VouchersPage />} />
+            <Route path="vouchers" element={<VouchersPage />} />
+            <Route path="voucher/validar" element={<VoucherValidarPage />} />
+            <Route path="vouchers/auditoria" element={<VoucherAuditoriaPage />} />
            <Route path="protestos" element={<ProtestosFilaPage />} />
            <Route path="relatorios" element={<StageReportsPage />} />
         </Route>
