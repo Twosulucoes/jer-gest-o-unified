@@ -259,12 +259,17 @@ export const AppRoutes = () => (
            <Route path="credenciamento" element={<CredenciamentoPage />} />
            <Route path="credenciamento-externo" element={<CredenciamentoExternoPage />} />
            <Route path="validacao-qr" element={<ValidacaoQRPage />} />
-           <Route path="competicao/partidas-agenda" element={<CompeticaoPartidasAgendaPage />} />
-           <Route path="competicao/resultados" element={<CompeticaoResultadosPage />} />
-           <Route path="competicao/painel" element={<CompeticaoPainelPage />} />
-           <Route path="competicao/equipes" element={<CompeticaoEquipesPage />} />
-           <Route path="competicao/partida/:matchId" element={<CompeticaoPartidaDetalhePage />} />
-           <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
+            <Route path="competicao/partidas-agenda" element={<CompeticaoPartidasAgendaPage />} />
+            <Route path="competicao/resultados" element={<CompeticaoResultadosPage />} />
+            <Route path="competicao/painel" element={<CompeticaoPainelPage />} />
+            <Route path="competicao/equipes" element={<CompeticaoEquipesPage />} />
+            <Route path="competicao/central" element={<CompeticaoCentralPage />} />
+            <Route path="competicao/fases" element={<CompeticaoFasesPage />} />
+            <Route path="competicao/grupos" element={<CompeticaoGruposPage />} />
+            <Route path="competicao/pre-validacao" element={<CompeticaoPreValidacaoPage />} />
+            <Route path="competicao/regras" element={<RegrasPage />} />
+            <Route path="competicao/partida/:matchId" element={<CompeticaoPartidaDetalhePage />} />
+            <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
             <Route path="alojamento" element={<AlojamentoHubPage />} />
             <Route path="alojamento/ocupacao" element={<AdminAlojamentoOcupacaoPage />} />
             <Route path="alojamento/unidades" element={<AdminAlojamentoUnidadesPage />} />
