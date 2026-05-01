@@ -8,7 +8,7 @@ import {
   Users, UserCheck, ShieldCheck, Bus, UtensilsCrossed, Building, Trophy,
   CheckCircle2, AlertTriangle, Clock, TrendingUp,
   Upload, UsersRound, ScanLine, Navigation, ClipboardList, CalendarDays, KeyRound,
-  RefreshCw, Bed, Truck, CalendarClock, Calendar, Gavel
+  RefreshCw, Bed, Truck, CalendarClock, Calendar, Gavel, Layers
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -121,6 +121,16 @@ export default function DashboardPage() {
           )}
         </div>
       </AppPageHeader>
+
+      {/* Botão de Operação por Etapa adicionado conforme solicitado */}
+      <div className="flex justify-start px-1">
+        <Link to="/admin/etapas">
+          <Button variant="default" className="gap-2 shadow-app-sm">
+            <Layers className="h-4 w-4" />
+            Operação por Etapa
+          </Button>
+        </Link>
+      </div>
 
       {/* DashboardQuickActions removido conforme solicitado para manter apenas o dashboard visual */}
 
