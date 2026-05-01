@@ -86,6 +86,10 @@ const DebugPublicadosPage = lazy(() => import("../pages/admin/DebugPublicadosPag
 const StageHomePage = lazy(() => import("../pages/admin/StageHomePage"));
 const StageReportsPage = lazy(() => import("../pages/admin/StageReportsPage"));
 
+// Referee specific pages
+const RefereeRemunerationConfigPage = lazy(() => import("../pages/admin/referees/RefereeRemunerationConfigPage"));
+const RefereeReportingPage = lazy(() => import("../pages/admin/referees/RefereeReportingPage"));
+
 // Operational Module Pages (Admin/Stage)
 const CredenciamentoPage = lazy(() => import("../pages/admin/CredenciamentoPage"));
 const CredenciamentoExternoPage = lazy(() => import("../pages/admin/CredenciamentoExternoPage"));
