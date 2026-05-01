@@ -122,7 +122,7 @@ export default function DashboardPage() {
         </div>
       </AppPageHeader>
 
-      <DashboardQuickActions actions={visibleActions} />
+      {/* DashboardQuickActions removido conforme solicitado para manter apenas o dashboard visual */}
 
       {/* KPI Resumo Principal */}
       <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
