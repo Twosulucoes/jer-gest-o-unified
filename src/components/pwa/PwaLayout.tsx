@@ -199,9 +199,22 @@ export default function PwaLayout({
         onSignOut={handleSignOut}
       />
       <PwaLayoutCtx.Provider value={ownCtxValue}>
-      <main className={cn("flex-1 overflow-auto", !hideFooter && "pb-24")}>
-        {children || <Outlet />}
-      </main>
+        {/* Banner de Etapa Ativa para segurança operacional */}
+        {(currentModule === "alojamento" || currentModule === "alimentacao") && activeStage && (
+          <div className="sticky top-14 z-10 bg-amber-500/10 dark:bg-amber-500/5 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-500 backdrop-blur-sm">
+            <div className="flex items-center gap-2 truncate mr-4">
+              <Layers className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">ETAPA: <span className="font-black underline decoration-amber-500/30 underline-offset-2">{activeStage.name}</span></span>
+            </div>
+            <div className="shrink-0 flex items-center gap-1 font-mono text-[9px] opacity-80 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+              <span className="opacity-60">ID:</span>
+              <span>{activeStage.id.split('-')[0]}...</span>
+            </div>
+          </div>
+        )}
+        <main className={cn("flex-1 overflow-auto", !hideFooter && "pb-24")}>
+          {children || <Outlet />}
+        </main>
 
       {!hideFooter && (
         <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_10px_rgba(0,0,0,0.1)]">
