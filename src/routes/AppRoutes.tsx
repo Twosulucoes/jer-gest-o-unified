@@ -257,10 +257,12 @@ export const AppRoutes = () => (
            <Route path="competicao/equipes" element={<CompeticaoEquipesPage />} />
            <Route path="competicao/partida/:matchId" element={<CompeticaoPartidaDetalhePage />} />
            <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
-           <Route path="alojamento" element={<AlojamentoHubPage />} />
-           <Route path="alojamento/ocupacao" element={<AdminAlojamentoOcupacaoPage />} />
-           <Route path="alojamento/unidades" element={<AdminAlojamentoUnidadesPage />} />
-           <Route path="alojamento/presenca" element={<AdminAlojamentoPresencaPage />} />
+            <Route path="alojamento" element={<AlojamentoHubPage />} />
+            <Route path="alojamento/ocupacao" element={<AdminAlojamentoOcupacaoPage />} />
+            <Route path="alojamento/unidades" element={<AdminAlojamentoUnidadesPage />} />
+            <Route path="alojamento/locais" element={<AdminAlojamentoLocaisPage />} />
+            <Route path="alojamento/presenca" element={<AdminAlojamentoPresencaPage />} />
+            <Route path="alojamento/relatorios" element={<AdminAlojamentoRelatoriosPage />} />
            <Route path="alimentacao" element={<AlimentacaoHubPage />} />
            <Route path="alimentacao/janelas" element={<AdminAlimentacaoJanelasPage />} />
            <Route path="alimentacao/consumos" element={<AdminAlimentacaoConsumoPage />} />
