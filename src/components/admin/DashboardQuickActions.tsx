@@ -26,7 +26,7 @@ interface DashboardQuickActionsProps {
 export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
   if (actions.length === 0) return null;
 
-  const isCredenciamentoAction = (label: string) => label === "Credenciamento";
+  const isCredenciamentoAction = (label: string) => label === "Credenciamento" || label === "Vinculação";
 
   return (
     <div className="space-y-3">
