@@ -13,8 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UserPlus, Search, Trash2, Upload, Users } from "lucide-react";
+import { UserPlus, Search, Trash2, Upload, Users, UserCog } from "lucide-react";
 import ArbitrosImportDialog from "./ArbitrosImportDialog";
+import { RefereeProfileDialog } from "./RefereeProfileDialog";
 
 interface Arbitro {
   user_id: string;
@@ -43,6 +44,7 @@ export function ArbitrosTab() {
   const [inviteName, setInviteName] = useState("");
   const [inviting, setInviting] = useState(false);
   const [removeConfirm, setRemoveConfirm] = useState<Arbitro | null>(null);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
   const { data: arbitros = [], isLoading } = useQuery({
     queryKey: ["arbitros-list", activeEventId],
@@ -183,7 +185,7 @@ export function ArbitrosTab() {
                   <TableHead>Nome</TableHead>
                   <TableHead className="text-center w-40">Designações no evento</TableHead>
                   <TableHead className="text-center w-28">Ativo</TableHead>
-                  <TableHead className="w-14" />
+                  <TableHead className="w-24" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -199,16 +201,27 @@ export function ArbitrosTab() {
                       <Switch checked={a.active} onCheckedChange={() => toggleActive(a)} />
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => setRemoveConfirm(a)}
-                        disabled={a.assignments_count > 0}
-                        title={a.assignments_count > 0 ? "Possui designações ativas — remova-as primeiro" : "Remover da equipe"}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary"
+                          onClick={() => setEditingUserId(a.user_id)}
+                          title="Editar cadastro detalhado"
+                        >
+                          <UserCog className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => setRemoveConfirm(a)}
+                          disabled={a.assignments_count > 0}
+                          title={a.assignments_count > 0 ? "Possui designações ativas — remova-as primeiro" : "Remover da equipe"}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -280,6 +293,12 @@ export function ArbitrosTab() {
         open={importOpen}
         onOpenChange={setImportOpen}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ["arbitros-list"] })}
+      />
+
+      <RefereeProfileDialog
+        open={!!editingUserId}
+        userId={editingUserId}
+        onOpenChange={open => !open && setEditingUserId(null)}
       />
     </div>
   );

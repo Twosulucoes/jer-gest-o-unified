@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
       }
 
       case "invite_user": {
-        const { email, full_name, role: singleRole, roles: multiRoles } = body;
+        const { email, full_name, role: singleRole, roles: multiRoles, phone } = body;
         // Support both single role (legacy) and multiple roles
         const targetRoles: string[] = multiRoles && Array.isArray(multiRoles) && multiRoles.length > 0
           ? multiRoles
@@ -175,13 +175,15 @@ Deno.serve(async (req) => {
         if (inviteErr) {
           // If user already exists, we just want to update their roles/profile
           if (inviteErr.message.toLowerCase().includes("already") || inviteErr.message.toLowerCase().includes("existe")) {
-            const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers({
-              filter: `email:eq:${email}`
-            });
-            if (listErr || !users || users.length === 0) {
+            const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers();
+            if (listErr || !users) {
               return jsonResponse({ error: `Usuário já existe mas não pôde ser recuperado: ${inviteErr.message}` }, 500);
             }
-            userId = users[0].id;
+            const existingUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+            if (!existingUser) {
+              return jsonResponse({ error: `Usuário já existe no Auth mas não foi encontrado na listagem.` }, 404);
+            }
+            userId = existingUser.id;
           } else {
             return jsonResponse({ error: inviteErr.message }, 500);
           }
@@ -202,6 +204,17 @@ Deno.serve(async (req) => {
             user_id: userId,
             role: r,
           }, { onConflict: "user_id,role" });
+        }
+        
+        // If one of the roles is 'arbitragem', ensure they have a record in referee_profiles
+        if (targetRoles.includes("arbitragem")) {
+          await adminClient.from("referee_profiles").upsert({
+            user_id: userId,
+            full_name: full_name || email.split('@')[0],
+            email: email,
+            phone: phone || null,
+            status: "Ativo"
+          }, { onConflict: "user_id" });
         }
 
         // Log audit

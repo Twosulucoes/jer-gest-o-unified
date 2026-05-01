@@ -86,6 +86,10 @@ const DebugPublicadosPage = lazy(() => import("../pages/admin/DebugPublicadosPag
 const StageHomePage = lazy(() => import("../pages/admin/StageHomePage"));
 const StageReportsPage = lazy(() => import("../pages/admin/StageReportsPage"));
 
+// Referee specific pages
+const RefereeRemunerationConfigPage = lazy(() => import("../pages/admin/referees/RefereeRemunerationConfigPage"));
+const RefereeReportingPage = lazy(() => import("../pages/admin/referees/RefereeReportingPage"));
+
 // Operational Module Pages (Admin/Stage)
 const CredenciamentoPage = lazy(() => import("../pages/admin/CredenciamentoPage"));
 const CredenciamentoExternoPage = lazy(() => import("../pages/admin/CredenciamentoExternoPage"));
@@ -179,6 +183,7 @@ const DelegacaoProtestoNovoPage = lazy(() => import("../pages/pwa/delegacao/Dele
 const DelegacaoProtestoDetalhePage = lazy(() => import("../pages/pwa/delegacao/DelegacaoProtestoDetalhePage"));
 const PwaDebugPage = lazy(() => import("../pages/pwa/PwaDebugPage"));
 const QrDiagnosticoPage = lazy(() => import("../pages/pwa/diagnostico/QrDiagnosticoPage"));
+const RefereePwaProfilePage = lazy(() => import("../pages/pwa/arbitragem/RefereeProfilePage"));
 const VincularCredencialPage = lazy(() => import("../pages/pwa/credenciamento/VincularCredencialPage"));
 const PwaSelectionFallback = lazy(() => import("../pages/pwa/PwaSelectionFallback"));
 const PwaNotFoundHandler = lazy(() => import("../components/pwa/PwaNotFoundHandler"));
@@ -271,6 +276,8 @@ export const AppRoutes = () => (
         </Route>
 
         <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitrosPage /></ProtectedRoute>} />
+        <Route path="arbitragem/config" element={<ProtectedRoute allowedRoles={["admin"]}><RefereeRemunerationConfigPage /></ProtectedRoute>} />
+        <Route path="arbitragem/relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RefereeReportingPage /></ProtectedRoute>} />
         <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
         <Route path="categorias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CategoriasPage /></ProtectedRoute>} />
         <Route path="locais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><LocaisPage /></ProtectedRoute>} />
@@ -390,6 +397,8 @@ export const AppRoutes = () => (
         <Route path="resultados" element={<ResultadosHomePage />} />
         <Route path="resultados/partidas" element={<ResultadosPartidasPage />} />
         <Route path="resultados/partida/:id" element={<ResultadosPartidaFormPage />} />
+
+        <Route path="arbitragem/perfil" element={<RefereePwaProfilePage />} />
 
         <Route path="delegacao" element={<DelegacaoHomePage />} />
         <Route path="delegacao/participantes" element={<DelegacaoParticipantesPage />} />
