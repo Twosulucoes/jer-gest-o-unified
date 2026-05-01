@@ -38,6 +38,10 @@ interface StageContextValue {
   activeStage: EventStage | null;
   /** Function to manually update the active stage */
   setActiveStageId: (id: string | null) => void;
+  /** Whether the context is currently transitioning or syncing (locking UI) */
+  isContextLocked: boolean;
+  /** Manually trigger or release a context lock */
+  setContextLocked: (locked: boolean) => void;
 }
 
 const StageContext = createContext<StageContextValue | undefined>(undefined);
@@ -47,6 +51,7 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
   const eventId = useActiveEventId();
   const { stageId: routeStageId } = useParams<{ stageId?: string }>();
   const location = useLocation();
+  const [isContextLocked, setContextLocked] = useState(false);
   
   // Identify current module based on path
   const currentModule = useMemo(() => {
@@ -60,11 +65,7 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
 
   const [persistedStageId, setPersistedStageId] = useState<string | null>(() => {
     try {
-      const lastModule = localStorage.getItem(MODULE_STORAGE_KEY);
       const lastStageId = localStorage.getItem(STORAGE_KEY);
-      
-      // If we are changing modules, we might want to reset or validate, 
-      // but for now let's just ensure we have the last known stage.
       return lastStageId;
     } catch {
       return null;
@@ -75,10 +76,19 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const lastModule = localStorage.getItem(MODULE_STORAGE_KEY);
     if (lastModule && lastModule !== currentModule && currentModule !== "other") {
-      console.log(`[StageContext] Module changed from ${lastModule} to ${currentModule}. Syncing context...`);
-      // When changing modules, we force a query invalidation to ensure data consistency
+      console.log(`[StageContext] Module changed from ${lastModule} to ${currentModule}. Syncing context and locking...`);
+      setContextLocked(true);
+      
+      // Clear filters and invalidate queries
       handleContextChange(queryClient);
+      
+      // Auto-release lock after a short delay to allow React state to settle
+      const timer = setTimeout(() => {
+        setContextLocked(false);
+      }, 500);
+      return () => clearTimeout(timer);
     }
+    
     if (currentModule !== "other") {
       localStorage.setItem(MODULE_STORAGE_KEY, currentModule);
     }
@@ -104,7 +114,11 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
   const setActiveStageId = useCallback((id: string | null) => {
     const finalId = id === "none" ? null : id;
     if (finalId !== persistedStageId) {
+      setContextLocked(true);
       handleContextChange(queryClient);
+      
+      // Release lock after a short delay
+      setTimeout(() => setContextLocked(false), 300);
     }
     
     setPersistedStageId(finalId);
@@ -140,8 +154,10 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
       activeStageId: activeStageId ?? null,
       activeStage,
       setActiveStageId,
+      isContextLocked,
+      setContextLocked,
     };
-  }, [stages, stagesLoading, activeStageId, setActiveStageId]);
+  }, [stages, stagesLoading, activeStageId, setActiveStageId, isContextLocked]);
 
   return <StageContext.Provider value={value}>{children}</StageContext.Provider>;
 }
