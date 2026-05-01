@@ -119,8 +119,8 @@ export default function AlojamentoHubPage() {
         </div>
         {canWrite && (
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("alocacao-lote")}>
-              <Users className="h-4 w-4 mr-1" /> Alocação em Lote
+            <Button variant="outline" onClick={() => navigate("unidades")}>
+              <BedDouble className="h-4 w-4 mr-1" /> Lista de Quartos
             </Button>
             <Button variant="outline" onClick={() => { setEditingLocation(null); setLocationDialog(true); }}>
               <Plus className="h-4 w-4 mr-1" /> Novo local
@@ -184,12 +184,12 @@ export default function AlojamentoHubPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors border-amber-200 bg-amber-50/10" onClick={() => navigate("divergencias")}>
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors border-blue-200 bg-blue-50/10" onClick={() => navigate("unidades")}>
           <CardContent className="flex items-center gap-3 p-4">
-            <AlertTriangle className="h-8 w-8 text-amber-500 shrink-0" />
+            <Building className="h-8 w-8 text-blue-500 shrink-0" />
             <div>
-              <p className="font-medium text-sm">Divergências</p>
-              <p className="text-xs text-muted-foreground">Relatório conflitos</p>
+              <p className="font-medium text-sm">Gestão de Unidades</p>
+              <p className="text-xs text-muted-foreground">Listagem de quartos</p>
             </div>
           </CardContent>
         </Card>
