@@ -22,6 +22,7 @@ import { downloadCsv, downloadXlsxSheets } from "@/lib/reportExport";
 
 export default function AlojamentoRelatoriosPage() {
   const eventId = useActiveEventId();
+  const { stageId } = useStageScope();
   const navigate = useNavigate();
   const { hasRole } = useAuth();
   const canExport = hasRole("admin") || hasRole("secretaria") || hasRole("alojamento");
