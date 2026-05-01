@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Info, HelpCircle } from "lucide-react";
+import { } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
