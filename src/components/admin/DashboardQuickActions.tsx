@@ -26,7 +26,8 @@ interface DashboardQuickActionsProps {
 export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
   if (actions.length === 0) return null;
 
-  const isCredenciamentoAction = (label: string) => label === "Credenciamento" || label === "Vinculação";
+  const isSpecialHelpAction = (label: string) => 
+    label === "Credenciamento" || label === "Vinculação" || label === "Consumo";
 
   return (
     <div className="space-y-3">
@@ -37,7 +38,9 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
       </div>
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {actions.map((action) => {
-          const isCredenciamento = isCredenciamentoAction(action.label);
+          const isSpecialHelp = isSpecialHelpAction(action.label);
+          const isCredenciamento = action.label === "Credenciamento" || action.label === "Vinculação";
+          const isConsumo = action.label === "Consumo";
           
           return (
             <div key={action.to} className="relative group flex">
@@ -56,14 +59,14 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
                     </div>
                   </Link>
                 </TooltipTrigger>
-                {isCredenciamento && (
+                {isSpecialHelp && (
                   <TooltipContent side="bottom" className="text-[10px]">
                     Explicação do critério de acesso
                   </TooltipContent>
                 )}
               </Tooltip>
 
-              {isCredenciamento && (
+              {isSpecialHelp && (
                 <div className="absolute top-2 right-2 z-10">
                   <Popover>
                     <PopoverTrigger asChild>
@@ -81,7 +84,12 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
                           <Info className="h-4 w-4" /> Como funciona o acesso?
                         </p>
                         <p className="text-xs leading-relaxed text-muted-foreground">
-                          Ao clicar, o sistema redireciona automaticamente para a <strong>última etapa que você acessou</strong> (armazenada no seu navegador).
+                          {isCredenciamento && (
+                            <>Ao clicar, o sistema redireciona automaticamente para a <strong>última etapa que você acessou</strong> (armazenada no seu navegador).</>
+                          )}
+                          {isConsumo && (
+                            <>Exibe o relatório de consumos da <strong>etapa atualmente selecionada</strong> no topo da tela.</>
+                          )}
                         </p>
                       </div>
                       
