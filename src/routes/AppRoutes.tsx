@@ -344,9 +344,9 @@ export const AppRoutes = () => (
         <Route path="registros/configuracao-osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ConfigOscPage /></ProtectedRoute>} />
         
         {/* Redirecionamentos operacionais */}
-        <Route path="credenciamento" element={<RedirectToEtapas />} />
-        <Route path="credenciamento-externo" element={<RedirectToEtapas />} />
-        <Route path="validacao-qr" element={<RedirectToEtapas />} />
+        <Route path="credenciamento/*" element={<RedirectToEtapas />} />
+        <Route path="credenciamento-externo/*" element={<RedirectToEtapas />} />
+        <Route path="validacao-qr/*" element={<RedirectToEtapas />} />
         <Route path="vouchers/*" element={<RedirectToEtapas />} />
         <Route path="transporte/*" element={<RedirectToEtapas />} />
         <Route path="alimentacao/*" element={<RedirectToEtapas />} />
