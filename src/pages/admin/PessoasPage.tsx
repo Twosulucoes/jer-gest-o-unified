@@ -363,6 +363,11 @@ export default function PessoasPage() {
                           <span className="text-[10px] text-muted-foreground uppercase">{p.email || ""}</span>
                         </div>
                       </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px] uppercase">
+                          {p.kind === "eventual" ? "Eventual" : "Participante"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-xs space-y-0.5">
                         <div className="flex items-center gap-1.5">
                           <Badge variant="outline" className="h-5 px-1 font-mono text-[10px]">CPF</Badge>
