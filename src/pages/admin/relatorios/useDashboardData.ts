@@ -120,7 +120,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       },
       // 1: credentials
       {
-        queryKey: ["dash3", "credentials", eventId],
+        queryKey: ["dash3", "credentials", eventId, stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
@@ -128,6 +128,18 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
             .select("id, status, issued_at, created_at, participant_id", { count: "exact" })
             .limit(5000);
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) {
+            // Filtro por etapa via participantes
+            const { data: stageParticipants } = await (supabase.from("event_stage_participants" as any) as any)
+              .select("participant_id")
+              .eq("stage_id", stageId);
+            
+            if (stageParticipants && stageParticipants.length > 0) {
+              query.in("participant_id", stageParticipants.map((p: any) => p.participant_id));
+            } else {
+              return { list: [], totalCount: 0 };
+            }
+          }
           const { data, count, error } = await query;
           if (error) console.error("Error fetching credentials:", error);
           return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
