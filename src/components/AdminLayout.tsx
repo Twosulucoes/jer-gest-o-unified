@@ -82,9 +82,8 @@ const navGroups: NavGroup[] = [
     icon: <FolderOpen className="h-4 w-4" />,
     items: [
       { label: "Eventos", to: "/admin/eventos", icon: <Calendar className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Pessoas (Central)", to: "/admin/pessoas", icon: <Users className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Pessoas", to: "/admin/pessoas", icon: <Users className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Participantes", to: "/admin/participantes", icon: <UsersRound className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Pessoas Eventuais", to: "/admin/pessoas/eventuais", icon: <Users className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Histórico do Participante", to: "/admin/participantes/historico", icon: <Trophy className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Delegações (Escolas)", to: "/admin/delegacoes", icon: <Building2 className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Credencial (Modelos)", to: "/admin/credenciais/modelos", icon: <BadgeCheck className="h-4 w-4" />, roles: ADMIN_ROLES },

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -53,6 +53,7 @@ interface PersonRow {
   food_restrictions: string | null;
   medical_notes: string | null;
   disability_type: string | null;
+  kind: "participant" | "eventual";
 }
 
 const cpfMask = (v: string) => {
@@ -65,14 +66,22 @@ const cpfMask = (v: string) => {
 
 export default function PessoasPage() {
   const { stageId } = useParams();
+  const [searchParams] = useSearchParams();
   const { hasRole } = useAuth();
   const qc = useQueryClient();
   const canManage = hasRole("admin") || hasRole("secretaria") || hasRole("super_admin");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [kindFilter, setKindFilter] = useState<"all" | "participant" | "eventual">("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const kind = searchParams.get("kind");
+    if (kind === "eventual") setKindFilter("eventual");
+    else if (kind === "participant") setKindFilter("participant");
+  }, [searchParams]);
 
   // Form states
   const [fullName, setFullName] = useState("");
@@ -86,19 +95,22 @@ export default function PessoasPage() {
   const [foodRestrictions, setFoodRestrictions] = useState("");
   const [medicalNotes, setMedicalNotes] = useState("");
   const [disabilityType, setDisabilityType] = useState("");
+  const [personKind, setPersonKind] = useState<"participant" | "eventual">("participant");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: people = [], isLoading } = useQuery({
-    queryKey: ["people-central", search, statusFilter],
+    queryKey: ["people-central", search, statusFilter, kindFilter],
     queryFn: async () => {
       let q = supabase
         .from("people")
-        .select("id, full_name, cpf, rg, birth_date, gender, email, phone, is_active, food_restrictions, medical_notes, disability_type")
+        .select("id, full_name, cpf, rg, birth_date, gender, email, phone, is_active, food_restrictions, medical_notes, disability_type, kind")
         .order("full_name")
         .limit(300);
 
       if (statusFilter === "active") q = q.eq("is_active", true);
       else if (statusFilter === "inactive") q = q.eq("is_active", false);
+
+      if (kindFilter !== "all") q = q.eq("kind", kindFilter);
 
       if (search.trim().length >= 2) {
         const term = `%${search.trim()}%`;
@@ -126,7 +138,7 @@ export default function PessoasPage() {
   const resetForm = () => {
     setFullName(""); setBirthDate(""); setGender(""); setCpf(""); setRg("");
     setEmail(""); setPhone(""); setIsActive(true); setFoodRestrictions("");
-    setMedicalNotes(""); setDisabilityType(""); setErrors({}); setEditingId(null);
+    setMedicalNotes(""); setDisabilityType(""); setPersonKind("participant"); setErrors({}); setEditingId(null);
   };
 
   const openCreate = () => { resetForm(); setFormOpen(true); };
@@ -144,6 +156,7 @@ export default function PessoasPage() {
     setFoodRestrictions(p.food_restrictions ?? "");
     setMedicalNotes(p.medical_notes ?? "");
     setDisabilityType(p.disability_type ?? "");
+    setPersonKind(p.kind);
     setErrors({});
     setFormOpen(true);
   };
@@ -174,7 +187,7 @@ export default function PessoasPage() {
         food_restrictions: parsed.data.food_restrictions || null,
         medical_notes: parsed.data.medical_notes || null,
         disability_type: parsed.data.disability_type || null,
-        kind: "participant", // Garante campo obrigatório
+        kind: personKind,
       };
       if (editingId) {
         const { error } = await supabase.from("people").update(payload).eq("id", editingId);
@@ -276,14 +289,24 @@ export default function PessoasPage() {
                   maxLength={100}
                 />
               </div>
+              <Select value={kindFilter} onValueChange={(v: any) => setKindFilter(v)}>
+                <SelectTrigger className="w-full md:w-[150px]">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Tipos</SelectItem>
+                  <SelectItem value="participant">Participantes</SelectItem>
+                  <SelectItem value="eventual">Pessoas Eventuais</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-                <SelectTrigger className="w-full md:w-[180px]">
+                <SelectTrigger className="w-full md:w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os Status</SelectItem>
-                  <SelectItem value="active">Apenas Ativos</SelectItem>
-                  <SelectItem value="inactive">Apenas Inativos</SelectItem>
+                  <SelectItem value="all">Todos Status</SelectItem>
+                  <SelectItem value="active">Ativos</SelectItem>
+                  <SelectItem value="inactive">Inativos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -333,6 +356,7 @@ export default function PessoasPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[300px]">Nome</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Documentos</TableHead>
                     <TableHead>Nascimento</TableHead>
                     <TableHead className="text-center">Eventos</TableHead>
@@ -348,6 +372,11 @@ export default function PessoasPage() {
                           <span>{p.full_name}</span>
                           <span className="text-[10px] text-muted-foreground uppercase">{p.email || ""}</span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px] uppercase">
+                          {p.kind === "eventual" ? "Eventual" : "Participante"}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-xs space-y-0.5">
                         <div className="flex items-center gap-1.5">
@@ -410,6 +439,21 @@ export default function PessoasPage() {
                   <Label htmlFor="full_name">Nome completo *</Label>
                   <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={200} />
                   {errors.full_name && <p className="text-xs text-destructive">{errors.full_name}</p>}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tipo de Cadastro</Label>
+                    <Select value={personKind} onValueChange={(v: any) => setPersonKind(v)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="participant">Participante</SelectItem>
+                        <SelectItem value="eventual">Pessoa Eventual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
