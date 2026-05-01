@@ -294,6 +294,12 @@ export function ArbitrosTab() {
         onOpenChange={setImportOpen}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ["arbitros-list"] })}
       />
+
+      <RefereeProfileDialog
+        open={!!editingUserId}
+        userId={editingUserId}
+        onOpenChange={open => !open && setEditingUserId(null)}
+      />
     </div>
   );
 }
