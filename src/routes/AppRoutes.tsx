@@ -106,6 +106,8 @@ const TransporteHubPage = lazy(() => import("../pages/admin/TransporteHubPage"))
 const OcorrenciasPage = lazy(() => import("../pages/admin/OcorrenciasPage"));
 const PesquisaDashboardPage = lazy(() => import("../pages/admin/PesquisaDashboardPage"));
 const VouchersPage = lazy(() => import("../pages/admin/VouchersPage"));
+const VoucherValidarPage = lazy(() => import("../pages/admin/VoucherValidarPage"));
+const VoucherAuditoriaPage = lazy(() => import("../pages/admin/VoucherAuditoriaPage"));
 const ProtestosFilaPage = lazy(() => import("../pages/admin/ProtestosFilaPage"));
 
 // Transporte Subpages (Admin)
