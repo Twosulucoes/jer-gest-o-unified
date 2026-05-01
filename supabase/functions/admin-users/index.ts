@@ -205,6 +205,17 @@ Deno.serve(async (req) => {
             role: r,
           }, { onConflict: "user_id,role" });
         }
+        
+        // If one of the roles is 'arbitragem', ensure they have a record in referee_profiles
+        if (targetRoles.includes("arbitragem")) {
+          await adminClient.from("referee_profiles").upsert({
+            user_id: userId,
+            full_name: full_name || email.split('@')[0],
+            email: email,
+            phone: phone || null,
+            status: "Ativo"
+          }, { onConflict: "user_id" });
+        }
 
         // Log audit
         await logAudit(adminClient, "user_created", userId, caller.id, { email, roles: targetRoles, full_name });
