@@ -260,7 +260,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       },
       // 10: competition_matches
       {
-        queryKey: ["dash3", "matches", eventId],
+        queryKey: ["dash3", "matches", eventId, stageId],
         enabled,
         staleTime: 60_000, // 1 minute stale for matches
         queryFn: () => safe(async () => {
@@ -268,6 +268,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
             .select("id, status, sport_event_id, match_date, start_time", { count: "exact" })
             .limit(5000);
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) query.eq("stage_id", stageId);
           const { data, count, error } = await query;
           if (error) console.error("Error fetching matches:", error);
           return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
