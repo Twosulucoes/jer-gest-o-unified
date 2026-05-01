@@ -430,7 +430,7 @@ export default function PessoasPage() {
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="full_name">Nome completo *</Label>
-                  <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                  <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={200} />
                   {errors.full_name && <p className="text-xs text-destructive">{errors.full_name}</p>}
                 </div>
 
@@ -447,9 +447,6 @@ export default function PessoasPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                  <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={200} />
-                  {errors.full_name && <p className="text-xs text-destructive">{errors.full_name}</p>}
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
