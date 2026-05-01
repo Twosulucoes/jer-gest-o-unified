@@ -346,6 +346,7 @@ export default function PessoasPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[300px]">Nome</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Documentos</TableHead>
                     <TableHead>Nascimento</TableHead>
                     <TableHead className="text-center">Eventos</TableHead>
