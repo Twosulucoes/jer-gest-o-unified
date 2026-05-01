@@ -75,16 +75,7 @@ export default function PwaLayout({
   // Detect which PWA module we are in based on central mapping
   const currentModule = useMemo(() => {
     const moduleId = getModuleByPath(path);
-    if (moduleId === "other") {
-      // Manual overrides for special PWA routes not in main modules list
-      if (path.startsWith("/pwa/coordenacao-tecnica")) return "coordenacao-tecnica";
-      if (path.startsWith("/pwa/delegacao")) return "delegacao";
-      if (path.startsWith("/pwa/resultados")) return "resultados";
-      if (path.startsWith("/pwa/registros")) return "registros";
-      if (path.startsWith("/aovivo")) return "aovivo";
-      return null;
-    }
-    return moduleId;
+    return moduleId === "other" ? null : moduleId;
   }, [path]);
 
   const moduleConfig = {
