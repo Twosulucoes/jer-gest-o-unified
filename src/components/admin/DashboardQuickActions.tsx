@@ -39,8 +39,8 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {actions.map((action) => {
           const isSpecialHelp = isSpecialHelpAction(action.label);
-          const isCredenciamento = action.label === "Credenciamento" || action.label === "Vinculação";
-          const isConsumo = action.label === "Consumo";
+          const isCredenciamento = action.label === "Credenciamento" || action.label === "Vinculação" || action.label === "Validação QR";
+          const isConsumo = action.label === "Consumo" || action.label === "Ocupação" || action.label === "Viagens" || action.label === "Agenda" || action.label === "Resultados" || action.label === "Importação" || action.label === "Participantes";
           
           return (
             <div key={action.to} className="relative group flex">
