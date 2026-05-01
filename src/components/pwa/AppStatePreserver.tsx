@@ -14,7 +14,7 @@ export function AppStatePreserver() {
   const location = useLocation();
   const navigate = useNavigate();
   const hasRestored = useRef(false);
-  const { activeStageId, stages } = useStageContext();
+  const { activeStageId, stages, setContextLocked } = useStageContext();
 
   // Save current path on every change
   useEffect(() => {
@@ -43,7 +43,9 @@ export function AppStatePreserver() {
         if (pathParts.length === 2) { // e.g., ["pwa", "alojamento"]
           const newPath = `/${pathParts[0]}/${pathParts[1]}/${activeStageId}${location.search}${location.hash}`;
           console.log("[AppStatePreserver] Syncing stage to URL:", newPath);
+          setContextLocked(true);
           navigate(newPath, { replace: true });
+          setTimeout(() => setContextLocked(false), 500);
         }
       }
     }
@@ -86,7 +88,9 @@ export function AppStatePreserver() {
       const timer = setTimeout(() => {
         // Double check we are still at the entry point before redirecting
         if (window.location.pathname === "/" || window.location.pathname === "/login") {
+          setContextLocked(true);
           navigate(savedPath, { replace: true });
+          setTimeout(() => setContextLocked(false), 500);
         }
       }, 150);
       
