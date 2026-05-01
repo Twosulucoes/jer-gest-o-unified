@@ -6598,6 +6598,102 @@ export type Database = {
           },
         ]
       }
+      referee_profiles: {
+        Row: {
+          address_complement: string | null
+          bank_account: string | null
+          bank_branch: string | null
+          bank_name: string | null
+          birth_date: string | null
+          categories: string | null
+          city: string | null
+          cpf: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          gender: string | null
+          id: string
+          modalities: string | null
+          nationality: string | null
+          neighborhood: string | null
+          notes: string | null
+          phone: string | null
+          pis_pasep: string | null
+          registration_date: string | null
+          rg: string | null
+          rne: string | null
+          rne_validity: string | null
+          state: string | null
+          status: string
+          street_address: string | null
+          updated_at: string
+          user_id: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address_complement?: string | null
+          bank_account?: string | null
+          bank_branch?: string | null
+          bank_name?: string | null
+          birth_date?: string | null
+          categories?: string | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          gender?: string | null
+          id?: string
+          modalities?: string | null
+          nationality?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          phone?: string | null
+          pis_pasep?: string | null
+          registration_date?: string | null
+          rg?: string | null
+          rne?: string | null
+          rne_validity?: string | null
+          state?: string | null
+          status?: string
+          street_address?: string | null
+          updated_at?: string
+          user_id?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address_complement?: string | null
+          bank_account?: string | null
+          bank_branch?: string | null
+          bank_name?: string | null
+          birth_date?: string | null
+          categories?: string | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          gender?: string | null
+          id?: string
+          modalities?: string | null
+          nationality?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          phone?: string | null
+          pis_pasep?: string | null
+          registration_date?: string | null
+          rg?: string | null
+          rne?: string | null
+          rne_validity?: string | null
+          state?: string | null
+          status?: string
+          street_address?: string | null
+          updated_at?: string
+          user_id?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
       referee_remuneration_configs: {
         Row: {
           created_at: string
@@ -8929,6 +9025,10 @@ export type Database = {
         Args: { p_sport_event_id: string }
         Returns: Json
       }
+      check_user_stage_access: {
+        Args: { target_stage_id: string }
+        Returns: boolean
+      }
       check_voucher_schema_integrity: { Args: never; Returns: boolean }
       clear_logistics_seed_all_stages: {
         Args: { p_event_id: string }
@@ -9453,6 +9553,7 @@ export type Database = {
         Args: { p_match_id: string; p_observation?: string }
         Returns: Json
       }
+      rpc_import_referees: { Args: { p_rows: Json }; Returns: Json }
       rpc_increment_public_content_access: {
         Args: { p_kind?: string; p_slug: string }
         Returns: undefined
