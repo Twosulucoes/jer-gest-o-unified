@@ -42,29 +42,27 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
           
           return (
             <div key={action.to} className="relative group flex">
-              <TooltipProvider>
-                <Tooltip delayDuration={300}>
-                  <TooltipTrigger asChild>
-                    <Link
-                      to={action.to}
-                      className="flex flex-col items-center gap-3 rounded-2xl border border-border/50 bg-card p-4 text-center transition-all duration-300 hover:shadow-md hover:border-primary/30 hover:-translate-y-1 active:scale-[0.96] w-full"
-                    >
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 shadow-sm group-hover:shadow-glow">
-                        {action.icon}
-                      </div>
-                      <div className="space-y-0.5">
-                        <span className="text-xs font-bold text-foreground block">{action.label}</span>
-                        <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-tighter">{action.group}</span>
-                      </div>
-                    </Link>
-                  </TooltipTrigger>
-                  {isCredenciamento && (
-                    <TooltipContent side="bottom" className="text-[10px]">
-                      Explicação do critério de acesso
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={action.to}
+                    className="flex flex-col items-center gap-3 rounded-2xl border border-border/50 bg-card p-4 text-center transition-all duration-300 hover:shadow-md hover:border-primary/30 hover:-translate-y-1 active:scale-[0.96] w-full"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 shadow-sm group-hover:shadow-glow">
+                      {action.icon}
+                    </div>
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-foreground block">{action.label}</span>
+                      <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-tighter">{action.group}</span>
+                    </div>
+                  </Link>
+                </TooltipTrigger>
+                {isCredenciamento && (
+                  <TooltipContent side="bottom" className="text-[10px]">
+                    Explicação do critério de acesso
+                  </TooltipContent>
+                )}
+              </Tooltip>
 
               {isCredenciamento && (
                 <div className="absolute top-2 right-2 z-10">
@@ -72,7 +70,7 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
                     <PopoverTrigger asChild>
                       <button 
                         className="p-1.5 rounded-full text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        onClick={(e) => e.preventDefault()} // Impede navegação ao clicar no ícone
+                        onClick={(e) => e.preventDefault()}
                         aria-label="Ajuda sobre o credenciamento"
                       >
                         <HelpCircle className="h-4 w-4" />
