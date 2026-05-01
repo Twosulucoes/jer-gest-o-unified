@@ -28,6 +28,12 @@ O **JER Gestão** é uma plataforma robusta de gestão operacional para os Jogos
 ### Jornada do Administrador
 - Nova seção **"Primeiros Passos"** no manual, guiando novos administradores na configuração inicial do JER com cards interativos e barra de progresso individual.
 
+### Gestão de Arbitragem (Módulo Reformulado)
+- **Cadastro Completo:** Implementada a tabela `referee_profiles` para armazenar dados bancários, CPF e endereço dos árbitros.
+- **Importação Robusta:** Correção no motor de convites via Edge Function para lidar com usuários pré-existentes e auto-criação de perfis.
+- **Financeiro:** Ativação das telas de Configuração de Remuneração e Apuração de Atividades (Diárias/Partidas) para pagamentos.
+- **PWA de Árbitros:** Novo fluxo no PWA permitindo que o próprio árbitro preencha e mantenha seus dados cadastrais.
+
 ---
 
 
