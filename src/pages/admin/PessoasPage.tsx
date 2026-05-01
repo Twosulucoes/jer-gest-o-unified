@@ -279,14 +279,24 @@ export default function PessoasPage() {
                   maxLength={100}
                 />
               </div>
+              <Select value={kindFilter} onValueChange={(v: any) => setKindFilter(v)}>
+                <SelectTrigger className="w-full md:w-[150px]">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Tipos</SelectItem>
+                  <SelectItem value="participant">Participantes</SelectItem>
+                  <SelectItem value="eventual">Pessoas Eventuais</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-                <SelectTrigger className="w-full md:w-[180px]">
+                <SelectTrigger className="w-full md:w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os Status</SelectItem>
-                  <SelectItem value="active">Apenas Ativos</SelectItem>
-                  <SelectItem value="inactive">Apenas Inativos</SelectItem>
+                  <SelectItem value="all">Todos Status</SelectItem>
+                  <SelectItem value="active">Ativos</SelectItem>
+                  <SelectItem value="inactive">Inativos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
