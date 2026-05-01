@@ -267,15 +267,19 @@ export const AppRoutes = () => (
             <Route path="alojamento/locais" element={<AdminAlojamentoLocaisPage />} />
             <Route path="alojamento/presenca" element={<AdminAlojamentoPresencaPage />} />
             <Route path="alojamento/relatorios" element={<AdminAlojamentoRelatoriosPage />} />
-           <Route path="alimentacao" element={<AlimentacaoHubPage />} />
-           <Route path="alimentacao/janelas" element={<AdminAlimentacaoJanelasPage />} />
-           <Route path="alimentacao/consumos" element={<AdminAlimentacaoConsumoPage />} />
-           <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
-           <Route path="transporte" element={<TransporteHubPage />} />
-           <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
-           <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
-           <Route path="transporte/veiculos" element={<AdminTransporteVeiculosPage />} />
-           <Route path="transporte/embarque/:tripId" element={<AdminTransporteEmbarquePage />} />
+            <Route path="alimentacao" element={<AlimentacaoHubPage />} />
+            <Route path="alimentacao/tipos" element={<AdminAlimentacaoTiposPage />} />
+            <Route path="alimentacao/janelas" element={<AdminAlimentacaoJanelasPage />} />
+            <Route path="alimentacao/consumo" element={<AdminAlimentacaoConsumoPage />} />
+            <Route path="alimentacao/dashboard" element={<AdminAlimentacaoDashboardPage />} />
+            <Route path="alimentacao/relatorios" element={<AdminAlimentacaoRelatoriosPage />} />
+            <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
+            <Route path="transporte" element={<TransporteHubPage />} />
+            <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
+            <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
+            <Route path="transporte/veiculos" element={<AdminTransporteVeiculosPage />} />
+            <Route path="transporte/relatorios" element={<AdminTransporteRelatoriosPage />} />
+            <Route path="transporte/embarque/:tripId" element={<AdminTransporteEmbarquePage />} />
            <Route path="ocorrencias" element={<OcorrenciasPage />} />
            <Route path="pesquisa" element={<PesquisaDashboardPage />} />
            <Route path="vouchers" element={<VouchersPage />} />
