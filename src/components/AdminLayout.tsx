@@ -118,8 +118,6 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Usuários e Perfis", to: "/admin/acessos/usuarios", icon: <KeyRound className="h-4 w-4" />, roles: ["admin", "secretaria", "super_admin"] as AppRole[] },
       { label: "Acessos e Vínculos", to: "/admin/acessos/delegacoes", icon: <Shield className="h-4 w-4" />, roles: ["admin", "secretaria", "super_admin"] as AppRole[] },
-      { label: "Resultados (Ao Vivo)", to: "/pwa/resultados", icon: <Trophy className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", "super_admin"] as AppRole[] },
-      { label: "Evidências OSC", to: "/admin/evidencias-osc", icon: <BadgeCheck className="h-4 w-4" />, roles: ["admin", "secretaria", "alimentacao", "alojamento", "transporte", "coordenacao_tecnica", "super_admin"] as AppRole[] },
     ],
   },
   {
