@@ -112,7 +112,8 @@ export default function PwaLayout({
       { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento" },
       { role: "mesario", label: "Ao Vivo", icon: Radio, to: "/aovivo" },
       { role: "mesario", label: "Registros", icon: Trophy, to: "/pwa/registros", showOnlyIfRegistrosEnabled: true },
-      { role: "arbitragem", label: "Ao Vivo", icon: ShieldCheck, to: "/aovivo" },
+      { role: "arbitragem", label: "Ao Vivo", icon: Radio, to: "/pwa/resultados" },
+      { role: "arbitragem", label: "Meu Perfil", icon: ShieldCheck, to: "/pwa/arbitragem/perfil" },
     ] as const;
     
     const isSuperOrAdmin = hasRole("admin") || hasRole("super_admin");
