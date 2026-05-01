@@ -69,7 +69,7 @@ export interface DashboardData {
   };
 }
 
-export function useDashboardData(eventId?: string | null) {
+export function useDashboardData(eventId?: string | null, stageId?: string | null) {
   const enabled = true; // Sempre habilitado para permitir visão global
 
   // Initial dummy state when no eventId is provided to avoid crashes
@@ -91,7 +91,7 @@ export function useDashboardData(eventId?: string | null) {
     queries: [
       // 0: participants (id, credentialed_at, delegation_id)
       {
-        queryKey: ["dash3", "participants", eventId],
+        queryKey: ["dash3", "participants", eventId, stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
@@ -99,6 +99,19 @@ export function useDashboardData(eventId?: string | null) {
             .select("id, credentialed_at, delegation_id", { count: "exact" })
             .limit(5000);
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) {
+            // Se houver stageId, filtramos participantes vinculados a esta etapa
+            const { data: stageParticipants } = await (supabase.from("event_stage_participants" as any) as any)
+              .select("participant_id")
+              .eq("stage_id", stageId);
+            
+            if (stageParticipants && stageParticipants.length > 0) {
+              query.in("id", stageParticipants.map((p: any) => p.participant_id));
+            } else if (stageId) {
+              // Se filtrou por etapa mas não há ninguém, retorna vazio
+              return { list: [], totalCount: 0 };
+            }
+          }
           const { data, count, error } = await query;
           if (error) console.error("Error fetching participants:", error);
           // Return both data and the exact count from the header
@@ -107,7 +120,7 @@ export function useDashboardData(eventId?: string | null) {
       },
       // 1: credentials
       {
-        queryKey: ["dash3", "credentials", eventId],
+        queryKey: ["dash3", "credentials", eventId, stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
@@ -115,6 +128,18 @@ export function useDashboardData(eventId?: string | null) {
             .select("id, status, issued_at, created_at, participant_id", { count: "exact" })
             .limit(5000);
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) {
+            // Filtro por etapa via participantes
+            const { data: stageParticipants } = await (supabase.from("event_stage_participants" as any) as any)
+              .select("participant_id")
+              .eq("stage_id", stageId);
+            
+            if (stageParticipants && stageParticipants.length > 0) {
+              query.in("participant_id", stageParticipants.map((p: any) => p.participant_id));
+            } else {
+              return { list: [], totalCount: 0 };
+            }
+          }
           const { data, count, error } = await query;
           if (error) console.error("Error fetching credentials:", error);
           return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
@@ -135,13 +160,14 @@ export function useDashboardData(eventId?: string | null) {
       },
       // 3: meal_windows + meal_types
       {
-        queryKey: ["dash3", "meal_windows", eventId],
+        queryKey: ["dash3", "meal_windows", eventId, stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("meal_windows")
             .select("id, service_date, meal_type_id, label");
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { data } = await query;
           return data ?? [];
         }, [] as { id: string; service_date: string; meal_type_id: string; label: string | null }[]),
@@ -169,6 +195,7 @@ export function useDashboardData(eventId?: string | null) {
             .select("id, capacity, is_active")
             .eq("is_active", true);
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { data } = await query;
           return data ?? [];
         }, [] as { id: string; capacity: number; is_active: boolean }[]),
@@ -197,6 +224,7 @@ export function useDashboardData(eventId?: string | null) {
             .select("id", { count: "exact" })
             .limit(5000);
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
         }, { list: [], totalCount: 0 }),
@@ -210,6 +238,7 @@ export function useDashboardData(eventId?: string | null) {
           const query = supabase.from("transport_vehicles")
             .select("id", { count: "exact", head: true });
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { count } = await query;
           return count ?? 0;
         }, 0),
@@ -223,6 +252,7 @@ export function useDashboardData(eventId?: string | null) {
           const query = supabase.from("sport_events")
             .select("id, name, sports(name), categories(name)");
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { data } = await query;
           return (data ?? []) as Array<{
             id: string;
@@ -234,7 +264,7 @@ export function useDashboardData(eventId?: string | null) {
       },
       // 10: competition_matches
       {
-        queryKey: ["dash3", "matches", eventId],
+        queryKey: ["dash3", "matches", eventId, stageId],
         enabled,
         staleTime: 60_000, // 1 minute stale for matches
         queryFn: () => safe(async () => {
@@ -242,6 +272,7 @@ export function useDashboardData(eventId?: string | null) {
             .select("id, status, sport_event_id, match_date, start_time", { count: "exact" })
             .limit(5000);
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { data, count, error } = await query;
           if (error) console.error("Error fetching matches:", error);
           return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
