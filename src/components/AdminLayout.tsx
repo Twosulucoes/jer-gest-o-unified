@@ -147,6 +147,8 @@ const navGroups: NavGroup[] = [
     icon: <Gavel className="h-4 w-4" />,
     items: [
       { label: "Árbitros (Base)", to: "/admin/arbitragem", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
+      { label: "Regras de Pagamento", to: "/admin/arbitragem/config", icon: <Settings className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
+      { label: "Apuração / Pagamentos", to: "/admin/arbitragem/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde"] as AppRole[] },
     ],
   },
