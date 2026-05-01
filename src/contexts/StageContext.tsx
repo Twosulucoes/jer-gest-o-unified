@@ -9,6 +9,7 @@ import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { handleContextChange } from "@/lib/context-manager";
+import { getModuleByPath } from "@/constants/modules";
 
 const STORAGE_KEY = "jer_active_stage_id";
 const MODULE_STORAGE_KEY = "jer_active_module";
@@ -53,14 +54,9 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [isContextLocked, setContextLocked] = useState(false);
   
-  // Identify current module based on path
+  // Identify current module based on path using central mapping
   const currentModule = useMemo(() => {
-    if (location.pathname.startsWith("/pwa/alojamento")) return "alojamento";
-    if (location.pathname.startsWith("/pwa/alimentacao")) return "alimentacao";
-    if (location.pathname.startsWith("/pwa/credenciamento")) return "credenciamento";
-    if (location.pathname.startsWith("/pwa/transporte")) return "transporte";
-    if (location.pathname.startsWith("/admin")) return "admin";
-    return "other";
+    return getModuleByPath(location.pathname);
   }, [location.pathname]);
 
   const [persistedStageId, setPersistedStageId] = useState<string | null>(() => {
