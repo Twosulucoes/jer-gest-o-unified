@@ -418,9 +418,10 @@ export const AppRoutes = () => (
       </Route>
 
 
-      <Route path="/resultados-publicos" element={<PublicResultsPage />} />
-      <Route path="/public/results" element={<Navigate to="/resultados-publicos" replace />} />
-      <Route path="/quadro-medalhas" element={<PublicMedalTablePage />} />
+      {/* Telas públicas desativadas por solicitação do usuário para simplificar o fluxo */}
+      <Route path="/resultados-publicos" element={<Navigate to="/login" replace />} />
+      <Route path="/public/results" element={<Navigate to="/login" replace />} />
+      <Route path="/quadro-medalhas" element={<Navigate to="/login" replace />} />
       <Route path="/atleta/:id" element={<AtletaPublicProfilePage />} />
       <Route path="/entrega-tecnica" element={<EntregaTecnicaPage />} />
       
