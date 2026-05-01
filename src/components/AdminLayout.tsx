@@ -78,6 +78,14 @@ const coordDashboardItem: NavItem = {
 
 const navGroups: NavGroup[] = [
   {
+    id: "operacao", label: "Operação por Etapa", description: "Módulos de operação das etapas.",
+    icon: <Layers className="h-4 w-4" />,
+    items: [
+      { label: "Ir para Etapas", to: "/admin/etapas", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
+    ],
+  },
+  {
+
     id: "preparacao", label: "Preparação do Evento", description: "Cadastros base do evento.",
     icon: <FolderOpen className="h-4 w-4" />,
     items: [
