@@ -347,14 +347,14 @@ export const AppRoutes = () => (
         <Route path="credenciamento" element={<RedirectToEtapas />} />
         <Route path="credenciamento-externo" element={<RedirectToEtapas />} />
         <Route path="validacao-qr" element={<RedirectToEtapas />} />
-        <Route path="vouchers" element={<RedirectToEtapas />} />
-        <Route path="transporte" element={<RedirectToEtapas />} />
-        <Route path="alimentacao" element={<RedirectToEtapas />} />
-        <Route path="alojamento" element={<RedirectToEtapas />} />
-        <Route path="competicao" element={<RedirectToEtapas />} />
-        <Route path="protestos" element={<RedirectToEtapas />} />
-        <Route path="ocorrencias" element={<RedirectToEtapas />} />
-        <Route path="pesquisa" element={<RedirectToEtapas />} />
+        <Route path="vouchers/*" element={<RedirectToEtapas />} />
+        <Route path="transporte/*" element={<RedirectToEtapas />} />
+        <Route path="alimentacao/*" element={<RedirectToEtapas />} />
+        <Route path="alojamento/*" element={<RedirectToEtapas />} />
+        <Route path="competicao/*" element={<RedirectToEtapas />} />
+        <Route path="protestos/*" element={<RedirectToEtapas />} />
+        <Route path="ocorrencias/*" element={<RedirectToEtapas />} />
+        <Route path="pesquisa/*" element={<RedirectToEtapas />} />
       </Route>
 
       <Route path="/pwa" element={<PwaRouteGuard><PwaLayout /></PwaRouteGuard>}>
