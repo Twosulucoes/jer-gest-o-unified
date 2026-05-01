@@ -224,6 +224,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
             .select("id", { count: "exact" })
             .limit(5000);
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
         }, { list: [], totalCount: 0 }),
