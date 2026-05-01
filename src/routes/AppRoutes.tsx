@@ -398,6 +398,8 @@ export const AppRoutes = () => (
         <Route path="resultados/partidas" element={<ResultadosPartidasPage />} />
         <Route path="resultados/partida/:id" element={<ResultadosPartidaFormPage />} />
 
+        <Route path="arbitragem/perfil" element={<RefereePwaProfilePage />} />
+
         <Route path="delegacao" element={<DelegacaoHomePage />} />
         <Route path="delegacao/participantes" element={<DelegacaoParticipantesPage />} />
         <Route path="delegacao/agenda" element={<DelegacaoAgendaPage />} />
