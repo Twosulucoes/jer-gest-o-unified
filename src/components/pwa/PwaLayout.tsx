@@ -199,16 +199,20 @@ export default function PwaLayout({
         onSignOut={handleSignOut}
       />
       <PwaLayoutCtx.Provider value={ownCtxValue}>
-        {/* Banner de Etapa Ativa para segurança operacional */}
+        {/* Banner de Etapa Ativa para segurança operacional (Alojamento/Alimentação) */}
         {(currentModule === "alojamento" || currentModule === "alimentacao") && activeStage && (
-          <div className="sticky top-14 z-10 bg-amber-500/10 dark:bg-amber-500/5 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-500 backdrop-blur-sm">
-            <div className="flex items-center gap-2 truncate mr-4">
-              <Layers className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">ETAPA: <span className="font-black underline decoration-amber-500/30 underline-offset-2">{activeStage.name}</span></span>
+          <div className="sticky top-14 z-10 bg-amber-500/20 dark:bg-amber-500/10 border-b border-amber-500/40 px-4 py-2.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-amber-800 dark:text-amber-400 backdrop-blur-md shadow-sm">
+            <div className="flex items-center gap-2 truncate mr-3">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-500">
+                <Layers className="h-3 w-3" />
+              </div>
+              <span className="truncate">
+                ETAPA: <span className="font-black text-amber-900 dark:text-amber-300">{activeStage.name}</span>
+              </span>
             </div>
-            <div className="shrink-0 flex items-center gap-1 font-mono text-[9px] opacity-80 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+            <div className="shrink-0 flex items-center gap-1 font-mono text-[8px] opacity-80 bg-background/50 dark:bg-black/20 px-1.5 py-0.5 rounded border border-amber-500/20 tabular-nums">
               <span className="opacity-60">ID:</span>
-              <span>{activeStage.id.split('-')[0]}...</span>
+              <span>{activeStage.id.slice(0, 8)}...</span>
             </div>
           </div>
         )}
