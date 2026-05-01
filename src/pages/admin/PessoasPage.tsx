@@ -430,6 +430,24 @@ export default function PessoasPage() {
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="full_name">Nome completo *</Label>
+                  <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                  {errors.full_name && <p className="text-xs text-destructive">{errors.full_name}</p>}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tipo de Cadastro</Label>
+                    <Select value={personKind} onValueChange={(v: any) => setPersonKind(v)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="participant">Participante</SelectItem>
+                        <SelectItem value="eventual">Pessoa Eventual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                   <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={200} />
                   {errors.full_name && <p className="text-xs text-destructive">{errors.full_name}</p>}
                 </div>
