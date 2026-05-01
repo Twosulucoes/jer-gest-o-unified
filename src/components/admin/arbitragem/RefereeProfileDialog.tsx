@@ -25,7 +25,7 @@ export function RefereeProfileDialog({ userId, open, onOpenChange }: Props) {
     queryKey: ["referee-profile", userId],
     enabled: !!userId && open,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("referee_profiles")
         .select("*")
         .eq("user_id", userId!)
