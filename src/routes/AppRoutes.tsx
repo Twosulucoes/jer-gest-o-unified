@@ -275,6 +275,8 @@ export const AppRoutes = () => (
         </Route>
 
         <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitrosPage /></ProtectedRoute>} />
+        <Route path="arbitragem/config" element={<ProtectedRoute allowedRoles={["admin"]}><RefereeRemunerationConfigPage /></ProtectedRoute>} />
+        <Route path="arbitragem/relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RefereeReportingPage /></ProtectedRoute>} />
         <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
         <Route path="categorias" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CategoriasPage /></ProtectedRoute>} />
         <Route path="locais" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><LocaisPage /></ProtectedRoute>} />
