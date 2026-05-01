@@ -501,9 +501,11 @@ export default function AdminLayout() {
               JER Gestão
             </h2>
 
-            <div className="flex-1 sm:flex-none">
-              <EtapaSwitcher />
-            </div>
+            {isStageRoute && (
+              <div className="flex-1 sm:flex-none">
+                <EtapaSwitcher />
+              </div>
+            )}
             <div className="flex-1" />
 
             <GlobalRefreshButton />
