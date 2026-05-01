@@ -180,7 +180,7 @@ export default function PessoasPage() {
         food_restrictions: parsed.data.food_restrictions || null,
         medical_notes: parsed.data.medical_notes || null,
         disability_type: parsed.data.disability_type || null,
-        kind: "participant", // Garante campo obrigatório
+        kind: personKind,
       };
       if (editingId) {
         const { error } = await supabase.from("people").update(payload).eq("id", editingId);
