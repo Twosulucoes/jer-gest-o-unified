@@ -131,7 +131,7 @@ export default function PessoasPage() {
   const resetForm = () => {
     setFullName(""); setBirthDate(""); setGender(""); setCpf(""); setRg("");
     setEmail(""); setPhone(""); setIsActive(true); setFoodRestrictions("");
-    setMedicalNotes(""); setDisabilityType(""); setErrors({}); setEditingId(null);
+    setMedicalNotes(""); setDisabilityType(""); setPersonKind("participant"); setErrors({}); setEditingId(null);
   };
 
   const openCreate = () => { resetForm(); setFormOpen(true); };
