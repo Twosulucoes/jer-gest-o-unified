@@ -69,7 +69,7 @@ export interface DashboardData {
   };
 }
 
-export function useDashboardData(eventId?: string | null) {
+export function useDashboardData(eventId?: string | null, stageId?: string | null) {
   const enabled = true; // Sempre habilitado para permitir visão global
 
   // Initial dummy state when no eventId is provided to avoid crashes
