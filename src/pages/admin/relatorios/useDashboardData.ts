@@ -167,7 +167,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           const query = supabase.from("meal_windows")
             .select("id, service_date, meal_type_id, label");
           if (eventId) query.eq("event_id", eventId);
-          if (stageId) query.eq("stage_id", stageId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { data } = await query;
           return data ?? [];
         }, [] as { id: string; service_date: string; meal_type_id: string; label: string | null }[]),
