@@ -252,6 +252,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           const query = supabase.from("sport_events")
             .select("id, name, sports(name), categories(name)");
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { data } = await query;
           return (data ?? []) as Array<{
             id: string;
