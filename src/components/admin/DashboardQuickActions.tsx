@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
 
 interface DashboardAction {
   label: string;
@@ -20,7 +19,7 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
       <div className="flex items-center justify-between px-1">
         <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
           <span className="h-1 w-1 rounded-full bg-primary/40" />
-          Acessos Rápidos (Visão Geral)
+          Visão Geral do Evento
         </h2>
       </div>
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
