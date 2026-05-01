@@ -268,7 +268,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
             .select("id, status, sport_event_id, match_date, start_time", { count: "exact" })
             .limit(5000);
           if (eventId) query.eq("event_id", eventId);
-          if (stageId) query.eq("stage_id", stageId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { data, count, error } = await query;
           if (error) console.error("Error fetching matches:", error);
           return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
