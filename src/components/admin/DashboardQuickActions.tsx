@@ -27,7 +27,7 @@ export function DashboardQuickActions({ actions }: DashboardQuickActionsProps) {
   if (actions.length === 0) return null;
 
   const isSpecialHelpAction = (label: string) => 
-    label === "Credenciamento" || label === "Vinculação" || label === "Consumo";
+    ["Credenciamento", "Vinculação", "Consumo", "Ocupação", "Viagens", "Agenda", "Resultados", "Importação", "Participantes", "Validação QR"].includes(label);
 
   return (
     <div className="space-y-3">
