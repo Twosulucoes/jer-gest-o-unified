@@ -77,6 +77,12 @@ export default function PessoasPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  useEffect(() => {
+    const kind = searchParams.get("kind");
+    if (kind === "eventual") setKindFilter("eventual");
+    else if (kind === "participant") setKindFilter("participant");
+  }, [searchParams]);
+
   // Form states
   const [fullName, setFullName] = useState("");
   const [birthDate, setBirthDate] = useState("");
