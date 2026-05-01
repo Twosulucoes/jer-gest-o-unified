@@ -87,7 +87,7 @@ export default function DashboardPage() {
   });
 
   const { activeStageId } = useEventContext() as any; // Using context to get possible stage ID if any
-  const { data, isLoading, refetchAll, lastUpdated } = useDashboardData(eventId, activeStageId);
+  const { data, isLoading, refetchAll, lastUpdated } = useDashboardData(eventId, null); // Pass null for stageId to always show global view
 
   const selectedEvent = events.find(e => e.id === eventId);
   const r = data.resumo;
