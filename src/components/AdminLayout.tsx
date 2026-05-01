@@ -197,9 +197,17 @@ const groupRoutesMap = new Map(navGroups.map(group => [
   ]
 ]));
 
-function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: boolean; onClick?: () => void }) {
+function NavItemLink({ item, collapsed, onClick, highlighted }: { item: NavItem; collapsed?: boolean; onClick?: () => void; highlighted?: boolean }) {
   const navigate = useNavigate();
   const statusEmoji = getStatusEmoji(item.to);
+
+  const activeClass = highlighted 
+    ? "bg-primary text-primary-foreground shadow-lg scale-[1.02] border-primary" 
+    : "bg-sidebar-accent text-sidebar-primary shadow-app-sm";
+  
+  const inactiveClass = highlighted
+    ? "bg-primary/90 text-primary-foreground hover:bg-primary hover:scale-[1.02] shadow-md border-primary/20"
+    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground";
 
   if (collapsed) {
     return (
@@ -211,10 +219,8 @@ function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: 
             end={item.to === "/admin"}
             onClick={onClick}
             className={({ isActive }) =>
-              `flex items-center justify-center rounded-lg p-2.5 transition-all duration-150 ${
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-primary shadow-app-sm"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+              `flex items-center justify-center rounded-lg p-2.5 transition-all duration-200 border ${
+                isActive ? activeClass : inactiveClass
               }`
             }
           >
@@ -229,34 +235,36 @@ function NavItemLink({ item, collapsed, onClick }: { item: NavItem; collapsed?: 
   }
 
   return (
-    <div className="flex items-center group">
+    <div className={`flex items-center group ${highlighted ? "my-2" : ""}`}>
       <NavLink
         to={item.to}
         state={item.state}
         end={item.to === "/admin"}
         onClick={onClick}
         className={({ isActive }) =>
-          `flex-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
-            isActive
-              ? "bg-sidebar-accent text-sidebar-primary shadow-app-sm"
-              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+          `flex-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition-all duration-200 border ${
+            isActive ? activeClass : inactiveClass
           }`
         }
       >
-        {item.icon}
-        <span className="truncate flex-1">{item.label}</span>
-        {statusEmoji && <span className="text-[10px] leading-none opacity-60">{statusEmoji}</span>}
+        <div className={highlighted ? "animate-pulse" : ""}>
+          {item.icon}
+        </div>
+        <span className="truncate flex-1 uppercase tracking-tight">{item.label}</span>
+        {statusEmoji && <span className="text-[10px] leading-none opacity-80">{statusEmoji}</span>}
       </NavLink>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/admin/sistema/diagnostico?route=${encodeURIComponent(item.to)}`);
-        }}
-        className="opacity-0 group-hover:opacity-50 hover:!opacity-100 p-1 transition-opacity text-sidebar-foreground/40"
-        title="O que é isto?"
-      >
-        <Info className="h-3 w-3" />
-      </button>
+      {!highlighted && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/admin/sistema/diagnostico?route=${encodeURIComponent(item.to)}`);
+          }}
+          className="opacity-0 group-hover:opacity-50 hover:!opacity-100 p-1 transition-opacity text-sidebar-foreground/40"
+          title="O que é isto?"
+        >
+          <Info className="h-3 w-3" />
+        </button>
+      )}
     </div>
   );
 }
