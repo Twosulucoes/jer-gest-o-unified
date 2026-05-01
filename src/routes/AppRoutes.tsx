@@ -109,11 +109,15 @@ const AdminTransporteViagensPage = lazy(() => import("../pages/admin/TransporteV
 const AdminTransporteRotasPage = lazy(() => import("../pages/admin/TransporteRotasPage"));
 const AdminTransporteEmbarquePage = lazy(() => import("../pages/admin/TransporteEmbarquePage"));
 const AdminTransporteVeiculosPage = lazy(() => import("../pages/admin/TransporteVeiculosPage"));
+const AdminTransporteRelatoriosPage = lazy(() => import("../pages/admin/TransporteRelatoriosPage"));
 
 // Alimentacao Subpages (Admin)
 const AdminAlimentacaoJanelasPage = lazy(() => import("../pages/admin/AlimentacaoJanelasPage"));
 const AdminAlimentacaoConsumoPage = lazy(() => import("../pages/admin/AlimentacaoConsumoPage"));
 const AdminAlimentacaoPrevisaoPage = lazy(() => import("../pages/admin/AlimentacaoPrevisaoPage"));
+const AdminAlimentacaoTiposPage = lazy(() => import("../pages/admin/AlimentacaoTiposPage"));
+const AdminAlimentacaoDashboardPage = lazy(() => import("../pages/admin/AlimentacaoDashboardPage"));
+const AdminAlimentacaoRelatoriosPage = lazy(() => import("../pages/admin/AlimentacaoRelatoriosPage"));
 
 // Alojamento Subpages (Admin)
 const AdminAlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
