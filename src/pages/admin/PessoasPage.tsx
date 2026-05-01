@@ -90,16 +90,18 @@ export default function PessoasPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: people = [], isLoading } = useQuery({
-    queryKey: ["people-central", search, statusFilter],
+    queryKey: ["people-central", search, statusFilter, kindFilter],
     queryFn: async () => {
       let q = supabase
         .from("people")
-        .select("id, full_name, cpf, rg, birth_date, gender, email, phone, is_active, food_restrictions, medical_notes, disability_type")
+        .select("id, full_name, cpf, rg, birth_date, gender, email, phone, is_active, food_restrictions, medical_notes, disability_type, kind")
         .order("full_name")
         .limit(300);
 
       if (statusFilter === "active") q = q.eq("is_active", true);
       else if (statusFilter === "inactive") q = q.eq("is_active", false);
+
+      if (kindFilter !== "all") q = q.eq("kind", kindFilter);
 
       if (search.trim().length >= 2) {
         const term = `%${search.trim()}%`;
