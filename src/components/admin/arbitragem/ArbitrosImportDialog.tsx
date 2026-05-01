@@ -113,6 +113,7 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
             email: row.email,
             full_name: row.nome || undefined,
             roles: ["arbitragem"],
+            phone: row.telefone,
           });
           updated[globalIdx] = { ...row, status: "ok" };
         } catch (err: any) {
