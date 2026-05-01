@@ -185,7 +185,7 @@ export function ArbitrosTab() {
                   <TableHead>Nome</TableHead>
                   <TableHead className="text-center w-40">Designações no evento</TableHead>
                   <TableHead className="text-center w-28">Ativo</TableHead>
-                  <TableHead className="w-14" />
+                  <TableHead className="w-24" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -201,16 +201,27 @@ export function ArbitrosTab() {
                       <Switch checked={a.active} onCheckedChange={() => toggleActive(a)} />
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => setRemoveConfirm(a)}
-                        disabled={a.assignments_count > 0}
-                        title={a.assignments_count > 0 ? "Possui designações ativas — remova-as primeiro" : "Remover da equipe"}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary"
+                          onClick={() => setEditingUserId(a.user_id)}
+                          title="Editar cadastro detalhado"
+                        >
+                          <UserCog className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => setRemoveConfirm(a)}
+                          disabled={a.assignments_count > 0}
+                          title={a.assignments_count > 0 ? "Possui designações ativas — remova-as primeiro" : "Remover da equipe"}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
