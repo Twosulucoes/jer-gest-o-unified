@@ -66,6 +66,7 @@ const cpfMask = (v: string) => {
 
 export default function PessoasPage() {
   const { stageId } = useParams();
+  const [searchParams] = useSearchParams();
   const { hasRole } = useAuth();
   const qc = useQueryClient();
   const canManage = hasRole("admin") || hasRole("secretaria") || hasRole("super_admin");
