@@ -91,7 +91,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
     queries: [
       // 0: participants (id, credentialed_at, delegation_id)
       {
-        queryKey: ["dash3", "participants", eventId],
+        queryKey: ["dash3", "participants", eventId, stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
@@ -99,6 +99,19 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
             .select("id, credentialed_at, delegation_id", { count: "exact" })
             .limit(5000);
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) {
+            // Se houver stageId, filtramos participantes vinculados a esta etapa
+            const { data: stageParticipants } = await (supabase.from("event_stage_participants" as any) as any)
+              .select("participant_id")
+              .eq("stage_id", stageId);
+            
+            if (stageParticipants && stageParticipants.length > 0) {
+              query.in("id", stageParticipants.map((p: any) => p.participant_id));
+            } else if (stageId) {
+              // Se filtrou por etapa mas não há ninguém, retorna vazio
+              return { list: [], totalCount: 0 };
+            }
+          }
           const { data, count, error } = await query;
           if (error) console.error("Error fetching participants:", error);
           // Return both data and the exact count from the header
