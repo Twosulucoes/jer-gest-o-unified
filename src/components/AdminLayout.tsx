@@ -355,32 +355,6 @@ export default function AdminLayout() {
               <NavItemLink item={coordDashboardItem} collapsed={collapsed} onClick={closeSidebar} />
             )}
 
-            {/* CTA único: Entrar na Etapa */}
-            {(hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica") || hasRole("transporte") || hasRole("alimentacao") || hasRole("coordenador_modalidade") || hasRole("super_admin")) && (
-              collapsed ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <NavLink
-                      to="/admin/etapas"
-                      onClick={closeSidebar}
-                      className="mt-2 flex items-center justify-center rounded-lg p-2.5 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-app-sm"
-                    >
-                      <ListTree className="h-4 w-4" />
-                    </NavLink>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">Entrar na Etapa</TooltipContent>
-                </Tooltip>
-              ) : (
-                <NavLink
-                  to="/admin/etapas"
-                  onClick={closeSidebar}
-                  className="mt-2 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-app-sm"
-                >
-                  <ListTree className="h-4 w-4" />
-                  Entrar na Etapa
-                </NavLink>
-              )
-            )}
 
             {navGroups.filter(isGroupVisible).map((group) => (
               <Collapsible key={group.id} defaultOpen={activeGroupId === group.id}>
