@@ -96,6 +96,10 @@ const CredenciamentoExternoPage = lazy(() => import("../pages/admin/Credenciamen
 const ValidacaoQRPage = lazy(() => import("../pages/admin/ValidacaoQRPage"));
 const CompeticaoPartidasAgendaPage = lazy(() => import("../pages/admin/CompeticaoPartidasAgendaPage"));
 const CompeticaoResultadosPage = lazy(() => import("../pages/admin/CompeticaoResultadosPage"));
+const CompeticaoCentralPage = lazy(() => import("../pages/admin/CompeticaoCentralPage"));
+const CompeticaoFasesPage = lazy(() => import("../pages/admin/CompeticaoFasesPage"));
+const CompeticaoGruposPage = lazy(() => import("../pages/admin/CompeticaoGruposPage"));
+const CompeticaoPreValidacaoPage = lazy(() => import("../pages/admin/PreValidacaoPage"));
 const AlojamentoHubPage = lazy(() => import("../pages/admin/AlojamentoHubPage"));
 const AlimentacaoHubPage = lazy(() => import("../pages/admin/AlimentacaoHubPage"));
 const TransporteHubPage = lazy(() => import("../pages/admin/TransporteHubPage"));
