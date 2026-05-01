@@ -16,6 +16,7 @@ import { installErrorReporter } from "@/lib/monitoring/errorReporter";
 import { PwaUpdateNotice } from "./components/pwa/PwaUpdateNotice";
 import { PwaInstallNotice } from "./components/pwa/PwaInstallNotice";
 import { AppStatePreserver } from "./components/pwa/AppStatePreserver";
+import { ContextLockGuard } from "./components/pwa/ContextLockGuard";
 import { VersionValidator } from "./components/pwa/VersionValidator";
 import { AppRoutes } from "./routes/AppRoutes";
 
@@ -59,6 +60,7 @@ const App = () => (
           <VersionValidator>
             <EventProvider>
               <StageProvider>
+                <ContextLockGuard />
                 <CompetitionProvider>
                   <AppRoutes />
                 </CompetitionProvider>
