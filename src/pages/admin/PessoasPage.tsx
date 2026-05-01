@@ -53,6 +53,7 @@ interface PersonRow {
   food_restrictions: string | null;
   medical_notes: string | null;
   disability_type: string | null;
+  kind: "participant" | "eventual";
 }
 
 const cpfMask = (v: string) => {
