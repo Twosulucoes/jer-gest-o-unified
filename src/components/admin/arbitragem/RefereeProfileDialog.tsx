@@ -49,7 +49,7 @@ export function RefereeProfileDialog({ userId, open, onOpenChange }: Props) {
 
   const saveMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("referee_profiles")
         .upsert({
           ...formData,
