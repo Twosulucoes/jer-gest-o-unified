@@ -345,6 +345,8 @@ export const AppRoutes = () => (
         
         {/* Redirecionamentos operacionais */}
         <Route path="credenciamento" element={<RedirectToEtapas />} />
+        <Route path="credenciamento-externo" element={<RedirectToEtapas />} />
+        <Route path="validacao-qr" element={<RedirectToEtapas />} />
         <Route path="vouchers" element={<RedirectToEtapas />} />
         <Route path="transporte" element={<RedirectToEtapas />} />
         <Route path="alimentacao" element={<RedirectToEtapas />} />
