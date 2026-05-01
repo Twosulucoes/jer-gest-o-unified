@@ -195,6 +195,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
             .select("id, capacity, is_active")
             .eq("is_active", true);
           if (eventId) query.eq("event_id", eventId);
+          if (stageId) (query as any).eq("event_stage_id", stageId);
           const { data } = await query;
           return data ?? [];
         }, [] as { id: string; capacity: number; is_active: boolean }[]),
