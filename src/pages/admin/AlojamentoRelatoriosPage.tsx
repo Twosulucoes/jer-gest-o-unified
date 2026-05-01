@@ -32,10 +32,13 @@ export default function AlojamentoRelatoriosPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   const { data: locations = [] } = useQuery({
-    queryKey: ["lodging-locations", eventId],
-    enabled: !!eventId,
+    queryKey: ["lodging-locations", stageId || eventId],
+    enabled: !!stageId || !!eventId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("lodging_locations").select("id, name").eq("event_id", eventId!).eq("is_active", true).order("name");
+      let q = supabase.from("lodging_locations").select("id, name").eq("is_active", true).order("name");
+      if (stageId) q = q.eq("event_stage_id", stageId);
+      else if (eventId) q = q.eq("event_id", eventId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
@@ -52,10 +55,12 @@ export default function AlojamentoRelatoriosPage() {
   });
 
   const { data: units = [] } = useQuery({
-    queryKey: ["lodging-units-report", eventId, locationFilter],
-    enabled: !!eventId,
+    queryKey: ["lodging-units-report", stageId || eventId, locationFilter],
+    enabled: !!stageId || !!eventId,
     queryFn: async () => {
-      let q = supabase.from("lodging_units").select("id, name, capacity, location_id, lodging_locations(name)").eq("event_id", eventId!);
+      let q = supabase.from("lodging_units").select("id, name, capacity, location_id, lodging_locations(name)");
+      if (stageId) q = q.eq("event_stage_id", stageId);
+      else if (eventId) q = q.eq("event_id", eventId);
       if (locationFilter !== "all") q = q.eq("location_id", locationFilter);
       const { data, error } = await q;
       if (error) throw error;
@@ -64,15 +69,17 @@ export default function AlojamentoRelatoriosPage() {
   });
 
   const { data: occupancies, isLoading, isError } = useQuery({
-    queryKey: ["lodging-report", eventId, locationFilter, delegationFilter],
-    enabled: !!eventId,
+    queryKey: ["lodging-report", stageId || eventId, locationFilter, delegationFilter],
+    enabled: !!stageId || !!eventId,
     queryFn: async () => {
       let q = supabase
         .from("lodging_occupancies")
         .select("*, lodging_units(name, capacity, location_id, lodging_locations(name)), participants(person:people(full_name), delegation_id, delegations(institutions(name)))")
-        .eq("event_id", eventId!)
         .order("checked_in_at", { ascending: false });
 
+      if (stageId) q = q.eq("event_stage_id", stageId);
+      else if (eventId) q = q.eq("event_id", eventId);
+      
       if (locationFilter !== "all") q = q.eq("lodging_units.location_id", locationFilter);
 
       const { data, error } = await q;
