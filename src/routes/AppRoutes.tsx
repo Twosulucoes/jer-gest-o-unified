@@ -119,6 +119,8 @@ const AdminAlimentacaoPrevisaoPage = lazy(() => import("../pages/admin/Alimentac
 const AdminAlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
 const AdminAlojamentoUnidadesPage = lazy(() => import("../pages/admin/AlojamentoUnidadesPage"));
 const AdminAlojamentoPresencaPage = lazy(() => import("../pages/admin/AlojamentoPresencaPage"));
+const AdminAlojamentoLocaisPage = lazy(() => import("../pages/admin/AlojamentoLocaisPage"));
+const AdminAlojamentoRelatoriosPage = lazy(() => import("../pages/admin/AlojamentoRelatoriosPage"));
 
 // Competicao Subpages (Admin)
 const CompeticaoPainelPage = lazy(() => import("../pages/admin/CompeticaoPainelPage"));
