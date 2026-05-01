@@ -210,9 +210,9 @@ export default function PwaLayout({
                 ETAPA: <span className="font-black text-amber-900 dark:text-amber-300">{activeStage.name}</span>
               </span>
             </div>
-            <div className="shrink-0 flex items-center gap-1 font-mono text-[8px] opacity-80 bg-background/50 dark:bg-black/20 px-1.5 py-0.5 rounded border border-amber-500/20 tabular-nums">
-              <span className="opacity-60">ID:</span>
-              <span>{activeStage.id.slice(0, 8)}...</span>
+            <div className="shrink-0 flex items-center gap-1 font-mono text-[9px] font-bold opacity-90 bg-background/60 dark:bg-black/30 px-2 py-0.5 rounded border border-amber-500/30 tabular-nums text-amber-900 dark:text-amber-200">
+              <span className="opacity-50 font-normal">ID:</span>
+              <span>{activeStage.id.slice(0, 8)}</span>
             </div>
           </div>
         )}
