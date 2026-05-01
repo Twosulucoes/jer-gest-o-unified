@@ -21,8 +21,8 @@ export const PublicHeader = ({ subtitle, onBack, showBackButton }: PublicHeaderP
   const { user } = useAuth();
   const location = useLocation();
 
-  const isResults = location.pathname.startsWith("/public/results");
-  const isMedals = location.pathname.startsWith("/public/medals");
+  const isResults = location.pathname.startsWith("/resultados-publicos");
+  const isMedals = location.pathname.startsWith("/quadro-medalhas");
 
   return (
     <header className="glass-panel-strong px-4 py-3 sticky top-0 z-50">
@@ -53,7 +53,7 @@ export const PublicHeader = ({ subtitle, onBack, showBackButton }: PublicHeaderP
                 isResults && "bg-primary/10 text-primary hover:bg-primary/20"
               )}
             >
-              <Link to="/public/results">
+              <Link to="/resultados-publicos">
                 <Calendar className="h-3.5 w-3.5" />
                 Resultados e Agenda
               </Link>
@@ -67,7 +67,7 @@ export const PublicHeader = ({ subtitle, onBack, showBackButton }: PublicHeaderP
                 isMedals && "bg-primary/10 text-primary hover:bg-primary/20"
               )}
             >
-              <Link to="/public/medals">
+              <Link to="/quadro-medalhas">
                 <Trophy className="h-3.5 w-3.5" />
                 Quadro de Medalhas
               </Link>
@@ -85,13 +85,13 @@ export const PublicHeader = ({ subtitle, onBack, showBackButton }: PublicHeaderP
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl shadow-xl animate-scale-in">
                 <DropdownMenuItem asChild className="rounded-xl">
-                  <Link to="/public/results" className="gap-3 py-2.5">
+                  <Link to="/resultados-publicos" className="gap-3 py-2.5">
                     <Calendar className="h-4 w-4 text-primary" />
                     <span className="font-medium">Resultados e Agenda</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="rounded-xl">
-                  <Link to="/public/medals" className="gap-3 py-2.5">
+                  <Link to="/quadro-medalhas" className="gap-3 py-2.5">
                     <Trophy className="h-4 w-4 text-primary" />
                     <span className="font-medium">Quadro de Medalhas</span>
                   </Link>
