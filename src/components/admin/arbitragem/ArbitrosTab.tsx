@@ -13,8 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UserPlus, Search, Trash2, Upload, Users } from "lucide-react";
+import { UserPlus, Search, Trash2, Upload, Users, UserCog } from "lucide-react";
 import ArbitrosImportDialog from "./ArbitrosImportDialog";
+import { RefereeProfileDialog } from "./RefereeProfileDialog";
 
 interface Arbitro {
   user_id: string;
