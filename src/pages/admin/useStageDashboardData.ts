@@ -51,9 +51,14 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("participant_event_stages" as any)
+          const { data, error } = await supabase.from("participant_event_stages" as any)
             .select("participant_id, participants(credentialed_at)")
             .eq("event_stage_id", stageId!);
+          
+          if (error) {
+            console.error("Error fetching participants for stage dashboard:", error);
+            throw error;
+          }
           return (data ?? []) as any[];
         }, []),
       },
