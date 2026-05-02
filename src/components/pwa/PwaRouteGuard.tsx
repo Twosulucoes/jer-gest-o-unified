@@ -107,7 +107,12 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
       });
       return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_event" }} replace />;
     }
-    if (requireStage && !activeStageId) {
+
+    // Identifica se o caminho atual é uma "página inicial de módulo" que geralmente lista locais/etapas
+    const isModuleHome = location.pathname.split('/').length === 3;
+    const moduleRequireStage = requireStage && !isModuleHome;
+
+    if (moduleRequireStage && !activeStageId) {
       logPwaEvent({
         action: "forced_config_redirect",
         target_path: "/pwa/configuracao",
@@ -116,7 +121,6 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
       });
       return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_stage" }} replace />;
     }
-
   }
 
   // If specific roles required, check. Admin/secretaria always pass.
