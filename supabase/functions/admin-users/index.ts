@@ -33,6 +33,10 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error("Missing environment variables SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    }
+
     // Verify caller is authenticated
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -46,17 +50,16 @@ Deno.serve(async (req) => {
 
     // Verify caller: try getClaims first (signing-keys), fallback to getUser via user-scoped client
     const token = authHeader.replace("Bearer ", "");
-    let callerId: string | null = null;
-    let callerEmail: string | undefined;
-
-    // Standard way to get user from token in Edge Functions
+    
+    // Check if it's a valid token
     const { data: { user: callerUser }, error: callerErr } = await adminClient.auth.getUser(token);
     if (callerErr || !callerUser) {
-      return jsonResponse({ error: "NOT_AUTHENTICATED" }, 401);
+      console.error("Auth verification failed:", callerErr);
+      return jsonResponse({ error: "NOT_AUTHENTICATED", details: callerErr?.message }, 401);
     }
-    callerId = callerUser.id;
-    callerEmail = callerUser.email;
-
+    
+    const callerId = callerUser.id;
+    const callerEmail = callerUser.email;
     const caller = { id: callerId, email: callerEmail };
 
     // Check permissions using admin client
