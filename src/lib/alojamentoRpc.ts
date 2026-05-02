@@ -1,13 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export async function rpcResolveQr(token: string) {
-  const { data, error } = await supabase.rpc("resolve_qr" as any, { p_token: token });
+  const { data, error } = await supabase.rpc("resolve_qr", { p_token: token });
   if (error) throw error;
   return data as Record<string, any>;
 }
 
 export async function rpcCheckin(deviceId: string, token: string, locationId: string, unitId?: string, mode = "person_qr") {
-  const { data, error } = await supabase.rpc("pwa_lodging_checkin" as any, {
+  const { data, error } = await supabase.rpc("pwa_lodging_checkin", {
     p_device_id: deviceId,
     p_token: token,
     p_location_id: locationId,
@@ -19,7 +19,7 @@ export async function rpcCheckin(deviceId: string, token: string, locationId: st
 }
 
 export async function rpcCheckout(deviceId: string, token: string, locationId: string) {
-  const { data, error } = await supabase.rpc("pwa_lodging_checkout" as any, {
+  const { data, error } = await supabase.rpc("pwa_lodging_checkout", {
     p_device_id: deviceId,
     p_token: token,
     p_location_id: locationId,
@@ -29,7 +29,7 @@ export async function rpcCheckout(deviceId: string, token: string, locationId: s
 }
 
 export async function rpcRegisterPresence(deviceId: string, token: string, unitId: string, mode = "person_qr") {
-  const { data, error } = await supabase.rpc("pwa_lodging_register_presence" as any, {
+  const { data, error } = await supabase.rpc("pwa_lodging_register_presence", {
     p_device_id: deviceId,
     p_token: token,
     p_unit_id: unitId,
@@ -40,7 +40,7 @@ export async function rpcRegisterPresence(deviceId: string, token: string, unitI
 }
 
 export async function rpcAssignBed(deviceId: string, personToken: string, bedToken: string) {
-  const { data, error } = await supabase.rpc("pwa_assign_bed" as any, {
+  const { data, error } = await supabase.rpc("pwa_assign_bed", {
     p_device_id: deviceId,
     p_person_token: personToken,
     p_bed_token: bedToken,
@@ -50,7 +50,7 @@ export async function rpcAssignBed(deviceId: string, personToken: string, bedTok
 }
 
 export async function rpcSearchPerson(query: string, facilityId: string, limit = 20) {
-  const { data, error } = await supabase.rpc("pwa_search_person" as any, {
+  const { data, error } = await supabase.rpc("pwa_search_person", {
     p_query: query,
     p_facility_id: facilityId,
     p_limit: limit,
@@ -60,7 +60,7 @@ export async function rpcSearchPerson(query: string, facilityId: string, limit =
 }
 
 export async function rpcGenerateQr(qrType: string, entityId: string) {
-  const { data, error } = await supabase.rpc("admin_generate_qr" as any, {
+  const { data, error } = await supabase.rpc("admin_generate_qr", {
     p_qr_type: qrType,
     p_entity_id: entityId,
   });
