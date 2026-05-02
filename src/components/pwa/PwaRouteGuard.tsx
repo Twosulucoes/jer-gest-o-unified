@@ -130,13 +130,16 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
       logPwaEvent({
         action: "access_denied",
         reason: "User lacks required roles",
-        metadata: { allowedRoles },
+        metadata: { allowedRoles, currentRoles: roles },
         event_id: activeEventId,
         stage_id: activeStageId
       });
-      return <Navigate to="/acesso-negado" replace />;
+      // Redirect to /pwa landing page instead of /acesso-negado to avoid loop if coming from /pwa index
+      if (location.pathname === "/pwa" || location.pathname === "/pwa/") {
+        return <Navigate to="/login" replace />;
+      }
+      return <Navigate to="/pwa" replace />;
     }
-
   }
 
   // Resource Ownership Check: For specific routes like incidents, ensure it belongs to the active event
