@@ -1,4 +1,5 @@
 import { dbTelemetry, DbOp } from "./dbTelemetry";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 /**
  * Creates a fetch interceptor for Supabase to automatically log database operations.
@@ -85,19 +86,28 @@ async function handleRestTelemetry(url: string, init: RequestInit | undefined, r
 
     if (response.ok) {
       try {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          rowsAffected = data.length;
-        } else if (data && typeof data === 'object') {
-          rowsAffected = 1;
+        // Only read JSON if the response content-type is json to avoid errors
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            rowsAffected = data.length;
+          } else if (data && typeof data === 'object') {
+            rowsAffected = 1;
+          }
         }
       } catch (_e) {
-        // Not JSON or empty response
+        // Fail silently
       }
     } else {
       try {
-        const errorData = await response.json();
-        errorCode = errorData?.code || errorData?.message || String(response.status);
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json() as PostgrestError;
+          errorCode = errorData?.code || errorData?.message || String(response.status);
+        } else {
+          errorCode = String(response.status);
+        }
       } catch (_e) {
         errorCode = String(response.status);
       }

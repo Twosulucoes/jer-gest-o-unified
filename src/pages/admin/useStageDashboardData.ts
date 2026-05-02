@@ -51,9 +51,14 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("participant_event_stages" as any)
+          const { data, error } = await supabase.from("participant_event_stages" as any)
             .select("participant_id, participants(credentialed_at)")
             .eq("event_stage_id", stageId!);
+          
+          if (error) {
+            console.error("Error fetching participants for stage dashboard:", error);
+            throw error;
+          }
           return (data ?? []) as any[];
         }, []),
       },
@@ -62,9 +67,15 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("competition_matches" as any)
+          // Use table name directly without cast as any if possible, or ensure correct schema
+          const { data, error } = await supabase.from("competition_matches")
             .select("id, status, sport_event_id, start_time, match_date, sport_events(name, sports(name))")
             .eq("event_stage_id", stageId!);
+          
+          if (error) {
+            console.error("Error fetching matches for stage dashboard:", error);
+            throw error;
+          }
           return (data ?? []) as any[];
         }, []),
       },
@@ -73,10 +84,15 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("lodging_units" as any)
+          const { data, error } = await supabase.from("lodging_units" as any)
             .select("id, capacity")
             .eq("event_stage_id", stageId!)
             .eq("is_active", true);
+          
+          if (error) {
+            console.error("Error fetching lodging units for stage dashboard:", error);
+            throw error;
+          }
           return (data ?? []) as any[];
         }, []),
       },
@@ -97,9 +113,14 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("meal_windows" as any)
+          const { data, error } = await supabase.from("meal_windows" as any)
             .select("id, service_date")
             .eq("event_stage_id", stageId!);
+          
+          if (error) {
+            console.error("Error fetching meal windows for stage dashboard:", error);
+            throw error;
+          }
           return (data ?? []) as any[];
         }, []),
       },
@@ -108,7 +129,11 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.rpc("get_unhandled_referee_indisponibilities", { p_etapa_id: stageId });
+          const { data, error } = await supabase.rpc("get_unhandled_referee_indisponibilities", { p_etapa_id: stageId });
+          if (error) {
+            console.error("Error fetching referee indisponibilities:", error);
+            throw error;
+          }
           return (data ?? []) as any[];
         }, []),
       },
@@ -130,9 +155,14 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled: enabled && windowIds.length > 0,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("meal_consumptions" as any)
+          const { data, error } = await supabase.from("meal_consumptions" as any)
             .select("id, consumed_at, meal_window_id")
             .in("meal_window_id", windowIds);
+          
+          if (error) {
+            console.error("Error fetching meal consumptions for stage dashboard:", error);
+            throw error;
+          }
           return (data ?? []) as any[];
         }, []),
       }

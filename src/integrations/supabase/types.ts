@@ -9175,13 +9175,7 @@ export type Database = {
       get_unhandled_referee_indisponibilities: {
         Args: { p_etapa_id: string }
         Returns: {
-          assignment_id: string
-          is_critical: boolean
-          match_id: string
-          match_time: string
-          reason: string
-          referee_name: string
-          reported_at: string
+          id: string
         }[]
       }
       get_user_delegation_id: { Args: { _user_id: string }; Returns: string }
