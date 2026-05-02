@@ -371,17 +371,13 @@ export const AppRoutes = () => (
         <Route path="registros/configuracao-osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ConfigOscPage /></ProtectedRoute>} />
         
         {/* Redirecionamentos operacionais */}
-        <Route path="credenciamento/*" element={<RedirectToEtapas />} />
-        <Route path="credenciamento-externo/*" element={<RedirectToEtapas />} />
-        <Route path="validacao-qr/*" element={<RedirectToEtapas />} />
-        <Route path="vouchers/*" element={<RedirectToEtapas />} />
-        <Route path="transporte/*" element={<RedirectToEtapas />} />
-        <Route path="alimentacao/*" element={<RedirectToEtapas />} />
-        <Route path="alojamento/*" element={<RedirectToEtapas />} />
-        <Route path="competicao/*" element={<RedirectToEtapas />} />
-        <Route path="protestos/*" element={<RedirectToEtapas />} />
-        <Route path="ocorrencias/*" element={<RedirectToEtapas />} />
-        <Route path="pesquisa/*" element={<RedirectToEtapas />} />
+        <Route path="credenciamento/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="vouchers/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="transporte/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "transporte"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="alimentacao/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="alojamento/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alojamento"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="competicao/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="pesquisa/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
       </Route>
 
       <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLayout /></PwaRouteGuard>}>
