@@ -86,19 +86,67 @@ export default function AlojamentoScanPage() {
   }, [userId]);
 
   useEffect(() => {
+    async function loadFacilities() {
+      if (!eventId) return;
+      let query = supabase
+        .from("lodging_locations")
+        .select("id, name")
+        .eq("event_id", eventId)
+        .eq("is_active", true);
+      if (stageId) query = query.eq("event_stage_id", stageId);
+      const { data } = await query.order("name");
+      if (data) setFacilities(data);
+    }
+    loadFacilities();
+  }, [eventId, stageId]);
+
+  useEffect(() => {
     async function loadUnits() {
-      if (!facilityId) return;
-      const { data } = await supabase
-        .from("lodging_units")
-        .select("id, name, capacity, gender_restriction")
-        .eq("location_id", facilityId)
-        .eq("is_active", true)
-        .order("name");
+      if (!facilityId) {
+        setUnits([]);
+        return;
+      }
+
+      // RPC para obter ocupação atual e calcular vagas
+      const { data: occData } = await supabase.rpc("get_alojamento_ocupacao" as any, { 
+        p_facility_id: facilityId 
+      });
+
+      // Pegamos os quartos do primeiro bloco (dummy block)
+      const rooms = (occData && Array.isArray(occData) && occData[0]?.rooms) || [];
       
-      if (data) setUnits(data);
+      // Carregamos detalhes extras (restrição de gênero) que o RPC acima talvez não retorne completo
+      const { data: unitsDetail } = await supabase
+        .from("lodging_units")
+        .select("id, gender_restriction")
+        .eq("location_id", facilityId)
+        .eq("is_active", true);
+
+      const detailMap = new Map(unitsDetail?.map(u => [u.id, u.gender_restriction]) || []);
+
+      const enrichedUnits = rooms.map((r: any) => ({
+        id: r.id,
+        name: r.code,
+        capacity: r.capacity,
+        occupied: r.occupied,
+        gender_restriction: detailMap.get(r.id) || 'mixed'
+      }));
+      
+      setUnits(enrichedUnits);
     }
     loadUnits();
   }, [facilityId]);
+
+  const handleFacilityChange = (val: string) => {
+    const id = val === "none" ? null : val;
+    setFacilityId(id);
+    if (id) setSelectedFacility(id);
+    else localStorage.removeItem("jer_alj_facility_id");
+    
+    // Reset unit when facility changes
+    setSelectedUnitId(null);
+    setSelectedUnit(null);
+  };
 
   const handleUnitChange = (val: string) => {
     const id = val === "none" ? null : val;
