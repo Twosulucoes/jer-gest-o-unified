@@ -195,7 +195,7 @@ export const systemMap: SystemMapGroup[] = [
         route: "/admin/logistica/consolidada",
         pageFile: "src/pages/admin/LogisticaConsolidadaPage.tsx",
         description: "Painel agregado por pessoa: necessidades vs consumo de transporte, alimentação, alojamento e vouchers. KPIs, filtros por delegação/escopo/status e drill-down por pessoa com export CSV.",
-        roles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento"],
+        roles: ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento", "super_admin"],
         status: ModuleStatus.DONE,
         dataSources: ["vw_person_logistics_consumption", "service_vouchers", "service_voucher_uses"],
         gaps: [],
