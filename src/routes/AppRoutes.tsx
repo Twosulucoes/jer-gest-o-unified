@@ -374,7 +374,7 @@ export const AppRoutes = () => (
         <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="vouchers" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="transporte" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "transporte"]}><RedirectToEtapas /></ProtectedRoute>} />
-        <Route path="alimentacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="alimentacao/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="alojamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alojamento"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="competicao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="pesquisa" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
