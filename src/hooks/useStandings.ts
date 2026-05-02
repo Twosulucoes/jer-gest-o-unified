@@ -86,7 +86,7 @@ export function useStandings(
         };
       }
 
-      const { data, error } = await supabase.rpc(rpcName as never, params as any);
+      const { data, error } = await supabase.rpc(rpcName as any, params as any);
       if (error) throw error;
       return data as unknown as StandingsResult;
     },
