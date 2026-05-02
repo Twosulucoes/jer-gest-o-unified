@@ -413,6 +413,10 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: `Unknown action: ${action}` }, 400);
     }
   } catch (err) {
-    return jsonResponse({ error: (err as Error).message }, 500);
+    console.error("Fatal error in admin-users edge function:", err);
+    return jsonResponse({ 
+      error: (err as Error).message,
+      stack: (err as Error).stack 
+    }, 500);
   }
 });
