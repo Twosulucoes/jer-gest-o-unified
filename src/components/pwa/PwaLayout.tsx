@@ -183,14 +183,15 @@ export default function PwaLayout({
 
   return (
     <PwaScreen noPadding className="min-h-[100dvh]">
-      {/* PwaHeader fora do provider — não pode ver isActive=true ou retorna null */}
-      <PwaHeader
-        title={displayTitle}
-        icon={DisplayIcon}
-        backTo={backToOverride ?? backTo}
-        onBack={onBackOverride ?? onBack}
-        onSignOut={handleSignOut}
-      />
+      {path !== "/pwa" && path !== "/pwa/" && (
+        <PwaHeader
+          title={displayTitle}
+          icon={DisplayIcon}
+          backTo={backToOverride ?? backTo}
+          onBack={onBackOverride ?? onBack}
+          onSignOut={handleSignOut}
+        />
+      )}
       <PwaLayoutCtx.Provider value={ownCtxValue}>
         {/* Banner de Etapa Ativa para segurança operacional (Alojamento/Alimentação) */}
         {(currentModule === "alojamento" || currentModule === "alimentacao") && activeStage && (
