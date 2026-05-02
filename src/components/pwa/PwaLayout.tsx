@@ -102,7 +102,7 @@ export default function PwaLayout({
       { role: "alojamento", label: "Alojamento", icon: Building, to: "/pwa/alojamento" },
       { role: "coordenacao_tecnica", label: "Coord. Técnica", icon: Trophy, to: "/pwa/coordenacao-tecnica" },
       { role: "delegacao", label: "Delegação", icon: Users, to: "/pwa/delegacao" },
-      { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento" },
+      { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento/vincular" },
       { role: "mesario", label: "Ao Vivo", icon: Radio, to: "/aovivo" },
       { role: "mesario", label: "Registros", icon: Trophy, to: "/pwa/registros", showOnlyIfRegistrosEnabled: true },
       { role: "arbitragem", label: "Ao Vivo", icon: Radio, to: "/pwa/resultados" },

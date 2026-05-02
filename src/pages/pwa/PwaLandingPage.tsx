@@ -23,7 +23,7 @@ const MODULE_CARDS = [
   { role: "alojamento", label: "Alojamento", icon: Building, to: "/pwa/alojamento", gradient: "from-[hsl(133,55%,45%)] to-[hsl(174,87%,34%)]" },
   { role: "coordenacao_tecnica", label: "Coord. Técnica", icon: Trophy, to: "/pwa/coordenacao-tecnica", gradient: "from-[hsl(214,78%,21%)] to-[hsl(212,84%,36%)]" },
   { role: "delegacao", label: "Delegação", icon: Users, to: "/pwa/delegacao", gradient: "from-[hsl(174,87%,34%)] to-[hsl(133,55%,45%)]" },
-  { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento", gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]" },
+  { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento/vincular", gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]" },
   { role: "mesario", label: "Mesário", icon: Gavel, to: "/aovivo", gradient: "from-[hsl(25,95%,45%)] to-[hsl(14,89%,36%)]" },
   { role: "arbitragem", label: "Arbitragem", icon: Shield, to: "/aovivo", gradient: "from-[hsl(14,89%,36%)] to-[hsl(25,95%,45%)]" },
   { role: "pesquisa", label: "Pesquisa", icon: ClipboardCheck, to: "/pwa/pesquisa/login", gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]" },
