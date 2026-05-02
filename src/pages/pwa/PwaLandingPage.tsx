@@ -124,46 +124,20 @@ export default function PwaLandingPage() {
 
   return (
     <div className="tactical-cockpit min-h-screen bg-background">
-      <div
-        className="px-5 pt-10 pb-12"
-        style={{
-          background:
-            "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(212 84% 36%) 40%, hsl(174 87% 34%) 70%, hsl(133 55% 45%) 100%)",
-        }}
-      >
-        <div className="flex items-center justify-between max-w-md mx-auto">
+      <div className="p-4 max-w-md mx-auto space-y-5">
+        <div className="bg-card/95 backdrop-blur-sm rounded-3xl border border-white/20 shadow-xl p-5 space-y-4 bg-gradient-to-br from-primary/10 to-primary/5">
           <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30">
+            <div className="h-14 w-14 rounded-2xl bg-primary/20 flex items-center justify-center shadow-lg border border-primary/30">
               <img src="/brand/monogram.png" alt="" className="h-10 w-10 object-contain" />
             </div>
             <div>
-              <h1 className="text-xl font-heading font-extrabold text-white tracking-tight">JER's Gestão</h1>
-              <p className="text-sm text-white/80 font-medium">
+              <h1 className="text-xl font-heading font-extrabold text-foreground tracking-tight">JER's Gestão</h1>
+              <p className="text-sm text-muted-foreground font-medium">
                 Olá, {profile.full_name?.split(' ')[0] || "Usuário"}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <PwaRefreshButton />
-            {(profile.roles.includes("admin") || profile.roles.includes("super_admin") || profile.roles.includes("secretaria") || profile.roles.includes("coordenacao_tecnica")) && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => navigate("/admin")} 
-                className="h-11 w-11 text-white/80 hover:text-white hover:bg-white/10 rounded-full"
-                title="Painel Admin"
-              >
-                <Settings className="h-6 w-6" />
-              </Button>
-            )}
-            <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-11 w-11 text-white/80 hover:text-white hover:bg-white/10 rounded-full">
-              <LogOut className="h-6 w-6" />
-            </Button>
-          </div>
         </div>
-      </div>
-
-      <div className="p-4 max-w-md mx-auto space-y-5 -mt-8">
         {/* Configuração de Contexto (Evento e Etapa) */}
         <div className="bg-card/95 backdrop-blur-sm rounded-3xl border border-white/20 shadow-xl p-5 space-y-4">
           <div className="space-y-4">
