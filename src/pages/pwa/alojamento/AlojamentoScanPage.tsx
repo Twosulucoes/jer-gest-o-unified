@@ -380,21 +380,47 @@ export default function AlojamentoScanPage() {
         </Tabs>
 
         {(mode === "checkin" || mode === "presence") && (
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Unidade / Quarto</label>
-            <Select value={selectedUnitId || "none"} onValueChange={handleUnitChange}>
-              <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-none shadow-inner font-medium">
-                <SelectValue placeholder="Selecione a unidade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhuma selecionada</SelectItem>
-                {units.map(u => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.name}{u.gender_restriction && u.gender_restriction !== "misto" ? ` — ${u.gender_restriction === "masculino" ? "Masc." : "Fem."}` : ""}{u.capacity ? ` (${u.capacity} lug.)` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Local / Estabelecimento</label>
+              <Select value={facilityId || "none"} onValueChange={handleFacilityChange}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-none shadow-inner font-medium">
+                  <SelectValue placeholder="Selecione o local" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum selecionado</SelectItem>
+                  {facilities.map(f => (
+                    <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Unidade / Quarto</label>
+              <Select value={selectedUnitId || "none"} onValueChange={handleUnitChange} disabled={!facilityId}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-none shadow-inner font-medium">
+                  <SelectValue placeholder={!facilityId ? "Selecione o local primeiro" : "Selecione a unidade"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma selecionada</SelectItem>
+                  {units.map(u => {
+                    const gender = u.gender_restriction === "male" ? "Masc." : u.gender_restriction === "female" ? "Fem." : "Misto";
+                    const isFull = u.occupied >= u.capacity;
+                    return (
+                      <SelectItem key={u.id} value={u.id} className={isFull ? "opacity-60" : ""}>
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <span className="font-bold">{u.name}</span>
+                          <span className="text-[10px] opacity-70">
+                            [{gender}] {u.occupied}/{u.capacity} {isFull ? "(Lotado)" : "vagas"}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
 
