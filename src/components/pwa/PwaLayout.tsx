@@ -102,7 +102,7 @@ export default function PwaLayout({
       { role: "alojamento", label: "Alojamento", icon: Building, to: "/pwa/alojamento" },
       { role: "coordenacao_tecnica", label: "Coord. Técnica", icon: Trophy, to: "/pwa/coordenacao-tecnica" },
       { role: "delegacao", label: "Delegação", icon: Users, to: "/pwa/delegacao" },
-      { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento" },
+      { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento/vincular" },
       { role: "mesario", label: "Ao Vivo", icon: Radio, to: "/aovivo" },
       { role: "mesario", label: "Registros", icon: Trophy, to: "/pwa/registros", showOnlyIfRegistrosEnabled: true },
       { role: "arbitragem", label: "Ao Vivo", icon: Radio, to: "/pwa/resultados" },
@@ -183,14 +183,15 @@ export default function PwaLayout({
 
   return (
     <PwaScreen noPadding className="min-h-[100dvh]">
-      {/* PwaHeader fora do provider — não pode ver isActive=true ou retorna null */}
-      <PwaHeader
-        title={displayTitle}
-        icon={DisplayIcon}
-        backTo={backToOverride ?? backTo}
-        onBack={onBackOverride ?? onBack}
-        onSignOut={handleSignOut}
-      />
+      {path !== "/pwa" && path !== "/pwa/" && (
+        <PwaHeader
+          title={displayTitle}
+          icon={DisplayIcon}
+          backTo={backToOverride ?? backTo}
+          onBack={onBackOverride ?? onBack}
+          onSignOut={handleSignOut}
+        />
+      )}
       <PwaLayoutCtx.Provider value={ownCtxValue}>
         {/* Banner de Etapa Ativa para segurança operacional (Alojamento/Alimentação) */}
         {(currentModule === "alojamento" || currentModule === "alimentacao") && activeStage && (

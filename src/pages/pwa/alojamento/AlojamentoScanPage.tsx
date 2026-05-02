@@ -22,6 +22,7 @@ import {
   rpcRegisterPresence,
   getDeviceId, 
   getSelectedFacility,
+  setSelectedFacility,
   getSelectedUnit,
   setSelectedUnit
 } from "@/lib/alojamentoRpc";
@@ -60,6 +61,7 @@ const MODULE = "alojamento" as const;
 export default function AlojamentoScanPage() {
   const navigate = useNavigate();
   const { activeEvent } = useEventContext();
+  const eventId = activeEvent?.id;
   usePwaAudit("alojamento/escanear");
   const stageId = useActiveStageId();
   const { user } = useAuth();
@@ -73,29 +75,79 @@ export default function AlojamentoScanPage() {
   const [prefs, setPrefs] = useState<ScanPreferences>(() => loadScanPreferences(MODULE, userId));
   const [telemetry, setTelemetry] = useState<ScanTelemetry>(() => loadScanTelemetry(MODULE, userId));
   
-  const facilityId = getSelectedFacility();
+  const [facilityId, setFacilityId] = useState<string | null>(getSelectedFacility());
+  const [facilities, setFacilities] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(getSelectedUnit());
 
   useEffect(() => {
+    setFacilityId(getSelectedFacility());
     setPrefs(loadScanPreferences(MODULE, userId));
     setTelemetry(loadScanTelemetry(MODULE, userId));
   }, [userId]);
 
   useEffect(() => {
+    async function loadFacilities() {
+      if (!eventId) return;
+      let query = supabase
+        .from("lodging_locations")
+        .select("id, name")
+        .eq("event_id", eventId)
+        .eq("is_active", true);
+      if (stageId) query = query.eq("event_stage_id", stageId);
+      const { data } = await query.order("name");
+      if (data) setFacilities(data);
+    }
+    loadFacilities();
+  }, [eventId, stageId]);
+
+  useEffect(() => {
     async function loadUnits() {
-      if (!facilityId) return;
-      const { data } = await supabase
-        .from("lodging_units")
-        .select("id, name, capacity, gender_restriction")
-        .eq("location_id", facilityId)
-        .eq("is_active", true)
-        .order("name");
+      if (!facilityId) {
+        setUnits([]);
+        return;
+      }
+
+      // RPC para obter ocupação atual e calcular vagas
+      const { data: occData } = await supabase.rpc("get_alojamento_ocupacao" as any, { 
+        p_facility_id: facilityId 
+      });
+
+      // Pegamos os quartos do primeiro bloco (dummy block)
+      const rooms = (occData && Array.isArray(occData) && occData[0]?.rooms) || [];
       
-      if (data) setUnits(data);
+      // Carregamos detalhes extras (restrição de gênero) que o RPC acima talvez não retorne completo
+      const { data: unitsDetail } = await supabase
+        .from("lodging_units")
+        .select("id, gender_restriction")
+        .eq("location_id", facilityId)
+        .eq("is_active", true);
+
+      const detailMap = new Map(unitsDetail?.map(u => [u.id, u.gender_restriction]) || []);
+
+      const enrichedUnits = rooms.map((r: any) => ({
+        id: r.id,
+        name: r.code,
+        capacity: r.capacity,
+        occupied: r.occupied,
+        gender_restriction: detailMap.get(r.id) || 'mixed'
+      }));
+      
+      setUnits(enrichedUnits);
     }
     loadUnits();
   }, [facilityId]);
+
+  const handleFacilityChange = (val: string) => {
+    const id = val === "none" ? null : val;
+    setFacilityId(id);
+    if (id) setSelectedFacility(id);
+    else localStorage.removeItem("jer_alj_facility_id");
+    
+    // Reset unit when facility changes
+    setSelectedUnitId(null);
+    setSelectedUnit(null);
+  };
 
   const handleUnitChange = (val: string) => {
     const id = val === "none" ? null : val;
@@ -328,21 +380,47 @@ export default function AlojamentoScanPage() {
         </Tabs>
 
         {(mode === "checkin" || mode === "presence") && (
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Unidade / Quarto</label>
-            <Select value={selectedUnitId || "none"} onValueChange={handleUnitChange}>
-              <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-none shadow-inner font-medium">
-                <SelectValue placeholder="Selecione a unidade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhuma selecionada</SelectItem>
-                {units.map(u => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.name}{u.gender_restriction && u.gender_restriction !== "misto" ? ` — ${u.gender_restriction === "masculino" ? "Masc." : "Fem."}` : ""}{u.capacity ? ` (${u.capacity} lug.)` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Local / Estabelecimento</label>
+              <Select value={facilityId || "none"} onValueChange={handleFacilityChange}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-none shadow-inner font-medium">
+                  <SelectValue placeholder="Selecione o local" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum selecionado</SelectItem>
+                  {facilities.map(f => (
+                    <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground uppercase ml-1">Unidade / Quarto</label>
+              <Select value={selectedUnitId || "none"} onValueChange={handleUnitChange} disabled={!facilityId}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-none shadow-inner font-medium">
+                  <SelectValue placeholder={!facilityId ? "Selecione o local primeiro" : "Selecione a unidade"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma selecionada</SelectItem>
+                  {units.map(u => {
+                    const gender = u.gender_restriction === "male" ? "Masc." : u.gender_restriction === "female" ? "Fem." : "Misto";
+                    const isFull = u.occupied >= u.capacity;
+                    return (
+                      <SelectItem key={u.id} value={u.id} className={isFull ? "opacity-60" : ""}>
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <span className="font-bold">{u.name}</span>
+                          <span className="text-[10px] opacity-70">
+                            [{gender}] {u.occupied}/{u.capacity} {isFull ? "(Lotado)" : "vagas"}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
 

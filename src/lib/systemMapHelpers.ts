@@ -25,8 +25,7 @@ export function getStatusMeta(status: ModuleStatus) {
 export function getStatusEmoji(route: string): string {
   const item = findSystemItemByRoute(route);
   if (!item) {
-    console.warn(`[systemMap] Rota não encontrada no mapa: ${route}`);
-    return "❓";
+    return ""; // Silent return if not found to avoid log pollution
   }
   return STATUS_META[item.status].emoji;
 }

@@ -107,7 +107,12 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
       });
       return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_event" }} replace />;
     }
-    if (requireStage && !activeStageId) {
+
+    // Identifica se o caminho atual é uma "página inicial de módulo" que geralmente lista locais/etapas
+    const isModuleHome = location.pathname.split('/').length === 3;
+    const moduleRequireStage = requireStage && !isModuleHome;
+
+    if (moduleRequireStage && !activeStageId) {
       logPwaEvent({
         action: "forced_config_redirect",
         target_path: "/pwa/configuracao",
@@ -116,7 +121,6 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
       });
       return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_stage" }} replace />;
     }
-
   }
 
   // If specific roles required, check. Admin/secretaria always pass.
@@ -130,9 +134,15 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
         event_id: activeEventId,
         stage_id: activeStageId
       });
+      
+      // Se não for autorizado para o sub-módulo, manda de volta para a home do PWA
+      if (location.pathname !== "/pwa" && location.pathname !== "/pwa/") {
+        return <Navigate to="/pwa" replace />;
+      }
+      
+      // Se nem para a home do PWA ele é autorizado (improvável), vai para negado
       return <Navigate to="/acesso-negado" replace />;
     }
-
   }
 
   // Resource Ownership Check: For specific routes like incidents, ensure it belongs to the active event

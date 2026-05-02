@@ -124,6 +124,7 @@ const AdminAlimentacaoPrevisaoPage = lazy(() => import("../pages/admin/Alimentac
 const AdminAlimentacaoTiposPage = lazy(() => import("../pages/admin/AlimentacaoTiposPage"));
 const AdminAlimentacaoDashboardPage = lazy(() => import("../pages/admin/AlimentacaoDashboardPage"));
 const AdminAlimentacaoRelatoriosPage = lazy(() => import("../pages/admin/AlimentacaoRelatoriosPage"));
+const AdminAlimentacaoLocaisPage = lazy(() => import("../pages/admin/AlimentacaoLocaisPage"));
 
 // Alojamento Subpages (Admin)
 const AdminAlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
@@ -153,35 +154,35 @@ const PwaLayout = lazy(() => import("../components/pwa/PwaLayout"));
 const PwaLandingPage = lazy(() => import("../pages/pwa/PwaLandingPage"));
 const PwaModulePage = lazy(() => import("../pages/pwa/PwaModulePage"));
 const PwaInstallPage = lazy(() => import("../pages/pwa/PwaInstallPage"));
-const AlojamentoHomePage = lazy(() => import("../pages/pwa/alojamento/AlojamentoHomePage"));
-const AlojamentoScanPage = lazy(() => import("../pages/pwa/alojamento/AlojamentoScanPage"));
-const AlojamentoBuscarPage = lazy(() => import("../pages/pwa/alojamento/AlojamentoBuscarPage"));
-const AlojamentoOcupacaoPage = lazy(() => import("../pages/pwa/alojamento/AlojamentoOcupacaoPage"));
-const AlojamentoPessoaPage = lazy(() => import("../pages/pwa/alojamento/AlojamentoPessoaPage"));
-const AlojamentoIncidentesPage = lazy(() => import("../pages/pwa/alojamento/AlojamentoIncidentesPage"));
-const AlojamentoNovoIncidentePage = lazy(() => import("../pages/pwa/alojamento/AlojamentoNovoIncidentePage"));
-const AlojamentoListaCompletaPage = lazy(() => import("../pages/pwa/alojamento/AlojamentoListaCompletaPage"));
-const AlojamentoUnidadeFaltososPage = lazy(() => import("../pages/pwa/alojamento/AlojamentoUnidadeFaltososPage"));
-const TransporteHomePage = lazy(() => import("../pages/pwa/transporte/TransporteHomePage"));
-const TransporteViagensPage = lazy(() => import("../pages/pwa/transporte/TransporteViagensPage"));
-const TransporteScanPage = lazy(() => import("../pages/pwa/transporte/TransporteScanPage"));
-const TransporteEmbarquePage = lazy(() => import("../pages/pwa/transporte/TransporteEmbarquePage"));
-const TransporteRotasPage = lazy(() => import("../pages/pwa/transporte/TransporteRotasPage"));
-const TransportePassageirosPage = lazy(() => import("../pages/pwa/transporte/TransportePassageirosPage"));
-const AlimentacaoHomePage = lazy(() => import("../pages/pwa/alimentacao/AlimentacaoHomePage"));
-const AlimentacaoScanPage = lazy(() => import("../pages/pwa/alimentacao/AlimentacaoScanPage"));
-const AlimentacaoBuscarPage = lazy(() => import("../pages/pwa/alimentacao/AlimentacaoBuscarPage"));
-const AlimentacaoJanelasPage = lazy(() => import("../pages/pwa/alimentacao/AlimentacaoJanelasPage"));
-const AlimentacaoListaConsumosPage = lazy(() => import("../pages/pwa/alimentacao/AlimentacaoListaConsumosPage"));
-const CoordenacaoHomePage = lazy(() => import("../pages/pwa/coordenacao/CoordenacaoHomePage"));
-const CoordenacaoAgendaPage = lazy(() => import("../pages/pwa/coordenacao/CoordenacaoAgendaPage"));
-const CoordenacaoPartidasPage = lazy(() => import("../pages/pwa/coordenacao/CoordenacaoPartidasPage"));
-const CoordenacaoPartidaDetalhePage = lazy(() => import("../pages/pwa/coordenacao/CoordenacaoPartidaDetalhePage"));
-const CoordenacaoResultadosPage = lazy(() => import("../pages/pwa/coordenacao/CoordenacaoResultadosPage"));
-const CoordenacaoEstatisticasPage = lazy(() => import("../pages/pwa/coordenacao/CoordenacaoEstatisticasPage"));
-const CoordenacaoConsultaPage = lazy(() => import("../pages/pwa/coordenacao/CoordenacaoConsultaPage"));
-const CoordenacaoIncidentePage = lazy(() => import("../pages/pwa/coordenacao/CoordenacaoIncidentePage"));
-const CoordenacaoIncidentesPage = lazy(() => import("../pages/pwa/coordenacao/CoordenacaoIncidentesPage"));
+const AlojamentoHomePage = lazy(() => import("@/pages/pwa/alojamento/AlojamentoHomePage"));
+const AlojamentoScanPage = lazy(() => import("@/pages/pwa/alojamento/AlojamentoScanPage"));
+const AlojamentoBuscarPage = lazy(() => import("@/pages/pwa/alojamento/AlojamentoBuscarPage"));
+const AlojamentoOcupacaoPage = lazy(() => import("@/pages/pwa/alojamento/AlojamentoOcupacaoPage"));
+const AlojamentoPessoaPage = lazy(() => import("@/pages/pwa/alojamento/AlojamentoPessoaPage"));
+const AlojamentoIncidentesPage = lazy(() => import("@/pages/pwa/alojamento/AlojamentoIncidentesPage"));
+const AlojamentoNovoIncidentePage = lazy(() => import("@/pages/pwa/alojamento/AlojamentoNovoIncidentePage"));
+const AlojamentoListaCompletaPage = lazy(() => import("@/pages/pwa/alojamento/AlojamentoListaCompletaPage"));
+const AlojamentoUnidadeFaltososPage = lazy(() => import("@/pages/pwa/alojamento/AlojamentoUnidadeFaltososPage"));
+const TransporteHomePage = lazy(() => import("@/pages/pwa/transporte/TransporteHomePage"));
+const TransporteViagensPage = lazy(() => import("@/pages/pwa/transporte/TransporteViagensPage"));
+const TransporteScanPage = lazy(() => import("@/pages/pwa/transporte/TransporteScanPage"));
+const TransporteEmbarquePage = lazy(() => import("@/pages/pwa/transporte/TransporteEmbarquePage"));
+const TransporteRotasPage = lazy(() => import("@/pages/pwa/transporte/TransporteRotasPage"));
+const TransportePassageirosPage = lazy(() => import("@/pages/pwa/transporte/TransportePassageirosPage"));
+const AlimentacaoHomePage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoHomePage"));
+const AlimentacaoScanPage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoScanPage"));
+const AlimentacaoBuscarPage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoBuscarPage"));
+const AlimentacaoJanelasPage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoJanelasPage"));
+const AlimentacaoListaConsumosPage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoListaConsumosPage"));
+const CoordenacaoHomePage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoHomePage"));
+const CoordenacaoAgendaPage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoAgendaPage"));
+const CoordenacaoPartidasPage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoPartidasPage"));
+const CoordenacaoPartidaDetalhePage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoPartidaDetalhePage"));
+const CoordenacaoResultadosPage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoResultadosPage"));
+const CoordenacaoEstatisticasPage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoEstatisticasPage"));
+const CoordenacaoConsultaPage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoConsultaPage"));
+const CoordenacaoIncidentePage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoIncidentePage"));
+const CoordenacaoIncidentesPage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoIncidentesPage"));
 const ResultadosHomePage = lazy(() => import("../pages/pwa/resultados/ResultadosHomePage"));
 const ResultadosPartidasPage = lazy(() => import("../pages/pwa/resultados/ResultadosPartidasPage"));
 const ResultadosPartidaFormPage = lazy(() => import("../pages/pwa/resultados/ResultadosPartidaFormPage"));
@@ -284,7 +285,8 @@ export const AppRoutes = () => (
             <Route path="alimentacao/consumo" element={<AdminAlimentacaoConsumoPage />} />
             <Route path="alimentacao/dashboard" element={<AdminAlimentacaoDashboardPage />} />
             <Route path="alimentacao/relatorios" element={<AdminAlimentacaoRelatoriosPage />} />
-            <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
+             <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
+             <Route path="alimentacao/locais" element={<AdminAlimentacaoLocaisPage />} />
             <Route path="transporte" element={<TransporteHubPage />} />
             <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
             <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
@@ -369,78 +371,74 @@ export const AppRoutes = () => (
         <Route path="registros/configuracao-osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ConfigOscPage /></ProtectedRoute>} />
         
         {/* Redirecionamentos operacionais */}
-        <Route path="credenciamento/*" element={<RedirectToEtapas />} />
-        <Route path="credenciamento-externo/*" element={<RedirectToEtapas />} />
-        <Route path="validacao-qr/*" element={<RedirectToEtapas />} />
-        <Route path="vouchers/*" element={<RedirectToEtapas />} />
-        <Route path="transporte/*" element={<RedirectToEtapas />} />
-        <Route path="alimentacao/*" element={<RedirectToEtapas />} />
-        <Route path="alojamento/*" element={<RedirectToEtapas />} />
-        <Route path="competicao/*" element={<RedirectToEtapas />} />
-        <Route path="protestos/*" element={<RedirectToEtapas />} />
-        <Route path="ocorrencias/*" element={<RedirectToEtapas />} />
-        <Route path="pesquisa/*" element={<RedirectToEtapas />} />
+        <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="vouchers" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="transporte" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "transporte"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="alimentacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="alojamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alojamento"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="competicao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="pesquisa" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
       </Route>
 
-      <Route path="/pwa" element={<PwaRouteGuard><PwaLayout /></PwaRouteGuard>}>
+      <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLayout /></PwaRouteGuard>}>
         <Route index element={<PwaLandingPage />} />
         <Route path="configuracao" element={<PwaSelectionFallback />} />
         <Route path="install" element={<PwaInstallPage />} />
-        <Route path=":module" element={<PwaModulePage />} />
+        <Route path="alojamento" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoHomePage /></PwaRouteGuard>} />
+        <Route path="alojamento/scan" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoScanPage /></PwaRouteGuard>} />
+        <Route path="alojamento/buscar" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoBuscarPage /></PwaRouteGuard>} />
+        <Route path="alojamento/ocupacao" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoOcupacaoPage /></PwaRouteGuard>} />
+        <Route path="alojamento/pessoa/:id" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoPessoaPage /></PwaRouteGuard>} />
+        <Route path="alojamento/incidentes" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoIncidentesPage /></PwaRouteGuard>} />
+        <Route path="alojamento/incidentes/novo" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoNovoIncidentePage /></PwaRouteGuard>} />
+        <Route path="alojamento/lista-completa" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoListaCompletaPage /></PwaRouteGuard>} />
+        <Route path="alojamento/unidade/:id/faltosos" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoUnidadeFaltososPage /></PwaRouteGuard>} />
 
-        <Route path="alojamento" element={<AlojamentoHomePage />} />
-        <Route path="alojamento/scan" element={<AlojamentoScanPage />} />
-        <Route path="alojamento/buscar" element={<AlojamentoBuscarPage />} />
-        <Route path="alojamento/ocupacao" element={<AlojamentoOcupacaoPage />} />
-        <Route path="alojamento/pessoa/:id" element={<AlojamentoPessoaPage />} />
-        <Route path="alojamento/incidentes" element={<AlojamentoIncidentesPage />} />
-        <Route path="alojamento/incidentes/novo" element={<AlojamentoNovoIncidentePage />} />
-        <Route path="alojamento/lista-completa" element={<AlojamentoListaCompletaPage />} />
-        <Route path="alojamento/unidade/:id/faltosos" element={<AlojamentoUnidadeFaltososPage />} />
+        <Route path="transporte" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteHomePage /></PwaRouteGuard>} />
+        <Route path="transporte/viagens" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteViagensPage /></PwaRouteGuard>} />
+        <Route path="transporte/scan" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteScanPage /></PwaRouteGuard>} />
+        <Route path="transporte/embarque/:tripId" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteEmbarquePage /></PwaRouteGuard>} />
+        <Route path="transporte/rotas" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteRotasPage /></PwaRouteGuard>} />
+        <Route path="transporte/passageiros/:tripId" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransportePassageirosPage /></PwaRouteGuard>} />
 
-        <Route path="transporte" element={<TransporteHomePage />} />
-        <Route path="transporte/viagens" element={<TransporteViagensPage />} />
-        <Route path="transporte/scan" element={<TransporteScanPage />} />
-        <Route path="transporte/embarque/:tripId" element={<TransporteEmbarquePage />} />
-        <Route path="transporte/rotas" element={<TransporteRotasPage />} />
-        <Route path="transporte/passageiros/:tripId" element={<TransportePassageirosPage />} />
+        <Route path="alimentacao" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoHomePage /></PwaRouteGuard>} />
+        <Route path="alimentacao/scan" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoScanPage /></PwaRouteGuard>} />
+        <Route path="alimentacao/buscar" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoBuscarPage /></PwaRouteGuard>} />
+        <Route path="alimentacao/janelas" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoJanelasPage /></PwaRouteGuard>} />
+        <Route path="alimentacao/consumos" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoListaConsumosPage /></PwaRouteGuard>} />
 
-        <Route path="alimentacao" element={<AlimentacaoHomePage />} />
-        <Route path="alimentacao/scan" element={<AlimentacaoScanPage />} />
-        <Route path="alimentacao/buscar" element={<AlimentacaoBuscarPage />} />
-        <Route path="alimentacao/janelas" element={<AlimentacaoJanelasPage />} />
-        <Route path="alimentacao/consumos" element={<AlimentacaoListaConsumosPage />} />
+        <Route path="coordenacao-tecnica" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/agenda" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoAgendaPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/partidas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoPartidasPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/partida/:id" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoPartidaDetalhePage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/resultados" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoResultadosPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/estatisticas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoEstatisticasPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/consulta" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoConsultaPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/incidentes" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoIncidentesPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/incidentes/novo" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoIncidentePage /></PwaRouteGuard>} />
 
-        <Route path="coordenacao" element={<CoordenacaoHomePage />} />
-        <Route path="coordenacao/agenda" element={<CoordenacaoAgendaPage />} />
-        <Route path="coordenacao/partidas" element={<CoordenacaoPartidasPage />} />
-        <Route path="coordenacao/partida/:id" element={<CoordenacaoPartidaDetalhePage />} />
-        <Route path="coordenacao/resultados" element={<CoordenacaoResultadosPage />} />
-        <Route path="coordenacao/estatisticas" element={<CoordenacaoEstatisticasPage />} />
-        <Route path="coordenacao/consulta" element={<CoordenacaoConsultaPage />} />
-        <Route path="coordenacao/incidentes" element={<CoordenacaoIncidentesPage />} />
-        <Route path="coordenacao/incidentes/novo" element={<CoordenacaoIncidentePage />} />
+        <Route path="resultados" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosHomePage /></PwaRouteGuard>} />
+        <Route path="resultados/partidas" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosPartidasPage /></PwaRouteGuard>} />
+        <Route path="resultados/partida/:id" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosPartidaFormPage /></PwaRouteGuard>} />
 
-        <Route path="resultados" element={<ResultadosHomePage />} />
-        <Route path="resultados/partidas" element={<ResultadosPartidasPage />} />
-        <Route path="resultados/partida/:id" element={<ResultadosPartidaFormPage />} />
+        <Route path="delegacao" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoHomePage /></PwaRouteGuard>} />
+        <Route path="delegacao/participantes" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoParticipantesPage /></PwaRouteGuard>} />
+        <Route path="delegacao/agenda" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoAgendaPage /></PwaRouteGuard>} />
+        <Route path="delegacao/logistica" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoLogisticaPage /></PwaRouteGuard>} />
+        <Route path="delegacao/locais" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoLocaisPage /></PwaRouteGuard>} />
+        <Route path="delegacao/protestos" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestosPage /></PwaRouteGuard>} />
+        <Route path="delegacao/protesto/novo" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
+        <Route path="delegacao/protesto/:id" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
 
         <Route path="arbitragem/perfil" element={<RefereePwaProfilePage />} />
-
-        <Route path="delegacao" element={<DelegacaoHomePage />} />
-        <Route path="delegacao/participantes" element={<DelegacaoParticipantesPage />} />
-        <Route path="delegacao/agenda" element={<DelegacaoAgendaPage />} />
-        <Route path="delegacao/logistica" element={<DelegacaoLogisticaPage />} />
-        <Route path="delegacao/locais" element={<DelegacaoLocaisPage />} />
-        <Route path="delegacao/protestos" element={<DelegacaoProtestosPage />} />
-        <Route path="delegacao/protestos/novo" element={<DelegacaoProtestoNovoPage />} />
-        <Route path="delegacao/protestos/:id" element={<DelegacaoProtestoDetalhePage />} />
-
-        <Route path="debug" element={<PwaDebugPage />} />
-        <Route path="qr-diagnostico" element={<QrDiagnosticoPage />} />
-        <Route path="vincular-credencial" element={<VincularCredencialPage />} />
+        <Route path="credenciamento" element={<Navigate to="vincular" replace />} />
+        <Route path="credenciamento/vincular" element={<VincularCredencialPage />} />
         
-        {/* Catch-all for /pwa/* routes */}
+        <Route path="debug" element={<PwaDebugPage />} />
+        <Route path="diagnostico/qr" element={<QrDiagnosticoPage />} />
+
+        {/* Catch-all for modules not yet explicitly defined or "coming soon" */}
+        <Route path=":module" element={<PwaModulePage />} />
         <Route path="*" element={<PwaNotFoundHandler />} />
       </Route>
 
