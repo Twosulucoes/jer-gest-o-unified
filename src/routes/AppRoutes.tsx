@@ -124,6 +124,7 @@ const AdminAlimentacaoPrevisaoPage = lazy(() => import("../pages/admin/Alimentac
 const AdminAlimentacaoTiposPage = lazy(() => import("../pages/admin/AlimentacaoTiposPage"));
 const AdminAlimentacaoDashboardPage = lazy(() => import("../pages/admin/AlimentacaoDashboardPage"));
 const AdminAlimentacaoRelatoriosPage = lazy(() => import("../pages/admin/AlimentacaoRelatoriosPage"));
+const AdminAlimentacaoLocaisPage = lazy(() => import("../pages/admin/AlimentacaoLocaisPage"));
 
 // Alojamento Subpages (Admin)
 const AdminAlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
