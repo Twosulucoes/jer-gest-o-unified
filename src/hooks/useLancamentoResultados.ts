@@ -257,7 +257,10 @@ export function useAdicionarArbitro(matchId: string) {
       qc.invalidateQueries({ queryKey: ["arbitros-partida", matchId] });
       toast.success("Árbitro adicionado");
     },
-    onError: () => toast.error("Erro ao adicionar árbitro"),
+    onError: (error: any) => {
+      console.error(error);
+      toast.error("Erro ao adicionar árbitro");
+    },
   });
 }
 
@@ -272,7 +275,10 @@ export function useRemoverArbitro(matchId: string) {
       qc.invalidateQueries({ queryKey: ["arbitros-partida", matchId] });
       toast.success("Árbitro removido");
     },
-    onError: () => toast.error("Erro ao remover árbitro"),
+    onError: (error: any) => {
+      console.error(error);
+      toast.error("Erro ao remover árbitro");
+    },
   });
 }
 
@@ -332,7 +338,10 @@ export function useSalvarPlacar(matchId: string) {
       qc.invalidateQueries({ queryKey: ["partidas-modalidade"] });
       toast.success("Placar salvo com sucesso");
     },
-    onError: () => toast.error("Erro ao salvar placar"),
+    onError: (error: any) => {
+      console.error(error);
+      toast.error("Erro ao salvar placar");
+    },
   });
 }
 
@@ -435,7 +444,10 @@ export function useUploadAnexo(matchId: string) {
       qc.invalidateQueries({ queryKey: ["anexos-partida", matchId] });
       toast.success("Arquivo anexado");
     },
-    onError: () => toast.error("Erro ao anexar arquivo"),
+    onError: (error: any) => {
+      console.error(error);
+      toast.error("Erro ao anexar arquivo");
+    },
   });
 }
 
@@ -451,6 +463,9 @@ export function useDeleteAnexo(matchId: string) {
       qc.invalidateQueries({ queryKey: ["anexos-partida", matchId] });
       toast.success("Arquivo removido");
     },
-    onError: () => toast.error("Erro ao remover arquivo"),
+    onError: (error: any) => {
+      console.error(error);
+      toast.error("Erro ao remover arquivo");
+    },
   });
 }
