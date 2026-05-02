@@ -96,16 +96,29 @@ Deno.serve(async (req) => {
     switch (action) {
       case "list_users": {
         // List all users from auth + profiles
-        const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 500 });
-        if (error) return jsonResponse({ error: error.message }, 500);
+        // Note: listUsers is paginated. For large datasets, this might need handling.
+        const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+        if (error) {
+          console.error("Error listing users from Auth:", error);
+          return jsonResponse({ error: error.message }, 500);
+        }
 
-        const { data: profiles } = await adminClient
+        const { data: profiles, error: profilesErr } = await adminClient
           .from("profiles")
           .select("id, full_name, active");
+        
+        if (profilesErr) {
+          console.error("Error listing profiles:", profilesErr);
+          // Don't fail completely if profiles fail, but log it
+        }
 
-        const { data: allRoles } = await adminClient
+        const { data: allRoles, error: rolesErr } = await adminClient
           .from("user_roles")
           .select("user_id, role");
+        
+        if (rolesErr) {
+          console.error("Error listing roles:", rolesErr);
+        }
 
         const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]));
         const rolesMap = new Map<string, string[]>();
