@@ -22,6 +22,7 @@ import {
   rpcRegisterPresence,
   getDeviceId, 
   getSelectedFacility,
+  setSelectedFacility,
   getSelectedUnit,
   setSelectedUnit
 } from "@/lib/alojamentoRpc";
