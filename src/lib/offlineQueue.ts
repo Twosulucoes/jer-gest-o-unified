@@ -114,16 +114,22 @@ export const syncOfflineQueue = async () => {
     } catch (err: unknown) {
       const error = err as Error;
       console.error(`Error syncing item ${item.id}:`, error);
-      updatedQueue[idx].attempts += 1;
-      updatedQueue[idx].lastError = error.message || "Erro de conexão";
       
-      if (updatedQueue[idx].attempts >= 5) {
-        updatedQueue[idx].status = "conflict";
-        updatedQueue[idx].lastError = "Limite de tentativas excedido.";
-      } else {
-        updatedQueue[idx].status = "failed";
+      const updatedQueueState = getOfflineQueue();
+      const currentIdx = updatedQueueState.findIndex(i => i.id === item.id);
+      
+      if (currentIdx !== -1) {
+        updatedQueueState[currentIdx].attempts += 1;
+        updatedQueueState[currentIdx].lastError = error.message || "Erro de conexão";
+        
+        if (updatedQueueState[currentIdx].attempts >= 5) {
+          updatedQueueState[currentIdx].status = "conflict";
+          updatedQueueState[currentIdx].lastError = "Limite de tentativas excedido.";
+        } else {
+          updatedQueueState[currentIdx].status = "failed";
+        }
+        saveOfflineQueue(updatedQueueState);
       }
-      saveOfflineQueue(updatedQueue);
       errorCount++;
     }
   }
