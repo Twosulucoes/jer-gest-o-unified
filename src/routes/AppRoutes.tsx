@@ -384,7 +384,7 @@ export const AppRoutes = () => (
         <Route path="pesquisa/*" element={<RedirectToEtapas />} />
       </Route>
 
-      <Route path="/pwa" element={<PwaRouteGuard><PwaLayout /></PwaRouteGuard>}>
+      <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLayout /></PwaRouteGuard>}>
         <Route index element={<PwaLandingPage />} />
         <Route path="configuracao" element={<PwaSelectionFallback />} />
         <Route path="install" element={<PwaInstallPage />} />
