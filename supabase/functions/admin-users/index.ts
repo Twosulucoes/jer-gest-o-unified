@@ -33,6 +33,10 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error("Missing environment variables SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    }
+
     // Verify caller is authenticated
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -46,17 +50,16 @@ Deno.serve(async (req) => {
 
     // Verify caller: try getClaims first (signing-keys), fallback to getUser via user-scoped client
     const token = authHeader.replace("Bearer ", "");
-    let callerId: string | null = null;
-    let callerEmail: string | undefined;
-
-    // Standard way to get user from token in Edge Functions
+    
+    // Check if it's a valid token
     const { data: { user: callerUser }, error: callerErr } = await adminClient.auth.getUser(token);
     if (callerErr || !callerUser) {
-      return jsonResponse({ error: "NOT_AUTHENTICATED" }, 401);
+      console.error("Auth verification failed:", callerErr);
+      return jsonResponse({ error: "NOT_AUTHENTICATED", details: callerErr?.message }, 401);
     }
-    callerId = callerUser.id;
-    callerEmail = callerUser.email;
-
+    
+    const callerId = callerUser.id;
+    const callerEmail = callerUser.email;
     const caller = { id: callerId, email: callerEmail };
 
     // Check permissions using admin client
@@ -96,16 +99,29 @@ Deno.serve(async (req) => {
     switch (action) {
       case "list_users": {
         // List all users from auth + profiles
-        const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 500 });
-        if (error) return jsonResponse({ error: error.message }, 500);
+        // Note: listUsers is paginated. For large datasets, this might need handling.
+        const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+        if (error) {
+          console.error("Error listing users from Auth:", error);
+          return jsonResponse({ error: error.message }, 500);
+        }
 
-        const { data: profiles } = await adminClient
+        const { data: profiles, error: profilesErr } = await adminClient
           .from("profiles")
           .select("id, full_name, active");
+        
+        if (profilesErr) {
+          console.error("Error listing profiles:", profilesErr);
+          // Don't fail completely if profiles fail, but log it
+        }
 
-        const { data: allRoles } = await adminClient
+        const { data: allRoles, error: rolesErr } = await adminClient
           .from("user_roles")
           .select("user_id, role");
+        
+        if (rolesErr) {
+          console.error("Error listing roles:", rolesErr);
+        }
 
         const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]));
         const rolesMap = new Map<string, string[]>();
@@ -192,29 +208,46 @@ Deno.serve(async (req) => {
         }
 
         // Upsert profile
-        await adminClient.from("profiles").upsert({
+        const { error: profileErr } = await adminClient.from("profiles").upsert({
           id: userId,
           full_name: full_name || null,
           active: true,
         }, { onConflict: "id" });
 
+        if (profileErr) {
+          console.error("Error upserting profile:", profileErr);
+          return jsonResponse({ error: `Erro ao criar perfil: ${profileErr.message}` }, 500);
+        }
+
         // Insert all roles
         for (const r of targetRoles) {
-          await adminClient.from("user_roles").upsert({
+          const { error: roleErr } = await adminClient.from("user_roles").upsert({
             user_id: userId,
             role: r,
           }, { onConflict: "user_id,role" });
+          
+          if (roleErr) {
+            console.error(`Error assigning role ${r}:`, roleErr);
+            return jsonResponse({ error: `Erro ao atribuir perfil ${r}: ${roleErr.message}` }, 500);
+          }
         }
         
         // If one of the roles is 'arbitragem', ensure they have a record in referee_profiles
         if (targetRoles.includes("arbitragem")) {
-          await adminClient.from("referee_profiles").upsert({
+          const { error: refereeErr } = await adminClient.from("referee_profiles").upsert({
             user_id: userId,
             full_name: full_name || email.split('@')[0],
             email: email,
             phone: phone || null,
             status: "Ativo"
           }, { onConflict: "user_id" });
+
+          if (refereeErr) {
+            console.error("Error creating referee profile:", refereeErr);
+            // We don't necessarily want to fail the whole invite if just the referee profile fails
+            // but for now let's be strict to ensure data integrity
+            return jsonResponse({ error: `Erro ao criar cadastro de árbitro: ${refereeErr.message}` }, 500);
+          }
         }
 
         // Log audit
@@ -413,6 +446,10 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: `Unknown action: ${action}` }, 400);
     }
   } catch (err) {
-    return jsonResponse({ error: (err as Error).message }, 500);
+    console.error("Fatal error in admin-users edge function:", err);
+    return jsonResponse({ 
+      error: (err as Error).message,
+      stack: (err as Error).stack 
+    }, 500);
   }
 });
