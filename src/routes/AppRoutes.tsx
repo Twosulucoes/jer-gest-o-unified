@@ -285,7 +285,8 @@ export const AppRoutes = () => (
             <Route path="alimentacao/consumo" element={<AdminAlimentacaoConsumoPage />} />
             <Route path="alimentacao/dashboard" element={<AdminAlimentacaoDashboardPage />} />
             <Route path="alimentacao/relatorios" element={<AdminAlimentacaoRelatoriosPage />} />
-            <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
+             <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
+             <Route path="alimentacao/locais" element={<AdminAlimentacaoLocaisPage />} />
             <Route path="transporte" element={<TransporteHubPage />} />
             <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
             <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
