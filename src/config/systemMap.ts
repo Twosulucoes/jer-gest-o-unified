@@ -171,7 +171,7 @@ export const systemMap: SystemMapGroup[] = [
         route: "/admin/pessoas/duplicidades",
         pageFile: "src/pages/admin/DuplicidadesPessoasPage.tsx",
         description: "Detecta e mescla pessoas duplicadas (mesmo CPF ou nome+nascimento), preservando histórico de participações e vouchers.",
-        roles: ["admin", "secretaria"],
+        roles: ["admin", "secretaria", "super_admin"],
         status: ModuleStatus.DONE,
         dataSources: ["people", "participants", "service_vouchers"],
         gaps: [],
