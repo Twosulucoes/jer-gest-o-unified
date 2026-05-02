@@ -101,31 +101,32 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
     setImporting(true);
     const updated = [...rows];
     
-    // Batch in groups of 3 to avoid overloading Edge Functions
-    const BATCH_SIZE = 3;
-    for (let i = 0; i < updated.length; i += BATCH_SIZE) {
-      const batch = updated.slice(i, i + BATCH_SIZE);
-      const promises = batch.map(async (row, idx) => {
-        const globalIdx = i + idx;
-        if (row.status === "ok") return;
-        try {
-          await callAdminUsers("invite_user", {
-            email: row.email,
-            full_name: row.nome || undefined,
-            roles: ["arbitragem"],
-            phone: row.telefone,
-          });
-          updated[globalIdx] = { ...row, status: "ok" };
-        } catch (err: any) {
-          const msg: string = err.message || "Erro";
-          // If the message says the user already exists, it might be that the Edge Function 
-          // failed to handle it OR it returned a 500. But with my update, it should return success.
-          // However, we keep a check here just in case.
-          const isDup = msg.toLowerCase().includes("already") || msg.toLowerCase().includes("existe") || msg.toLowerCase().includes("duplicate");
-          updated[globalIdx] = { ...row, status: isDup ? "duplicate" : "error", error: msg };
-        }
-      });
-      await Promise.all(promises);
+    // Process individually instead of batching to ensure reliability
+    for (let i = 0; i < updated.length; i++) {
+      const row = updated[i];
+      if (row.status === "ok") continue;
+      
+      try {
+        await callAdminUsers("invite_user", {
+          email: row.email,
+          full_name: row.nome || undefined,
+          roles: ["arbitragem"],
+          phone: row.telefone,
+        });
+        updated[i] = { ...row, status: "ok" };
+      } catch (err: any) {
+        const msg: string = err.message || "Erro";
+        const isDup = msg.toLowerCase().includes("already") || 
+                    msg.toLowerCase().includes("existe") || 
+                    msg.toLowerCase().includes("duplicate");
+        
+        updated[i] = { 
+          ...row, 
+          status: isDup ? "duplicate" : "error", 
+          error: msg 
+        };
+      }
+      // Update UI progressively
       setRows([...updated]);
     }
 
