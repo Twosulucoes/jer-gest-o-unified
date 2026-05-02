@@ -52,6 +52,13 @@ export function usePwaAudit(moduleName: string, currentModuleEventId?: string | 
         }
       } catch (err) {
         console.error("Failed to log PWA audit:", err);
+        // Silent reporting for background audit failures
+        reportError({
+          message: `Audit failed for ${moduleName}`,
+          severity: "warning",
+          context: { err, moduleName },
+          silent: true
+        });
       }
     };
 
@@ -86,6 +93,12 @@ export function usePwaAudit(moduleName: string, currentModuleEventId?: string | 
         });
       } catch (err) {
         console.error("Failed to log scope violation:", err);
+        reportError({
+          message: `Scope violation logging failed for ${moduleName}`,
+          severity: "warning",
+          context: { err, moduleName },
+          silent: true
+        });
       }
       return false;
     }

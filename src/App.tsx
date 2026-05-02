@@ -25,17 +25,25 @@ installErrorReporter();
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: (failureCount, error: unknown) => {
-        const err = error as { status?: number };
-        if (err?.status === 404 || err?.status === 403) return false;
+      retry: (failureCount, error: any) => {
+        if (error?.status === 404 || error?.status === 403) return false;
         return failureCount < 2;
       },
       staleTime: 1000 * 60 * 5,
       gcTime: 1000 * 60 * 30,
+      throwOnError: (error: any) => {
+        // Only throw critical errors to the ErrorBoundary
+        return error?.status === 500 || error?.severity === "critical";
+      }
     },
     mutations: {
-      onError: (error: unknown) => {
+      onError: (error: any) => {
         console.error("Mutation error:", error);
+        reportError({
+          message: error.message || "Mutation failed",
+          severity: "error",
+          context: { error }
+        });
       }
     }
   },

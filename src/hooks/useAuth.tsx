@@ -80,10 +80,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const userData = await fetchUserData(nextSession.user.id);
         if (!isMounted) return;
-        // Verify we're still processing the same user (no newer session arrived)
         if (processingRef.current !== nextUserId) return;
         setRoles(userData.roles);
         setProfile(userData.profile);
+      } catch (err) {
+        console.error("Failed to fetch user data:", err);
+        // On partial failure, we still want to show the app with basic user info
+        setRoles([]);
+        setProfile(null);
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -115,12 +119,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchUserData]);
 
   const signOut = useCallback(async () => {
-    processingRef.current = null;
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setRoles([]);
-    setProfile(null);
+    try {
+      processingRef.current = null;
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("Sign out error:", err);
+    } finally {
+      setUser(null);
+      setSession(null);
+      setRoles([]);
+      setProfile(null);
+    }
   }, []);
 
   const hasRole = useCallback((role: AppRole) => roles.includes(role), [roles]);

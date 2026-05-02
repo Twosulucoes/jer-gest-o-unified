@@ -37,7 +37,11 @@ export function reportError(payload: {
   stack?: string;
   severity?: "info" | "warning" | "error" | "critical";
   context?: Record<string, unknown>;
+  silent?: boolean;
 }) {
+  if (!payload.silent && payload.severity === "critical") {
+    // We could trigger a global state update or toast here if needed
+  }
   queue.push({
     source: "frontend",
     severity: payload.severity ?? "error",
