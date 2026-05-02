@@ -155,9 +155,14 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled: enabled && windowIds.length > 0,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("meal_consumptions" as any)
+          const { data, error } = await supabase.from("meal_consumptions" as any)
             .select("id, consumed_at, meal_window_id")
             .in("meal_window_id", windowIds);
+          
+          if (error) {
+            console.error("Error fetching meal consumptions for stage dashboard:", error);
+            throw error;
+          }
           return (data ?? []) as any[];
         }, []),
       }
