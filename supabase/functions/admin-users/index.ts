@@ -208,29 +208,46 @@ Deno.serve(async (req) => {
         }
 
         // Upsert profile
-        await adminClient.from("profiles").upsert({
+        const { error: profileErr } = await adminClient.from("profiles").upsert({
           id: userId,
           full_name: full_name || null,
           active: true,
         }, { onConflict: "id" });
 
+        if (profileErr) {
+          console.error("Error upserting profile:", profileErr);
+          return jsonResponse({ error: `Erro ao criar perfil: ${profileErr.message}` }, 500);
+        }
+
         // Insert all roles
         for (const r of targetRoles) {
-          await adminClient.from("user_roles").upsert({
+          const { error: roleErr } = await adminClient.from("user_roles").upsert({
             user_id: userId,
             role: r,
           }, { onConflict: "user_id,role" });
+          
+          if (roleErr) {
+            console.error(`Error assigning role ${r}:`, roleErr);
+            return jsonResponse({ error: `Erro ao atribuir perfil ${r}: ${roleErr.message}` }, 500);
+          }
         }
         
         // If one of the roles is 'arbitragem', ensure they have a record in referee_profiles
         if (targetRoles.includes("arbitragem")) {
-          await adminClient.from("referee_profiles").upsert({
+          const { error: refereeErr } = await adminClient.from("referee_profiles").upsert({
             user_id: userId,
             full_name: full_name || email.split('@')[0],
             email: email,
             phone: phone || null,
             status: "Ativo"
           }, { onConflict: "user_id" });
+
+          if (refereeErr) {
+            console.error("Error creating referee profile:", refereeErr);
+            // We don't necessarily want to fail the whole invite if just the referee profile fails
+            // but for now let's be strict to ensure data integrity
+            return jsonResponse({ error: `Erro ao criar cadastro de árbitro: ${refereeErr.message}` }, 500);
+          }
         }
 
         // Log audit
