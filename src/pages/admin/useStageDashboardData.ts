@@ -62,9 +62,15 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("competition_matches" as any)
+          // Use table name directly without cast as any if possible, or ensure correct schema
+          const { data, error } = await supabase.from("competition_matches")
             .select("id, status, sport_event_id, start_time, match_date, sport_events(name, sports(name))")
             .eq("event_stage_id", stageId!);
+          
+          if (error) {
+            console.error("Error fetching matches for stage dashboard:", error);
+            throw error;
+          }
           return (data ?? []) as any[];
         }, []),
       },
