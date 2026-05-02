@@ -130,6 +130,18 @@ export const systemMap: SystemMapGroup[] = [
         nextActions: [],
       },
       {
+        id: "importacao-pendencias",
+        label: "Pendências de Importação",
+        route: "/admin/importacao/pendencias",
+        pageFile: "src/pages/admin/ImportacaoPendenciasPage.tsx",
+        description: "Visualiza e resolve erros de linhas que não puderam ser processadas durante a importação.",
+        roles: ["admin", "secretaria"],
+        status: ModuleStatus.DONE,
+        dataSources: ["import_row_errors"],
+        gaps: [],
+        nextActions: [],
+      },
+      {
         id: "participantes",
         label: "Participantes",
         route: "/admin/participantes",
