@@ -1,4 +1,5 @@
 import { dbTelemetry, DbOp } from "./dbTelemetry";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 /**
  * Creates a fetch interceptor for Supabase to automatically log database operations.
