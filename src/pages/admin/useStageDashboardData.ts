@@ -129,7 +129,11 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.rpc("get_unhandled_referee_indisponibilities", { p_etapa_id: stageId });
+          const { data, error } = await supabase.rpc("get_unhandled_referee_indisponibilities", { p_etapa_id: stageId });
+          if (error) {
+            console.error("Error fetching referee indisponibilities:", error);
+            throw error;
+          }
           return (data ?? []) as any[];
         }, []),
       },
