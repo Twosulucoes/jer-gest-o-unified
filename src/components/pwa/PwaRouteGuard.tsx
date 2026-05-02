@@ -108,9 +108,8 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
       return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_event" }} replace />;
     }
 
-    // Identifica se o caminho atual é uma "página inicial de módulo" que geralmente lista locais/etapas
-    const isModuleHome = location.pathname.split('/').length === 3;
-    const moduleRequireStage = requireStage && !isModuleHome;
+    // All operational Pwa routes now strictly require a stage
+    const moduleRequireStage = requireStage;
 
     if (moduleRequireStage && !activeStageId) {
       logPwaEvent({
