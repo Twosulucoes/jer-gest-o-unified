@@ -82,7 +82,7 @@ export default function TransporteViagensPage() {
 
         {trips.map((trip) => (
           <Card key={trip.id} className="cursor-pointer hover:bg-accent/50 active:scale-[0.98] transition-all"
-            onClick={() => navigate(`/pwa/transporte/embarque?tripId=${trip.id}`)}>
+            onClick={() => navigate(`/pwa/transporte/embarque/${trip.id}`)}>
             <CardContent className="p-3 space-y-1">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-sm">

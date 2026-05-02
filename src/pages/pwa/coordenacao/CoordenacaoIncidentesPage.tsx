@@ -210,7 +210,7 @@ export default function CoordenacaoIncidentesPage() {
           <Card 
             key={inc.id} 
             className="cursor-pointer hover:bg-accent/50 active:scale-[0.98] transition-all border-border/60 bg-card/95 shadow-app-sm"
-            onClick={() => navigate(`/pwa/coordenacao-tecnica/incidente/${inc.id}`)}
+            onClick={() => navigate(`/pwa/coordenacao-tecnica/incidentes/${inc.id}`)}
           >
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center justify-between">
