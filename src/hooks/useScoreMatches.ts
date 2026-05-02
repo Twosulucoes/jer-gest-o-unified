@@ -123,11 +123,14 @@ export function useModalitySchools(sportEventId: string | undefined) {
       if (error) throw error;
       
       // Map to a simpler structure: { team_id, school_id, school_name }
-      return (data || []).map(t => ({
-        team_id: t.id,
-        school_id: t.delegation_id,
-        school_name: (t.delegations as any)?.institutions?.name || "Sem Nome"
-      }));
+      return (data || []).map(t => {
+        const institutions = (t.delegations as any)?.institutions;
+        return {
+          team_id: t.id,
+          school_id: t.delegation_id,
+          school_name: Array.isArray(institutions) ? institutions[0]?.name : institutions?.name || "Sem Nome"
+        };
+      });
     },
   });
 }
