@@ -377,7 +377,7 @@ export const AppRoutes = () => (
         <Route path="alimentacao/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="alojamento/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alojamento"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="competicao/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RedirectToEtapas /></ProtectedRoute>} />
-        <Route path="pesquisa/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "pesquisa"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="pesquisa/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
       </Route>
 
       <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLayout /></PwaRouteGuard>}>
