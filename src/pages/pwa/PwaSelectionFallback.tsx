@@ -192,7 +192,7 @@ const PwaSelectionFallback = () => {
           <div className="grid grid-cols-2 gap-3 w-full">
             <Button 
               variant="outline" 
-              onClick={() => navigate("/pwa")} 
+              onClick={() => navigate("/pwa", { state: { fromMenu: true } })} 
               className="h-12 rounded-xl border-muted-foreground/20"
             >
               Início PWA
