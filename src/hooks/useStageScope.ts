@@ -65,7 +65,7 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
     queryKey: ["event_stage_meta", stageId, eventId],
     enabled: !!stageId && !!eventId,
     queryFn: async () => {
-      const { data, error } = await (supabase.from("event_stages" as never) as any)
+      const { data, error } = await supabase.from("event_stages")
         .select("id,name,slug,kind,status,starts_at,ends_at")
         .eq("id", stageId)
         .eq("event_id", eventId)
@@ -89,7 +89,7 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
     queryFn: async () => {
       const [pesRows, pseRows] = await Promise.all([
         paginateAll<{ participant_id: string }>((from, to) =>
-          (supabase.from("participant_event_stages" as never) as any)
+          supabase.from("participant_event_stages")
             .select("participant_id")
             .eq("event_stage_id", stageId)
             .eq("event_id", eventId)
@@ -140,8 +140,8 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
         if (pseErr) throw pseErr;
         if (teamErr) throw teamErr;
 
-        (pse ?? []).forEach((row: any) => participantSportEventIds.push(row.id as string));
-        (teamMembers ?? []).forEach((row: any) => {
+        (pse ?? []).forEach((row) => participantSportEventIds.push(row.id));
+        (teamMembers ?? []).forEach((row) => {
           if (row.team_id) teamIdSet.add(row.team_id as string);
         });
       }
@@ -152,7 +152,7 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
           .select("match_id")
           .in("participant_sport_event_id", chunk);
         if (error) throw error;
-        (data ?? []).forEach((row: any) => matchSet.add(row.match_id));
+        (data ?? []).forEach((row) => { if (row.match_id) matchSet.add(row.match_id); });
       }
 
       for (const chunk of chunkArray(Array.from(teamIdSet), FILTER_CHUNK_SIZE)) {
@@ -161,7 +161,7 @@ export function useStageScope(options: UseStageScopeOptions = {}) {
           .select("match_id")
           .in("team_id", chunk);
         if (error) throw error;
-        (data ?? []).forEach((row: any) => matchSet.add(row.match_id));
+        (data ?? []).forEach((row) => { if (row.match_id) matchSet.add(row.match_id); });
       }
 
       return matchSet;
