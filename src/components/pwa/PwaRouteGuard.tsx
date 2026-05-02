@@ -134,9 +134,15 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
         event_id: activeEventId,
         stage_id: activeStageId
       });
+      
+      // Se não for autorizado para o sub-módulo, manda de volta para a home do PWA
+      if (location.pathname !== "/pwa" && location.pathname !== "/pwa/") {
+        return <Navigate to="/pwa" replace />;
+      }
+      
+      // Se nem para a home do PWA ele é autorizado (improvável), vai para negado
       return <Navigate to="/acesso-negado" replace />;
     }
-
   }
 
   // Resource Ownership Check: For specific routes like incidents, ensure it belongs to the active event
