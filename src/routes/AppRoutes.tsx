@@ -388,51 +388,51 @@ export const AppRoutes = () => (
         <Route index element={<PwaLandingPage />} />
         <Route path="configuracao" element={<PwaSelectionFallback />} />
         <Route path="install" element={<PwaInstallPage />} />
-        <Route path="alojamento" element={<AlojamentoHomePage />} />
-        <Route path="alojamento/scan" element={<AlojamentoScanPage />} />
-        <Route path="alojamento/buscar" element={<AlojamentoBuscarPage />} />
-        <Route path="alojamento/ocupacao" element={<AlojamentoOcupacaoPage />} />
-        <Route path="alojamento/pessoa/:id" element={<AlojamentoPessoaPage />} />
-        <Route path="alojamento/incidentes" element={<AlojamentoIncidentesPage />} />
-        <Route path="alojamento/incidentes/novo" element={<AlojamentoNovoIncidentePage />} />
-        <Route path="alojamento/lista-completa" element={<AlojamentoListaCompletaPage />} />
-        <Route path="alojamento/unidade/:id/faltosos" element={<AlojamentoUnidadeFaltososPage />} />
+        <Route path="alojamento" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoHomePage /></PwaRouteGuard>} />
+        <Route path="alojamento/scan" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoScanPage /></PwaRouteGuard>} />
+        <Route path="alojamento/buscar" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoBuscarPage /></PwaRouteGuard>} />
+        <Route path="alojamento/ocupacao" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoOcupacaoPage /></PwaRouteGuard>} />
+        <Route path="alojamento/pessoa/:id" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoPessoaPage /></PwaRouteGuard>} />
+        <Route path="alojamento/incidentes" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoIncidentesPage /></PwaRouteGuard>} />
+        <Route path="alojamento/incidentes/novo" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoNovoIncidentePage /></PwaRouteGuard>} />
+        <Route path="alojamento/lista-completa" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoListaCompletaPage /></PwaRouteGuard>} />
+        <Route path="alojamento/unidade/:id/faltosos" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoUnidadeFaltososPage /></PwaRouteGuard>} />
 
-        <Route path="transporte" element={<TransporteHomePage />} />
-        <Route path="transporte/viagens" element={<TransporteViagensPage />} />
-        <Route path="transporte/scan" element={<TransporteScanPage />} />
-        <Route path="transporte/embarque/:tripId" element={<TransporteEmbarquePage />} />
-        <Route path="transporte/rotas" element={<TransporteRotasPage />} />
-        <Route path="transporte/passageiros/:tripId" element={<TransportePassageirosPage />} />
+        <Route path="transporte" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteHomePage /></PwaRouteGuard>} />
+        <Route path="transporte/viagens" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteViagensPage /></PwaRouteGuard>} />
+        <Route path="transporte/scan" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteScanPage /></PwaRouteGuard>} />
+        <Route path="transporte/embarque/:tripId" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteEmbarquePage /></PwaRouteGuard>} />
+        <Route path="transporte/rotas" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteRotasPage /></PwaRouteGuard>} />
+        <Route path="transporte/passageiros/:tripId" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransportePassageirosPage /></PwaRouteGuard>} />
 
-        <Route path="alimentacao" element={<AlimentacaoHomePage />} />
-        <Route path="alimentacao/scan" element={<AlimentacaoScanPage />} />
-        <Route path="alimentacao/buscar" element={<AlimentacaoBuscarPage />} />
-        <Route path="alimentacao/janelas" element={<AlimentacaoJanelasPage />} />
-        <Route path="alimentacao/consumos" element={<AlimentacaoListaConsumosPage />} />
+        <Route path="alimentacao" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoHomePage /></PwaRouteGuard>} />
+        <Route path="alimentacao/scan" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoScanPage /></PwaRouteGuard>} />
+        <Route path="alimentacao/buscar" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoBuscarPage /></PwaRouteGuard>} />
+        <Route path="alimentacao/janelas" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoJanelasPage /></PwaRouteGuard>} />
+        <Route path="alimentacao/consumos" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoListaConsumosPage /></PwaRouteGuard>} />
 
-        <Route path="coordenacao-tecnica" element={<CoordenacaoHomePage />} />
-        <Route path="coordenacao-tecnica/agenda" element={<CoordenacaoAgendaPage />} />
-        <Route path="coordenacao-tecnica/partidas" element={<CoordenacaoPartidasPage />} />
-        <Route path="coordenacao-tecnica/partida/:id" element={<CoordenacaoPartidaDetalhePage />} />
-        <Route path="coordenacao-tecnica/resultados" element={<CoordenacaoResultadosPage />} />
-        <Route path="coordenacao-tecnica/estatisticas" element={<CoordenacaoEstatisticasPage />} />
-        <Route path="coordenacao-tecnica/consulta" element={<CoordenacaoConsultaPage />} />
-        <Route path="coordenacao-tecnica/incidentes" element={<CoordenacaoIncidentesPage />} />
-        <Route path="coordenacao-tecnica/incidentes/novo" element={<CoordenacaoIncidentePage />} />
+        <Route path="coordenacao-tecnica" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/agenda" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoAgendaPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/partidas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoPartidasPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/partida/:id" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoPartidaDetalhePage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/resultados" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoResultadosPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/estatisticas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoEstatisticasPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/consulta" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoConsultaPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/incidentes" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoIncidentesPage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/incidentes/novo" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoIncidentePage /></PwaRouteGuard>} />
 
-        <Route path="resultados" element={<ResultadosHomePage />} />
-        <Route path="resultados/partidas" element={<ResultadosPartidasPage />} />
-        <Route path="resultados/partida/:id" element={<ResultadosPartidaFormPage />} />
+        <Route path="resultados" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosHomePage /></PwaRouteGuard>} />
+        <Route path="resultados/partidas" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosPartidasPage /></PwaRouteGuard>} />
+        <Route path="resultados/partida/:id" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosPartidaFormPage /></PwaRouteGuard>} />
 
-        <Route path="delegacao" element={<DelegacaoHomePage />} />
-        <Route path="delegacao/participantes" element={<DelegacaoParticipantesPage />} />
-        <Route path="delegacao/agenda" element={<DelegacaoAgendaPage />} />
-        <Route path="delegacao/logistica" element={<DelegacaoLogisticaPage />} />
-        <Route path="delegacao/locais" element={<DelegacaoLocaisPage />} />
-        <Route path="delegacao/protestos" element={<DelegacaoProtestosPage />} />
-        <Route path="delegacao/protesto/novo" element={<DelegacaoProtestoNovoPage />} />
-        <Route path="delegacao/protesto/:id" element={<DelegacaoProtestoDetalhePage />} />
+        <Route path="delegacao" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoHomePage /></PwaRouteGuard>} />
+        <Route path="delegacao/participantes" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoParticipantesPage /></PwaRouteGuard>} />
+        <Route path="delegacao/agenda" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoAgendaPage /></PwaRouteGuard>} />
+        <Route path="delegacao/logistica" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoLogisticaPage /></PwaRouteGuard>} />
+        <Route path="delegacao/locais" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoLocaisPage /></PwaRouteGuard>} />
+        <Route path="delegacao/protestos" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestosPage /></PwaRouteGuard>} />
+        <Route path="delegacao/protesto/novo" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
+        <Route path="delegacao/protesto/:id" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
 
         <Route path="arbitragem/perfil" element={<RefereePwaProfilePage />} />
         <Route path="credenciamento" element={<Navigate to="vincular" replace />} />
