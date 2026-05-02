@@ -84,10 +84,15 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data } = await supabase.from("lodging_units" as any)
+          const { data, error } = await supabase.from("lodging_units" as any)
             .select("id, capacity")
             .eq("event_stage_id", stageId!)
             .eq("is_active", true);
+          
+          if (error) {
+            console.error("Error fetching lodging units for stage dashboard:", error);
+            throw error;
+          }
           return (data ?? []) as any[];
         }, []),
       },
