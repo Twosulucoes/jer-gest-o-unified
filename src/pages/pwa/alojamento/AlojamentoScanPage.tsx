@@ -74,11 +74,13 @@ export default function AlojamentoScanPage() {
   const [prefs, setPrefs] = useState<ScanPreferences>(() => loadScanPreferences(MODULE, userId));
   const [telemetry, setTelemetry] = useState<ScanTelemetry>(() => loadScanTelemetry(MODULE, userId));
   
-  const facilityId = getSelectedFacility();
+  const [facilityId, setFacilityId] = useState<string | null>(getSelectedFacility());
+  const [facilities, setFacilities] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(getSelectedUnit());
 
   useEffect(() => {
+    setFacilityId(getSelectedFacility());
     setPrefs(loadScanPreferences(MODULE, userId));
     setTelemetry(loadScanTelemetry(MODULE, userId));
   }, [userId]);
