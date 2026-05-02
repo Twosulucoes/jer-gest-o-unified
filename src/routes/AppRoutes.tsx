@@ -388,8 +388,6 @@ export const AppRoutes = () => (
         <Route index element={<PwaLandingPage />} />
         <Route path="configuracao" element={<PwaSelectionFallback />} />
         <Route path="install" element={<PwaInstallPage />} />
-        <Route path=":module" element={<PwaModulePage />} />
-
         <Route path="alojamento" element={<AlojamentoHomePage />} />
         <Route path="alojamento/scan" element={<AlojamentoScanPage />} />
         <Route path="alojamento/buscar" element={<AlojamentoBuscarPage />} />
@@ -413,21 +411,19 @@ export const AppRoutes = () => (
         <Route path="alimentacao/janelas" element={<AlimentacaoJanelasPage />} />
         <Route path="alimentacao/consumos" element={<AlimentacaoListaConsumosPage />} />
 
-        <Route path="coordenacao" element={<CoordenacaoHomePage />} />
-        <Route path="coordenacao/agenda" element={<CoordenacaoAgendaPage />} />
-        <Route path="coordenacao/partidas" element={<CoordenacaoPartidasPage />} />
-        <Route path="coordenacao/partida/:id" element={<CoordenacaoPartidaDetalhePage />} />
-        <Route path="coordenacao/resultados" element={<CoordenacaoResultadosPage />} />
-        <Route path="coordenacao/estatisticas" element={<CoordenacaoEstatisticasPage />} />
-        <Route path="coordenacao/consulta" element={<CoordenacaoConsultaPage />} />
-        <Route path="coordenacao/incidentes" element={<CoordenacaoIncidentesPage />} />
-        <Route path="coordenacao/incidentes/novo" element={<CoordenacaoIncidentePage />} />
+        <Route path="coordenacao-tecnica" element={<CoordenacaoHomePage />} />
+        <Route path="coordenacao-tecnica/agenda" element={<CoordenacaoAgendaPage />} />
+        <Route path="coordenacao-tecnica/partidas" element={<CoordenacaoPartidasPage />} />
+        <Route path="coordenacao-tecnica/partida/:id" element={<CoordenacaoPartidaDetalhePage />} />
+        <Route path="coordenacao-tecnica/resultados" element={<CoordenacaoResultadosPage />} />
+        <Route path="coordenacao-tecnica/estatisticas" element={<CoordenacaoEstatisticasPage />} />
+        <Route path="coordenacao-tecnica/consulta" element={<CoordenacaoConsultaPage />} />
+        <Route path="coordenacao-tecnica/incidentes" element={<CoordenacaoIncidentesPage />} />
+        <Route path="coordenacao-tecnica/incidentes/novo" element={<CoordenacaoIncidentePage />} />
 
         <Route path="resultados" element={<ResultadosHomePage />} />
         <Route path="resultados/partidas" element={<ResultadosPartidasPage />} />
         <Route path="resultados/partida/:id" element={<ResultadosPartidaFormPage />} />
-
-        <Route path="arbitragem/perfil" element={<RefereePwaProfilePage />} />
 
         <Route path="delegacao" element={<DelegacaoHomePage />} />
         <Route path="delegacao/participantes" element={<DelegacaoParticipantesPage />} />
@@ -435,14 +431,18 @@ export const AppRoutes = () => (
         <Route path="delegacao/logistica" element={<DelegacaoLogisticaPage />} />
         <Route path="delegacao/locais" element={<DelegacaoLocaisPage />} />
         <Route path="delegacao/protestos" element={<DelegacaoProtestosPage />} />
-        <Route path="delegacao/protestos/novo" element={<DelegacaoProtestoNovoPage />} />
-        <Route path="delegacao/protestos/:id" element={<DelegacaoProtestoDetalhePage />} />
+        <Route path="delegacao/protesto/novo" element={<DelegacaoProtestoNovoPage />} />
+        <Route path="delegacao/protesto/:id" element={<DelegacaoProtestoDetalhePage />} />
 
-        <Route path="debug" element={<PwaDebugPage />} />
-        <Route path="qr-diagnostico" element={<QrDiagnosticoPage />} />
-        <Route path="vincular-credencial" element={<VincularCredencialPage />} />
+        <Route path="arbitragem/perfil" element={<RefereePwaProfilePage />} />
+        <Route path="credenciamento" element={<Navigate to="vincular" replace />} />
+        <Route path="credenciamento/vincular" element={<VincularCredencialPage />} />
         
-        {/* Catch-all for /pwa/* routes */}
+        <Route path="debug" element={<PwaDebugPage />} />
+        <Route path="diagnostico/qr" element={<QrDiagnosticoPage />} />
+
+        {/* Catch-all for modules not yet explicitly defined or "coming soon" */}
+        <Route path=":module" element={<PwaModulePage />} />
         <Route path="*" element={<PwaNotFoundHandler />} />
       </Route>
 
