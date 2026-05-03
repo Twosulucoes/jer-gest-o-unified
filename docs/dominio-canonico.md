@@ -345,7 +345,7 @@ A substituição é um **evento administrativo** que afeta:
 | **F3** | `competition_phases.event_stage_id` ADD COLUMN + backfill + FK ON DELETE RESTRICT + NOT NULL + INDEX. Encerra Fase F. | ✅ |
 | **G1** | Schema + RPC: tabela `substitutions` (auditoria imutável, stage-scoped), `participant_sport_events` ganha `cancelled_by_substitution_id`/`created_by_substitution_id` + status `cancelled_by_substitution`, RPC `execute_substitution` atômica e idempotente, RLS (admin/secretaria/coord_tecnica full; delegacao read+request da própria) | ✅ |
 | **G2** | UI Admin `/admin/etapa/:stageId/competicao/substituicoes` — listagem com filtros (status/busca), `RequestSubstitutionDialog` (escolhe delegação, prova, atleta out/in, motivo), ações Aprovar/Rejeitar/Executar/Cancelar; `delegacao` só vê e solicita as próprias | ✅ |
-| G3 | Visão da delegação `/pwa/delegacao/substituicoes` (somente leitura das próprias) | ⏳ |
+| **G3** | Visão da delegação no PWA — `/pwa/delegacao/substituicoes` mobile-first (lista RLS-escopada + botão para solicitar reusando `RequestSubstitutionDialog`); card "Substituições" no `DelegacaoHomePage` | ✅ |
 
 ### Sequência recomendada
 A → B → F → C → D → E → G
