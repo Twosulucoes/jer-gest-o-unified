@@ -57,6 +57,7 @@ const AjudaChamadosPage = lazy(() => import("../pages/admin/AjudaChamadosPage"))
 const AjudaChatPage = lazy(() => import("../pages/admin/AjudaChatPage"));
 const AjudaManualPage = lazy(() => import("../pages/admin/AjudaManualPage"));
 const CompeticaoPartidaDetalhePage = lazy(() => import("../pages/admin/CompeticaoPartidaDetalhePage"));
+const SubstituicoesPage = lazy(() => import("../pages/admin/SubstituicoesPage"));
 const CompeticaoLancamentoScorePage = lazy(() => import("../pages/admin/CompeticaoLancamentoScorePage"));
 const CompeticaoLancamentoSetsPage = lazy(() => import("../pages/admin/CompeticaoLancamentoSetsPage"));
 const CompeticaoLancamentoCombatPage = lazy(() => import("../pages/admin/CompeticaoLancamentoCombatPage"));
@@ -281,6 +282,7 @@ export const AppRoutes = () => (
             <Route path="competicao/pre-validacao" element={<CompeticaoPreValidacaoPage />} />
             <Route path="competicao/regras" element={<RegrasPage />} />
             <Route path="competicao/partida/:matchId" element={<CompeticaoPartidaDetalhePage />} />
+            <Route path="competicao/substituicoes" element={<SubstituicoesPage />} />
             <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
             <Route path="alojamento" element={<AlojamentoHubPage />} />
             <Route path="alojamento/ocupacao" element={<AdminAlojamentoOcupacaoPage />} />
