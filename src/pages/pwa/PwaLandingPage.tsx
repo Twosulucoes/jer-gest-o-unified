@@ -249,12 +249,9 @@ export default function PwaLandingPage() {
                 <button
                   key={card.role}
                   onClick={() => {
-                    console.log("[PwaLandingPage] CLICK card", { role: card.role, to: card.to, activeEventId, activeStageId });
                     if (card.to.startsWith("/pwa") && !card.to.includes("install") && !card.to.includes("credenciamento") && !activeStageId) {
-                      console.log("[PwaLandingPage] → /pwa/configuracao (missing_stage)");
                       navigate("/pwa/configuracao", { state: { from: { pathname: card.to }, reason: "missing_stage" } });
                     } else {
-                      console.log("[PwaLandingPage] → navigate to", card.to);
                       navigate(card.to);
                     }
                   }}
