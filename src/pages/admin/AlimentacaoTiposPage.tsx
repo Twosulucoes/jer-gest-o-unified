@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MealTypeFormDialog, { type MealTypeFormValues } from "@/components/admin/MealTypeFormDialog";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScope } from "@/hooks/useStageScope";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,7 @@ export default function AlimentacaoTiposPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const selectedEventId = useActiveEventId();
+  const { stageId } = useStageScope();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -57,8 +59,10 @@ export default function AlimentacaoTiposPage() {
 
   const createMut = useMutation({
     mutationFn: async (v: MealTypeFormValues) => {
-      const { error } = await supabase.from("meal_types").insert({
-        event_id: v.event_id, name: v.name, slug: v.slug,
+      if (!stageId) throw new Error("Selecione uma etapa antes de criar tipo de refeição.");
+      const { error } = await (supabase as any).from("meal_types").insert({
+        event_id: v.event_id, event_stage_id: stageId,
+        name: v.name, slug: v.slug,
         sort_order: v.sort_order, is_active: v.is_active,
       });
       if (error) throw error;
@@ -98,9 +102,11 @@ export default function AlimentacaoTiposPage() {
 
   const duplicateMut = useMutation({
     mutationFn: async (m: any) => {
-      const { id, created_at, updated_at, ...rest } = m;
-      const { error } = await supabase.from("meal_types").insert({
+      if (!stageId) throw new Error("Selecione uma etapa antes de duplicar.");
+      const { id: _id, created_at: _ca, updated_at: _ua, event_stage_id: _es, ...rest } = m;
+      const { error } = await (supabase as any).from("meal_types").insert({
         ...rest,
+        event_stage_id: stageId,
         name: `${m.name} (Cópia)`,
         slug: `${m.slug}-copia-${Math.floor(Math.random() * 1000)}`,
       });

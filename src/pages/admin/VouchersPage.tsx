@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScope } from "@/hooks/useStageScope";
 import QRCode from "qrcode";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -164,6 +165,7 @@ function getServiceInstanceLabel(v: any, instances: any) {
 // -------- Main Page --------
 export default function VouchersPage() {
   const eventId = useActiveEventId();
+  const { stageId } = useStageScope();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -605,8 +607,10 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
       console.log("DEBUG: Iniciando emissão de voucher individual...");
       const vType = isNominal ? "nominal" : "aggregate";
       
+      if (!stageId) throw new Error("Selecione uma etapa antes de emitir voucher.");
       const payload: any = {
         event_id: eventId,
+        event_stage_id: stageId,
         voucher_type: vType,
         is_nominal: isNominal,
         qr_code_value: genQrValue(),
@@ -818,8 +822,10 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           throw bErr;
         }
 
+        if (!stageId) throw new Error("Selecione uma etapa antes de emitir lote de vouchers.");
         const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
           event_id: eventId,
+          event_stage_id: stageId,
           batch_id: batch.id,
           participant_id: null,
           voucher_type: "aggregate" as const,
