@@ -59,7 +59,10 @@ export interface DashboardData {
     by_delegation: DelegationProgressRow[];
   };
   inscricoes: {
-    total: number;
+    total_provas: number;
+    total_etapas: number;
+    pendentes_documentacao: number;
+    por_status: { name: string; value: number }[];
     by_stage: { id: string; name: string; count: number }[];
     by_modality: { id: string; name: string; count: number }[];
   };
@@ -88,7 +91,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       referees_total: 0, referees_assigned: 0,
     },
     credenciamento: { daily: [], by_delegation: [] },
-    inscricoes: { total: 0, by_stage: [], by_modality: [] },
+    inscricoes: { total_provas: 0, total_etapas: 0, pendentes_documentacao: 0, por_status: [], by_stage: [], by_modality: [] },
     alimentacao: { daily: [], meal_types: [], by_delegation: [] },
     competicao: { by_sport: [], today: [] },
   };
@@ -296,26 +299,26 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           return data ?? [];
         }, [] as { id: string; name: string }[]),
       },
-      // 12: participant_event_stages
+      // 12: participant_event_stages (Vinculos em Etapas)
       {
         queryKey: ["dash3", "participant_event_stages", eventId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          // Esta tabela vincula participante a etapa. 
-          // Se eventId presente, filtramos via participação
-          const query = supabase.from("participant_event_stages" as any).select("stage_id", { count: "exact" }).limit(10000);
+          const query = supabase.from("participant_event_stages" as any).select("id, event_stage_id", { count: "exact" }).limit(10000);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
       },
-      // 13: participant_sport_events
+      // 13: participant_sport_events (Inscrições em Provas)
       {
         queryKey: ["dash3", "participant_sport_events", eventId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const query = supabase.from("participant_sport_events" as any).select("sport_event_id", { count: "exact" }).limit(10000);
+          const query = supabase.from("participant_sport_events" as any)
+            .select("id, sport_event_id, registration_status, is_blocked_by_documentation", { count: "exact" })
+            .limit(10000);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
@@ -586,19 +589,30 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       teams: "",
     }));
 
-  // Inscrições (Participantes x Etapas/Modalidades)
+  // Inscrições (Estatísticas de Provas e Etapas)
   const ES = eventStages ?? [];
   const PES = pEventStagesRes?.list ?? [];
   const PSE = pSportEventsRes?.list ?? [];
 
   const stageCountMap = new Map<string, number>();
   PES.forEach((pes: any) => {
-    stageCountMap.set(pes.stage_id, (stageCountMap.get(pes.stage_id) ?? 0) + 1);
+    stageCountMap.set(pes.event_stage_id, (stageCountMap.get(pes.event_stage_id) ?? 0) + 1);
   });
 
   const modalityCountMap = new Map<string, number>();
+  const statusMap = new Map<string, number>();
+  let blockedDocCount = 0;
+
   PSE.forEach((pse: any) => {
+    // Contagem por modalidade
     modalityCountMap.set(pse.sport_event_id, (modalityCountMap.get(pse.sport_event_id) ?? 0) + 1);
+    
+    // Contagem por status de inscrição
+    const status = pse.registration_status || "Pendente";
+    statusMap.set(status, (statusMap.get(status) ?? 0) + 1);
+
+    // Contagem de bloqueios por documentação
+    if (pse.is_blocked_by_documentation) blockedDocCount++;
   });
 
   const data: DashboardData = {
@@ -622,7 +636,10 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
     },
 
     inscricoes: {
-      total: P_total || P.length,
+      total_provas: PSE.length,
+      total_etapas: PES.length,
+      pendentes_documentacao: blockedDocCount,
+      por_status: Array.from(statusMap.entries()).map(([name, value]) => ({ name, value })),
       by_stage: ES.map(s => ({ id: s.id, name: s.name, count: stageCountMap.get(s.id) ?? 0 })),
       by_modality: SE.map(s => ({ id: s.id, name: seName.get(s.id) || s.name || "Modalidade", count: modalityCountMap.get(s.id) ?? 0 }))
         .sort((a, b) => b.count - a.count)

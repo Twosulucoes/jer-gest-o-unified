@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
 import { DashboardQuickActions } from "@/components/admin/DashboardQuickActions";
 import { DashboardProgressCard } from "@/components/admin/DashboardProgressCard";
@@ -176,17 +176,65 @@ export default function DashboardPage() {
               <ClipboardCheck className="h-3.5 w-3.5" /> Estatísticas de Inscrições
             </h2>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <AppKPI 
+              icon={ClipboardCheck} 
+              label="Inscrições em Provas" 
+              value={data.inscricoes.total_provas}
+              sub="Total de entradas em modalidades"
+              loading={isLoading}
+              className="bg-blue-500/5 border-blue-500/10"
+            />
+
+            <AppKPI 
+              icon={MapPin} 
+              label="Vínculos por Etapa" 
+              value={data.inscricoes.total_etapas}
+              sub="Participantes alocados em etapas"
+              loading={isLoading}
+            />
+
+            <AppKPI 
+              icon={AlertTriangle} 
+              label="Bloqueio Documental" 
+              value={data.inscricoes.pendentes_documentacao}
+              sub="Inscrições com pendências"
+              alert={data.inscricoes.pendentes_documentacao > 0}
+              loading={isLoading}
+            />
+
             <Card>
               <CardHeader className="py-3 px-4">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Total Geral</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">Status das Inscrições</CardTitle>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold">{data.inscricoes.total}</div>
-                <p className="text-[10px] text-muted-foreground">Inscritos no evento atual</p>
+              <CardContent className="h-[120px] pt-0">
+                {isLoading ? <Skeleton className="w-full h-full" /> : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={data.inscricoes.por_status}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={30}
+                        outerRadius={45}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {data.inscricoes.por_status.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={PALETTE[index % PALETTE.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 10 }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
+          </div>
 
+          <div className="grid gap-4 md:grid-cols-2">
             <DashboardProgressCard
               title="Inscrições por Etapa"
               isLoading={isLoading}
@@ -194,20 +242,20 @@ export default function DashboardPage() {
                 id: s.id,
                 name: s.name,
                 current: s.count,
-                total: data.inscricoes.total,
-                percentage: data.inscricoes.total > 0 ? Math.round((s.count / data.inscricoes.total) * 100) : 0
+                total: data.inscricoes.total_etapas,
+                percentage: data.inscricoes.total_etapas > 0 ? Math.round((s.count / data.inscricoes.total_etapas) * 100) : 0
               }))}
             />
 
             <DashboardProgressCard
-              title="Top 10 Modalidades"
+              title="Top 10 Modalidades (Inscrições)"
               isLoading={isLoading}
               items={data.inscricoes.by_modality.map(m => ({
                 id: m.id,
                 name: m.name,
                 current: m.count,
-                total: data.inscricoes.total,
-                percentage: data.inscricoes.total > 0 ? Math.round((m.count / data.inscricoes.total) * 100) : 0
+                total: data.inscricoes.total_provas,
+                percentage: data.inscricoes.total_provas > 0 ? Math.round((m.count / data.inscricoes.total_provas) * 100) : 0
               }))}
             />
           </div>
