@@ -403,7 +403,8 @@ export default function AlimentacaoScanPage() {
           setResult({ ok: false, message: msg, source: "qr" });
           toast.error(msg);
           recordOutcome("error");
-          void recordIncident("PARTICIPANT_INACTIVE", resolved.participant_id);
+          // Mapeado para NOT_ELIGIBLE — enum atual não cobre INACTIVE/NO_CREDENTIAL.
+          void recordIncident("NOT_ELIGIBLE", resolved.participant_id);
           return;
         }
 
@@ -412,7 +413,7 @@ export default function AlimentacaoScanPage() {
           setResult({ ok: false, message: msg, source: "qr" });
           toast.error(msg, { description: "Encaminhe o atleta para a secretaria." });
           recordOutcome("error");
-          void recordIncident("NO_CREDENTIAL", resolved.participant_id);
+          void recordIncident("NOT_ELIGIBLE", resolved.participant_id);
           return;
         }
 
@@ -434,10 +435,52 @@ export default function AlimentacaoScanPage() {
     }
   };
 
+  // Avalia presença/elegibilidade do participante para refeição.
+  // Mantém paridade com a trava aplicada no fluxo de QR (handleScan).
+  const evaluateMealEligibility = (
+    row: Pick<ParticipantManualSearchRow, "is_active" | "needs_meals" | "credentialed_at">,
+  ): { ok: true } | { ok: false; reason: "INACTIVE" | "NEEDS_MEALS_FALSE" | "NO_CREDENTIAL"; message: string } => {
+    if (row.is_active === false) {
+      return { ok: false, reason: "INACTIVE", message: "Participante Inativo." };
+    }
+    if (row.needs_meals === false) {
+      return {
+        ok: false,
+        reason: "NEEDS_MEALS_FALSE",
+        message: "Participante não declarou necessidade de alimentação.",
+      };
+    }
+    if (!row.credentialed_at) {
+      return {
+        ok: false,
+        reason: "NO_CREDENTIAL",
+        message: "Participante não possui credencial ativa (Aguardando Credenciamento).",
+      };
+    }
+    return { ok: true };
+  };
+
   const handleManualPick = async (row: ParticipantManualSearchRow) => {
     setManualQuery("");
     setManualHits([]);
     try {
+      // Trava de presença aplicada também no caminho manual (Etapa 0 da
+      // auditoria de Alimentação). Sem isso, o operador conseguia inserir
+      // consumo para qualquer pessoa do evento via busca por nome/CPF.
+      const verdict = evaluateMealEligibility(row);
+      if (!verdict.ok) {
+        setResult({ ok: false, message: verdict.message, source: "manual" });
+        toast.error(verdict.message, {
+          description: verdict.reason === "NO_CREDENTIAL" ? "Encaminhe para a secretaria." : undefined,
+        });
+        recordOutcome("error");
+        // O enum atual de meal_incident_type não distingue esses motivos;
+        // mapeamos para NOT_ELIGIBLE para manter trilha de auditoria
+        // funcional. Etapa 1 da auditoria fará ALTER TYPE para incluir os
+        // motivos específicos (NO_CREDENTIAL, PARTICIPANT_INACTIVE, etc.).
+        void recordIncident("NOT_ELIGIBLE", row.participant_id);
+        return;
+      }
       await registerMealConsumption(row.participant_id, row.full_name, "manual", "manual", null);
     } catch (err: unknown) {
       setResult({ ok: false, message: `${getSystemMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}` });
@@ -555,22 +598,37 @@ export default function AlimentacaoScanPage() {
                   <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhum participante encontrado neste evento.</p>
                 )}
                 {!manualSearching &&
-                  manualHits.map((h) => (
-                    <button
-                      key={h.participant_id}
-                      type="button"
-                      onClick={() => void handleManualPick(h)}
-                      className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60"
-                    >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
-                        <User className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">{h.full_name}</p>
-                        <p className="truncate text-xs text-muted-foreground">{h.participant_type}</p>
-                      </div>
-                    </button>
-                  ))}
+                  manualHits.map((h) => {
+                    const verdict = evaluateMealEligibility(h);
+                    const badgeLabel = !verdict.ok
+                      ? verdict.reason === "NO_CREDENTIAL"
+                        ? "sem credencial"
+                        : verdict.reason === "NEEDS_MEALS_FALSE"
+                          ? "não precisa alim."
+                          : "inativo"
+                      : null;
+                    return (
+                      <button
+                        key={h.participant_id}
+                        type="button"
+                        onClick={() => void handleManualPick(h)}
+                        className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
+                          <User className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-foreground">{h.full_name}</p>
+                          <p className="truncate text-xs text-muted-foreground">{h.participant_type}</p>
+                        </div>
+                        {badgeLabel && (
+                          <span className="ml-2 shrink-0 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                            {badgeLabel}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
               </CardContent>
             </Card>
           )}

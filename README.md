@@ -63,7 +63,7 @@ Para navegar pela complexidade do sistema, utilize os guias detalhados abaixo:
 | Módulo | Status | Destaque Recente |
 | :--- | :---: | :--- |
 | **🏠 Alojamento** | ✅ | Fechado para operação. Controle de ocupação e presença noturna. |
-| **🍽️ Alimentação** | ✅ | Motor de janelas de serviço e controle de divergências. |
+| **🍽️ Alimentação** | 🟡 | **Auditoria 2026-05-03:** evolução para controle por refeição/dia/presença. Trava de presença agora aplicada também no fluxo manual do PWA. Plano incremental em [`docs/modulos/alimentacao-auditoria.md`](docs/modulos/alimentacao-auditoria.md). |
 | **🚌 Transporte** | ✅ | Gestão de embarque e listas de passageiros por viagem. |
 | **🏆 Competição** | ✅ | Motor de regras JSONB e suporte a 6 famílias de modalidades. |
 | **📄 Boletins** | ✅ | Geração automática de PDF e XLSX oficial. |
