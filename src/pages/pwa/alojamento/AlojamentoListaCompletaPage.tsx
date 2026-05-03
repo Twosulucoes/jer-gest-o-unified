@@ -60,8 +60,8 @@ export default function AlojamentoListaCompletaPage() {
         unit_id,
         lodging_units!unit_id!inner(name, location_id, lodging_locations!inner(name, event_id, event_stage_id)),
         participants!inner(
-          id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone,
-          person_id, people!inner(full_name, cpf, birth_date, photo_url, gender),
+          id, delegation_id,
+          person_id, people!inner(full_name, cpf, birth_date, photo_url, gender, guardian_name, guardian_phone, coach_name, coach_phone),
           delegations!inner(institution_id, institutions!inner(name))
         )
       `)
@@ -93,10 +93,10 @@ export default function AlojamentoListaCompletaPage() {
       birth_date: r.participants?.people?.birth_date,
       photo_url: r.participants?.people?.photo_url,
       gender: r.participants?.people?.gender || "",
-      guardian_name: r.participants?.guardian_name,
-      guardian_phone: r.participants?.guardian_phone,
-      coach_name: r.participants?.coach_name,
-      coach_phone: r.participants?.coach_phone,
+      guardian_name: r.participants?.people?.guardian_name,
+      guardian_phone: r.participants?.people?.guardian_phone,
+      coach_name: r.participants?.people?.coach_name,
+      coach_phone: r.participants?.people?.coach_phone,
       delegation_name: r.participants?.delegations?.institutions?.name || null,
       delegation_id: r.participants?.delegation_id,
     }));
