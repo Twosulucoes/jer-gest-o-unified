@@ -209,6 +209,10 @@ export default function AlimentacaoDivergenciasPage() {
       'VOUCHER_REVOKED': 'Voucher Revogado',
       'VOUCHER_EXPIRED': 'Voucher Expirado',
       'VOUCHER_ALREADY_USED': 'Voucher Já Usado',
+      'NO_CREDENTIAL': 'Sem Credencial',
+      'PARTICIPANT_INACTIVE': 'Participante Inativo',
+      'NEEDS_MEALS_FALSE': 'Não Precisa Alimentação',
+      'LEFT_EVENT': 'Saiu do Evento',
       'OTHER': 'Outro'
     };
     return map[type] || type;
