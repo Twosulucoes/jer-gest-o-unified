@@ -6,10 +6,11 @@ import AuthLoadingScreen from "@/components/auth/AuthLoadingScreen";
 import { AlertCircle, CalendarDays, Lock, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AppRole } from "@/config/accessControl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { VersionBadge } from "../VersionBadge";
 import { logPwaEvent } from "@/utils/pwaTelemetry";
+import { toast } from "sonner";
 
 
 interface PwaRouteGuardProps {
@@ -21,18 +22,19 @@ interface PwaRouteGuardProps {
 }
 
 export default function PwaRouteGuard({ children, allowedRoles, requireStage = true }: PwaRouteGuardProps) {
-  const { user, loading, hasRole } = useAuth();
+  const { user, loading, hasRole, roles } = useAuth();
   const { activeEventId, eventsLoading } = useEventContext();
   const { activeStageId, stagesLoading } = useStageContext();
   const { incidentId } = useParams();
   const location = useLocation();
   const [resourceValidating, setResourceValidating] = useState(false);
   const [resourceError, setResourceError] = useState<string | null>(null);
+  const accessDeniedToastShown = useRef(false);
 
   useEffect(() => {
     const validateIncident = async () => {
       // Only run this specific check for the incident detail route
-      if (!incidentId || !activeEventId || !location.pathname.includes("/pwa/coordenacao-tecnica/incidente/")) {
+      if (!incidentId || !activeEventId || !location.pathname.includes("/pwa/coordenacao-tecnica/incidentes/")) {
         setResourceError(null);
         return;
       }
@@ -130,16 +132,24 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
       logPwaEvent({
         action: "access_denied",
         reason: "User lacks required roles",
-        metadata: { allowedRoles },
+        metadata: { allowedRoles, userRoles: roles, path: location.pathname },
         event_id: activeEventId,
         stage_id: activeStageId
       });
-      
+
+      if (!accessDeniedToastShown.current) {
+        accessDeniedToastShown.current = true;
+        toast.error("Acesso negado", {
+          description: `Você não tem permissão para acessar este módulo. Roles necessárias: ${allowedRoles.join(", ")}. Suas roles: ${roles.join(", ") || "(nenhuma)"}.`,
+          duration: 6000,
+        });
+      }
+
       // Se não for autorizado para o sub-módulo, manda de volta para a home do PWA
       if (location.pathname !== "/pwa" && location.pathname !== "/pwa/") {
         return <Navigate to="/pwa" replace />;
       }
-      
+
       // Se nem para a home do PWA ele é autorizado (improvável), vai para negado
       return <Navigate to="/acesso-negado" replace />;
     }
