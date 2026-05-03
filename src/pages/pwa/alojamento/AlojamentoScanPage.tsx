@@ -334,6 +334,7 @@ export default function AlojamentoScanPage() {
           PRESENCE_WITHOUT_CHECKIN: "Pessoa sem check-in ativo.",
           PRESENCE_WRONG_UNIT: "Pessoa em unidade divergente.",
           PRESENCE_ALREADY_REGISTERED: "Presença já registrada hoje.",
+          LEFT_EVENT: "Participante registrou saída antecipada do evento.",
         };
         toast.error(errorMessages[res.error] || res.message || res.error || getSystemMessage("ERR_UNKNOWN", lang));
         recordOutcome("error");
