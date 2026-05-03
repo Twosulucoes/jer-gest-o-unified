@@ -107,6 +107,7 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
         target_path: "/pwa/configuracao",
         reason: "missing_event"
       });
+      console.warn("[PwaRouteGuard] redirect → /pwa/configuracao (missing_event)", { path: location.pathname });
       return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_event" }} replace />;
     }
 
@@ -121,6 +122,7 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
         reason: "missing_stage",
         event_id: activeEventId
       });
+      console.warn("[PwaRouteGuard] redirect → /pwa/configuracao (missing_stage)", { path: location.pathname });
       return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_stage" }} replace />;
     }
   }

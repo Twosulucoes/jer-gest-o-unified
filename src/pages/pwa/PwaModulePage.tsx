@@ -72,6 +72,7 @@ export default function PwaModulePage() {
   useEffect(() => {
     (async () => {
       if (!config) {
+        console.warn("[PwaModulePage] redirect → /pwa: módulo desconhecido", { module });
         navigate("/pwa", { replace: true });
         return;
       }
@@ -89,6 +90,7 @@ export default function PwaModulePage() {
         .single();
 
       if (!profileData?.active) {
+        console.warn("[PwaModulePage] redirect → /pwa: perfil inativo");
         navigate("/pwa", { replace: true });
         return;
       }
@@ -102,6 +104,7 @@ export default function PwaModulePage() {
       const hasAccess = config.allowedRoles.some((r) => userRoles.includes(r));
 
       if (!hasAccess) {
+        console.warn("[PwaModulePage] redirect → /pwa: sem acesso", { module, userRoles, allowedRoles: config.allowedRoles });
         navigate("/pwa", { replace: true });
         return;
       }
@@ -109,7 +112,7 @@ export default function PwaModulePage() {
       setAuthorized(true);
       setLoading(false);
     })();
-  }, [config, navigate]);
+  }, [config, navigate, module]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
