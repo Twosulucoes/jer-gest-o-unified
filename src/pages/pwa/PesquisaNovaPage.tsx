@@ -181,25 +181,28 @@ export default function PesquisaNovaPage() {
   };
 
   const loadParticipantData = async (participantId: string, name: string) => {
-    // Fetch more details (age, gender)
-    const { data: part, error } = await supabase
+    // Fetch participant_type (inscrição) + birth_date/gender via JOIN com people
+    // (Fase A1 da normalização: cadastrais civis vivem em `people`).
+    const { data: part, error } = await (supabase as any)
       .from("participants")
-      .select("birth_date, biological_sex, participant_type")
+      .select("participant_type, people(birth_date, gender)")
       .eq("id", participantId)
       .single();
 
     if (error) throw error;
 
     if (part) {
-      setRespondentType(part.participant_type === 'athlete' ? 'atleta' : 
+      setRespondentType(part.participant_type === 'athlete' ? 'atleta' :
                         part.participant_type === 'coach' ? 'tecnico' : 'outro');
-      
-      if (part.biological_sex) {
-        setRespondentGender(part.biological_sex === 'male' ? 'masculino' : 'feminino');
+
+      const personGender: string | undefined = part.people?.gender;
+      if (personGender) {
+        setRespondentGender(personGender === 'male' ? 'masculino' : 'feminino');
       }
 
-      if (part.birth_date) {
-        const age = differenceInYears(new Date(), parseISO(part.birth_date));
+      const personBirth: string | undefined = part.people?.birth_date;
+      if (personBirth) {
+        const age = differenceInYears(new Date(), parseISO(personBirth));
         if (age <= 12) setRespondentAge('ate_12');
         else if (age <= 17) setRespondentAge('13_17');
         else if (age <= 30) setRespondentAge('18_30');
