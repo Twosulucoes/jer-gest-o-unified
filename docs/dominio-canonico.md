@@ -199,16 +199,18 @@
 #### `participant_sport_events`
 **Pergunta:** "Esta pessoa está inscrita nesta prova nesta etapa?"
 **Escopo:** evento + etapa (junction com a prova).
-**FK:** participant_id, sport_event_id, **event_stage_id** (a tornar NOT NULL).
+**FK:** participant_id, sport_event_id, `event_stage_id` (NOT NULL desde Fase F2).
 
 | Coluna | Tipo | Notas |
 |:---|:---|:---|
 | `(participant_id, sport_event_id, event_stage_id)` | UNIQUE | Uma linha por inscrição esportiva por etapa. |
 | `status` | enum | `pending`, `confirmed`, `cancelled`, `rejected`. |
 
-> **Pendência (Fase F):** hoje `event_stage_id` é nullable. Para representar
-> "João correu 100m em Caracaraí e na Final", precisa **uma linha por etapa**.
-> Tornar NOT NULL após backfill.
+> **Implementação cumprida (Fase F2):** `event_stage_id NOT NULL`,
+> permitindo representar "João correu 100m em Caracaraí E na Final"
+> com uma linha por etapa. UNIQUE redefinido para
+> `(participant_id, sport_event_id, event_stage_id)` direto, sem
+> COALESCE com zero-uuid.
 
 ---
 
@@ -339,7 +341,7 @@ A substituição é um **evento administrativo** que afeta:
 | D | Remover redundâncias (`participants.active_status`); corrigir bug `get_participant_counts_by_institution` (lê `p.institution_id` que não existe) | ⏳ |
 | E | Atualizar docs (este documento + glossário + DB) | ⏳ |
 | **F1** | Logística stage-scoped — `meal_types.event_stage_id` e `meal_locations.event_stage_id` NOT NULL; `service_vouchers.event_stage_id` adicionado e NOT NULL (voucher é consumo da etapa, canônico §11.5) | ✅ |
-| F2 | `participant_sport_events.event_stage_id NOT NULL` após backfill | ⏳ |
+| **F2** | `participant_sport_events.event_stage_id` NOT NULL após backfill; UNIQUE redefinido para `(participant_id, sport_event_id, event_stage_id)` direto (sem COALESCE) | ✅ |
 | F3 | `competition_phases.event_stage_id` adicionado e NOT NULL | ⏳ |
 | G | **Substituições** — tabela `substitutions`, versionamento de `participant_sport_events`, fluxo administrativo no Admin com aprovação | ⏳ |
 
