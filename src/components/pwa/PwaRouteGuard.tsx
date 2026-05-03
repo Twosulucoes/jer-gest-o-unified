@@ -95,7 +95,9 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
   }
 
   // Central redirection layer for internal PWA routes
-  const isPwaInternalRoute = location.pathname.startsWith("/pwa/") && 
+  const isPwaInternalRoute = location.pathname.startsWith("/pwa") && 
+                             location.pathname !== "/pwa" &&
+                             location.pathname !== "/pwa/" &&
                              location.pathname !== "/pwa/configuracao" &&
                              location.pathname !== "/pwa/install" &&
                              location.pathname !== "/pwa/set-password";
@@ -111,11 +113,7 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
       return <Navigate to="/pwa/configuracao" state={{ from: location, reason: "missing_event" }} replace />;
     }
 
-    // Identifica se o caminho atual é uma "página inicial de módulo" que geralmente lista locais/etapas
-    const isModuleHome = location.pathname.split('/').length === 3;
-    const moduleRequireStage = requireStage && !isModuleHome;
-
-    if (moduleRequireStage && !activeStageId) {
+    if (requireStage && !activeStageId) {
       logPwaEvent({
         action: "forced_config_redirect",
         target_path: "/pwa/configuracao",

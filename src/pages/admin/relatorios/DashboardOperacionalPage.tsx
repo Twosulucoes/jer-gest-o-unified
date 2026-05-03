@@ -133,8 +133,8 @@ export default function DashboardOperacionalPage() {
             Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-[100px]" />)
           ) : (
             <>
-              <KpiCard icon={Users} label="Participantes" value={r.participants_total}
-                sub={`${r.credentialed} credenciados de ${r.participants_total} (${pct(r.credentialed, r.participants_total)}%)`}
+              <KpiCard icon={Users} label="Atletas" value={r.athletes_total}
+                sub={`${r.credentialed} credenciados de ${r.athletes_total} (${pct(r.credentialed, r.athletes_total)}%)`}
                 tint="bg-primary/10 text-primary" />
               <KpiCard icon={BadgeCheck} label="Credenciais Ativas" value={r.credentials_active}
                 sub={`${r.credentials_today} emitidas hoje`}

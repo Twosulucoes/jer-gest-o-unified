@@ -8,7 +8,8 @@ import {
   Users, UserCheck, ShieldCheck, Bus, UtensilsCrossed, Building, Trophy,
   CheckCircle2, AlertTriangle, Clock, TrendingUp,
   Upload, UsersRound, ScanLine, Navigation, ClipboardList, CalendarDays, KeyRound,
-  RefreshCw, Bed, Truck, CalendarClock, Calendar, Gavel, Layers
+  RefreshCw, Bed, Truck, CalendarClock, Calendar, Gavel, Layers, ClipboardCheck,
+  LayoutDashboard, MapPin
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
 import { DashboardQuickActions } from "@/components/admin/DashboardQuickActions";
 import { DashboardProgressCard } from "@/components/admin/DashboardProgressCard";
@@ -133,13 +134,13 @@ export default function DashboardPage() {
           Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-[100px]" />)
         ) : (
           <>
-            <AppKPI icon={Users} label="Participantes" value={r.participants_total}
-              sub={`${r.credentialed} credenciados (${pct(r.credentialed, r.participants_total)}%)`}
+            <AppKPI icon={Users} label="Atletas" value={r.athletes_total}
+              sub={`${r.participants_total} pessoas total`}
               loading={isLoading}
               className="bg-primary/5 border-primary/10"
             />
-            <AppKPI icon={ShieldCheck} label="Credenciais Ativas" value={r.credentials_active}
-              sub={`${r.credentials_today} hoje`}
+            <AppKPI icon={UserCheck} label="Credenciados" value={r.credentialed}
+              sub={`${pct(r.credentialed, r.athletes_total)}% dos atletas`}
               loading={isLoading}
             />
             <AppKPI icon={Trophy} label="Partidas" value={r.matches_total}
@@ -168,6 +169,97 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
+        {/* Novas KPIs de Inscrições */}
+        <section className="space-y-3 lg:col-span-12">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <ClipboardCheck className="h-3.5 w-3.5" /> Estatísticas de Inscrições
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <AppKPI 
+              icon={ClipboardCheck} 
+              label="Inscrições em Provas" 
+              value={data.inscricoes.total_provas}
+              sub={`${pct(data.inscricoes.total_provas, r.athletes_total)}% média por atleta`}
+              loading={isLoading}
+              className="bg-blue-500/5 border-blue-500/10"
+            />
+
+            <AppKPI 
+              icon={MapPin} 
+              label="Vínculos por Etapa" 
+              value={data.inscricoes.total_etapas}
+              sub={`${data.inscricoes.total_etapas < r.athletes_total ? "Existem atletas sem etapa" : "Todos atletas vinculados"}`}
+              loading={isLoading}
+            />
+
+            <AppKPI 
+              icon={AlertTriangle} 
+              label="Bloqueio Documental" 
+              value={data.inscricoes.pendentes_documentacao}
+              sub="Inscrições com pendências"
+              alert={data.inscricoes.pendentes_documentacao > 0}
+              loading={isLoading}
+            />
+
+            <Card>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Status das Inscrições</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[120px] pt-0">
+                {isLoading ? <Skeleton className="w-full h-full" /> : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={data.inscricoes.por_status}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={30}
+                        outerRadius={45}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {data.inscricoes.por_status.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={PALETTE[index % PALETTE.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 10 }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <DashboardProgressCard
+              title="Inscrições por Etapa"
+              isLoading={isLoading}
+              items={data.inscricoes.by_stage.map(s => ({
+                id: s.id,
+                name: s.name,
+                current: s.count,
+                total: data.inscricoes.total_etapas,
+                percentage: data.inscricoes.total_etapas > 0 ? Math.round((s.count / data.inscricoes.total_etapas) * 100) : 0
+              }))}
+            />
+
+            <DashboardProgressCard
+              title="Top 10 Modalidades (Inscrições)"
+              isLoading={isLoading}
+              items={data.inscricoes.by_modality.map(m => ({
+                id: m.id,
+                name: m.name,
+                current: m.count,
+                total: data.inscricoes.total_provas,
+                percentage: data.inscricoes.total_provas > 0 ? Math.round((m.count / data.inscricoes.total_provas) * 100) : 0
+              }))}
+            />
+          </div>
+        </section>
         {/* Credenciamento Charts */}
         <section className="space-y-3 lg:col-span-6">
           <div className="flex items-center justify-between">

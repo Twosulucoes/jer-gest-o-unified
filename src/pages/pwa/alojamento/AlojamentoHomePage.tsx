@@ -44,17 +44,20 @@ export default function AlojamentoHomePage() {
     (async () => {
       if (!eventId) return;
       
-      let query = supabase
+      // If stageId is missing, we shouldn't show any locations to ensure data integrity
+      if (!stageId) {
+        setFacilities([]);
+        setLoading(false);
+        return;
+      }
+      
+      const { data, error } = await supabase
         .from("lodging_locations")
         .select("id, name, is_active")
         .eq("event_id", eventId)
-        .eq("is_active", true);
-
-      if (stageId) {
-        query = query.eq("event_stage_id", stageId);
-      }
-
-      const { data, error } = await query.order("name");
+        .eq("event_stage_id", stageId) // Strict filtering
+        .eq("is_active", true)
+        .order("name");
       
       dbTelemetry.log({
         moduleName: 'alojamento',
@@ -89,6 +92,9 @@ export default function AlojamentoHomePage() {
         if (!facilityId && enriched.length > 0) {
           setFacilityId(enriched[0].id);
           setSelectedFacility(enriched[0].id);
+        } else if (enriched.length === 0) {
+          setFacilityId("");
+          setSelectedFacility("");
         }
       }
       setLoading(false);
