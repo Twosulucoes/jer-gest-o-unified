@@ -144,8 +144,8 @@
 | Coluna | Tipo | Notas |
 |:---|:---|:---|
 | `(person_id, event_id)` | UNIQUE | Uma inscrição por pessoa por evento. |
-| `participant_type` | enum | `athlete`, `coach`, `head_of_delegation`, `official`, `staff`, ... (≥14 valores reais; deve virar enum real, não CHECK). |
-| `enrollment_class` | enum (`participant_category`) | `delegation` ou `organization`. **Renomeado** de `category` para evitar conflito com a tabela `categories`. |
+| `participant_type` | enum (`participant_type`) | `athlete`, `coach`, `head_of_delegation`, `official`, `staff`, `motorista`, `agente_operacao`, `logistica`, `cozinheira`, `guia`, `secretaria`, `mesario`, `arbitro`, `delegado`, `fiscal`, `operador_pesquisa`, `tecnico_ti`, `terceiro`, `colaborador` (19 valores; enum desde Fase C). |
+| `enrollment_class` | enum (`participant_category`) | `delegation` ou `organization`. **Renomeado** de `category` na Fase C para evitar conflito com a tabela `categories`. |
 | `status` | enum (`lifecycle_status`) | `pending`, `confirmed`, `cancelled`, `rejected`. **A unificar** com outras tabelas. |
 | `is_active` | bool | Vivo no evento. |
 | `regular_attendance_confirmed` | bool | Confirmação administrativa. |
@@ -337,7 +337,7 @@ A substituição é um **evento administrativo** que afeta:
 | **B1** | Refactor de leituras: 27 arquivos passam a ler `delegations(institutions(name))` em vez de `delegations(school_name)` | ✅ |
 | **B2** | Refactor de edição: `DelegationFormDialog` (sem prefixo `school_`) + `DelegacoesPage` (insert/update em `institutions` + `delegations`, filters/sort/search via JOIN) | ✅ |
 | **B3** | Migration final: DROP 11 colunas `school_*` em `delegations` + DROP 3 triggers de sync + DROP 3 funções + DROP índice único legado + types.ts limpo | ✅ |
-| C | Renomear ambiguidades (`participants.category` → `enrollment_class`; `result_status` em inglês com enum); criar `enum participant_type` real | ⏳ |
+| **C** | Renomear `participants.category` → `enrollment_class`; criar `enum participant_type` real com 19 valores em uso. (`match_result_status` enum já existia desde 20260422.) | ✅ |
 | D | Remover redundâncias (`participants.active_status`); corrigir bug `get_participant_counts_by_institution` (lê `p.institution_id` que não existe) | ⏳ |
 | E | Atualizar docs (este documento + glossário + DB) | ⏳ |
 | **F1** | Logística stage-scoped — `meal_types.event_stage_id` e `meal_locations.event_stage_id` NOT NULL; `service_vouchers.event_stage_id` adicionado e NOT NULL (voucher é consumo da etapa, canônico §11.5) | ✅ |

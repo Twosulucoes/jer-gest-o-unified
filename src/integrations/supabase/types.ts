@@ -5400,6 +5400,7 @@ export type Database = {
           credentialed_at: string | null
           credentialed_by: string | null
           delegation_id: string | null
+          enrollment_class: string
           event_id: string
           id: string
           is_active: boolean
@@ -5423,6 +5424,7 @@ export type Database = {
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string | null
+          enrollment_class?: string
           event_id: string
           id?: string
           is_active?: boolean
@@ -5446,6 +5448,7 @@ export type Database = {
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string | null
+          enrollment_class?: string
           event_id?: string
           id?: string
           is_active?: boolean
