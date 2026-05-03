@@ -278,7 +278,15 @@ export default function AlimentacaoScanPage() {
     };
 
     if (!isOnline()) {
-      addToOfflineQueue("alimentacao", consumptionData, participantName || undefined);
+      const enqueueResult = addToOfflineQueue("alimentacao", consumptionData, participantName || undefined);
+      if (enqueueResult.deduped) {
+        const dedupMsg = `Já existe registro offline pendente para ${participantName || "este participante"} nesta janela.`;
+        setResult({ ok: false, message: dedupMsg, source: resultSource });
+        toast.info(dedupMsg, { description: "Aguarde a sincronização para evitar duplicidade." });
+        recordOutcome("error");
+        reopenIfContinuous();
+        return;
+      }
       const successMsg = `${getSystemMessage("SUCCESS_REGISTERED", lang)} (Offline): ${participantName || ""}`;
       setResult({
         ok: true,

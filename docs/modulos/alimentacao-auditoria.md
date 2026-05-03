@@ -1,6 +1,6 @@
 # Auditoria Operacional: Módulo de Alimentação — JER Gestão
-**Data:** 2026-05-03 (atualizado após Etapa 1)
-**Status Global:** 🟡 OPERACIONAL COM RESSALVAS — evolução para controle por refeição/dia/presença em curso
+**Data:** 2026-05-03 (Etapas 0–6 concluídas)
+**Status Global:** 🟢 FECHADO PARA OPERAÇÃO — controle por refeição/dia/presença em produção
 
 > Este documento substitui as auditorias anteriores e incorpora um novo diagnóstico
 > 360º do módulo de Alimentação, com o objetivo de alinhar o sistema ao modelo
@@ -102,7 +102,7 @@
 
 ### 2.2 Altos — afetam confiança operacional
 7. **Sem trava de saída.** Após registro de checkout do alojamento, o participante continua elegível para refeições. Não existe consulta "está em vigência hoje?" centralizada.
-8. **Validação de duplicidade só existe no DB e numa contagem JS racy.** O JS faz `select count` antes do insert e o DB mantém um `UNIQUE`. No caminho offline a verificação é apenas local — duas filas offline distintas podem gerar duplicidade no momento do sync, sem incidente claro.
+8. ~~**Validação de duplicidade só existe no DB e numa contagem JS racy.**~~ ✅ **Resolvido (Etapa 6).** Fila offline deduplica por `(meal_window_id, participant_id)` antes de empilhar; ao bater no `UNIQUE` no sync (cross-device), grava `meal_incidents.DUPLICATE` com `is_offline=true` e descarta o item local. A trilha agora captura cada conflito.
 9. **Operador não vê na busca manual o motivo de bloqueio.** Sem badges de "sem credencial" / "não precisa alim." / "checkout efetuado", a equipe perde tempo tentando registrar pessoas que serão recusadas.
 10. ~~**Sem visão por delegação para o perfil `delegacao`.**~~ ✅ **Resolvido (Etapa 5).** Nova rota `/pwa/delegacao/alimentacao` com KPIs e listas escopadas pela delegação do usuário via RLS.
 
@@ -255,9 +255,22 @@ Objetivo: separar motivos de bloqueio e fechar permissões abertas.
   não consumiu) reaproveitando a mesma lógica da Etapa 4.
 - ✅ Card "Alimentação" adicionado ao `DelegacaoHomePage`.
 
-### Etapa 6 — Robustez offline
-- Validar duplicidade entre filas offline ao sincronizar (resolução determinística pelo timestamp original).
-- Conciliação visual de conflitos (já existe parcial via `VoucherConflictCentral`).
+### Etapa 6 — Robustez offline ✅
+- ✅ `addToOfflineQueue` agora aplica deduplicação determinística no
+  ato do enfileiramento: mesma combinação `(meal_window_id,
+  participant_id)` na fila ainda não sincronizada não cria item
+  duplicado. O retorno passou a ser `{ item, deduped }` para que a UI
+  possa avisar o operador.
+- ✅ `AlimentacaoScanPage` exibe toast informativo quando a tentativa
+  offline é deduplicada e não recompõe o card de sucesso indevido
+  (antes, dois registros locais "ok" sumiam com falha silenciosa no
+  sync).
+- ✅ Sync online: ao bater em `23505` (UNIQUE) durante o flush, a fila
+  invoca `record_meal_incident('DUPLICATE', is_offline=true)` com o
+  timestamp original do scan e descarta o item local. A trilha de
+  auditoria captura cada conflito de fila em vez de marcar apenas
+  como "conflict" sem rastro. Caso a gravação do incidente também
+  falhe, o item é mantido como `conflict` para revisão manual.
 
 ---
 
