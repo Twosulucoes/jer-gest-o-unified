@@ -446,6 +446,19 @@ export const AppRoutes = () => (
         <Route path="debug" element={<PwaDebugPage />} />
         <Route path="diagnostico/qr" element={<QrDiagnosticoPage />} />
 
+        {/*
+          Wildcard de recuperação por módulo. Captura URLs com lixo
+          (ex: /pwa/alimentacao/<UUID>) e renderiza a home do módulo,
+          em vez de cair no catch-all global e gerar loop de redirect.
+          Rotas específicas acima ainda têm prioridade no React Router v6.
+        */}
+        <Route path="alojamento/*" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoHomePage /></PwaRouteGuard>} />
+        <Route path="alimentacao/*" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoHomePage /></PwaRouteGuard>} />
+        <Route path="transporte/*" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteHomePage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/*" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
+        <Route path="delegacao/*" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoHomePage /></PwaRouteGuard>} />
+        <Route path="resultados/*" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosHomePage /></PwaRouteGuard>} />
+
         {/* Catch-all for modules not yet explicitly defined or "coming soon" */}
         <Route path=":module" element={<PwaModulePage />} />
         <Route path="*" element={<PwaNotFoundHandler />} />
