@@ -61,7 +61,9 @@ export default function AlimentacaoBuscarPage() {
                 ? "não precisa alim."
                 : !p.credentialed_at
                   ? "sem credencial"
-                  : null;
+                  : p.left_event_at
+                    ? "saiu do evento"
+                    : null;
             return (
               <Card key={p.participant_id} className="cursor-pointer hover:bg-accent/50 active:scale-[0.98] transition-all">
                 <CardContent className="p-3 flex items-center justify-between gap-2">

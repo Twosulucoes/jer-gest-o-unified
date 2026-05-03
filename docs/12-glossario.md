@@ -40,6 +40,7 @@
 | **Trava de Presença (Alimentação)** | Conjunto de validações que só libera consumo de refeição para participante `is_active`, `needs_meals`, com `credentialed_at` preenchido e sem saída do evento registrada antes da `service_date` da janela. Aplica a QR e busca manual no PWA |
 | **Incidente de Refeição (Meal Incident)** | Registro auditável de tentativa recusada (`meal_incidents`) com tipo, instante, operador e participante |
 | **Presença Efetiva (no evento)** | Estado derivado: pessoa que credenciou e ainda não registrou saída antecipada — fonte de verdade para previsão diária e elegibilidade operacional de Alimentação |
+| **Saída Antecipada (Left Event)** | Registro formal em `participants.left_event_at` indicando que o participante deixou o evento. Encerra a elegibilidade para refeições a partir da data informada (validado por trigger no `meal_consumptions`) |
 | **Unidade (Lodging Unit)** | Quarto ou espaço de alojamento com capacidade definida |
 | **Ocupação** | Alocação de participante em unidade de alojamento |
 | **RLS** | Row Level Security — políticas de acesso em nível de linha no PostgreSQL |

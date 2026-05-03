@@ -9,6 +9,7 @@ export type ParticipantManualSearchRow = {
   is_active?: boolean;
   needs_meals?: boolean;
   credentialed_at?: string | null;
+  left_event_at?: string | null;
 };
 
 /** Remove caracteres que quebram filtros ILIKE do PostgREST. */
@@ -54,7 +55,7 @@ export async function searchParticipantsByNameOrCpf(
   // Carrega também sinais de presença/elegibilidade (is_active, needs_meals,
   // credentialed_at) para que telas operacionais possam aplicar a "trava de
   // presença" no fluxo manual sem uma segunda viagem ao banco.
-  const baseSelect = "id, person_id, participant_type, is_active, needs_meals, credentialed_at";
+  const baseSelect = "id, person_id, participant_type, is_active, needs_meals, credentialed_at, left_event_at";
   let ptQuery = supabase
     .from("participants")
     .select(baseSelect)
@@ -89,6 +90,7 @@ export async function searchParticipantsByNameOrCpf(
       is_active: pt.is_active ?? undefined,
       needs_meals: pt.needs_meals ?? undefined,
       credentialed_at: pt.credentialed_at ?? null,
+      left_event_at: pt.left_event_at ?? null,
     };
   });
 }

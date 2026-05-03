@@ -198,10 +198,24 @@ Objetivo: separar motivos de bloqueio e fechar permissões abertas.
   fluxo QR quanto no manual; `AlimentacaoDivergenciasPage` ganhou rótulos
   legíveis para os novos motivos.
 
-### Etapa 2 — Saída antecipada
-- Migration: `participants.left_event_at TIMESTAMPTZ`, `left_event_reason TEXT`, `left_event_by UUID`.
-- Tela Admin: botão "Registrar saída antecipada" com auditoria em `participant_audit_log`.
-- Trigger no DB ao inserir `meal_consumptions` que valida vigência.
+### Etapa 2 — Saída antecipada ✅
+- ✅ Migration `20260503152209_alimentacao_etapa2_left_event.sql`:
+  `participants.left_event_at TIMESTAMPTZ`, `left_event_reason TEXT`,
+  `left_event_by UUID`. Índice parcial em `left_event_at IS NOT NULL`.
+- ✅ Trigger `ck_meal_consumption_left_event` (BEFORE INSERT em
+  `meal_consumptions`): bloqueia o consumo quando
+  `service_date >= left_event_at::date`, com mensagem contendo as
+  duas datas para auditoria.
+- ✅ UI Admin: novo card **Saída Antecipada do Evento** em
+  `ParticipantResumoTab` com botão "Registrar saída antecipada" (motivo
+  em `Select` + detalhes opcionais) e botão "Reverter saída" para
+  admin/secretaria. Persistência direta em `participants` (autor em
+  `left_event_by`, instante em `left_event_at`, motivo composto em
+  `left_event_reason`).
+- ✅ PWA: `evaluateMealEligibility` ganha quarto critério (`LEFT_EVENT`),
+  aplicado em QR (com a `service_date` da janela selecionada) e na busca
+  manual. Badge "saiu do evento" exibido na lista da busca. Incidente
+  registrado como `LEFT_EVENT`.
 
 ### Etapa 3 — Previsão por presença
 - RPC `get_present_participant_counts(p_event_id, p_stage_id, p_service_date)` que aplica o invariante 3.3.
