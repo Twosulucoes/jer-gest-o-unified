@@ -306,6 +306,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("participant_event_stages" as any).select("id, event_stage_id", { count: "exact" }).limit(10000);
+          if (eventId) (query as any).eq("event_id", eventId);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
@@ -319,6 +320,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           const query = supabase.from("participant_sport_events" as any)
             .select("id, sport_event_id, registration_status, is_blocked_by_documentation", { count: "exact" })
             .limit(10000);
+          if (eventId) (query as any).eq("event_id", eventId);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
