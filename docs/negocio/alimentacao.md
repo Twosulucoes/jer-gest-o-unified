@@ -60,8 +60,13 @@ Toda tentativa recusada gera linha em `meal_incidents` com:
 ### 5. Operação Offline
 - Janelas do dia ficam em `localStorage` para uso sem rede.
 - Consumos offline vão para fila de sincronização.
-- Validação de duplicidade no modo offline é **best effort**: o `UNIQUE` do
-  banco fecha a porta no momento da sincronização e gera `DUPLICATE` na trilha.
+- A fila local **deduplica** por `(meal_window_id, participant_id)`: uma
+  segunda tentativa offline para o mesmo atleta na mesma janela não
+  empilha um novo item — o operador é avisado.
+- Em conflito cross-device (outro operador já registrou o consumo
+  online), o sync grava automaticamente `meal_incidents.DUPLICATE` com
+  `is_offline = true` e o timestamp original do scan, mantendo a trilha
+  de auditoria mesmo quando o registro acaba descartado.
 
 ### 6. Cenários típicos
 - **Chegada tardia:** atleta credenciado no penúltimo dia só passa a contar

@@ -63,7 +63,7 @@ Para navegar pela complexidade do sistema, utilize os guias detalhados abaixo:
 | Módulo | Status | Destaque Recente |
 | :--- | :---: | :--- |
 | **🏠 Alojamento** | ✅ | Fechado para operação. Controle de ocupação e presença noturna. |
-| **🍽️ Alimentação** | 🟡 | **Auditoria 2026-05-03:** Etapas 0–5 entregues — trava de presença em todos os caminhos do PWA, enum de incidentes estendido, RLS restaurada, saída antecipada do evento (tela admin + trigger no DB), Previsão de Demanda por presença efetiva, Divergências/Ausências sem alarmes falsos e PWA da delegação consultando o próprio consumo. Plano incremental em [`docs/modulos/alimentacao-auditoria.md`](docs/modulos/alimentacao-auditoria.md). |
+| **🍽️ Alimentação** | ✅ | **Auditoria 2026-05-03 concluída:** Etapas 0–6 entregues — trava de presença em todos os caminhos do PWA, enum de incidentes estendido, RLS estrita, saída antecipada do evento, Previsão de Demanda e Divergências por presença efetiva, PWA da delegação e fila offline com deduplicação determinística + trilha de DUPLICATE. Diagnóstico em [`docs/modulos/alimentacao-auditoria.md`](docs/modulos/alimentacao-auditoria.md). |
 | **🚌 Transporte** | ✅ | Gestão de embarque e listas de passageiros por viagem. |
 | **🏆 Competição** | ✅ | Motor de regras JSONB e suporte a 6 famílias de modalidades. |
 | **📄 Boletins** | ✅ | Geração automática de PDF e XLSX oficial. |
