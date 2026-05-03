@@ -5283,8 +5283,10 @@ export type Database = {
       participant_sport_events: {
         Row: {
           block_reason_code: string | null
+          cancelled_by_substitution_id: string | null
           category_rule_code: string | null
           created_at: string
+          created_by_substitution_id: string | null
           event_stage_id: string
           gender_snapshot: string | null
           id: string
@@ -5303,8 +5305,10 @@ export type Database = {
         }
         Insert: {
           block_reason_code?: string | null
+          cancelled_by_substitution_id?: string | null
           category_rule_code?: string | null
           created_at?: string
+          created_by_substitution_id?: string | null
           event_stage_id: string
           gender_snapshot?: string | null
           id?: string
@@ -5323,8 +5327,10 @@ export type Database = {
         }
         Update: {
           block_reason_code?: string | null
+          cancelled_by_substitution_id?: string | null
           category_rule_code?: string | null
           created_at?: string
+          created_by_substitution_id?: string | null
           event_stage_id?: string
           gender_snapshot?: string | null
           id?: string
@@ -7724,6 +7730,124 @@ export type Database = {
           },
         ]
       }
+      substitutions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          delegation_id: string
+          event_id: string
+          event_stage_id: string
+          executed_at: string | null
+          executed_by: string | null
+          id: string
+          notes: string | null
+          participant_in_id: string
+          participant_out_id: string
+          reason: string | null
+          reason_code: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_notes: string | null
+          requested_at: string
+          requested_by: string
+          sport_event_id: string
+          status: Database["public"]["Enums"]["substitution_status"]
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          delegation_id: string
+          event_id: string
+          event_stage_id: string
+          executed_at?: string | null
+          executed_by?: string | null
+          id?: string
+          notes?: string | null
+          participant_in_id: string
+          participant_out_id: string
+          reason?: string | null
+          reason_code?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_notes?: string | null
+          requested_at?: string
+          requested_by: string
+          sport_event_id: string
+          status?: Database["public"]["Enums"]["substitution_status"]
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          delegation_id?: string
+          event_id?: string
+          event_stage_id?: string
+          executed_at?: string | null
+          executed_by?: string | null
+          id?: string
+          notes?: string | null
+          participant_in_id?: string
+          participant_out_id?: string
+          reason?: string | null
+          reason_code?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_notes?: string | null
+          requested_at?: string
+          requested_by?: string
+          sport_event_id?: string
+          status?: Database["public"]["Enums"]["substitution_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "substitutions_delegation_id_fkey"
+            columns: ["delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_participant_in_id_fkey"
+            columns: ["participant_in_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_participant_out_id_fkey"
+            columns: ["participant_out_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_ticket_comments: {
         Row: {
           author_id: string
@@ -9022,6 +9146,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      execute_substitution: {
+        Args: { p_substitution_id: string }
+        Returns: Json
+      }
       find_duplicate_people: {
         Args: never
         Returns: {
@@ -9680,6 +9808,37 @@ export type Database = {
         | "VOUCHER_EXPIRED"
         | "VOUCHER_ALREADY_USED"
         | "OTHER"
+        | "NO_CREDENTIAL"
+        | "PARTICIPANT_INACTIVE"
+        | "NEEDS_MEALS_FALSE"
+        | "LEFT_EVENT"
+      participant_category: "delegation" | "organization"
+      participant_type:
+        | "athlete"
+        | "coach"
+        | "head_of_delegation"
+        | "official"
+        | "staff"
+        | "motorista"
+        | "agente_operacao"
+        | "logistica"
+        | "cozinheira"
+        | "guia"
+        | "secretaria"
+        | "mesario"
+        | "arbitro"
+        | "delegado"
+        | "fiscal"
+        | "operador_pesquisa"
+        | "tecnico_ti"
+        | "terceiro"
+        | "colaborador"
+      substitution_status:
+        | "requested"
+        | "approved"
+        | "rejected"
+        | "executed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -9838,6 +9997,39 @@ export const Constants = {
         "VOUCHER_EXPIRED",
         "VOUCHER_ALREADY_USED",
         "OTHER",
+        "NO_CREDENTIAL",
+        "PARTICIPANT_INACTIVE",
+        "NEEDS_MEALS_FALSE",
+        "LEFT_EVENT",
+      ],
+      participant_category: ["delegation", "organization"],
+      participant_type: [
+        "athlete",
+        "coach",
+        "head_of_delegation",
+        "official",
+        "staff",
+        "motorista",
+        "agente_operacao",
+        "logistica",
+        "cozinheira",
+        "guia",
+        "secretaria",
+        "mesario",
+        "arbitro",
+        "delegado",
+        "fiscal",
+        "operador_pesquisa",
+        "tecnico_ti",
+        "terceiro",
+        "colaborador",
+      ],
+      substitution_status: [
+        "requested",
+        "approved",
+        "rejected",
+        "executed",
+        "cancelled",
       ],
     },
   },

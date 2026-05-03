@@ -343,7 +343,9 @@ A substituição é um **evento administrativo** que afeta:
 | **F1** | Logística stage-scoped — `meal_types.event_stage_id` e `meal_locations.event_stage_id` NOT NULL; `service_vouchers.event_stage_id` adicionado e NOT NULL (voucher é consumo da etapa, canônico §11.5) | ✅ |
 | **F2** | `participant_sport_events.event_stage_id` NOT NULL após backfill; UNIQUE redefinido para `(participant_id, sport_event_id, event_stage_id)` direto (sem COALESCE) | ✅ |
 | **F3** | `competition_phases.event_stage_id` ADD COLUMN + backfill + FK ON DELETE RESTRICT + NOT NULL + INDEX. Encerra Fase F. | ✅ |
-| G | **Substituições** — tabela `substitutions`, versionamento de `participant_sport_events`, fluxo administrativo no Admin com aprovação | ⏳ |
+| **G1** | Schema + RPC: tabela `substitutions` (auditoria imutável, stage-scoped), `participant_sport_events` ganha `cancelled_by_substitution_id`/`created_by_substitution_id` + status `cancelled_by_substitution`, RPC `execute_substitution` atômica e idempotente, RLS (admin/secretaria/coord_tecnica full; delegacao read+request da própria) | ✅ |
+| G2 | UI Admin `/admin/etapa/:stageId/substituicoes` — fluxo solicitar/aprovar/rejeitar/executar | ⏳ |
+| G3 | Visão da delegação `/pwa/delegacao/substituicoes` (somente leitura das próprias) | ⏳ |
 
 ### Sequência recomendada
 A → B → F → C → D → E → G
