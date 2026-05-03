@@ -5395,7 +5395,6 @@ export type Database = {
       }
       participants: {
         Row: {
-          active_status: string | null
           created_at: string
           credentialed_at: string | null
           credentialed_by: string | null
@@ -5419,7 +5418,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          active_status?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
@@ -5443,7 +5441,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          active_status?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null

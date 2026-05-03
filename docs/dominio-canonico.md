@@ -166,7 +166,7 @@
 | `coach_name`, `coach_phone`, `guardian_name`, `guardian_phone` | Vínculos civis — migrados para `people`. | ✅ removido (Fase A2) |
 | `enrollment_date` | Redundante com `created_at`. | ✅ removido (Fase A2) |
 | `school_role_label` | Cadastral escolar — migrado para `people`. | ✅ removido (Fase A2) |
-| `active_status` | Redundante com `is_active` + `status`. | ⏳ Fase D |
+| `active_status` | Redundante com `is_active` + `status`. | ✅ removido (Fase D) |
 
 #### `participant_credentials`
 **Pergunta:** "Qual credencial física essa pessoa tem nesse evento?"
@@ -338,7 +338,7 @@ A substituição é um **evento administrativo** que afeta:
 | **B2** | Refactor de edição: `DelegationFormDialog` (sem prefixo `school_`) + `DelegacoesPage` (insert/update em `institutions` + `delegations`, filters/sort/search via JOIN) | ✅ |
 | **B3** | Migration final: DROP 11 colunas `school_*` em `delegations` + DROP 3 triggers de sync + DROP 3 funções + DROP índice único legado + types.ts limpo | ✅ |
 | **C** | Renomear `participants.category` → `enrollment_class`; criar `enum participant_type` real com 19 valores em uso. (`match_result_status` enum já existia desde 20260422.) | ✅ |
-| D | Remover redundâncias (`participants.active_status`); corrigir bug `get_participant_counts_by_institution` (lê `p.institution_id` que não existe) | ⏳ |
+| **D** | DROP `participants.active_status` (redundante); corrige bug latente em `get_participant_counts_by_institution` e `get_present_participant_counts_by_institution` (passam a fazer JOIN com `delegations` para resolver `institution_id`) | ✅ |
 | E | Atualizar docs (este documento + glossário + DB) | ⏳ |
 | **F1** | Logística stage-scoped — `meal_types.event_stage_id` e `meal_locations.event_stage_id` NOT NULL; `service_vouchers.event_stage_id` adicionado e NOT NULL (voucher é consumo da etapa, canônico §11.5) | ✅ |
 | **F2** | `participant_sport_events.event_stage_id` NOT NULL após backfill; UNIQUE redefinido para `(participant_id, sport_event_id, event_stage_id)` direto (sem COALESCE) | ✅ |
