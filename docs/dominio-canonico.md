@@ -276,7 +276,7 @@
 ### Executivo (stage-scoped)
 | Tabela | Escopo | Comentário |
 |:---|:---|:---|
-| `competition_phases` | **etapa** | **Pendência (Fase F):** hoje só tem `event_id`+`sport_event_id`. **Adicionar `event_stage_id NOT NULL`** — fase eliminatória pertence à Caracaraí, fase final pertence à Boa Vista. |
+| `competition_phases` | **etapa** ✓ | `event_stage_id NOT NULL` desde a Fase F3 — fase eliminatória pertence à Caracaraí, fase final pertence à Boa Vista. |
 | `competition_groups` | herda de phase | OK uma vez que phases tenha event_stage_id. |
 | `competition_matches` | **etapa** ✓ | Já tem `event_stage_id`. Cada partida acontece em uma etapa. |
 | `competition_match_entries` | herda de match | Entry = team OU participant_sport_event. |
@@ -342,7 +342,7 @@ A substituição é um **evento administrativo** que afeta:
 | E | Atualizar docs (este documento + glossário + DB) | ⏳ |
 | **F1** | Logística stage-scoped — `meal_types.event_stage_id` e `meal_locations.event_stage_id` NOT NULL; `service_vouchers.event_stage_id` adicionado e NOT NULL (voucher é consumo da etapa, canônico §11.5) | ✅ |
 | **F2** | `participant_sport_events.event_stage_id` NOT NULL após backfill; UNIQUE redefinido para `(participant_id, sport_event_id, event_stage_id)` direto (sem COALESCE) | ✅ |
-| F3 | `competition_phases.event_stage_id` adicionado e NOT NULL | ⏳ |
+| **F3** | `competition_phases.event_stage_id` ADD COLUMN + backfill + FK ON DELETE RESTRICT + NOT NULL + INDEX. Encerra Fase F. | ✅ |
 | G | **Substituições** — tabela `substitutions`, versionamento de `participant_sport_events`, fluxo administrativo no Admin com aprovação | ⏳ |
 
 ### Sequência recomendada
