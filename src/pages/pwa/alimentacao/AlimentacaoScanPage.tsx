@@ -46,6 +46,18 @@ interface MealWindow {
   capacity?: number;
 }
 
+// Saída antecipada (Etapa 2): pessoa fica inelegível para janelas com
+// service_date >= left_event_at::date. O trigger no DB (etapa 2) bloqueia
+// inserções; o front aplica a mesma regra para mensagem clara e trilha.
+function leftEventBlocksWindow(
+  leftEventAt: string | null | undefined,
+  serviceDate: string | undefined,
+): boolean {
+  if (!leftEventAt || !serviceDate) return false;
+  const leftDate = leftEventAt.slice(0, 10); // ISO -> YYYY-MM-DD
+  return serviceDate >= leftDate;
+}
+
 const MODULE = "alimentacao" as const;
 
 export default function AlimentacaoScanPage() {
@@ -391,10 +403,13 @@ export default function AlimentacaoScanPage() {
           return;
         }
 
-        // Nova validação de segurança: Verificar status do participante
-        const { data: partData, error: partError } = await supabase
+        // Nova validação de segurança: Verificar status do participante.
+        // Etapa 2: também passa a verificar saída antecipada (left_event_at)
+        // para fechar a trava no fluxo QR; o trigger no DB é o cinto e o
+        // suspensório.
+        const { data: partData, error: partError } = await (supabase as any)
           .from("participants")
-          .select("status, is_active, credentialed_at")
+          .select("status, is_active, credentialed_at, needs_meals, left_event_at")
           .eq("id", resolved.participant_id)
           .single();
 
@@ -416,6 +431,16 @@ export default function AlimentacaoScanPage() {
           return;
         }
 
+        const winForQr = windows.find((w) => w.id === windowId);
+        if (leftEventBlocksWindow(partData.left_event_at, winForQr?.service_date)) {
+          const msg = "Participante registrou saída antecipada do evento.";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg);
+          recordOutcome("error");
+          void recordIncident("LEFT_EVENT", resolved.participant_id);
+          return;
+        }
+
         participantId = resolved.participant_id;
         participantName = resolved.full_name;
         method = "qr_scan";
@@ -434,11 +459,14 @@ export default function AlimentacaoScanPage() {
     }
   };
 
+  type EligibilityReason = "INACTIVE" | "NEEDS_MEALS_FALSE" | "NO_CREDENTIAL" | "LEFT_EVENT";
+
   // Avalia presença/elegibilidade do participante para refeição.
   // Mantém paridade com a trava aplicada no fluxo de QR (handleScan).
   const evaluateMealEligibility = (
-    row: Pick<ParticipantManualSearchRow, "is_active" | "needs_meals" | "credentialed_at">,
-  ): { ok: true } | { ok: false; reason: "INACTIVE" | "NEEDS_MEALS_FALSE" | "NO_CREDENTIAL"; message: string } => {
+    row: Pick<ParticipantManualSearchRow, "is_active" | "needs_meals" | "credentialed_at" | "left_event_at">,
+    serviceDate?: string,
+  ): { ok: true } | { ok: false; reason: EligibilityReason; message: string } => {
     if (row.is_active === false) {
       return { ok: false, reason: "INACTIVE", message: "Participante Inativo." };
     }
@@ -456,12 +484,17 @@ export default function AlimentacaoScanPage() {
         message: "Participante não possui credencial ativa (Aguardando Credenciamento).",
       };
     }
+    if (leftEventBlocksWindow(row.left_event_at, serviceDate)) {
+      return {
+        ok: false,
+        reason: "LEFT_EVENT",
+        message: "Participante registrou saída antecipada do evento.",
+      };
+    }
     return { ok: true };
   };
 
-  const incidentTypeFor = (
-    reason: "INACTIVE" | "NEEDS_MEALS_FALSE" | "NO_CREDENTIAL",
-  ): string => {
+  const incidentTypeFor = (reason: EligibilityReason): string => {
     switch (reason) {
       case "INACTIVE":
         return "PARTICIPANT_INACTIVE";
@@ -469,6 +502,8 @@ export default function AlimentacaoScanPage() {
         return "NEEDS_MEALS_FALSE";
       case "NO_CREDENTIAL":
         return "NO_CREDENTIAL";
+      case "LEFT_EVENT":
+        return "LEFT_EVENT";
     }
   };
 
@@ -476,10 +511,11 @@ export default function AlimentacaoScanPage() {
     setManualQuery("");
     setManualHits([]);
     try {
-      // Trava de presença aplicada também no caminho manual (Etapa 0/1 da
+      // Trava de presença aplicada também no caminho manual (Etapa 0/1/2 da
       // auditoria de Alimentação). Sem isso, o operador conseguia inserir
       // consumo para qualquer pessoa do evento via busca por nome/CPF.
-      const verdict = evaluateMealEligibility(row);
+      const win = windows.find((w) => w.id === windowId);
+      const verdict = evaluateMealEligibility(row, win?.service_date);
       if (!verdict.ok) {
         setResult({ ok: false, message: verdict.message, source: "manual" });
         toast.error(verdict.message, {
@@ -609,13 +645,16 @@ export default function AlimentacaoScanPage() {
                 )}
                 {!manualSearching &&
                   manualHits.map((h) => {
-                    const verdict = evaluateMealEligibility(h);
+                    const winForBadge = windows.find((w) => w.id === windowId);
+                    const verdict = evaluateMealEligibility(h, winForBadge?.service_date);
                     const badgeLabel = !verdict.ok
                       ? verdict.reason === "NO_CREDENTIAL"
                         ? "sem credencial"
                         : verdict.reason === "NEEDS_MEALS_FALSE"
                           ? "não precisa alim."
-                          : "inativo"
+                          : verdict.reason === "LEFT_EVENT"
+                            ? "saiu do evento"
+                            : "inativo"
                       : null;
                     return (
                       <button

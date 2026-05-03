@@ -35,7 +35,10 @@ Para registrar consumo o participante deve:
 1. Ter `is_active = true`.
 2. Ter `needs_meals = true` (declarou consumo de refeições).
 3. Ter `credentialed_at` preenchido (chegou ao evento).
-4. Não ter registro de saída do evento anterior à `service_date` da janela.
+4. Não ter `left_event_at` preenchido para uma data ≤ `service_date`
+   da janela. O DB enforca via trigger
+   `ck_meal_consumption_left_event` em `meal_consumptions`; o PWA
+   replica a regra para mensagens claras.
 
 Aplica-se a **QR de credencial**, **busca manual** e (futuro) **inserção
 manual via Admin**. Vouchers seguem regras próprias do módulo de Vouchers.
