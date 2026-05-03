@@ -38,6 +38,7 @@ export interface TodayMatchRow {
 export interface DashboardData {
   resumo: {
     participants_total: number;
+    athletes_total: number;
     credentialed: number;
     credentials_active: number;
     credentials_today: number;
@@ -58,6 +59,14 @@ export interface DashboardData {
     daily: DailyPoint[];
     by_delegation: DelegationProgressRow[];
   };
+  inscricoes: {
+    total_provas: number;
+    total_etapas: number;
+    pendentes_documentacao: number;
+    por_status: { name: string; value: number }[];
+    by_stage: { id: string; name: string; count: number }[];
+    by_modality: { id: string; name: string; count: number }[];
+  };
   alimentacao: {
     daily: MealDailyPoint[];
     meal_types: string[];
@@ -75,7 +84,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // Initial dummy state when no eventId is provided to avoid crashes
   const dummyData: DashboardData = {
     resumo: {
-      participants_total: 0, credentialed: 0, credentials_active: 0, credentials_today: 0,
+      participants_total: 0, athletes_total: 0, credentialed: 0, credentials_active: 0, credentials_today: 0,
       matches_total: 0, matches_done: 0, matches_published: 0,
       meals_total: 0, meals_today: 0,
       lodging_capacity: 0, lodging_occupied: 0,
@@ -83,6 +92,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       referees_total: 0, referees_assigned: 0,
     },
     credenciamento: { daily: [], by_delegation: [] },
+    inscricoes: { total_provas: 0, total_etapas: 0, pendentes_documentacao: 0, por_status: [], by_stage: [], by_modality: [] },
     alimentacao: { daily: [], meal_types: [], by_delegation: [] },
     competicao: { by_sport: [], today: [] },
   };
@@ -278,25 +288,81 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
         }, { list: [], totalCount: 0 }),
       },
+      // 11: event_stages
+      {
+        queryKey: ["dash3", "event_stages", eventId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const query = supabase.from("event_stages").select("id, name");
+          if (eventId) query.eq("event_id", eventId);
+          const { data } = await query;
+          return data ?? [];
+        }, [] as { id: string; name: string }[]),
+      },
+      // 12: participant_event_stages (Vinculos em Etapas)
+      {
+        queryKey: ["dash3", "participant_event_stages", eventId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const query = supabase.from("participant_event_stages" as any).select("id, event_stage_id", { count: "exact" }).limit(10000);
+          if (eventId) (query as any).eq("event_id", eventId);
+          const { data, count } = await query;
+          return { list: data ?? [], totalCount: count ?? 0 };
+        }, { list: [], totalCount: 0 }),
+      },
+      // 13: participant_sport_events (Inscrições em Provas)
+      {
+        queryKey: ["dash3", "participant_sport_events", eventId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const query = supabase.from("participant_sport_events" as any)
+            .select("id, sport_event_id, registration_status, is_blocked_by_documentation, participants!inner(event_id)", { count: "exact" })
+            .limit(10000);
+          if (eventId) (query as any).eq("participants.event_id", eventId);
+          const { data, count } = await query;
+          return { list: data ?? [], totalCount: count ?? 0 };
+        }, { list: [], totalCount: 0 }),
+      },
+      // 14: athletes count
+      {
+        queryKey: ["dash3", "athletes_count", eventId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const query = supabase.from("participants").select("id", { count: "exact", head: true }).eq("participant_type", "athlete");
+          if (eventId) query.eq("event_id", eventId);
+          const { count } = await query;
+          return count ?? 0;
+        }, 0),
+      },
     ],
   });
 
   const isLoading = queries.some((q) => q.isLoading);
   
-  const [participantsRes, credentialsRes, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, tripsRes, vehicles, sportEvents, matchesRes] =
-    queries.map((q) => q.data) as [
-      { list: any[]; totalCount: number },
-      { list: any[]; totalCount: number },
-      { id: string; school_name: string }[],
-      { id: string; service_date: string; meal_type_id: string; label: string | null }[],
-      { id: string; name: string }[],
-      { id: string; capacity: number; is_active: boolean }[],
-      number,
-      { list: any[]; totalCount: number },
-      number,
-      Array<{ id: string; name: string | null; sports: { name: string } | null; categories: { name: string } | null }>,
-      { list: any[]; totalCount: number },
-    ];
+  const [
+    participantsRes, credentialsRes, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, 
+    tripsRes, vehicles, sportEvents, matchesRes, eventStages, pEventStagesRes, pSportEventsRes, athletesTotal
+  ] = queries.map((q) => q.data) as [
+    { list: any[]; totalCount: number },
+    { list: any[]; totalCount: number },
+    { id: string; school_name: string }[],
+    { id: string; service_date: string; meal_type_id: string; label: string | null }[],
+    { id: string; name: string }[],
+    { id: string; capacity: number; is_active: boolean }[],
+    number,
+    { list: any[]; totalCount: number },
+    number,
+    Array<{ id: string; name: string | null; sports: { name: string } | null; categories: { name: string } | null }>,
+    { list: any[]; totalCount: number },
+    { id: string; name: string }[],
+    { list: any[]; totalCount: number },
+    { list: any[]; totalCount: number },
+    number,
+  ];
 
 
   // Fallbacks defensivos
@@ -539,9 +605,36 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       teams: "",
     }));
 
+  // Inscrições (Estatísticas de Provas e Etapas)
+  const ES = eventStages ?? [];
+  const PES = pEventStagesRes?.list ?? [];
+  const PSE = pSportEventsRes?.list ?? [];
+
+  const stageCountMap = new Map<string, number>();
+  PES.forEach((pes: any) => {
+    stageCountMap.set(pes.event_stage_id, (stageCountMap.get(pes.event_stage_id) ?? 0) + 1);
+  });
+
+  const modalityCountMap = new Map<string, number>();
+  const statusMap = new Map<string, number>();
+  let blockedDocCount = 0;
+
+  PSE.forEach((pse: any) => {
+    // Contagem por modalidade
+    modalityCountMap.set(pse.sport_event_id, (modalityCountMap.get(pse.sport_event_id) ?? 0) + 1);
+    
+    // Contagem por status de inscrição
+    const status = pse.registration_status || "Pendente";
+    statusMap.set(status, (statusMap.get(status) ?? 0) + 1);
+
+    // Contagem de bloqueios por documentação
+    if (pse.is_blocked_by_documentation) blockedDocCount++;
+  });
+
   const data: DashboardData = {
     resumo: {
       participants_total: P_total || P.length,
+      athletes_total: athletesTotal ?? 0,
       credentialed,
       credentials_active: C_total || activeCreds.length,
       credentials_today: credToday,
@@ -557,6 +650,17 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       transport_vehicles: VE,
       referees_total: refereesTotal,
       referees_assigned: refereesAssigned,
+    },
+
+    inscricoes: {
+      total_provas: pSportEventsRes?.totalCount || PSE.length,
+      total_etapas: pEventStagesRes?.totalCount || PES.length,
+      pendentes_documentacao: blockedDocCount,
+      por_status: Array.from(statusMap.entries()).map(([name, value]) => ({ name, value })),
+      by_stage: ES.map(s => ({ id: s.id, name: s.name, count: stageCountMap.get(s.id) ?? 0 })),
+      by_modality: SE.map(s => ({ id: s.id, name: seName.get(s.id) || s.name || "Modalidade", count: modalityCountMap.get(s.id) ?? 0 }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
     },
 
     credenciamento: { daily: credDaily, by_delegation: byDelegation },

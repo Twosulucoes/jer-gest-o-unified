@@ -378,7 +378,7 @@ export const AppRoutes = () => (
         <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="vouchers" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="transporte" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "transporte"]}><RedirectToEtapas /></ProtectedRoute>} />
-        <Route path="alimentacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="alimentacao/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="alojamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alojamento"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="competicao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="pesquisa" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
@@ -396,7 +396,7 @@ export const AppRoutes = () => (
         <Route path="alojamento/incidentes" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoIncidentesPage /></PwaRouteGuard>} />
         <Route path="alojamento/incidentes/novo" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoNovoIncidentePage /></PwaRouteGuard>} />
         <Route path="alojamento/lista-completa" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoListaCompletaPage /></PwaRouteGuard>} />
-        <Route path="alojamento/unidade/:id/faltosos" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoUnidadeFaltososPage /></PwaRouteGuard>} />
+        <Route path="alojamento/unidade/:unitId/faltosos" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoUnidadeFaltososPage /></PwaRouteGuard>} />
 
         <Route path="transporte" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteHomePage /></PwaRouteGuard>} />
         <Route path="transporte/viagens" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteViagensPage /></PwaRouteGuard>} />
@@ -414,7 +414,7 @@ export const AppRoutes = () => (
         <Route path="coordenacao-tecnica" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/agenda" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoAgendaPage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/partidas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoPartidasPage /></PwaRouteGuard>} />
-        <Route path="coordenacao-tecnica/partida/:id" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoPartidaDetalhePage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/partida/:matchId" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoPartidaDetalhePage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/resultados" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoResultadosPage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/estatisticas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoEstatisticasPage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/consulta" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoConsultaPage /></PwaRouteGuard>} />
@@ -424,7 +424,7 @@ export const AppRoutes = () => (
 
         <Route path="resultados" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosHomePage /></PwaRouteGuard>} />
         <Route path="resultados/partidas" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosPartidasPage /></PwaRouteGuard>} />
-        <Route path="resultados/partida/:id" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosPartidaFormPage /></PwaRouteGuard>} />
+        <Route path="resultados/partida/:matchId" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosPartidaFormPage /></PwaRouteGuard>} />
 
         <Route path="delegacao" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoHomePage /></PwaRouteGuard>} />
         <Route path="delegacao/participantes" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoParticipantesPage /></PwaRouteGuard>} />
