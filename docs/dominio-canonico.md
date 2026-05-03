@@ -339,7 +339,7 @@ A substituição é um **evento administrativo** que afeta:
 | **B3** | Migration final: DROP 11 colunas `school_*` em `delegations` + DROP 3 triggers de sync + DROP 3 funções + DROP índice único legado + types.ts limpo | ✅ |
 | **C** | Renomear `participants.category` → `enrollment_class`; criar `enum participant_type` real com 19 valores em uso. (`match_result_status` enum já existia desde 20260422.) | ✅ |
 | **D** | DROP `participants.active_status` (redundante); corrige bug latente em `get_participant_counts_by_institution` e `get_present_participant_counts_by_institution` (passam a fazer JOIN com `delegations` para resolver `institution_id`) | ✅ |
-| E | Atualizar docs (este documento + glossário + DB) | ⏳ |
+| **E** | Atualização de docs: `05-banco-de-dados-e-rls.md` reescrito refletindo os 4 quadrantes, enums, constraints, triggers e fases de normalização; `12-glossario.md` ganhou termos novos (Etapa, Quadrante, Lei de Escopo, Stage-scoped, Inscrição em Etapa, Documento Canônico, Substituição). | ✅ |
 | **F1** | Logística stage-scoped — `meal_types.event_stage_id` e `meal_locations.event_stage_id` NOT NULL; `service_vouchers.event_stage_id` adicionado e NOT NULL (voucher é consumo da etapa, canônico §11.5) | ✅ |
 | **F2** | `participant_sport_events.event_stage_id` NOT NULL após backfill; UNIQUE redefinido para `(participant_id, sport_event_id, event_stage_id)` direto (sem COALESCE) | ✅ |
 | **F3** | `competition_phases.event_stage_id` ADD COLUMN + backfill + FK ON DELETE RESTRICT + NOT NULL + INDEX. Encerra Fase F. | ✅ |
