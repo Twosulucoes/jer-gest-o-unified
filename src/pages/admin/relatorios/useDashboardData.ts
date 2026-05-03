@@ -38,6 +38,7 @@ export interface TodayMatchRow {
 export interface DashboardData {
   resumo: {
     participants_total: number;
+    athletes_total: number;
     credentialed: number;
     credentials_active: number;
     credentials_today: number;
@@ -83,7 +84,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // Initial dummy state when no eventId is provided to avoid crashes
   const dummyData: DashboardData = {
     resumo: {
-      participants_total: 0, credentialed: 0, credentials_active: 0, credentials_today: 0,
+      participants_total: 0, athletes_total: 0, credentialed: 0, credentials_active: 0, credentials_today: 0,
       matches_total: 0, matches_done: 0, matches_published: 0,
       meals_total: 0, meals_today: 0,
       lodging_capacity: 0, lodging_occupied: 0,
@@ -324,6 +325,18 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
+      },
+      // 14: athletes count
+      {
+        queryKey: ["dash3", "athletes_count", eventId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const query = supabase.from("participants").select("id", { count: "exact", head: true }).eq("participant_type", "athlete");
+          if (eventId) query.eq("event_id", eventId);
+          const { count } = await query;
+          return count ?? 0;
+        }, 0),
       },
     ],
   });
@@ -620,6 +633,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   const data: DashboardData = {
     resumo: {
       participants_total: P_total || P.length,
+      athletes_total: athletesTotal ?? 0,
       credentialed,
       credentials_active: C_total || activeCreds.length,
       credentials_today: credToday,
