@@ -387,9 +387,35 @@ export default function AlimentacaoScanPage() {
           setResult({ ok: false, message: errorMsg, source: "qr" });
           toast.error(errorMsg);
           recordOutcome("error");
-          void recordIncident("OTHER"); // Or a specific type if resolved but not found in context
+          void recordIncident("OTHER");
           return;
         }
+
+        // Nova validação de segurança: Verificar status do participante
+        const { data: partData, error: partError } = await supabase
+          .from("participants")
+          .select("status, is_active, credentialed_at")
+          .eq("id", resolved.participant_id)
+          .single();
+
+        if (partError || !partData?.is_active) {
+          const msg = "Participante Inativo ou não encontrado";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg);
+          recordOutcome("error");
+          void recordIncident("PARTICIPANT_INACTIVE", resolved.participant_id);
+          return;
+        }
+
+        if (!partData.credentialed_at) {
+          const msg = "Participante não possui credencial ativa (Aguardando Credenciamento)";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg, { description: "Encaminhe o atleta para a secretaria." });
+          recordOutcome("error");
+          void recordIncident("NO_CREDENTIAL", resolved.participant_id);
+          return;
+        }
+
         participantId = resolved.participant_id;
         participantName = resolved.full_name;
         method = "qr_scan";
