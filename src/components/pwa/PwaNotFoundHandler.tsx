@@ -5,6 +5,19 @@ import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
 import { Loader2 } from "lucide-react";
 
+const KNOWN_PWA_MODULES = [
+  "alojamento",
+  "alimentacao",
+  "transporte",
+  "coordenacao-tecnica",
+  "delegacao",
+  "credenciamento",
+  "resultados",
+  "registros",
+  "arbitragem",
+  "diagnostico",
+];
+
 /**
  * Component to handle and log non-existent PWA routes.
  */
@@ -16,18 +29,27 @@ export default function PwaNotFoundHandler() {
 
   useEffect(() => {
     console.warn("[PwaNotFoundHandler] rota PWA inexistente:", location.pathname);
+
+    // Defensive recovery: if path is /pwa/<known-module>/<garbage>, fall back
+    // to the module home rather than the global PWA landing.
+    const segments = location.pathname.split("/").filter(Boolean);
+    let target = "/pwa";
+    if (segments[0] === "pwa" && segments[1] && KNOWN_PWA_MODULES.includes(segments[1])) {
+      target = `/pwa/${segments[1]}`;
+      console.warn(`[PwaNotFoundHandler] recuperando para a home do módulo: ${target}`);
+    }
+
     logPwaEvent({
       action: "route_not_found",
       path: location.pathname,
-      target_path: "/pwa",
+      target_path: target,
       reason: "PWA Route does not exist",
       event_id: activeEventId,
       stage_id: activeStageId
     });
 
-    // Redirect to PWA home after a short delay
     const timer = setTimeout(() => {
-      navigate("/pwa", { replace: true });
+      navigate(target, { replace: true });
     }, 1500);
 
     return () => clearTimeout(timer);
@@ -42,7 +64,7 @@ export default function PwaNotFoundHandler() {
           A rota <span className="font-mono text-xs bg-muted px-1 rounded">{location.pathname}</span> não existe no PWA.
         </p>
         <p className="text-sm text-muted-foreground animate-pulse">
-          Redirecionando para o menu principal...
+          Redirecionando...
         </p>
       </div>
     </div>
