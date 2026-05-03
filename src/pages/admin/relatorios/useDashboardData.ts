@@ -38,6 +38,7 @@ export interface TodayMatchRow {
 export interface DashboardData {
   resumo: {
     participants_total: number;
+    athletes_total: number;
     credentialed: number;
     credentials_active: number;
     credentials_today: number;
@@ -83,7 +84,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // Initial dummy state when no eventId is provided to avoid crashes
   const dummyData: DashboardData = {
     resumo: {
-      participants_total: 0, credentialed: 0, credentials_active: 0, credentials_today: 0,
+      participants_total: 0, athletes_total: 0, credentialed: 0, credentials_active: 0, credentials_today: 0,
       matches_total: 0, matches_done: 0, matches_published: 0,
       meals_total: 0, meals_today: 0,
       lodging_capacity: 0, lodging_occupied: 0,
@@ -306,6 +307,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("participant_event_stages" as any).select("id, event_stage_id", { count: "exact" }).limit(10000);
+          if (eventId) (query as any).eq("event_id", eventId);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
@@ -317,11 +319,24 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("participant_sport_events" as any)
-            .select("id, sport_event_id, registration_status, is_blocked_by_documentation", { count: "exact" })
+            .select("id, sport_event_id, registration_status, is_blocked_by_documentation, participants!inner(event_id)", { count: "exact" })
             .limit(10000);
+          if (eventId) (query as any).eq("participants.event_id", eventId);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
+      },
+      // 14: athletes count
+      {
+        queryKey: ["dash3", "athletes_count", eventId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const query = supabase.from("participants").select("id", { count: "exact", head: true }).eq("participant_type", "athlete");
+          if (eventId) query.eq("event_id", eventId);
+          const { count } = await query;
+          return count ?? 0;
+        }, 0),
       },
     ],
   });
@@ -330,7 +345,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   
   const [
     participantsRes, credentialsRes, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, 
-    tripsRes, vehicles, sportEvents, matchesRes, eventStages, pEventStagesRes, pSportEventsRes
+    tripsRes, vehicles, sportEvents, matchesRes, eventStages, pEventStagesRes, pSportEventsRes, athletesTotal
   ] = queries.map((q) => q.data) as [
     { list: any[]; totalCount: number },
     { list: any[]; totalCount: number },
@@ -346,6 +361,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
     { id: string; name: string }[],
     { list: any[]; totalCount: number },
     { list: any[]; totalCount: number },
+    number,
   ];
 
 
@@ -618,6 +634,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   const data: DashboardData = {
     resumo: {
       participants_total: P_total || P.length,
+      athletes_total: athletesTotal ?? 0,
       credentialed,
       credentials_active: C_total || activeCreds.length,
       credentials_today: credToday,
@@ -636,8 +653,8 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
     },
 
     inscricoes: {
-      total_provas: PSE.length,
-      total_etapas: PES.length,
+      total_provas: pSportEventsRes?.totalCount || PSE.length,
+      total_etapas: pEventStagesRes?.totalCount || PES.length,
       pendentes_documentacao: blockedDocCount,
       por_status: Array.from(statusMap.entries()).map(([name, value]) => ({ name, value })),
       by_stage: ES.map(s => ({ id: s.id, name: s.name, count: stageCountMap.get(s.id) ?? 0 })),
