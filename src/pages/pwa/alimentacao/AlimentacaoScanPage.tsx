@@ -403,8 +403,7 @@ export default function AlimentacaoScanPage() {
           setResult({ ok: false, message: msg, source: "qr" });
           toast.error(msg);
           recordOutcome("error");
-          // Mapeado para NOT_ELIGIBLE — enum atual não cobre INACTIVE/NO_CREDENTIAL.
-          void recordIncident("NOT_ELIGIBLE", resolved.participant_id);
+          void recordIncident("PARTICIPANT_INACTIVE", resolved.participant_id);
           return;
         }
 
@@ -413,7 +412,7 @@ export default function AlimentacaoScanPage() {
           setResult({ ok: false, message: msg, source: "qr" });
           toast.error(msg, { description: "Encaminhe o atleta para a secretaria." });
           recordOutcome("error");
-          void recordIncident("NOT_ELIGIBLE", resolved.participant_id);
+          void recordIncident("NO_CREDENTIAL", resolved.participant_id);
           return;
         }
 
@@ -460,11 +459,24 @@ export default function AlimentacaoScanPage() {
     return { ok: true };
   };
 
+  const incidentTypeFor = (
+    reason: "INACTIVE" | "NEEDS_MEALS_FALSE" | "NO_CREDENTIAL",
+  ): string => {
+    switch (reason) {
+      case "INACTIVE":
+        return "PARTICIPANT_INACTIVE";
+      case "NEEDS_MEALS_FALSE":
+        return "NEEDS_MEALS_FALSE";
+      case "NO_CREDENTIAL":
+        return "NO_CREDENTIAL";
+    }
+  };
+
   const handleManualPick = async (row: ParticipantManualSearchRow) => {
     setManualQuery("");
     setManualHits([]);
     try {
-      // Trava de presença aplicada também no caminho manual (Etapa 0 da
+      // Trava de presença aplicada também no caminho manual (Etapa 0/1 da
       // auditoria de Alimentação). Sem isso, o operador conseguia inserir
       // consumo para qualquer pessoa do evento via busca por nome/CPF.
       const verdict = evaluateMealEligibility(row);
@@ -474,11 +486,9 @@ export default function AlimentacaoScanPage() {
           description: verdict.reason === "NO_CREDENTIAL" ? "Encaminhe para a secretaria." : undefined,
         });
         recordOutcome("error");
-        // O enum atual de meal_incident_type não distingue esses motivos;
-        // mapeamos para NOT_ELIGIBLE para manter trilha de auditoria
-        // funcional. Etapa 1 da auditoria fará ALTER TYPE para incluir os
-        // motivos específicos (NO_CREDENTIAL, PARTICIPANT_INACTIVE, etc.).
-        void recordIncident("NOT_ELIGIBLE", row.participant_id);
+        // Etapa 1: o enum meal_incident_type foi estendido com os motivos
+        // específicos abaixo, então a trilha distingue cada situação.
+        void recordIncident(incidentTypeFor(verdict.reason), row.participant_id);
         return;
       }
       await registerMealConsumption(row.participant_id, row.full_name, "manual", "manual", null);

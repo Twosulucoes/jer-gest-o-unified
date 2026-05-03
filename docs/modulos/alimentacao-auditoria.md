@@ -1,5 +1,5 @@
 # Auditoria Operacional: Módulo de Alimentação — JER Gestão
-**Data:** 2026-05-03
+**Data:** 2026-05-03 (atualizado após Etapa 1)
 **Status Global:** 🟡 OPERACIONAL COM RESSALVAS — evolução para controle por refeição/dia/presença em curso
 
 > Este documento substitui as auditorias anteriores e incorpora um novo diagnóstico
@@ -93,12 +93,12 @@
 ## 2. Lacunas e Riscos Identificados
 
 ### 2.1 Críticos — afetam diretamente prestação de contas
-1. **Busca manual no PWA bypassa a trava de presença.** O fluxo de QR exige `is_active` + `credentialed_at`, mas `handleManualPick` em `AlimentacaoScanPage` insere consumo sem validação. Operador com perfil `alimentacao` consegue registrar refeição para qualquer pessoa do evento, mesmo não credenciada.
-2. **Enum `meal_incident_type` não cobre os motivos usados pelo código.** O scanner registra `recordIncident("NO_CREDENTIAL", …)` e `recordIncident("PARTICIPANT_INACTIVE", …)`, mas esses valores não existem no enum. As inserções **falham silenciosamente** (apenas `console.error`), ou seja, a trilha de auditoria de bloqueios por credencial está **vazia** hoje.
-3. **RLS de `meal_windows` e `meal_locations` foi aberta para todos os autenticados.** A migration `20260503022945` aplicou `USING (true) WITH CHECK (true)` nas duas tabelas. Operadores com perfis sem privilégio (ex.: `delegacao`, `transporte`) podem inserir, alterar ou deletar janelas e locais. Quebra a matriz documentada em `docs/02-modelo-de-acesso-e-perfis.md`.
-4. **Previsão de Demanda super‑estima.** `calculateForecast` parte do total de `participants` por perfil/delegação/instituição. Não desconta quem ainda não chegou (`credentialed_at IS NULL`) nem quem já fez checkout. Em dias de chegada/saída a planilha enviada à cozinha é falsa por excesso.
-5. **Divergências infla "ausências".** A página marca como ausência todo participante elegível sem consumo na janela do dia, sem filtrar por presença efetiva. Isso gera alarmes falsos no dia de chegada/saída e em modalidades de um único dia.
-6. **`needs_meals` é ignorado em todos os caminhos.** Mesmo o QR autoriza consumo de quem declarou que não precisa de alimentação (visitantes, delegados de ônibus, etc.). Em fechamento, esses consumos contam como custo legítimo na cozinha e abrem brecha de fraude.
+1. ~~**Busca manual no PWA bypassa a trava de presença.**~~ ✅ **Resolvido (Etapa 0).** `handleManualPick` agora aplica `evaluateMealEligibility` antes de inserir.
+2. ~~**Enum `meal_incident_type` não cobre os motivos usados pelo código.**~~ ✅ **Resolvido (Etapa 1).** Enum estendido com `NO_CREDENTIAL`, `PARTICIPANT_INACTIVE`, `NEEDS_MEALS_FALSE`, `LEFT_EVENT`; scanner agora emite cada motivo específico.
+3. ~~**RLS de `meal_windows` e `meal_locations` foi aberta para todos os autenticados.**~~ ✅ **Resolvido (Etapa 1).** RLS restaurada para `admin/secretaria` (FOR ALL) + `alimentacao/coordenacao_tecnica` (FOR SELECT), usando `has_role(auth.uid(), <role>)`.
+4. **Previsão de Demanda super‑estima.** `calculateForecast` parte do total de `participants` por perfil/delegação/instituição. Não desconta quem ainda não chegou (`credentialed_at IS NULL`) nem quem já fez checkout. Em dias de chegada/saída a planilha enviada à cozinha é falsa por excesso. _(Etapa 3.)_
+5. **Divergências infla "ausências".** A página marca como ausência todo participante elegível sem consumo na janela do dia, sem filtrar por presença efetiva. Isso gera alarmes falsos no dia de chegada/saída e em modalidades de um único dia. _(Etapa 4.)_
+6. **`needs_meals` é ignorado nos caminhos administrativos.** O scanner do PWA já trata (Etapa 0/1), mas a previsão e o motor de divergências ainda não consideram o flag. _(Etapas 3/4.)_
 
 ### 2.2 Altos — afetam confiança operacional
 7. **Sem trava de saída.** Após registro de checkout do alojamento, o participante continua elegível para refeições. Não existe consulta "está em vigência hoje?" centralizada.
@@ -182,11 +182,21 @@ Objetivo: reduzir erro operacional imediato sem alterar contratos.
 
 UI: muda apenas o resultado da busca manual e a mensagem de erro do scanner. Fluxo e relatórios existentes não mudam. Risco de regressão: **mínimo** (acrescenta validação onde antes não havia).
 
-### Etapa 1 — Estender enum de incidentes e RLS
+### Etapa 1 — Estender enum de incidentes e RLS ✅
 Objetivo: separar motivos de bloqueio e fechar permissões abertas.
-- Migration ADD VALUE em `meal_incident_type` (`NO_CREDENTIAL`, `PARTICIPANT_INACTIVE`, `NEEDS_MEALS_FALSE`, `LEFT_EVENT`).
-- Migration ajusta RLS de `meal_windows` e `meal_locations` para padrão `admin/secretaria` (write) + `alimentacao/coordenacao_tecnica` (read), removendo `USING (true)`.
-- Atualiza scanner para emitir os novos tipos.
+- ✅ Migration `20260503144312_alimentacao_etapa1_extend_incident_type.sql`:
+  ADD VALUE em `meal_incident_type` (`NO_CREDENTIAL`, `PARTICIPANT_INACTIVE`,
+  `NEEDS_MEALS_FALSE`, `LEFT_EVENT`).
+- ✅ Migration `20260503144313_alimentacao_etapa1_restore_rls.sql`:
+  remove o hotfix permissivo `USING (true)` de `meal_windows`/`meal_locations`
+  e a tentativa quebrada baseada em `auth.jwt() ->> 'role'`. Restaura o padrão
+  `has_role(auth.uid(), <role>)`: `admin`/`secretaria` (FOR ALL),
+  `alimentacao`/`coordenacao_tecnica` (FOR SELECT). A política de escopo por
+  etapa de `20260501204911` permanece intacta.
+- ✅ Scanner do PWA passa a emitir os tipos específicos
+  (`PARTICIPANT_INACTIVE`, `NO_CREDENTIAL`, `NEEDS_MEALS_FALSE`) tanto no
+  fluxo QR quanto no manual; `AlimentacaoDivergenciasPage` ganhou rótulos
+  legíveis para os novos motivos.
 
 ### Etapa 2 — Saída antecipada
 - Migration: `participants.left_event_at TIMESTAMPTZ`, `left_event_reason TEXT`, `left_event_by UUID`.
