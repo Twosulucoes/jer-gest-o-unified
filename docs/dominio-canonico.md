@@ -221,8 +221,8 @@
 ### Alimentação
 | Tabela | Escopo | Comentário |
 |:---|:---|:---|
-| `meal_types` | **etapa** | Cardápio pode mudar entre etapas. **Hoje nullable** — tornar NOT NULL na Fase F. |
-| `meal_locations` | **etapa** | Refeitórios físicos. **Hoje nullable** — tornar NOT NULL na Fase F. |
+| `meal_types` | **etapa** ✓ | Cardápio pode mudar entre etapas. `event_stage_id NOT NULL` desde a Fase F1. |
+| `meal_locations` | **etapa** ✓ | Refeitórios físicos. `event_stage_id NOT NULL` desde a Fase F1. |
 | `meal_windows` | **etapa** ✓ | Janela de serviço. Já no padrão correto. |
 | `meal_window_eligibility` | herda de window | Regras de elegibilidade (perfil/delegação/instituição). |
 | `meal_consumptions` | herda de window | Consumos efetivos. Único por (window, participant). |
@@ -250,7 +250,7 @@
 ### Vouchers
 | Tabela | Escopo | Comentário |
 |:---|:---|:---|
-| `service_vouchers` | **etapa** | **Decisão fixada: voucher é consumo da etapa.** Hoje só `event_id` — adicionar `event_stage_id NOT NULL` na Fase F. `replaces_voucher_id` permite versionamento (substituição/reemissão). |
+| `service_vouchers` | **etapa** ✓ | **Voucher é consumo da etapa** (canônico §11.5). `event_stage_id NOT NULL` desde a Fase F1. `replaces_voucher_id` permite versionamento (substituição/reemissão). |
 | `service_voucher_uses` | herda do voucher | Trilha de uso. |
 | `service_eventual_people` | evento | Cadastro do prestador é por evento (o mesmo prestador pode ter vouchers em duas etapas, com vouchers distintos). |
 
@@ -338,7 +338,9 @@ A substituição é um **evento administrativo** que afeta:
 | C | Renomear ambiguidades (`participants.category` → `enrollment_class`; `result_status` em inglês com enum); criar `enum participant_type` real | ⏳ |
 | D | Remover redundâncias (`participants.active_status`); corrigir bug `get_participant_counts_by_institution` (lê `p.institution_id` que não existe) | ⏳ |
 | E | Atualizar docs (este documento + glossário + DB) | ⏳ |
-| F | **Stage-scoping consistente** — `event_stage_id NOT NULL` em meal_types/meal_locations, service_vouchers, competition_phases. `participant_sport_events.event_stage_id NOT NULL` após backfill | ⏳ |
+| **F1** | Logística stage-scoped — `meal_types.event_stage_id` e `meal_locations.event_stage_id` NOT NULL; `service_vouchers.event_stage_id` adicionado e NOT NULL (voucher é consumo da etapa, canônico §11.5) | ✅ |
+| F2 | `participant_sport_events.event_stage_id NOT NULL` após backfill | ⏳ |
+| F3 | `competition_phases.event_stage_id` adicionado e NOT NULL | ⏳ |
 | G | **Substituições** — tabela `substitutions`, versionamento de `participant_sport_events`, fluxo administrativo no Admin com aprovação | ⏳ |
 
 ### Sequência recomendada

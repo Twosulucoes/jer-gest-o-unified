@@ -4015,6 +4015,7 @@ export type Database = {
           capacity: number | null
           created_at: string | null
           event_id: string | null
+          event_stage_id: string
           id: string
           is_active: boolean | null
           name: string
@@ -4025,6 +4026,7 @@ export type Database = {
           capacity?: number | null
           created_at?: string | null
           event_id?: string | null
+          event_stage_id: string
           id?: string
           is_active?: boolean | null
           name: string
@@ -4035,6 +4037,7 @@ export type Database = {
           capacity?: number | null
           created_at?: string | null
           event_id?: string | null
+          event_stage_id?: string
           id?: string
           is_active?: boolean | null
           name?: string
@@ -4054,7 +4057,7 @@ export type Database = {
         Row: {
           created_at: string
           event_id: string
-          event_stage_id: string | null
+          event_stage_id: string
           id: string
           is_active: boolean
           name: string
@@ -4067,7 +4070,7 @@ export type Database = {
         Insert: {
           created_at?: string
           event_id: string
-          event_stage_id?: string | null
+          event_stage_id: string
           id?: string
           is_active?: boolean
           name: string
@@ -4080,7 +4083,7 @@ export type Database = {
         Update: {
           created_at?: string
           event_id?: string
-          event_stage_id?: string | null
+          event_stage_id?: string
           id?: string
           is_active?: boolean
           name?: string
@@ -7077,6 +7080,7 @@ export type Database = {
           created_at: string
           current_uses: number
           event_id: string
+          event_stage_id: string
           eventual_person_id: string | null
           id: string
           is_contingency: boolean
@@ -7110,6 +7114,7 @@ export type Database = {
           created_at?: string
           current_uses?: number
           event_id: string
+          event_stage_id: string
           eventual_person_id?: string | null
           id?: string
           is_contingency?: boolean
@@ -7143,6 +7148,7 @@ export type Database = {
           created_at?: string
           current_uses?: number
           event_id?: string
+          event_stage_id?: string
           eventual_person_id?: string | null
           id?: string
           is_contingency?: boolean
