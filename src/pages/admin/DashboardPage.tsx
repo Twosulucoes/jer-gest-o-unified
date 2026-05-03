@@ -8,7 +8,8 @@ import {
   Users, UserCheck, ShieldCheck, Bus, UtensilsCrossed, Building, Trophy,
   CheckCircle2, AlertTriangle, Clock, TrendingUp,
   Upload, UsersRound, ScanLine, Navigation, ClipboardList, CalendarDays, KeyRound,
-  RefreshCw, Bed, Truck, CalendarClock, Calendar, Gavel, Layers
+  RefreshCw, Bed, Truck, CalendarClock, Calendar, Gavel, Layers, ClipboardCheck,
+  LayoutDashboard, MapPin
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -168,6 +169,49 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
+        {/* Novas KPIs de Inscrições */}
+        <section className="space-y-3 lg:col-span-12">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <ClipboardCheck className="h-3.5 w-3.5" /> Estatísticas de Inscrições
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Total Geral</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold">{data.inscricoes.total}</div>
+                <p className="text-[10px] text-muted-foreground">Inscritos no evento atual</p>
+              </CardContent>
+            </Card>
+
+            <DashboardProgressCard
+              title="Inscrições por Etapa"
+              isLoading={isLoading}
+              items={data.inscricoes.by_stage.map(s => ({
+                id: s.id,
+                name: s.name,
+                current: s.count,
+                total: data.inscricoes.total,
+                percentage: data.inscricoes.total > 0 ? Math.round((s.count / data.inscricoes.total) * 100) : 0
+              }))}
+            />
+
+            <DashboardProgressCard
+              title="Top 10 Modalidades"
+              isLoading={isLoading}
+              items={data.inscricoes.by_modality.map(m => ({
+                id: m.id,
+                name: m.name,
+                current: m.count,
+                total: data.inscricoes.total,
+                percentage: data.inscricoes.total > 0 ? Math.round((m.count / data.inscricoes.total) * 100) : 0
+              }))}
+            />
+          </div>
+        </section>
         {/* Credenciamento Charts */}
         <section className="space-y-3 lg:col-span-6">
           <div className="flex items-center justify-between">

@@ -58,6 +58,11 @@ export interface DashboardData {
     daily: DailyPoint[];
     by_delegation: DelegationProgressRow[];
   };
+  inscricoes: {
+    total: number;
+    by_stage: { id: string; name: string; count: number }[];
+    by_modality: { id: string; name: string; count: number }[];
+  };
   alimentacao: {
     daily: MealDailyPoint[];
     meal_types: string[];
@@ -83,6 +88,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       referees_total: 0, referees_assigned: 0,
     },
     credenciamento: { daily: [], by_delegation: [] },
+    inscricoes: { total: 0, by_stage: [], by_modality: [] },
     alimentacao: { daily: [], meal_types: [], by_delegation: [] },
     competicao: { by_sport: [], today: [] },
   };
@@ -278,25 +284,66 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
         }, { list: [], totalCount: 0 }),
       },
+      // 11: event_stages
+      {
+        queryKey: ["dash3", "event_stages", eventId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const query = supabase.from("event_stages").select("id, name");
+          if (eventId) query.eq("event_id", eventId);
+          const { data } = await query;
+          return data ?? [];
+        }, [] as { id: string; name: string }[]),
+      },
+      // 12: participant_event_stages
+      {
+        queryKey: ["dash3", "participant_event_stages", eventId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          // Esta tabela vincula participante a etapa. 
+          // Se eventId presente, filtramos via participação
+          const query = supabase.from("participant_event_stages" as any).select("stage_id", { count: "exact" }).limit(10000);
+          const { data, count } = await query;
+          return { list: data ?? [], totalCount: count ?? 0 };
+        }, { list: [], totalCount: 0 }),
+      },
+      // 13: participant_sport_events
+      {
+        queryKey: ["dash3", "participant_sport_events", eventId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const query = supabase.from("participant_sport_events" as any).select("sport_event_id", { count: "exact" }).limit(10000);
+          const { data, count } = await query;
+          return { list: data ?? [], totalCount: count ?? 0 };
+        }, { list: [], totalCount: 0 }),
+      },
     ],
   });
 
   const isLoading = queries.some((q) => q.isLoading);
   
-  const [participantsRes, credentialsRes, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, tripsRes, vehicles, sportEvents, matchesRes] =
-    queries.map((q) => q.data) as [
-      { list: any[]; totalCount: number },
-      { list: any[]; totalCount: number },
-      { id: string; school_name: string }[],
-      { id: string; service_date: string; meal_type_id: string; label: string | null }[],
-      { id: string; name: string }[],
-      { id: string; capacity: number; is_active: boolean }[],
-      number,
-      { list: any[]; totalCount: number },
-      number,
-      Array<{ id: string; name: string | null; sports: { name: string } | null; categories: { name: string } | null }>,
-      { list: any[]; totalCount: number },
-    ];
+  const [
+    participantsRes, credentialsRes, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, 
+    tripsRes, vehicles, sportEvents, matchesRes, eventStages, pEventStagesRes, pSportEventsRes
+  ] = queries.map((q) => q.data) as [
+    { list: any[]; totalCount: number },
+    { list: any[]; totalCount: number },
+    { id: string; school_name: string }[],
+    { id: string; service_date: string; meal_type_id: string; label: string | null }[],
+    { id: string; name: string }[],
+    { id: string; capacity: number; is_active: boolean }[],
+    number,
+    { list: any[]; totalCount: number },
+    number,
+    Array<{ id: string; name: string | null; sports: { name: string } | null; categories: { name: string } | null }>,
+    { list: any[]; totalCount: number },
+    { id: string; name: string }[],
+    { list: any[]; totalCount: number },
+    { list: any[]; totalCount: number },
+  ];
 
 
   // Fallbacks defensivos
@@ -539,6 +586,21 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       teams: "",
     }));
 
+  // Inscrições (Participantes x Etapas/Modalidades)
+  const ES = eventStages ?? [];
+  const PES = pEventStagesRes?.list ?? [];
+  const PSE = pSportEventsRes?.list ?? [];
+
+  const stageCountMap = new Map<string, number>();
+  PES.forEach((pes: any) => {
+    stageCountMap.set(pes.stage_id, (stageCountMap.get(pes.stage_id) ?? 0) + 1);
+  });
+
+  const modalityCountMap = new Map<string, number>();
+  PSE.forEach((pse: any) => {
+    modalityCountMap.set(pse.sport_event_id, (modalityCountMap.get(pse.sport_event_id) ?? 0) + 1);
+  });
+
   const data: DashboardData = {
     resumo: {
       participants_total: P_total || P.length,
@@ -557,6 +619,14 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       transport_vehicles: VE,
       referees_total: refereesTotal,
       referees_assigned: refereesAssigned,
+    },
+
+    inscricoes: {
+      total: P_total || P.length,
+      by_stage: ES.map(s => ({ id: s.id, name: s.name, count: stageCountMap.get(s.id) ?? 0 })),
+      by_modality: SE.map(s => ({ id: s.id, name: seName.get(s.id) || s.name || "Modalidade", count: modalityCountMap.get(s.id) ?? 0 }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
     },
 
     credenciamento: { daily: credDaily, by_delegation: byDelegation },
