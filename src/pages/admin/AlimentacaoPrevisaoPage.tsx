@@ -123,20 +123,36 @@ export default function AlimentacaoPrevisaoPage() {
     refetchInterval: 30000,
   });
 
-  // 5. Eligibility Totals Query
+  // 5. Eligibility Totals Query (Etapa 3 — usa presença efetiva por dia)
+  // Conta apenas participantes presentes (credenciados, ativos, com
+  // needs_meals e sem saída antecipada antes da data) para alimentar a
+  // previsão diária de cozinha. Antes, contava todos os inscritos do
+  // evento, inflando a quantidade nos dias de chegada/saída.
   const { data: eligibilityTotals } = useQuery<EligibilityTotals>({
-    queryKey: ["meal_eligibility_forecast", eventId, stageId],
+    queryKey: ["meal_eligibility_forecast_present", eventId, stageId, filterDate],
     queryFn: async () => {
       const [profileRes, delegationRes, institutionRes] = await Promise.all([
-        supabase.rpc("get_participant_counts_by_profile" as any, { p_event_id: eventId, p_stage_id: stageId }),
-        supabase.rpc("get_participant_counts_by_delegation" as any, { p_event_id: eventId, p_stage_id: stageId }),
-        supabase.rpc("get_participant_counts_by_institution" as any, { p_event_id: eventId, p_stage_id: stageId }),
+        supabase.rpc("get_present_participant_counts_by_profile" as any, {
+          p_event_id: eventId,
+          p_service_date: filterDate,
+          p_stage_id: stageId,
+        }),
+        supabase.rpc("get_present_participant_counts_by_delegation" as any, {
+          p_event_id: eventId,
+          p_service_date: filterDate,
+          p_stage_id: stageId,
+        }),
+        supabase.rpc("get_present_participant_counts_by_institution" as any, {
+          p_event_id: eventId,
+          p_service_date: filterDate,
+          p_stage_id: stageId,
+        }),
       ]);
 
       const profiles = (profileRes.data as any[]) || [];
       const delegations = (delegationRes.data as any[]) || [];
       const institutions = (institutionRes.data as any[]) || [];
-      
+
       return {
         profiles,
         delegations,
@@ -146,6 +162,22 @@ export default function AlimentacaoPrevisaoPage() {
     },
     enabled: !!eventId,
     initialData: { profiles: [], delegations: [], institutions: [], total: 0 }
+  });
+
+  // Métrica de comparação: total de inscritos (sem filtro de presença).
+  // Mantida para que o operador veja a diferença entre inscrição e presença
+  // efetiva e identifique rapidamente atrasos de credenciamento.
+  const { data: enrolledTotal = 0 } = useQuery<number>({
+    queryKey: ["meal_eligibility_enrolled_total", eventId, stageId],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_participant_counts_by_profile" as any, {
+        p_event_id: eventId,
+        p_stage_id: stageId,
+      });
+      const rows = (data as any[]) || [];
+      return rows.reduce((acc, curr) => acc + Number(curr.count || 0), 0);
+    },
+    enabled: !!eventId,
   });
 
   const calculateForecast = (window: any) => {
@@ -451,6 +483,7 @@ export default function AlimentacaoPrevisaoPage() {
                 <CardTitle className="text-base flex items-center gap-2">
                   <Utensils className="h-4 w-4 text-primary" /> Resumo do Dia
                 </CardTitle>
+                <CardDescription>Base de cálculo: presença efetiva no evento</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-1">
@@ -464,6 +497,21 @@ export default function AlimentacaoPrevisaoPage() {
                   <p className="text-2xl font-bold text-primary">
                     {filteredWindows.reduce((acc, w) => acc + (consumptionCounts[w.id] || 0), 0)}
                   </p>
+                </div>
+                <div className="space-y-1 pt-2 border-t">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">Presentes hoje</p>
+                    <p className="text-sm font-semibold text-foreground">{eligibilityTotals.total}</p>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">Inscritos no evento</p>
+                    <p className="text-sm text-muted-foreground">{enrolledTotal}</p>
+                  </div>
+                  {enrolledTotal > eligibilityTotals.total && (
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                      {enrolledTotal - eligibilityTotals.total} pessoa(s) inscrita(s) ainda não estão presentes nesta data.
+                    </p>
+                  )}
                 </div>
                 <div className="pt-2">
                   <Button variant="link" className="p-0 h-auto text-xs" onClick={() => toast.info("Funcionalidade em desenvolvimento")}>

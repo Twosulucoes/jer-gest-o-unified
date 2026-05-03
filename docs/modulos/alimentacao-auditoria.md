@@ -96,7 +96,7 @@
 1. ~~**Busca manual no PWA bypassa a trava de presença.**~~ ✅ **Resolvido (Etapa 0).** `handleManualPick` agora aplica `evaluateMealEligibility` antes de inserir.
 2. ~~**Enum `meal_incident_type` não cobre os motivos usados pelo código.**~~ ✅ **Resolvido (Etapa 1).** Enum estendido com `NO_CREDENTIAL`, `PARTICIPANT_INACTIVE`, `NEEDS_MEALS_FALSE`, `LEFT_EVENT`; scanner agora emite cada motivo específico.
 3. ~~**RLS de `meal_windows` e `meal_locations` foi aberta para todos os autenticados.**~~ ✅ **Resolvido (Etapa 1).** RLS restaurada para `admin/secretaria` (FOR ALL) + `alimentacao/coordenacao_tecnica` (FOR SELECT), usando `has_role(auth.uid(), <role>)`.
-4. **Previsão de Demanda super‑estima.** `calculateForecast` parte do total de `participants` por perfil/delegação/instituição. Não desconta quem ainda não chegou (`credentialed_at IS NULL`) nem quem já fez checkout. Em dias de chegada/saída a planilha enviada à cozinha é falsa por excesso. _(Etapa 3.)_
+4. ~~**Previsão de Demanda super‑estima.**~~ ✅ **Resolvido (Etapa 3).** A página passou a consumir as novas RPCs `get_present_participant_counts_by_*` que aplicam credenciamento, `needs_meals` e saída antecipada por data; o card "Resumo do Dia" mostra Presentes × Inscritos.
 5. **Divergências infla "ausências".** A página marca como ausência todo participante elegível sem consumo na janela do dia, sem filtrar por presença efetiva. Isso gera alarmes falsos no dia de chegada/saída e em modalidades de um único dia. _(Etapa 4.)_
 6. **`needs_meals` é ignorado nos caminhos administrativos.** O scanner do PWA já trata (Etapa 0/1), mas a previsão e o motor de divergências ainda não consideram o flag. _(Etapas 3/4.)_
 
@@ -217,10 +217,18 @@ Objetivo: separar motivos de bloqueio e fechar permissões abertas.
   manual. Badge "saiu do evento" exibido na lista da busca. Incidente
   registrado como `LEFT_EVENT`.
 
-### Etapa 3 — Previsão por presença
-- RPC `get_present_participant_counts(p_event_id, p_stage_id, p_service_date)` que aplica o invariante 3.3.
-- `AlimentacaoPrevisaoPage`: usar a nova RPC para o cálculo do dia.
-- Manter a previsão "planejamento total" como segunda métrica (comparação inscritos × presentes).
+### Etapa 3 — Previsão por presença ✅
+- ✅ Migration `20260503153321_alimentacao_etapa3_present_counts.sql`:
+  cria `get_present_participant_counts_by_profile`,
+  `_by_delegation` e `_by_institution`. Filtros: `is_active`,
+  `needs_meals`, `credentialed_at::date <= service_date` e
+  `(left_event_at IS NULL OR left_event_at::date > service_date)`. Retorno
+  no mesmo formato das funções `get_participant_counts_by_*` legadas.
+- ✅ `AlimentacaoPrevisaoPage` agora consome as RPCs de presença efetiva
+  (re-fetch ao mudar a data de serviço) e exibe, no Resumo do Dia, a
+  comparação **Presentes hoje × Inscritos no evento** com aviso destacando
+  a diferença. Os XLSX/PDF gerados para a cozinha passam a refletir a
+  presença real da data, eliminando a sobre-contagem dos dias de chegada.
 
 ### Etapa 4 — Divergências por presença
 - `AlimentacaoDivergenciasPage`: ausências passam a considerar apenas presentes no dia.
