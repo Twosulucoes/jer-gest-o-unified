@@ -71,6 +71,11 @@
 | `id` | uuid | PK |
 | `full_name`, `cpf`, `rg`, `birth_date`, `gender`, `email`, `phone`, `photo_url` | — | Cadastro civil. |
 | `food_restrictions`, `disability_type`, `medical_notes` | — | Saúde/restrições civis. |
+| `eja_flag`, `wheelchair_user_flag` | bool | Acessibilidade/educação (cadastral). |
+| `national_ban_until` | timestamptz | Banimento federal vigente até esta data (cadastral; atravessa eventos). |
+| `coach_name`, `coach_phone` | text | Técnico/professor responsável (cadastral). |
+| `guardian_name`, `guardian_phone` | text | Responsável legal (cadastral). |
+| `school_role_label` | text | Rótulo de papel escolar (cadastral). |
 | `institution_id` | FK → institutions | Escola da pessoa (vínculo civil, agnóstico de evento). Nullable. |
 | `is_active` | bool | Pessoa pode ser desativada no cadastro mestre (ex.: óbito, registro duplicado). |
 
@@ -157,10 +162,10 @@
 | `birth_date` | Já existe em `people.birth_date`. Cadastral. | ✅ removido (Fase A1) |
 | `biological_sex` | Sinônimo de `people.gender`. Cadastral. | ✅ removido (Fase A1) |
 | `disability_type` | Já existe em `people.disability_type`. Cadastral. | ✅ removido (Fase A1) |
-| `eja_flag`, `wheelchair_user_flag`, `national_ban_until` | Cadastrais — pertencem a `people`. | ⏳ Fase A2 (precisa ADD COLUMN em people antes do DROP) |
-| `coach_name`, `coach_phone`, `guardian_name`, `guardian_phone` | Pertencem a `people` (vínculos civis) ou tabela própria de relacionamentos. | ⏳ Fase A2 |
-| `enrollment_date` | Redundante com `created_at`. | ⏳ Fase A2 |
-| `school_role_label` | Caso de uso obscuro; revisar antes de remover. | ⏳ Fase A2 |
+| `eja_flag`, `wheelchair_user_flag`, `national_ban_until` | Cadastrais — migrados para `people`. | ✅ removido (Fase A2) |
+| `coach_name`, `coach_phone`, `guardian_name`, `guardian_phone` | Vínculos civis — migrados para `people`. | ✅ removido (Fase A2) |
+| `enrollment_date` | Redundante com `created_at`. | ✅ removido (Fase A2) |
+| `school_role_label` | Cadastral escolar — migrado para `people`. | ✅ removido (Fase A2) |
 | `active_status` | Redundante com `is_active` + `status`. | ⏳ Fase D |
 
 #### `participant_credentials`
@@ -326,7 +331,7 @@ A substituição é um **evento administrativo** que afeta:
 | Fase | Escopo | Status |
 |:---:|:---|:---:|
 | **A1** | Desbloat de `participants` — DROP `birth_date`, `biological_sex`, `disability_type` (duplicatas óbvias) | ✅ |
-| A2 | Mover `coach_*`, `guardian_*`, `eja_flag`, `wheelchair_user_flag`, `national_ban_until`, `enrollment_date`, `school_role_label` para `people` (precisa ADD COLUMN antes do DROP) | ⏳ |
+| **A2** | Mover `coach_*`, `guardian_*`, `eja_flag`, `wheelchair_user_flag`, `national_ban_until`, `school_role_label` para `people`; `enrollment_date` removido sem migrar | ✅ |
 | B | Desfusão `delegations` × `institutions` (remover colunas `school_*`, dropar 3 triggers, refactor de 190 referências) | ⏳ |
 | C | Renomear ambiguidades (`participants.category` → `enrollment_class`; `result_status` em inglês com enum); criar `enum participant_type` real | ⏳ |
 | D | Remover redundâncias (`participants.active_status`); corrigir bug `get_participant_counts_by_institution` (lê `p.institution_id` que não existe) | ⏳ |

@@ -5423,22 +5423,15 @@ export type Database = {
       participants: {
         Row: {
           active_status: string | null
-          coach_name: string | null
-          coach_phone: string | null
           created_at: string
           credentialed_at: string | null
           credentialed_by: string | null
           delegation_id: string | null
-          eja_flag: boolean | null
-          enrollment_date: string | null
           event_id: string
-          guardian_name: string | null
-          guardian_phone: string | null
           id: string
           is_active: boolean
           logistics_notes: string | null
           logistics_restrictions: string | null
-          national_ban_until: string | null
           needs_lodging: boolean
           needs_meals: boolean
           needs_transport: boolean
@@ -5446,31 +5439,22 @@ export type Database = {
           participant_type: string
           person_id: string
           regular_attendance_confirmed: boolean | null
-          school_role_label: string | null
           seed_batch_id: string | null
           seed_tag: string | null
           status: string
           updated_at: string
-          wheelchair_user_flag: boolean | null
         }
         Insert: {
           active_status?: string | null
-          coach_name?: string | null
-          coach_phone?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string | null
-          eja_flag?: boolean | null
-          enrollment_date?: string | null
           event_id: string
-          guardian_name?: string | null
-          guardian_phone?: string | null
           id?: string
           is_active?: boolean
           logistics_notes?: string | null
           logistics_restrictions?: string | null
-          national_ban_until?: string | null
           needs_lodging?: boolean
           needs_meals?: boolean
           needs_transport?: boolean
@@ -5478,31 +5462,22 @@ export type Database = {
           participant_type?: string
           person_id: string
           regular_attendance_confirmed?: boolean | null
-          school_role_label?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string
           updated_at?: string
-          wheelchair_user_flag?: boolean | null
         }
         Update: {
           active_status?: string | null
-          coach_name?: string | null
-          coach_phone?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string | null
-          eja_flag?: boolean | null
-          enrollment_date?: string | null
           event_id?: string
-          guardian_name?: string | null
-          guardian_phone?: string | null
           id?: string
           is_active?: boolean
           logistics_notes?: string | null
           logistics_restrictions?: string | null
-          national_ban_until?: string | null
           needs_lodging?: boolean
           needs_meals?: boolean
           needs_transport?: boolean
@@ -5510,12 +5485,10 @@ export type Database = {
           participant_type?: string
           person_id?: string
           regular_attendance_confirmed?: boolean | null
-          school_role_label?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string
           updated_at?: string
-          wheelchair_user_flag?: boolean | null
         }
         Relationships: [
           {
@@ -5618,66 +5591,90 @@ export type Database = {
       people: {
         Row: {
           birth_date: string
+          coach_name: string | null
+          coach_phone: string | null
           cpf: string | null
           created_at: string
           disability_type: string | null
+          eja_flag: boolean | null
           email: string | null
           food_restrictions: string | null
           full_name: string
           gender: string
+          guardian_name: string | null
+          guardian_phone: string | null
           id: string
           institution_id: string | null
           is_active: boolean
           kind: string
           medical_notes: string | null
+          national_ban_until: string | null
           phone: string | null
           photo_url: string | null
           rg: string | null
+          school_role_label: string | null
           seed_batch_id: string | null
           seed_tag: string | null
           updated_at: string
+          wheelchair_user_flag: boolean | null
         }
         Insert: {
           birth_date: string
+          coach_name?: string | null
+          coach_phone?: string | null
           cpf?: string | null
           created_at?: string
           disability_type?: string | null
+          eja_flag?: boolean | null
           email?: string | null
           food_restrictions?: string | null
           full_name: string
           gender?: string
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           institution_id?: string | null
           is_active?: boolean
           kind?: string
           medical_notes?: string | null
+          national_ban_until?: string | null
           phone?: string | null
           photo_url?: string | null
           rg?: string | null
+          school_role_label?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           updated_at?: string
+          wheelchair_user_flag?: boolean | null
         }
         Update: {
           birth_date?: string
+          coach_name?: string | null
+          coach_phone?: string | null
           cpf?: string | null
           created_at?: string
           disability_type?: string | null
+          eja_flag?: boolean | null
           email?: string | null
           food_restrictions?: string | null
           full_name?: string
           gender?: string
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           institution_id?: string | null
           is_active?: boolean
           kind?: string
           medical_notes?: string | null
+          national_ban_until?: string | null
           phone?: string | null
           photo_url?: string | null
           rg?: string | null
+          school_role_label?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           updated_at?: string
+          wheelchair_user_flag?: boolean | null
         }
         Relationships: [
           {
