@@ -449,7 +449,7 @@ export const AppRoutes = () => (
         <Route path="delegacao/protesto/novo" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
         <Route path="delegacao/protesto/:id" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
 
-        <Route path="arbitragem/perfil" element={<RefereePwaProfilePage />} />
+        <Route path="arbitragem/perfil" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><RefereePwaProfilePage /></PwaRouteGuard>} />
         <Route path="credenciamento" element={<Navigate to="vincular" replace />} />
         <Route path="credenciamento/vincular" element={<VincularCredencialPage />} />
         
