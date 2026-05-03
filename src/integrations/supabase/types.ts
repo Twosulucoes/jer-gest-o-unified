@@ -5423,15 +5423,12 @@ export type Database = {
       participants: {
         Row: {
           active_status: string | null
-          biological_sex: string | null
-          birth_date: string | null
           coach_name: string | null
           coach_phone: string | null
           created_at: string
           credentialed_at: string | null
           credentialed_by: string | null
           delegation_id: string | null
-          disability_type: string | null
           eja_flag: boolean | null
           enrollment_date: string | null
           event_id: string
@@ -5458,15 +5455,12 @@ export type Database = {
         }
         Insert: {
           active_status?: string | null
-          biological_sex?: string | null
-          birth_date?: string | null
           coach_name?: string | null
           coach_phone?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string | null
-          disability_type?: string | null
           eja_flag?: boolean | null
           enrollment_date?: string | null
           event_id: string
@@ -5493,15 +5487,12 @@ export type Database = {
         }
         Update: {
           active_status?: string | null
-          biological_sex?: string | null
-          birth_date?: string | null
           coach_name?: string | null
           coach_phone?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string | null
-          disability_type?: string | null
           eja_flag?: boolean | null
           enrollment_date?: string | null
           event_id?: string
