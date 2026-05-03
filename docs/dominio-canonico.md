@@ -333,7 +333,7 @@ A substituição é um **evento administrativo** que afeta:
 | **A1** | Desbloat de `participants` — DROP `birth_date`, `biological_sex`, `disability_type` (duplicatas óbvias) | ✅ |
 | **A2** | Mover `coach_*`, `guardian_*`, `eja_flag`, `wheelchair_user_flag`, `national_ban_until`, `school_role_label` para `people`; `enrollment_date` removido sem migrar | ✅ |
 | **B1** | Refactor de leituras: 27 arquivos passam a ler `delegations(institutions(name))` em vez de `delegations(school_name)` | ✅ |
-| B2 | Refactor de edição: `DelegationFormDialog` + `DelegacoesPage` editam `institutions` diretamente | ⏳ |
+| **B2** | Refactor de edição: `DelegationFormDialog` (sem prefixo `school_`) + `DelegacoesPage` (insert/update em `institutions` + `delegations`, filters/sort/search via JOIN) | ✅ |
 | B3 | Migration final: DROP 11 colunas `school_*` + DROP 3 triggers + types.ts + canônico | ⏳ |
 | C | Renomear ambiguidades (`participants.category` → `enrollment_class`; `result_status` em inglês com enum); criar `enum participant_type` real | ⏳ |
 | D | Remover redundâncias (`participants.active_status`); corrigir bug `get_participant_counts_by_institution` (lê `p.institution_id` que não existe) | ⏳ |

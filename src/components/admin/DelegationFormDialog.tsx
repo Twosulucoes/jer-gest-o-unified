@@ -31,25 +31,32 @@ const NETWORK_TYPE_OPTIONS = [
   { value: "privada", label: "Privada" },
 ];
 
+// Os dados da escola vivem em `institutions` (canônico). O form coleta
+// esses campos com o nome canônico (sem prefixo "school_") e a página
+// pai decide criar/atualizar a institution e ligar à delegation pelo
+// institution_id.
 const delegationSchema = z.object({
   event_id: z.string().min(1, "Selecione um evento"),
   status: z.string().min(1, "Selecione o status"),
-  // Dados da escola (embutidos na delegação)
-  school_name: z.string().min(2, "Nome da escola deve ter no mínimo 2 caracteres"),
-  school_official_name: z.string().optional().or(z.literal("")),
-  school_slug: z.string().min(2, "Slug deve ter no mínimo 2 caracteres")
+  // institution_id é preenchido automaticamente quando se está editando
+  // ou quando o caller resolve o vínculo após salvar uma institution nova.
+  institution_id: z.string().optional().or(z.literal("")),
+  // Dados da escola (institution)
+  name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres"),
+  official_name: z.string().optional().or(z.literal("")),
+  slug: z.string().min(2, "Slug deve ter no mínimo 2 caracteres")
     .regex(/^[a-z0-9-]+$/, "Slug: apenas letras minúsculas, números e hífens"),
-  school_network_type: z.string().min(1, "Selecione o tipo de rede"),
-  school_city: z.string().optional().or(z.literal("")),
-  school_state: z.string().optional().or(z.literal(""))
+  network_type: z.string().min(1, "Selecione o tipo de rede"),
+  city: z.string().optional().or(z.literal("")),
+  state: z.string().optional().or(z.literal(""))
     .refine((val) => !val || /^[A-Z]{2}$/.test(val), "UF deve ter 2 letras maiúsculas"),
-  school_district: z.string().optional().or(z.literal("")),
-  school_contact_name: z.string().optional().or(z.literal("")),
-  school_contact_phone: z.string().optional().or(z.literal("")),
-  school_contact_email: z.string().optional().or(z.literal(""))
+  district: z.string().optional().or(z.literal("")),
+  contact_name: z.string().optional().or(z.literal("")),
+  contact_phone: z.string().optional().or(z.literal("")),
+  contact_email: z.string().optional().or(z.literal(""))
     .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "E-mail inválido"),
-  school_is_active: z.boolean(),
-  // Chefia
+  is_active: z.boolean(),
+  // Chefia (vivem em delegations)
   chief_name: z.string().trim().max(200).optional().or(z.literal("")),
   chief_phone: z.string().trim().max(30).optional().or(z.literal("")),
   chief_email: z.string().trim().optional().or(z.literal(""))
@@ -62,19 +69,23 @@ export type DelegationFormValues = z.infer<typeof delegationSchema>;
 interface DelegationFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  delegation?: (Tables<"delegations"> & Record<string, any>) | null;
+  // Aceita uma delegation com os campos JOINados de institutions (da query
+  // padrão da página). O form se vira para extrair os valores certos.
+  delegation?: (Tables<"delegations"> & {
+    institutions?: Partial<Tables<"institutions">> | null;
+  } & Record<string, any>) | null;
   events: Tables<"events">[];
   onSubmit: (values: DelegationFormValues) => void;
   isPending: boolean;
 }
 
 const EMPTY_VALUES: DelegationFormValues = {
-  event_id: "", status: "pending",
-  school_name: "", school_official_name: "", school_slug: "",
-  school_network_type: "municipal",
-  school_city: "", school_state: "", school_district: "",
-  school_contact_name: "", school_contact_phone: "", school_contact_email: "",
-  school_is_active: true,
+  event_id: "", status: "pending", institution_id: "",
+  name: "", official_name: "", slug: "",
+  network_type: "municipal",
+  city: "", state: "", district: "",
+  contact_name: "", contact_phone: "", contact_email: "",
+  is_active: true,
   chief_name: "", chief_phone: "", chief_email: "", notes: "",
 };
 
@@ -91,20 +102,24 @@ export default function DelegationFormDialog({
   useEffect(() => {
     if (delegation) {
       const d = delegation as any;
+      const inst = d.institutions ?? {};
       form.reset({
         event_id: d.event_id,
         status: d.status,
-        school_name: d.school_name ?? "",
-        school_official_name: d.school_official_name ?? "",
-        school_slug: d.school_slug ?? "",
-        school_network_type: d.school_network_type ?? "municipal",
-        school_city: d.school_city ?? "",
-        school_state: d.school_state ?? "",
-        school_district: d.school_district ?? "",
-        school_contact_name: d.school_contact_name ?? "",
-        school_contact_phone: d.school_contact_phone ?? "",
-        school_contact_email: d.school_contact_email ?? "",
-        school_is_active: d.school_is_active ?? true,
+        institution_id: d.institution_id ?? "",
+        // Prioriza dados de institutions; cai no legado school_* enquanto
+        // a Fase B3 não dropa as colunas espelhadas.
+        name: inst.name ?? d.school_name ?? "",
+        official_name: inst.official_name ?? d.school_official_name ?? "",
+        slug: inst.slug ?? d.school_slug ?? "",
+        network_type: inst.network_type ?? d.school_network_type ?? "municipal",
+        city: inst.city ?? d.school_city ?? "",
+        state: inst.state ?? d.school_state ?? "",
+        district: inst.district ?? d.school_district ?? "",
+        contact_name: inst.contact_name ?? d.school_contact_name ?? "",
+        contact_phone: inst.contact_phone ?? d.school_contact_phone ?? "",
+        contact_email: inst.contact_email ?? d.school_contact_email ?? "",
+        is_active: inst.is_active ?? d.school_is_active ?? true,
         chief_name: d.chief_name ?? "",
         chief_phone: d.chief_phone ?? "",
         chief_email: d.chief_email ?? "",
@@ -119,14 +134,14 @@ export default function DelegationFormDialog({
   }, [delegation, events, form]);
 
   const handleNameChange = (value: string) => {
-    form.setValue("school_name", value);
-    if (!isEditing || form.getValues("school_slug") === "") {
+    form.setValue("name", value);
+    if (!isEditing || form.getValues("slug") === "") {
       const slug = value
         .toLowerCase().normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[̀-ͯ]/g, "")
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
-      form.setValue("school_slug", slug);
+      form.setValue("slug", slug);
     }
   };
 
@@ -136,7 +151,9 @@ export default function DelegationFormDialog({
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Delegação (Escola)" : "Nova Delegação (Escola)"}</DialogTitle>
           <DialogDescription>
-            Cada delegação representa uma escola participante do evento.
+            Cada delegação representa uma escola participante do evento. Os dados
+            cadastrais da escola vivem em <code>institutions</code> e atravessam
+            edições; os campos de chefia e status são desta delegação.
           </DialogDescription>
         </DialogHeader>
 
@@ -174,11 +191,13 @@ export default function DelegationFormDialog({
               )} />
             </div>
 
-            {/* Bloco escola */}
+            {/* Bloco escola (institutions) */}
             <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
-              <h3 className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">Dados da Escola</h3>
+              <h3 className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Dados da Escola (Instituição)
+              </h3>
 
-              <FormField control={form.control} name="school_name" render={({ field }) => (
+              <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome</FormLabel>
                   <FormControl><Input placeholder="Escola Municipal João da Silva" {...field}
@@ -187,7 +206,7 @@ export default function DelegationFormDialog({
                 </FormItem>
               )} />
 
-              <FormField control={form.control} name="school_official_name" render={({ field }) => (
+              <FormField control={form.control} name="official_name" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome oficial</FormLabel>
                   <FormControl><Input placeholder="Opcional" {...field} /></FormControl>
@@ -196,14 +215,14 @@ export default function DelegationFormDialog({
               )} />
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="school_slug" render={({ field }) => (
+                <FormField control={form.control} name="slug" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Slug</FormLabel>
                     <FormControl><Input placeholder="escola-joao-silva" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="school_network_type" render={({ field }) => (
+                <FormField control={form.control} name="network_type" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de rede</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -220,10 +239,10 @@ export default function DelegationFormDialog({
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <FormField control={form.control} name="school_city" render={({ field }) => (
+                <FormField control={form.control} name="city" render={({ field }) => (
                   <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input placeholder="Boa Vista" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="school_state" render={({ field }) => (
+                <FormField control={form.control} name="state" render={({ field }) => (
                   <FormItem>
                     <FormLabel>UF</FormLabel>
                     <FormControl><Input placeholder="RR" maxLength={2} {...field}
@@ -231,24 +250,24 @@ export default function DelegationFormDialog({
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="school_district" render={({ field }) => (
+                <FormField control={form.control} name="district" render={({ field }) => (
                   <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input placeholder="Centro" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <FormField control={form.control} name="school_contact_name" render={({ field }) => (
+                <FormField control={form.control} name="contact_name" render={({ field }) => (
                   <FormItem><FormLabel>Contato (escola)</FormLabel><FormControl><Input placeholder="Diretor(a)" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="school_contact_phone" render={({ field }) => (
+                <FormField control={form.control} name="contact_phone" render={({ field }) => (
                   <FormItem><FormLabel>Telefone</FormLabel><FormControl><Input placeholder="(95) 99999-0000" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="school_contact_email" render={({ field }) => (
+                <FormField control={form.control} name="contact_email" render={({ field }) => (
                   <FormItem><FormLabel>E-mail</FormLabel><FormControl><Input placeholder="contato@escola.com" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
 
-              <FormField control={form.control} name="school_is_active" render={({ field }) => (
+              <FormField control={form.control} name="is_active" render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border bg-card p-3">
                   <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                   <div className="space-y-1 leading-none">
