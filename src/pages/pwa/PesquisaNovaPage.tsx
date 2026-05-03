@@ -114,7 +114,7 @@ export default function PesquisaNovaPage() {
   }, [saveDraftDebounced]);
 
   useEffect(() => {
-    if (!session) navigate('/pwa/pesquisa/login', { replace: true });
+    if (!session) navigate('/pesquisa/login', { replace: true });
   }, [session, navigate]);
 
   useEffect(() => {
@@ -248,7 +248,7 @@ export default function PesquisaNovaPage() {
         const result = data as any;
         if (result?.error === 'SESSION_INVALID') {
           clearSession();
-          navigate('/pwa/pesquisa/login', { replace: true });
+          navigate('/pesquisa/login', { replace: true });
           return;
         }
         submitted = true;
@@ -263,7 +263,7 @@ export default function PesquisaNovaPage() {
 
     clearDraft();
     setSubmitting(false);
-    navigate('/pwa/pesquisa/confirmacao', { state: { submitted, isKiosk }, replace: true });
+    navigate('/pesquisa/confirmacao', { state: { submitted, isKiosk }, replace: true });
   };
 
   const OptionButton = ({ value, label, selected, onClick }: { value: string; label: string; selected: boolean; onClick: () => void }) => (
@@ -286,7 +286,7 @@ export default function PesquisaNovaPage() {
       {(!isKiosk || step === 'profile') && (
         <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 flex items-center justify-between">
           <Button variant="ghost" size="sm" onClick={() => {
-            if (step === 'profile') navigate('/pwa/pesquisa/home');
+            if (step === 'profile') navigate('/pesquisa/home');
             else if (step === 'open') setStep('questionnaire');
             else setStep('profile');
           }}>

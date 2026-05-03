@@ -25,7 +25,7 @@ const ROLE_REDIRECT_MAP: Record<string, string> = {
   delegacao: "/pwa/delegacao",
   mesario: "/aovivo",
   arbitragem: "/aovivo",
-  pesquisa: "/pwa/pesquisa/login",
+  pesquisa: "/pesquisa/login",
 };
 
 const ADMIN_ROLES = ["admin", "super_admin", "secretaria", "coordenacao_tecnica", "cde"];

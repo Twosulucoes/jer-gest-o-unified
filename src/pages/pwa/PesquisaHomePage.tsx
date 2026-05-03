@@ -39,7 +39,7 @@ export default function PesquisaHomePage() {
   const session = getSession();
 
   const loadHome = useCallback(async () => {
-    if (!session) { navigate('/pwa/pesquisa/login', { replace: true }); return; }
+    if (!session) { navigate('/pesquisa/login', { replace: true }); return; }
     try {
       const { data, error } = await supabase.rpc('pesquisa_pwa_get_home', {
         p_session_id: session.session_id,
@@ -48,7 +48,7 @@ export default function PesquisaHomePage() {
       const result = data as any;
       if (result?.error === 'SESSION_INVALID') {
         clearSession();
-        navigate('/pwa/pesquisa/login', { replace: true });
+        navigate('/pesquisa/login', { replace: true });
         return;
       }
       setHomeData(result);
@@ -74,7 +74,7 @@ export default function PesquisaHomePage() {
       try { await supabase.rpc('pesquisa_revoke_session', { p_session_id: session.session_id }); } catch {}
     }
     clearSession();
-    navigate('/pwa/pesquisa/login', { replace: true });
+    navigate('/pesquisa/login', { replace: true });
   };
 
   if (!session) return null;
@@ -104,7 +104,7 @@ export default function PesquisaHomePage() {
 
       {/* Action */}
       <Button
-        onClick={() => navigate('/pwa/pesquisa/nova')}
+        onClick={() => navigate('/pesquisa/nova')}
         className="w-full h-14 text-lg gap-2"
       >
         <Plus className="h-5 w-5" /> Nova Coleta

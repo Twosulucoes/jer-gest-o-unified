@@ -135,7 +135,7 @@ export default function PesquisaPesquisadoresPage() {
     setPinDialogOpen(true);
   };
 
-  const pwaUrl = `${window.location.origin}/pwa/pesquisa/login`;
+  const pwaUrl = `${window.location.origin}/pesquisa/login`;
 
   const copyMessage = (r: Researcher, pin?: string) => {
     const location = r.assigned_location ? `\nLocal padrão: ${r.assigned_location}` : '';
