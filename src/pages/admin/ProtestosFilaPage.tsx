@@ -33,7 +33,7 @@ export default function ProtestosFilaPage() {
   const load = async () => {
     let q = supabase
       .from("protests")
-      .select("*, delegations:delegation_id(school_name), competition_matches:match_id(match_number, end_time)")
+      .select("*, delegations:delegation_id(institutions(name)), competition_matches:match_id(match_number, end_time)")
       .order("created_at", { ascending: false });
     if (statusFilter !== "all") q = q.eq("status", statusFilter);
     const { data } = await q;
@@ -111,7 +111,7 @@ export default function ProtestosFilaPage() {
                   {p.decision && <Badge variant="outline" className="uppercase">{p.decision}</Badge>}
                 </div>
                 <p className="text-sm">
-                  <strong>{p.delegations?.school_name ?? "—"}</strong> — Partida #{p.competition_matches?.match_number ?? "—"}
+                  <strong>{p.delegations?.institutions?.name ?? "—"}</strong> — Partida #{p.competition_matches?.match_number ?? "—"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Protocolado em {format(new Date(p.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}

@@ -101,7 +101,7 @@ export default function TransportePassageirosPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("transport_passengers")
-      .select("id, status, boarded_at, is_manual, manual_name, manual_cpf, no_show, participant_id, participant:participants(guardian_name, guardian_phone, coach_name, coach_phone, person:people(full_name, cpf, photo_url), delegation:delegations(school_name))")
+      .select("id, status, boarded_at, is_manual, manual_name, manual_cpf, no_show, participant_id, participant:participants(person:people(full_name, cpf, photo_url, guardian_name, guardian_phone, coach_name, coach_phone), delegation:delegations(institutions(name)))")
       .eq("trip_id", tripId)
       .order("created_at");
 
@@ -119,11 +119,11 @@ export default function TransportePassageirosPage() {
       full_name: p.is_manual ? (p.manual_name || "Manual") : (p.participant?.person?.full_name || "—"),
       cpf: p.is_manual ? p.manual_cpf : (p.participant?.person?.cpf || null),
       photo_url: p.participant?.person?.photo_url || null,
-      delegation_name: p.participant?.delegation?.school_name || null,
-      guardian_name: p.participant?.guardian_name || null,
-      guardian_phone: p.participant?.guardian_phone || null,
-      coach_name: p.participant?.coach_name || null,
-      coach_phone: p.participant?.coach_phone || null,
+      delegation_name: p.participant?.delegation?.institutions?.name || null,
+      guardian_name: p.participant?.person?.guardian_name || null,
+      guardian_phone: p.participant?.person?.guardian_phone || null,
+      coach_name: p.participant?.person?.coach_name || null,
+      coach_phone: p.participant?.person?.coach_phone || null,
     }));
 
     // Sort: boarded first, then pending, then no_show

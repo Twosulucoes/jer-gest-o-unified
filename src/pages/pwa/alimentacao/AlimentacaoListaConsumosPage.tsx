@@ -102,8 +102,8 @@ export default function AlimentacaoListaConsumosPage() {
       .select(`
         id, consumed_at, participant_id, meal_window_id,
         participants!inner(
-          id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone, participant_type,
-          people!inner(full_name, cpf, photo_url),
+          id, delegation_id, participant_type,
+          people!inner(full_name, cpf, photo_url, guardian_name, guardian_phone, coach_name, coach_phone),
           delegations(institution_id, institutions(name))
         ),
         meal_windows!inner(id, label, start_time, end_time, service_date, event_id, event_stage_id, meal_types!inner(name))
@@ -141,10 +141,10 @@ export default function AlimentacaoListaConsumosPage() {
       full_name: c.participants?.people?.full_name || "",
       cpf: c.participants?.people?.cpf || null,
       photo_url: c.participants?.people?.photo_url || null,
-      guardian_name: c.participants?.guardian_name,
-      guardian_phone: c.participants?.guardian_phone,
-      coach_name: c.participants?.coach_name,
-      coach_phone: c.participants?.coach_phone,
+      guardian_name: c.participants?.people?.guardian_name,
+      guardian_phone: c.participants?.people?.guardian_phone,
+      coach_name: c.participants?.people?.coach_name,
+      coach_phone: c.participants?.people?.coach_phone,
       delegation_name: c.participants?.delegations?.institutions?.name || null,
       delegation_id: c.participants?.delegation_id,
       participant_type: c.participants?.participant_type || null,

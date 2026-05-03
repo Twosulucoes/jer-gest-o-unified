@@ -218,7 +218,7 @@ export default function ParticipantesPage() {
       const baseFields =
         "id, status, participant_type, person_id, delegation_id, created_at, " +
         "person:people(id, full_name, cpf, gender), " +
-        "delegation:delegations(id, school_name, institution_id, institution:institutions(name))";
+        "delegation:delegations(id, institution_id, institution:institutions(name))";
 
       const from = page * pageSize;
       const to = from + pageSize - 1;
@@ -271,8 +271,8 @@ export default function ParticipantesPage() {
         case "status":
           va = a.status ?? ""; vb = b.status ?? ""; break;
         case "institution":
-          va = a.delegation?.school_name ?? "";
-          vb = b.delegation?.school_name ?? ""; break;
+          va = a.delegation?.institution?.name ?? "";
+          vb = b.delegation?.institution?.name ?? ""; break;
         case "created":
           va = a.created_at ?? ""; vb = b.created_at ?? ""; break;
       }
@@ -413,8 +413,7 @@ export default function ParticipantesPage() {
     { header: "Gênero", accessor: (p) => p.person?.gender ?? "" },
     { header: "Tipo", accessor: (p) => TYPE_LABELS[p.participant_type] ?? p.participant_type ?? "" },
     { header: "Status", accessor: (p) => STATUS_LABELS[p.status]?.label ?? p.status ?? "" },
-    { header: "Instituição", accessor: (p) => p.delegation?.institution?.name ?? p.delegation?.school_name ?? "" },
-    { header: "Escola (delegação)", accessor: (p) => p.delegation?.school_name ?? "" },
+    { header: "Instituição", accessor: (p) => p.delegation?.institution?.name ?? "" },
     { header: "Inscrições (modalidade/prova)", accessor: (p) => getEnrollmentSummary(p.id) === "—" ? "" : getEnrollmentSummary(p.id) },
     {
       header: "Etapas",
@@ -429,7 +428,7 @@ export default function ParticipantesPage() {
   const baseSelectExport =
     "id, status, participant_type, person_id, delegation_id, created_at, " +
     "person:people(id, full_name, cpf, gender), " +
-    "delegation:delegations(id, school_name, institution_id, institution:institutions(id, name))";
+    "delegation:delegations(id, institution_id, institution:institutions(id, name))";
 
   const fetchAllParticipants = async () => {
     if (!selectedEventId) return [];
@@ -517,8 +516,7 @@ export default function ParticipantesPage() {
     { key: "gender", label: "Gênero", weight: 8, accessor: (p) => p.person?.gender ?? "" },
     { key: "type", label: "Tipo", weight: 10, accessor: (p) => TYPE_LABELS[p.participant_type] ?? p.participant_type ?? "" },
     { key: "status", label: "Status", weight: 10, accessor: (p) => STATUS_LABELS[p.status]?.label ?? p.status ?? "" },
-    { key: "institution", label: "Instituição", weight: 22, accessor: (p) => p.delegation?.institution?.name ?? p.delegation?.school_name ?? "" },
-    { key: "school", label: "Escola (delegação)", weight: 20, accessor: (p) => p.delegation?.school_name ?? "" },
+    { key: "institution", label: "Instituição", weight: 22, accessor: (p) => p.delegation?.institution?.name ?? "" },
     { key: "enrollments", label: "Modalidade/Prova", weight: 22, accessor: (p) => {
       const list = enrollments.filter((e: any) => e.participant_id === p.id);
       if (list.length === 0) return "";
@@ -839,7 +837,7 @@ export default function ParticipantesPage() {
             {rows.map((p: any) => {
               const person = p.person;
               const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
-              const institutionName = p.delegation?.institution?.name ?? p.delegation?.school_name ?? "—";
+              const institutionName = p.delegation?.institution?.name ?? "—";
               return (
                 <Card
                   key={p.id}
@@ -899,7 +897,7 @@ export default function ParticipantesPage() {
                 {rows.map((p: any) => {
                   const person = p.person;
                   const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
-                  const institutionName = p.delegation?.institution?.name ?? p.delegation?.school_name ?? "—";
+                  const institutionName = p.delegation?.institution?.name ?? "—";
                   return (
                     <TableRow key={p.id} className={isFetching ? "opacity-70" : ""}>
                       <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>

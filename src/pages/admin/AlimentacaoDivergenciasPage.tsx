@@ -52,7 +52,7 @@ export default function AlimentacaoDivergenciasPage() {
           participants(
             id,
             people(full_name),
-            delegations(school_name)
+            delegations(institutions(name))
           ),
           profiles:registered_by(full_name)
         `)
@@ -112,7 +112,7 @@ export default function AlimentacaoDivergenciasPage() {
           needs_meals,
           credentialed_at,
           left_event_at,
-          delegations(school_name, institution_id),
+          delegations(institution_id, institutions(name)),
           people(full_name)
         `)
         .eq("event_id", eventId!)
@@ -189,7 +189,7 @@ export default function AlimentacaoDivergenciasPage() {
         data.push({
           "Tipo": "Tentativa Recusada",
           "Participante": i.participants?.people?.full_name || "Anônimo",
-          "Delegação": i.participants?.delegations?.school_name || "—",
+          "Delegação": i.participants?.delegations?.institutions?.name || "—",
           "Janela": i.meal_windows?.label || i.meal_windows?.meal_types?.name,
           "Motivo": i.incident_type,
           "Instante": format(new Date(i.incident_at), "HH:mm:ss"),
@@ -204,7 +204,7 @@ export default function AlimentacaoDivergenciasPage() {
         data.push({
           "Tipo": "Ausência de Consumo",
           "Participante": m.participant?.people?.full_name,
-          "Delegação": m.participant?.delegations?.school_name,
+          "Delegação": m.participant?.delegations?.institutions?.name,
           "Janela": m.window?.label || m.window?.meal_types?.name,
           "Motivo": m.motivo ?? "Presente, elegível, não consumiu",
           "Instante": "—",
@@ -319,7 +319,7 @@ export default function AlimentacaoDivergenciasPage() {
                       <TableRow key={i.id}>
                         <TableCell>
                           <div className="font-medium">{i.participants?.people?.full_name || "Anônimo"}</div>
-                          <div className="text-[10px] text-muted-foreground uppercase">{i.participants?.delegations?.school_name || "—"}</div>
+                          <div className="text-[10px] text-muted-foreground uppercase">{i.participants?.delegations?.institutions?.name || "—"}</div>
                         </TableCell>
                         <TableCell>{i.meal_windows?.label || i.meal_windows?.meal_types?.name}</TableCell>
                         <TableCell>
@@ -374,7 +374,7 @@ export default function AlimentacaoDivergenciasPage() {
                     filteredMissing.slice(0, 300).map((m) => (
                       <TableRow key={m.id}>
                         <TableCell className="font-medium">{m.participant?.people?.full_name}</TableCell>
-                        <TableCell className="text-xs">{m.participant?.delegations?.school_name}</TableCell>
+                        <TableCell className="text-xs">{m.participant?.delegations?.institutions?.name}</TableCell>
                         <TableCell className="text-xs">{m.window?.label || m.window?.meal_types?.name}</TableCell>
                         <TableCell className="text-xs">
                           <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50 dark:bg-red-950/30 dark:text-red-300 text-[10px]">

@@ -37,9 +37,9 @@ export default function AlocacaoLotePage() {
       if (!selectedEventId) return [];
       const { data, error } = await supabase
         .from("delegations")
-        .select("id, school_name, institutions(name)")
+        .select("id, institutions(name)")
         .eq("event_id", selectedEventId)
-        .order("school_name");
+        .order("institution_id");
       if (error) throw error;
       return data;
     },
@@ -233,7 +233,7 @@ export default function AlocacaoLotePage() {
                   <SelectContent>
                     {delegations.map(d => (
                       <SelectItem key={d.id} value={d.id}>
-                        {d.school_name} {d.institutions?.name ? `(${d.institutions.name})` : ""}
+                        {d.institutions?.name ?? d.id}
                       </SelectItem>
                     ))}
                   </SelectContent>

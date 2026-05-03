@@ -17,7 +17,7 @@ export const ROUTE_DATA_MAPPING: RouteDataRequirement[] = [
       { name: "events", columns: ["id", "name", "year", "status"] },
       { name: "participants", columns: ["id", "credentialed_at", "delegation_id", "event_id"] },
       { name: "participant_credentials", columns: ["id", "status", "issued_at", "created_at", "participant_id", "event_id"] },
-      { name: "delegations", columns: ["id", "school_name", "event_id"] },
+      { name: "delegations", columns: ["id", "institution_id", "event_id"] },
       { name: "meal_windows", columns: ["id", "service_date", "meal_type_id", "label", "event_id"] },
       { name: "meal_types", columns: ["id", "name", "event_id"] },
       { name: "lodging_units", columns: ["id", "capacity", "is_active", "event_id"] },
@@ -43,7 +43,7 @@ export const ROUTE_DATA_MAPPING: RouteDataRequirement[] = [
     label: "Lista de Participantes",
     tables: [
       { name: "participants", columns: ["id", "name", "badge_name", "document", "birth_date", "gender", "status", "delegation_id", "event_id"], joins: ["delegations", "people"] },
-      { name: "delegations", columns: ["id", "school_name"] },
+      { name: "delegations", columns: ["id", "institution_id"] },
       { name: "people", columns: ["id", "full_name"] }
     ]
   },
@@ -53,7 +53,7 @@ export const ROUTE_DATA_MAPPING: RouteDataRequirement[] = [
     tables: [
       { name: "participants", columns: ["id", "name", "badge_name", "status", "delegation_id", "event_id"] },
       { name: "participant_credentials", columns: ["id", "participant_id", "status", "issued_at"] },
-      { name: "delegations", columns: ["id", "school_name"] }
+      { name: "delegations", columns: ["id", "institution_id"] }
     ]
   },
   {

@@ -107,7 +107,7 @@ const TABLE_CONFIGS: TableConfig[] = [
       "id", "participant_type", "needs_transport", "needs_meals", "needs_lodging", "created_at",
       "person_id", "person:people(full_name,cpf,email,phone,birth_date,gender)",
       "event_id", "event:events(name,status,year)",
-      "delegation_id", "delegation:delegations(school_name,status)",
+      "delegation_id", "delegation:delegations(status,institutions(name))",
     ].join(","),
     colGroups: [
       {
@@ -142,7 +142,7 @@ const TABLE_CONFIGS: TableConfig[] = [
       {
         label: "Delegação", hex: "#059669",
         cols: [
-          { key: "delegation.school_name", label: "Escola" },
+          { key: "delegation.institutions.name", label: "Escola" },
           { key: "delegation.status", label: "Status", type: "badge" },
         ],
       },
@@ -185,21 +185,21 @@ const TABLE_CONFIGS: TableConfig[] = [
     name: "delegations",
     label: "Delegações",
     menuGroup: "Delegações",
-    orderBy: "school_name",
+    orderBy: "created_at",
     select: [
-      "id", "school_name", "school_official_name", "status", "school_city", "school_state", "created_at",
-      "institution_id", "institution:institutions(name,city,state)",
+      "id", "status", "created_at",
+      "institution_id", "institution:institutions(name,official_name,city,state)",
       "event_id", "event:events(name,year)",
     ].join(","),
     colGroups: [
       {
         label: "Delegação", hex: "#059669",
         cols: [
-          { key: "school_name", label: "Escola" },
-          { key: "school_official_name", label: "Nome oficial" },
+          { key: "institution.name", label: "Escola" },
+          { key: "institution.official_name", label: "Nome oficial" },
           { key: "status", label: "Status", type: "badge" },
-          { key: "school_city", label: "Cidade" },
-          { key: "school_state", label: "UF" },
+          { key: "institution.city", label: "Cidade" },
+          { key: "institution.state", label: "UF" },
           { key: "created_at", label: "Criado em", type: "date" },
         ],
       },
@@ -227,7 +227,7 @@ const TABLE_CONFIGS: TableConfig[] = [
     orderBy: "name",
     select: [
       "id", "name", "created_at",
-      "delegation_id", "delegation:delegations(school_name,status)",
+      "delegation_id", "delegation:delegations(status,institutions(name))",
       "event_id", "event:events(name,year)",
       "sport_event_id", "sport_event:sport_events(gender,sport:sports(name),category:categories(name))",
     ].join(","),
@@ -242,7 +242,7 @@ const TABLE_CONFIGS: TableConfig[] = [
       {
         label: "Delegação", hex: "#059669",
         cols: [
-          { key: "delegation.school_name", label: "Escola" },
+          { key: "delegation.institutions.name", label: "Escola" },
           { key: "delegation.status", label: "Status", type: "badge" },
         ],
       },
@@ -271,7 +271,7 @@ const TABLE_CONFIGS: TableConfig[] = [
     select: [
       "id", "created_at",
       "participant_id", "participant:participants(participant_type,person:people(full_name,cpf))",
-      "team_id", "team:teams(name,delegation:delegations(school_name),sport_event:sport_events(sport:sports(name),category:categories(name)))",
+      "team_id", "team:teams(name,delegation:delegations(institutions(name)),sport_event:sport_events(sport:sports(name),category:categories(name)))",
     ].join(","),
     colGroups: [
       {
@@ -292,7 +292,7 @@ const TABLE_CONFIGS: TableConfig[] = [
         label: "Time", hex: "#0f766e",
         cols: [
           { key: "team.name", label: "Time" },
-          { key: "team.delegation.school_name", label: "Escola" },
+          { key: "team.delegation.institutions.name", label: "Escola" },
           { key: "team.sport_event.sport.name", label: "Esporte" },
           { key: "team.sport_event.category.name", label: "Categoria" },
         ],
@@ -381,7 +381,7 @@ const TABLE_CONFIGS: TableConfig[] = [
       "id", "role", "created_at",
       "participant_id", "participant:participants(participant_type,person:people(full_name,cpf))",
       "event_id", "event:events(name,year)",
-      "delegation_id", "delegation:delegations(school_name)",
+      "delegation_id", "delegation:delegations(institutions(name))",
     ].join(","),
     colGroups: [
       {
@@ -404,7 +404,7 @@ const TABLE_CONFIGS: TableConfig[] = [
       },
       {
         label: "Delegação", hex: "#059669",
-        cols: [{ key: "delegation.school_name", label: "Escola" }],
+        cols: [{ key: "delegation.institutions.name", label: "Escola" }],
       },
     ],
   },
@@ -486,7 +486,7 @@ const TABLE_CONFIGS: TableConfig[] = [
     orderBy: "consumed_at",
     select: [
       "id", "consumed_at",
-      "participant_id", "participant:participants(participant_type,person:people(full_name,cpf),delegation:delegations(school_name))",
+      "participant_id", "participant:participants(participant_type,person:people(full_name,cpf),delegation:delegations(institutions(name)))",
       "meal_window_id", "meal_window:meal_windows(starts_at,ends_at,meal_type:meal_types(name),event:events(name))",
     ].join(","),
     colGroups: [
@@ -502,7 +502,7 @@ const TABLE_CONFIGS: TableConfig[] = [
           { key: "participant.person.full_name", label: "Nome" },
           { key: "participant.person.cpf", label: "CPF" },
           { key: "participant.participant_type", label: "Tipo", type: "badge" },
-          { key: "participant.delegation.school_name", label: "Delegação" },
+          { key: "participant.delegation.institutions.name", label: "Delegação" },
         ],
       },
       {
@@ -523,7 +523,7 @@ const TABLE_CONFIGS: TableConfig[] = [
     orderBy: "created_at",
     select: [
       "id", "check_in_at", "check_out_at", "created_at",
-      "participant_id", "participant:participants(participant_type,person:people(full_name,cpf),delegation:delegations(school_name))",
+      "participant_id", "participant:participants(participant_type,person:people(full_name,cpf),delegation:delegations(institutions(name)))",
       "unit_id", "unit:lodging_units(name,location:lodging_locations(name))",
       "event_id", "event:events(name,year)",
     ].join(","),
@@ -542,7 +542,7 @@ const TABLE_CONFIGS: TableConfig[] = [
           { key: "participant.person.full_name", label: "Nome" },
           { key: "participant.person.cpf", label: "CPF" },
           { key: "participant.participant_type", label: "Tipo", type: "badge" },
-          { key: "participant.delegation.school_name", label: "Delegação" },
+          { key: "participant.delegation.institutions.name", label: "Delegação" },
         ],
       },
       {
@@ -565,7 +565,7 @@ const TABLE_CONFIGS: TableConfig[] = [
     orderBy: "created_at",
     select: [
       "id", "created_at",
-      "participant_id", "participant:participants(participant_type,person:people(full_name,cpf),delegation:delegations(school_name))",
+      "participant_id", "participant:participants(participant_type,person:people(full_name,cpf),delegation:delegations(institutions(name)))",
       "trip_id", "trip:transport_trips(departure_at,route:transport_routes(name),vehicle:transport_vehicles(plate,capacity))",
     ].join(","),
     colGroups: [
@@ -581,7 +581,7 @@ const TABLE_CONFIGS: TableConfig[] = [
           { key: "participant.person.full_name", label: "Nome" },
           { key: "participant.person.cpf", label: "CPF" },
           { key: "participant.participant_type", label: "Tipo", type: "badge" },
-          { key: "participant.delegation.school_name", label: "Delegação" },
+          { key: "participant.delegation.institutions.name", label: "Delegação" },
         ],
       },
       {

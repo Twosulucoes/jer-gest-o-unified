@@ -162,10 +162,13 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("delegations")
-            .select("id, school_name");
+            .select("id, institutions(name)");
           if (eventId) query.eq("event_id", eventId);
-          const { data } = await query;
-          return data ?? [];
+          const { data } = await query as any;
+          return ((data ?? []) as any[]).map((d) => ({
+            id: d.id as string,
+            school_name: (d.institutions?.name ?? "") as string,
+          }));
         }, [] as { id: string; school_name: string }[]),
       },
       // 3: meal_windows + meal_types

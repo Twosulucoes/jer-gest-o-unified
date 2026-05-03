@@ -77,7 +77,7 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
       const { data, error } = await (supabase as any).from("meal_window_eligibility")
         .select(`
           *,
-          delegations(school_name),
+          delegations(institutions(name)),
           institutions(name)
         `)
         .eq("meal_window_id", mealWindow.id);
@@ -137,12 +137,16 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
     enabled: open,
   });
 
-  // Fetch delegations for rules
+  // Fetch delegations for rules — nome vem de institutions (canônico)
   const { data: delegations = [] } = useQuery({
     queryKey: ["delegations_simple"],
     queryFn: async () => {
-      const { data } = await supabase.from("delegations").select("id, school_name").order("school_name");
-      return data || [];
+      const { data } = await (supabase as any)
+        .from("delegations")
+        .select("id, institutions(name)");
+      return ((data || []) as any[])
+        .map((d) => ({ id: d.id as string, school_name: (d.institutions?.name ?? "") as string }))
+        .sort((a, b) => a.school_name.localeCompare(b.school_name));
     },
     enabled: open && ruleType === "delegation",
   });

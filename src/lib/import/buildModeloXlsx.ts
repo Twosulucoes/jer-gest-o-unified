@@ -27,7 +27,7 @@ export interface ModeloDataSources {
   modalidades?: string[];      // do banco (sports.name)
   provas?: string[];           // do banco (sport_events / prova_catalog)
   categorias?: string[];       // do banco (categories.name)
-  escolas?: string[];          // do banco (delegations.school_name)
+  escolas?: string[];          // do banco (institutions.name via delegations)
   eventName?: string;
   eventYear?: number;
   stageName?: string;

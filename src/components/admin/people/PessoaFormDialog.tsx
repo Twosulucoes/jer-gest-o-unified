@@ -102,10 +102,10 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
     queryKey: ["delegations_for_form", eventId],
     enabled: !!eventId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("delegations")
-        .select("id, school_name, institution:institutions(name)")
-        .eq("event_id", eventId!).order("school_name");
+        .select("id, institution:institutions(name)")
+        .eq("event_id", eventId!);
       if (error) throw error;
       return data;
     },
@@ -496,7 +496,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
                         >
                           <span className="truncate">
                             {delegationId
-                              ? delegations.find((d: any) => d.id === delegationId)?.school_name
+                              ? delegations.find((d: any) => d.id === delegationId)?.institution?.name
                               : "Sem delegação"}
                           </span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -518,11 +518,11 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
                               {delegations.map((d: any) => (
                                 <CommandItem
                                   key={d.id}
-                                  value={d.school_name}
+                                  value={d.institution?.name}
                                   onSelect={() => { setDelegationId(d.id); setDelegationOpen(false); }}
                                 >
                                   <Check className={cn("mr-2 h-4 w-4", delegationId === d.id ? "opacity-100" : "opacity-0")} />
-                                  {d.school_name}
+                                  {d.institution?.name}
                                 </CommandItem>
                               ))}
                             </CommandGroup>
