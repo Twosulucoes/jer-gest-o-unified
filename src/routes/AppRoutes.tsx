@@ -125,6 +125,8 @@ const AdminAlimentacaoTiposPage = lazy(() => import("../pages/admin/AlimentacaoT
 const AdminAlimentacaoDashboardPage = lazy(() => import("../pages/admin/AlimentacaoDashboardPage"));
 const AdminAlimentacaoRelatoriosPage = lazy(() => import("../pages/admin/AlimentacaoRelatoriosPage"));
 const AdminAlimentacaoLocaisPage = lazy(() => import("../pages/admin/AlimentacaoLocaisPage"));
+const AdminAlimentacaoPadroesPage = lazy(() => import("../pages/admin/AlimentacaoPadroesPage"));
+const AdminAlimentacaoDivergenciasPage = lazy(() => import("../pages/admin/AlimentacaoDivergenciasPage"));
 
 // Alojamento Subpages (Admin)
 const AdminAlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
@@ -291,6 +293,8 @@ export const AppRoutes = () => (
             <Route path="alimentacao/relatorios" element={<AdminAlimentacaoRelatoriosPage />} />
              <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
              <Route path="alimentacao/locais" element={<AdminAlimentacaoLocaisPage />} />
+             <Route path="alimentacao/padroes" element={<AdminAlimentacaoPadroesPage />} />
+             <Route path="alimentacao/divergencias" element={<AdminAlimentacaoDivergenciasPage />} />
             <Route path="transporte" element={<TransporteHubPage />} />
             <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
             <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
@@ -375,13 +379,13 @@ export const AppRoutes = () => (
         <Route path="registros/configuracao-osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ConfigOscPage /></ProtectedRoute>} />
         
         {/* Redirecionamentos operacionais */}
-        <Route path="credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
-        <Route path="vouchers" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
-        <Route path="transporte" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "transporte"]}><RedirectToEtapas /></ProtectedRoute>} />
-        <Route path="alimentacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao"]}><RedirectToEtapas /></ProtectedRoute>} />
-        <Route path="alojamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alojamento"]}><RedirectToEtapas /></ProtectedRoute>} />
-        <Route path="competicao" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RedirectToEtapas /></ProtectedRoute>} />
-        <Route path="pesquisa" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="credenciamento/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="vouchers/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="transporte/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "transporte"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="alimentacao/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alimentacao"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="alojamento/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "alojamento"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="competicao/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RedirectToEtapas /></ProtectedRoute>} />
+        <Route path="pesquisa/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
       </Route>
 
       <Route path="/pwa" element={<PwaRouteGuard requireStage={false}><PwaLayout /></PwaRouteGuard>}>

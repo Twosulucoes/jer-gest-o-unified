@@ -216,7 +216,7 @@ export default function AlimentacaoHubPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/consumo")}>
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/consumo` : "/admin/alimentacao/consumo")}>
           <CardContent className="flex items-center gap-3 p-4">
             <ClipboardList className="h-8 w-8 text-primary shrink-0" />
             <div>
@@ -226,7 +226,7 @@ export default function AlimentacaoHubPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/previsao")}>
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/previsao` : "/admin/alimentacao/previsao")}>
           <CardContent className="flex items-center gap-3 p-4">
             <Calculator className="h-8 w-8 text-primary shrink-0" />
             <div>
@@ -236,7 +236,7 @@ export default function AlimentacaoHubPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/dashboard")}>
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/dashboard` : "/admin/alimentacao/dashboard")}>
           <CardContent className="flex items-center gap-3 p-4">
             <LayoutDashboard className="h-8 w-8 text-primary shrink-0" />
             <div>
@@ -246,7 +246,7 @@ export default function AlimentacaoHubPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/locais")}>
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/locais` : "/admin/alimentacao/locais")}>
           <CardContent className="flex items-center gap-3 p-4">
             <MapPin className="h-8 w-8 text-primary shrink-0" />
             <div>
@@ -256,7 +256,7 @@ export default function AlimentacaoHubPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/relatorios")}>
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/relatorios` : "/admin/alimentacao/relatorios")}>
           <CardContent className="flex items-center gap-3 p-4">
             <FileText className="h-8 w-8 text-primary shrink-0" />
             <div>
@@ -266,7 +266,7 @@ export default function AlimentacaoHubPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/divergencias")}>
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/divergencias` : "/admin/alimentacao/divergencias")}>
           <CardContent className="flex items-center gap-3 p-4">
             <UserX className="h-8 w-8 text-amber-500 shrink-0" />
             <div>
@@ -276,7 +276,7 @@ export default function AlimentacaoHubPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/alimentacao/padroes")}>
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/padroes` : "/admin/alimentacao/padroes")}>
           <CardContent className="flex items-center gap-3 p-4">
             <Clock className="h-8 w-8 text-primary shrink-0" />
             <div>
