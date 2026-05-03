@@ -299,26 +299,26 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           return data ?? [];
         }, [] as { id: string; name: string }[]),
       },
-      // 12: participant_event_stages
+      // 12: participant_event_stages (Vinculos em Etapas)
       {
         queryKey: ["dash3", "participant_event_stages", eventId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          // Esta tabela vincula participante a etapa. 
-          // Se eventId presente, filtramos via participação
-          const query = supabase.from("participant_event_stages" as any).select("stage_id", { count: "exact" }).limit(10000);
+          const query = supabase.from("participant_event_stages" as any).select("id, event_stage_id", { count: "exact" }).limit(10000);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
       },
-      // 13: participant_sport_events
+      // 13: participant_sport_events (Inscrições em Provas)
       {
         queryKey: ["dash3", "participant_sport_events", eventId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const query = supabase.from("participant_sport_events" as any).select("sport_event_id", { count: "exact" }).limit(10000);
+          const query = supabase.from("participant_sport_events" as any)
+            .select("id, sport_event_id, registration_status, is_blocked_by_documentation", { count: "exact" })
+            .limit(10000);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
