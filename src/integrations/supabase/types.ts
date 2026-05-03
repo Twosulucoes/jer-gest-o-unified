@@ -826,6 +826,7 @@ export type Database = {
           disputes_unpublished_reason: string | null
           disputes_updated_at: string | null
           event_id: string
+          event_stage_id: string
           id: string
           name: string
           phase_type: string
@@ -845,6 +846,7 @@ export type Database = {
           disputes_unpublished_reason?: string | null
           disputes_updated_at?: string | null
           event_id: string
+          event_stage_id: string
           id?: string
           name: string
           phase_type?: string
@@ -864,6 +866,7 @@ export type Database = {
           disputes_unpublished_reason?: string | null
           disputes_updated_at?: string | null
           event_id?: string
+          event_stage_id?: string
           id?: string
           name?: string
           phase_type?: string

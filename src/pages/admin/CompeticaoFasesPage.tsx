@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import CompetitionPhaseFormDialog, { type PhaseFormValues } from "@/components/admin/CompetitionPhaseFormDialog";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScopedSportEventIds } from "@/hooks/useStageScopedSportEvents";
+import { useStageScope } from "@/hooks/useStageScope";
 
 export default function CompeticaoFasesPage() {
   const qc = useQueryClient();
@@ -21,6 +22,7 @@ export default function CompeticaoFasesPage() {
   const [editing, setEditing] = useState<any>(null);
   const selectedEventId = useActiveEventId();
   const { isStageScoped, sportEventIds: stageSportEventIds } = useStageScopedSportEventIds();
+  const { stageId } = useStageScope();
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   const { data: events = [] } = useQuery({
@@ -71,8 +73,10 @@ export default function CompeticaoFasesPage() {
 
   const createMut = useMutation({
     mutationFn: async (v: PhaseFormValues) => {
-      const { error } = await supabase.from("competition_phases").insert({
+      if (!stageId) throw new Error("Selecione uma etapa antes de criar a fase.");
+      const { error } = await (supabase as any).from("competition_phases").insert({
         event_id: selectedEventId,
+        event_stage_id: stageId,
         sport_event_id: v.sport_event_id,
         name: v.name,
         phase_type: v.phase_type,
