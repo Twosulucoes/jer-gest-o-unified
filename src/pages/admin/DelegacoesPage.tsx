@@ -46,9 +46,9 @@ export default function DelegacoesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [networkFilter, setNetworkFilter] = useState<string>("all");
   const [cityFilter, setCityFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"school_name" | "school_city" | "school_network_type" | "status" | "created_at">("school_name");
+  const [sortBy, setSortBy] = useState<"name" | "city" | "network_type" | "status" | "created_at">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [groupBy, setGroupBy] = useState<"none" | "school_city" | "status" | "school_network_type" | "stage">("none");
+  const [groupBy, setGroupBy] = useState<"none" | "city" | "status" | "network_type" | "stage">("none");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
 
@@ -122,25 +122,30 @@ export default function DelegacoesPage() {
     enabled: !stageId || !!stageDelegationIds,
     placeholderData: keepPreviousData,
     queryFn: async () => {
-      let q = supabase
+      // Query canônica: dados da escola vivem em institutions (inner join).
+      let q: any = (supabase as any)
         .from("delegations")
-        .select("*", { count: "exact" });
+        .select(
+          "*, institutions!inner(id, name, official_name, slug, network_type, city, state, district, contact_name, contact_phone, contact_email, is_active)",
+          { count: "exact" },
+        );
 
       if (selectedEventId) q = q.eq("event_id", selectedEventId);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
-      if (networkFilter !== "all") q = q.eq("school_network_type", networkFilter);
-      if (cityFilter !== "all") q = q.eq("school_city", cityFilter);
+      if (networkFilter !== "all") q = q.eq("institutions.network_type", networkFilter);
+      if (cityFilter !== "all") q = q.eq("institutions.city", cityFilter);
 
       if (debouncedSearch.trim().length >= 2) {
         const term = debouncedSearch.trim().replace(/[%,]/g, "");
+        // Search no nested institutions + chief_name (próprio da delegation).
         q = q.or(
           [
-            `school_name.ilike.%${term}%`,
-            `school_official_name.ilike.%${term}%`,
-            `school_city.ilike.%${term}%`,
-            `chief_name.ilike.%${term}%`,
-          ].join(",")
-        );
+            `name.ilike.%${term}%`,
+            `official_name.ilike.%${term}%`,
+            `city.ilike.%${term}%`,
+          ].join(","),
+          { foreignTable: "institutions" },
+        ).or(`chief_name.ilike.%${term}%`);
       }
 
       if (stageId) {
@@ -151,9 +156,20 @@ export default function DelegacoesPage() {
 
       const from = page * pageSize;
       const to = from + pageSize - 1;
-      const { data, error, count } = await q
-        .order(sortBy, { ascending: sortDir === "asc", nullsFirst: false })
-        .range(from, to);
+
+      // Order: campos de delegations direto; campos da escola via foreignTable.
+      const sortBelongsToInstitutions = sortBy === "name" || sortBy === "city" || sortBy === "network_type";
+      if (sortBelongsToInstitutions) {
+        q = q.order(sortBy, {
+          ascending: sortDir === "asc",
+          nullsFirst: false,
+          foreignTable: "institutions",
+        });
+      } else {
+        q = q.order(sortBy, { ascending: sortDir === "asc", nullsFirst: false });
+      }
+
+      const { data, error, count } = await q.range(from, to);
       if (error) throw error;
       return { rows: data ?? [], total: count ?? 0 };
     },
@@ -162,21 +178,23 @@ export default function DelegacoesPage() {
   const delegations = pageData?.rows ?? [];
   const total = pageData?.total ?? 0;
 
-  // Distinct cities for the city filter (no escopo do evento)
+  // Distinct cities for the city filter (no escopo do evento; vem de institutions).
   const { data: cityOptions = [] } = useQuery({
     queryKey: ["delegacoes-cities", selectedEventId],
     enabled: !!selectedEventId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("delegations")
-        .select("school_city")
+        .select("institutions!inner(city)")
         .eq("event_id", selectedEventId!)
-        .not("school_city", "is", null)
-        .order("school_city", { ascending: true })
+        .not("institutions.city", "is", null)
         .limit(2000);
       if (error) throw error;
       const set = new Set<string>();
-      (data ?? []).forEach((r: any) => { if (r.school_city) set.add(r.school_city); });
+      (data ?? []).forEach((r: any) => {
+        const c = r?.institutions?.city;
+        if (c) set.add(c);
+      });
       return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
     },
   });
@@ -258,14 +276,14 @@ export default function DelegacoesPage() {
     const map = new Map<string, { key: string; label: string; rows: any[] }>();
     for (const d of delegations as any[]) {
       let keys: { key: string; label: string }[] = [];
-      if (groupBy === "school_city") {
-        const city = d.school_city || "Sem município";
+      if (groupBy === "city") {
+        const city = d.institutions?.city || "Sem município";
         keys = [{ key: city, label: city }];
       } else if (groupBy === "status") {
         const k = d.status || "—";
         keys = [{ key: k, label: STATUS_MAP[k]?.label ?? k }];
-      } else if (groupBy === "school_network_type") {
-        const k = d.school_network_type || "—";
+      } else if (groupBy === "network_type") {
+        const k = d.institutions?.network_type || "—";
         keys = [{ key: k, label: NETWORK_LABEL[k] ?? k }];
       } else if (groupBy === "stage") {
         const ids = stagesByDelegation.get(d.id);
@@ -287,28 +305,71 @@ export default function DelegacoesPage() {
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
   }, [delegations, groupBy, stagesByDelegation, stageMap]);
 
-  const toPayload = (values: DelegationFormValues) => ({
-    event_id: values.event_id,
-    status: values.status,
-    school_name: values.school_name,
-    school_official_name: values.school_official_name || null,
-    school_slug: values.school_slug,
-    school_network_type: values.school_network_type,
-    school_city: values.school_city || null,
-    school_state: values.school_state || null,
-    school_district: values.school_district || null,
-    school_contact_name: values.school_contact_name || null,
-    school_contact_phone: values.school_contact_phone || null,
-    school_contact_email: values.school_contact_email || null,
-    school_is_active: values.school_is_active,
-    chief_name: values.chief_name || null,
-    chief_phone: values.chief_phone || null,
-    chief_email: values.chief_email || null,
-    notes: values.notes || null,
+  // Os dados da escola vivem em `institutions` (canônico). O save aqui é em
+  // duas etapas: garante a institution (resolve por slug ou cria nova) e
+  // depois cria/atualiza a delegation com institution_id + chief_* + status.
+
+  const institutionPayload = (v: DelegationFormValues) => ({
+    name: v.name,
+    official_name: v.official_name || null,
+    slug: v.slug,
+    network_type: v.network_type,
+    city: v.city || null,
+    state: v.state || null,
+    district: v.district || null,
+    contact_name: v.contact_name || null,
+    contact_phone: v.contact_phone || null,
+    contact_email: v.contact_email || null,
+    is_active: v.is_active,
   });
 
+  const delegationPayload = (v: DelegationFormValues, institutionId: string) => ({
+    event_id: v.event_id,
+    institution_id: institutionId,
+    status: v.status,
+    chief_name: v.chief_name || null,
+    chief_phone: v.chief_phone || null,
+    chief_email: v.chief_email || null,
+    notes: v.notes || null,
+  });
+
+  /** Resolve a institution por slug (se já existir) ou cria uma nova. Retorna o id. */
+  const resolveOrCreateInstitution = async (v: DelegationFormValues): Promise<string> => {
+    if (v.institution_id) {
+      // Editando: atualiza a institution existente.
+      const { error } = await (supabase as any)
+        .from("institutions")
+        .update(institutionPayload(v))
+        .eq("id", v.institution_id);
+      if (error) throw error;
+      return v.institution_id;
+    }
+    // Criando: tenta encontrar institution com mesmo slug; se não existir, cria.
+    const { data: existing } = await (supabase as any)
+      .from("institutions")
+      .select("id")
+      .eq("slug", v.slug)
+      .maybeSingle();
+    if (existing?.id) {
+      // Reusa institution existente e atualiza dados (cadastro mestre evolui).
+      const { error: updErr } = await (supabase as any)
+        .from("institutions")
+        .update(institutionPayload(v))
+        .eq("id", existing.id);
+      if (updErr) throw updErr;
+      return existing.id as string;
+    }
+    const { data: created, error } = await (supabase as any)
+      .from("institutions")
+      .insert(institutionPayload(v))
+      .select("id")
+      .single();
+    if (error) throw error;
+    return created.id as string;
+  };
+
   const handleError = (err: Error, action: string) => {
-    if (err.message?.includes("delegations_school_slug_event_key") || err.message?.includes("institutions_slug_key")) {
+    if (err.message?.includes("institutions_slug_key") || err.message?.includes("delegations_school_slug_event_key")) {
       toast.error("Já existe uma escola com este slug. Escolha outro.");
     } else {
       toast.error(`Erro ao ${action} delegação: ${err.message}`);
@@ -319,7 +380,10 @@ export default function DelegacoesPage() {
 
   const createMutation = useMutation({
     mutationFn: async (values: DelegationFormValues) => {
-      const { error } = await (supabase.from("delegations") as any).insert(toPayload(values));
+      const institutionId = await resolveOrCreateInstitution(values);
+      const { error } = await (supabase as any)
+        .from("delegations")
+        .insert(delegationPayload(values, institutionId));
       if (error) throw error;
     },
     onSuccess: () => {
@@ -332,8 +396,17 @@ export default function DelegacoesPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...values }: DelegationFormValues & { id: string }) => {
-      const { event_id: _, ...rest } = toPayload(values);
-      const { error } = await (supabase.from("delegations") as any).update(rest).eq("id", id);
+      const institutionId = await resolveOrCreateInstitution(values);
+      const payload = delegationPayload(values, institutionId);
+      const { event_id: _ev, institution_id: _inst, ...rest } = payload;
+      // event_id é imutável após criação; institution_id pode trocar (no
+      // caso raro de reusarem outra institution pelo slug).
+      const updateBody: Record<string, unknown> = rest;
+      updateBody.institution_id = institutionId;
+      const { error } = await (supabase as any)
+        .from("delegations")
+        .update(updateBody)
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -353,23 +426,23 @@ export default function DelegacoesPage() {
     }
   };
 
-  // Colunas de exportação (Delegações)
+  // Colunas de exportação (Delegações). Dados da escola vêm de institutions.
   const exportColumns: ExportColumn<any>[] = [
-    { header: "Escola", accessor: (d) => d.school_name ?? "" },
-    { header: "Nome oficial", accessor: (d) => d.school_official_name ?? "" },
-    { header: "Slug", accessor: (d) => d.school_slug ?? "" },
-    { header: "Rede", accessor: (d) => NETWORK_LABEL[d.school_network_type] ?? d.school_network_type ?? "" },
-    { header: "Município", accessor: (d) => d.school_city ?? "" },
-    { header: "UF", accessor: (d) => d.school_state ?? "" },
-    { header: "Distrito", accessor: (d) => d.school_district ?? "" },
+    { header: "Escola", accessor: (d) => d.institutions?.name ?? "" },
+    { header: "Nome oficial", accessor: (d) => d.institutions?.official_name ?? "" },
+    { header: "Slug", accessor: (d) => d.institutions?.slug ?? "" },
+    { header: "Rede", accessor: (d) => NETWORK_LABEL[d.institutions?.network_type] ?? d.institutions?.network_type ?? "" },
+    { header: "Município", accessor: (d) => d.institutions?.city ?? "" },
+    { header: "UF", accessor: (d) => d.institutions?.state ?? "" },
+    { header: "Distrito", accessor: (d) => d.institutions?.district ?? "" },
     { header: "Status", accessor: (d) => STATUS_MAP[d.status]?.label ?? d.status ?? "" },
     { header: "Chefe", accessor: (d) => d.chief_name ?? "" },
     { header: "Tel. Chefe", accessor: (d) => d.chief_phone ?? "" },
     { header: "E-mail Chefe", accessor: (d) => d.chief_email ?? "" },
-    { header: "Contato (escola)", accessor: (d) => d.school_contact_name ?? "" },
-    { header: "Tel. Contato", accessor: (d) => d.school_contact_phone ?? "" },
-    { header: "E-mail Contato", accessor: (d) => d.school_contact_email ?? "" },
-    { header: "Ativa?", accessor: (d) => (d.school_is_active ? "Sim" : "Não") },
+    { header: "Contato (escola)", accessor: (d) => d.institutions?.contact_name ?? "" },
+    { header: "Tel. Contato", accessor: (d) => d.institutions?.contact_phone ?? "" },
+    { header: "E-mail Contato", accessor: (d) => d.institutions?.contact_email ?? "" },
+    { header: "Ativa?", accessor: (d) => (d.institutions?.is_active ? "Sim" : "Não") },
     {
       header: "Etapas",
       accessor: (d) => {
@@ -381,6 +454,9 @@ export default function DelegacoesPage() {
     { header: "Criada em", accessor: (d) => (d.created_at ? new Date(d.created_at).toLocaleString("pt-BR") : "") },
   ];
 
+  const SELECT_WITH_INSTITUTION =
+    "*, institutions!inner(id, name, official_name, slug, network_type, city, state, district, contact_name, contact_phone, contact_email, is_active)";
+
   const fetchAllDelegations = async () => {
     if (!selectedEventId) return [];
     const PAGE = 1000;
@@ -388,11 +464,11 @@ export default function DelegacoesPage() {
     const acc: any[] = [];
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("delegations")
-        .select("*")
+        .select(SELECT_WITH_INSTITUTION)
         .eq("event_id", selectedEventId)
-        .order("school_name", { ascending: true })
+        .order("name", { ascending: true, foreignTable: "institutions" })
         .range(from, from + PAGE - 1);
       if (error) throw error;
       const rows = data ?? [];
@@ -409,28 +485,38 @@ export default function DelegacoesPage() {
     const acc: any[] = [];
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      let q = supabase.from("delegations").select("*");
+      let q: any = (supabase as any).from("delegations").select(SELECT_WITH_INSTITUTION);
       if (selectedEventId) q = q.eq("event_id", selectedEventId);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
-      if (networkFilter !== "all") q = q.eq("school_network_type", networkFilter);
-      if (cityFilter !== "all") q = q.eq("school_city", cityFilter);
+      if (networkFilter !== "all") q = q.eq("institutions.network_type", networkFilter);
+      if (cityFilter !== "all") q = q.eq("institutions.city", cityFilter);
       if (debouncedSearch.trim().length >= 2) {
         const term = debouncedSearch.trim().replace(/[%,]/g, "");
-        q = q.or([
-          `school_name.ilike.%${term}%`,
-          `school_official_name.ilike.%${term}%`,
-          `school_city.ilike.%${term}%`,
-          `chief_name.ilike.%${term}%`,
-        ].join(","));
+        q = q.or(
+          [
+            `name.ilike.%${term}%`,
+            `official_name.ilike.%${term}%`,
+            `city.ilike.%${term}%`,
+          ].join(","),
+          { foreignTable: "institutions" },
+        ).or(`chief_name.ilike.%${term}%`);
       }
       if (stageId) {
         const ids = stageDelegationIds ?? [];
         if (ids.length === 0) return acc;
         q = q.in("id", ids);
       }
-      const { data, error } = await q
-        .order(sortBy, { ascending: sortDir === "asc", nullsFirst: false })
-        .range(from, from + PAGE - 1);
+      const sortBelongsToInstitutions = sortBy === "name" || sortBy === "city" || sortBy === "network_type";
+      if (sortBelongsToInstitutions) {
+        q = q.order(sortBy, {
+          ascending: sortDir === "asc",
+          nullsFirst: false,
+          foreignTable: "institutions",
+        });
+      } else {
+        q = q.order(sortBy, { ascending: sortDir === "asc", nullsFirst: false });
+      }
+      const { data, error } = await q.range(from, from + PAGE - 1);
       if (error) throw error;
       const rows = data ?? [];
       acc.push(...rows);
@@ -445,27 +531,27 @@ export default function DelegacoesPage() {
     weight: number; // peso para distribuir largura
     accessor: (d: any) => string;
   }> = [
-    { key: "school_name", label: "Escola", weight: 28, accessor: (d) => d.school_name ?? "" },
-    { key: "school_official_name", label: "Nome oficial", weight: 22, accessor: (d) => d.school_official_name ?? "" },
-    { key: "network", label: "Rede", weight: 10, accessor: (d) => NETWORK_LABEL[d.school_network_type] ?? d.school_network_type ?? "" },
-    { key: "city_uf", label: "Município/UF", weight: 16, accessor: (d) => `${d.school_city ?? "—"}${d.school_state ? "/" + d.school_state : ""}` },
-    { key: "city", label: "Município", weight: 14, accessor: (d) => d.school_city ?? "" },
-    { key: "district", label: "Distrito", weight: 12, accessor: (d) => d.school_district ?? "" },
+    { key: "name", label: "Escola", weight: 28, accessor: (d) => d.institutions?.name ?? "" },
+    { key: "official_name", label: "Nome oficial", weight: 22, accessor: (d) => d.institutions?.official_name ?? "" },
+    { key: "network", label: "Rede", weight: 10, accessor: (d) => NETWORK_LABEL[d.institutions?.network_type] ?? d.institutions?.network_type ?? "" },
+    { key: "city_uf", label: "Município/UF", weight: 16, accessor: (d) => `${d.institutions?.city ?? "—"}${d.institutions?.state ? "/" + d.institutions.state : ""}` },
+    { key: "city", label: "Município", weight: 14, accessor: (d) => d.institutions?.city ?? "" },
+    { key: "district", label: "Distrito", weight: 12, accessor: (d) => d.institutions?.district ?? "" },
     { key: "status", label: "Status", weight: 10, accessor: (d) => STATUS_MAP[d.status]?.label ?? d.status ?? "" },
     { key: "chief_name", label: "Chefe", weight: 16, accessor: (d) => d.chief_name ?? "" },
     { key: "chief_phone", label: "Tel. Chefe", weight: 12, accessor: (d) => d.chief_phone ?? "" },
     { key: "chief_email", label: "E-mail Chefe", weight: 18, accessor: (d) => d.chief_email ?? "" },
-    { key: "school_contact_name", label: "Contato (escola)", weight: 16, accessor: (d) => d.school_contact_name ?? "" },
-    { key: "school_contact_phone", label: "Tel. Contato", weight: 12, accessor: (d) => d.school_contact_phone ?? "" },
+    { key: "contact_name", label: "Contato (escola)", weight: 16, accessor: (d) => d.institutions?.contact_name ?? "" },
+    { key: "contact_phone", label: "Tel. Contato", weight: 12, accessor: (d) => d.institutions?.contact_phone ?? "" },
     { key: "stages", label: "Etapas", weight: 18, accessor: (d) => {
       const ids = stagesByDelegation.get(d.id);
       if (!ids || ids.size === 0) return "";
       return Array.from(ids).map((id) => stageMap.get(id)?.name).filter(Boolean).join(", ");
     } },
-    { key: "is_active", label: "Ativa?", weight: 8, accessor: (d) => (d.school_is_active ? "Sim" : "Não") },
+    { key: "is_active", label: "Ativa?", weight: 8, accessor: (d) => (d.institutions?.is_active ? "Sim" : "Não") },
   ];
 
-  const PDF_DEFAULT_FIELDS = ["school_name", "network", "city_uf", "status", "chief_name", "chief_phone"];
+  const PDF_DEFAULT_FIELDS = ["name", "network", "city_uf", "status", "chief_name", "chief_phone"];
   const [pdfFields, setPdfFields] = useState<string[]>(PDF_DEFAULT_FIELDS);
 
   const pdfFieldOptions: PdfFieldOption[] = PDF_FIELD_CATALOG.map(({ key, label }) => ({ key, label }));
@@ -488,14 +574,14 @@ export default function DelegacoesPage() {
     const map = new Map<string, PdfListGroup<any>>();
     for (const d of rows) {
       let entries: { key: string; label: string }[] = [];
-      if (groupBy === "school_city") {
-        const c = d.school_city || "Sem município";
+      if (groupBy === "city") {
+        const c = d.institutions?.city || "Sem município";
         entries = [{ key: c, label: `Município: ${c}` }];
       } else if (groupBy === "status") {
         const k = d.status || "—";
         entries = [{ key: k, label: `Status: ${STATUS_MAP[k]?.label ?? k}` }];
-      } else if (groupBy === "school_network_type") {
-        const k = d.school_network_type || "—";
+      } else if (groupBy === "network_type") {
+        const k = d.institutions?.network_type || "—";
         entries = [{ key: k, label: `Rede: ${NETWORK_LABEL[k] ?? k}` }];
       } else if (groupBy === "stage") {
         const ids = stagesByDelegation.get(d.id);
@@ -526,7 +612,7 @@ export default function DelegacoesPage() {
     }
     const groups = buildGroups(rows);
     const groupingLabel = groupBy !== "none"
-      ? `Agrupado por: ${({ school_city: "Município", status: "Status", school_network_type: "Rede", stage: "Etapa" } as any)[groupBy]}`
+      ? `Agrupado por: ${({ city: "Município", status: "Status", network_type: "Rede", stage: "Etapa" } as any)[groupBy]}`
       : undefined;
     const blob = await exportListPdf(pdfColumns, groups, {
       title: "Relatório de Delegações",
@@ -640,9 +726,9 @@ export default function DelegacoesPage() {
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
             <SelectTrigger className="h-8 w-[170px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="school_name">Escola</SelectItem>
-              <SelectItem value="school_city">Município</SelectItem>
-              <SelectItem value="school_network_type">Rede</SelectItem>
+              <SelectItem value="name">Escola</SelectItem>
+              <SelectItem value="city">Município</SelectItem>
+              <SelectItem value="network_type">Rede</SelectItem>
               <SelectItem value="status">Status</SelectItem>
               <SelectItem value="created_at">Cadastro</SelectItem>
             </SelectContent>
@@ -665,9 +751,9 @@ export default function DelegacoesPage() {
             <SelectTrigger className="h-8 w-[170px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="none">Sem agrupamento</SelectItem>
-              <SelectItem value="school_city">Município</SelectItem>
+              <SelectItem value="city">Município</SelectItem>
               <SelectItem value="status">Status</SelectItem>
-              <SelectItem value="school_network_type">Rede</SelectItem>
+              <SelectItem value="network_type">Rede</SelectItem>
               <SelectItem value="stage">Etapa</SelectItem>
             </SelectContent>
           </Select>
@@ -709,9 +795,9 @@ export default function DelegacoesPage() {
                 )}
                 <div className="grid gap-3">
                   {g.rows.map((del: any) => {
-                    const d = del;
+                    const inst = del.institutions ?? {};
                     const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
-                    const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
+                    const cityState = [inst.city, inst.state].filter(Boolean).join("/");
                     return (
                       <Link
                         key={del.id}
@@ -720,7 +806,7 @@ export default function DelegacoesPage() {
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <h3 className="font-semibold text-sm text-foreground line-clamp-2 flex-1">
-                            {d.school_name ?? "—"}
+                            {inst.name ?? "—"}
                           </h3>
                           <Badge variant={statusInfo.variant} className="shrink-0 text-[10px] px-1.5 py-0">
                             {statusInfo.label}
@@ -730,8 +816,8 @@ export default function DelegacoesPage() {
                           {cityState && (
                             <p className="flex items-center gap-1">
                               <span className="font-medium text-foreground/70">Local:</span> {cityState}
-                              {d.school_network_type && (
-                                <span className="capitalize ml-1">· {d.school_network_type}</span>
+                              {inst.network_type && (
+                                <span className="capitalize ml-1">· {inst.network_type}</span>
                               )}
                             </p>
                           )}
@@ -798,14 +884,14 @@ export default function DelegacoesPage() {
                       </TableRow>
                     )}
                     {g.rows.map((del: any) => {
-                      const d = del;
+                      const inst = del.institutions ?? {};
                       const statusInfo = STATUS_MAP[del.status] ?? { label: del.status, variant: "outline" as const };
-                      const cityState = [d.school_city, d.school_state].filter(Boolean).join("/");
+                      const cityState = [inst.city, inst.state].filter(Boolean).join("/");
                       return (
                         <TableRow key={del.id} className={isFetching ? "opacity-70" : ""}>
-                          <TableCell className="font-medium">{d.school_name ?? "—"}</TableCell>
+                          <TableCell className="font-medium">{inst.name ?? "—"}</TableCell>
                           <TableCell className="text-muted-foreground">{cityState || "—"}</TableCell>
-                          <TableCell className="text-muted-foreground capitalize">{d.school_network_type ?? "—"}</TableCell>
+                          <TableCell className="text-muted-foreground capitalize">{inst.network_type ?? "—"}</TableCell>
                           <TableCell>
                             <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                           </TableCell>
