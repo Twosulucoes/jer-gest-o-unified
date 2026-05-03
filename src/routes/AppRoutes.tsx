@@ -192,6 +192,7 @@ const DelegacaoHomePage = lazy(() => import("../pages/pwa/delegacao/DelegacaoHom
 const DelegacaoParticipantesPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoParticipantesPage"));
 const DelegacaoAgendaPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoAgendaPage"));
 const DelegacaoLogisticaPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoLogisticaPage"));
+const DelegacaoAlimentacaoPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoAlimentacaoPage"));
 const DelegacaoLocaisPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoLocaisPage"));
 const DelegacaoProtestosPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoProtestosPage"));
 const DelegacaoProtestoNovoPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoProtestoNovoPage"));
@@ -434,6 +435,7 @@ export const AppRoutes = () => (
         <Route path="delegacao/participantes" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoParticipantesPage /></PwaRouteGuard>} />
         <Route path="delegacao/agenda" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoAgendaPage /></PwaRouteGuard>} />
         <Route path="delegacao/logistica" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoLogisticaPage /></PwaRouteGuard>} />
+        <Route path="delegacao/alimentacao" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoAlimentacaoPage /></PwaRouteGuard>} />
         <Route path="delegacao/locais" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoLocaisPage /></PwaRouteGuard>} />
         <Route path="delegacao/protestos" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestosPage /></PwaRouteGuard>} />
         <Route path="delegacao/protesto/novo" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />

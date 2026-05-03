@@ -104,7 +104,7 @@
 7. **Sem trava de saída.** Após registro de checkout do alojamento, o participante continua elegível para refeições. Não existe consulta "está em vigência hoje?" centralizada.
 8. **Validação de duplicidade só existe no DB e numa contagem JS racy.** O JS faz `select count` antes do insert e o DB mantém um `UNIQUE`. No caminho offline a verificação é apenas local — duas filas offline distintas podem gerar duplicidade no momento do sync, sem incidente claro.
 9. **Operador não vê na busca manual o motivo de bloqueio.** Sem badges de "sem credencial" / "não precisa alim." / "checkout efetuado", a equipe perde tempo tentando registrar pessoas que serão recusadas.
-10. **Sem visão por delegação para o perfil `delegacao`.** O perfil existe nos docs ("em desenvolvimento"), mas não há tela dedicada que mostre o consumo dos próprios atletas.
+10. ~~**Sem visão por delegação para o perfil `delegacao`.**~~ ✅ **Resolvido (Etapa 5).** Nova rota `/pwa/delegacao/alimentacao` com KPIs e listas escopadas pela delegação do usuário via RLS.
 
 ### 2.3 Médios — qualidade da experiência
 11. **Estados vazios e de erro inconsistentes** em algumas telas (`AlimentacaoConsumoPage` mistura skeleton + texto sem padrão claro).
@@ -242,9 +242,18 @@ Objetivo: separar motivos de bloqueio e fechar permissões abertas.
   representa. A descrição da aba e o XLSX exportado refletem o novo
   critério.
 
-### Etapa 5 — Visão por delegação
-- Tela `/pwa/delegacao/alimentacao` consultando consumos dos atletas da própria delegação.
-- RLS de leitura: `delegacao` vê somente `participant.delegation_id = own_delegation_id`.
+### Etapa 5 — Visão por delegação ✅
+- ✅ Migration `20260503175418_alimentacao_etapa5_delegacao_rls.sql`:
+  novas políticas `meal_windows`/`meal_locations`/`meal_types` SELECT
+  abertas para `delegacao` (cardápio é informação pública dentro do
+  evento) e `meal_consumptions` SELECT escopada por
+  `participants.delegation_id = get_user_delegation_id(auth.uid())`.
+- ✅ Nova rota `/pwa/delegacao/alimentacao` (`DelegacaoAlimentacaoPage`)
+  com seletor de data, KPIs (Presentes × Consumos × Ausências da
+  delegação), lista de janelas do dia com contagem por janela, lista
+  de consumos da delegação e seção de ausências (Presente, elegível,
+  não consumiu) reaproveitando a mesma lógica da Etapa 4.
+- ✅ Card "Alimentação" adicionado ao `DelegacaoHomePage`.
 
 ### Etapa 6 — Robustez offline
 - Validar duplicidade entre filas offline ao sincronizar (resolução determinística pelo timestamp original).
