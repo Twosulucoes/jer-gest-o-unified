@@ -1203,17 +1203,6 @@ export type Database = {
           id: string
           institution_id: string
           notes: string | null
-          school_city: string | null
-          school_contact_email: string | null
-          school_contact_name: string | null
-          school_contact_phone: string | null
-          school_district: string | null
-          school_is_active: boolean
-          school_name: string
-          school_network_type: string
-          school_official_name: string | null
-          school_slug: string
-          school_state: string | null
           seed_batch_id: string | null
           seed_tag: string | null
           status: string
@@ -1228,17 +1217,6 @@ export type Database = {
           id?: string
           institution_id: string
           notes?: string | null
-          school_city?: string | null
-          school_contact_email?: string | null
-          school_contact_name?: string | null
-          school_contact_phone?: string | null
-          school_district?: string | null
-          school_is_active?: boolean
-          school_name: string
-          school_network_type: string
-          school_official_name?: string | null
-          school_slug: string
-          school_state?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string
@@ -1253,17 +1231,6 @@ export type Database = {
           id?: string
           institution_id?: string
           notes?: string | null
-          school_city?: string | null
-          school_contact_email?: string | null
-          school_contact_name?: string | null
-          school_contact_phone?: string | null
-          school_district?: string | null
-          school_is_active?: boolean
-          school_name?: string
-          school_network_type?: string
-          school_official_name?: string | null
-          school_slug?: string
-          school_state?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string

@@ -114,7 +114,7 @@ export default function DelegacaoDetalhePage() {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem className="min-w-0">
-              <BreadcrumbPage className="truncate text-sm">{delegation.institutions?.name ?? delegation.school_name ?? "Detalhe"}</BreadcrumbPage>
+              <BreadcrumbPage className="truncate text-sm">{delegation.institutions?.name ?? "Detalhe"}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -128,7 +128,7 @@ export default function DelegacaoDetalhePage() {
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-base sm:text-xl font-bold text-foreground leading-tight line-clamp-2 break-words">
-              {delegation.institutions?.name ?? delegation.school_name ?? "Delegação"}
+              {delegation.institutions?.name ?? "Delegação"}
             </h1>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
               <Badge variant={statusInfo.variant} className="text-xs">{statusInfo.label}</Badge>
@@ -137,12 +137,10 @@ export default function DelegacaoDetalhePage() {
                   {participantCount} participante{participantCount !== 1 ? "s" : ""}
                 </span>
               )}
-              {(delegation.institutions?.city ?? delegation.school_city) && (
+              {delegation.institutions?.city && (
                 <span className="text-xs text-muted-foreground truncate">
-                  • {delegation.institutions?.city ?? delegation.school_city}
-                  {(delegation.institutions?.state ?? delegation.school_state)
-                    ? `/${delegation.institutions?.state ?? delegation.school_state}`
-                    : ""}
+                  • {delegation.institutions.city}
+                  {delegation.institutions.state ? `/${delegation.institutions.state}` : ""}
                 </span>
               )}
             </div>

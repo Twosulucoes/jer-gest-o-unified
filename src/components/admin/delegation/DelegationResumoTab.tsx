@@ -10,9 +10,6 @@ interface Props {
     chief_name: string | null;
     chief_email: string | null;
     chief_phone: string | null;
-    school_name: string;
-    school_city?: string | null;
-    school_state?: string | null;
     notes: string | null;
     status: string;
     created_at: string;
@@ -154,11 +151,11 @@ export default function DelegationResumoTab({ delegation, institution, event }: 
             <CardTitle className="text-base">Dados da Delegação</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <Row label="Instituição" value={institution?.name ?? delegation.school_name} />
-            {(institution?.city ?? delegation.school_city) && (
+            <Row label="Instituição" value={institution?.name ?? "—"} />
+            {institution?.city && (
               <Row
                 label="Cidade"
-                value={`${institution?.city ?? delegation.school_city}${(institution?.state ?? delegation.school_state) ? `/${institution?.state ?? delegation.school_state}` : ""}`}
+                value={`${institution.city}${institution.state ? `/${institution.state}` : ""}`}
               />
             )}
             <Row label="Evento" value={event ? `${event.name} (${event.year})` : undefined} />

@@ -369,7 +369,7 @@ export default function DelegacoesPage() {
   };
 
   const handleError = (err: Error, action: string) => {
-    if (err.message?.includes("institutions_slug_key") || err.message?.includes("delegations_school_slug_event_key")) {
+    if (err.message?.includes("institutions_slug_key")) {
       toast.error("Já existe uma escola com este slug. Escolha outro.");
     } else {
       toast.error(`Erro ao ${action} delegação: ${err.message}`);
