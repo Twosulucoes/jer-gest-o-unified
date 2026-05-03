@@ -346,7 +346,23 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   const [
     participantsRes, credentialsRes, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, 
     tripsRes, vehicles, sportEvents, matchesRes, eventStages, pEventStagesRes, pSportEventsRes, athletesTotal
-  ] = queries.map((q) => q.data) as any;
+  ] = queries.map((q) => q.data) as [
+    { list: any[]; totalCount: number },
+    { list: any[]; totalCount: number },
+    { id: string; school_name: string }[],
+    { id: string; service_date: string; meal_type_id: string; label: string | null }[],
+    { id: string; name: string }[],
+    { id: string; capacity: number; is_active: boolean }[],
+    number,
+    { list: any[]; totalCount: number },
+    number,
+    Array<{ id: string; name: string | null; sports: { name: string } | null; categories: { name: string } | null }>,
+    { list: any[]; totalCount: number },
+    { id: string; name: string }[],
+    { list: any[]; totalCount: number },
+    { list: any[]; totalCount: number },
+    number,
+  ];
 
 
   // Fallbacks defensivos
