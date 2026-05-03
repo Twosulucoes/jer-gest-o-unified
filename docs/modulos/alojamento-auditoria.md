@@ -79,9 +79,7 @@
 
 4. ~~**`pwa_lodging_checkin` ignora `participants.left_event_at`.**~~ ✅ **Resolvido (Etapa 1).** RPC bloqueia com `LEFT_EVENT` e grava o motivo em `lodging_audit_logs`.
 
-5. **`pwa_lodging_checkin` ignora `participants.needs_lodging`.** Pessoas
-   que declararam não precisar de alojamento na inscrição (visitantes,
-   delegados sem hospedagem) podem ser hospedadas sem alerta.
+5. ~~**`pwa_lodging_checkin` ignora `participants.needs_lodging`.**~~ ✅ **Resolvido (Etapa 2).** RPC bloqueia com `NEEDS_LODGING_FALSE` e oferece override (`p_force`) para casos legítimos, gravando exceção em `divergence_notes` e na trilha de auditoria.
 
 6. ~~**Não há "saída antecipada" automática ao registrar `left_event_at`.**~~ ✅ **Resolvido (Etapa 1).** Trigger `trg_participant_left_event_lodging` faz auto-checkout em `checked_in` (com `checked_out_at = left_event_at`) e cancela `planned`, gerando trilha em `lodging_audit_logs` com `action='auto_checkout'`.
 
@@ -138,12 +136,23 @@ com mínimo risco de regressão. Não toca DB.
 - ✅ `AlojamentoScanPage` mapeia `LEFT_EVENT` para a mensagem
   "Participante registrou saída antecipada do evento.".
 
-### Etapa 2 — Validar `needs_lodging`
-- Atualizar `pwa_lodging_checkin` para retornar erro `NEEDS_LODGING_FALSE`
-  quando o participante não declarou necessidade de alojamento. Permitir
-  override via flag opcional do operador (justificado em
-  `divergence_notes`).
-- Trilha em `lodging_audit_logs` com o novo `error_code`.
+### Etapa 2 — Validar `needs_lodging` ✅
+- ✅ Migration `20260503183407_alojamento_etapa2_needs_lodging.sql`:
+  `pwa_lodging_checkin` ganha parâmetro `p_force BOOLEAN DEFAULT FALSE`
+  e nova validação após o lookup do participante. Quando
+  `participants.needs_lodging IS DISTINCT FROM TRUE` e `p_force=false`,
+  retorna `{ ok: false, error: 'NEEDS_LODGING_FALSE', can_force: true,
+  message: ... }` e grava `lodging_audit_logs` com o novo `error_code`.
+  Quando `p_force=true`, o check-in segue normalmente, com
+  `divergence_notes` apendado: `"Check-in autorizado manualmente
+  (needs_lodging=false)"` e `metadata.override_needs_lodging=true` na
+  trilha.
+- ✅ `rpcCheckin` ganhou parâmetro opcional `force` (default `false`),
+  retrocompatível.
+- ✅ `AlojamentoScanPage` exibe toast com botão **"Confirmar mesmo
+  assim"** quando recebe `NEEDS_LODGING_FALSE` com `can_force=true`,
+  refazendo o check-in com `force=true`. Mensagem padrão também
+  aparece em `errorMessages`.
 
 ### Etapa 3 — Limpar `participants.biological_sex`
 - Migration de `DROP COLUMN` (após confirmação de que nenhum read
