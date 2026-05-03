@@ -77,20 +77,13 @@
 
 ### 2.2 Altos — afetam consistência cruzada com Alimentação
 
-4. **`pwa_lodging_checkin` ignora `participants.left_event_at`.** Após
-   a Etapa 2 do módulo Alimentação, a saída antecipada do evento
-   encerra a elegibilidade para refeições. No alojamento a mesma
-   pessoa ainda consegue fazer **novo** check-in mesmo depois de ter
-   registrado saída antecipada, o que é incoerente.
+4. ~~**`pwa_lodging_checkin` ignora `participants.left_event_at`.**~~ ✅ **Resolvido (Etapa 1).** RPC bloqueia com `LEFT_EVENT` e grava o motivo em `lodging_audit_logs`.
 
 5. **`pwa_lodging_checkin` ignora `participants.needs_lodging`.** Pessoas
    que declararam não precisar de alojamento na inscrição (visitantes,
    delegados sem hospedagem) podem ser hospedadas sem alerta.
 
-6. **Não há "saída antecipada" automática ao registrar `left_event_at`.**
-   Ao registrar saída do evento via Admin, `lodging_occupancies` ativos
-   não são fechados nem sinalizados, deixando o painel de presença
-   noturna mostrando ocupação fantasma na noite seguinte.
+6. ~~**Não há "saída antecipada" automática ao registrar `left_event_at`.**~~ ✅ **Resolvido (Etapa 1).** Trigger `trg_participant_left_event_lodging` faz auto-checkout em `checked_in` (com `checked_out_at = left_event_at`) e cancela `planned`, gerando trilha em `lodging_audit_logs` com `action='auto_checkout'`.
 
 ### 2.3 Médios — qualidade da informação
 
@@ -127,15 +120,23 @@ com mínimo risco de regressão. Não toca DB.
 - Atualizar este documento de auditoria com diagnóstico realista.
 - Atualizar `docs/04-modulos-operacionais.md` removendo afirmação enganosa de 100%.
 
-### Etapa 1 — Cross-check com saída antecipada (Alimentação Etapa 2)
-- Migration: trigger ou validação na RPC `pwa_lodging_checkin` que
-  bloqueia novo check-in se `participants.left_event_at IS NOT NULL`
-  (com mensagem `LEFT_EVENT`).
-- Migration: trigger `AFTER UPDATE` em `participants` que, quando
-  `left_event_at` passa de NULL para data, executa um auto-checkout
-  em `lodging_occupancies` ativos do participante (com
-  `checked_out_at = left_event_at`, motivo registrado em
-  `divergence_notes` como "Auto-checkout: saída do evento").
+### Etapa 1 — Cross-check com saída antecipada (Alimentação Etapa 2) ✅
+- ✅ Migration `20260503181640_alojamento_etapa1_left_event.sql`:
+  - `pwa_lodging_checkin` recebeu validação após o lookup de gênero:
+    se `participants.left_event_at IS NOT NULL`, retorna
+    `{ ok: false, error: 'LEFT_EVENT' }` com a data formatada e
+    grava `lodging_audit_logs` com `error_code='LEFT_EVENT'`.
+  - Trigger `trg_participant_left_event_lodging` (`AFTER UPDATE OF
+    left_event_at ON participants`, condição `WHEN OLD IS DISTINCT
+    FROM NEW`): quando `left_event_at` é registrado, executa
+    auto-checkout dos `lodging_occupancies` em status `checked_in`
+    (`checked_out_at` = `left_event_at`, `divergence_notes`
+    apendado com motivo) e cancela linhas em status `planned`
+    (preservando o histórico). Cada auto-checkout gera linha em
+    `lodging_audit_logs` com `action='auto_checkout'` e
+    `metadata.reason='left_event'`.
+- ✅ `AlojamentoScanPage` mapeia `LEFT_EVENT` para a mensagem
+  "Participante registrou saída antecipada do evento.".
 
 ### Etapa 2 — Validar `needs_lodging`
 - Atualizar `pwa_lodging_checkin` para retornar erro `NEEDS_LODGING_FALSE`
