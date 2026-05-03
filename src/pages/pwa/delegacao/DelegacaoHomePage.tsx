@@ -7,7 +7,7 @@ import { PwaListItem, PwaListAvatar } from "@/components/pwa/PwaListItem";
 import { PwaActionGrid } from "@/components/pwa/PwaActionGrid";
 import {
   Users, Calendar, MapPin,
-  ClipboardList, Bus, Gavel, ChevronRight, AlertTriangle,
+  ClipboardList, Bus, Gavel, ChevronRight, AlertTriangle, UtensilsCrossed,
 } from "lucide-react";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 
@@ -155,6 +155,7 @@ export default function DelegacaoHomePage() {
               { label: "Participantes", icon: ClipboardList, to: "/pwa/delegacao/participantes" },
               { label: "Agenda", icon: Calendar, to: "/pwa/delegacao/agenda" },
               { label: "Logística", icon: Bus, to: "/pwa/delegacao/logistica" },
+              { label: "Alimentação", icon: UtensilsCrossed, to: "/pwa/delegacao/alimentacao" },
               { label: "Locais", icon: MapPin, to: "/pwa/delegacao/locais" },
               { label: "Protestos", icon: Gavel, to: "/pwa/delegacao/protestos" },
             ]}

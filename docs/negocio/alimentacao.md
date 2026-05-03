@@ -78,7 +78,7 @@ Toda tentativa recusada gera linha em `meal_incidents` com:
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
 | Configurar tipos/locais/janelas/padrões | ✅ | ✅ | 👁 | 👁 | ❌ | ❌ |
 | Registrar consumo | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ |
-| Ver dashboards/relatórios/divergências | ✅ | ✅ | ✅ | 👁 | 👁 (própria delegação) | ❌ |
+| Ver dashboards/relatórios/divergências | ✅ | ✅ | ✅ | 👁 | 👁 (própria delegação, via `/pwa/delegacao/alimentacao`) | ❌ |
 | Registrar saída antecipada | ✅ | ✅ | ❌ | ❌ | 👁 | ❌ |
 
 ## Auditoria e Prestação de Contas
