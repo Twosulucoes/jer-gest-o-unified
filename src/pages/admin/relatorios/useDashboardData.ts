@@ -318,9 +318,9 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("participant_sport_events" as any)
-            .select("id, sport_event_id, registration_status, is_blocked_by_documentation", { count: "exact" })
+            .select("id, sport_event_id, registration_status, is_blocked_by_documentation, participants!inner(event_id)", { count: "exact" })
             .limit(10000);
-          if (eventId) (query as any).eq("event_id", eventId);
+          if (eventId) (query as any).eq("participants.event_id", eventId);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
@@ -638,8 +638,8 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
     },
 
     inscricoes: {
-      total_provas: PSE.length,
-      total_etapas: PES.length,
+      total_provas: pSportEventsRes?.totalCount || PSE.length,
+      total_etapas: pEventStagesRes?.totalCount || PES.length,
       pendentes_documentacao: blockedDocCount,
       por_status: Array.from(statusMap.entries()).map(([name, value]) => ({ name, value })),
       by_stage: ES.map(s => ({ id: s.id, name: s.name, count: stageCountMap.get(s.id) ?? 0 })),
