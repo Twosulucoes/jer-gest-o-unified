@@ -97,7 +97,7 @@
 2. ~~**Enum `meal_incident_type` não cobre os motivos usados pelo código.**~~ ✅ **Resolvido (Etapa 1).** Enum estendido com `NO_CREDENTIAL`, `PARTICIPANT_INACTIVE`, `NEEDS_MEALS_FALSE`, `LEFT_EVENT`; scanner agora emite cada motivo específico.
 3. ~~**RLS de `meal_windows` e `meal_locations` foi aberta para todos os autenticados.**~~ ✅ **Resolvido (Etapa 1).** RLS restaurada para `admin/secretaria` (FOR ALL) + `alimentacao/coordenacao_tecnica` (FOR SELECT), usando `has_role(auth.uid(), <role>)`.
 4. ~~**Previsão de Demanda super‑estima.**~~ ✅ **Resolvido (Etapa 3).** A página passou a consumir as novas RPCs `get_present_participant_counts_by_*` que aplicam credenciamento, `needs_meals` e saída antecipada por data; o card "Resumo do Dia" mostra Presentes × Inscritos.
-5. **Divergências infla "ausências".** A página marca como ausência todo participante elegível sem consumo na janela do dia, sem filtrar por presença efetiva. Isso gera alarmes falsos no dia de chegada/saída e em modalidades de um único dia. _(Etapa 4.)_
+5. ~~**Divergências infla "ausências".**~~ ✅ **Resolvido (Etapa 4).** A página passou a filtrar participantes por `is_active`, `needs_meals` e `credentialed_at`, e cruzar com `service_date` + `left_event_at` antes de marcar uma janela como ausência. Coluna "Motivo" passou a explicitar `Presente, elegível, não consumiu`.
 6. **`needs_meals` é ignorado nos caminhos administrativos.** O scanner do PWA já trata (Etapa 0/1), mas a previsão e o motor de divergências ainda não consideram o flag. _(Etapas 3/4.)_
 
 ### 2.2 Altos — afetam confiança operacional
@@ -230,9 +230,17 @@ Objetivo: separar motivos de bloqueio e fechar permissões abertas.
   a diferença. Os XLSX/PDF gerados para a cozinha passam a refletir a
   presença real da data, eliminando a sobre-contagem dos dias de chegada.
 
-### Etapa 4 — Divergências por presença
-- `AlimentacaoDivergenciasPage`: ausências passam a considerar apenas presentes no dia.
-- Adicionar coluna "Motivo" com diferenciação entre "não consumiu" e "fora de vigência".
+### Etapa 4 — Divergências por presença ✅
+- ✅ `AlimentacaoDivergenciasPage` agora carrega apenas participantes
+  ativos, com `needs_meals` e `credentialed_at IS NOT NULL`, e filtra
+  no front por presença na `service_date` (credenciado até a data e sem
+  saída antecipada anterior à data). Atletas que ainda não chegaram ou
+  já saíram **deixam de aparecer como ausência**, eliminando os alarmes
+  falsos do dia de chegada/saída e em modalidades de um único dia.
+- ✅ Coluna **Motivo** substitui o badge genérico `FALTA` por
+  `"Presente, elegível, não consumiu"`, deixando claro o que a linha
+  representa. A descrição da aba e o XLSX exportado refletem o novo
+  critério.
 
 ### Etapa 5 — Visão por delegação
 - Tela `/pwa/delegacao/alimentacao` consultando consumos dos atletas da própria delegação.

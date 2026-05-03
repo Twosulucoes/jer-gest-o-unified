@@ -97,36 +97,53 @@ export default function AlimentacaoDivergenciasPage() {
       
       if (consError) throw consError;
 
-      // 2.3 For each window, find eligible participants who didn't consume
-      // We need participant list for the event/stage
+      // 2.3 Buscar participantes elegíveis e cruzar com consumos.
+      // Etapa 4: filtra por PRESENÇA EFETIVA na data de serviço — só conta
+      // como "ausência" quem realmente estava no evento e era elegível.
+      // Antes, a página marcava como ausência atletas que ainda não tinham
+      // chegado ou já haviam saído, gerando alarmes falsos.
       let partQuery = (supabase as any)
         .from("participants")
         .select(`
-          id, 
+          id,
           participant_type,
-          delegation_id, 
+          delegation_id,
+          is_active,
+          needs_meals,
+          credentialed_at,
+          left_event_at,
           delegations(school_name, institution_id),
           people(full_name)
         `)
-        .eq("event_id", eventId!);
-      
-      // Note: participants table might not have event_stage_id directly, 
-      // but they are linked to the event. If a stage filter is needed, 
-      // it would be via registrations if they exist. 
-      // For now we use event level.
-      
+        .eq("event_id", eventId!)
+        .eq("is_active", true)
+        .eq("needs_meals", true)
+        .not("credentialed_at", "is", null);
+
       const { data: participants, error: partError } = await partQuery;
       if (partError) throw partError;
+
+      // Filtro por presença na data: credenciado até a data e sem saída
+      // antecipada anterior à data.
+      const presentParticipants = (participants ?? []).filter((p: any) => {
+        const credentialedDate = p.credentialed_at?.slice(0, 10);
+        if (!credentialedDate || credentialedDate > filterDate) return false;
+        if (p.left_event_at) {
+          const leftDate = p.left_event_at.slice(0, 10);
+          if (leftDate <= filterDate) return false;
+        }
+        return true;
+      });
 
       const missing: any[] = [];
 
       for (const win of windows) {
         const rules = win.meal_window_eligibility || [];
         const winConsumptions = new Set(consumptions?.filter(c => c.meal_window_id === win.id).map(c => c.participant_id));
-        
-        participants?.forEach(p => {
-          // Check eligibility
-          let isEligible = rules.length === 0; // If no rules, everyone is eligible
+
+        presentParticipants.forEach((p: any) => {
+          // Check eligibility por regras da janela (perfil/delegação/instituição)
+          let isEligible = rules.length === 0; // Sem regras → todos elegíveis
           if (rules.length > 0) {
             isEligible = rules.some((r: any) => {
               if (r.eligibility_type === 'participant_type') return p.participant_type === r.participant_type_value;
@@ -141,7 +158,8 @@ export default function AlimentacaoDivergenciasPage() {
               id: `${win.id}-${p.id}`,
               participant: p,
               window: win,
-              type: 'MISSING'
+              type: 'MISSING',
+              motivo: 'Presente, elegível, não consumiu',
             });
           }
         });
@@ -188,7 +206,7 @@ export default function AlimentacaoDivergenciasPage() {
           "Participante": m.participant?.people?.full_name,
           "Delegação": m.participant?.delegations?.school_name,
           "Janela": m.window?.label || m.window?.meal_types?.name,
-          "Motivo": "Elegível não consumiu",
+          "Motivo": m.motivo ?? "Presente, elegível, não consumiu",
           "Instante": "—",
           "Operador": "—",
           "Offline": "—"
@@ -330,7 +348,10 @@ export default function AlimentacaoDivergenciasPage() {
                 <UserX className="h-4 w-4 text-red-500" /> 
                 Ausências de Consumo ({filteredMissing.length})
               </CardTitle>
-              <CardDescription>Pessoas elegíveis que não registraram consumo na janela</CardDescription>
+              <CardDescription>
+                Apenas presentes na data (credenciados, ativos, com <span className="font-mono">needs_meals</span>,
+                sem saída antecipada) e elegíveis pela janela que não registraram consumo.
+              </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
@@ -339,7 +360,7 @@ export default function AlimentacaoDivergenciasPage() {
                     <TableHead>Participante</TableHead>
                     <TableHead>Delegação</TableHead>
                     <TableHead>Janela</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Motivo</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -348,14 +369,18 @@ export default function AlimentacaoDivergenciasPage() {
                       <TableRow key={i}><TableCell colSpan={4}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
                     ))
                   ) : filteredMissing.length === 0 ? (
-                    <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground">Nenhuma ausência detectada ou não há janelas/elegíveis.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground">Nenhuma ausência detectada para esta data.</TableCell></TableRow>
                   ) : (
                     filteredMissing.slice(0, 300).map((m) => (
                       <TableRow key={m.id}>
                         <TableCell className="font-medium">{m.participant?.people?.full_name}</TableCell>
                         <TableCell className="text-xs">{m.participant?.delegations?.school_name}</TableCell>
                         <TableCell className="text-xs">{m.window?.label || m.window?.meal_types?.name}</TableCell>
-                        <TableCell><Badge variant="outline" className="text-red-500 border-red-200 bg-red-50 text-[10px]">FALTA</Badge></TableCell>
+                        <TableCell className="text-xs">
+                          <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50 dark:bg-red-950/30 dark:text-red-300 text-[10px]">
+                            {m.motivo ?? "Presente, elegível, não consumiu"}
+                          </Badge>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
