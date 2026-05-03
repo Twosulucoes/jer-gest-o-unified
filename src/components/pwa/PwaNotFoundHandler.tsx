@@ -15,6 +15,7 @@ export default function PwaNotFoundHandler() {
   const { activeStageId } = useStageContext();
 
   useEffect(() => {
+    console.warn("[PwaNotFoundHandler] rota PWA inexistente:", location.pathname);
     logPwaEvent({
       action: "route_not_found",
       path: location.pathname,
