@@ -1,6 +1,6 @@
 # 12 — Glossário
 
-> Auditoria atualizada em 2026-04-14
+> Auditoria atualizada em 2026-05-03
 
 | Termo | Definição |
 |-------|-----------|
@@ -35,8 +35,11 @@
 | **Boletim Oficial** | Documento formal que oficializa resultados publicados |
 | **Publicação** | Ato de tornar um resultado visível ao público (requer boletim) |
 | **Governança de Resultado** | Ciclo resultado_lancado → resultado_validado → publicado |
-| **Janela de Serviço (Meal Window)** | Período de atendimento de uma refeição (ex: Almoço 11h-13h) |
-| **Consumo** | Registro de que um participante utilizou uma refeição |
+| **Janela de Serviço (Meal Window)** | Período de atendimento de uma refeição (ex: Almoço 11h-13h) em uma data específica |
+| **Consumo** | Registro de que um participante utilizou uma refeição (`meal_consumptions`) |
+| **Trava de Presença (Alimentação)** | Conjunto de validações que só libera consumo de refeição para participante `is_active`, `needs_meals`, com `credentialed_at` preenchido e sem saída do evento registrada antes da `service_date` da janela. Aplica a QR e busca manual no PWA |
+| **Incidente de Refeição (Meal Incident)** | Registro auditável de tentativa recusada (`meal_incidents`) com tipo, instante, operador e participante |
+| **Presença Efetiva (no evento)** | Estado derivado: pessoa que credenciou e ainda não registrou saída antecipada — fonte de verdade para previsão diária e elegibilidade operacional de Alimentação |
 | **Unidade (Lodging Unit)** | Quarto ou espaço de alojamento com capacidade definida |
 | **Ocupação** | Alocação de participante em unidade de alojamento |
 | **RLS** | Row Level Security — políticas de acesso em nível de linha no PostgreSQL |
