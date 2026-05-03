@@ -134,13 +134,13 @@ export default function DashboardPage() {
           Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-[100px]" />)
         ) : (
           <>
-            <AppKPI icon={Users} label="Participantes" value={r.participants_total}
-              sub={`${r.credentialed} credenciados (${pct(r.credentialed, r.participants_total)}%)`}
+            <AppKPI icon={Users} label="Atletas" value={r.athletes_total}
+              sub={`${r.participants_total} pessoas total`}
               loading={isLoading}
               className="bg-primary/5 border-primary/10"
             />
-            <AppKPI icon={ShieldCheck} label="Credenciais Ativas" value={r.credentials_active}
-              sub={`${r.credentials_today} hoje`}
+            <AppKPI icon={UserCheck} label="Credenciados" value={r.credentialed}
+              sub={`${pct(r.credentialed, r.athletes_total)}% dos atletas`}
               loading={isLoading}
             />
             <AppKPI icon={Trophy} label="Partidas" value={r.matches_total}
@@ -181,7 +181,7 @@ export default function DashboardPage() {
               icon={ClipboardCheck} 
               label="Inscrições em Provas" 
               value={data.inscricoes.total_provas}
-              sub="Total de entradas em modalidades"
+              sub={`${pct(data.inscricoes.total_provas, r.athletes_total)}% média por atleta`}
               loading={isLoading}
               className="bg-blue-500/5 border-blue-500/10"
             />
@@ -190,7 +190,7 @@ export default function DashboardPage() {
               icon={MapPin} 
               label="Vínculos por Etapa" 
               value={data.inscricoes.total_etapas}
-              sub="Participantes alocados em etapas"
+              sub={`${data.inscricoes.total_etapas < r.athletes_total ? "Existem atletas sem etapa" : "Todos atletas vinculados"}`}
               loading={isLoading}
             />
 
