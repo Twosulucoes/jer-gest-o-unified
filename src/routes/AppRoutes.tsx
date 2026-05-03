@@ -200,6 +200,10 @@ const RefereePwaProfilePage = lazy(() => import("../pages/pwa/arbitragem/Referee
 const VincularCredencialPage = lazy(() => import("../pages/pwa/credenciamento/VincularCredencialPage"));
 const PwaSelectionFallback = lazy(() => import("../pages/pwa/PwaSelectionFallback"));
 const PwaNotFoundHandler = lazy(() => import("../components/pwa/PwaNotFoundHandler"));
+const PesquisaLoginPage = lazy(() => import("../pages/pwa/PesquisaLoginPage"));
+const PesquisaHomePage = lazy(() => import("../pages/pwa/PesquisaHomePage"));
+const PesquisaNovaPage = lazy(() => import("../pages/pwa/PesquisaNovaPage"));
+const PesquisaConfirmacaoPage = lazy(() => import("../pages/pwa/PesquisaConfirmacaoPage"));
 
 // Public Pages
 const PublicResultsPage = lazy(() => import("../pages/public/PublicResultsPage"));
@@ -443,6 +447,12 @@ export const AppRoutes = () => (
         <Route path="*" element={<PwaNotFoundHandler />} />
       </Route>
 
+
+      {/* Pesquisa: login por PIN, sem auth Supabase nem evento/etapa do contexto */}
+      <Route path="/pesquisa/login" element={<PesquisaLoginPage />} />
+      <Route path="/pesquisa/home" element={<PesquisaHomePage />} />
+      <Route path="/pesquisa/nova" element={<PesquisaNovaPage />} />
+      <Route path="/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
 
       {/* Telas públicas desativadas por solicitação do usuário para simplificar o fluxo */}
       <Route path="/resultados-publicos" element={<Navigate to="/login" replace />} />

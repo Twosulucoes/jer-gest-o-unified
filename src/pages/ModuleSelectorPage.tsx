@@ -139,7 +139,7 @@ const MODULE_OPTIONS: ModuleOption[] = [
     label: "Pesquisa",
     description: "Coleta de dados em campo",
     icon: Search,
-    path: "/pwa/pesquisa",
+    path: "/pesquisa/login",
     gradient: "from-[hsl(25,95%,53%)] to-[hsl(15,90%,40%)]",
     requireStage: true,
   },

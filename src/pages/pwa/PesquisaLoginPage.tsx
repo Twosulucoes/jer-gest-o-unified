@@ -16,7 +16,7 @@ export default function PesquisaLoginPage() {
 
   useEffect(() => {
     const session = getSession();
-    if (session) navigate('/pwa/pesquisa/home', { replace: true });
+    if (session) navigate('/pesquisa/home', { replace: true });
   }, [navigate]);
 
   const handleLogin = async (currentPin: string) => {
@@ -41,7 +41,7 @@ export default function PesquisaLoginPage() {
       }
 
       saveSession(result);
-      navigate('/pwa/pesquisa/home', { replace: true });
+      navigate('/pesquisa/home', { replace: true });
     } catch (err: any) {
       setError('Erro de conexão. Tente novamente.');
     } finally {
