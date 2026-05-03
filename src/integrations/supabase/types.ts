@@ -5282,7 +5282,7 @@ export type Database = {
           block_reason_code: string | null
           category_rule_code: string | null
           created_at: string
-          event_stage_id: string | null
+          event_stage_id: string
           gender_snapshot: string | null
           id: string
           is_blocked_by_documentation: boolean | null
@@ -5302,7 +5302,7 @@ export type Database = {
           block_reason_code?: string | null
           category_rule_code?: string | null
           created_at?: string
-          event_stage_id?: string | null
+          event_stage_id: string
           gender_snapshot?: string | null
           id?: string
           is_blocked_by_documentation?: boolean | null
@@ -5322,7 +5322,7 @@ export type Database = {
           block_reason_code?: string | null
           category_rule_code?: string | null
           created_at?: string
-          event_stage_id?: string | null
+          event_stage_id?: string
           gender_snapshot?: string | null
           id?: string
           is_blocked_by_documentation?: boolean | null
