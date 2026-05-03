@@ -38,7 +38,7 @@ export default function DelegacaoProtestosPage() {
       <PwaHeader title="Protestos" icon={Gavel} backTo="/pwa/delegacao" />
 
       <main className="p-4 max-w-md mx-auto space-y-3">
-        <Button onClick={() => navigate("/pwa/delegacao/protestos/novo")} className="w-full" variant="gradient">
+        <Button onClick={() => navigate("/pwa/delegacao/protesto/novo")} className="w-full" variant="gradient">
           <Plus className="h-4 w-4" /> Novo protesto
         </Button>
 
@@ -56,7 +56,7 @@ export default function DelegacaoProtestosPage() {
         {list.map((p) => {
           const meta = STATUS_LABEL[p.status] ?? STATUS_LABEL.protocolado;
           return (
-            <Card key={p.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(`/pwa/delegacao/protestos/${p.id}`)}>
+            <Card key={p.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(`/pwa/delegacao/protesto/${p.id}`)}>
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div>

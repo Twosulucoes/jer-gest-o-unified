@@ -71,7 +71,7 @@ export default function AlojamentoIncidentesPage() {
               <TabsTrigger value="resolvida">Resolvidas</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button size="icon" variant="module" className="h-9 w-9 rounded-xl" onClick={() => navigate("/pwa/alojamento/incidentes/nova")}>
+          <Button size="icon" variant="module" className="h-9 w-9 rounded-xl" onClick={() => navigate("/pwa/alojamento/incidentes/novo")}>
             <Plus className="h-4 w-4" />
           </Button>
         </div>
