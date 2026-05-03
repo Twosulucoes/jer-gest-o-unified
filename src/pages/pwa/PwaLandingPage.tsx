@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, ClipboardCheck, Building, Gavel, Shield, Layers, IdCard, Download, Calendar, Settings } from "lucide-react";
+import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, Building, Gavel, Shield, Layers, IdCard, Download, Calendar, Settings } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,7 +26,6 @@ const MODULE_CARDS = [
   { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento/vincular", gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]" },
   { role: "mesario", label: "Mesário", icon: Gavel, to: "/aovivo", gradient: "from-[hsl(25,95%,45%)] to-[hsl(14,89%,36%)]" },
   { role: "arbitragem", label: "Arbitragem", icon: Shield, to: "/aovivo", gradient: "from-[hsl(14,89%,36%)] to-[hsl(25,95%,45%)]" },
-  { role: "pesquisa", label: "Pesquisa", icon: ClipboardCheck, to: "/pwa/pesquisa/login", gradient: "from-[hsl(212,84%,36%)] to-[hsl(174,87%,34%)]" },
 ];
 
 export default function PwaLandingPage() {
@@ -250,7 +249,7 @@ export default function PwaLandingPage() {
                 <button
                   key={card.role}
                   onClick={() => {
-                    if (card.to.startsWith("/pwa") && !card.to.includes("pesquisa") && !card.to.includes("install") && !activeStageId) {
+                    if (card.to.startsWith("/pwa") && !card.to.includes("install") && !card.to.includes("credenciamento") && !activeStageId) {
                       navigate("/pwa/configuracao", { state: { from: { pathname: card.to }, reason: "missing_stage" } });
                     } else {
                       navigate(card.to);

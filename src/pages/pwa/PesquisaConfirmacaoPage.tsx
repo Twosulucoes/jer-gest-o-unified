@@ -10,7 +10,7 @@ export default function PesquisaConfirmacaoPage() {
 
   useEffect(() => {
     if (state?.isKiosk) {
-      const timer = setTimeout(() => navigate('/pwa/pesquisa/home', { replace: true }), 3000);
+      const timer = setTimeout(() => navigate('/pesquisa/home', { replace: true }), 3000);
       return () => clearTimeout(timer);
     }
   }, [state, navigate]);
@@ -35,7 +35,7 @@ export default function PesquisaConfirmacaoPage() {
 
         <div className="space-y-3">
           <Button 
-            onClick={() => navigate('/pwa/pesquisa/nova?scan=true', { replace: true })} 
+            onClick={() => navigate('/pesquisa/nova?scan=true', { replace: true })} 
             className="w-full h-14 text-lg gap-2 shadow-app-md"
           >
             <ScanLine className="h-5 w-5" /> Próxima coleta (Scan)
@@ -43,7 +43,7 @@ export default function PesquisaConfirmacaoPage() {
           
           <Button 
             variant="outline"
-            onClick={() => navigate('/pwa/pesquisa/nova', { replace: true })} 
+            onClick={() => navigate('/pesquisa/nova', { replace: true })} 
             className="w-full h-12 gap-2 text-muted-foreground"
           >
             <Plus className="h-4 w-4" /> Nova coleta manual
@@ -51,7 +51,7 @@ export default function PesquisaConfirmacaoPage() {
           
           <Button 
             variant="outline" 
-            onClick={() => navigate('/pwa/pesquisa/home', { replace: true })} 
+            onClick={() => navigate('/pesquisa/home', { replace: true })} 
             className="w-full h-12 gap-2 text-muted-foreground"
           >
             <Home className="h-4 w-4" /> Painel inicial
