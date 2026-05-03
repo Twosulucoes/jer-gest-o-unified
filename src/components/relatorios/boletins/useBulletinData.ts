@@ -141,7 +141,7 @@ export function useBulletinData(filters: BulletinFilters) {
         const [{ data: ents = [] }, { data: ress = [] }] = await Promise.all([
           supabase
             .from("competition_match_entries")
-            .select("id, match_id, side, team_id, participant_sport_event_id, seed, teams(name, delegations(school_name)), participant_sport_events(participants(full_name, delegations(school_name)))")
+            .select("id, match_id, side, team_id, participant_sport_event_id, seed, teams(name, delegations(institutions(name))), participant_sport_events(participants(full_name, delegations(institutions(name))))")
             .in("match_id", matchIds),
           supabase
             .from("competition_match_results")
@@ -151,9 +151,9 @@ export function useBulletinData(filters: BulletinFilters) {
 
         entries = (ents as any[]).map((e) => {
           const teamName = e.teams?.name ?? null;
-          const teamDeleg = e.teams?.delegations?.school_name ?? null;
+          const teamDeleg = e.teams?.delegations?.institutions?.name ?? null;
           const partName = e.participant_sport_events?.participants?.full_name ?? null;
-          const partDeleg = e.participant_sport_events?.participants?.delegations?.school_name ?? null;
+          const partDeleg = e.participant_sport_events?.participants?.delegations?.institutions?.name ?? null;
           const display_name = teamName ?? partName ?? "—";
           const delegation_name = teamDeleg ?? partDeleg ?? null;
           return {

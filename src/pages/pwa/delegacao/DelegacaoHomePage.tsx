@@ -53,15 +53,15 @@ export default function DelegacaoHomePage() {
       const delId = userDelegation.delegation_id;
       setDelegationId(delId);
 
-      const { data: delRow } = await supabase
+      const { data: delRow } = await (supabase as any)
         .from("delegations")
-        .select("school_name, chief_name")
+        .select("chief_name, institutions(name)")
         .eq("id", delId)
         .maybeSingle();
 
       if (delRow) {
         const chief = delRow.chief_name ? ` — Chefe: ${delRow.chief_name}` : "";
-        setDelegationLabel(`${delRow.school_name ?? "Delegação"}${chief}`);
+        setDelegationLabel(`${delRow.institutions?.name ?? "Delegação"}${chief}`);
       }
 
       const [atletasRes, credRes, pendRes, listRes] = await Promise.all([

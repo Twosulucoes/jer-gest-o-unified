@@ -76,12 +76,16 @@ export function useOscData(eventId: string | null | undefined) {
       const { data: ev } = await supabase
         .from("events").select("name, start_date, end_date").eq("id", eventId).maybeSingle();
 
-      // 2. Delegações + escola
-      const { data: dels } = await supabase
+      // 2. Delegações + escola (canônico: escola vem de institutions)
+      const { data: dels } = await (supabase as any)
         .from("delegations")
-        .select("id, school_name, school_network_type")
+        .select("id, institutions(name, network_type)")
         .eq("event_id", eventId);
-      const delegations = (dels || []) as Array<{ id: string; school_name: string; school_network_type: string | null }>;
+      const delegations = ((dels || []) as any[]).map((d) => ({
+        id: d.id as string,
+        school_name: (d.institutions?.name ?? "") as string,
+        school_network_type: (d.institutions?.network_type ?? null) as string | null,
+      }));
 
       // 3. Participantes
       const { data: parts } = await supabase

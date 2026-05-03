@@ -43,7 +43,7 @@ interface ParticipantRow {
   needs_meals: boolean;
   credentialed_at: string | null;
   left_event_at: string | null;
-  delegations: { school_name: string | null; institution_id: string | null } | null;
+  delegations: { institution_id: string | null; institutions: { name: string | null } | null } | null;
   people: { full_name: string | null } | null;
 }
 
@@ -100,7 +100,7 @@ export default function DelegacaoAlimentacaoPage() {
         .select(`
           id, participant_type, delegation_id, is_active, needs_meals,
           credentialed_at, left_event_at,
-          delegations(school_name, institution_id),
+          delegations(institution_id, institutions(name)),
           people(full_name)
         `)
         .eq("event_id", activeEventId)

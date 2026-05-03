@@ -45,7 +45,7 @@ export default function HistoricoBuscaPage() {
           participant_type, 
           status, 
           event:events(id, name, year),
-          delegation:delegations(id, school_name, institution:institutions(name))
+          delegation:delegations(id, institution:institutions(name))
         `)
         .eq("person_id", selectedPerson.id)
         .order("created_at", { ascending: false });
@@ -149,7 +149,7 @@ export default function HistoricoBuscaPage() {
                           </Badge>
                         </div>
                         <p className={`text-[10px] mt-0.5 truncate ${selectedParticipationId === p.id ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                          {p.delegation?.institution?.name || p.delegation?.school_name || "Sem delegação"}
+                          {p.delegation?.institution?.name || "Sem delegação"}
                         </p>
                       </button>
                     ))}

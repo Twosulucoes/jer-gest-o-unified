@@ -22,7 +22,7 @@ export function useRegistros(sportEventId?: string) {
           entries:competition_match_entries(
             id,
             side,
-            team:teams(id, name, delegation_id, delegation:delegations(school_name)),
+            team:teams(id, name, delegation_id, delegation:delegations(institutions(name))),
             score:match_scores(id, score_final, outcome, score_detail)
           )
         `)
