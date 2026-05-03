@@ -173,7 +173,7 @@ export default function AlojamentoHubPage() {
       </div>
 
       {/* Operations Shortcuts */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("ocupacao")}>
           <CardContent className="flex items-center gap-3 p-4">
             <KeyRound className="h-8 w-8 text-primary shrink-0" />
@@ -200,6 +200,26 @@ export default function AlojamentoHubPage() {
             <div>
               <p className="font-medium text-sm">Presença Noturna</p>
               <p className="text-xs text-muted-foreground">Reconciliação</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors border-emerald-200 bg-emerald-50/10" onClick={() => navigate("alocacao-lote")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <Users className="h-8 w-8 text-emerald-500 shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Alocação em Lote</p>
+              <p className="text-xs text-muted-foreground">Wizard por delegação</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors border-amber-200 bg-amber-50/10" onClick={() => navigate("divergencias")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <AlertTriangle className="h-8 w-8 text-amber-500 shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Divergências</p>
+              <p className="text-xs text-muted-foreground">Alocado × real, ausências</p>
             </div>
           </CardContent>
         </Card>

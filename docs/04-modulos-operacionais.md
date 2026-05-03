@@ -34,10 +34,12 @@
 - **Relatórios**: Exportação em PDF, XLSX e CSV com assinatura do responsável.
 - **Evidências**: Registro de listas de presença e fotos de buffet vinculadas às janelas.
 
-## 6. Alojamento (✅ Pronto — 100%)
-- **Alocação em Lote**: Rota `/admin/alojamento/alocacao-lote` com wizard para alocar delegações inteiras respeitando gênero e capacidade.
+## 6. Alojamento (🟡 Re-audit 2026-05-03)
+- **Alocação em Lote**: Rota `/admin/etapa/:stageId/alojamento/alocacao-lote` com wizard para alocar delegações inteiras respeitando gênero e capacidade. Reativada na Etapa 0 da nova auditoria (estava implementada mas órfã de roteamento).
+- **Divergências**: Rota `/admin/etapa/:stageId/alojamento/divergencias` consolidando alocado × real e ausências de check-in. Reativada na Etapa 0.
 - **Segurança de Gênero**: Trigger `trg_validate_lodging_gender` impede alocação de participantes em unidades com restrição de gênero incompatível.
 - **Evidências**: Checklists de entrada/saída e fotos de vistorias centralizadas.
+- **Plano de evolução**: ver [`docs/modulos/alojamento-auditoria.md`](modulos/alojamento-auditoria.md). Etapa 1 cruzará a saída antecipada do evento com o check-in (após Alimentação Etapa 2).
 
 ## 7. Competição (✅ Pronto — Refatoração Etapa 3: Painel Combat)
 - **Tabelas**: 15 tabelas (phases, groups, matches, entries, results, scores, lineups, events, penalties, officials, attachments, attempts, player_stats, discipline, match_user_assignments)
