@@ -16,8 +16,9 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Calendar, Clock, MapPin, Check, X, AlertTriangle, Loader2, CalendarX,
+  Calendar, Clock, MapPin, Check, X, AlertTriangle, Loader2, CalendarX, Upload,
 } from "lucide-react";
+import LancamentoSimplificadoDialog from "@/components/admin/competition/LancamentoSimplificadoDialog";
 import { format, parseISO } from "date-fns";
 
 interface AgendaRow {
@@ -62,6 +63,7 @@ export default function ArbitragemAgendaPage() {
 
   const [unavailableTarget, setUnavailableTarget] = useState<AgendaRow | null>(null);
   const [reason, setReason] = useState("");
+  const [lancamentoTarget, setLancamentoTarget] = useState<AgendaRow | null>(null);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["pwa-arb-agenda", user?.id, activeEventId],
@@ -212,6 +214,7 @@ export default function ArbitragemAgendaPage() {
                     row={r}
                     onConfirm={() => confirmMut.mutate(r.id)}
                     onReportUnavailable={() => setUnavailableTarget(r)}
+                    onLancar={() => setLancamentoTarget(r)}
                     pendingMutation={confirmMut.isPending}
                   />
                 ))
@@ -307,6 +310,18 @@ export default function ArbitragemAgendaPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <LancamentoSimplificadoDialog
+        open={!!lancamentoTarget}
+        onOpenChange={(o) => { if (!o) setLancamentoTarget(null); }}
+        matchId={lancamentoTarget?.match_id ?? null}
+        eventId={activeEventId ?? ""}
+        matchSummary={
+          lancamentoTarget
+            ? `${lancamentoTarget.sport_name ?? "Modalidade"}${lancamentoTarget.category_name ? ` · ${lancamentoTarget.category_name}` : ""} · ${formatDateTime(lancamentoTarget.match_date, lancamentoTarget.start_time)}${lancamentoTarget.venue_name ? ` · ${lancamentoTarget.venue_name}` : ""}`
+            : undefined
+        }
+      />
     </PwaLayout>
   );
 }
@@ -315,11 +330,12 @@ interface AgendaCardProps {
   row: AgendaRow;
   onConfirm?: () => void;
   onReportUnavailable?: () => void;
+  onLancar?: () => void;
   pendingMutation?: boolean;
   readonly?: boolean;
 }
 
-function AgendaCard({ row, onConfirm, onReportUnavailable, pendingMutation, readonly }: AgendaCardProps) {
+function AgendaCard({ row, onConfirm, onReportUnavailable, onLancar, pendingMutation, readonly }: AgendaCardProps) {
   const status = row.acceptance_status ?? "pending";
   const statusBadge =
     status === "confirmed"
@@ -395,7 +411,17 @@ function AgendaCard({ row, onConfirm, onReportUnavailable, pendingMutation, read
         )}
 
         {!readonly && status === "confirmed" && (
-          <div className="pt-1">
+          <div className="pt-1 space-y-1.5">
+            {onLancar && (
+              <Button
+                size="sm"
+                className="w-full h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white"
+                onClick={onLancar}
+              >
+                <Upload className="h-3.5 w-3.5 mr-1.5" />
+                Lançamento Rápido
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"

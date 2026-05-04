@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import CompetitionMatchFormDialog, { type MatchFormValues } from "@/components/admin/CompetitionMatchFormDialog";
 import CollectiveScoreForm, { type ScoreEntry } from "@/components/admin/CollectiveScoreForm";
+import LancamentoSimplificadoDialog from "@/components/admin/competition/LancamentoSimplificadoDialog";
+import { Upload } from "lucide-react";
 import type { MatchConfig } from "@/components/admin/MatchConfigEditor";
 import { BackButton } from "@/components/navigation/BackButton";
 import type { IndividualConfig } from "@/components/admin/IndividualConfigEditor";
@@ -119,6 +121,7 @@ export default function CompeticaoPartidaDetalhePage() {
   const [collectiveScoreOpen, setCollectiveScoreOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [publishBulletinId, setPublishBulletinId] = useState("");
+  const [lancamentoOpen, setLancamentoOpen] = useState(false);
 
   const { data: events = [] } = useQuery({
     queryKey: ["events"],
@@ -655,6 +658,13 @@ export default function CompeticaoPartidaDetalhePage() {
           <p className="text-sm text-muted-foreground mt-0.5">Detalhe da partida/prova</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <Button
+            size="sm"
+            onClick={() => setLancamentoOpen(true)}
+            className="bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            <Upload className="mr-2 h-4 w-4" />Lançamento Rápido
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)}>
             <ClipboardList className="mr-2 h-4 w-4" />Súmula
           </Button>
@@ -1189,6 +1199,14 @@ export default function CompeticaoPartidaDetalhePage() {
         events={events}
         onSubmit={(v) => updateMatchMut.mutate(v)}
         isPending={updateMatchMut.isPending}
+      />
+
+      <LancamentoSimplificadoDialog
+        open={lancamentoOpen}
+        onOpenChange={setLancamentoOpen}
+        matchId={matchId ?? null}
+        eventId={match.event_id}
+        matchSummary={`${sportEvent?.name ?? ""} — ${phase?.name ?? ""}${match.match_number ? ` #${match.match_number}` : ""} · ${formatDate(match.match_date)} ${match.start_time?.slice(0, 5) ?? ""}${venue ? ` · ${venue.name}` : ""}`}
       />
 
       {/* Confirmation: remove participant */}
