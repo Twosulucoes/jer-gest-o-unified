@@ -157,11 +157,19 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
   const queryClient = useQueryClient();
   const toggleAdvances = useMutation({
     mutationFn: async (args: { table: "participant_sport_events" | "teams"; id: string; value: boolean }) => {
-      const { error } = await supabase
+      // .select() força PostgREST a retornar as linhas afetadas. Se a role
+      // tem SELECT mas não UPDATE (ex: coord_modalidade), o Supabase devolve
+      // error=null com data=[] em vez de erro — sem isso, o toast não dispara
+      // e o valor "volta sozinho" no refetch, confundindo o usuário.
+      const { data, error } = await supabase
         .from(args.table)
         .update({ advances_directly: args.value })
-        .eq("id", args.id);
+        .eq("id", args.id)
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Sem permissão para alterar este inscrito (RLS).");
+      }
     },
     onSuccess: (_data, vars) => {
       if (vars.table === "participant_sport_events") {
