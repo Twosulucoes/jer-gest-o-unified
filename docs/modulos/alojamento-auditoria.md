@@ -164,10 +164,20 @@
   - Grid expandida para `lg:grid-cols-5`.
   - Mutations `createUnit`/`updateUnit` usam mesmo `buildUnitPayload()`.
 
-### **Etapa 6 — Hook centralizado de ocupação** 🟡
-**Pequeno, risco baixo**
-- `useLodgingOccupancy({ unitId | locationId | stageId })` retornando `{ planned, checked_in, checked_out, capacity, percentual }`.
-- Refactor das 4 páginas para usar o hook (testes manuais para confirmar números iguais).
+### **Etapa 6 — Hook centralizado de ocupação** ✅
+**Novo `useLodgingOccupancy(stageId)` + refactor de Hub e UnidadesPage**
+
+Inspeção dos 4+ candidatos da reauditoria mostrou que apenas 2 deles tinham duplicação real (mesma query + mesmo loop de agregação). Os demais usam APIs diferentes — refactor seria forçado.
+
+- [x] `src/hooks/useLodgingOccupancy.ts` (novo): retorna `{ rows, countsByUnit: Map<unit_id, { planned, allocated, checked_in, checked_out, cancelled, active }>, totals, isLoading, isError }`. `active = allocated + checked_in` (= "ocupação corrente"). Helper `emptyOccupancyCounts()` para consumidores que recebem por prop.
+- [x] `AlojamentoHubPage` refatorada: substitui `useLodgingOccupancyCounts` + loop manual por `useLodgingOccupancy(stageId)`. `totalOccupied = totals.active`; ocupação por local agora soma `activeOccupancyByUnit(u.id)`.
+- [x] `AlojamentoUnidadesPage` refatorada: idem. KPI da página e badges por linha agora vêm do hook.
+- [x] `useLodgingOccupancyCounts` (antiga, em `useLodgingAdmin.ts`): marcada como `@deprecated` com referência ao hook novo. Mantida exportada para zero breakage caso terceiros consumam.
+- **Não refatoradas (por design diferente)**:
+  - `AlojamentoOcupacaoPage` (admin) — query per-unit (`selectedUnitId`), shape diferente.
+  - `AlojamentoPresencaPage` — query stage-wide com JOIN de `people` para reconciliação. Hook teria que crescer demais para servir.
+  - PWA `AlojamentoOcupacaoPage` — usa RPCs server-side (`get_alojamento_ocupacao`, `get_alojamento_kpis`), sem agregação client.
+  - PWA `AlojamentoPessoaPage` — não consulta `lodging_occupancies` diretamente. (Achado da reauditoria foi imprecisão minha — corrigido aqui.)
 
 ### **Etapa 7 — UX miúda** 🟡
 **Pequeno, risco baixo**
