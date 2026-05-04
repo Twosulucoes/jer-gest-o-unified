@@ -38,7 +38,7 @@ const ParticipanteDetalhePage = lazy(() => import("../pages/admin/ParticipanteDe
 const ParticipanteHistoricoPage = lazy(() => import("../pages/admin/ParticipanteHistoricoPage"));
 const PessoasPage = lazy(() => import("../pages/admin/PessoasPage"));
 const EventuaisPage = lazy(() => import("../pages/admin/EventuaisPage"));
-const ArbitrosPage = lazy(() => import("../pages/admin/ArbitrosPage"));
+const ArbitragemEquipePage = lazy(() => import("../pages/admin/ArbitragemEquipePage"));
 const RegrasPage = lazy(() => import("../pages/admin/RegrasPage"));
 const ComplianceDashboardPage = lazy(() => import("../pages/admin/ComplianceDashboardPage"));
 const AuditoriaPage = lazy(() => import("../pages/admin/AuditoriaPage"));
@@ -318,7 +318,7 @@ export const AppRoutes = () => (
            <Route path="relatorios" element={<StageReportsPage />} />
         </Route>
 
-        <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitrosPage /></ProtectedRoute>} />
+        <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitragemEquipePage /></ProtectedRoute>} />
         <Route path="arbitragem/config" element={<ProtectedRoute allowedRoles={["admin"]}><RefereeRemunerationConfigPage /></ProtectedRoute>} />
         <Route path="arbitragem/relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RefereeReportingPage /></ProtectedRoute>} />
         <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
