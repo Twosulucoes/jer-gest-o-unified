@@ -194,11 +194,17 @@ Inspeção dos 4+ candidatos da reauditoria mostrou que apenas 2 deles tinham du
 - [x] Cor por categoria de incidente já feita na Etapa 4 — referido aqui só por completude.
 - [x] `COMMENT ON COLUMN` para `unit_id` vs `checked_in_unit_id` já feito na Etapa 3.
 
-### **Etapa 8 — Drop `participants.biological_sex`** 🟢
-**Médio, risco médio (precisa confirmar callers)**
-- Audit completo dos leitores restantes do campo legado.
-- Migration drop após zerar callers.
-- (Já estava na auditoria anterior — mantida.)
+### **Etapa 8 — Drop `participants.biological_sex`** ✅ OBSOLETA
+**Já resolvida pela normalização canônica antes desta auditoria.**
+
+Auditoria de callers (2026-05-04):
+- `grep biological_sex` em `src/`, `supabase/functions/`, `supabase/migrations/`, `types.ts` → única referência viva é a própria migration que dropou a coluna: `supabase/migrations/20260503193219_normalizacao_fase_a1_drop_legacy_cadastrais.sql`.
+- `types.ts` não declara `biological_sex` em `participants` Row/Insert/Update.
+- Nenhum caller restante.
+
+A migration acima (Fase A1 da normalização canônica) já fez o `DROP COLUMN biological_sex` em conjunto com `birth_date` e `disability_type`, todas em favor de `people.*`. A auditoria de uso foi documentada inline na própria migration.
+
+**Conclusão:** sem trabalho a executar nesta etapa. Mantida no doc apenas como registro histórico do plano.
 
 ### **Etapa 9 — Visão por delegação no PWA** 🟢
 **Médio**
