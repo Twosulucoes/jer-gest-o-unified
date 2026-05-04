@@ -1,208 +1,190 @@
 # Auditoria Operacional: Módulo de Alojamento — JER Gestão
-**Data:** 2026-05-03 (re-audit pós Alimentação)
-**Status Global:** 🟡 OPERACIONAL COM RESSALVAS — duas telas críticas existem em `src/` mas estão **órfãs** (não registradas em rotas), além de ajustes alinhados ao novo modelo de presença efetiva introduzido pelo módulo de Alimentação.
 
-> Esta auditoria substitui a anterior (declarada "FECHADO PARA OPERAÇÃO" em 2026-04-28), que se baseou no inventário do código sem testar se as rotas estavam de fato registradas. O histórico está preservado ao final.
+**Reauditoria atual:** 2026-05-04 (auditoria solicitada pelo usuário cobrindo redundância, input × BD, RLS, enums/labels e UX/UI)
+**Status global:** 🟡 OPERACIONAL COM DÉBITOS ESTRUTURAIS — fluxo de campo funciona; existem gaps reais de Lei de Escopo no banco, enums sem CHECK, campos do BD não expostos na UI, e labels duplicadas/divergentes entre telas.
+
+> Esta reauditoria substitui as anteriores (2026-04-28 "FECHADO" e 2026-05-03 "OPERACIONAL COM RESSALVAS"). Histórico preservado ao final.
 
 ---
 
-## 1. Levantamento do Estado Atual
+## 1. Inventário do Estado Atual
 
-### 1.1 Telas e fluxos existentes
+### 1.1 Rotas e telas (sem órfãos confirmados nesta passagem)
 
-#### Admin
-| Tela | Rota declarada | Rota registrada? | Função |
-|:---|:---|:---:|:---|
-| Hub de Alojamento | `/admin/etapa/:stageId/alojamento` | ✅ | Visão geral de locais e quartos da etapa, atalhos para operações. |
-| Locais | `/alojamento/locais` | ✅ | CRUD de `lodging_locations`. |
-| Unidades | `/alojamento/unidades` | ✅ | CRUD de `lodging_units` com gênero, capacidade. |
-| Ocupação | `/alojamento/ocupacao` | ✅ | Operação real de check-in/out, listas. |
-| Presença Noturna | `/alojamento/presenca` | ✅ | Reconciliação Presentes/Ausentes/Faltosos. |
-| Relatórios | `/alojamento/relatorios` | ✅ | Exportação XLSX/CSV/PDF. |
-| **Alocação em Lote** | `/admin/alojamento/alocacao-lote` (docs) | ❌ **órfã** | Wizard de alocação por delegação respeitando gênero/capacidade. **Existe em `src/pages/admin/alojamento/AlocacaoLotePage.tsx` mas não há `<Route>` registrado.** |
-| **Divergências** | `/alojamento/divergencias` (auditoria anterior) | ❌ **órfã** | Lista consolidada de divergências (alocado × real) e ausências de check-in. **Existe em `src/pages/admin/AlojamentoDivergenciasPage.tsx` mas não há `<Route>` registrado.** |
+#### Admin (`/admin/etapa/:stageId/alojamento/...` — todas stage-scoped)
 
-#### PWA (`/pwa/alojamento`)
-| Tela | Rota | Função |
-|:---|:---|:---|
-| Home | `/pwa/alojamento` | Atalhos para escanear, buscar, ocupação, lista. |
-| Scanner | `/pwa/alojamento/scan` | Check-in / Check-out / Modo Lua via QR. |
-| Buscar | `/pwa/alojamento/buscar` | Busca manual (nome/CPF) — somente consulta. |
-| Ocupação | `/pwa/alojamento/ocupacao` | Visão de ocupação atual. |
-| Pessoa | `/pwa/alojamento/pessoa/:id` | Detalhes de hospedagem da pessoa. |
-| Incidentes | `/pwa/alojamento/incidentes` e `/incidentes/novo` | Trilha de incidentes. |
-| Lista Completa | `/pwa/alojamento/lista-completa` | Lista consolidada de hóspedes. |
-| Faltosos da unidade | `/pwa/alojamento/unidade/:unitId/faltosos` | "Quem deveria estar aqui". |
+| Caminho | Página | Função | Status |
+|:---|:---|:---|:---:|
+| `/alojamento` | `AlojamentoHubPage` | Hub: cards e KPIs | ✅ |
+| `/alojamento/locais` | `AlojamentoLocaisPage` | CRUD `lodging_locations` | ✅ |
+| `/alojamento/unidades` | `AlojamentoUnidadesPage` | CRUD `lodging_units` | ✅ |
+| `/alojamento/ocupacao` | `AlojamentoOcupacaoPage` | Operação check-in/out | ✅ |
+| `/alojamento/presenca` | `AlojamentoPresencaPage` | Reconciliação noturna | ✅ |
+| `/alojamento/relatorios` | `AlojamentoRelatoriosPage` | Exportação | ✅ |
+| `/alojamento/divergencias` | `AlojamentoDivergenciasPage` | Lista divergências | ✅ (re-rotada na Etapa 0 anterior) |
+| `/alojamento/alocacao-lote` | `AlocacaoLotePage` | Wizard de alocação por delegação | ✅ (re-rotada na Etapa 0 anterior) |
+
+#### PWA (`/pwa/alojamento/...`)
+
+`AlojamentoHomePage` · `AlojamentoScanPage` · `AlojamentoBuscarPage` · `AlojamentoOcupacaoPage` (PWA) · `AlojamentoPessoaPage` · `AlojamentoIncidentesPage` · `AlojamentoNovoIncidentePage` · `AlojamentoListaCompletaPage` · `AlojamentoUnidadeFaltososPage` — todas roteadas com `PwaRouteGuard` `["alojamento", "admin", "secretaria"]`.
 
 ### 1.2 Modelo de dados envolvido
-- `lodging_locations(event_id, event_stage_id, name, address, is_active)`
-- `lodging_units(event_id, event_stage_id, location_id, name, capacity, gender_restriction, is_active)`
-- `lodging_occupancies(participant_id, unit_id, status, checked_in_at, checked_in_by, checked_in_device_id, checked_in_location_id, checked_in_unit_id, checked_out_at, checked_out_by, divergence_notes, event_stage_id)`
-- `lodging_presence_logs(participant_id, unit_id, event_id, recorded_by, device_id, recorded_at)` — modo lua.
-- `lodging_audit_logs(action, success, error_code, error_message, metadata, …)` — trilha completa.
-- `lodging_incidents` — incidentes operacionais.
+
+| Tabela | event_id | event_stage_id | RLS | Notas |
+|:---|:---:|:---:|:---:|:---|
+| `lodging_locations` | NOT NULL | **NULLABLE** | ✅ | Locations of stay |
+| `lodging_units` | NOT NULL | **NULLABLE** | ✅ | Quartos com gender, capacity, accessibility (campos extras não aparecem na UI) |
+| `lodging_occupancies` | NOT NULL | **NULLABLE** | ✅ | Tem `unit_id` E `checked_in_unit_id` (planejado vs real) — dualidade não documentada |
+| `lodging_audit_logs` | **AUSENTE** | **AUSENTE** | ⚠️ Sem RLS por etapa | Trilha completa, mas não é stage-scoped |
+| `lodging_presence_logs` | NULLABLE | **AUSENTE** | ⚠️ | Modo lua de reconciliação |
+| `lodging_incidents` | (via location_id) | (via location_id) | ✅ EXISTS via location | OK indireto |
+| `lodging_supervisions` | NOT NULL | **AUSENTE** | ⚠️ Frouxa | Policy `Allow authenticated view` permite qualquer autenticado |
 
 ### 1.3 RPCs operacionais
-- `pwa_lodging_checkin(p_device_id, p_token, p_location_id, p_unit_id, p_mode)`
-- `pwa_lodging_checkout(p_device_id, p_token, p_location_id)`
-- `pwa_lodging_register_presence(p_device_id, p_token, p_unit_id, p_mode)`
-- Todas com `SECURITY DEFINER` + verificação de `check_user_stage_access(stage_id)`.
-- Validações ativas no check-in: gênero (`unit.gender_restriction` × `people.gender`), capacidade (`unit.capacity`), duplicidade (`status='checked_in'`), participante existente e ativo.
-
-### 1.4 RLS
-- `lodging_locations`/`lodging_units`/`lodging_occupancies`: políticas estritas para `admin`/`secretaria` (write), `coordenacao_tecnica`/`alojamento` (read), e `Stage restricted access` (FOR ALL com `check_user_stage_access`).
-- `lodging_audit_logs` com `is_offline` e `device_info` para trilha completa.
+- `pwa_lodging_checkin(p_device_id, p_token, p_location_id, p_unit_id, p_mode, p_force)` — valida `LEFT_EVENT`, `NEEDS_LODGING_FALSE`, `GENDER_MISMATCH`, `UNIT_FULL`, `ALREADY_CHECKED_IN`, `PARTICIPANT_NOT_FOUND`. SECURITY DEFINER. ✅
+- `pwa_lodging_checkout(p_device_id, p_token, p_location_id)` ✅
+- `pwa_lodging_register_presence(p_device_id, p_token, p_unit_id, p_mode)` ✅
+- Trigger `trg_participant_left_event_lodging` faz auto-checkout / cancel quando `left_event_at` é setado ✅
 
 ---
 
-## 2. Lacunas e Riscos Identificados
+## 2. Achados desta reauditoria
 
-### 2.1 Críticos — afetam operação de campo
+### 2.1 🔴 Crítico — banco / Lei de Escopo
 
-1. **Alocação em Lote (`AlocacaoLotePage`) é uma rota fantasma.** O arquivo
-   `src/pages/admin/alojamento/AlocacaoLotePage.tsx` está implementado e
-   citado em `docs/04-modulos-operacionais.md` como "Pronto — 100%", mas
-   não há `<Route>` em `src/routes/AppRoutes.tsx`. Coordenação não
-   consegue acessar o wizard pela URL nem por menu.
+1. **`event_stage_id` NULLABLE em `lodging_locations`/`units`/`occupancies`.**
+   Migrações adicionaram a coluna mas nunca aplicaram `SET NOT NULL`. Consequência: `check_user_stage_access(NULL)` retorna FALSE, então registros sem stage ficam invisíveis para qualquer usuário stage-scoped (até admin tem que ter fallback). Fere o quadrante "Operação" do `dominio-canonico.md`.
 
-2. **Divergências (`AlojamentoDivergenciasPage`) também órfã.** Mesma
-   situação — implementada, declarada conforme na auditoria anterior,
-   mas inacessível ao operador. A coluna "alocado × real" só aparece
-   inline na ocupação, sem a consolidação prometida.
+2. **`lodging_audit_logs` sem `event_id` nem `event_stage_id`.**
+   Auditoria operacional sem rastreabilidade de etapa. Impossibilita filtro por etapa em forenses; RLS por etapa é impraticável.
 
-3. **Hub de Alojamento não tem entrada para Divergências nem para
-   Alocação em Lote.** Mesmo se as rotas fossem registradas, hoje não
-   há card no `AlojamentoHubPage` que aponte para elas — operadores
-   precisariam memorizar a URL.
+3. **`lodging_presence_logs` sem `event_stage_id`** e `event_id` nullable. Mesma falha.
 
-### 2.2 Altos — afetam consistência cruzada com Alimentação
+4. **`lodging_supervisions` sem `event_stage_id` + RLS frouxa** (`Allow authenticated view USING (true)`): qualquer usuário autenticado lê supervisões de qualquer evento.
 
-4. ~~**`pwa_lodging_checkin` ignora `participants.left_event_at`.**~~ ✅ **Resolvido (Etapa 1).** RPC bloqueia com `LEFT_EVENT` e grava o motivo em `lodging_audit_logs`.
+5. **Sem `CHECK` constraints para enums** (`status`, `gender_restriction`, `severity`, `category`). App força valores válidos, mas INSERT direto via service_role pode corromper.
 
-5. ~~**`pwa_lodging_checkin` ignora `participants.needs_lodging`.**~~ ✅ **Resolvido (Etapa 2).** RPC bloqueia com `NEEDS_LODGING_FALSE` e oferece override (`p_force`) para casos legítimos, gravando exceção em `divergence_notes` e na trilha de auditoria.
+### 2.2 🔴 Crítico — UI/dados
 
-6. ~~**Não há "saída antecipada" automática ao registrar `left_event_at`.**~~ ✅ **Resolvido (Etapa 1).** Trigger `trg_participant_left_event_lodging` faz auto-checkout em `checked_in` (com `checked_out_at = left_event_at`) e cancela `planned`, gerando trilha em `lodging_audit_logs` com `action='auto_checkout'`.
+6. **Status `planned` e `cancelled` não traduzidos.** `ParticipantLogisticaTab.tsx:15-17` mapeia `allocated`/`checked_in`/`checked_out` mas faz fallback ao valor cru para os demais. Operador vê `planned` em inglês.
 
-### 2.3 Médios — qualidade da informação
+7. **Mensagens hardcoded em `AlojamentoScanPage`.** `LEFT_EVENT` e `NEEDS_LODGING_FALSE` têm texto literal no componente; resto vem de `systemMessages.ts`. Quebra centralização e dificulta i18n/ajuste.
 
-7. **`gender_restriction` é compatibilizado contra `people.gender`.**
-   A validação assume que `people.gender` está sempre preenchido. Para
-   pessoas eventuais (vouchers), o cadastro pode não ter gênero — o
-   check-in do voucher de alojamento não passa por essa validação.
+### 2.3 🟡 Importante — UX/UI
 
-8. **Relatório de Divergências mistura "Check-in pendente" com
-   "alocação × real".** Ao re-rotear a página, a coluna `Status` precisa
-   distinguir os dois casos para que a coordenação saiba o que pedir
-   ao operador (cobrar check-in vs explicar a divergência).
+8. **Inconsistência de gender label.** `AlojamentoUnidadesPage.tsx:34` mostra "Masculino"/"Feminino"/"Misto"; `AlojamentoHubPage.tsx:50` e `AlojamentoScanPage.tsx:443` mostram "Masc."/"Fem."/"Misto". Mesmo dado, telas adjacentes.
 
-9. **Documentação desatualizada.** `docs/04-modulos-operacionais.md`
-   declara "Alojamento (✅ Pronto — 100%)" e o auditório anterior
-   declara "FECHADO PARA OPERAÇÃO". O re-audit aponta divergências.
+9. **Campos do BD ausentes na UI** (`lodging_units`):
+   - `floor` (andar) — útil em prédios de múltiplos pavimentos.
+   - `is_accessible` + `accessible_features_json` — **PCD não tem como ser sinalizado**.
+   - `gender_zone` — agrupador de quartos (ex: ala feminina).
+   - `min_age_policy` — restrição etária (separar adulto/menor).
+   Acessibilidade é o mais grave. Quartos PCD existem no banco como conceito, mas a UI não permite preenchê-los nem buscá-los.
 
-### 2.4 Médios — débito técnico
-10. **`participants.biological_sex` continua coexistindo com
-    `people.gender`.** Auditoria anterior já sinalizou; até hoje não
-    foi removido. RPCs usam `people.gender`, mas APIs antigas ainda
-    leem o campo legado.
+10. **`unit_id` vs `checked_in_unit_id` indocumentado.** Em `lodging_occupancies`, unit_id é o "alocado/planejado" e `checked_in_unit_id` é o "real onde fez check-in". Sem comentário no schema nem na UI; risco de queries usarem o errado.
 
----
+11. **Sem confirmação de delete** em CRUD de units/locations.
 
-## 3. Proposta de Evolução
+12. **NEEDS_LODGING_FALSE flow confuso.** `AlojamentoScanPage:358-372` cai no fallback genérico mas é tratado especialmente em outro `if` (linha 302-331) com botão "Confirmar mesmo assim". Mistura de caminhos.
 
-### Etapa 0 — Higiene de roteamento + atalhos no Hub (este PR)
-Objetivo: fazer com que as duas telas órfãs voltem a ser acessíveis,
-com mínimo risco de regressão. Não toca DB.
+13. **Categoria de incidente sem cor** — todas badges `secondary`. `severity` tem cor (azul/âmbar/vermelho), `category` não. Falta hierarquia visual.
 
-- Registrar `<Route path="alojamento/divergencias">` (escopo `etapa/`) e `<Route path="alojamento/alocacao-lote">`.
-- Adicionar dois cards no `AlojamentoHubPage`: "Alocação em Lote" e "Divergências".
-- Atualizar este documento de auditoria com diagnóstico realista.
-- Atualizar `docs/04-modulos-operacionais.md` removendo afirmação enganosa de 100%.
+14. **Severity em badge minúsculo** (`baixa`, `media`, `alta`) enquanto labels do form vão capitalizadas.
 
-### Etapa 1 — Cross-check com saída antecipada (Alimentação Etapa 2) ✅
-- ✅ Migration `20260503181640_alojamento_etapa1_left_event.sql`:
-  - `pwa_lodging_checkin` recebeu validação após o lookup de gênero:
-    se `participants.left_event_at IS NOT NULL`, retorna
-    `{ ok: false, error: 'LEFT_EVENT' }` com a data formatada e
-    grava `lodging_audit_logs` com `error_code='LEFT_EVENT'`.
-  - Trigger `trg_participant_left_event_lodging` (`AFTER UPDATE OF
-    left_event_at ON participants`, condição `WHEN OLD IS DISTINCT
-    FROM NEW`): quando `left_event_at` é registrado, executa
-    auto-checkout dos `lodging_occupancies` em status `checked_in`
-    (`checked_out_at` = `left_event_at`, `divergence_notes`
-    apendado com motivo) e cancela linhas em status `planned`
-    (preservando o histórico). Cada auto-checkout gera linha em
-    `lodging_audit_logs` com `action='auto_checkout'` e
-    `metadata.reason='left_event'`.
-- ✅ `AlojamentoScanPage` mapeia `LEFT_EVENT` para a mensagem
-  "Participante registrou saída antecipada do evento.".
+15. **KPI ocupação recalculado em 4+ páginas** (`AlojamentoHubPage`, admin `AlojamentoOcupacaoPage`, `AlojamentoPresencaPage`, PWA `AlojamentoPessoaPage`). Falta hook `useLodgingOccupancy()` centralizando regra.
 
-### Etapa 2 — Validar `needs_lodging` ✅
-- ✅ Migration `20260503183407_alojamento_etapa2_needs_lodging.sql`:
-  `pwa_lodging_checkin` ganha parâmetro `p_force BOOLEAN DEFAULT FALSE`
-  e nova validação após o lookup do participante. Quando
-  `participants.needs_lodging IS DISTINCT FROM TRUE` e `p_force=false`,
-  retorna `{ ok: false, error: 'NEEDS_LODGING_FALSE', can_force: true,
-  message: ... }` e grava `lodging_audit_logs` com o novo `error_code`.
-  Quando `p_force=true`, o check-in segue normalmente, com
-  `divergence_notes` apendado: `"Check-in autorizado manualmente
-  (needs_lodging=false)"` e `metadata.override_needs_lodging=true` na
-  trilha.
-- ✅ `rpcCheckin` ganhou parâmetro opcional `force` (default `false`),
-  retrocompatível.
-- ✅ `AlojamentoScanPage` exibe toast com botão **"Confirmar mesmo
-  assim"** quando recebe `NEEDS_LODGING_FALSE` com `can_force=true`,
-  refazendo o check-in com `force=true`. Mensagem padrão também
-  aparece em `errorMessages`.
+### 2.4 🟢 Cosmético / refactor ideal
 
-### Etapa 3 — Limpar `participants.biological_sex`
-- Migration de `DROP COLUMN` (após confirmação de que nenhum read
-  ainda usa o campo legado).
-- Audit de qualquer caller restante.
-
-### Etapa 4 — Refinar Divergências
-- Coluna `Tipo de Divergência` separando "alocado × real" de
-  "check-in pendente" e "saída sem checkout".
-- Filtros por etapa, local, delegação.
-- Exportação consistente com a Alimentação Etapa 4.
-
-### Etapa 5 — Visão por delegação
-- `/pwa/delegacao/alojamento` (espelho da Etapa 5 de Alimentação) com
-  RLS escopada por `delegation_id`.
+16. `lodging_locations`/`units`/`occupancies` têm `metadata`/`seed_*` sem UI — corretamente ignorados (são internos / seed).
+17. PWA OfflineSyncStatus, Hub cards e empty states estão bons.
 
 ---
 
-## 4. Permissões por Perfil (alvo)
+## 3. Plano de evolução proposto
 
-| Ação | admin | secretaria | coord_tecnica | alojamento | delegacao | publico |
-|:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| CRUD de locais/unidades | ✅ | ✅ | 👁 | 👁 | ❌ | ❌ |
-| Operar check-in/out (PWA) | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ |
-| Ver dashboards/divergências/alocação em lote | ✅ | ✅ | ✅ | 👁 | 👁 (própria, futuro) | ❌ |
+> Etapas 0–2 já estavam concluídas em PRs anteriores (re-rotear órfãs, validar `left_event_at`, validar `needs_lodging`). As etapas abaixo são novas, baseadas nos achados acima. Renumeradas para clareza.
+
+### **Etapa 3 — Lei de Escopo + CHECKs no banco** 🔴
+**Médio, risco médio (backfill em produção)**
+- Backfill `event_stage_id` em `lodging_locations`/`units`/`occupancies` via JOIN com matches/event_stages.
+- `SET NOT NULL` nas três tabelas após backfill.
+- Adicionar `event_id` + `event_stage_id` em `lodging_audit_logs` (NULLABLE inicial; backfill via `lodging_units.event_stage_id` quando `unit_id` presente; trigger para sync futuro).
+- Adicionar `event_stage_id` em `lodging_presence_logs` e `lodging_supervisions` (com trigger de sync).
+- Apertar RLS de `lodging_supervisions` (remover `Allow authenticated view`, criar policies por role).
+- `CHECK` constraints para `lodging_units.gender_restriction IN ('male','female','mixed')`, `lodging_occupancies.status IN ('planned','allocated','checked_in','checked_out','cancelled')`, `lodging_incidents.severity IN ('baixa','media','alta')`, `lodging_incidents.category`, `lodging_incidents.status`.
+
+### **Etapa 4 — Labels e mensagens unificadas** 🔴/🟡
+**Pequeno, risco baixo (puro front)**
+- Criar `src/lib/alojamento/labels.ts` (módulo centralizado):
+  - `lodgingStatusLabel(status)` → `{ label, tone }` (cobre todos os 5 status incl. `planned` e `cancelled`).
+  - `genderRestrictionLabel(g, { short })` (long/short variants).
+  - `severityLabel`/`categoryLabel`/`incidentStatusLabel` (cor + label).
+- Mover `LEFT_EVENT` e `NEEDS_LODGING_FALSE` para `systemMessages.ts`.
+- Substituir uses no `ParticipantLogisticaTab`, `AlojamentoUnidadesPage`, `AlojamentoHubPage`, `AlojamentoScanPage`, `AlojamentoIncidentesPage`.
+- Padronizar capitalização das badges.
+
+### **Etapa 5 — Acessibilidade e campos PCD na UI** 🟡
+**Pequeno, risco baixo**
+- `LodgingUnitFormDialog`: adicionar `floor`, `is_accessible` (switch), `accessible_features_json` (chips/checkboxes — rampas, banheiro adaptado, barras, sinalização tátil), `gender_zone` (texto livre opcional), `min_age_policy` (`adulto_only` / `menor_only` / `livre`).
+- `AlojamentoUnidadesPage`: filtros "Acessibilidade" + "Andar"; ícone PCD nas linhas com `is_accessible=true`.
+- Hub: card "Quartos PCD" com contagem.
+
+### **Etapa 6 — Hook centralizado de ocupação** 🟡
+**Pequeno, risco baixo**
+- `useLodgingOccupancy({ unitId | locationId | stageId })` retornando `{ planned, checked_in, checked_out, capacity, percentual }`.
+- Refactor das 4 páginas para usar o hook (testes manuais para confirmar números iguais).
+
+### **Etapa 7 — UX miúda** 🟡
+**Pequeno, risco baixo**
+- Confirmação `AlertDialog` antes de deletar unidade/local.
+- Documentar `unit_id` vs `checked_in_unit_id` (`COMMENT ON COLUMN`) e padronizar uso em queries.
+- Cor por categoria de incidente.
+
+### **Etapa 8 — Drop `participants.biological_sex`** 🟢
+**Médio, risco médio (precisa confirmar callers)**
+- Audit completo dos leitores restantes do campo legado.
+- Migration drop após zerar callers.
+- (Já estava na auditoria anterior — mantida.)
+
+### **Etapa 9 — Visão por delegação no PWA** 🟢
+**Médio**
+- `/pwa/delegacao/alojamento` espelhando o padrão de `delegacao/alimentacao` (Etapa 5 da auditoria de Alimentação).
+- RLS escopada por `delegation_id`.
+- (Já estava na auditoria anterior — mantida.)
 
 ---
 
-## 5. Critérios de Pronto desta Etapa 0
-- ✅ Diagnóstico realista do estado atual com tabela telas × rota registrada.
-- ✅ Re-rotear `AlojamentoDivergenciasPage` e `AlocacaoLotePage` com guards de role corretos.
-- ✅ Adicionar cards no `AlojamentoHubPage`.
-- ✅ Atualizar `README.md`, `docs/04-modulos-operacionais.md` e este documento.
+## 4. Critérios de pronto (esta reauditoria)
 
-## 6. Roteiro de Teste Operacional (Etapa 0)
+- ✅ Diagnóstico realista com achados ranqueados (🔴 7 críticos / 🟡 8 importantes / 🟢 ok).
+- ✅ Plano de Etapas 3–9 com tamanho/risco estimado.
+- [ ] Aprovação do usuário sobre a ordem de execução (recomendação: 3 → 4 → 5 → 6 → 7 → 8 → 9).
+- [ ] Cada Etapa em uma PR draft separada para revisão incremental.
 
-1. Login como `admin`, ir até `/admin/etapa/<id>/alojamento` → conferir os dois novos cards "Alocação em Lote" e "Divergências".
-2. Clicar em "Divergências" → carrega a página `AlojamentoDivergenciasPage` com a lista de ocupações.
-3. Filtrar por "Divergência de Unidade" e "Check-in Pendente" → resultados mudam.
-4. Voltar ao Hub e clicar em "Alocação em Lote" → wizard abre na etapa 1 (seleção de delegação).
-5. Login como `alojamento` → rota `/admin/etapa/<id>/alojamento/divergencias` deve estar acessível (somente leitura), `/alocacao-lote` é admin/secretaria.
+---
+
+## 5. Recomendação de ordem
+
+1. **Etapa 3 primeiro** — fecha o gap estrutural mais grave (Lei de Escopo, RLS frouxa, integridade de enums). É pré-requisito moral para tudo que vem depois (relatórios cross-stage, divergências corretas).
+2. **Etapa 4** logo em seguida — barata, alta visibilidade, fecha o risco de exibir enum cru.
+3. **Etapa 5** (acessibilidade) — destrava operação real de quartos PCD.
+4. **6–7** em paralelo (refactor + UX miúda).
+5. **8** depois de checar callers.
+6. **9** quando houver decisão sobre o módulo Delegação amadurecer.
 
 ---
 
 ## Histórico de Auditorias (preservado)
 
-### 2026-04-28 (Fechamento original)
-Veredito anterior: ✅ FECHADO PARA OPERAÇÃO. Inventário do código foi
-ok no papel, mas o registro de rotas não foi conferido — daí o
-re-audit acima.
+### 2026-05-03 — Reauditoria pós-Alimentação
+Estado: 🟡 OPERACIONAL COM RESSALVAS. Identificou órfãs (`AlocacaoLotePage`, `AlojamentoDivergenciasPage`) — corrigidas em Etapa 0. Etapas 1 e 2 (cross-check `left_event_at` e `needs_lodging`) também fechadas neste ciclo.
 
-### 2026-04-28 (Fase 3, Fase 2, Fase 1, Manhã)
-Histórico das fases originais. Mantido para referência.
+### 2026-04-28 — Fechamento original
+Veredito: ✅ FECHADO PARA OPERAÇÃO. Inventário ok no papel mas registro de rotas não foi conferido — daí as duas reauditorias subsequentes.
+
+### Etapas concluídas em ciclos anteriores (preservadas)
+
+- **Etapa 0** ✅ — Re-rotear órfãs + cards no Hub + atualizar docs.
+- **Etapa 1** ✅ — `pwa_lodging_checkin` valida `participants.left_event_at`; trigger `trg_participant_left_event_lodging` faz auto-checkout/cancel.
+- **Etapa 2** ✅ — `pwa_lodging_checkin` valida `participants.needs_lodging` com override `p_force`; UI exibe toast com botão "Confirmar mesmo assim".
+
