@@ -145,11 +145,24 @@
   - `AlojamentoScanPage` → mesma `genderRestrictionLabel(short)` + remoção do hardcoded `LEFT_EVENT`/`NEEDS_LODGING_FALSE` em favor de `getSystemMessage()`.
   - `AlojamentoIncidentesPage` → `severityLabel` + `categoryLabel` (agora com cor diferenciada por categoria) + `incidentStatusLabel`.
 
-### **Etapa 5 — Acessibilidade e campos PCD na UI** 🟡
-**Pequeno, risco baixo**
-- `LodgingUnitFormDialog`: adicionar `floor`, `is_accessible` (switch), `accessible_features_json` (chips/checkboxes — rampas, banheiro adaptado, barras, sinalização tátil), `gender_zone` (texto livre opcional), `min_age_policy` (`adulto_only` / `menor_only` / `livre`).
-- `AlojamentoUnidadesPage`: filtros "Acessibilidade" + "Andar"; ícone PCD nas linhas com `is_accessible=true`.
-- Hub: card "Quartos PCD" com contagem.
+### **Etapa 5 — Acessibilidade e campos PCD na UI** ✅
+**5 campos do BD agora editáveis + filtros + ícone PCD + KPI**
+
+- [x] `LodgingUnitFormDialog`:
+  - Novos campos `floor` (texto livre), `gender_zone` (texto livre), `min_age_policy` (Select: "Sem restrição" / "Apenas adultos" / "Apenas menores acompanhados").
+  - **Switch "Acessível para PCD"** (`is_accessible`) com ícone `Accessibility` e fundo azul destacado.
+  - Quando ligado, expande seção com 6 checkboxes para `accessible_features_json`: Rampa, Banheiro adaptado, Barras de apoio, Sinalização tátil, Piso antiderrapante, Acesso por elevador. Constante `ACCESSIBLE_FEATURE_OPTIONS` exportada para reuso futuro.
+  - Persistência: `{ items: string[] }` em `accessible_features_json` (helper `readFeatures()` faz compat com formato legado, caso exista).
+  - Schema Zod e `defaultValues` atualizados; `useEffect` de edição preenche os 5 novos campos.
+- [x] `AlojamentoUnidadesPage`:
+  - **Filtros**: busca por nome + Select "Acessibilidade" (todos / apenas PCD / sem acessibilidade) + Select "Andar" (populado dinamicamente).
+  - Nova coluna "PCD" na tabela com ícone `Accessibility` em badge azul; nova coluna "Andar".
+  - Subtítulo da página mostra contagem de PCD inline ("· ♿ N PCD").
+  - Mutations create/update agora chamam `buildPayload()` que inclui os 5 novos campos.
+- [x] `AlojamentoHubPage`:
+  - 5º card de stats "Quartos PCD" com ícone `Accessibility` e fundo azul.
+  - Grid expandida para `lg:grid-cols-5`.
+  - Mutations `createUnit`/`updateUnit` usam mesmo `buildUnitPayload()`.
 
 ### **Etapa 6 — Hook centralizado de ocupação** 🟡
 **Pequeno, risco baixo**
