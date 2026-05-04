@@ -67,6 +67,8 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 5. **Documentação divergente.** O documento anterior mencionava `/admin/arbitragem/apuracao` e `/admin/arbitragem/remuneracao`; a realidade é `/admin/arbitragem/relatorios` e `/admin/arbitragem/config`. Quem chega via doc não encontra a tela.
 6. **`systemMap.ts` desincronizado.** Entrada `arbitragem-equipe` aponta para rota inexistente.
 7. **Sem "home" PWA do árbitro.** Não há landing dedicada com agenda + perfil + indisponibilidades; a navegação despeja o usuário em `/pwa/resultados`.
+8. **Importação CSV joga 17 das 20 colunas no lixo.** A planilha real tem `Nome, CPF, Modalidades, Categorias, Celular, RG, Email, RNE, Sexo, Data Nascimento, CEP, Endereço, Complemento, Bairro, Cidade, UF, Banco, Agência, Conta Corrente, Nacionalidade`, mas o parser atual em `ArbitrosImportDialog.tsx` só lê Nome/Email/Telefone. CPF, RNE, modalidades, categorias, endereço e dados bancários são silenciosamente descartados. Doc anterior afirmava "idempotência por CPF" — falso, idempotência real é por e-mail.
+9. **Importação não cria `people`.** Árbitro convidado fica fora do quadrante "Pessoas Unificadas" do modelo canônico; mesmo CPF pode existir como atleta em `people` e como árbitro só em `referee_profiles`/`profiles`, sem vínculo.
 
 ### 🟢 Melhorias / Lei de Escopo
 
@@ -94,15 +96,64 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 - [ ] Corrigir links internos da página rica para `/admin/arbitragem/config` e `/admin/arbitragem/relatorios`.
 - [ ] Atualizar `systemMap.ts` e `docs/modulos/arbitros-auditoria.md` com a rota final.
 
-### Etapa 2 — Migração formal de `referee_profiles` + RLS
+### Etapa 2 — Importação canônica + migração formal de `referee_profiles`
 
-- [ ] Escrever `CREATE TABLE` retroativo em `supabase/migrations/` (idempotente: `CREATE TABLE IF NOT EXISTS ...; ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`).
-- [ ] Definir RLS:
-  - Próprio árbitro: SELECT/UPDATE da própria linha (`user_id = auth.uid()`).
-  - Admin / secretaria: total.
-  - `coordenacao_tecnica`: SELECT (para escalar).
-  - Bloquear DELETE para não-admin.
-- [ ] Confirmar que o PWA `RefereeProfilePage` continua funcional (não cria linhas em nome de outro `user_id`).
+> **Decisões registradas (2026-05-03):**
+> 1. Importação **cria/vincula `people`** (alinha ao quadrante Pessoas do `dominio-canonico.md`).
+> 2. **CPF não é obrigatório**: árbitro estrangeiro pode entrar só com RNE. Constraint: `CHECK (cpf IS NOT NULL OR rne IS NOT NULL)`.
+> 3. Quando o CPF já existe em `people`, **reaproveita** a mesma `people.id` (pessoa pode ser árbitro hoje e ter sido atleta antes).
+> 4. **Edge function nova** (`import-referees`), separada de `admin-users`.
+> 5. Quando o e-mail já está em outro `user_id`, **adiciona** a role `arbitragem` (comportamento atual).
+> 6. Dados bancários do CSV **importam direto**, mas com auditoria reforçada (log por linha que tem banco preenchido).
+
+#### Etapa 2.1 — Migração formal de `referee_profiles` + RLS *(pré-requisito)*
+
+- [ ] `supabase/migrations/<timestamp>_referee_profiles_formalize.sql`:
+  - `CREATE TABLE IF NOT EXISTS referee_profiles (...)` retroativo (todas as 25+ colunas que já existem).
+  - `ALTER TABLE` para adicionar `person_id UUID REFERENCES people(id)` (nullable inicialmente, populado pela 2.3).
+  - `CHECK (cpf IS NOT NULL OR rne IS NOT NULL)`.
+  - `UNIQUE(cpf) WHERE cpf IS NOT NULL`, `UNIQUE(user_id)`.
+  - `ENABLE ROW LEVEL SECURITY`.
+- [ ] Policies com `has_role()`:
+  - `arbitragem`: SELECT/UPDATE da própria linha (`user_id = auth.uid()`).
+  - `admin`/`secretaria`: ALL.
+  - `coordenacao_tecnica`: SELECT.
+  - DELETE: somente `admin`.
+- [ ] Smoke test: PWA `RefereeProfilePage` continua salvando.
+
+#### Etapa 2.2 — Parser CSV completo (front)
+
+- [ ] Reescrever `parseCsv` em `ArbitrosImportDialog.tsx` para reconhecer **20 colunas**:
+  Nome, CPF, Modalidades, Categorias, Celular, RG, Email, RNE, Sexo, Data Nascimento, CEP, Endereço, Complemento, Bairro, Cidade, UF, Banco, Agência, Conta Corrente, Nacionalidade.
+- [ ] Normalizadores:
+  - CPF/CEP/Telefone: só dígitos.
+  - CPF: validar dígitos verificadores; vazio é OK se houver RNE.
+  - Data: aceitar `dd/mm/aaaa` e `aaaa-mm-dd` → ISO.
+  - Modalidades/Categorias: split por `;` ou `,` interno.
+  - UF: `upper()`, validar 2 letras.
+- [ ] Pré-visualização com erros por linha **antes** do envio (validação client-side).
+- [ ] Garantir que `console.log` nunca despeje dado bancário.
+- [ ] Atualizar texto da UI explicando colunas aceitas e que CPF é dispensável se RNE estiver presente.
+
+#### Etapa 2.3 — Edge function `import-referees` (backend)
+
+- [ ] Nova função `supabase/functions/import-referees/index.ts`.
+- [ ] Recebe payload `{ rows: ArbitroImport[] }`, processa linha a linha:
+  1. Match por **CPF** (se houver) → senão por **e-mail** (fallback) → senão cria.
+  2. Upsert em `people` (chave: cpf OR (rne, nome)). Reutiliza `id` existente.
+  3. `auth.admin.inviteUserByEmail` (ou recupera user existente).
+  4. Upsert em `profiles` + `user_roles` (role `arbitragem`).
+  5. Upsert em `referee_profiles` com **todos** os 20 campos + `person_id` apontando para o `people.id`.
+  6. `audit_events` por linha, com flag `bank_data: bool` (sem despejar valores).
+- [ ] Resposta com diagnóstico por linha: `created | updated | linked_existing | error` + motivo.
+- [ ] Bloqueio: secretaria não pode importar admin/secretaria.
+
+#### Etapa 2.4 — UX de erro e re-importação
+
+- [ ] Mostrar coluna de motivo por linha que falhou.
+- [ ] Botão "Baixar CSV de erros" com a coluna de motivo.
+- [ ] Suporte a re-importar só linhas com erro (mantém OK como já feito).
+- [ ] KPIs no resumo: criados, atualizados, vinculados a pessoa existente, ignorados, com erro.
 
 ### Etapa 3 — Lei de Escopo no schema `arbitragem` e em `match_user_assignments`
 
@@ -137,7 +188,10 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 | :--- | :--- |
 | 0 | PR mergeada com guard adicionado, doc novo, systemMap honesto. |
 | 1 | Página rica acessível por URL própria, links internos funcionam, nenhuma rota órfã. |
-| 2 | `supabase/migrations/` tem o `CREATE TABLE referee_profiles` + policies; CI passa; testes manuais de PWA funcionam. |
+| 2.1 | `supabase/migrations/` tem o `CREATE TABLE referee_profiles` + policies + check `cpf OR rne`; CI passa; PWA continua funcional. |
+| 2.2 | Parser do CSV reconhece 20 colunas; pré-visualização mostra erros por linha; bancário não vaza no console. |
+| 2.3 | Edge `import-referees` cria/vincula `people`, popula `referee_profiles` completo, idempotente por CPF (ou e-mail). |
+| 2.4 | Tela mostra erros por linha, exporta CSV de erros, suporta re-importar só falhas. |
 | 3 | Coluna `event_stage_id` em todas as 4 tabelas, com NOT NULL e trigger; queries continuam funcionando. |
 | 4 | PWA do árbitro tem home + agenda + indisponibilidade dedicadas, com guard. |
 
