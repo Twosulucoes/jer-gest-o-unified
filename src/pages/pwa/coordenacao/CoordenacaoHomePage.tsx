@@ -42,7 +42,7 @@ export default function CoordenacaoHomePage() {
 
       const today = new Date().toISOString().slice(0, 10);
 
-      const [todayRes, andamentoRes, pendentesRes, totalRes, incidentsRes, agendaRes] = await Promise.all([
+      const [todayRes, andamentoRes, finalizadasRes, totalRes, incidentsRes, agendaRes] = await Promise.all([
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("match_date", today),
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "in_progress"),
         supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "finished"),
@@ -60,7 +60,7 @@ export default function CoordenacaoHomePage() {
       setKpis({
         partidasHoje: todayRes.count || 0,
         emAndamento: andamentoRes.count || 0,
-        finalizadas: pendentesRes.count || 0,
+        finalizadas: finalizadasRes.count || 0,
         totalPartidas: totalRes.count || 0,
         pendingIncidents: incidentsRes.count || 0,
       });
@@ -69,18 +69,20 @@ export default function CoordenacaoHomePage() {
     })();
   }, [navigate, activeEventId]);
 
+  // Status canônico de competition_matches: scheduled / in_progress / finished
+  // (+ outros eventuais). Branches PT-BR (em_andamento, finalizada) removidos
+  // como parte da Fase 3 da auditoria de Dashboard/KPIs — eram código
+  // defensivo morto.
   const statusTone = (s: string) => {
-    const v = s === "em_andamento" ? "in_progress" : s === "finalizada" ? "finished" : s;
-    if (v === "in_progress") return "live";
-    if (v === "finished") return "ok";
-    if (v === "scheduled") return "scheduled";
+    if (s === "in_progress") return "live";
+    if (s === "finished") return "ok";
+    if (s === "scheduled") return "scheduled";
     return "neutral";
   };
   const statusLabel = (s: string) => {
-    const v = s === "em_andamento" ? "in_progress" : s === "finalizada" ? "finished" : s;
-    if (v === "in_progress") return "Em curso";
-    if (v === "finished") return "Concluído";
-    if (v === "scheduled") return "Próximo";
+    if (s === "in_progress") return "Em curso";
+    if (s === "finished") return "Concluído";
+    if (s === "scheduled") return "Próximo";
     return s;
   };
 
