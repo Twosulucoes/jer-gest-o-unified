@@ -129,15 +129,21 @@
 - [x] `COMMENT ON COLUMN` documentando `unit_id` (planejado) vs `checked_in_unit_id` (real onde fez check-in) em `lodging_occupancies` para resolver ambiguidade.
 - [x] `types.ts` atualizado com novas colunas e relationships.
 
-### **Etapa 4 — Labels e mensagens unificadas** 🔴/🟡
-**Pequeno, risco baixo (puro front)**
-- Criar `src/lib/alojamento/labels.ts` (módulo centralizado):
-  - `lodgingStatusLabel(status)` → `{ label, tone }` (cobre todos os 5 status incl. `planned` e `cancelled`).
-  - `genderRestrictionLabel(g, { short })` (long/short variants).
-  - `severityLabel`/`categoryLabel`/`incidentStatusLabel` (cor + label).
-- Mover `LEFT_EVENT` e `NEEDS_LODGING_FALSE` para `systemMessages.ts`.
-- Substituir uses no `ParticipantLogisticaTab`, `AlojamentoUnidadesPage`, `AlojamentoHubPage`, `AlojamentoScanPage`, `AlojamentoIncidentesPage`.
-- Padronizar capitalização das badges.
+### **Etapa 4 — Labels e mensagens unificadas** ✅
+**`src/lib/alojamento/labels.ts` + `systemMessages.ts` + 5 consumidores refatorados**
+
+- [x] Módulo central `src/lib/alojamento/labels.ts`:
+  - `lodgingStatusLabel(status)` cobre todos os 5: `planned` ("Planejada"), `allocated` ("Alocada"), `checked_in` ("Check-in"), `checked_out` ("Check-out"), `cancelled` ("Cancelada"). Cada um com tone canônico.
+  - `genderRestrictionLabel(g, { short })` — variante longa ("Masculino") e curta ("Masc.") usando o mesmo dicionário.
+  - `severityLabel`, `categoryLabel`, `incidentStatusLabel` — cada um retornando `{ label, tone }`.
+  - Helpers `toneToBadgeVariant()` e `toneToTextClass()` para integração shadcn/Tailwind.
+- [x] `systemMessages.ts`: novos códigos `LEFT_EVENT` e `NEEDS_LODGING_FALSE` com tradução PT/ES.
+- [x] Consumidores refatorados:
+  - `ParticipantLogisticaTab` → usa `lodgingStatusLabel` + `toneToBadgeVariant` (fim do mapa incompleto que deixava `planned`/`cancelled` crus).
+  - `AlojamentoUnidadesPage` → `genderRestrictionLabel(g)` (longa).
+  - `AlojamentoHubPage` → `genderRestrictionLabel(g, { short: true })` (curta).
+  - `AlojamentoScanPage` → mesma `genderRestrictionLabel(short)` + remoção do hardcoded `LEFT_EVENT`/`NEEDS_LODGING_FALSE` em favor de `getSystemMessage()`.
+  - `AlojamentoIncidentesPage` → `severityLabel` + `categoryLabel` (agora com cor diferenciada por categoria) + `incidentStatusLabel`.
 
 ### **Etapa 5 — Acessibilidade e campos PCD na UI** 🟡
 **Pequeno, risco baixo**

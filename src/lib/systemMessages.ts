@@ -52,7 +52,9 @@ export const SYSTEM_MESSAGE_CODES = [
   "GENDER_MISMATCH",
   "CAPACITY_FULL",
   "CAPACITY_NOT_DEFINED",
-  "PRESENCE_SUCCESS"
+  "PRESENCE_SUCCESS",
+  "LEFT_EVENT",
+  "NEEDS_LODGING_FALSE"
 ] as const;
 
 export type SystemMessageCode = typeof SYSTEM_MESSAGE_CODES[number];
@@ -267,6 +269,14 @@ const MESSAGES: Record<SystemMessageCode, Record<PwaLang, string>> = {
   PRESENCE_SUCCESS: {
     pt: "Presença registrada!",
     es: "¡Presencia registrada!",
+  },
+  LEFT_EVENT: {
+    pt: "Participante registrou saída antecipada do evento.",
+    es: "El participante registró salida anticipada del evento.",
+  },
+  NEEDS_LODGING_FALSE: {
+    pt: "Participante não está marcado como necessitando alojamento.",
+    es: "El participante no está marcado como necesitando alojamiento.",
   },
 };
 

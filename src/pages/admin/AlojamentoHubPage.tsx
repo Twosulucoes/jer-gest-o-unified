@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LodgingLocationFormDialog, { type LodgingLocationFormValues } from "@/components/admin/LodgingLocationFormDialog";
 import LodgingUnitFormDialog, { type LodgingUnitFormValues } from "@/components/admin/LodgingUnitFormDialog";
 import type { StageContext } from "@/components/admin/VehicleFormDialog";
+import { genderRestrictionLabel } from "@/lib/alojamento/labels";
 
 export default function AlojamentoHubPage() {
   const qc = useQueryClient();
@@ -47,7 +48,7 @@ export default function AlojamentoHubPage() {
 
   const totalCapacity = units.reduce((sum: number, u: any) => sum + (u.capacity || 0), 0);
   const totalOccupied = occupancyCounts.length;
-  const genderLabel = (g: string) => g === "male" ? "Masc." : g === "female" ? "Fem." : "Misto";
+  const genderLabel = (g: string) => genderRestrictionLabel(g, { short: true });
 
   const createLocation = useMutation({
     mutationFn: async (v: LodgingLocationFormValues) => {
