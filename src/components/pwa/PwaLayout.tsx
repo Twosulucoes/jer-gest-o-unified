@@ -84,6 +84,7 @@ export default function PwaLayout({
     alojamento: { title: "Alojamento", icon: Building, scanTo: "/pwa/alojamento/scan", homeTo: "/pwa/alojamento" },
     "coordenacao-tecnica": { title: "Coordenação", icon: Trophy, homeTo: "/pwa/coordenacao-tecnica", primaryAction: { icon: Search, to: "/pwa/coordenacao-tecnica/consulta", label: "Consultar" } },
     delegacao: { title: "Delegação", icon: Users, homeTo: "/pwa/delegacao" },
+    arbitragem: { title: "Arbitragem", icon: ShieldCheck, homeTo: "/pwa/arbitragem", primaryAction: { icon: Calendar, to: "/pwa/arbitragem/agenda", label: "Agenda" } },
     credenciamento: { title: "Credenciamento", icon: IdCard, scanTo: "/pwa/credenciamento/vincular", homeTo: "/pwa/credenciamento" },
     resultados: { title: "Resultados", icon: Award, homeTo: "/pwa/resultados" },
     registros: { title: "Registros", icon: Trophy, homeTo: "/pwa/registros", primaryAction: { icon: Plus, to: "/pwa/registros", label: "Novo" } },
@@ -105,8 +106,8 @@ export default function PwaLayout({
       { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento/vincular" },
       { role: "mesario", label: "Ao Vivo", icon: Radio, to: "/aovivo" },
       { role: "mesario", label: "Registros", icon: Trophy, to: "/pwa/registros", showOnlyIfRegistrosEnabled: true },
+      { role: "arbitragem", label: "Arbitragem", icon: ShieldCheck, to: "/pwa/arbitragem" },
       { role: "arbitragem", label: "Ao Vivo", icon: Radio, to: "/pwa/resultados" },
-      { role: "arbitragem", label: "Meu Perfil", icon: ShieldCheck, to: "/pwa/arbitragem/perfil" },
     ] as const;
     
     const isSuperOrAdmin = hasRole("admin") || hasRole("super_admin");

@@ -183,11 +183,12 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 
 ### Etapa 4 — PWA do árbitro (UX completa)
 
-- [ ] Criar `ArbitragemHomePage` em `src/pages/pwa/arbitragem/` (KPI da agenda do dia + atalhos).
-- [ ] Criar `ArbitragemAgendaPage` (próximas designações com confirmar/recusar).
-- [ ] Criar `ArbitragemIndisponibilidadePage` (recusa com justificativa, lista histórica).
-- [ ] Adicionar fallback `arbitragem/*` em `AppRoutes.tsx`.
-- [ ] Reapontar `PwaLayout` para a nova home.
+- [x] `src/pages/pwa/arbitragem/ArbitragemHomePage.tsx` — landing do árbitro com KPIs (Designações/Confirmadas/Pendentes), banner de cadastro incompleto (sem `referee_profiles`) e CPF/RNE pendente, lista das próximas 5 partidas e grid de atalhos (Agenda, Indisponibilidades, Perfil, Ao Vivo).
+- [x] `ArbitragemAgendaPage` — todas as designações em 3 abas (Próximas / Passadas / Indisp.); cada partida pendente tem botão **Confirmar** (`acceptance_status='confirmed'` + `reported_at`) e botão **Indisp.** que abre dialog com `Textarea` (mín. 4 chars, máx. 500) e grava `acceptance_status='unavailable'` + `indisponibility_reason`.
+- [x] `ArbitragemIndisponibilidadePage` — histórico das partidas reportadas como indisponíveis no evento, com motivo e data do report.
+- [x] `AppRoutes.tsx`: rotas `/pwa/arbitragem`, `/pwa/arbitragem/agenda`, `/pwa/arbitragem/indisponibilidade` (+ a já existente `/perfil`) com `PwaRouteGuard` para `arbitragem`/`admin`/`secretaria`. Fallback `arbitragem/*` adicionado para URLs erradas caírem na home (mesmo padrão de `delegacao/*`, `alimentacao/*`, `alojamento/*`).
+- [x] `PwaLayout`: `moduleConfig.arbitragem` adicionado (`homeTo: /pwa/arbitragem`, primaryAction = "Agenda"); switcher trocou "Meu Perfil" por "Arbitragem" como entrada principal (perfil continua acessível pelos atalhos da home).
+- [x] `constants/modules.ts`: `arbitragem` registrado como `ModuleId` para que `getModuleByPath` identifique corretamente todas as sub-rotas.
 
 ### Etapa 5 — Melhorias opcionais (pós-evento)
 
@@ -208,7 +209,7 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 | 2.3 | Edge `import-referees` cria/vincula `people` por CPF, popula `referee_profiles` completo, ativa o CHECK `cpf OR rne`, PWA valida antes do Save. Foreigners RNE-only ficam com `person_id=null` até Etapa futura adicionar `rne` em `people`. |
 | 2.4 | Tela mostra erros por linha, exporta CSV de erros (mesmo schema da planilha + Motivo), suporta re-importar só falhas. ✅ |
 | 3 | Coluna `event_stage_id` em todas as 4 tabelas, com NOT NULL e trigger; queries continuam funcionando. |
-| 4 | PWA do árbitro tem home + agenda + indisponibilidade dedicadas, com guard. |
+| 4 | PWA do árbitro tem home + agenda + indisponibilidade dedicadas, com guard. ✅ |
 
 ---
 
