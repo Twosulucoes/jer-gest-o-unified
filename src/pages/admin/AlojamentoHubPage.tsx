@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useStageInfo, useLodgingLocations, useLodgingUnits, useLodgingOccupancyCounts } from "@/hooks/useLodgingAdmin";
+import { useStageInfo, useLodgingLocations, useLodgingUnits } from "@/hooks/useLodgingAdmin";
+import { useLodgingOccupancy } from "@/hooks/useLodgingOccupancy";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,15 +40,12 @@ export default function AlojamentoHubPage() {
 
   const { data: locations = [], isLoading: loadingLocations } = useLodgingLocations(stageId);
   const { data: units = [], isLoading: loadingUnits } = useLodgingUnits(stageId);
-  const { data: occupancyCounts = [] } = useLodgingOccupancyCounts(stageId);
-
-  const occCountMap = new Map<string, number>();
-  occupancyCounts.forEach((o: any) => {
-    occCountMap.set(o.unit_id, (occCountMap.get(o.unit_id) || 0) + 1);
-  });
+  const { countsByUnit, totals: occupancyTotals } = useLodgingOccupancy(stageId);
+  const activeOccupancyByUnit = (unitId: string) =>
+    countsByUnit.get(unitId)?.active ?? 0;
 
   const totalCapacity = units.reduce((sum: number, u: any) => sum + (u.capacity || 0), 0);
-  const totalOccupied = occupancyCounts.length;
+  const totalOccupied = occupancyTotals.active;
   const accessibleUnitsCount = units.filter((u: any) => u.is_accessible).length;
   const genderLabel = (g: string) => genderRestrictionLabel(g, { short: true });
 
@@ -280,7 +278,7 @@ export default function AlojamentoHubPage() {
           {locations.map((loc: any) => {
             const locUnits = units.filter((u: any) => u.location_id === loc.id);
             const locCapacity = locUnits.reduce((s: number, u: any) => s + (u.capacity || 0), 0);
-            const locOccupied = locUnits.reduce((s: number, u: any) => s + (occCountMap.get(u.id) || 0), 0);
+            const locOccupied = locUnits.reduce((s: number, u: any) => s + activeOccupancyByUnit(u.id), 0);
 
             return (
               <Card key={loc.id}>
@@ -315,7 +313,7 @@ export default function AlojamentoHubPage() {
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {locUnits.map((u: any) => {
-                        const occ = occCountMap.get(u.id) || 0;
+                        const occ = activeOccupancyByUnit(u.id);
                         const full = occ >= u.capacity;
                         return (
                           <div

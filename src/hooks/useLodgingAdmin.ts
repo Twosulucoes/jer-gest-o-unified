@@ -56,6 +56,12 @@ export function useLodgingUnits(stageId: string | null | undefined) {
   });
 }
 
+/**
+ * @deprecated Use `useLodgingOccupancy(stageId).countsByUnit` em vez disso (Etapa 6
+ * da auditoria de alojamento). Esta função retorna apenas linhas com status
+ * `allocated`/`checked_in` sem agregação. O hook novo já devolve o Map<unit_id,
+ * counts> pronto + totais agregados.
+ */
 export function useLodgingOccupancyCounts(stageId: string | null | undefined) {
   return useQuery({
     queryKey: ["lodging_occupancy_counts", stageId],

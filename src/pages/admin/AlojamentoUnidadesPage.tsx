@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useStageScope } from "@/hooks/useStageScope";
-import { useStageInfo, useLodgingLocations, useLodgingUnits, useLodgingOccupancyCounts } from "@/hooks/useLodgingAdmin";
+import { useStageInfo, useLodgingLocations, useLodgingUnits } from "@/hooks/useLodgingAdmin";
+import { useLodgingOccupancy } from "@/hooks/useLodgingOccupancy";
 import { toast } from "sonner";
 import { Plus, Pencil, BedDouble, Accessibility, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,12 +29,9 @@ export default function AlojamentoUnidadesPage() {
   const { data: stageInfo } = useStageInfo(stageId);
   const { data: locations = [] } = useLodgingLocations(stageId);
   const { data: units, isLoading } = useLodgingUnits(stageId);
-  const { data: occupancyCounts = [] } = useLodgingOccupancyCounts(stageId);
-
-  const occCountMap = new Map<string, number>();
-  occupancyCounts.forEach((o: any) => {
-    occCountMap.set(o.unit_id, (occCountMap.get(o.unit_id) || 0) + 1);
-  });
+  const { countsByUnit } = useLodgingOccupancy(stageId);
+  const activeOccupancyByUnit = (unitId: string) =>
+    countsByUnit.get(unitId)?.active ?? 0;
 
   const locationsMap = new Map(locations.map((l: any) => [l.id, l]));
   const genderLabel = (g: string) => genderRestrictionLabel(g);
@@ -210,7 +208,7 @@ export default function AlojamentoUnidadesPage() {
             </TableHeader>
             <TableBody>
               {filteredUnits.map((u: any) => {
-                const occ = occCountMap.get(u.id) || 0;
+                const occ = activeOccupancyByUnit(u.id);
                 const full = occ >= u.capacity;
                 return (
                   <TableRow key={u.id}>
