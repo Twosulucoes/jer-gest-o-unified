@@ -695,7 +695,6 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       credentialed_kpi: credentialed,
       cred_active_distinct_participants: credentialed,
       cred_active_rows: credActive,
-      credentialed_from_participants_flag: credentialedFromParticipants,
       credentials_today: credToday,
       matches_total: MA_total,
       meals_total: consumptionsTotal,
