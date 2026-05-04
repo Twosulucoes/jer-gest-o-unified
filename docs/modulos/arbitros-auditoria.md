@@ -162,10 +162,11 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 
 #### Etapa 2.4 — UX de erro e re-importação
 
-- [ ] Mostrar coluna de motivo por linha que falhou.
-- [ ] Botão "Baixar CSV de erros" com a coluna de motivo.
-- [ ] Suporte a re-importar só linhas com erro (mantém OK como já feito).
-- [ ] KPIs no resumo: criados, atualizados, vinculados a pessoa existente, ignorados, com erro.
+- [x] Coluna de motivo por linha falhada já visível inline (validação client-side ou erro do backend).
+- [x] Botão **"Baixar CSV de erros"** — exporta linhas com `validationErrors`, `status='error'` ou `status='duplicate'` no mesmo formato da planilha-fonte (20 colunas) + coluna `Motivo`. Separador `;` (Excel BR) e BOM UTF-8 para abrir corretamente em Excel.
+- [x] Botão **"Tentar novamente N falha(s)"** — re-envia somente as linhas com `status='error'` (não re-tenta `duplicate`, que é estado intencional).
+- [x] Refatoração: extraída `importRowsMatching(predicate, contextLabel)` que serve tanto para a importação inicial quanto para o retry, mantendo o mapeamento `originalIndex` → linha na tabela.
+- [x] KPIs no header já mostram: válidas / com erro / convidados / duplicados / falharam (somam direto do estado, sem recontagem manual).
 
 ### Etapa 3 — Lei de Escopo no schema `arbitragem` e em `match_user_assignments`
 
@@ -203,7 +204,7 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 | 2.1 | `supabase/migrations/` tem o `CREATE TABLE referee_profiles` + policies + FK `person_id`; CI passa; PWA continua funcional. CHECK `cpf OR rne` fica para 2.3. |
 | 2.2 | Parser do CSV reconhece 20 colunas; pré-visualização mostra erros por linha; bancário não vaza no console. |
 | 2.3 | Edge `import-referees` cria/vincula `people` por CPF, popula `referee_profiles` completo, ativa o CHECK `cpf OR rne`, PWA valida antes do Save. Foreigners RNE-only ficam com `person_id=null` até Etapa futura adicionar `rne` em `people`. |
-| 2.4 | Tela mostra erros por linha, exporta CSV de erros, suporta re-importar só falhas. |
+| 2.4 | Tela mostra erros por linha, exporta CSV de erros (mesmo schema da planilha + Motivo), suporta re-importar só falhas. ✅ |
 | 3 | Coluna `event_stage_id` em todas as 4 tabelas, com NOT NULL e trigger; queries continuam funcionando. |
 | 4 | PWA do árbitro tem home + agenda + indisponibilidade dedicadas, com guard. |
 

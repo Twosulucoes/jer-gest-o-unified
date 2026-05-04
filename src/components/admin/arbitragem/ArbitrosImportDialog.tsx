@@ -6,12 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Upload, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, Info } from "lucide-react";
+import { Upload, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, Info, Download, RefreshCw } from "lucide-react";
 import {
   parseRefereeCsv,
   type RefereeImportRow,
   FIELD_LABELS,
   ALL_FIELD_KEYS,
+  type FieldKey,
 } from "./refereeImport";
 
 interface Props {
@@ -95,21 +96,22 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
     e.target.value = "";
   }
 
-  async function handleImport() {
+  async function importRowsMatching(
+    predicate: (r: RefereeImportRow) => boolean,
+    contextLabel: string,
+  ) {
     if (rows.length === 0) return;
     setImporting(true);
 
-    // Mantém a ordem original; constrói o subset enviado e mapeia índices.
     const updated = [...rows];
     const payload: { row: RefereeImportRow; originalIndex: number }[] = [];
     updated.forEach((r, i) => {
-      if (r.status === "ok") return;
-      if (r.validationErrors.length > 0) return;
+      if (!predicate(r)) return;
       payload.push({ row: r, originalIndex: i });
     });
 
     if (payload.length === 0) {
-      toast.error("Nenhuma linha válida para importar.");
+      toast.error(`Nenhuma linha aplicável para ${contextLabel}.`);
       setImporting(false);
       return;
     }
@@ -140,12 +142,11 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
         })),
       );
 
-      // Mapeia resultado de volta para o índice original na tabela
       response.results.forEach((res) => {
         const originalIndex = payload[res.index].originalIndex;
         const target = updated[originalIndex];
         if (res.status === "created" || res.status === "linked_existing" || res.status === "updated") {
-          updated[originalIndex] = { ...target, status: "ok" };
+          updated[originalIndex] = { ...target, status: "ok", errorMessage: undefined };
         } else if (res.status === "duplicate") {
           updated[originalIndex] = { ...target, status: "duplicate", errorMessage: res.reason };
         } else {
@@ -163,14 +164,50 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
       ];
       const skipped = updated.filter((r) => r.validationErrors.length > 0).length;
       if (skipped > 0) parts.push(`${skipped} ignorados (validação)`);
-      toast.success(`Importação: ${parts.join(", ")}`);
+      toast.success(`${contextLabel}: ${parts.join(", ")}`);
     } catch (err: any) {
-      toast.error(`Falha geral na importação: ${err.message ?? "Erro desconhecido"}`);
+      toast.error(`Falha geral em ${contextLabel}: ${err.message ?? "Erro desconhecido"}`);
     }
 
     setImporting(false);
     setDone(true);
     onSuccess();
+  }
+
+  async function handleImport() {
+    await importRowsMatching(
+      (r) => r.status !== "ok" && r.validationErrors.length === 0,
+      "Importação",
+    );
+  }
+
+  async function handleRetryFailed() {
+    await importRowsMatching(
+      (r) => r.status === "error" && r.validationErrors.length === 0,
+      "Re-tentativa",
+    );
+  }
+
+  function handleDownloadErrors() {
+    const failingRows = rows.filter(
+      (r) => r.validationErrors.length > 0 || r.status === "error" || r.status === "duplicate",
+    );
+    if (failingRows.length === 0) {
+      toast.info("Nada a baixar — sem erros.");
+      return;
+    }
+    const csv = buildErrorsCsv(failingRows);
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    a.href = url;
+    a.download = `erros-importacao-arbitros_${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`CSV gerado com ${failingRows.length} linha(s).`);
   }
 
   function handleClose() {
@@ -310,10 +347,35 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-wrap gap-2">
           <Button variant="outline" onClick={handleClose}>
             Fechar
           </Button>
+
+          {/* Download de erros (disponível assim que houver linhas com algum tipo de problema) */}
+          {(stats.withErr > 0 || (done && (stats.failed > 0 || stats.dup > 0))) && (
+            <Button variant="outline" onClick={handleDownloadErrors} disabled={importing}>
+              <Download className="h-4 w-4 mr-2" />
+              Baixar CSV de erros (
+              {rows.filter(
+                (r) =>
+                  r.validationErrors.length > 0 ||
+                  r.status === "error" ||
+                  r.status === "duplicate",
+              ).length}
+              )
+            </Button>
+          )}
+
+          {/* Retry só de falhas (após primeira importação) */}
+          {done && stats.failed > 0 && (
+            <Button variant="outline" onClick={handleRetryFailed} disabled={importing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${importing ? "animate-spin" : ""}`} />
+              Tentar novamente {stats.failed} falha{stats.failed > 1 ? "s" : ""}
+            </Button>
+          )}
+
+          {/* Importação inicial */}
           {rows.length > 0 && !done && (
             <Button onClick={handleImport} disabled={importing || stats.importable === 0}>
               {importing
@@ -411,4 +473,61 @@ function RowFragment({ row, hasErr, expanded, statusIcon, onToggle }: RowFragmen
       )}
     </>
   );
+}
+
+// ------------------------------------------------------------
+// CSV de erros — mesma forma da planilha de origem + coluna Motivo
+// ------------------------------------------------------------
+
+// Ordem das colunas no CSV de erros corresponde à planilha-fonte.
+const ERROR_CSV_COLUMNS: { key: FieldKey; header: string }[] = [
+  { key: "full_name", header: "Nome" },
+  { key: "cpf", header: "CPF" },
+  { key: "modalities", header: "Modalidades" },
+  { key: "categories", header: "Categorias" },
+  { key: "phone", header: "Celular" },
+  { key: "rg", header: "RG" },
+  { key: "email", header: "Email" },
+  { key: "rne", header: "RNE" },
+  { key: "gender", header: "Sexo" },
+  { key: "birth_date", header: "Data Nascimento" },
+  { key: "zip_code", header: "CEP" },
+  { key: "street_address", header: "Endereço" },
+  { key: "address_complement", header: "Complemento" },
+  { key: "neighborhood", header: "Bairro" },
+  { key: "city", header: "Cidade" },
+  { key: "state", header: "UF" },
+  { key: "bank_name", header: "Banco" },
+  { key: "bank_branch", header: "Agência" },
+  { key: "bank_account", header: "Conta Corrente" },
+  { key: "nationality", header: "Nacionalidade" },
+];
+
+function csvEscape(value: unknown, sep: string): string {
+  const s = value == null ? "" : String(value);
+  if (s.includes(sep) || s.includes('"') || s.includes("\n") || s.includes("\r")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+function reasonOf(row: RefereeImportRow): string {
+  if (row.validationErrors.length > 0) return row.validationErrors.join("; ");
+  if (row.errorMessage) return row.errorMessage;
+  if (row.status === "duplicate") return "Já cadastrado";
+  return "";
+}
+
+function buildErrorsCsv(rows: RefereeImportRow[]): string {
+  // Separador `;` para abrir bem em Excel BR sem precisar de "Importar dados".
+  const sep = ";";
+  const headers = [...ERROR_CSV_COLUMNS.map((c) => c.header), "Motivo"];
+  const lines: string[] = [headers.map((h) => csvEscape(h, sep)).join(sep)];
+
+  for (const row of rows) {
+    const cols = ERROR_CSV_COLUMNS.map((c) => csvEscape(row[c.key], sep));
+    cols.push(csvEscape(reasonOf(row), sep));
+    lines.push(cols.join(sep));
+  }
+  return lines.join("\r\n");
 }
