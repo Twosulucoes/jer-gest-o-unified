@@ -108,18 +108,20 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 
 #### Etapa 2.1 — Migração formal de `referee_profiles` + RLS *(pré-requisito)*
 
-- [ ] `supabase/migrations/<timestamp>_referee_profiles_formalize.sql`:
-  - `CREATE TABLE IF NOT EXISTS referee_profiles (...)` retroativo (todas as 25+ colunas que já existem).
-  - `ALTER TABLE` para adicionar `person_id UUID REFERENCES people(id)` (nullable inicialmente, populado pela 2.3).
-  - `CHECK (cpf IS NOT NULL OR rne IS NOT NULL)`.
-  - `UNIQUE(cpf) WHERE cpf IS NOT NULL`, `UNIQUE(user_id)`.
+- [x] `supabase/migrations/20260504020000_arbitragem_2_1_referee_profiles_formalize.sql`:
+  - `CREATE TABLE IF NOT EXISTS referee_profiles (...)` retroativo (todas as 26 colunas).
+  - `ADD COLUMN person_id UUID REFERENCES people(id)` (nullable; populado pela 2.3).
+  - `UNIQUE(cpf) WHERE cpf IS NOT NULL`, `UNIQUE(user_id) WHERE user_id IS NOT NULL`.
+  - FK `user_id → auth.users(id) ON DELETE SET NULL`.
+  - Trigger `update_updated_at_column`.
   - `ENABLE ROW LEVEL SECURITY`.
-- [ ] Policies com `has_role()`:
-  - `arbitragem`: SELECT/UPDATE da própria linha (`user_id = auth.uid()`).
+- [x] Policies com `has_role()`:
+  - `arbitragem`: SELECT/UPDATE/INSERT da própria linha (`user_id = auth.uid()`); INSERT necessário porque o PWA usa `upsert`.
   - `admin`/`secretaria`: ALL.
-  - `coordenacao_tecnica`: SELECT.
-  - DELETE: somente `admin`.
-- [ ] Smoke test: PWA `RefereeProfilePage` continua salvando.
+  - `coordenacao_tecnica` e `coordenador_modalidade`: SELECT (precisam para escalar).
+  - DELETE: implicitamente só admin/secretaria (sem policy adicional para outros).
+- [x] Smoke test: PWA `RefereeProfilePage` continua funcional (INSERT do upsert tem WITH CHECK + UPDATE tem USING/WITH CHECK; ambos válidos com `user_id = auth.uid()`).
+- [ ] **Adiado para Etapa 2.3:** `CHECK (cpf IS NOT NULL OR rne IS NOT NULL)`. Adicionar agora quebraria o primeiro Save no PWA (que permite salvar só com `full_name` hoje). A 2.3 ajusta importer + PWA para garantir o invariante e só então o constraint entra.
 
 #### Etapa 2.2 — Parser CSV completo (front)
 
@@ -188,7 +190,7 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 | :--- | :--- |
 | 0 | PR mergeada com guard adicionado, doc novo, systemMap honesto. |
 | 1 | Página rica acessível por URL própria, links internos funcionam, nenhuma rota órfã. |
-| 2.1 | `supabase/migrations/` tem o `CREATE TABLE referee_profiles` + policies + check `cpf OR rne`; CI passa; PWA continua funcional. |
+| 2.1 | `supabase/migrations/` tem o `CREATE TABLE referee_profiles` + policies + FK `person_id`; CI passa; PWA continua funcional. CHECK `cpf OR rne` fica para 2.3. |
 | 2.2 | Parser do CSV reconhece 20 colunas; pré-visualização mostra erros por linha; bancário não vaza no console. |
 | 2.3 | Edge `import-referees` cria/vincula `people`, popula `referee_profiles` completo, idempotente por CPF (ou e-mail). |
 | 2.4 | Tela mostra erros por linha, exporta CSV de erros, suporta re-importar só falhas. |
