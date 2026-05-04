@@ -13,6 +13,7 @@ import { PwaContainer } from "@/components/pwa/PwaScreen";
 import { PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
 import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { useEventContext } from "@/contexts/EventContext";
+import { useActiveStageId } from "@/contexts/StageContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import PwaLayout from "@/components/pwa/PwaLayout";
 
@@ -32,6 +33,7 @@ interface TripRow {
 export default function TransporteHomePage() {
   const navigate = useNavigate();
   const { activeEventId } = useEventContext();
+  const stageId = useActiveStageId();
   const [loading, setLoading] = useState(true);
   const [trips, setTrips] = useState<TripRow[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
@@ -45,17 +47,20 @@ export default function TransporteHomePage() {
     if (!session) { navigate("/login", { replace: true }); return; }
     setUserId(session.user.id);
 
-    const { data, error } = await supabase
+    // Filtra por stage quando há contexto ativo (transport_trips.event_stage_id
+    // existe no schema). Sem stage, mostra todas as viagens do evento.
+    let q = supabase
       .from("transport_trips")
       .select("id, scheduled_at, trip_status, status, assigned_driver_id, driver_checked_in_at, driver_name, transport_routes(name, origin, destination), transport_vehicles(label, plate), transport_passengers(id, status)")
       .eq("event_id", activeEventId)
-      .in("trip_status", ["scheduled", "in_progress"])
-      .order("scheduled_at", { ascending: true });
+      .in("trip_status", ["scheduled", "in_progress"]);
+    if (stageId) q = q.eq("event_stage_id", stageId);
+    const { data, error } = await q.order("scheduled_at", { ascending: true });
 
     if (error) console.error(error);
     setTrips((data as any) || []);
     setLoading(false);
-  }, [navigate, activeEventId]);
+  }, [navigate, activeEventId, stageId]);
 
   useEffect(() => { fetchTrips(); }, [fetchTrips]);
 

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
+import { useActiveStageId } from "@/contexts/StageContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import { PwaContainer } from "@/components/pwa/PwaScreen";
 import { PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
@@ -49,6 +50,7 @@ export default function ArbitragemHomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { activeEventId } = useEventContext();
+  const stageId = useActiveStageId();
   const [refereeStatus, setRefereeStatus] = useState<string | null>(null);
   usePwaAudit("arbitragem");
 
@@ -72,10 +74,13 @@ export default function ArbitragemHomePage() {
   }, [user?.id]);
 
   const { data: assignments = [], isLoading } = useQuery({
-    queryKey: ["pwa-arb-home-assignments", user?.id, activeEventId],
+    queryKey: ["pwa-arb-home-assignments", user?.id, activeEventId, stageId],
     enabled: !!user?.id && !!activeEventId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      // Filtra por stage quando há contexto ativo (Etapa 3.1 da auditoria
+      // de Arbitragem adicionou event_stage_id direto em match_user_assignments).
+      // Sem stage selecionado, mostra todas as designações do evento.
+      let q = (supabase as any)
         .from("match_user_assignments")
         .select(`
           id, match_id, role, acceptance_status,
@@ -87,6 +92,8 @@ export default function ArbitragemHomePage() {
         `)
         .eq("user_id", user!.id)
         .eq("event_id", activeEventId!);
+      if (stageId) q = q.eq("event_stage_id", stageId);
+      const { data, error } = await q;
       if (error) throw error;
 
       return (data ?? []).map((row: any) => ({

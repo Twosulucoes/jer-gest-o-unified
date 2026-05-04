@@ -73,7 +73,7 @@ export default function AlojamentoHomePage() {
         const list = (data || []) as Facility[];
 
         const kpiResults = await Promise.all(
-          list.map(f => supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: f.id }))
+          list.map(f => supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: f.id, p_event_stage_id: stageId }))
         );
 
         const enriched: Facility[] = list.map((f, i) => {
@@ -106,7 +106,7 @@ export default function AlojamentoHomePage() {
     if (!facilityId) return;
     setSelectedFacility(facilityId);
     (async () => {
-      const { data, error } = await supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId });
+      const { data, error } = await supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId, p_event_stage_id: stageId });
       
       dbTelemetry.log({
         moduleName: 'alojamento',

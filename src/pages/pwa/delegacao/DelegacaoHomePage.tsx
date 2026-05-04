@@ -64,6 +64,11 @@ export default function DelegacaoHomePage() {
         setDelegationLabel(`${delRow.institutions?.name ?? "Delegação"}${chief}`);
       }
 
+      // Decisão (Fase 2 da auditoria de Dashboard/KPIs): "atletas da delegação"
+      // é um número CADASTRAL — pessoas inscritas pela delegação no evento,
+      // não operação por etapa. Por isso filtramos por delegation_id apenas;
+      // intencionalmente sem event_stage_id. Se no futuro o conceito mudar
+      // (ex.: "atletas presentes nesta etapa"), criar KPI separado.
       const [atletasRes, credRes, pendRes, listRes] = await Promise.all([
         supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId).eq("participant_type", "athlete"),
         supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId).eq("participant_type", "athlete").eq("status", "confirmed"),

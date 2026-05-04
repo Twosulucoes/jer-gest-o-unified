@@ -124,12 +124,13 @@
 - [x] (2) **Migração `20260504093919_dashboard_fix_alojamento_kpis_status.sql`** — `get_alojamento_kpis` agora conta `status IN ('planned', 'allocated')` em `reserved_beds`. Antes só somava `'planned'`, mas o fluxo operacional grava `'allocated'`. Cobre os dois casos para resistir a alocações em lote pré-evento (que podem usar `'planned'`).
 - [x] (3) **Falso positivo descartado** — `useStageDashboardData.ts:128-138` retorna o array como `refereeIndisponibilities` e o consumidor `StageHomePage.tsx:77` já exibe label honesto: "*N* oficial(is) que reportaram indisponibilidade para partidas desta etapa e ainda não foram substituídos". A inspeção mais profunda mostrou que o agente confundiu o nome interno da query com o label exibido. Sem ação necessária.
 
-### **Fase 2 — Aplicar Lei de Escopo nos PWA homes (🟡 4-10)** — Médio, risco baixo
-- ArbitragemHomePage: filtrar `match_user_assignments.event_stage_id` quando contexto.
-- TransporteHomePage: idem `transport_trips.event_stage_id` (se denormalizado).
-- DelegacaoHomePage: decidir conceito (cadastral vs operacional) e ajustar.
-- AlimentacaoHomePage: bloquear sem `stageId` ou rotular.
-- RPC `get_alojamento_kpis`: adicionar parâmetro `p_event_stage_id`.
+### **Fase 2 — Aplicar Lei de Escopo nos PWA homes** ✅
+- [x] **ArbitragemHomePage** — `match_user_assignments` agora filtrado por `event_stage_id` quando há contexto de etapa (Etapa 3.1 da Arbitragem adicionou a coluna).
+- [x] **TransporteHomePage** — `transport_trips.event_stage_id` filtrado quando há contexto. Sem stage, mostra todas as viagens do evento (default seguro).
+- [x] **DelegacaoHomePage** — **decidido cadastral** (atletas inscritos pela delegação no evento, não operação por etapa). Comentário no código documenta a decisão e instrui que, se o conceito mudar, criar KPI separado.
+- [x] **AlimentacaoHomePage** — banner âmbar explícito quando `stageId` é null avisando que os KPIs somam o evento inteiro. Operador entende o que está vendo.
+- [x] **RPC `get_alojamento_kpis`** — parâmetro `p_event_stage_id uuid DEFAULT NULL` adicionado. Filtra `lodging_units.event_stage_id` e `lodging_occupancies.event_stage_id` quando presente. Compatível com callers legados (default null = comportamento antigo). Migração: `20260504095058_dashboard_alojamento_kpis_stage_scope.sql`.
+- [x] PWA `AlojamentoHomePage` agora passa `stageId` em ambas as chamadas do RPC (lista de facilities + facility selecionada).
 
 ### **Fase 3 — Melhorias e limpezas (🟡 11)** — Pequeno
 - Renomear `pendentesRes` em CoordenacaoHomePage e remover branches mortos.
