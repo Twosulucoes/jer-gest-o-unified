@@ -143,16 +143,22 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 
 #### Etapa 2.3 — Edge function `import-referees` (backend)
 
-- [ ] Nova função `supabase/functions/import-referees/index.ts`.
-- [ ] Recebe payload `{ rows: ArbitroImport[] }`, processa linha a linha:
-  1. Match por **CPF** (se houver) → senão por **e-mail** (fallback) → senão cria.
-  2. Upsert em `people` (chave: cpf OR (rne, nome)). Reutiliza `id` existente.
-  3. `auth.admin.inviteUserByEmail` (ou recupera user existente).
-  4. Upsert em `profiles` + `user_roles` (role `arbitragem`).
-  5. Upsert em `referee_profiles` com **todos** os 20 campos + `person_id` apontando para o `people.id`.
-  6. `audit_events` por linha, com flag `bank_data: bool` (sem despejar valores).
-- [ ] Resposta com diagnóstico por linha: `created | updated | linked_existing | error` + motivo.
-- [ ] Bloqueio: secretaria não pode importar admin/secretaria.
+- [x] Nova função `supabase/functions/import-referees/index.ts`.
+- [x] Auth: caller deve ser `admin`, `secretaria` ou `super_admin`. JWT validado via `auth.getUser(token)` + `user_roles`.
+- [x] Recebe payload `{ rows: ImportRow[] }`, processa linha a linha (sequencial):
+  1. Validações inline: e-mail presente, nome ≥ 2 chars, CPF ou RNE obrigatório, CPF válido (algoritmo dos dígitos verificadores).
+  2. Match em `people` por **CPF** (lookup direto). Se existir: atualiza apenas campos não-nulos (não sobrescreve). Se não: cria novo (exige `birth_date` por ser NOT NULL no people).
+     - **Limitação assumida:** árbitro estrangeiro (sem CPF, só RNE) **não** é vinculado a `people` — `person_id` fica NULL. Etapa futura adiciona coluna `rne` em `people` para fechar esse caso.
+  3. `auth.admin.inviteUserByEmail` (envia link `/pwa/set-password`); se já existe, recupera via `listUsers()` paginado.
+  4. Upsert em `profiles` (id, full_name, active=true).
+  5. Upsert em `user_roles` (user_id, role='arbitragem').
+  6. Upsert em `referee_profiles` com **todos os 20 campos** + `person_id`.
+  7. `audit_events` por linha (`action='referee_imported'`) + audit agregado no fim (`action='referee_import_batch'`); ambos com flag `had_bank_data: bool` mas **sem despejar valores**.
+- [x] Resposta: `{ ok, summary: {total, created, linked_existing, duplicate, error, with_bank_data}, results: [{index, email, status, reason?, user_id?, person_id?, had_bank_data}] }`.
+- [x] Limites de segurança: 1000 linhas por chamada; CORS canônico do projeto.
+- [x] **Migração** `20260504003050_arbitragem_2_3_referee_check_cpf_or_rne.sql` ativa o `CHECK (cpf IS NOT NULL OR rne IS NOT NULL)` (`NOT VALID` + tentativa de `VALIDATE` com fallback gracioso se houver linhas legadas).
+- [x] **Front (`ArbitrosImportDialog`):** chama `import-referees` em vez de `admin-users.invite_user`; envia payload com 20 campos; mapeia resultados de volta para a tabela; status diferenciados (created/linked_existing/duplicate/error).
+- [x] **PWA (`RefereeProfilePage`):** valida `CPF || RNE` antes do Save (alinhado ao CHECK); novo campo `RNE (estrangeiros)` com placeholder.
 
 #### Etapa 2.4 — UX de erro e re-importação
 
@@ -196,7 +202,7 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 | 1 | Página rica acessível por URL própria, links internos funcionam, nenhuma rota órfã. |
 | 2.1 | `supabase/migrations/` tem o `CREATE TABLE referee_profiles` + policies + FK `person_id`; CI passa; PWA continua funcional. CHECK `cpf OR rne` fica para 2.3. |
 | 2.2 | Parser do CSV reconhece 20 colunas; pré-visualização mostra erros por linha; bancário não vaza no console. |
-| 2.3 | Edge `import-referees` cria/vincula `people`, popula `referee_profiles` completo, idempotente por CPF (ou e-mail). |
+| 2.3 | Edge `import-referees` cria/vincula `people` por CPF, popula `referee_profiles` completo, ativa o CHECK `cpf OR rne`, PWA valida antes do Save. Foreigners RNE-only ficam com `person_id=null` até Etapa futura adicionar `rne` em `people`. |
 | 2.4 | Tela mostra erros por linha, exporta CSV de erros, suporta re-importar só falhas. |
 | 3 | Coluna `event_stage_id` em todas as 4 tabelas, com NOT NULL e trigger; queries continuam funcionando. |
 | 4 | PWA do árbitro tem home + agenda + indisponibilidade dedicadas, com guard. |
