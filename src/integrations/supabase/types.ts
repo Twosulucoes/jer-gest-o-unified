@@ -5389,6 +5389,7 @@ export type Database = {
       }
       participant_sport_events: {
         Row: {
+          advances_directly: boolean
           block_reason_code: string | null
           cancelled_by_substitution_id: string | null
           category_rule_code: string | null
@@ -5411,6 +5412,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          advances_directly?: boolean
           block_reason_code?: string | null
           cancelled_by_substitution_id?: string | null
           category_rule_code?: string | null
@@ -5433,6 +5435,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          advances_directly?: boolean
           block_reason_code?: string | null
           cancelled_by_substitution_id?: string | null
           category_rule_code?: string | null
@@ -8174,6 +8177,7 @@ export type Database = {
       }
       teams: {
         Row: {
+          advances_directly: boolean
           category_code: string | null
           created_at: string
           delegation_id: string
@@ -8193,6 +8197,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          advances_directly?: boolean
           category_code?: string | null
           created_at?: string
           delegation_id: string
@@ -8212,6 +8217,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          advances_directly?: boolean
           category_code?: string | null
           created_at?: string
           delegation_id?: string
