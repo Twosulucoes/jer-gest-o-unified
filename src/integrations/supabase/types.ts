@@ -2622,6 +2622,8 @@ export type Database = {
           device_id: string | null
           error_code: string | null
           error_message: string | null
+          event_id: string | null
+          event_stage_id: string | null
           id: string
           location_id: string | null
           metadata: Json | null
@@ -2636,6 +2638,8 @@ export type Database = {
           device_id?: string | null
           error_code?: string | null
           error_message?: string | null
+          event_id?: string | null
+          event_stage_id?: string | null
           id?: string
           location_id?: string | null
           metadata?: Json | null
@@ -2650,6 +2654,8 @@ export type Database = {
           device_id?: string | null
           error_code?: string | null
           error_message?: string | null
+          event_id?: string | null
+          event_stage_id?: string | null
           id?: string
           location_id?: string | null
           metadata?: Json | null
@@ -2659,6 +2665,20 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lodging_audit_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lodging_audit_logs_location_id_fkey"
             columns: ["location_id"]
@@ -2934,6 +2954,7 @@ export type Database = {
           created_at: string | null
           device_id: string | null
           event_id: string | null
+          event_stage_id: string | null
           id: string
           participant_id: string
           recorded_at: string | null
@@ -2944,6 +2965,7 @@ export type Database = {
           created_at?: string | null
           device_id?: string | null
           event_id?: string | null
+          event_stage_id?: string | null
           id?: string
           participant_id: string
           recorded_at?: string | null
@@ -2954,6 +2976,7 @@ export type Database = {
           created_at?: string | null
           device_id?: string | null
           event_id?: string | null
+          event_stage_id?: string | null
           id?: string
           participant_id?: string
           recorded_at?: string | null
@@ -2966,6 +2989,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_presence_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {
@@ -2997,6 +3027,7 @@ export type Database = {
           delegation_id: string
           ended_at: string | null
           event_id: string
+          event_stage_id: string | null
           id: number
           location_id: string | null
           notes: string | null
@@ -3010,6 +3041,7 @@ export type Database = {
           delegation_id: string
           ended_at?: string | null
           event_id: string
+          event_stage_id?: string | null
           id?: number
           location_id?: string | null
           notes?: string | null
@@ -3023,6 +3055,7 @@ export type Database = {
           delegation_id?: string
           ended_at?: string | null
           event_id?: string
+          event_stage_id?: string | null
           id?: number
           location_id?: string | null
           notes?: string | null
@@ -3044,6 +3077,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_supervisions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {

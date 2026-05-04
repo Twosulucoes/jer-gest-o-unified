@@ -104,14 +104,30 @@
 
 > Etapas 0–2 já estavam concluídas em PRs anteriores (re-rotear órfãs, validar `left_event_at`, validar `needs_lodging`). As etapas abaixo são novas, baseadas nos achados acima. Renumeradas para clareza.
 
-### **Etapa 3 — Lei de Escopo + CHECKs no banco** 🔴
-**Médio, risco médio (backfill em produção)**
-- Backfill `event_stage_id` em `lodging_locations`/`units`/`occupancies` via JOIN com matches/event_stages.
-- `SET NOT NULL` nas três tabelas após backfill.
-- Adicionar `event_id` + `event_stage_id` em `lodging_audit_logs` (NULLABLE inicial; backfill via `lodging_units.event_stage_id` quando `unit_id` presente; trigger para sync futuro).
-- Adicionar `event_stage_id` em `lodging_presence_logs` e `lodging_supervisions` (com trigger de sync).
-- Apertar RLS de `lodging_supervisions` (remover `Allow authenticated view`, criar policies por role).
-- `CHECK` constraints para `lodging_units.gender_restriction IN ('male','female','mixed')`, `lodging_occupancies.status IN ('planned','allocated','checked_in','checked_out','cancelled')`, `lodging_incidents.severity IN ('baixa','media','alta')`, `lodging_incidents.category`, `lodging_incidents.status`.
+### **Etapa 3 — Lei de Escopo + CHECKs no banco** ✅
+**Migração: `20260504020200_alojamento_3_lei_de_escopo.sql`**
+
+- [x] Backfill `event_stage_id`:
+  - `lodging_locations`: heurística "primeiro stage não-arquivado do evento (mais antigo por start_date)".
+  - `lodging_units`: herda de `lodging_locations` quando ambos referem o mesmo location; fallback para mesma heurística do evento.
+  - `lodging_occupancies`: herda de `lodging_units` (relação direta via `unit_id`).
+- [x] `SET NOT NULL` nas três tabelas em bloco com `EXCEPTION WHEN not_null_violation` — falha graciosamente com NOTICE se houver linhas órfãs (deploy não para).
+- [x] `lodging_audit_logs`: adicionadas `event_id` + `event_stage_id` (nullable + FK), backfill via `unit_id` (preferencial) ou `location_id` (fallback), trigger `sync_lodging_audit_logs_scope` BEFORE INSERT/UPDATE.
+- [x] `lodging_presence_logs`: adicionada `event_stage_id` (nullable + FK), backfill via `unit_id`, trigger `sync_lodging_presence_logs_scope`.
+- [x] `lodging_supervisions`: adicionada `event_stage_id` (nullable + FK), backfill via `location_id`, trigger `sync_lodging_supervisions_scope`.
+- [x] **RLS de `lodging_supervisions` apertada**: drop de TODAS as policies legadas (incluindo `Allow authenticated view USING (true)`), criadas policies canônicas via `has_role()` + `app_role`:
+  - `admin`/`secretaria`: ALL
+  - `coordenacao_tecnica`: SELECT
+  - `alojamento`: ALL
+  - Stage scoped read via `check_user_stage_access(event_stage_id)` (consistente com locations/units)
+- [x] CHECK constraints (NOT VALID + tentativa de VALIDATE em EXCEPTION):
+  - `lodging_units.gender_restriction IN ('male','female','mixed')`
+  - `lodging_occupancies.status IN ('planned','allocated','checked_in','checked_out','cancelled')`
+  - `lodging_incidents.severity IN ('baixa','media','alta')`
+  - `lodging_incidents.category IN ('geral','disciplina','saude','patrimonio','seguranca')`
+  - `lodging_incidents.status IN ('aberta','em_atendimento','resolvida')`
+- [x] `COMMENT ON COLUMN` documentando `unit_id` (planejado) vs `checked_in_unit_id` (real onde fez check-in) em `lodging_occupancies` para resolver ambiguidade.
+- [x] `types.ts` atualizado com novas colunas e relationships.
 
 ### **Etapa 4 — Labels e mensagens unificadas** 🔴/🟡
 **Pequeno, risco baixo (puro front)**
