@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useStageScope } from "@/hooks/useStageScope";
-import { useStageInfo, useLodgingLocations } from "@/hooks/useLodgingAdmin";
+import { useStageInfo, useLodgingLocations, useLodgingUnits } from "@/hooks/useLodgingAdmin";
+import { useLodgingOccupancy } from "@/hooks/useLodgingOccupancy";
 import { toast } from "sonner";
 import { Plus, Pencil, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,13 @@ export default function AlojamentoLocaisPage() {
     : undefined;
 
   const { data: locations, isLoading } = useLodgingLocations(stageId);
+  const { data: allUnits = [] } = useLodgingUnits(stageId);
+  const { countsByUnit } = useLodgingOccupancy(stageId);
+  const dependentCounts = editing ? (() => {
+    const locUnits = allUnits.filter((u: any) => u.location_id === editing.id && u.is_active);
+    const locOcc = locUnits.reduce((s: number, u: any) => s + (countsByUnit.get(u.id)?.active ?? 0), 0);
+    return { activeUnits: locUnits.length, activeOccupancies: locOcc };
+  })() : undefined;
 
   const createMut = useMutation({
     mutationFn: async (v: LodgingLocationFormValues) => {
@@ -129,6 +137,7 @@ export default function AlojamentoLocaisPage() {
         stageContext={stageContext}
         onSubmit={(v) => editing ? updateMut.mutate({ id: editing.id, ...v }) : createMut.mutate(v)}
         isPending={createMut.isPending || updateMut.isPending}
+        dependentCounts={dependentCounts}
       />
     </div>
   );

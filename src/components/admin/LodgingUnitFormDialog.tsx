@@ -15,7 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Accessibility } from "lucide-react";
+import { Accessibility, AlertTriangle } from "lucide-react";
 
 // ------------------------------------------------------------
 // Acessibilidade (Etapa 5 da auditoria de Alojamento)
@@ -65,6 +65,10 @@ interface Props {
   locations: any[];
   onSubmit: (values: LodgingUnitFormValues) => void;
   isPending: boolean;
+  /** Ocupações correntes (allocated + checked_in) deste quarto. Quando >0 e o
+   * usuário desmarca "Ativa", o form mostra um aviso de risco operacional.
+   * Etapa 7 da auditoria de Alojamento. */
+  activeOccupancies?: number;
 }
 
 const DEFAULTS: LodgingUnitFormValues = {
@@ -92,7 +96,7 @@ function readFeatures(raw: unknown): string[] {
   return [];
 }
 
-export default function LodgingUnitFormDialog({ open, onOpenChange, unit, locations, onSubmit, isPending }: Props) {
+export default function LodgingUnitFormDialog({ open, onOpenChange, unit, locations, onSubmit, isPending, activeOccupancies = 0 }: Props) {
   const isEditing = !!unit;
 
   const form = useForm<LodgingUnitFormValues>({
@@ -121,6 +125,8 @@ export default function LodgingUnitFormDialog({ open, onOpenChange, unit, locati
   }, [unit, form]);
 
   const isAccessible = form.watch("is_accessible");
+  const formIsActive = form.watch("is_active");
+  const showDeactivateWarning = isEditing && !formIsActive && activeOccupancies > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -275,6 +281,20 @@ export default function LodgingUnitFormDialog({ open, onOpenChange, unit, locati
                 </div>
               </FormItem>
             )} />
+
+            {showDeactivateWarning && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2 text-xs text-destructive">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-bold">
+                    Atenção: este quarto tem {activeOccupancies} hospedagem{activeOccupancies > 1 ? "s" : ""} ativa{activeOccupancies > 1 ? "s" : ""}.
+                  </p>
+                  <p className="opacity-90">
+                    Desativar não fará checkout automático nem cancelará alocações. Faça check-out / remanejamento antes para evitar inconsistências operacionais.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

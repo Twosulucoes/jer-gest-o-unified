@@ -19,7 +19,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { Info } from "lucide-react";
 import { downloadXlsx } from "@/lib/reportExport";
 
 type DivergenceType = "unit_divergence" | "missing_checkin" | "missing_presence" | "all";
@@ -145,7 +147,21 @@ export default function AlojamentoDivergenciasPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Participante</TableHead>
-                <TableHead>Unidade Real</TableHead>
+                <TableHead>
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex items-center gap-1 cursor-help">
+                          Unidade alocada
+                          <Info className="h-3 w-3 text-muted-foreground" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[280px]">
+                        Quarto planejado pela coordenação (`unit_id`). O check-in real pode estar em outro quarto se houve remanejamento — nesse caso, ver coluna "Divergência".
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
                 <TableHead>Divergência / Pendência</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ação</TableHead>
