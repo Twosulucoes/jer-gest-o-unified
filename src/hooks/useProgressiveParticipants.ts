@@ -138,7 +138,12 @@ export function useProgressiveParticipants<T = any>(opts: Options) {
 
         if (!token.cancelled) setFirstPageReady(true);
       } catch (e: any) {
-        if (!token.cancelled) setError(e);
+        if (!token.cancelled) {
+          setError(e);
+          // Garante que o consumidor sai do estado "loading" e mostra o erro,
+          // em vez de ficar preso em skeletons quando a primeira página falha.
+          setFirstPageReady(true);
+        }
       } finally {
         if (!token.cancelled) setIsBackgroundLoading(false);
       }
