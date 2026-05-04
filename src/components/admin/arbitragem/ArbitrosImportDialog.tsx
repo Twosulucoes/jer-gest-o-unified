@@ -20,13 +20,37 @@ interface Props {
   onSuccess: () => void;
 }
 
-async function callAdminUsers(action: string, body: Record<string, unknown> = {}) {
-  const { data, error } = await supabase.functions.invoke("admin-users", {
-    body: { action, ...body },
+interface BatchResult {
+  index: number;
+  email: string;
+  status: "created" | "updated" | "linked_existing" | "duplicate" | "error";
+  reason?: string;
+  user_id?: string;
+  person_id?: string | null;
+  had_bank_data: boolean;
+}
+
+interface BatchResponse {
+  ok: true;
+  summary: {
+    total: number;
+    created: number;
+    linked_existing: number;
+    updated: number;
+    duplicate: number;
+    error: number;
+    with_bank_data: number;
+  };
+  results: BatchResult[];
+}
+
+async function callImportReferees(rows: any[]): Promise<BatchResponse> {
+  const { data, error } = await supabase.functions.invoke("import-referees", {
+    body: { rows },
   });
   if (error) throw new Error(error.message);
   if ((data as any)?.error) throw new Error((data as any).error);
-  return data;
+  return data as BatchResponse;
 }
 
 export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: Props) {
@@ -74,41 +98,75 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
   async function handleImport() {
     if (rows.length === 0) return;
     setImporting(true);
+
+    // Mantém a ordem original; constrói o subset enviado e mapeia índices.
     const updated = [...rows];
+    const payload: { row: RefereeImportRow; originalIndex: number }[] = [];
+    updated.forEach((r, i) => {
+      if (r.status === "ok") return;
+      if (r.validationErrors.length > 0) return;
+      payload.push({ row: r, originalIndex: i });
+    });
 
-    for (let i = 0; i < updated.length; i++) {
-      const row = updated[i];
-      if (row.status === "ok") continue;
-      // Pula linhas com erro de validação client-side
-      if (row.validationErrors.length > 0) continue;
-
-      try {
-        await callAdminUsers("invite_user", {
-          email: row.email,
-          full_name: row.full_name || undefined,
-          roles: ["arbitragem"],
-          phone: row.phone || undefined,
-        });
-        updated[i] = { ...row, status: "ok" };
-      } catch (err: any) {
-        const msg: string = err.message || "Erro";
-        const isDup =
-          msg.toLowerCase().includes("already") ||
-          msg.toLowerCase().includes("existe") ||
-          msg.toLowerCase().includes("duplicate");
-        updated[i] = { ...row, status: isDup ? "duplicate" : "error", errorMessage: msg };
-      }
-      setRows([...updated]);
+    if (payload.length === 0) {
+      toast.error("Nenhuma linha válida para importar.");
+      setImporting(false);
+      return;
     }
 
-    const ok = updated.filter((r) => r.status === "ok").length;
-    const dups = updated.filter((r) => r.status === "duplicate").length;
-    const errs = updated.filter((r) => r.status === "error").length;
-    const skipped = updated.filter((r) => r.validationErrors.length > 0).length;
+    try {
+      const response = await callImportReferees(
+        payload.map(({ row }) => ({
+          full_name: row.full_name,
+          email: row.email,
+          cpf: row.cpf,
+          rne: row.rne,
+          rg: row.rg,
+          phone: row.phone,
+          birth_date: row.birth_date,
+          gender: row.gender,
+          nationality: row.nationality,
+          zip_code: row.zip_code,
+          street_address: row.street_address,
+          address_complement: row.address_complement,
+          neighborhood: row.neighborhood,
+          city: row.city,
+          state: row.state,
+          bank_name: row.bank_name,
+          bank_branch: row.bank_branch,
+          bank_account: row.bank_account,
+          modalities: row.modalities,
+          categories: row.categories,
+        })),
+      );
 
-    const parts = [`${ok} convidados`, `${dups} duplicados`, `${errs} erros`];
-    if (skipped > 0) parts.push(`${skipped} ignorados (validação)`);
-    toast.success(`Importação: ${parts.join(", ")}`);
+      // Mapeia resultado de volta para o índice original na tabela
+      response.results.forEach((res) => {
+        const originalIndex = payload[res.index].originalIndex;
+        const target = updated[originalIndex];
+        if (res.status === "created" || res.status === "linked_existing" || res.status === "updated") {
+          updated[originalIndex] = { ...target, status: "ok" };
+        } else if (res.status === "duplicate") {
+          updated[originalIndex] = { ...target, status: "duplicate", errorMessage: res.reason };
+        } else {
+          updated[originalIndex] = { ...target, status: "error", errorMessage: res.reason };
+        }
+      });
+      setRows(updated);
+
+      const s = response.summary;
+      const parts = [
+        `${s.created} novos`,
+        `${s.linked_existing} reativados`,
+        `${s.duplicate} duplicados`,
+        `${s.error} erros`,
+      ];
+      const skipped = updated.filter((r) => r.validationErrors.length > 0).length;
+      if (skipped > 0) parts.push(`${skipped} ignorados (validação)`);
+      toast.success(`Importação: ${parts.join(", ")}`);
+    } catch (err: any) {
+      toast.error(`Falha geral na importação: ${err.message ?? "Erro desconhecido"}`);
+    }
 
     setImporting(false);
     setDone(true);
@@ -164,16 +222,16 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
             </Button>
           </div>
 
-          {/* Disclosure de envio parcial (Etapa 2.2 valida tudo, 2.3 enviará tudo ao backend) */}
+          {/* Importação canônica (Etapa 2.3): popula referee_profiles completo + vincula people por CPF */}
           {rows.length > 0 && (
-            <div className="rounded-md border border-amber-300/60 bg-amber-50 dark:border-amber-700/40 dark:bg-amber-950/20 p-3 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+            <div className="rounded-md border border-emerald-300/60 bg-emerald-50 dark:border-emerald-700/40 dark:bg-emerald-950/20 p-3 text-xs text-emerald-900 dark:text-emerald-200 flex items-start gap-2">
               <Info className="h-4 w-4 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
                 <p>
-                  <strong>Versão atual (Etapa 2.2):</strong> envia apenas <strong>Nome</strong>, <strong>E-mail</strong> e <strong>Telefone</strong> ao backend.
+                  <strong>Importação canônica:</strong> envia todos os 20 campos ao backend.
                 </p>
                 <p>
-                  Os demais campos (CPF, modalidades, endereço, banco etc.) são validados aqui e serão integrados na Etapa 2.3 (importação canônica com vínculo a Pessoas).
+                  Pessoa unificada (people) é localizada/criada por CPF; árbitros estrangeiros (só RNE) ficam sem vínculo a `people` por enquanto. Convite de e-mail é enviado automaticamente para novos usuários.
                 </p>
               </div>
             </div>

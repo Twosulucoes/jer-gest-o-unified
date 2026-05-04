@@ -42,6 +42,14 @@ export default function RefereeProfilePage() {
 
   const saveMut = useMutation({
     mutationFn: async () => {
+      // Pré-condição alinhada ao CHECK do banco (Etapa 2.3): pessoa
+      // precisa ter CPF OU RNE para que o registro seja válido.
+      const cpfDigits = (formData.cpf ?? "").replace(/\D+/g, "");
+      const rne = (formData.rne ?? "").trim();
+      if (!cpfDigits && !rne) {
+        throw new Error("Informe CPF ou RNE antes de salvar.");
+      }
+
       const { error } = await (supabase as any)
         .from("referee_profiles")
         .upsert({
@@ -49,7 +57,7 @@ export default function RefereeProfilePage() {
           user_id: user?.id,
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id" });
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -93,12 +101,27 @@ export default function RefereeProfilePage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>CPF</Label>
-                <Input value={formData.cpf || ""} onChange={e => handleChange("cpf", e.target.value)} />
+                <Input
+                  value={formData.cpf || ""}
+                  onChange={e => handleChange("cpf", e.target.value)}
+                  placeholder="000.000.000-00"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Data Nascimento</Label>
                 <Input type="date" value={formData.birth_date || ""} onChange={e => handleChange("birth_date", e.target.value)} />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>RNE (estrangeiros)</Label>
+              <Input
+                value={formData.rne || ""}
+                onChange={e => handleChange("rne", e.target.value)}
+                placeholder="Use se não tiver CPF"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Obrigatório informar CPF ou RNE.
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label>Telefone / WhatsApp</Label>
