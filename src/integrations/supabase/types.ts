@@ -3827,6 +3827,63 @@ export type Database = {
           },
         ]
       }
+      match_evidences: {
+        Row: {
+          event_id: string
+          evidence_type: string
+          file_name: string | null
+          id: string
+          match_id: string
+          mime_type: string | null
+          notes: string | null
+          storage_bucket: string | null
+          storage_path: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          event_id: string
+          evidence_type: string
+          file_name?: string | null
+          id?: string
+          match_id: string
+          mime_type?: string | null
+          notes?: string | null
+          storage_bucket?: string | null
+          storage_path?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          event_id?: string
+          evidence_type?: string
+          file_name?: string | null
+          id?: string
+          match_id?: string
+          mime_type?: string | null
+          notes?: string | null
+          storage_bucket?: string | null
+          storage_path?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_evidences_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_evidences_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_user_assignments: {
         Row: {
           acceptance_status: string | null
