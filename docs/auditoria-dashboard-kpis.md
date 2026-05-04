@@ -119,10 +119,10 @@
 
 > Sliced em 3 PRs por tamanho/risco. Prefiro arrumar em ordem de severidade.
 
-### **Fase 1 — Corrigir KPIs quebrados (🔴)** — Pequeno, risco baixo
-- (1) Trocar query de "Árbitros designados" em `useDashboardData.ts` para `match_user_assignments` distinct user_id.
-- (2) Ajustar RPC `get_alojamento_kpis` para contar `'allocated'` em "reservados".
-- (3) Renomear card "Árbitros designados" em `useStageDashboardData.ts` para "Indisponibilidades não tratadas" (ou adicionar segundo card de fato).
+### **Fase 1 — Corrigir KPIs quebrados (🔴)** ✅
+- [x] (1) `useDashboardData.ts:447-465` — query "Árbitros designados" agora usa `match_user_assignments` filtrando por `event_id` e contando `distinct user_id`. Antes era hardcoded `0` porque a tabela `referee_event_assignments` referenciada nunca existiu.
+- [x] (2) **Migração `20260504093919_dashboard_fix_alojamento_kpis_status.sql`** — `get_alojamento_kpis` agora conta `status IN ('planned', 'allocated')` em `reserved_beds`. Antes só somava `'planned'`, mas o fluxo operacional grava `'allocated'`. Cobre os dois casos para resistir a alocações em lote pré-evento (que podem usar `'planned'`).
+- [x] (3) **Falso positivo descartado** — `useStageDashboardData.ts:128-138` retorna o array como `refereeIndisponibilities` e o consumidor `StageHomePage.tsx:77` já exibe label honesto: "*N* oficial(is) que reportaram indisponibilidade para partidas desta etapa e ainda não foram substituídos". A inspeção mais profunda mostrou que o agente confundiu o nome interno da query com o label exibido. Sem ação necessária.
 
 ### **Fase 2 — Aplicar Lei de Escopo nos PWA homes (🟡 4-10)** — Médio, risco baixo
 - ArbitragemHomePage: filtrar `match_user_assignments.event_stage_id` quando contexto.

@@ -445,14 +445,26 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         }, 0),
       },
       // 4: árbitros designados no evento ativo
-      // NOTA: a tabela `referee_event_assignments` ainda não existe no schema
-      // (gera 404 em PostgREST). Mantemos o slot do KPI retornando 0 até que
-      // a tabela seja criada e tipada em src/integrations/supabase/types.ts.
+      // Source: match_user_assignments (FK match_id → competition_matches).
+      // Conta usuários DISTINTOS designados em qualquer função operacional
+      // de partida no evento. Pré-Etapa 3 da Arbitragem usaríamos JOIN com
+      // competition_matches; depois da Etapa 3.1 a tabela ganhou event_id +
+      // event_stage_id direto, então o filtro é trivial.
       {
         queryKey: ["dash3", "referees_assigned", eventId],
         enabled: enabled && !!eventId,
         staleTime: STALE,
-        queryFn: () => safe(async () => 0, 0),
+        queryFn: () => safe(async () => {
+          const { data } = await (supabase.from("match_user_assignments") as any)
+            .select("user_id")
+            .eq("event_id", eventId);
+          if (!data) return 0;
+          const distinct = new Set<string>();
+          for (const row of data as Array<{ user_id: string | null }>) {
+            if (row.user_id) distinct.add(row.user_id);
+          }
+          return distinct.size;
+        }, 0),
       },
     ],
   });
