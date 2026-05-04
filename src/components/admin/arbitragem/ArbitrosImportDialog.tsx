@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -6,14 +6,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Upload, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Upload, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, Info } from "lucide-react";
+import {
+  parseRefereeCsv,
+  type RefereeImportRow,
+  FIELD_LABELS,
+  ALL_FIELD_KEYS,
+} from "./refereeImport";
 
-interface CsvRow {
-  nome: string;
-  email: string;
-  telefone?: string;
-  status: "pending" | "ok" | "error" | "duplicate";
-  error?: string;
+interface Props {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onSuccess: () => void;
 }
 
 async function callAdminUsers(action: string, body: Record<string, unknown> = {}) {
@@ -25,72 +29,43 @@ async function callAdminUsers(action: string, body: Record<string, unknown> = {}
   return data;
 }
 
-interface Props {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  onSuccess: () => void;
-}
-
 export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: Props) {
-  const [rows, setRows] = useState<CsvRow[]>([]);
+  const [rows, setRows] = useState<RefereeImportRow[]>([]);
+  const [unrecognized, setUnrecognized] = useState<string[]>([]);
+  const [recognizedCount, setRecognizedCount] = useState(0);
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(false);
+  const [expandedIdx, setExpandedIdx] = useState<Set<number>>(new Set());
 
-  function parseCsv(text: string): CsvRow[] {
-    // Remove BOM se existir
-    const cleanText = text.replace(/^\uFEFF/, "");
-    
-    const lines = cleanText.trim().split(/\r?\n/);
-    if (lines.length < 2) return [];
-
-    // Tenta detectar o separador (vírgula ou ponto-e-vírgula)
-    const firstLine = lines[0];
-    const separator = firstLine.includes(";") ? ";" : ",";
-    
-    const normalize = (s: string) => s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
-    
-    const header = lines[0].split(separator).map(h => h.trim().replace(/"/g, ""));
-    const nomeIdx = header.findIndex(h => {
-      const n = normalize(h);
-      return n.includes("nome") || n === "name" || n === "atleta" || n === "arbitro";
-    });
-    const emailIdx = header.findIndex(h => {
-      const n = normalize(h);
-      return n.includes("email") || n.includes("mail");
-    });
-    const telIdx = header.findIndex(h => {
-      const n = normalize(h);
-      return n.includes("tel") || n.includes("fone") || n.includes("celular") || n === "phone";
-    });
-    
-    if (emailIdx === -1) {
-      console.error("Header detectado:", header);
-      return [];
-    }
-    
-    return lines.slice(1).map(line => {
-      const cols = line.split(separator).map(c => c.trim().replace(/"/g, ""));
-      return {
-        nome: nomeIdx >= 0 ? cols[nomeIdx] || "" : "",
-        email: cols[emailIdx] || "",
-        telefone: telIdx >= 0 ? cols[telIdx] || undefined : undefined,
-        status: "pending" as const,
-      };
-    }).filter(r => r.email && r.email.includes("@"));
-  }
+  const stats = useMemo(() => {
+    const total = rows.length;
+    const withErr = rows.filter((r) => r.validationErrors.length > 0).length;
+    const ok = rows.filter((r) => r.status === "ok").length;
+    const dup = rows.filter((r) => r.status === "duplicate").length;
+    const failed = rows.filter((r) => r.status === "error").length;
+    const importable = rows.filter((r) => r.validationErrors.length === 0).length;
+    return { total, withErr, ok, dup, failed, importable };
+  }, [rows]);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => {
-      const parsed = parseCsv(ev.target?.result as string);
-      if (parsed.length === 0) {
-        toast.error("CSV inválido. Verifique se há colunas 'Nome' e 'Email'.");
+    reader.onload = (ev) => {
+      const result = parseRefereeCsv(ev.target?.result as string);
+      if (result.fatalError) {
+        toast.error(result.fatalError);
         return;
       }
-      setRows(parsed);
+      if (result.rows.length === 0) {
+        toast.error("Nenhuma linha válida encontrada no CSV.");
+        return;
+      }
+      setRows(result.rows);
+      setUnrecognized(result.unrecognizedHeaders);
+      setRecognizedCount(result.recognizedColumns.length);
       setDone(false);
+      setExpandedIdx(new Set());
     };
     reader.readAsText(file, "UTF-8");
     e.target.value = "";
@@ -100,40 +75,41 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
     if (rows.length === 0) return;
     setImporting(true);
     const updated = [...rows];
-    
-    // Process individually instead of batching to ensure reliability
+
     for (let i = 0; i < updated.length; i++) {
       const row = updated[i];
       if (row.status === "ok") continue;
-      
+      // Pula linhas com erro de validação client-side
+      if (row.validationErrors.length > 0) continue;
+
       try {
         await callAdminUsers("invite_user", {
           email: row.email,
-          full_name: row.nome || undefined,
+          full_name: row.full_name || undefined,
           roles: ["arbitragem"],
-          phone: row.telefone,
+          phone: row.phone || undefined,
         });
         updated[i] = { ...row, status: "ok" };
       } catch (err: any) {
         const msg: string = err.message || "Erro";
-        const isDup = msg.toLowerCase().includes("already") || 
-                    msg.toLowerCase().includes("existe") || 
-                    msg.toLowerCase().includes("duplicate");
-        
-        updated[i] = { 
-          ...row, 
-          status: isDup ? "duplicate" : "error", 
-          error: msg 
-        };
+        const isDup =
+          msg.toLowerCase().includes("already") ||
+          msg.toLowerCase().includes("existe") ||
+          msg.toLowerCase().includes("duplicate");
+        updated[i] = { ...row, status: isDup ? "duplicate" : "error", errorMessage: msg };
       }
-      // Update UI progressively
       setRows([...updated]);
     }
 
-    const ok = updated.filter(r => r.status === "ok").length;
-    const dups = updated.filter(r => r.status === "duplicate").length;
-    const errs = updated.filter(r => r.status === "error").length;
-    toast.success(`Importação: ${ok} convidados, ${dups} duplicados, ${errs} erros`);
+    const ok = updated.filter((r) => r.status === "ok").length;
+    const dups = updated.filter((r) => r.status === "duplicate").length;
+    const errs = updated.filter((r) => r.status === "error").length;
+    const skipped = updated.filter((r) => r.validationErrors.length > 0).length;
+
+    const parts = [`${ok} convidados`, `${dups} duplicados`, `${errs} erros`];
+    if (skipped > 0) parts.push(`${skipped} ignorados (validação)`);
+    toast.success(`Importação: ${parts.join(", ")}`);
+
     setImporting(false);
     setDone(true);
     onSuccess();
@@ -141,30 +117,44 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
 
   function handleClose() {
     setRows([]);
+    setUnrecognized([]);
+    setRecognizedCount(0);
     setDone(false);
+    setExpandedIdx(new Set());
     onOpenChange(false);
   }
 
-  const statusIcon = (status?: string) => {
+  function toggleExpand(i: number) {
+    const next = new Set(expandedIdx);
+    if (next.has(i)) next.delete(i);
+    else next.add(i);
+    setExpandedIdx(next);
+  }
+
+  const statusIcon = (status: RefereeImportRow["status"], hasErr: boolean) => {
     if (status === "ok") return <CheckCircle className="h-4 w-4 text-green-500" />;
     if (status === "error") return <XCircle className="h-4 w-4 text-destructive" />;
     if (status === "duplicate") return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+    if (hasErr) return <XCircle className="h-4 w-4 text-destructive" />;
     return <span className="inline-block h-4 w-4 rounded-full border-2 border-muted-foreground/30" />;
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Importar Árbitros via CSV</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-hidden flex-1 flex flex-col">
+          {/* Upload area */}
           <div className="rounded-lg border border-dashed border-border p-4 text-center space-y-2">
             <p className="text-sm text-muted-foreground">
-              CSV com colunas: <strong>Nome</strong>, <strong>Email</strong>, Telefone (opcional)
+              Colunas reconhecidas: <strong>Nome</strong>, <strong>Email</strong> (obrigatório), CPF, RNE, RG, Celular, Sexo, Data Nascimento, Nacionalidade, CEP, Endereço, Complemento, Bairro, Cidade, UF, Banco, Agência, Conta, Modalidades, Categorias.
             </p>
-            <p className="text-xs text-muted-foreground">Separador vírgula ou ponto-e-vírgula • Codificação UTF-8</p>
+            <p className="text-xs text-muted-foreground">
+              Separador vírgula ou ponto-e-vírgula • UTF-8 • Datas em <code>dd/mm/aaaa</code> ou ISO • Modalidades/Categorias separadas por <code>;</code> ou <code>,</code>
+            </p>
             <Button variant="outline" asChild>
               <label className="cursor-pointer">
                 <Upload className="h-4 w-4 mr-2" />
@@ -174,63 +164,193 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
             </Button>
           </div>
 
+          {/* Disclosure de envio parcial (Etapa 2.2 valida tudo, 2.3 enviará tudo ao backend) */}
           {rows.length > 0 && (
-            <>
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span><strong className="text-foreground">{rows.length}</strong> árbitros no arquivo</span>
+            <div className="rounded-md border border-amber-300/60 bg-amber-50 dark:border-amber-700/40 dark:bg-amber-950/20 p-3 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+              <Info className="h-4 w-4 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p>
+                  <strong>Versão atual (Etapa 2.2):</strong> envia apenas <strong>Nome</strong>, <strong>E-mail</strong> e <strong>Telefone</strong> ao backend.
+                </p>
+                <p>
+                  Os demais campos (CPF, modalidades, endereço, banco etc.) são validados aqui e serão integrados na Etapa 2.3 (importação canônica com vínculo a Pessoas).
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Headers não reconhecidos */}
+          {unrecognized.length > 0 && (
+            <div className="rounded-md border border-muted bg-muted/30 p-3 text-xs">
+              <p className="font-medium mb-1">{recognizedCount} coluna(s) reconhecida(s).</p>
+              <p className="text-muted-foreground">
+                Ignoradas (cabeçalho não reconhecido): {unrecognized.join(", ")}
+              </p>
+            </div>
+          )}
+
+          {/* Stats / KPIs */}
+          {rows.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span>
+                  <strong>{stats.total}</strong> linhas
+                </span>
+                {stats.importable > 0 && (
+                  <Badge variant="outline">{stats.importable} válidas</Badge>
+                )}
+                {stats.withErr > 0 && (
+                  <Badge variant="destructive">{stats.withErr} com erro</Badge>
+                )}
                 {done && (
-                  <div className="flex gap-2">
-                    <Badge variant="success">{rows.filter(r => r.status === "ok").length} convidados</Badge>
-                    {rows.filter(r => r.status === "duplicate").length > 0 && (
-                      <Badge variant="warning">{rows.filter(r => r.status === "duplicate").length} já existiam</Badge>
+                  <>
+                    <Badge variant="success">{stats.ok} convidados</Badge>
+                    {stats.dup > 0 && <Badge variant="warning">{stats.dup} duplicados</Badge>}
+                    {stats.failed > 0 && (
+                      <Badge variant="destructive">{stats.failed} falharam</Badge>
                     )}
-                    {rows.filter(r => r.status === "error").length > 0 && (
-                      <Badge variant="destructive">{rows.filter(r => r.status === "error").length} erros</Badge>
-                    )}
-                  </div>
+                  </>
                 )}
               </div>
-              <ScrollArea className="h-60 rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-8" />
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Telefone</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.map((r, i) => (
-                      <TableRow
+            </div>
+          )}
+
+          {/* Tabela de preview */}
+          {rows.length > 0 && (
+            <ScrollArea className="flex-1 rounded-md border min-h-[200px]">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableRow>
+                    <TableHead className="w-8" />
+                    <TableHead className="w-8" />
+                    <TableHead>Nome</TableHead>
+                    <TableHead>E-mail</TableHead>
+                    <TableHead>CPF / RNE</TableHead>
+                    <TableHead>Modalidades</TableHead>
+                    <TableHead>Erros</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((r, i) => {
+                    const hasErr = r.validationErrors.length > 0;
+                    const expanded = expandedIdx.has(i);
+                    return (
+                      <RowFragment
                         key={i}
-                        className={
-                          r.status === "error" ? "bg-destructive/5" :
-                          r.status === "ok" ? "bg-green-500/5" : ""
-                        }
-                      >
-                        <TableCell>{statusIcon(r.status)}</TableCell>
-                        <TableCell className="font-medium">{r.nome || "—"}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{r.email}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{r.telefone || "—"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </>
+                        index={i}
+                        row={r}
+                        hasErr={hasErr}
+                        expanded={expanded}
+                        statusIcon={statusIcon(r.status, hasErr)}
+                        onToggle={() => toggleExpand(i)}
+                      />
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </ScrollArea>
           )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>Fechar</Button>
+          <Button variant="outline" onClick={handleClose}>
+            Fechar
+          </Button>
           {rows.length > 0 && !done && (
-            <Button onClick={handleImport} disabled={importing}>
-              {importing ? "Importando..." : `Importar ${rows.length} árbitros`}
+            <Button onClick={handleImport} disabled={importing || stats.importable === 0}>
+              {importing
+                ? "Importando..."
+                : stats.importable === 0
+                ? "Nenhuma linha válida"
+                : `Importar ${stats.importable} válidas`}
             </Button>
           )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ------------------------------------------------------------
+// Linha + detalhe expandido
+// ------------------------------------------------------------
+
+interface RowFragmentProps {
+  index: number;
+  row: RefereeImportRow;
+  hasErr: boolean;
+  expanded: boolean;
+  statusIcon: React.ReactNode;
+  onToggle: () => void;
+}
+
+function RowFragment({ row, hasErr, expanded, statusIcon, onToggle }: RowFragmentProps) {
+  const cpfOrRne = row.cpf || (row.rne ? `RNE ${row.rne}` : "—");
+
+  return (
+    <>
+      <TableRow
+        className={
+          row.status === "error"
+            ? "bg-destructive/5"
+            : row.status === "ok"
+            ? "bg-green-500/5"
+            : hasErr
+            ? "bg-destructive/5"
+            : ""
+        }
+      >
+        <TableCell>
+          <button
+            type="button"
+            onClick={onToggle}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label={expanded ? "Recolher" : "Expandir"}
+          >
+            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
+        </TableCell>
+        <TableCell>{statusIcon}</TableCell>
+        <TableCell className="font-medium">{row.full_name || "—"}</TableCell>
+        <TableCell className="text-xs text-muted-foreground">{row.email}</TableCell>
+        <TableCell className="text-xs">{cpfOrRne}</TableCell>
+        <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+          {row.modalities || "—"}
+        </TableCell>
+        <TableCell className="text-xs">
+          {hasErr ? (
+            <span className="text-destructive">{row.validationErrors.join("; ")}</span>
+          ) : row.errorMessage ? (
+            <span className="text-destructive">{row.errorMessage}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
+        </TableCell>
+      </TableRow>
+      {expanded && (
+        <TableRow className="bg-muted/20">
+          <TableCell colSpan={7} className="p-0">
+            <div className="p-3 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-xs">
+              {ALL_FIELD_KEYS.map((k) => {
+                // Não exibir dados bancários explicitamente em linha; mostrar só "preenchido / vazio".
+                const isBank = k === "bank_name" || k === "bank_branch" || k === "bank_account";
+                const value = row[k];
+                const display = isBank
+                  ? value
+                    ? "(preenchido)"
+                    : "—"
+                  : value || "—";
+                return (
+                  <div key={k}>
+                    <span className="text-muted-foreground">{FIELD_LABELS[k]}:</span>{" "}
+                    <span className="font-medium">{display}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
   );
 }
