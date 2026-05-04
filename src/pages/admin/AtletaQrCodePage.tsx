@@ -36,7 +36,7 @@ export default function AtletaQrCodePage() {
       if (!activeEvent?.id || search.length < 2) return [];
       const { data, error } = await supabase
         .from("participants")
-        .select("id, participant_type, status, person:people!participants_person_id_fkey(full_name, gender), delegation:delegations!participants_delegation_id_fkey(institution:institutions!delegations_institution_id_fkey(name))")
+        .select("id, participant_type, status, person:people!person_id(full_name, gender), delegation:delegations!delegation_id(institution:institutions!delegations_institution_id_fkey(name))")
         .eq("event_id", activeEvent.id)
         .eq("participant_type", "athlete")
         .limit(20);

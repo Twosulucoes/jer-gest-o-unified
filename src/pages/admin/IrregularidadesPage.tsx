@@ -64,8 +64,8 @@ export default function IrregularidadesPage() {
           *,
           participant:participants!participation_irregularities_participant_id_fkey(
             id,
-            person:people!participants_person_id_fkey(full_name),
-            delegation:delegations!participants_delegation_id_fkey(
+            person:people!person_id(full_name),
+            delegation:delegations!delegation_id(
               id,
               institution:institutions!delegations_institution_id_fkey(name)
             )

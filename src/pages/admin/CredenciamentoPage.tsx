@@ -316,9 +316,13 @@ export default function CredenciamentoPage() {
   // Nesse caso, ignoramos o filtro de etapa (melhor mostrar todos do evento que mostrar vazio falso).
   const effectiveStageFilter = stageId && stageIdsArray ? stageIdsArray : null;
 
+  // PostgREST FK hints: usamos coluna (`!person_id`, `!delegation_id`) em vez do
+  // nome da constraint (`!participants_person_id_fkey`) porque a view
+  // `vw_person_logistics_consumption` expõe os mesmos FKs ao schema cache,
+  // tornando o hint pelo nome da constraint AMBÍGUO (PGRST201 → 400 Bad Request).
   const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id,
-    person:people!participants_person_id_fkey(full_name, cpf, photo_url, guardian_name, guardian_phone, coach_name, coach_phone),
-    delegation:delegations!participants_delegation_id_fkey(id, institution_id, institutions(name))`;
+    person:people!person_id(full_name, cpf, photo_url, guardian_name, guardian_phone, coach_name, coach_phone),
+    delegation:delegations!delegation_id(id, institution_id, institutions(name))`;
 
   const {
     data: progressiveParts,
