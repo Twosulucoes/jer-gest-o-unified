@@ -204,6 +204,9 @@ const DelegacaoProtestoDetalhePage = lazy(() => import("../pages/pwa/delegacao/D
 const PwaDebugPage = lazy(() => import("../pages/pwa/PwaDebugPage"));
 const QrDiagnosticoPage = lazy(() => import("../pages/pwa/diagnostico/QrDiagnosticoPage"));
 const RefereePwaProfilePage = lazy(() => import("../pages/pwa/arbitragem/RefereeProfilePage"));
+const ArbitragemHomePage = lazy(() => import("../pages/pwa/arbitragem/ArbitragemHomePage"));
+const ArbitragemAgendaPage = lazy(() => import("../pages/pwa/arbitragem/ArbitragemAgendaPage"));
+const ArbitragemIndisponibilidadePage = lazy(() => import("../pages/pwa/arbitragem/ArbitragemIndisponibilidadePage"));
 const VincularCredencialPage = lazy(() => import("../pages/pwa/credenciamento/VincularCredencialPage"));
 const PwaSelectionFallback = lazy(() => import("../pages/pwa/PwaSelectionFallback"));
 const PwaNotFoundHandler = lazy(() => import("../components/pwa/PwaNotFoundHandler"));
@@ -449,6 +452,9 @@ export const AppRoutes = () => (
         <Route path="delegacao/protesto/novo" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
         <Route path="delegacao/protesto/:id" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
 
+        <Route path="arbitragem" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemHomePage /></PwaRouteGuard>} />
+        <Route path="arbitragem/agenda" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemAgendaPage /></PwaRouteGuard>} />
+        <Route path="arbitragem/indisponibilidade" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemIndisponibilidadePage /></PwaRouteGuard>} />
         <Route path="arbitragem/perfil" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><RefereePwaProfilePage /></PwaRouteGuard>} />
         <Route path="credenciamento" element={<Navigate to="vincular" replace />} />
         <Route path="credenciamento/vincular" element={<VincularCredencialPage />} />
@@ -467,6 +473,7 @@ export const AppRoutes = () => (
         <Route path="transporte/*" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteHomePage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/*" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
         <Route path="delegacao/*" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoHomePage /></PwaRouteGuard>} />
+        <Route path="arbitragem/*" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemHomePage /></PwaRouteGuard>} />
         <Route path="resultados/*" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosHomePage /></PwaRouteGuard>} />
 
         {/* Catch-all for modules not yet explicitly defined or "coming soon" */}
