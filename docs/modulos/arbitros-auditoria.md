@@ -172,14 +172,14 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 
 ### Etapa 3 — Lei de Escopo no schema `arbitragem` e em `match_user_assignments`
 
-- [ ] Adicionar `event_stage_id` (NOT NULL com backfill) em:
-  - `match_user_assignments`
-  - `arbitragem.results`
-  - `arbitragem.officials`
-  - `arbitragem.match_officials`
-- [ ] Trigger para manter `event_stage_id` consistente com `competition_matches.event_stage_id` quando `match_id` for atualizado.
-- [ ] Padronizar policies de `referee_remuneration_configs` para usar `has_role()`.
-- [ ] Remover `public.match_officials` se confirmado sem leitores (grep + vista de logs).
+> **Decisões registradas (2026-05-04):**
+> 1. `competition_matches.event_stage_id` é hoje **NULLABLE**, então as denormalizações nascem nullable também. NOT NULL aspiracional para o futuro, condicionado a uma migração estrutural fora do escopo desta auditoria.
+> 2. `arbitragem.officials` **excluída** do escopo: é catálogo de evento (sem `match_id`) e não pertence ao quadrante operacional. A audit doc original incluía-a; a inspeção mostrou que não cabe.
+> 3. `public.match_officials` **mantida**: tem 4 leitores ativos no front (`MatchOfficialsCard`, `MatchSummaryDialog`, `IndividualMatchSummaryDialog`, `useLancamentoResultados`) — é officials informais por nome (sem vínculo a `auth.users` nem a `arbitragem.officials`), conceito separado, não é resíduo.
+
+- [x] **3.1** — `match_user_assignments.event_stage_id` adicionada com FK + índices + backfill via JOIN com `competition_matches`. Trigger `sync_match_user_assignments_stage` (BEFORE INSERT/UPDATE de `match_id`/`event_stage_id`) deriva o stage do match. `types.ts` atualizado.
+- [x] **3.2** — `arbitragem.match_officials.event_stage_id` e `arbitragem.results.event_stage_id` adicionadas com FK + índices + backfill + triggers `arbitragem.sync_match_officials_stage` e `arbitragem.sync_results_stage`.
+- [x] **3.3** — Policies de `referee_remuneration_configs` migradas de `EXISTS (SELECT FROM user_roles ...)` para `has_role(auth.uid(), 'X'::app_role)` (admin full, secretaria/coord_tecnica/coord_modalidade SELECT). Padrão alinhado ao resto do código.
 
 ### Etapa 4 — PWA do árbitro (UX completa)
 
@@ -208,7 +208,7 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 | 2.2 | Parser do CSV reconhece 20 colunas; pré-visualização mostra erros por linha; bancário não vaza no console. |
 | 2.3 | Edge `import-referees` cria/vincula `people` por CPF, popula `referee_profiles` completo, ativa o CHECK `cpf OR rne`, PWA valida antes do Save. Foreigners RNE-only ficam com `person_id=null` até Etapa futura adicionar `rne` em `people`. |
 | 2.4 | Tela mostra erros por linha, exporta CSV de erros (mesmo schema da planilha + Motivo), suporta re-importar só falhas. ✅ |
-| 3 | Coluna `event_stage_id` em todas as 4 tabelas, com NOT NULL e trigger; queries continuam funcionando. |
+| 3 | Coluna `event_stage_id` (nullable, com trigger) em `match_user_assignments` + `arbitragem.match_officials` + `arbitragem.results`; policies de `referee_remuneration_configs` padronizadas. ✅ |
 | 4 | PWA do árbitro tem home + agenda + indisponibilidade dedicadas, com guard. ✅ |
 
 ---
