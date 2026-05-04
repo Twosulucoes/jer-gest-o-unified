@@ -483,17 +483,18 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // ----- Cálculos -----
   const today = todayISO();
 
-  // Credenciamento — fonte de verdade: distinct participant_id em participant_credentials.status='active'
+  // Credenciamento — fonte de verdade ÚNICA: distinct participant_id em
+  // participant_credentials.status='active'. Etapa 3 da auditoria de
+  // Dashboard/KPIs descartou o fallback para `participants.credentialed_at`
+  // que escondia divergências entre as duas fontes. Se o número parecer
+  // baixo, é porque a tabela participant_credentials ainda não está
+  // populada — sintoma deve ser corrigido na origem, não mascarado aqui.
+  // `credentialed_at` ainda alimenta o gráfico temporal credDaily abaixo
+  // (granularidade diária), mas não a contagem absoluta.
   const activeCreds = C.filter((c) => c.status === "active");
-  const credActiveDistinctParticipants = new Set(
+  const credentialed = new Set(
     activeCreds.map((c) => c.participant_id).filter((x): x is string => !!x)
   ).size;
-  const credentialedFromParticipants = P.filter((p) => p.credentialed_at).length;
-  // KPI "Credenciados" = participantes únicos com credencial ativa (preferencial),
-  // com fallback para flag credentialed_at se não houver credenciais ativas registradas.
-  const credentialed = credActiveDistinctParticipants > 0
-    ? credActiveDistinctParticipants
-    : credentialedFromParticipants;
   const credActive = activeCreds.length; // total de credenciais ativas (pode incluir reemissões)
   const credToday = C.filter((c) => (c.issued_at ?? c.created_at)?.slice(0, 10) === today).length;
 
@@ -673,9 +674,12 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       pendentes_documentacao: blockedDocCount,
       por_status: Array.from(statusMap.entries()).map(([name, value]) => ({ name, value })),
       by_stage: ES.map(s => ({ id: s.id, name: s.name, count: stageCountMap.get(s.id) ?? 0 })),
+      // Retorna TODAS as modalidades ordenadas por contagem decrescente.
+      // O slice (top-N) é responsabilidade do consumidor — assim a UI pode
+      // exibir "+ N modalidades não mostradas" para evitar truncamento
+      // silencioso (Fase 3 da auditoria de Dashboard/KPIs).
       by_modality: SE.map(s => ({ id: s.id, name: seName.get(s.id) || s.name || "Modalidade", count: modalityCountMap.get(s.id) ?? 0 }))
         .sort((a, b) => b.count - a.count)
-        .slice(0, 10)
     },
 
     credenciamento: { daily: credDaily, by_delegation: byDelegation },

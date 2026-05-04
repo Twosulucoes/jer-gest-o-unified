@@ -132,18 +132,21 @@
 - [x] **RPC `get_alojamento_kpis`** — parâmetro `p_event_stage_id uuid DEFAULT NULL` adicionado. Filtra `lodging_units.event_stage_id` e `lodging_occupancies.event_stage_id` quando presente. Compatível com callers legados (default null = comportamento antigo). Migração: `20260504095058_dashboard_alojamento_kpis_stage_scope.sql`.
 - [x] PWA `AlojamentoHomePage` agora passa `stageId` em ambas as chamadas do RPC (lista de facilities + facility selecionada).
 
-### **Fase 3 — Melhorias e limpezas (🟡 11)** — Pequeno
-- Renomear `pendentesRes` em CoordenacaoHomePage e remover branches mortos.
-- Resolver source-of-truth de "credenciados" entre `participant_credentials.status` e `participants.credentialed_at`.
-- "Inscrições por modalidade": remover top-10 hardcoded ou exibir contador.
+### **Fase 3 — Melhorias e limpezas** ✅
+- [x] **CoordenacaoHomePage**: variável `pendentesRes` renomeada para `finalizadosRes` (nome reflete a query — `status='finished'`). Funções `statusLabel`/`statusTone` tiveram os branches PT-BR mortos (`em_andamento`, `finalizada`) removidos — comentário inline documenta o enum canônico (`scheduled`/`in_progress`/`finished`).
+- [x] **"Inscrições por modalidade"**: hook (`useDashboardData.ts`) agora retorna **todas** as modalidades ordenadas decrescente. Consumidor (`DashboardPage.tsx`) faz `slice(0, 10)` localmente + exibe rodapé "+ N modalidade(s) não exibida(s)" quando há mais. Mesmo padrão da seção Credenciamento.
+- [x] **"Credenciados" — source-of-truth única**: removido o fallback que mascarava divergência entre `participant_credentials.status='active'` e `participants.credentialed_at`. KPI agora vem **só** de `participant_credentials`. Comentário explica que `credentialed_at` segue alimentando o gráfico temporal `credDaily` (granularidade diária), mas não a contagem absoluta. Se o número parecer baixo, sintoma deve ser corrigido na origem, não escondido com fallback.
 
 ---
 
 ## 4. Critérios de Pronto
 
 - ✅ Diagnóstico documentado com 11 achados ranqueados.
-- [ ] Aprovação do usuário sobre a ordem (recomendação: Fase 1 → 2 → 3).
-- [ ] Cada Fase em PR draft separado.
+- ✅ Fase 1 mergeada (#57): KPIs em 🔴 desbloqueados.
+- ✅ Fase 2 mergeada (#58): Lei de Escopo nos PWA homes.
+- ✅ Fase 3 mergeada: limpezas (var renames, contador overflow, source-of-truth).
+
+**Auditoria de Dashboard/KPIs concluída.**
 
 ---
 
