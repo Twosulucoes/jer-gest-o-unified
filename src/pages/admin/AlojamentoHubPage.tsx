@@ -8,7 +8,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, Building, DoorOpen, KeyRound, BedDouble, Users, Moon, AlertTriangle, History, ClipboardList
+  Plus, Pencil, Building, DoorOpen, KeyRound, BedDouble, Users, Moon, AlertTriangle, History, ClipboardList, Accessibility
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,7 @@ export default function AlojamentoHubPage() {
 
   const totalCapacity = units.reduce((sum: number, u: any) => sum + (u.capacity || 0), 0);
   const totalOccupied = occupancyCounts.length;
+  const accessibleUnitsCount = units.filter((u: any) => u.is_accessible).length;
   const genderLabel = (g: string) => genderRestrictionLabel(g, { short: true });
 
   const createLocation = useMutation({
@@ -73,12 +74,31 @@ export default function AlojamentoHubPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  function buildUnitPayload(v: LodgingUnitFormValues) {
+    const features = v.is_accessible && v.accessible_features.length > 0
+      ? { items: v.accessible_features }
+      : null;
+    return {
+      location_id: v.location_id,
+      name: v.name,
+      capacity: v.capacity,
+      gender_restriction: v.gender_restriction,
+      notes: v.notes || null,
+      is_active: v.is_active,
+      floor: v.floor || null,
+      is_accessible: v.is_accessible,
+      accessible_features_json: features,
+      gender_zone: v.gender_zone || null,
+      min_age_policy: v.min_age_policy === "none" ? null : v.min_age_policy,
+    };
+  }
+
   const createUnit = useMutation({
     mutationFn: async (v: LodgingUnitFormValues) => {
       const { error } = await (supabase.from("lodging_units") as any).insert({
-        event_id: stageInfo!.event_id, event_stage_id: stageId,
-        location_id: v.location_id, name: v.name, capacity: v.capacity,
-        gender_restriction: v.gender_restriction, notes: v.notes || null, is_active: v.is_active,
+        event_id: stageInfo!.event_id,
+        event_stage_id: stageId,
+        ...buildUnitPayload(v),
       });
       if (error) throw error;
     },
@@ -88,10 +108,7 @@ export default function AlojamentoHubPage() {
 
   const updateUnit = useMutation({
     mutationFn: async ({ id, ...v }: LodgingUnitFormValues & { id: string }) => {
-      const { error } = await supabase.from("lodging_units").update({
-        location_id: v.location_id, name: v.name, capacity: v.capacity,
-        gender_restriction: v.gender_restriction, notes: v.notes || null, is_active: v.is_active,
-      }).eq("id", id);
+      const { error } = await (supabase.from("lodging_units") as any).update(buildUnitPayload(v)).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["lodging_units"] }); toast.success("Quarto atualizado"); setUnitDialog(false); setEditingUnit(null); },
@@ -134,7 +151,7 @@ export default function AlojamentoHubPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <Building className="h-8 w-8 text-primary shrink-0" />
@@ -168,6 +185,15 @@ export default function AlojamentoHubPage() {
             <div>
               <p className="text-2xl font-bold">{totalOccupied}<span className="text-sm text-muted-foreground font-normal">/{totalCapacity}</span></p>
               <p className="text-xs text-muted-foreground">Ocupados</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-blue-200/60 bg-blue-50/30 dark:bg-blue-950/10">
+          <CardContent className="p-4 flex items-center gap-3">
+            <Accessibility className="h-8 w-8 text-blue-600 dark:text-blue-400 shrink-0" />
+            <div>
+              <p className="text-2xl font-bold">{accessibleUnitsCount}</p>
+              <p className="text-xs text-muted-foreground">Quartos PCD</p>
             </div>
           </CardContent>
         </Card>
