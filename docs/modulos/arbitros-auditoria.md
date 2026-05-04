@@ -125,17 +125,21 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 
 #### Etapa 2.2 — Parser CSV completo (front)
 
-- [ ] Reescrever `parseCsv` em `ArbitrosImportDialog.tsx` para reconhecer **20 colunas**:
+- [x] Módulo puro `src/components/admin/arbitragem/refereeImport.ts` (lógica isolada de React, reutilizável pela edge function da 2.3).
+- [x] Reconhece **20 colunas** com aliases (case-insensitive, sem acento):
   Nome, CPF, Modalidades, Categorias, Celular, RG, Email, RNE, Sexo, Data Nascimento, CEP, Endereço, Complemento, Bairro, Cidade, UF, Banco, Agência, Conta Corrente, Nacionalidade.
-- [ ] Normalizadores:
+- [x] Normalizadores:
   - CPF/CEP/Telefone: só dígitos.
-  - CPF: validar dígitos verificadores; vazio é OK se houver RNE.
-  - Data: aceitar `dd/mm/aaaa` e `aaaa-mm-dd` → ISO.
-  - Modalidades/Categorias: split por `;` ou `,` interno.
-  - UF: `upper()`, validar 2 letras.
-- [ ] Pré-visualização com erros por linha **antes** do envio (validação client-side).
-- [ ] Garantir que `console.log` nunca despeje dado bancário.
-- [ ] Atualizar texto da UI explicando colunas aceitas e que CPF é dispensável se RNE estiver presente.
+  - `isValidCpf`: 11 dígitos + dígitos verificadores; vazio é OK se houver RNE.
+  - Data: aceita `dd/mm/aaaa`, `dd-mm-aaaa`, `aaaa-mm-dd` → ISO.
+  - Modalidades/Categorias: split por `;` ou `,` interno; canonicaliza com `"; "`.
+  - UF: `upper()`; validador acusa se ≠ 2 letras.
+  - Sexo: aceita M/F/Masculino/Feminino/Outro → canonicaliza para M/F/O.
+- [x] Validação por linha **antes** do envio: nome ausente, e-mail inválido, CPF inválido, falta CPF e RNE, UF inválida, CEP fora de 8 dígitos, data inválida.
+- [x] UI: tabela de preview com ícone de status, erros inline, expand de linha mostrando todos os 20 campos parseados; banco aparece como `(preenchido)` para não vazar valor; KPIs (válidas/com erro/convidados/duplicados/falharam).
+- [x] Disclosure no topo do dialog: "Esta versão envia apenas Nome, E-mail e Telefone; demais campos são validados aqui e integrados na 2.3".
+- [x] `safeRowSummary()` exportada para logging seguro (nunca inclui valores bancários).
+- [x] Botão "Importar X válidas" pula automaticamente linhas com `validationErrors.length > 0`.
 
 #### Etapa 2.3 — Edge function `import-referees` (backend)
 
