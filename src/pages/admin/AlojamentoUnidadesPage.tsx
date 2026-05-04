@@ -253,6 +253,7 @@ export default function AlojamentoUnidadesPage() {
         locations={locations}
         onSubmit={(v) => editing ? updateMut.mutate({ id: editing.id, ...v }) : createMut.mutate(v)}
         isPending={createMut.isPending || updateMut.isPending}
+        activeOccupancies={editing ? activeOccupancyByUnit(editing.id) : 0}
       />
     </div>
   );

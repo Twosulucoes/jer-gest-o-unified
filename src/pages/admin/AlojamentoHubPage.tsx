@@ -364,6 +364,11 @@ export default function AlojamentoHubPage() {
         stageContext={stageContext}
         onSubmit={(v) => editingLocation ? updateLocation.mutate({ id: editingLocation.id, ...v }) : createLocation.mutate(v)}
         isPending={createLocation.isPending || updateLocation.isPending}
+        dependentCounts={editingLocation ? (() => {
+          const locUnits = units.filter((u: any) => u.location_id === editingLocation.id && u.is_active);
+          const locOcc = locUnits.reduce((s: number, u: any) => s + activeOccupancyByUnit(u.id), 0);
+          return { activeUnits: locUnits.length, activeOccupancies: locOcc };
+        })() : undefined}
       />
       <LodgingUnitFormDialog
         open={unitDialog}
@@ -372,6 +377,7 @@ export default function AlojamentoHubPage() {
         locations={locations}
         onSubmit={(v) => editingUnit?.id ? updateUnit.mutate({ id: editingUnit.id, ...v }) : createUnit.mutate(v)}
         isPending={createUnit.isPending || updateUnit.isPending}
+        activeOccupancies={editingUnit?.id ? activeOccupancyByUnit(editingUnit.id) : 0}
       />
     </div>
   );

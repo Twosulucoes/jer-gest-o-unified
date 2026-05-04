@@ -179,11 +179,20 @@ Inspeção dos 4+ candidatos da reauditoria mostrou que apenas 2 deles tinham du
   - PWA `AlojamentoOcupacaoPage` — usa RPCs server-side (`get_alojamento_ocupacao`, `get_alojamento_kpis`), sem agregação client.
   - PWA `AlojamentoPessoaPage` — não consulta `lodging_occupancies` diretamente. (Achado da reauditoria foi imprecisão minha — corrigido aqui.)
 
-### **Etapa 7 — UX miúda** 🟡
-**Pequeno, risco baixo**
-- Confirmação `AlertDialog` antes de deletar unidade/local.
-- Documentar `unit_id` vs `checked_in_unit_id` (`COMMENT ON COLUMN`) e padronizar uso em queries.
-- Cor por categoria de incidente.
+### **Etapa 7 — UX miúda** ✅
+**Warnings de desativação + tooltip de unidade na DivergenciasPage**
+
+> Reescopada após inspeção: não existe DELETE real em locations/units/occupancies — todo CRUD usa soft-delete via `is_active`. O risco operacional equivalente é desativar entidade com dependências ativas. A solução é warning visual no form, não confirm dialog de delete.
+
+- [x] `LodgingUnitFormDialog` ganhou prop `activeOccupancies?: number`. Quando `isEditing && !is_active && activeOccupancies > 0`, mostra alerta destrutivo: "Atenção: este quarto tem N hospedagens ativas. Desativar não fará checkout automático nem cancelará alocações…"
+- [x] `LodgingLocationFormDialog` ganhou prop `dependentCounts?: { activeUnits, activeOccupancies }`. Mesmo tipo de warning, agregando quartos ativos + ocupações correntes do local.
+- [x] Consumidores passam os counts:
+  - `AlojamentoUnidadesPage` → `activeOccupancies` via `activeOccupancyByUnit(editing.id)`.
+  - `AlojamentoHubPage` (dialogs unit + location) → mesmo padrão; location agrega varrendo seus units.
+  - `AlojamentoLocaisPage` → `dependentCounts` via `useLodgingUnits` + `useLodgingOccupancy`.
+- [x] `AlojamentoDivergenciasPage`: header da coluna "Unidade Real" renomeado para **"Unidade alocada"** (acurado) com `<Tooltip>` explicando que é o quarto planejado pela coordenação (`unit_id`) e que o check-in real pode estar em outro quarto se houve remanejamento. Corrige uma imprecisão semântica.
+- [x] Cor por categoria de incidente já feita na Etapa 4 — referido aqui só por completude.
+- [x] `COMMENT ON COLUMN` para `unit_id` vs `checked_in_unit_id` já feito na Etapa 3.
 
 ### **Etapa 8 — Drop `participants.biological_sex`** 🟢
 **Médio, risco médio (precisa confirmar callers)**
