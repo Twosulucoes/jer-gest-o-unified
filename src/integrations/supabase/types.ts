@@ -3793,6 +3793,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           event_id: string
+          event_stage_id: string | null
           id: string
           indisponibility_reason: string | null
           match_id: string
@@ -3806,6 +3807,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           event_id: string
+          event_stage_id?: string | null
           id?: string
           indisponibility_reason?: string | null
           match_id: string
@@ -3819,6 +3821,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           event_id?: string
+          event_stage_id?: string | null
           id?: string
           indisponibility_reason?: string | null
           match_id?: string
@@ -3833,6 +3836,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {
