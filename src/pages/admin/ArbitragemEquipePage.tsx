@@ -423,13 +423,13 @@ export default function ArbitragemEquipePage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild>
-            <Link to="remuneracao">
+            <Link to="/admin/arbitragem/config">
               <Settings className="mr-1 h-4 w-4" />
               Remuneração
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link to="apuracao">
+            <Link to="/admin/arbitragem/relatorios">
               <Calendar className="mr-1 h-4 w-4" />
               Apuração
             </Link>

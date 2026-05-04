@@ -90,11 +90,13 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 
 ### Etapa 1 — Resgate da página rica e correção de navegação
 
-- [ ] Decidir destino de `ArbitragemEquipePage`:
-  - **Opção A (recomendada):** rotear em `/admin/arbitragem/escala` (sub-rota); manter `/admin/arbitragem` como Base (`ArbitrosTab`); adicionar links cruzados.
-  - **Opção B:** substituir a página atual de `/admin/arbitragem` pela versão rica e mover a aba "Árbitros" para dentro dela (já existe lá, na verdade).
-- [ ] Corrigir links internos da página rica para `/admin/arbitragem/config` e `/admin/arbitragem/relatorios`.
-- [ ] Atualizar `systemMap.ts` e `docs/modulos/arbitros-auditoria.md` com a rota final.
+> **Decisão (2026-05-04):** escolhida **Opção B** ao examinar `ArbitragemEquipePage` — ela já contém `<ArbitrosTab />` como uma das 4 abas internas (default `arbitros`). Substituir a rota direto evita URL fragmentada e elimina o órfão sem perder funcionalidade.
+
+- [x] `/admin/arbitragem` agora renderiza `ArbitragemEquipePage` (rich page com 4 abas: Árbitros, Por oficial, Por modalidade, Escala em lote + KPIs + exportação CSV/PDF).
+- [x] Links internos da página rica corrigidos: `to="remuneracao"` → `to="/admin/arbitragem/config"`; `to="apuracao"` → `to="/admin/arbitragem/relatorios"`.
+- [x] `ArbitrosPage.tsx` deletada (conteúdo é a aba `arbitros` da página rica — sem perda).
+- [x] `systemMap.ts` consolidado: entradas `arbitragem-base` e `arbitragem-equipe (ÓRFÃ)` viraram uma única entrada `arbitragem-equipe` apontando para a rota real, sem gaps.
+- [x] ACL preservada: `admin`, `secretaria`, `coordenacao_tecnica` (mesma do `/admin/arbitragem` antigo). Expansão para `coordenador_modalidade` deixada para futuro, porque a aba "Árbitros" tem invite/import sem gating de role no componente.
 
 ### Etapa 2 — Importação canônica + migração formal de `referee_profiles`
 
@@ -200,7 +202,7 @@ A rota `/admin/arbitragem` ativa hoje é a página enxuta `ArbitrosPage`, e não
 | Etapa | Pronto quando |
 | :--- | :--- |
 | 0 | PR mergeada com guard adicionado, doc novo, systemMap honesto. |
-| 1 | Página rica acessível por URL própria, links internos funcionam, nenhuma rota órfã. |
+| 1 | Página rica acessível em `/admin/arbitragem`, links internos funcionam, nenhuma rota órfã. ✅ |
 | 2.1 | `supabase/migrations/` tem o `CREATE TABLE referee_profiles` + policies + FK `person_id`; CI passa; PWA continua funcional. CHECK `cpf OR rne` fica para 2.3. |
 | 2.2 | Parser do CSV reconhece 20 colunas; pré-visualização mostra erros por linha; bancário não vaza no console. |
 | 2.3 | Edge `import-referees` cria/vincula `people` por CPF, popula `referee_profiles` completo, ativa o CHECK `cpf OR rne`, PWA valida antes do Save. Foreigners RNE-only ficam com `person_id=null` até Etapa futura adicionar `rne` em `people`. |
