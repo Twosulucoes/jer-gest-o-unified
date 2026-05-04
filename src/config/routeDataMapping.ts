@@ -42,54 +42,62 @@ export const ROUTE_DATA_MAPPING: RouteDataRequirement[] = [
     route: "/admin/participantes",
     label: "Lista de Participantes",
     tables: [
-      { name: "participants", columns: ["id", "name", "badge_name", "document", "birth_date", "gender", "status", "delegation_id", "event_id"], joins: ["delegations", "people"] },
+      // participants é tabela de PARTICIPAÇÃO (event-scoped). Dados cadastrais
+      // (nome, CPF, nascimento, gênero, etc.) ficam em `people`, JOIN via person_id.
+      { name: "participants", columns: ["id", "person_id", "status", "delegation_id", "event_id", "participant_type", "enrollment_class"], joins: ["delegations", "people"] },
       { name: "delegations", columns: ["id", "institution_id"] },
-      { name: "people", columns: ["id", "full_name"] }
+      { name: "people", columns: ["id", "full_name", "cpf", "birth_date", "gender"] }
     ]
   },
   {
     route: "/admin/credenciamento",
     label: "Credenciamento",
     tables: [
-      { name: "participants", columns: ["id", "name", "badge_name", "status", "delegation_id", "event_id"] },
+      { name: "participants", columns: ["id", "person_id", "status", "delegation_id", "event_id", "credentialed_at"] },
       { name: "participant_credentials", columns: ["id", "participant_id", "status", "issued_at"] },
-      { name: "delegations", columns: ["id", "institution_id"] }
+      { name: "delegations", columns: ["id", "institution_id"] },
+      { name: "people", columns: ["id", "full_name", "cpf"] }
     ]
   },
   {
     route: "/admin/transporte/viagens",
     label: "Viagens de Transporte",
     tables: [
-      { name: "transport_trips", columns: ["id", "route_id", "vehicle_id", "driver_name", "status", "scheduled_start", "event_id"], joins: ["transport_routes", "transport_vehicles"] },
-      { name: "transport_routes", columns: ["id", "name"] },
-      { name: "transport_vehicles", columns: ["id", "plate", "model"] }
+      // Schema real: transport_trips.scheduled_at (não scheduled_start);
+      // assigned_driver_id (não vehicle_id — vehicles vêm por join indireto).
+      { name: "transport_trips", columns: ["id", "route_id", "assigned_driver_id", "driver_name", "status", "trip_status", "scheduled_at", "event_id", "event_stage_id"], joins: ["transport_routes"] },
+      { name: "transport_routes", columns: ["id", "name", "origin", "destination"] }
     ]
   },
   {
     route: "/admin/alimentacao/consumo",
     label: "Consumo de Alimentação",
     tables: [
-      { name: "meal_consumptions", columns: ["id", "participant_id", "meal_window_id", "consumed_at"], joins: ["participants", "meal_windows"] },
-      { name: "participants", columns: ["id", "name"] },
-      { name: "meal_windows", columns: ["id", "label"] }
+      { name: "meal_consumptions", columns: ["id", "participant_id", "meal_window_id", "consumed_at"], joins: ["participants", "meal_windows", "people"] },
+      { name: "participants", columns: ["id", "person_id", "delegation_id", "event_id"] },
+      { name: "people", columns: ["id", "full_name", "cpf"] },
+      { name: "meal_windows", columns: ["id", "label", "service_date", "meal_type_id"] }
     ]
   },
   {
     route: "/admin/alojamento/ocupacao",
     label: "Ocupação de Alojamento",
     tables: [
-      { name: "lodging_occupancies", columns: ["id", "participant_id", "unit_id", "status", "check_in_at"], joins: ["participants", "lodging_units"] },
-      { name: "participants", columns: ["id", "name"] },
-      { name: "lodging_units", columns: ["id", "name", "capacity"] }
+      // Schema real: lodging_occupancies.checked_in_at (não check_in_at).
+      { name: "lodging_occupancies", columns: ["id", "participant_id", "unit_id", "status", "checked_in_at", "checked_out_at", "event_id", "event_stage_id"], joins: ["participants", "lodging_units", "people"] },
+      { name: "participants", columns: ["id", "person_id", "delegation_id"] },
+      { name: "people", columns: ["id", "full_name", "cpf", "gender"] },
+      { name: "lodging_units", columns: ["id", "name", "capacity", "gender_restriction", "is_accessible"] }
     ]
   },
   {
     route: "/admin/competicao/partidas-agenda",
     label: "Agenda de Partidas",
     tables: [
-      { name: "competition_matches", columns: ["id", "sport_event_id", "match_date", "start_time", "status", "location_id", "event_id"], joins: ["sport_events", "locations"] },
+      // Schema real: competition_matches.venue_id (não location_id), tabela `venues`.
+      { name: "competition_matches", columns: ["id", "sport_event_id", "match_date", "start_time", "status", "venue_id", "event_id", "event_stage_id"], joins: ["sport_events", "venues"] },
       { name: "sport_events", columns: ["id", "name"] },
-      { name: "locations", columns: ["id", "name"] }
+      { name: "venues", columns: ["id", "name"] }
     ]
   }
 ];
