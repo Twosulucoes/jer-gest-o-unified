@@ -81,22 +81,6 @@ export interface DashboardData {
 export function useDashboardData(eventId?: string | null, stageId?: string | null) {
   const enabled = true; // Sempre habilitado para permitir visão global
 
-  // Initial dummy state when no eventId is provided to avoid crashes
-  const dummyData: DashboardData = {
-    resumo: {
-      participants_total: 0, athletes_total: 0, credentialed: 0, credentials_active: 0, credentials_today: 0,
-      matches_total: 0, matches_done: 0, matches_published: 0,
-      meals_total: 0, meals_today: 0,
-      lodging_capacity: 0, lodging_occupied: 0,
-      transport_trips: 0, transport_passengers: 0, transport_vehicles: 0,
-      referees_total: 0, referees_assigned: 0,
-    },
-    credenciamento: { daily: [], by_delegation: [] },
-    inscricoes: { total_provas: 0, total_etapas: 0, pendentes_documentacao: 0, por_status: [], by_stage: [], by_modality: [] },
-    alimentacao: { daily: [], meal_types: [], by_delegation: [] },
-    competicao: { by_sport: [], today: [] },
-  };
-
   const queries = useQueries({
     queries: [
       // 0: participants (id, credentialed_at, delegation_id)
@@ -532,7 +516,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // Alimentação
   const mtName = new Map(MT.map((m) => [m.id, m.name] as const));
   const winById = new Map(MW.map((w) => [w.id, w] as const));
-  const mealsToday = consumptions.filter((c) => c.consumed_at.slice(0, 10) === today).length;
+  const mealsToday = consumptions.filter((c) => (c.consumed_at ?? "").slice(0, 10) === today).length;
 
   // daily empilhado por meal_type
   const dailyMap = new Map<string, Record<string, number>>();
@@ -686,23 +670,6 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
     alimentacao: { daily: mealsDaily, meal_types: mealTypesList, by_delegation: mealsByDelegation },
     competicao: { by_sport: bySport, today: todayMatches },
   };
-
-  if (!isLoadingAll && eventId) {
-    // eslint-disable-next-line no-console
-    console.log("[KPI dashboard]", {
-      eventId,
-      participants_total: P_total,
-      credentialed_kpi: credentialed,
-      cred_active_distinct_participants: credentialed,
-      cred_active_rows: credActive,
-      credentials_today: credToday,
-      matches_total: MA_total,
-      meals_total: consumptionsTotal,
-      lodging_occupied: LO,
-      transport_trips: TR_total,
-      transport_passengers: passengers,
-    });
-  }
 
 
   const refetchAll = async () => {
