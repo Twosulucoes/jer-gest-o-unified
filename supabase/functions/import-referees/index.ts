@@ -98,6 +98,20 @@ function pickNonNull<T extends Record<string, unknown>>(obj: T): Partial<T> {
   return out;
 }
 
+/**
+ * O parser do front canonicaliza Sexo para "M"/"F"/"O", mas o
+ * CHECK constraint people_gender_check exige IN ('male','female').
+ * Esta função traduz para os valores aceitos. "O" (Outro) e
+ * desconhecidos viram null para o INSERT usar o default da coluna.
+ */
+function mapGenderToPeopleSchema(g: string | null | undefined): string | null {
+  if (!g) return null;
+  const v = g.trim().toUpperCase();
+  if (v === "M" || v === "MALE" || v.startsWith("MASC")) return "male";
+  if (v === "F" || v === "FEMALE" || v.startsWith("FEM")) return "female";
+  return null;
+}
+
 async function findUserByEmail(adminClient: any, email: string): Promise<string | null> {
   // listUsers é paginado. Para a base atual (algumas centenas de árbitros)
   // 1 página de 1000 cobre. Para escala maior, evoluir com índice ou cache.
@@ -163,7 +177,7 @@ async function processRow(
         email: row.email,
         phone: row.phone,
         rg: row.rg,
-        gender: row.gender,
+        gender: mapGenderToPeopleSchema(row.gender),
       });
       if (Object.keys(updates).length > 0) {
         const { error: updErr } = await adminClient
@@ -185,7 +199,9 @@ async function processRow(
       if (row.email) insertPayload.email = row.email;
       if (row.phone) insertPayload.phone = row.phone;
       if (row.rg) insertPayload.rg = row.rg;
-      if (row.gender) insertPayload.gender = row.gender;
+      const mappedGender = mapGenderToPeopleSchema(row.gender);
+      if (mappedGender) insertPayload.gender = mappedGender;
+      // Sem gender mapeável → omite (people.gender NOT NULL DEFAULT 'male').
 
       const { data: newPerson, error: insErr } = await adminClient
         .from("people")

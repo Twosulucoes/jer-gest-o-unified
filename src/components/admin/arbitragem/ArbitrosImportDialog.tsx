@@ -242,45 +242,49 @@ export default function ArbitrosImportDialog({ open, onOpenChange, onSuccess }: 
         </DialogHeader>
 
         <div className="space-y-4 overflow-hidden flex-1 flex flex-col">
-          {/* Upload area */}
+          {/* Upload area — instruções extensas só no estado vazio. */}
           <div className="rounded-lg border border-dashed border-border p-4 text-center space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Colunas reconhecidas: <strong>Nome</strong>, <strong>Email</strong> (obrigatório), CPF, RNE, RG, Celular, Sexo, Data Nascimento, Nacionalidade, CEP, Endereço, Complemento, Bairro, Cidade, UF, Banco, Agência, Conta, Modalidades, Categorias.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Separador vírgula ou ponto-e-vírgula • UTF-8 • Datas em <code>dd/mm/aaaa</code> ou ISO • Modalidades/Categorias separadas por <code>;</code> ou <code>,</code>
-            </p>
+            {rows.length === 0 ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Colunas: <strong>Nome</strong>, <strong>Email</strong> (obrigatório), CPF, RNE, RG, Celular, Sexo, Data Nascimento, Nacionalidade, endereço, banco, modalidades, categorias.
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Separador <code>,</code> ou <code>;</code> · UTF-8 · datas <code>dd/mm/aaaa</code>
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {rows.length === 0 ? "" : `${recognizedCount} coluna(s) reconhecida(s)`} · Trocar arquivo:
+              </p>
+            )}
             <Button variant="outline" asChild>
               <label className="cursor-pointer">
                 <Upload className="h-4 w-4 mr-2" />
-                Selecionar arquivo .csv
+                {rows.length === 0 ? "Selecionar arquivo .csv" : "Trocar CSV"}
                 <input type="file" accept=".csv,.txt" onChange={handleFile} className="hidden" />
               </label>
             </Button>
           </div>
 
-          {/* Importação canônica (Etapa 2.3): popula referee_profiles completo + vincula people por CPF */}
-          {rows.length > 0 && (
-            <div className="rounded-md border border-emerald-300/60 bg-emerald-50 dark:border-emerald-700/40 dark:bg-emerald-950/20 p-3 text-xs text-emerald-900 dark:text-emerald-200 flex items-start gap-2">
-              <Info className="h-4 w-4 shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <p>
-                  <strong>Importação canônica:</strong> envia todos os 20 campos ao backend.
-                </p>
-                <p>
-                  Pessoa unificada (people) é localizada/criada por CPF; árbitros estrangeiros (só RNE) ficam sem vínculo a `people` por enquanto. Convite de e-mail é enviado automaticamente para novos usuários.
-                </p>
-              </div>
-            </div>
+          {/* Headers não reconhecidos (apenas quando relevante) */}
+          {unrecognized.length > 0 && !done && (
+            <p className="text-[11px] text-muted-foreground">
+              {recognizedCount} coluna(s) reconhecida(s) · ignoradas: {unrecognized.join(", ")}
+            </p>
           )}
 
-          {/* Headers não reconhecidos */}
-          {unrecognized.length > 0 && (
-            <div className="rounded-md border border-muted bg-muted/30 p-3 text-xs">
-              <p className="font-medium mb-1">{recognizedCount} coluna(s) reconhecida(s).</p>
-              <p className="text-muted-foreground">
-                Ignoradas (cabeçalho não reconhecido): {unrecognized.join(", ")}
-              </p>
+          {/* Resumo do processamento (somente após Importar). Os erros por linha
+              já aparecem inline na tabela e o CSV de erros pode ser baixado. */}
+          {done && stats.failed > 0 && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive flex items-start gap-2">
+              <Info className="h-4 w-4 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-bold">
+                  {stats.failed} linha(s) rejeitadas pelo backend.
+                </p>
+                <p>Veja o motivo na coluna "Erros" da tabela ou clique em "Baixar CSV de erros" para corrigir e re-importar.</p>
+              </div>
             </div>
           )}
 
