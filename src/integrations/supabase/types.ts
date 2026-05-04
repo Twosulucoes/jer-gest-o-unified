@@ -6584,6 +6584,7 @@ export type Database = {
           nationality: string | null
           neighborhood: string | null
           notes: string | null
+          person_id: string | null
           phone: string | null
           pis_pasep: string | null
           registration_date: string | null
@@ -6615,6 +6616,7 @@ export type Database = {
           nationality?: string | null
           neighborhood?: string | null
           notes?: string | null
+          person_id?: string | null
           phone?: string | null
           pis_pasep?: string | null
           registration_date?: string | null
@@ -6646,6 +6648,7 @@ export type Database = {
           nationality?: string | null
           neighborhood?: string | null
           notes?: string | null
+          person_id?: string | null
           phone?: string | null
           pis_pasep?: string | null
           registration_date?: string | null
@@ -6659,7 +6662,15 @@ export type Database = {
           user_id?: string | null
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "referee_profiles_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referee_remuneration_configs: {
         Row: {
