@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import LodgingUnitFormDialog, { type LodgingUnitFormValues } from "@/components/admin/LodgingUnitFormDialog";
+import { genderRestrictionLabel } from "@/lib/alojamento/labels";
 
 export default function AlojamentoUnidadesPage() {
   const qc = useQueryClient();
@@ -31,7 +32,7 @@ export default function AlojamentoUnidadesPage() {
   });
 
   const locationsMap = new Map(locations.map((l: any) => [l.id, l]));
-  const genderLabel = (g: string) => g === "male" ? "Masculino" : g === "female" ? "Feminino" : "Misto";
+  const genderLabel = (g: string) => genderRestrictionLabel(g);
 
   const createMut = useMutation({
     mutationFn: async (v: LodgingUnitFormValues) => {

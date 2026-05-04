@@ -6,15 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bus, UtensilsCrossed, BedDouble, Clock, MapPin, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { lodgingStatusLabel, toneToBadgeVariant } from "@/lib/alojamento/labels";
 
 interface Props {
   participantId: string;
   eventId: string;
 }
-
-const LODGING_STATUS: Record<string, string> = {
-  allocated: "Alocado", checked_in: "Check-in", checked_out: "Check-out",
-};
 
 const PASSENGER_STATUS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   boarded: { label: "Embarcado", variant: "default" },
@@ -207,7 +204,10 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
                   <div key={l.id} className="text-sm space-y-0.5">
                     <div className="flex justify-between">
                       <span className="text-foreground">{loc?.name} — {unit?.name ?? "?"}</span>
-                      <Badge variant="outline" className="text-xs">{LODGING_STATUS[l.status] ?? l.status}</Badge>
+                      {(() => {
+                        const s = lodgingStatusLabel(l.status);
+                        return <Badge variant={toneToBadgeVariant(s.tone)} className="text-xs">{s.label}</Badge>;
+                      })()}
                     </div>
                     {l.checked_in_at && (
                       <p className="text-xs text-muted-foreground">
