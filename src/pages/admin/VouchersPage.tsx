@@ -84,6 +84,7 @@ import {
 interface VoucherRow {
   id: string;
   event_id: string;
+  event_stage_id: string;
   participant_id: string | null;
   eventual_person_id: string | null;
   qr_code_value: string;
@@ -312,6 +313,16 @@ export default function VouchersPage() {
       const now = new Date().toISOString();
       const reason = `[Reemissão] ${revokeReason.trim()}`;
 
+      // Invariante de voucher: 1 evento × 1 etapa × 1 dia × 1 janela.
+      // Reemissão NÃO faz sentido para janela já encerrada — quem perdeu o
+      // QR depois que a janela fechou não pode mais consumir; tem que ser
+      // emitido um voucher do PRÓXIMO lote/janela. O trigger
+      // derive_voucher_validity já recusaria com 22023, mas barramos
+      // antes para mensagem clara.
+      if (oldV.valid_until && new Date(oldV.valid_until) < new Date()) {
+        throw new Error("Janela do voucher original já fechou — emita um voucher novo na janela atual em vez de reemitir.");
+      }
+
       // 1. Invalida o antigo
       const { error: updErr } = await supabase
         .from("service_vouchers")
@@ -323,11 +334,14 @@ export default function VouchersPage() {
         .eq("id", oldV.id);
       if (updErr) throw updErr;
 
-      // 2. Cria o novo
+      // 2. Cria o novo. event_stage_id é NOT NULL desde a Fase F1 — copia do antigo.
+      // valid_from é deixado null deliberadamente: o trigger
+      // derive_voucher_validity recalcula da janela-alvo.
       const { data: newV, error: insErr } = await (supabase
         .from("service_vouchers") as any)
         .insert({
           event_id: oldV.event_id,
+          event_stage_id: oldV.event_stage_id,
           participant_id: oldV.participant_id,
           eventual_person_id: oldV.eventual_person_id,
           qr_code_value: genQrValue(),
@@ -343,7 +357,6 @@ export default function VouchersPage() {
           target_facility_id: oldV.target_facility_id,
           target_date: oldV.target_date,
           max_uses: oldV.max_uses,
-          valid_until: oldV.valid_until,
           replaces_voucher_id: oldV.id,
           reissued_at: now,
           notes: `Reemissão de ${oldV.qr_code_value}. Motivo: ${revokeReason.trim()}`

@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { generateCredentialCode, generateSignedQrCodeValue } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, User, IdCard, Bus, Trophy, CheckCircle, Tag, ArrowLeft, Eye, RefreshCw, Activity, QrCode, Edit } from "lucide-react";
+import { Loader2, User, IdCard, Bus, Trophy, CheckCircle, Tag, ArrowLeft, Eye, RefreshCw, Activity, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,7 +22,6 @@ import ParticipantHistoricoTab from "@/components/admin/participant/ParticipantH
 import ParticipantCredencialTab from "@/components/admin/participant/ParticipantCredencialTab";
 import ParticipantLogisticaTab from "@/components/admin/participant/ParticipantLogisticaTab";
 import ParticipantRastreamentoTab from "@/components/admin/participant/ParticipantRastreamentoTab";
-// import ParticipantVoucherTab from "@/components/admin/participant/ParticipantVoucherTab";
 import { SingleLabelDialog } from "@/components/admin/CredentialLabelPrint";
 import CredentialPreviewDialog from "@/components/admin/CredentialPreviewDialog";
 import { BackButton } from "@/components/navigation/BackButton";
@@ -382,10 +381,6 @@ export default function ParticipanteDetalhePage() {
           <TabsTrigger value="rastreamento" className="gap-1.5">
             <Activity className="h-3.5 w-3.5" />Rastreamento
           </TabsTrigger>
-          {/* Aba de vouchers desativada pela regra JER-VOU-01 */}
-          {/* <TabsTrigger value="vouchers" className="gap-1.5">
-            <QrCode className="h-3.5 w-3.5" />Vouchers
-          </TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="resumo">
@@ -410,10 +405,6 @@ export default function ParticipanteDetalhePage() {
         <TabsContent value="rastreamento">
           <ParticipantRastreamentoTab participantId={participant.id} eventId={participant.event_id} />
         </TabsContent>
-        {/* Fluxo de voucher nominal desativado pela regra JER-VOU-01 */}
-        {/* <TabsContent value="vouchers">
-          <ParticipantVoucherTab participantId={participant.id} eventId={participant.event_id} />
-        </TabsContent> */}
       </Tabs>
 
       {/* Reissue confirmation dialog */}
