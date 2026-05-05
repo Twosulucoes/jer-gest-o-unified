@@ -143,7 +143,7 @@ export default function CoordenacaoHomePage() {
 
       <PwaActionGrid
         actions={[
-          { label: "Consulta", icon: Search, to: "/pwa/coordenacao-tecnica/consulta" },
+          { label: "Consulta", description: "Escanear QR para ver participante", icon: Search, to: "/pwa/coordenacao-tecnica/consulta", featured: true },
           { label: "Agenda", icon: Calendar, to: "/pwa/coordenacao-tecnica/agenda" },
           { label: "Partidas", icon: ClipboardList, to: "/pwa/coordenacao-tecnica/partidas" },
           { label: "Resultados", icon: Medal, to: "/pwa/coordenacao-tecnica/resultados" },

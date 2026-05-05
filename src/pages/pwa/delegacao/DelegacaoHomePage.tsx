@@ -172,7 +172,7 @@ export default function DelegacaoHomePage() {
         {delegationId && (
           <PwaActionGrid
             actions={[
-              { label: "Participantes", icon: ClipboardList, to: "/pwa/delegacao/participantes" },
+              { label: "Participantes", description: "Atletas e staff da sua escola", icon: ClipboardList, to: "/pwa/delegacao/participantes", featured: true },
               { label: "Agenda", icon: Calendar, to: "/pwa/delegacao/agenda" },
               { label: "Logística", icon: Bus, to: "/pwa/delegacao/logistica" },
               { label: "Alimentação", icon: UtensilsCrossed, to: "/pwa/delegacao/alimentacao" },
