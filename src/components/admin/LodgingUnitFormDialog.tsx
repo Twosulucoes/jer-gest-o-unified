@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,6 +43,7 @@ export const MIN_AGE_POLICY_OPTIONS = [
 
 const schema = z.object({
   location_id: z.string().min(1, "Selecione um local"),
+  wing_id: z.string().optional().or(z.literal("")),
   name: z.string().min(1, "Nome obrigatório"),
   capacity: z.coerce.number().int().min(1, "Mínimo 1"),
   gender_restriction: z.string(),
@@ -63,6 +64,9 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   unit?: any | null;
   locations: any[];
+  /** Alas cadastradas (`lodging_wings`). Quando o usuário escolher uma ala
+   * cujo `gender_default` está definido, o form pré-seleciona aquele sexo. */
+  wings?: any[];
   onSubmit: (values: LodgingUnitFormValues) => void;
   isPending: boolean;
   /** Ocupações correntes (allocated + checked_in) deste quarto. Quando >0 e o
@@ -73,6 +77,7 @@ interface Props {
 
 const DEFAULTS: LodgingUnitFormValues = {
   location_id: "",
+  wing_id: "",
   name: "",
   capacity: 1,
   gender_restriction: "mixed",
@@ -96,7 +101,7 @@ function readFeatures(raw: unknown): string[] {
   return [];
 }
 
-export default function LodgingUnitFormDialog({ open, onOpenChange, unit, locations, onSubmit, isPending, activeOccupancies = 0 }: Props) {
+export default function LodgingUnitFormDialog({ open, onOpenChange, unit, locations, wings = [], onSubmit, isPending, activeOccupancies = 0 }: Props) {
   const isEditing = !!unit;
 
   const form = useForm<LodgingUnitFormValues>({
@@ -108,6 +113,7 @@ export default function LodgingUnitFormDialog({ open, onOpenChange, unit, locati
     if (unit) {
       form.reset({
         location_id: unit.location_id,
+        wing_id: unit.wing_id ?? "",
         name: unit.name,
         capacity: unit.capacity,
         gender_restriction: unit.gender_restriction,
@@ -123,6 +129,23 @@ export default function LodgingUnitFormDialog({ open, onOpenChange, unit, locati
       form.reset(DEFAULTS);
     }
   }, [unit, form]);
+
+  const watchedLocationId = form.watch("location_id");
+  const watchedWingId = form.watch("wing_id");
+  const wingsForLocation = useMemo(
+    () => wings.filter((w) => w.location_id === watchedLocationId),
+    [wings, watchedLocationId],
+  );
+
+  // Quando troca para uma ala com gender_default definido, herda o sexo no
+  // gender_restriction (sem sobrescrever escolha explícita do usuário ao editar).
+  useEffect(() => {
+    if (!watchedWingId) return;
+    const wing = wings.find((w) => w.id === watchedWingId);
+    if (wing?.gender_default && form.getValues("gender_restriction") === "mixed") {
+      form.setValue("gender_restriction", wing.gender_default);
+    }
+  }, [watchedWingId, wings, form]);
 
   const isAccessible = form.watch("is_accessible");
   const formIsActive = form.watch("is_active");
@@ -140,7 +163,7 @@ export default function LodgingUnitFormDialog({ open, onOpenChange, unit, locati
             <FormField control={form.control} name="location_id" render={({ field }) => (
               <FormItem>
                 <FormLabel>Local</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={(v) => { field.onChange(v); form.setValue("wing_id", ""); }} value={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                   <SelectContent>
                     {locations.filter((l) => l.is_active).map((l) => (
@@ -151,6 +174,26 @@ export default function LodgingUnitFormDialog({ open, onOpenChange, unit, locati
                 <FormMessage />
               </FormItem>
             )} />
+
+            {wingsForLocation.length > 0 && (
+              <FormField control={form.control} name="wing_id" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ala</FormLabel>
+                  <Select onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)} value={field.value || "__none__"}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="__none__">Sem ala</SelectItem>
+                      {wingsForLocation.map((w) => (
+                        <SelectItem key={w.id} value={w.id}>
+                          {w.name}{w.gender_default ? ` (${w.gender_default === 'male' ? 'M' : w.gender_default === 'female' ? 'F' : 'misto'})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription className="text-xs">Opcional. Se a ala tiver sexo padrão, será herdado abaixo.</FormDescription>
+                </FormItem>
+              )} />
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="name" render={({ field }) => (
