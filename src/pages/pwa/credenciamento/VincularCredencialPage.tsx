@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential, extractCandidates, type ResolvedCredential } from "@/lib/resolveQrCredential";
+import { isVoucherQr } from "@/lib/voucherScan";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
@@ -68,9 +69,20 @@ export default function VincularCredencialPage() {
     setScannerOpen(false);
     if (!rawValue.trim()) return;
 
+    // Defesa contra falso-positivo: voucher escaneado por engano não pode
+    // ser vinculado como credencial externa. Sem essa guarda, o code do
+    // voucher entrava em external_credentials, quebrando os 2 sistemas.
+    if (isVoucherQr(rawValue)) {
+      toast.error("Este QR é um voucher, não uma credencial.", {
+        description: "Vouchers são consumidos no módulo de Alimentação, Transporte ou Alojamento — não podem ser vinculados aqui.",
+        duration: 6000,
+      });
+      return;
+    }
+
     const { values } = extractCandidates(rawValue);
-    const code = values[0]; 
-    
+    const code = values[0];
+
     if (!code) {
       toast.error("Código inválido");
       return;
@@ -101,6 +113,12 @@ export default function VincularCredencialPage() {
   const handleParticipantScan = async (rawValue: string) => {
     setParticipantScannerOpen(false);
     if (!rawValue.trim() || !activeEventId) return;
+
+    // Mesma defesa do handleScan — voucher não identifica pessoa.
+    if (isVoucherQr(rawValue)) {
+      toast.error("Este QR é um voucher, não identifica participante.");
+      return;
+    }
 
     try {
       setManualSearching(true);
