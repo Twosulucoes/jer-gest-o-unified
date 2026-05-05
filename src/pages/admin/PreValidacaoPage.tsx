@@ -417,10 +417,9 @@ export default function PreValidacaoPage() {
   const championMut = useMutation({
     mutationFn: async ({ row, mark }: { row: SportEventRow; mark: string }) => {
       // 1. Create a phase for this sport_event
-      const { data: phase, error: phaseErr } = await supabase
+      const { data: phase, error: phaseErr } = await (supabase as any)
         .from("competition_phases")
         .insert({
-          event_id: eventId!,
           sport_event_id: row.id,
           name: "Classificação Direta",
           phase_type: "direct",
@@ -432,10 +431,9 @@ export default function PreValidacaoPage() {
       if (phaseErr) throw phaseErr;
 
       // 2. Create a match
-      const { data: match, error: matchErr } = await supabase
+      const { data: match, error: matchErr } = await (supabase as any)
         .from("competition_matches")
         .insert({
-          event_id: eventId!,
           phase_id: phase.id,
           sport_event_id: row.id,
           status: "completed",
@@ -515,10 +513,9 @@ export default function PreValidacaoPage() {
   const championCollectiveMut = useMutation({
     mutationFn: async ({ row, notes }: { row: SportEventRow; notes: string }) => {
       // 1. Create phase
-      const { data: phase, error: phaseErr } = await supabase
+      const { data: phase, error: phaseErr } = await (supabase as any)
         .from("competition_phases")
         .insert({
-          event_id: eventId!,
           sport_event_id: row.id,
           name: "Classificação Direta",
           phase_type: "direct",
@@ -530,10 +527,9 @@ export default function PreValidacaoPage() {
       if (phaseErr) throw phaseErr;
 
       // 2. Create match
-      const { data: match, error: matchErr } = await supabase
+      const { data: match, error: matchErr } = await (supabase as any)
         .from("competition_matches")
         .insert({
-          event_id: eventId!,
           phase_id: phase.id,
           sport_event_id: row.id,
           status: "completed",

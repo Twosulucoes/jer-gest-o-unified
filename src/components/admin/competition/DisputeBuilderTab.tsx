@@ -443,10 +443,9 @@ export default function DisputeBuilderTab({ eventId, sportEventId, onChanged }: 
 
         // Create phase if needed
         if (!phaseId) {
-          const { data: phase, error } = await supabase
+          const { data: phase, error } = await (supabase as any)
             .from("competition_phases")
             .insert({
-              event_id: eventId,
               sport_event_id: sportEventId,
               name: "Fase de Grupos",
               phase_type: "group",

@@ -271,10 +271,9 @@ export default function IndividualHeatBuilderTab({ eventId, sportEventId, onChan
       finalPhaseId = existingPhases?.find((p) => p.phase_type === "final")?.id ?? null;
 
       if (!heatsPhaseId) {
-        const { data: phase, error } = await supabase
+        const { data: phase, error } = await (supabase as any)
           .from("competition_phases")
           .insert({
-            event_id: eventId,
             sport_event_id: sportEventId,
             name: "Baterias",
             phase_type: "heats",
@@ -293,10 +292,9 @@ export default function IndividualHeatBuilderTab({ eventId, sportEventId, onChan
 
         let phaseId = heat.isFinal ? finalPhaseId : heatsPhaseId;
         if (heat.isFinal && !phaseId) {
-          const { data: fp, error } = await supabase
+          const { data: fp, error } = await (supabase as any)
             .from("competition_phases")
             .insert({
-              event_id: eventId,
               sport_event_id: sportEventId,
               name: "Final",
               phase_type: "final",
