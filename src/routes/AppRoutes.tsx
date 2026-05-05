@@ -138,6 +138,7 @@ const AdminAlojamentoRelatoriosPage = lazy(() => import("../pages/admin/Alojamen
 const AdminAlojamentoDivergenciasPage = lazy(() => import("../pages/admin/AlojamentoDivergenciasPage"));
 const AdminAlojamentoAlocacaoLotePage = lazy(() => import("../pages/admin/alojamento/AlocacaoLotePage"));
 const AdminAlojamentoColchoesPage = lazy(() => import("../pages/admin/alojamento/AlojamentoColchoesPage"));
+const AdminAlojamentoEscolasPage = lazy(() => import("../pages/admin/alojamento/AlojamentoEscolasPage"));
 
 // Competicao Subpages (Admin)
 const CompeticaoPainelPage = lazy(() => import("../pages/admin/CompeticaoPainelPage"));
@@ -298,6 +299,7 @@ export const AppRoutes = () => (
             <Route path="alojamento/divergencias" element={<AdminAlojamentoDivergenciasPage />} />
             <Route path="alojamento/alocacao-lote" element={<AdminAlojamentoAlocacaoLotePage />} />
             <Route path="alojamento/colchoes" element={<AdminAlojamentoColchoesPage />} />
+            <Route path="alojamento/escolas" element={<AdminAlojamentoEscolasPage />} />
             <Route path="alimentacao" element={<AlimentacaoHubPage />} />
             <Route path="alimentacao/tipos" element={<AdminAlimentacaoTiposPage />} />
             <Route path="alimentacao/janelas" element={<AdminAlimentacaoJanelasPage />} />
