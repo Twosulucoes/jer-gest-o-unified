@@ -22,6 +22,83 @@ async function logAudit(adminClient: any, action: string, recordId: string, crea
   });
 }
 
+// Envia email via Resend API (https://resend.com — free: 3k emails/mês, sem limite/hora).
+// Configurar: supabase secrets set RESEND_API_KEY=re_xxx
+// Opcional: RESEND_FROM_EMAIL=noreply@seudominio.com  RESEND_FROM_NAME="JER Gestão"
+// Sem domínio verificado → use o padrão onboarding@resend.dev (funciona para testes).
+async function sendViaResend(
+  to: string,
+  apiKey: string,
+  link: string,
+  recipientName?: string | null,
+): Promise<boolean> {
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
+  const fromName = Deno.env.get("RESEND_FROM_NAME") || "JER Gestão";
+  const firstName = recipientName?.split(" ")[0] || to.split("@")[0];
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)">
+<tr><td style="background:#6366f1;padding:24px 32px">
+  <h1 style="margin:0;color:#fff;font-size:20px;font-weight:700">JER Gestão</h1>
+  <p style="margin:4px 0 0;color:#c7d2fe;font-size:13px">Sistema de Gestão de Eventos Esportivos</p>
+</td></tr>
+<tr><td style="padding:32px">
+  <h2 style="margin:0 0 16px;color:#1e1b4b;font-size:18px">Você foi convidado!</h2>
+  <p style="margin:0 0 12px;color:#374151;line-height:1.6">Olá, ${firstName}!</p>
+  <p style="margin:0 0 24px;color:#374151;line-height:1.6">
+    Você recebeu um convite para acessar o <strong>JER Gestão</strong>.
+    Clique no botão abaixo para definir sua senha e começar a usar o sistema:
+  </p>
+  <div style="text-align:center;margin:24px 0">
+    <a href="${link}" style="background:#6366f1;color:#fff;padding:14px 32px;border-radius:6px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block">
+      Definir Senha e Acessar
+    </a>
+  </div>
+  <p style="margin:24px 0 0;color:#6b7280;font-size:12px;line-height:1.5">
+    Este link é de uso único e expira em <strong>24 horas</strong>.<br>
+    Se você não esperava este convite, pode ignorar este email com segurança.
+  </p>
+</td></tr>
+<tr><td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb">
+  <p style="margin:0;color:#9ca3af;font-size:11px;text-align:center">© 2026 JER Gestão</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: `${fromName} <${fromEmail}>`,
+        to: [to],
+        subject: "Convite de Acesso — JER Gestão",
+        html,
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Resend error:", res.status, text);
+      return false;
+    }
+    const json = await res.json();
+    console.log("Email sent via Resend:", json.id);
+    return true;
+  } catch (e) {
+    console.error("Resend fetch exception:", e);
+    return false;
+  }
+}
+
 const VALID_ROLES = ["super_admin", "admin", "secretaria", "transporte", "alimentacao", "alojamento", "coordenacao_tecnica", "coordenador_modalidade", "delegacao", "mesario", "arbitragem", "cde"];
 
 Deno.serve(async (req) => {
@@ -229,35 +306,51 @@ Deno.serve(async (req) => {
           userId = r.id;
           manualLink = r.link;
         } else {
-          const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
-            redirectTo,
-          });
+          const resendKey = Deno.env.get("RESEND_API_KEY");
 
-          if (inviteErr) {
-            const msg = inviteErr.message.toLowerCase();
-            if (msg.includes("already") || msg.includes("existe") || msg.includes("registered")) {
-              // Usuário já em auth — recupera id e segue para upsert de profile/roles
-              const { data: { users: existingUsers }, error: listErr } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
-              if (listErr || !existingUsers) {
-                return jsonResponse({ error: `Usuário já existe mas não pôde ser recuperado: ${inviteErr.message}` }, 500);
+          if (resendKey) {
+            // Caminho principal (Resend configurado): cria usuário + gera link + envia via Resend.
+            // Sem dependência de SMTP do Supabase; sem rate limit por hora.
+            const r = await createWithoutEmail();
+            if ("error" in r) return jsonResponse({ error: r.error }, 500);
+            userId = r.id;
+            if (r.link) {
+              const sent = await sendViaResend(email, resendKey, r.link, full_name);
+              if (!sent) {
+                // Resend falhou (chave inválida, domínio não verificado, etc.) → link manual
+                manualLink = r.link;
               }
-              const existingUser = existingUsers.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
-              if (!existingUser) {
-                return jsonResponse({ error: `Usuário já existe no Auth mas não foi encontrado na listagem.` }, 404);
-              }
-              userId = existingUser.id;
-            } else {
-              // Fallback agressivo: qualquer outra falha (rate limit, SMTP fora, email
-              // inválido pro provider, network blip) → cria sem email e devolve link manual.
-              // Mantém demos funcionando 100% mesmo com SMTP indisponível.
-              console.warn("inviteUserByEmail failed, falling back to createUser:", inviteErr.message);
-              const r = await createWithoutEmail();
-              if ("error" in r) return jsonResponse({ error: `${inviteErr.message} | ${r.error}` }, 500);
-              userId = r.id;
-              manualLink = r.link;
             }
           } else {
-            userId = inviteData.user.id;
+            // Fallback: SMTP nativo Supabase (rate-limitado no free tier — ~4 emails/hora).
+            const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
+              redirectTo,
+            });
+
+            if (inviteErr) {
+              const msg = inviteErr.message.toLowerCase();
+              if (msg.includes("already") || msg.includes("existe") || msg.includes("registered")) {
+                // Usuário já em auth — recupera id e segue para upsert de profile/roles
+                const { data: { users: existingUsers }, error: listErr } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+                if (listErr || !existingUsers) {
+                  return jsonResponse({ error: `Usuário já existe mas não pôde ser recuperado: ${inviteErr.message}` }, 500);
+                }
+                const existingUser = existingUsers.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+                if (!existingUser) {
+                  return jsonResponse({ error: `Usuário já existe no Auth mas não foi encontrado na listagem.` }, 404);
+                }
+                userId = existingUser.id;
+              } else {
+                // Rate limit ou SMTP fora → cria sem email e devolve link manual
+                console.warn("inviteUserByEmail failed, falling back to createUser:", inviteErr.message);
+                const r = await createWithoutEmail();
+                if ("error" in r) return jsonResponse({ error: `${inviteErr.message} | ${r.error}` }, 500);
+                userId = r.id;
+                manualLink = r.link;
+              }
+            } else {
+              userId = inviteData.user.id;
+            }
           }
         }
 
@@ -472,11 +565,23 @@ Deno.serve(async (req) => {
         if (!wantsEmail) {
           manualLink = await genResendLink();
         } else {
-          const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(targetUser.email!, { redirectTo });
-          if (inviteErr) {
-            console.warn("resend_invite SMTP failed, generating manual link:", inviteErr.message);
-            manualLink = await genResendLink();
-            if (!manualLink) return jsonResponse({ error: inviteErr.message }, 500);
+          const resendKey = Deno.env.get("RESEND_API_KEY");
+
+          if (resendKey) {
+            // Resend configurado: gera link + envia por Resend
+            const link = await genResendLink();
+            if (link) {
+              const sent = await sendViaResend(targetUser.email!, resendKey, link);
+              if (!sent) manualLink = link;
+            }
+          } else {
+            // Fallback: SMTP nativo Supabase
+            const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(targetUser.email!, { redirectTo });
+            if (inviteErr) {
+              console.warn("resend_invite SMTP failed, generating manual link:", inviteErr.message);
+              manualLink = await genResendLink();
+              if (!manualLink) return jsonResponse({ error: inviteErr.message }, 500);
+            }
           }
         }
 
