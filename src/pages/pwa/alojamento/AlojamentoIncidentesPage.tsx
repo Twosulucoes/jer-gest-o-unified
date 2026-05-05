@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSelectedFacility } from "@/lib/alojamentoRpc";
 import { AlertTriangle, Plus } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { severityLabel, categoryLabel, incidentStatusLabel, toneToBadgeVariant } from "@/lib/alojamento/labels";
 
 interface Incident {
   id: string;
@@ -19,16 +20,11 @@ interface Incident {
   created_at: string;
 }
 
-const severityColors: Record<string, string> = {
+// Cor de fundo das badges por severity (mantida para alto contraste no PWA — a lib oferece tones, mas para incidentes o cliente pediu badges visualmente fortes).
+const severityBgClass: Record<string, string> = {
   baixa: "bg-blue-500/20 text-blue-700",
   media: "bg-amber-500/20 text-amber-700",
-  alta: "bg-red-500/20 text-red-700",
-};
-
-const statusLabels: Record<string, string> = {
-  aberta: "Aberta",
-  em_atendimento: "Em atendimento",
-  resolvida: "Resolvida",
+  alta:  "bg-red-500/20 text-red-700",
 };
 
 export default function AlojamentoIncidentesPage() {
@@ -89,19 +85,36 @@ export default function AlojamentoIncidentesPage() {
               <Card key={inc.id} className="overflow-hidden border-border/60 hover:shadow-md transition-shadow">
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <Badge variant="outline" className={`${severityColors[inc.severity]} border-0 text-[10px] font-bold uppercase`}>
-                      {inc.severity}
-                    </Badge>
-                    <Badge variant="secondary" className="text-[10px] font-bold uppercase">{inc.category}</Badge>
+                    {(() => {
+                      const sev = severityLabel(inc.severity);
+                      return (
+                        <Badge variant="outline" className={`${severityBgClass[inc.severity] ?? ""} border-0 text-[10px] font-bold uppercase`}>
+                          {sev.label}
+                        </Badge>
+                      );
+                    })()}
+                    {(() => {
+                      const cat = categoryLabel(inc.category);
+                      return (
+                        <Badge variant={toneToBadgeVariant(cat.tone)} className="text-[10px] font-bold uppercase">
+                          {cat.label}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                   <p className="text-sm font-medium text-foreground/90 line-clamp-2">{inc.description}</p>
                   <div className="flex items-center justify-between pt-1 border-t border-border/40">
                     <p className="text-[10px] text-muted-foreground font-medium">
                       {new Date(inc.created_at).toLocaleString("pt-BR", { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </p>
-                    <Badge variant="outline" className="text-[10px] border-border/60">
-                      {statusLabels[inc.status]}
-                    </Badge>
+                    {(() => {
+                      const st = incidentStatusLabel(inc.status);
+                      return (
+                        <Badge variant={toneToBadgeVariant(st.tone)} className="text-[10px]">
+                          {st.label}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                 </CardContent>
               </Card>

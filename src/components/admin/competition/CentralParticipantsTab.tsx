@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "@/hooks/use-toast";
 import {
   Select,
   SelectContent,
@@ -38,6 +40,7 @@ interface Props {
 interface EnrolledIndividual {
   id: string;
   status: string;
+  advances_directly: boolean;
   participant_id: string;
   participants: {
     id: string;
@@ -55,6 +58,7 @@ interface EnrolledTeam {
   id: string;
   name: string;
   status: string;
+  advances_directly: boolean;
   delegation_id: string;
   delegations: {
     institution_id: string;
@@ -97,7 +101,7 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
     queryFn: async () => {
       const { data, error } = await supabase
         .from("participant_sport_events")
-        .select("id, status, participant_id, participants(id, person_id, people(full_name), delegation_id, delegations(institution_id, institutions(name)))")
+        .select("id, status, advances_directly, participant_id, participants(id, person_id, people(full_name), delegation_id, delegations(institution_id, institutions(name)))")
         .eq("sport_event_id", sportEventId)
         .order("created_at");
       if (error) throw error;
@@ -118,7 +122,7 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, status, delegation_id, delegations(institution_id, institutions(name))")
+        .select("id, name, status, advances_directly, delegation_id, delegations(institution_id, institutions(name))")
         .eq("event_id", eventId)
         .eq("sport_event_id", sportEventId)
         .order("name");
@@ -148,6 +152,35 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
     if (!stageTeamIds) return [];
     return teamsRaw.filter((t) => stageTeamIds.has(t.id));
   }, [teamsRaw, isCollective, isStageScoped, stageTeamIds]);
+
+  // Toggle "classifica direto" — decisão manual do organizador.
+  const queryClient = useQueryClient();
+  const toggleAdvances = useMutation({
+    mutationFn: async (args: { table: "participant_sport_events" | "teams"; id: string; value: boolean }) => {
+      // .select() força PostgREST a retornar as linhas afetadas. Se a role
+      // tem SELECT mas não UPDATE (ex: coord_modalidade), o Supabase devolve
+      // error=null com data=[] em vez de erro — sem isso, o toast não dispara
+      // e o valor "volta sozinho" no refetch, confundindo o usuário.
+      const { data, error } = await supabase
+        .from(args.table)
+        .update({ advances_directly: args.value })
+        .eq("id", args.id)
+        .select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Sem permissão para alterar este inscrito (RLS).");
+      }
+    },
+    onSuccess: (_data, vars) => {
+      if (vars.table === "participant_sport_events") {
+        queryClient.invalidateQueries({ queryKey: ["central-enrolled", sportEventId] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["central-teams", eventId, sportEventId] });
+      }
+    },
+    onError: (e: any) =>
+      toast({ title: "Não foi possível salvar", description: e.message, variant: "destructive" }),
+  });
 
   // Eligibility pending (inaptos)
   const { data: pending = [], isLoading: loadingPending } = useQuery({
@@ -279,6 +312,10 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
   }
 
   const totalCount = isCollective ? teams.length : enrolled.length;
+  const directCount = isCollective
+    ? (teams as EnrolledTeam[]).filter((t) => t.advances_directly).length
+    : (enrolled as EnrolledIndividual[]).filter((e) => e.advances_directly).length;
+  const classificatoriaCount = totalCount - directCount;
 
   if (totalCount === 0) {
     return (
@@ -318,6 +355,29 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
         </Select>
       </div>
 
+      {/* Resumo informativo — sem gating, decisão manual do organizador. */}
+      <div className="rounded-md border border-muted bg-muted/30 px-4 py-2.5 text-xs flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span><strong className="text-foreground">{totalCount}</strong> inscrito{totalCount === 1 ? "" : "s"}</span>
+        <span className="text-muted-foreground">·</span>
+        <span className="text-emerald-700 dark:text-emerald-400">
+          <strong>{directCount}</strong> classifica{directCount === 1 ? "" : "m"} direto
+        </span>
+        <span className="text-muted-foreground">·</span>
+        <span>
+          <strong>{classificatoriaCount}</strong> {classificatoriaCount === 1 ? "disputa" : "disputam"} classificatória
+        </span>
+        {classificatoriaCount === 1 && (
+          <span className="ml-auto text-amber-700 dark:text-amber-400">
+            ⚠ apenas 1 na classificatória — sem confronto possível
+          </span>
+        )}
+        {totalCount === 1 && directCount === 0 && (
+          <span className="ml-auto text-amber-700 dark:text-amber-400">
+            ⚠ inscrito único — considere marcar "Direto"
+          </span>
+        )}
+      </div>
+
       {/* Tabs aptos / inaptos */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between">
@@ -351,15 +411,30 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
             <div className="grid gap-2">
               {isCollective
                 ? (filteredAptos as EnrolledTeam[]).map((t) => (
-                    <Card key={t.id} className="cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow">
+                    <Card key={t.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="py-3 px-4 flex items-center gap-3">
-                        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab active:cursor-grabbing" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{t.name}</p>
                           <p className="text-xs text-muted-foreground truncate">
                             {t.delegations?.institutions?.name ?? "—"}
                           </p>
                         </div>
+                        <label className="flex items-center gap-1.5 shrink-0 text-[11px] text-muted-foreground select-none cursor-pointer">
+                          <Switch
+                            checked={!!t.advances_directly}
+                            onCheckedChange={(value) =>
+                              toggleAdvances.mutate({ table: "teams", id: t.id, value })
+                            }
+                            disabled={toggleAdvances.isPending}
+                          />
+                          Direto
+                        </label>
+                        {t.advances_directly && (
+                          <Badge variant="outline" className="text-[10px] border-emerald-500 text-emerald-700">
+                            Classificado direto
+                          </Badge>
+                        )}
                         <Badge variant="outline" className="text-[10px] border-green-500 text-green-700">
                           {t.status}
                         </Badge>
@@ -367,9 +442,9 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
                     </Card>
                   ))
                 : (filteredAptos as EnrolledIndividual[]).map((e) => (
-                    <Card key={e.id} className="cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow">
+                    <Card key={e.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="py-3 px-4 flex items-center gap-3">
-                        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab active:cursor-grabbing" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">
                             {(e.participants as any)?.people?.full_name ?? "—"}
@@ -378,6 +453,21 @@ export default function CentralParticipantsTab({ eventId, sportEventId, isCollec
                             {(e.participants as any)?.delegations?.institutions?.name ?? "—"}
                           </p>
                         </div>
+                        <label className="flex items-center gap-1.5 shrink-0 text-[11px] text-muted-foreground select-none cursor-pointer">
+                          <Switch
+                            checked={!!e.advances_directly}
+                            onCheckedChange={(value) =>
+                              toggleAdvances.mutate({ table: "participant_sport_events", id: e.id, value })
+                            }
+                            disabled={toggleAdvances.isPending}
+                          />
+                          Direto
+                        </label>
+                        {e.advances_directly && (
+                          <Badge variant="outline" className="text-[10px] border-emerald-500 text-emerald-700">
+                            Classificado direto
+                          </Badge>
+                        )}
                         <Badge variant="outline" className="text-[10px] border-green-500 text-green-700">
                           {e.status}
                         </Badge>

@@ -56,6 +56,32 @@ export function useLodgingUnits(stageId: string | null | undefined) {
   });
 }
 
+/**
+ * Alas (wings) cadastradas por alojamento. Usadas como agrupador opcional
+ * dentro de `lodging_locations`; quando preenchidas, ditam o gender_default
+ * herdado pelos quartos da ala (lodging_units.wing_id).
+ */
+export function useLodgingWings(stageId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["lodging_wings", stageId],
+    queryFn: async () => {
+      if (!stageId) return [];
+      const { data, error } = await (supabase.from("lodging_wings" as any) as any)
+        .select("id, location_id, name, gender_default, sort_order")
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    enabled: !!stageId,
+  });
+}
+
+/**
+ * @deprecated Use `useLodgingOccupancy(stageId).countsByUnit` em vez disso (Etapa 6
+ * da auditoria de alojamento). Esta função retorna apenas linhas com status
+ * `allocated`/`checked_in` sem agregação. O hook novo já devolve o Map<unit_id,
+ * counts> pronto + totais agregados.
+ */
 export function useLodgingOccupancyCounts(stageId: string | null | undefined) {
   return useQuery({
     queryKey: ["lodging_occupancy_counts", stageId],

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
 import type { StageContext } from "@/components/admin/VehicleFormDialog";
+import { AlertTriangle } from "lucide-react";
 
 const schema = z.object({
   event_id: z.string().min(1, "Selecione um evento"),
@@ -35,9 +36,13 @@ interface Props {
   stageContext?: StageContext;
   onSubmit: (values: LodgingLocationFormValues) => void;
   isPending: boolean;
+  /** Dependentes deste local: quartos ativos e ocupações correntes. Quando >0
+   * e o usuário desmarca "Ativo", o form mostra um aviso de risco operacional.
+   * Etapa 7 da auditoria de Alojamento. */
+  dependentCounts?: { activeUnits: number; activeOccupancies: number };
 }
 
-export default function LodgingLocationFormDialog({ open, onOpenChange, location, events, stageContext, onSubmit, isPending }: Props) {
+export default function LodgingLocationFormDialog({ open, onOpenChange, location, events, stageContext, onSubmit, isPending, dependentCounts }: Props) {
   const isEditing = !!location;
 
   const form = useForm<LodgingLocationFormValues>({
@@ -91,7 +96,7 @@ export default function LodgingLocationFormDialog({ open, onOpenChange, location
             )}
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome</FormLabel>
+                <FormLabel required>Nome</FormLabel>
                 <FormControl><Input placeholder="Escola Municipal XYZ" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
@@ -110,15 +115,37 @@ export default function LodgingLocationFormDialog({ open, onOpenChange, location
                 <FormMessage />
               </FormItem>
             )} />
-            <FormField control={form.control} name="is_active" render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel>Ativo</FormLabel>
-                  <FormDescription>Local disponível para operação</FormDescription>
-                </div>
-              </FormItem>
-            )} />
+            <FormField control={form.control} name="is_active" render={({ field }) => {
+              const showWarn = isEditing && !field.value && !!dependentCounts &&
+                (dependentCounts.activeUnits > 0 || dependentCounts.activeOccupancies > 0);
+              return (
+                <>
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Ativo</FormLabel>
+                      <FormDescription>Local disponível para operação</FormDescription>
+                    </div>
+                  </FormItem>
+                  {showWarn && (
+                    <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-2 text-xs text-destructive">
+                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <p className="font-bold">
+                          Atenção: este local tem {dependentCounts!.activeUnits} quarto{dependentCounts!.activeUnits === 1 ? "" : "s"} ativo{dependentCounts!.activeUnits === 1 ? "" : "s"}
+                          {dependentCounts!.activeOccupancies > 0
+                            ? ` e ${dependentCounts!.activeOccupancies} hospedagem${dependentCounts!.activeOccupancies === 1 ? "" : "s"} corrente${dependentCounts!.activeOccupancies === 1 ? "" : "s"}`
+                            : ""}.
+                        </p>
+                        <p className="opacity-90">
+                          Desativar não cancela alocações nem força check-out. Faça check-out / desative os quartos primeiro para evitar inconsistências.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            }} />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={isPending}>{isPending ? "Salvando..." : isEditing ? "Salvar" : "Criar"}</Button>

@@ -826,6 +826,7 @@ export type Database = {
           disputes_unpublished_reason: string | null
           disputes_updated_at: string | null
           event_id: string
+          event_stage_id: string
           id: string
           name: string
           phase_type: string
@@ -845,6 +846,7 @@ export type Database = {
           disputes_unpublished_reason?: string | null
           disputes_updated_at?: string | null
           event_id: string
+          event_stage_id: string
           id?: string
           name: string
           phase_type?: string
@@ -864,6 +866,7 @@ export type Database = {
           disputes_unpublished_reason?: string | null
           disputes_updated_at?: string | null
           event_id?: string
+          event_stage_id?: string
           id?: string
           name?: string
           phase_type?: string
@@ -1203,17 +1206,6 @@ export type Database = {
           id: string
           institution_id: string
           notes: string | null
-          school_city: string | null
-          school_contact_email: string | null
-          school_contact_name: string | null
-          school_contact_phone: string | null
-          school_district: string | null
-          school_is_active: boolean
-          school_name: string
-          school_network_type: string
-          school_official_name: string | null
-          school_slug: string
-          school_state: string | null
           seed_batch_id: string | null
           seed_tag: string | null
           status: string
@@ -1228,17 +1220,6 @@ export type Database = {
           id?: string
           institution_id: string
           notes?: string | null
-          school_city?: string | null
-          school_contact_email?: string | null
-          school_contact_name?: string | null
-          school_contact_phone?: string | null
-          school_district?: string | null
-          school_is_active?: boolean
-          school_name: string
-          school_network_type: string
-          school_official_name?: string | null
-          school_slug: string
-          school_state?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string
@@ -1253,17 +1234,6 @@ export type Database = {
           id?: string
           institution_id?: string
           notes?: string | null
-          school_city?: string | null
-          school_contact_email?: string | null
-          school_contact_name?: string | null
-          school_contact_phone?: string | null
-          school_district?: string | null
-          school_is_active?: boolean
-          school_name?: string
-          school_network_type?: string
-          school_official_name?: string | null
-          school_slug?: string
-          school_state?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string
@@ -2652,6 +2622,8 @@ export type Database = {
           device_id: string | null
           error_code: string | null
           error_message: string | null
+          event_id: string | null
+          event_stage_id: string | null
           id: string
           location_id: string | null
           metadata: Json | null
@@ -2666,6 +2638,8 @@ export type Database = {
           device_id?: string | null
           error_code?: string | null
           error_message?: string | null
+          event_id?: string | null
+          event_stage_id?: string | null
           id?: string
           location_id?: string | null
           metadata?: Json | null
@@ -2680,6 +2654,8 @@ export type Database = {
           device_id?: string | null
           error_code?: string | null
           error_message?: string | null
+          event_id?: string | null
+          event_stage_id?: string | null
           id?: string
           location_id?: string | null
           metadata?: Json | null
@@ -2689,6 +2665,20 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lodging_audit_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lodging_audit_logs_location_id_fkey"
             columns: ["location_id"]
@@ -2964,6 +2954,7 @@ export type Database = {
           created_at: string | null
           device_id: string | null
           event_id: string | null
+          event_stage_id: string | null
           id: string
           participant_id: string
           recorded_at: string | null
@@ -2974,6 +2965,7 @@ export type Database = {
           created_at?: string | null
           device_id?: string | null
           event_id?: string | null
+          event_stage_id?: string | null
           id?: string
           participant_id: string
           recorded_at?: string | null
@@ -2984,6 +2976,7 @@ export type Database = {
           created_at?: string | null
           device_id?: string | null
           event_id?: string | null
+          event_stage_id?: string | null
           id?: string
           participant_id?: string
           recorded_at?: string | null
@@ -2996,6 +2989,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_presence_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {
@@ -3027,6 +3027,7 @@ export type Database = {
           delegation_id: string
           ended_at: string | null
           event_id: string
+          event_stage_id: string | null
           id: number
           location_id: string | null
           notes: string | null
@@ -3040,6 +3041,7 @@ export type Database = {
           delegation_id: string
           ended_at?: string | null
           event_id: string
+          event_stage_id?: string | null
           id?: number
           location_id?: string | null
           notes?: string | null
@@ -3053,6 +3055,7 @@ export type Database = {
           delegation_id?: string
           ended_at?: string | null
           event_id?: string
+          event_stage_id?: string | null
           id?: number
           location_id?: string | null
           notes?: string | null
@@ -3074,6 +3077,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_supervisions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {
@@ -3817,12 +3827,70 @@ export type Database = {
           },
         ]
       }
+      match_evidences: {
+        Row: {
+          event_id: string
+          evidence_type: string
+          file_name: string | null
+          id: string
+          match_id: string
+          mime_type: string | null
+          notes: string | null
+          storage_bucket: string | null
+          storage_path: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          event_id: string
+          evidence_type: string
+          file_name?: string | null
+          id?: string
+          match_id: string
+          mime_type?: string | null
+          notes?: string | null
+          storage_bucket?: string | null
+          storage_path?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          event_id?: string
+          evidence_type?: string
+          file_name?: string | null
+          id?: string
+          match_id?: string
+          mime_type?: string | null
+          notes?: string | null
+          storage_bucket?: string | null
+          storage_path?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_evidences_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_evidences_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_user_assignments: {
         Row: {
           acceptance_status: string | null
           created_at: string
           created_by: string | null
           event_id: string
+          event_stage_id: string | null
           id: string
           indisponibility_reason: string | null
           match_id: string
@@ -3836,6 +3904,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           event_id: string
+          event_stage_id?: string | null
           id?: string
           indisponibility_reason?: string | null
           match_id: string
@@ -3849,6 +3918,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           event_id?: string
+          event_stage_id?: string | null
           id?: string
           indisponibility_reason?: string | null
           match_id?: string
@@ -3863,6 +3933,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
           {
@@ -4048,6 +4125,7 @@ export type Database = {
           capacity: number | null
           created_at: string | null
           event_id: string | null
+          event_stage_id: string
           id: string
           is_active: boolean | null
           name: string
@@ -4058,6 +4136,7 @@ export type Database = {
           capacity?: number | null
           created_at?: string | null
           event_id?: string | null
+          event_stage_id: string
           id?: string
           is_active?: boolean | null
           name: string
@@ -4068,6 +4147,7 @@ export type Database = {
           capacity?: number | null
           created_at?: string | null
           event_id?: string | null
+          event_stage_id?: string
           id?: string
           is_active?: boolean | null
           name?: string
@@ -4087,7 +4167,7 @@ export type Database = {
         Row: {
           created_at: string
           event_id: string
-          event_stage_id: string | null
+          event_stage_id: string
           id: string
           is_active: boolean
           name: string
@@ -4100,7 +4180,7 @@ export type Database = {
         Insert: {
           created_at?: string
           event_id: string
-          event_stage_id?: string | null
+          event_stage_id: string
           id?: string
           is_active?: boolean
           name: string
@@ -4113,7 +4193,7 @@ export type Database = {
         Update: {
           created_at?: string
           event_id?: string
-          event_stage_id?: string | null
+          event_stage_id?: string
           id?: string
           is_active?: boolean
           name?: string
@@ -5309,10 +5389,13 @@ export type Database = {
       }
       participant_sport_events: {
         Row: {
+          advances_directly: boolean
           block_reason_code: string | null
+          cancelled_by_substitution_id: string | null
           category_rule_code: string | null
           created_at: string
-          event_stage_id: string | null
+          created_by_substitution_id: string | null
+          event_stage_id: string
           gender_snapshot: string | null
           id: string
           is_blocked_by_documentation: boolean | null
@@ -5329,10 +5412,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          advances_directly?: boolean
           block_reason_code?: string | null
+          cancelled_by_substitution_id?: string | null
           category_rule_code?: string | null
           created_at?: string
-          event_stage_id?: string | null
+          created_by_substitution_id?: string | null
+          event_stage_id: string
           gender_snapshot?: string | null
           id?: string
           is_blocked_by_documentation?: boolean | null
@@ -5349,10 +5435,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          advances_directly?: boolean
           block_reason_code?: string | null
+          cancelled_by_substitution_id?: string | null
           category_rule_code?: string | null
           created_at?: string
-          event_stage_id?: string | null
+          created_by_substitution_id?: string | null
+          event_stage_id?: string
           gender_snapshot?: string | null
           id?: string
           is_blocked_by_documentation?: boolean | null
@@ -5422,26 +5511,16 @@ export type Database = {
       }
       participants: {
         Row: {
-          active_status: string | null
-          biological_sex: string | null
-          birth_date: string | null
-          coach_name: string | null
-          coach_phone: string | null
           created_at: string
           credentialed_at: string | null
           credentialed_by: string | null
           delegation_id: string | null
-          disability_type: string | null
-          eja_flag: boolean | null
-          enrollment_date: string | null
+          enrollment_class: string
           event_id: string
-          guardian_name: string | null
-          guardian_phone: string | null
           id: string
           is_active: boolean
           logistics_notes: string | null
           logistics_restrictions: string | null
-          national_ban_until: string | null
           needs_lodging: boolean
           needs_meals: boolean
           needs_transport: boolean
@@ -5449,34 +5528,22 @@ export type Database = {
           participant_type: string
           person_id: string
           regular_attendance_confirmed: boolean | null
-          school_role_label: string | null
           seed_batch_id: string | null
           seed_tag: string | null
           status: string
           updated_at: string
-          wheelchair_user_flag: boolean | null
         }
         Insert: {
-          active_status?: string | null
-          biological_sex?: string | null
-          birth_date?: string | null
-          coach_name?: string | null
-          coach_phone?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string | null
-          disability_type?: string | null
-          eja_flag?: boolean | null
-          enrollment_date?: string | null
+          enrollment_class?: string
           event_id: string
-          guardian_name?: string | null
-          guardian_phone?: string | null
           id?: string
           is_active?: boolean
           logistics_notes?: string | null
           logistics_restrictions?: string | null
-          national_ban_until?: string | null
           needs_lodging?: boolean
           needs_meals?: boolean
           needs_transport?: boolean
@@ -5484,34 +5551,22 @@ export type Database = {
           participant_type?: string
           person_id: string
           regular_attendance_confirmed?: boolean | null
-          school_role_label?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string
           updated_at?: string
-          wheelchair_user_flag?: boolean | null
         }
         Update: {
-          active_status?: string | null
-          biological_sex?: string | null
-          birth_date?: string | null
-          coach_name?: string | null
-          coach_phone?: string | null
           created_at?: string
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string | null
-          disability_type?: string | null
-          eja_flag?: boolean | null
-          enrollment_date?: string | null
+          enrollment_class?: string
           event_id?: string
-          guardian_name?: string | null
-          guardian_phone?: string | null
           id?: string
           is_active?: boolean
           logistics_notes?: string | null
           logistics_restrictions?: string | null
-          national_ban_until?: string | null
           needs_lodging?: boolean
           needs_meals?: boolean
           needs_transport?: boolean
@@ -5519,12 +5574,10 @@ export type Database = {
           participant_type?: string
           person_id?: string
           regular_attendance_confirmed?: boolean | null
-          school_role_label?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           status?: string
           updated_at?: string
-          wheelchair_user_flag?: boolean | null
         }
         Relationships: [
           {
@@ -5627,66 +5680,90 @@ export type Database = {
       people: {
         Row: {
           birth_date: string
+          coach_name: string | null
+          coach_phone: string | null
           cpf: string | null
           created_at: string
           disability_type: string | null
+          eja_flag: boolean | null
           email: string | null
           food_restrictions: string | null
           full_name: string
           gender: string
+          guardian_name: string | null
+          guardian_phone: string | null
           id: string
           institution_id: string | null
           is_active: boolean
           kind: string
           medical_notes: string | null
+          national_ban_until: string | null
           phone: string | null
           photo_url: string | null
           rg: string | null
+          school_role_label: string | null
           seed_batch_id: string | null
           seed_tag: string | null
           updated_at: string
+          wheelchair_user_flag: boolean | null
         }
         Insert: {
           birth_date: string
+          coach_name?: string | null
+          coach_phone?: string | null
           cpf?: string | null
           created_at?: string
           disability_type?: string | null
+          eja_flag?: boolean | null
           email?: string | null
           food_restrictions?: string | null
           full_name: string
           gender?: string
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           institution_id?: string | null
           is_active?: boolean
           kind?: string
           medical_notes?: string | null
+          national_ban_until?: string | null
           phone?: string | null
           photo_url?: string | null
           rg?: string | null
+          school_role_label?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           updated_at?: string
+          wheelchair_user_flag?: boolean | null
         }
         Update: {
           birth_date?: string
+          coach_name?: string | null
+          coach_phone?: string | null
           cpf?: string | null
           created_at?: string
           disability_type?: string | null
+          eja_flag?: boolean | null
           email?: string | null
           food_restrictions?: string | null
           full_name?: string
           gender?: string
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           institution_id?: string | null
           is_active?: boolean
           kind?: string
           medical_notes?: string | null
+          national_ban_until?: string | null
           phone?: string | null
           photo_url?: string | null
           rg?: string | null
+          school_role_label?: string | null
           seed_batch_id?: string | null
           seed_tag?: string | null
           updated_at?: string
+          wheelchair_user_flag?: boolean | null
         }
         Relationships: [
           {
@@ -6617,6 +6694,7 @@ export type Database = {
           nationality: string | null
           neighborhood: string | null
           notes: string | null
+          person_id: string | null
           phone: string | null
           pis_pasep: string | null
           registration_date: string | null
@@ -6648,6 +6726,7 @@ export type Database = {
           nationality?: string | null
           neighborhood?: string | null
           notes?: string | null
+          person_id?: string | null
           phone?: string | null
           pis_pasep?: string | null
           registration_date?: string | null
@@ -6679,6 +6758,7 @@ export type Database = {
           nationality?: string | null
           neighborhood?: string | null
           notes?: string | null
+          person_id?: string | null
           phone?: string | null
           pis_pasep?: string | null
           registration_date?: string | null
@@ -6692,7 +6772,15 @@ export type Database = {
           user_id?: string | null
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "referee_profiles_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referee_remuneration_configs: {
         Row: {
@@ -7122,6 +7210,7 @@ export type Database = {
           created_at: string
           current_uses: number
           event_id: string
+          event_stage_id: string
           eventual_person_id: string | null
           id: string
           is_contingency: boolean
@@ -7155,6 +7244,7 @@ export type Database = {
           created_at?: string
           current_uses?: number
           event_id: string
+          event_stage_id: string
           eventual_person_id?: string | null
           id?: string
           is_contingency?: boolean
@@ -7188,6 +7278,7 @@ export type Database = {
           created_at?: string
           current_uses?: number
           event_id?: string
+          event_stage_id?: string
           eventual_person_id?: string | null
           id?: string
           is_contingency?: boolean
@@ -7760,6 +7851,124 @@ export type Database = {
           },
         ]
       }
+      substitutions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          delegation_id: string
+          event_id: string
+          event_stage_id: string
+          executed_at: string | null
+          executed_by: string | null
+          id: string
+          notes: string | null
+          participant_in_id: string
+          participant_out_id: string
+          reason: string | null
+          reason_code: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_notes: string | null
+          requested_at: string
+          requested_by: string
+          sport_event_id: string
+          status: Database["public"]["Enums"]["substitution_status"]
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          delegation_id: string
+          event_id: string
+          event_stage_id: string
+          executed_at?: string | null
+          executed_by?: string | null
+          id?: string
+          notes?: string | null
+          participant_in_id: string
+          participant_out_id: string
+          reason?: string | null
+          reason_code?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_notes?: string | null
+          requested_at?: string
+          requested_by: string
+          sport_event_id: string
+          status?: Database["public"]["Enums"]["substitution_status"]
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          delegation_id?: string
+          event_id?: string
+          event_stage_id?: string
+          executed_at?: string | null
+          executed_by?: string | null
+          id?: string
+          notes?: string | null
+          participant_in_id?: string
+          participant_out_id?: string
+          reason?: string | null
+          reason_code?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_notes?: string | null
+          requested_at?: string
+          requested_by?: string
+          sport_event_id?: string
+          status?: Database["public"]["Enums"]["substitution_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "substitutions_delegation_id_fkey"
+            columns: ["delegation_id"]
+            isOneToOne: false
+            referencedRelation: "delegations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_participant_in_id_fkey"
+            columns: ["participant_in_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_participant_out_id_fkey"
+            columns: ["participant_out_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_ticket_comments: {
         Row: {
           author_id: string
@@ -7968,6 +8177,7 @@ export type Database = {
       }
       teams: {
         Row: {
+          advances_directly: boolean
           category_code: string | null
           created_at: string
           delegation_id: string
@@ -7987,6 +8197,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          advances_directly?: boolean
           category_code?: string | null
           created_at?: string
           delegation_id: string
@@ -8006,6 +8217,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          advances_directly?: boolean
           category_code?: string | null
           created_at?: string
           delegation_id?: string
@@ -9058,6 +9270,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      execute_substitution: {
+        Args: { p_substitution_id: string }
+        Returns: Json
+      }
       find_duplicate_people: {
         Args: never
         Returns: {
@@ -9716,6 +9932,37 @@ export type Database = {
         | "VOUCHER_EXPIRED"
         | "VOUCHER_ALREADY_USED"
         | "OTHER"
+        | "NO_CREDENTIAL"
+        | "PARTICIPANT_INACTIVE"
+        | "NEEDS_MEALS_FALSE"
+        | "LEFT_EVENT"
+      participant_category: "delegation" | "organization"
+      participant_type:
+        | "athlete"
+        | "coach"
+        | "head_of_delegation"
+        | "official"
+        | "staff"
+        | "motorista"
+        | "agente_operacao"
+        | "logistica"
+        | "cozinheira"
+        | "guia"
+        | "secretaria"
+        | "mesario"
+        | "arbitro"
+        | "delegado"
+        | "fiscal"
+        | "operador_pesquisa"
+        | "tecnico_ti"
+        | "terceiro"
+        | "colaborador"
+      substitution_status:
+        | "requested"
+        | "approved"
+        | "rejected"
+        | "executed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -9874,6 +10121,39 @@ export const Constants = {
         "VOUCHER_EXPIRED",
         "VOUCHER_ALREADY_USED",
         "OTHER",
+        "NO_CREDENTIAL",
+        "PARTICIPANT_INACTIVE",
+        "NEEDS_MEALS_FALSE",
+        "LEFT_EVENT",
+      ],
+      participant_category: ["delegation", "organization"],
+      participant_type: [
+        "athlete",
+        "coach",
+        "head_of_delegation",
+        "official",
+        "staff",
+        "motorista",
+        "agente_operacao",
+        "logistica",
+        "cozinheira",
+        "guia",
+        "secretaria",
+        "mesario",
+        "arbitro",
+        "delegado",
+        "fiscal",
+        "operador_pesquisa",
+        "tecnico_ti",
+        "terceiro",
+        "colaborador",
+      ],
+      substitution_status: [
+        "requested",
+        "approved",
+        "rejected",
+        "executed",
+        "cancelled",
       ],
     },
   },

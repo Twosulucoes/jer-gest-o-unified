@@ -6,13 +6,14 @@ export async function rpcResolveQr(token: string) {
   return data as Record<string, any>;
 }
 
-export async function rpcCheckin(deviceId: string, token: string, locationId: string, unitId?: string, mode = "person_qr") {
+export async function rpcCheckin(deviceId: string, token: string, locationId: string, unitId?: string, mode = "person_qr", force = false) {
   const { data, error } = await supabase.rpc("pwa_lodging_checkin", {
     p_device_id: deviceId,
     p_token: token,
     p_location_id: locationId,
     p_unit_id: unitId || null,
     p_mode: mode,
+    p_force: force,
   });
   if (error) throw error;
   return data as Record<string, any>;

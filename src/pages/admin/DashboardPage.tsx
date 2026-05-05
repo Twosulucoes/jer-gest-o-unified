@@ -250,7 +250,7 @@ export default function DashboardPage() {
             <DashboardProgressCard
               title="Top 10 Modalidades (Inscrições)"
               isLoading={isLoading}
-              items={data.inscricoes.by_modality.map(m => ({
+              items={data.inscricoes.by_modality.slice(0, 10).map(m => ({
                 id: m.id,
                 name: m.name,
                 current: m.count,
@@ -258,6 +258,11 @@ export default function DashboardPage() {
                 percentage: data.inscricoes.total_provas > 0 ? Math.round((m.count / data.inscricoes.total_provas) * 100) : 0
               }))}
             />
+            {data.inscricoes.by_modality.length > 10 && (
+              <p className="text-[11px] text-muted-foreground text-center -mt-1">
+                + {data.inscricoes.by_modality.length - 10} modalidade(s) não exibida(s)
+              </p>
+            )}
           </div>
         </section>
         {/* Credenciamento Charts */}

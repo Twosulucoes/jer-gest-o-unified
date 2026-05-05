@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScope } from "@/hooks/useStageScope";
 import QRCode from "qrcode";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -83,6 +84,7 @@ import {
 interface VoucherRow {
   id: string;
   event_id: string;
+  event_stage_id: string;
   participant_id: string | null;
   eventual_person_id: string | null;
   qr_code_value: string;
@@ -164,6 +166,7 @@ function getServiceInstanceLabel(v: any, instances: any) {
 // -------- Main Page --------
 export default function VouchersPage() {
   const eventId = useActiveEventId();
+  const { stageId } = useStageScope();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -310,6 +313,16 @@ export default function VouchersPage() {
       const now = new Date().toISOString();
       const reason = `[Reemissão] ${revokeReason.trim()}`;
 
+      // Invariante de voucher: 1 evento × 1 etapa × 1 dia × 1 janela.
+      // Reemissão NÃO faz sentido para janela já encerrada — quem perdeu o
+      // QR depois que a janela fechou não pode mais consumir; tem que ser
+      // emitido um voucher do PRÓXIMO lote/janela. O trigger
+      // derive_voucher_validity já recusaria com 22023, mas barramos
+      // antes para mensagem clara.
+      if (oldV.valid_until && new Date(oldV.valid_until) < new Date()) {
+        throw new Error("Janela do voucher original já fechou — emita um voucher novo na janela atual em vez de reemitir.");
+      }
+
       // 1. Invalida o antigo
       const { error: updErr } = await supabase
         .from("service_vouchers")
@@ -321,11 +334,14 @@ export default function VouchersPage() {
         .eq("id", oldV.id);
       if (updErr) throw updErr;
 
-      // 2. Cria o novo
+      // 2. Cria o novo. event_stage_id é NOT NULL desde a Fase F1 — copia do antigo.
+      // valid_from é deixado null deliberadamente: o trigger
+      // derive_voucher_validity recalcula da janela-alvo.
       const { data: newV, error: insErr } = await (supabase
         .from("service_vouchers") as any)
         .insert({
           event_id: oldV.event_id,
+          event_stage_id: oldV.event_stage_id,
           participant_id: oldV.participant_id,
           eventual_person_id: oldV.eventual_person_id,
           qr_code_value: genQrValue(),
@@ -341,7 +357,6 @@ export default function VouchersPage() {
           target_facility_id: oldV.target_facility_id,
           target_date: oldV.target_date,
           max_uses: oldV.max_uses,
-          valid_until: oldV.valid_until,
           replaces_voucher_id: oldV.id,
           reissued_at: now,
           notes: `Reemissão de ${oldV.qr_code_value}. Motivo: ${revokeReason.trim()}`
@@ -605,8 +620,10 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
       console.log("DEBUG: Iniciando emissão de voucher individual...");
       const vType = isNominal ? "nominal" : "aggregate";
       
+      if (!stageId) throw new Error("Selecione uma etapa antes de emitir voucher.");
       const payload: any = {
         event_id: eventId,
+        event_stage_id: stageId,
         voucher_type: vType,
         is_nominal: isNominal,
         qr_code_value: genQrValue(),
@@ -818,8 +835,10 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           throw bErr;
         }
 
+        if (!stageId) throw new Error("Selecione uma etapa antes de emitir lote de vouchers.");
         const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
           event_id: eventId,
+          event_stage_id: stageId,
           batch_id: batch.id,
           participant_id: null,
           voucher_type: "aggregate" as const,

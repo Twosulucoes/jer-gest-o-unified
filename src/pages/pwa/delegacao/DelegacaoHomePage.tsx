@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PwaContainer } from "@/components/pwa/PwaScreen";
 import { PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
@@ -7,7 +7,7 @@ import { PwaListItem, PwaListAvatar } from "@/components/pwa/PwaListItem";
 import { PwaActionGrid } from "@/components/pwa/PwaActionGrid";
 import {
   Users, Calendar, MapPin,
-  ClipboardList, Bus, Gavel, ChevronRight, AlertTriangle,
+  ClipboardList, Bus, Gavel, ChevronRight, AlertTriangle, UtensilsCrossed, ArrowLeftRight,
 } from "lucide-react";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 
@@ -22,7 +22,22 @@ interface AthleteRow {
 
 export default function DelegacaoHomePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
+
+  // Defensivo: a rota PWA delegação é catch-all (`delegacao/*`). URLs
+  // antigas (cache de PWA, deep-links, push notifications) podem chegar
+  // como `/pwa/delegacao/<uuid>` ou similar — sem sub-rota válida.
+  // Normaliza pra `/pwa/delegacao` e evita loops onde o caminho extra
+  // confunde guards/state.
+  useEffect(() => {
+    if (location.pathname !== "/pwa/delegacao") {
+      navigate("/pwa/delegacao", { replace: true });
+    }
+    // intencional: só dispara no path inicial; sub-rotas como
+    // /pwa/delegacao/participantes têm sua própria página e não chegam aqui.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [delegationId, setDelegationId] = useState<string | null>(null);
   const [delegationLabel, setDelegationLabel] = useState<string>("");
   const [athletes, setAthletes] = useState<AthleteRow[]>([]);
@@ -53,17 +68,22 @@ export default function DelegacaoHomePage() {
       const delId = userDelegation.delegation_id;
       setDelegationId(delId);
 
-      const { data: delRow } = await supabase
+      const { data: delRow } = await (supabase as any)
         .from("delegations")
-        .select("school_name, chief_name")
+        .select("chief_name, institutions(name)")
         .eq("id", delId)
         .maybeSingle();
 
       if (delRow) {
         const chief = delRow.chief_name ? ` — Chefe: ${delRow.chief_name}` : "";
-        setDelegationLabel(`${delRow.school_name ?? "Delegação"}${chief}`);
+        setDelegationLabel(`${delRow.institutions?.name ?? "Delegação"}${chief}`);
       }
 
+      // Decisão (Fase 2 da auditoria de Dashboard/KPIs): "atletas da delegação"
+      // é um número CADASTRAL — pessoas inscritas pela delegação no evento,
+      // não operação por etapa. Por isso filtramos por delegation_id apenas;
+      // intencionalmente sem event_stage_id. Se no futuro o conceito mudar
+      // (ex.: "atletas presentes nesta etapa"), criar KPI separado.
       const [atletasRes, credRes, pendRes, listRes] = await Promise.all([
         supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId).eq("participant_type", "athlete"),
         supabase.from("participants").select("id", { count: "exact", head: true }).eq("delegation_id", delId).eq("participant_type", "athlete").eq("status", "confirmed"),
@@ -155,6 +175,8 @@ export default function DelegacaoHomePage() {
               { label: "Participantes", icon: ClipboardList, to: "/pwa/delegacao/participantes" },
               { label: "Agenda", icon: Calendar, to: "/pwa/delegacao/agenda" },
               { label: "Logística", icon: Bus, to: "/pwa/delegacao/logistica" },
+              { label: "Alimentação", icon: UtensilsCrossed, to: "/pwa/delegacao/alimentacao" },
+              { label: "Substituições", icon: ArrowLeftRight, to: "/pwa/delegacao/substituicoes" },
               { label: "Locais", icon: MapPin, to: "/pwa/delegacao/locais" },
               { label: "Protestos", icon: Gavel, to: "/pwa/delegacao/protestos" },
             ]}

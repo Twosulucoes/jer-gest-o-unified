@@ -30,6 +30,7 @@ import { extractQrToken } from "@/lib/resolveQrCredential";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
 import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
+import { genderRestrictionLabel } from "@/lib/alojamento/labels";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
 import { useAuth } from "@/hooks/useAuth";
 import { addToVoucherQueue } from "@/lib/voucherOffline";
@@ -297,6 +298,39 @@ export default function AlojamentoScanPage() {
       } else if (mode === "checkin") {
         res = await rpcCheckin(deviceId, token, facilityId, selectedUnitId || undefined);
         dbTelemetry.log({ moduleName: MODULE, tableName: 'lodging_occupancies', operation: 'INSERT', eventId, isSuccess: res.ok, errorCode: res.error });
+
+        // Etapa 2: needs_lodging=false abre opção de override pelo operador.
+        if (!res.ok && res.error === "NEEDS_LODGING_FALSE" && res.can_force) {
+          setResult(res);
+          toast.error(res.message || getSystemMessage("NEEDS_LODGING_FALSE", lang), {
+            description: "Toque em 'Confirmar mesmo assim' para hospedar com exceção registrada.",
+            action: {
+              label: "Confirmar mesmo assim",
+              onClick: async () => {
+                try {
+                  const forced = await rpcCheckin(deviceId, token, facilityId, selectedUnitId || undefined, "person_qr", true);
+                  dbTelemetry.log({ moduleName: MODULE, tableName: 'lodging_occupancies', operation: 'INSERT', eventId, isSuccess: forced.ok, errorCode: forced.error });
+                  setResult(forced);
+                  if (forced.ok) {
+                    toast.success(`${getSystemMessage("CHECKIN_SUCCESS", lang)} (override)`);
+                    recordOutcome("ok");
+                    if (navigator.vibrate) navigator.vibrate(200);
+                  } else {
+                    toast.error(forced.message || forced.error || getSystemMessage("ERR_UNKNOWN", lang));
+                    recordOutcome("error");
+                  }
+                } catch (e: any) {
+                  toast.error(`${getSystemMessage("ERR_UNKNOWN", lang)}: ${e.message || "desconhecido"}`);
+                  recordOutcome("error");
+                }
+              },
+            },
+          });
+          recordOutcome("error");
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+          reopenIfContinuous();
+          return;
+        }
       } else if (mode === "checkout") {
         res = await rpcCheckout(deviceId, token, facilityId);
         dbTelemetry.log({ moduleName: MODULE, tableName: 'lodging_occupancies', operation: 'UPDATE', eventId, isSuccess: res.ok, errorCode: res.error });
@@ -334,6 +368,8 @@ export default function AlojamentoScanPage() {
           PRESENCE_WITHOUT_CHECKIN: "Pessoa sem check-in ativo.",
           PRESENCE_WRONG_UNIT: "Pessoa em unidade divergente.",
           PRESENCE_ALREADY_REGISTERED: "Presença já registrada hoje.",
+          LEFT_EVENT: getSystemMessage("LEFT_EVENT", lang),
+          NEEDS_LODGING_FALSE: getSystemMessage("NEEDS_LODGING_FALSE", lang),
         };
         toast.error(errorMessages[res.error] || res.message || res.error || getSystemMessage("ERR_UNKNOWN", lang));
         recordOutcome("error");
@@ -405,7 +441,7 @@ export default function AlojamentoScanPage() {
                 <SelectContent>
                   <SelectItem value="none">Nenhuma selecionada</SelectItem>
                   {units.map(u => {
-                    const gender = u.gender_restriction === "male" ? "Masc." : u.gender_restriction === "female" ? "Fem." : "Misto";
+                    const gender = genderRestrictionLabel(u.gender_restriction, { short: true });
                     const isFull = u.occupied >= u.capacity;
                     return (
                       <SelectItem key={u.id} value={u.id} className={isFull ? "opacity-60" : ""}>

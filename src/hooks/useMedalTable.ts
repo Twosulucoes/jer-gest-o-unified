@@ -27,8 +27,8 @@ export function useMedalTable(eventId: string) {
           competition_match_entries!inner(
             team_id,
             participant_sport_event_id,
-            teams(delegation_id, delegations(school_name)),
-            participant_sport_events(participants(delegation_id, delegations(school_name)))
+            teams(delegation_id, delegations(institutions(name))),
+            participant_sport_events(participants(delegation_id, delegations(institutions(name))))
           ),
           competition_matches!inner(event_id)
         `)
@@ -43,7 +43,7 @@ export function useMedalTable(eventId: string) {
       results.forEach((r: any) => {
         const entry = r.competition_match_entries;
         const delegationId = entry.teams?.delegation_id || entry.participant_sport_events?.participants?.delegation_id;
-        const delegationName = entry.teams?.delegations?.school_name || entry.participant_sport_events?.participants?.delegations?.school_name || "Outros";
+        const delegationName = entry.teams?.delegations?.institutions?.name || entry.participant_sport_events?.participants?.delegations?.institutions?.name || "Outros";
 
         if (!delegationId) return;
 

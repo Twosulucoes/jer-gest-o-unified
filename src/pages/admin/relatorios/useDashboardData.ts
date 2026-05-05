@@ -81,22 +81,6 @@ export interface DashboardData {
 export function useDashboardData(eventId?: string | null, stageId?: string | null) {
   const enabled = true; // Sempre habilitado para permitir visão global
 
-  // Initial dummy state when no eventId is provided to avoid crashes
-  const dummyData: DashboardData = {
-    resumo: {
-      participants_total: 0, athletes_total: 0, credentialed: 0, credentials_active: 0, credentials_today: 0,
-      matches_total: 0, matches_done: 0, matches_published: 0,
-      meals_total: 0, meals_today: 0,
-      lodging_capacity: 0, lodging_occupied: 0,
-      transport_trips: 0, transport_passengers: 0, transport_vehicles: 0,
-      referees_total: 0, referees_assigned: 0,
-    },
-    credenciamento: { daily: [], by_delegation: [] },
-    inscricoes: { total_provas: 0, total_etapas: 0, pendentes_documentacao: 0, por_status: [], by_stage: [], by_modality: [] },
-    alimentacao: { daily: [], meal_types: [], by_delegation: [] },
-    competicao: { by_sport: [], today: [] },
-  };
-
   const queries = useQueries({
     queries: [
       // 0: participants (id, credentialed_at, delegation_id)
@@ -162,10 +146,13 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("delegations")
-            .select("id, school_name");
+            .select("id, institutions(name)");
           if (eventId) query.eq("event_id", eventId);
-          const { data } = await query;
-          return data ?? [];
+          const { data } = await query as any;
+          return ((data ?? []) as any[]).map((d) => ({
+            id: d.id as string,
+            school_name: (d.institutions?.name ?? "") as string,
+          }));
         }, [] as { id: string; school_name: string }[]),
       },
       // 3: meal_windows + meal_types
@@ -442,14 +429,26 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         }, 0),
       },
       // 4: árbitros designados no evento ativo
-      // NOTA: a tabela `referee_event_assignments` ainda não existe no schema
-      // (gera 404 em PostgREST). Mantemos o slot do KPI retornando 0 até que
-      // a tabela seja criada e tipada em src/integrations/supabase/types.ts.
+      // Source: match_user_assignments (FK match_id → competition_matches).
+      // Conta usuários DISTINTOS designados em qualquer função operacional
+      // de partida no evento. Pré-Etapa 3 da Arbitragem usaríamos JOIN com
+      // competition_matches; depois da Etapa 3.1 a tabela ganhou event_id +
+      // event_stage_id direto, então o filtro é trivial.
       {
         queryKey: ["dash3", "referees_assigned", eventId],
         enabled: enabled && !!eventId,
         staleTime: STALE,
-        queryFn: () => safe(async () => 0, 0),
+        queryFn: () => safe(async () => {
+          const { data } = await (supabase.from("match_user_assignments") as any)
+            .select("user_id")
+            .eq("event_id", eventId);
+          if (!data) return 0;
+          const distinct = new Set<string>();
+          for (const row of data as Array<{ user_id: string | null }>) {
+            if (row.user_id) distinct.add(row.user_id);
+          }
+          return distinct.size;
+        }, 0),
       },
     ],
   });
@@ -468,17 +467,18 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // ----- Cálculos -----
   const today = todayISO();
 
-  // Credenciamento — fonte de verdade: distinct participant_id em participant_credentials.status='active'
+  // Credenciamento — fonte de verdade ÚNICA: distinct participant_id em
+  // participant_credentials.status='active'. Etapa 3 da auditoria de
+  // Dashboard/KPIs descartou o fallback para `participants.credentialed_at`
+  // que escondia divergências entre as duas fontes. Se o número parecer
+  // baixo, é porque a tabela participant_credentials ainda não está
+  // populada — sintoma deve ser corrigido na origem, não mascarado aqui.
+  // `credentialed_at` ainda alimenta o gráfico temporal credDaily abaixo
+  // (granularidade diária), mas não a contagem absoluta.
   const activeCreds = C.filter((c) => c.status === "active");
-  const credActiveDistinctParticipants = new Set(
+  const credentialed = new Set(
     activeCreds.map((c) => c.participant_id).filter((x): x is string => !!x)
   ).size;
-  const credentialedFromParticipants = P.filter((p) => p.credentialed_at).length;
-  // KPI "Credenciados" = participantes únicos com credencial ativa (preferencial),
-  // com fallback para flag credentialed_at se não houver credenciais ativas registradas.
-  const credentialed = credActiveDistinctParticipants > 0
-    ? credActiveDistinctParticipants
-    : credentialedFromParticipants;
   const credActive = activeCreds.length; // total de credenciais ativas (pode incluir reemissões)
   const credToday = C.filter((c) => (c.issued_at ?? c.created_at)?.slice(0, 10) === today).length;
 
@@ -516,7 +516,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // Alimentação
   const mtName = new Map(MT.map((m) => [m.id, m.name] as const));
   const winById = new Map(MW.map((w) => [w.id, w] as const));
-  const mealsToday = consumptions.filter((c) => c.consumed_at.slice(0, 10) === today).length;
+  const mealsToday = consumptions.filter((c) => (c.consumed_at ?? "").slice(0, 10) === today).length;
 
   // daily empilhado por meal_type
   const dailyMap = new Map<string, Record<string, number>>();
@@ -658,33 +658,18 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       pendentes_documentacao: blockedDocCount,
       por_status: Array.from(statusMap.entries()).map(([name, value]) => ({ name, value })),
       by_stage: ES.map(s => ({ id: s.id, name: s.name, count: stageCountMap.get(s.id) ?? 0 })),
+      // Retorna TODAS as modalidades ordenadas por contagem decrescente.
+      // O slice (top-N) é responsabilidade do consumidor — assim a UI pode
+      // exibir "+ N modalidades não mostradas" para evitar truncamento
+      // silencioso (Fase 3 da auditoria de Dashboard/KPIs).
       by_modality: SE.map(s => ({ id: s.id, name: seName.get(s.id) || s.name || "Modalidade", count: modalityCountMap.get(s.id) ?? 0 }))
         .sort((a, b) => b.count - a.count)
-        .slice(0, 10)
     },
 
     credenciamento: { daily: credDaily, by_delegation: byDelegation },
     alimentacao: { daily: mealsDaily, meal_types: mealTypesList, by_delegation: mealsByDelegation },
     competicao: { by_sport: bySport, today: todayMatches },
   };
-
-  if (!isLoadingAll && eventId) {
-    // eslint-disable-next-line no-console
-    console.log("[KPI dashboard]", {
-      eventId,
-      participants_total: P_total,
-      credentialed_kpi: credentialed,
-      cred_active_distinct_participants: credActiveDistinctParticipants,
-      cred_active_rows: credActive,
-      credentialed_from_participants_flag: credentialedFromParticipants,
-      credentials_today: credToday,
-      matches_total: MA_total,
-      meals_total: consumptionsTotal,
-      lodging_occupied: LO,
-      transport_trips: TR_total,
-      transport_passengers: passengers,
-    });
-  }
 
 
   const refetchAll = async () => {

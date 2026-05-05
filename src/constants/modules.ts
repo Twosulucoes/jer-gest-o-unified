@@ -1,14 +1,15 @@
-export type ModuleId = 
-  | "alojamento" 
-  | "alimentacao" 
-  | "credenciamento" 
-  | "transporte" 
-  | "coordenacao-tecnica" 
-  | "delegacao" 
-  | "resultados" 
-  | "registros" 
+export type ModuleId =
+  | "alojamento"
+  | "alimentacao"
+  | "credenciamento"
+  | "transporte"
+  | "coordenacao-tecnica"
+  | "delegacao"
+  | "arbitragem"
+  | "resultados"
+  | "registros"
   | "aovivo"
-  | "admin" 
+  | "admin"
   | "other";
 
 export interface ModuleConfig {
@@ -24,6 +25,7 @@ export const APP_MODULES: ModuleConfig[] = [
   { id: "transporte", pathPrefix: "/pwa/transporte", label: "Transporte" },
   { id: "coordenacao-tecnica", pathPrefix: "/pwa/coordenacao-tecnica", label: "Coordenação Técnica" },
   { id: "delegacao", pathPrefix: "/pwa/delegacao", label: "Delegação" },
+  { id: "arbitragem", pathPrefix: "/pwa/arbitragem", label: "Arbitragem" },
   { id: "resultados", pathPrefix: "/pwa/resultados", label: "Resultados" },
   { id: "registros", pathPrefix: "/pwa/registros", label: "Registros" },
   { id: "aovivo", pathPrefix: "/aovivo", label: "Ao Vivo" },

@@ -35,7 +35,7 @@ export default function AlimentacaoRelatoriosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("delegations")
-        .select("id, school_name")
+        .select("id, institutions(name)")
         .eq("event_id", eventId!)
         .order("created_at");
       if (error) throw error;
@@ -62,7 +62,7 @@ export default function AlimentacaoRelatoriosPage() {
         .select(`
           *,
           meal_windows!inner(id, label, service_date, meal_type_id, event_id, event_stage_id, meal_types(name)),
-          participants(person:people(full_name), delegation_id, delegations(school_name))
+          participants(person:people(full_name), delegation_id, delegations(institutions(name)))
         `)
         .eq("meal_windows.event_id", eventId)
         .order("consumed_at", { ascending: false });
@@ -95,7 +95,7 @@ export default function AlimentacaoRelatoriosPage() {
   (consumptions || []).forEach((c: any) => {
     const typeName = c.meal_windows?.meal_types?.name || "Outro";
     totalByType.set(typeName, (totalByType.get(typeName) || 0) + 1);
-    const delName = c.participants?.delegations?.school_name || "Sem delegação";
+    const delName = c.participants?.delegations?.institutions?.name || "Sem delegação";
     totalByDelegation.set(delName, (totalByDelegation.get(delName) || 0) + 1);
   });
 
@@ -105,7 +105,7 @@ export default function AlimentacaoRelatoriosPage() {
     for (const c of consumptions) {
       rows.push([
         `"${c.participants?.person?.full_name || ""}"`,
-        `"${c.participants?.delegations?.school_name || ""}"`,
+        `"${c.participants?.delegations?.institutions?.name || ""}"`,
         `"${c.meal_windows?.label || ""}"`,
         c.consumed_at ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm") : "",
         c.method || "scan",
@@ -129,7 +129,7 @@ export default function AlimentacaoRelatoriosPage() {
     try {
       const detailData = consumptions.map(c => ({
         "Participante": c.participants?.person?.full_name || "",
-        "Delegação": c.participants?.delegations?.school_name || "",
+        "Delegação": c.participants?.delegations?.institutions?.name || "",
         "Refeição": c.meal_windows?.label || "",
         "Data/Hora": c.consumed_at ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm") : "",
         "Método": c.method || "scan"
@@ -184,7 +184,7 @@ export default function AlimentacaoRelatoriosPage() {
       doc.text("Detalhamento", 14, (doc as any).lastAutoTable.finalY + 10);
       const detailsTable = consumptions.map(c => [
         c.participants?.person?.full_name || "",
-        c.participants?.delegations?.school_name || "",
+        c.participants?.delegations?.institutions?.name || "",
         c.meal_windows?.label || "",
         c.consumed_at ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm") : ""
       ]);
@@ -322,7 +322,7 @@ export default function AlimentacaoRelatoriosPage() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
-                {delegations.map((d: any) => <SelectItem key={d.id} value={d.id}>{d.school_name || d.id}</SelectItem>)}
+                {delegations.map((d: any) => <SelectItem key={d.id} value={d.id}>{d.institutions?.name || d.id}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -396,7 +396,7 @@ export default function AlimentacaoRelatoriosPage() {
               {consumptions.slice(0, 200).map((c: any) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.participants?.person?.full_name || "—"}</TableCell>
-                  <TableCell>{c.participants?.delegations?.school_name || "—"}</TableCell>
+                  <TableCell>{c.participants?.delegations?.institutions?.name || "—"}</TableCell>
                   <TableCell>{c.meal_windows?.label || "—"}</TableCell>
                   <TableCell>{c.consumed_at ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm") : "—"}</TableCell>
                   <TableCell>{c.method || "scan"}</TableCell>

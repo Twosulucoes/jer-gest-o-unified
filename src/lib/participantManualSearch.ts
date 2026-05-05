@@ -6,6 +6,10 @@ export type ParticipantManualSearchRow = {
   full_name: string;
   cpf: string | null;
   participant_type: string;
+  is_active?: boolean;
+  needs_meals?: boolean;
+  credentialed_at?: string | null;
+  left_event_at?: string | null;
 };
 
 /** Remove caracteres que quebram filtros ILIKE do PostgREST. */
@@ -48,24 +52,21 @@ export async function searchParticipantsByNameOrCpf(
   if (pErr || !peopleRows?.length) return [];
 
   const personIds = peopleRows.map((p) => p.id);
+  // Carrega também sinais de presença/elegibilidade (is_active, needs_meals,
+  // credentialed_at) para que telas operacionais possam aplicar a "trava de
+  // presença" no fluxo manual sem uma segunda viagem ao banco.
+  const baseSelect = "id, person_id, participant_type, is_active, needs_meals, credentialed_at, left_event_at";
   let ptQuery = supabase
     .from("participants")
-    .select("id, person_id, participant_type")
+    .select(baseSelect)
     .eq("event_id", eventId)
     .eq("is_active", true)
     .in("person_id", personIds);
 
   if (stageId) {
-    // Check if participant is registered in this stage
-    const { data: stageParticipants } = await supabase
-      .from("participant_event_stages")
-      .select("participant_id")
-      .eq("event_stage_id", stageId)
-      .in("participant_id", []); // We'll refine this if needed, but the current DB doesn't have a direct stage link in participants table itself usually.
-    // However, the best way is to join participant_event_stages.
     ptQuery = supabase
       .from("participants")
-      .select("id, person_id, participant_type, participant_event_stages!inner(event_stage_id)")
+      .select(`${baseSelect}, participant_event_stages!inner(event_stage_id)`)
       .eq("event_id", eventId)
       .eq("is_active", true)
       .eq("participant_event_stages.event_stage_id", stageId)
@@ -78,7 +79,7 @@ export async function searchParticipantsByNameOrCpf(
 
   const byPerson = new Map(peopleRows.map((p) => [p.id, p]));
 
-  return parts.map((pt) => {
+  return parts.map((pt: any) => {
     const person = byPerson.get(pt.person_id);
     return {
       participant_id: pt.id,
@@ -86,6 +87,10 @@ export async function searchParticipantsByNameOrCpf(
       full_name: person?.full_name ?? "—",
       cpf: person?.cpf ?? null,
       participant_type: pt.participant_type,
+      is_active: pt.is_active ?? undefined,
+      needs_meals: pt.needs_meals ?? undefined,
+      credentialed_at: pt.credentialed_at ?? null,
+      left_event_at: pt.left_event_at ?? null,
     };
   });
 }

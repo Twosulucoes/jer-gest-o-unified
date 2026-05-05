@@ -107,6 +107,14 @@ export default function AlimentacaoHomePage() {
     <PwaLayout onBack={() => navigate(-1)} moduleTitle="Alimentação">
       <AlimentacaoDuplicateAlert />
 
+      {/* Aviso explícito quando o operador não tem etapa selecionada e os KPIs
+          contam o evento inteiro (Fase 2 da auditoria de Dashboard/KPIs). */}
+      {!stageId && !loading && (
+        <div className="mx-3 mt-2 rounded-md border border-amber-300/60 bg-amber-50 dark:border-amber-700/40 dark:bg-amber-950/20 p-2.5 text-[11px] text-amber-900 dark:text-amber-200">
+          ⚠️ Sem etapa selecionada — KPIs abaixo somam o evento inteiro. Selecione uma etapa para ver só a operação da sua jornada.
+        </div>
+      )}
+
       <PwaStatTriplet
         loading={loading}
         items={[
@@ -150,7 +158,7 @@ export default function AlimentacaoHomePage() {
 
         <PwaActionGrid
           actions={[
-            { label: "Scan QR", icon: ScanLine, to: "/pwa/alimentacao/scan" },
+            { label: "Scan QR", description: "Registrar consumo agora", icon: ScanLine, to: "/pwa/alimentacao/scan", featured: true },
             { label: "Buscar", icon: Search, to: "/pwa/alimentacao/buscar" },
             { label: "Janelas", icon: Clock, to: "/pwa/alimentacao/janelas" },
             { label: "Lista de Consumos", icon: ListChecks, to: "/pwa/alimentacao/lista-consumos" },

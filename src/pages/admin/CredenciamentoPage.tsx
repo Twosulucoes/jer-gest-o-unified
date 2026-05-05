@@ -134,18 +134,20 @@ interface CredentialParticipantRow {
   credentialed_by: string | null;
   person_id: string;
   delegation_id: string;
-  guardian_name: string | null;
-  guardian_phone: string | null;
-  coach_name: string | null;
-  coach_phone: string | null;
   person: {
     full_name: string | null;
     cpf: string | null;
     photo_url: string | null;
+    // Cadastrais civis (vínculos) vivem em people (Fase A2).
+    guardian_name: string | null;
+    guardian_phone: string | null;
+    coach_name: string | null;
+    coach_phone: string | null;
   } | null;
   delegation: {
     id: string;
-    school_name: string | null;
+    institution_id: string | null;
+    institutions: { name: string | null } | null;
   } | null;
 }
 
@@ -314,9 +316,13 @@ export default function CredenciamentoPage() {
   // Nesse caso, ignoramos o filtro de etapa (melhor mostrar todos do evento que mostrar vazio falso).
   const effectiveStageFilter = stageId && stageIdsArray ? stageIdsArray : null;
 
-  const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id, guardian_name, guardian_phone, coach_name, coach_phone,
-    person:people!participants_person_id_fkey(full_name, cpf, photo_url),
-    delegation:delegations!participants_delegation_id_fkey(id, school_name, institution_id)`;
+  // PostgREST FK hints: usamos coluna (`!person_id`, `!delegation_id`) em vez do
+  // nome da constraint (`!participants_person_id_fkey`) porque a view
+  // `vw_person_logistics_consumption` expõe os mesmos FKs ao schema cache,
+  // tornando o hint pelo nome da constraint AMBÍGUO (PGRST201 → 400 Bad Request).
+  const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id,
+    person:people!person_id(full_name, cpf, photo_url, guardian_name, guardian_phone, coach_name, coach_phone),
+    delegation:delegations!delegation_id(id, institution_id, institutions(name))`;
 
   const {
     data: progressiveParts,
@@ -383,7 +389,7 @@ export default function CredenciamentoPage() {
   const institutionOptions = useMemo(() => {
     const unique = new Map<string, string>();
     participants.forEach((participant) => {
-      const schoolName = participant.delegation?.school_name;
+      const schoolName = participant.delegation?.institutions?.name;
       if (schoolName) unique.set(schoolName, schoolName);
     });
     return Array.from(unique, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
@@ -394,8 +400,8 @@ export default function CredenciamentoPage() {
     return [...types].sort();
   }, [participants]);
 
-  const getInstitutionId = useCallback((participant: CredentialParticipantRow) => participant.delegation?.school_name ?? "", []);
-  const getInstitutionName = useCallback((participant: CredentialParticipantRow) => participant.delegation?.school_name ?? "—", []);
+  const getInstitutionId = useCallback((participant: CredentialParticipantRow) => participant.delegation?.institutions?.name ?? "", []);
+  const getInstitutionName = useCallback((participant: CredentialParticipantRow) => participant.delegation?.institutions?.name ?? "—", []);
 
   // --- Determine participant state ---
   const getParticipantState = useCallback((p: { status: string; id: string }): ParticipantState => {
@@ -774,19 +780,22 @@ export default function CredenciamentoPage() {
     
     // Opcional: Atualizar dados do responsável no banco se houver mudanças
     if (
-      tempGuardianData.name !== (selectedForCred.guardian_name || "") || 
-      tempGuardianData.phone !== (selectedForCred.guardian_phone || "") ||
-      tempGuardianData.relationship !== (selectedForCred.coach_name || "")
+      tempGuardianData.name !== (selectedForCred.person?.guardian_name || "") ||
+      tempGuardianData.phone !== (selectedForCred.person?.guardian_phone || "") ||
+      tempGuardianData.relationship !== (selectedForCred.person?.coach_name || "")
     ) {
+      // Cadastrais civis vivem em people (Fase A2). Atualiza pelo person_id
+      // do participante. Mantém coach_phone como null para consistência com
+      // o comportamento anterior (relationship é gravado em coach_name).
       const { error } = await supabase
-        .from("participants")
+        .from("people")
         .update({
           guardian_name: tempGuardianData.name,
           guardian_phone: tempGuardianData.phone,
           coach_name: tempGuardianData.relationship,
           coach_phone: null,
         })
-        .eq("id", selectedForCred.id);
+        .eq("id", selectedForCred.person_id);
       
       if (error) {
         toast.error("Erro ao atualizar dados do responsável: " + error.message);
@@ -1712,18 +1721,19 @@ export default function CredenciamentoPage() {
         }}
         onSuccess={async (pId) => {
           if (isWorkflowActive && selectedForCred) {
-            // Fetch the updated data to ensure the confirmation modal has latest info
-            const { data } = await supabase
+            // Fetch the updated data — cadastrais civis vivem em people (Fase A2).
+            const { data } = await (supabase as any)
               .from("participants")
-              .select("guardian_name, guardian_phone, coach_name")
+              .select("people(guardian_name, guardian_phone, coach_name)")
               .eq("id", pId)
               .single();
-            
-            if (data) {
+
+            const person = data?.people ?? {};
+            if (person) {
               setTempGuardianData({
-                name: data.guardian_name || "",
-                phone: data.guardian_phone || "",
-                relationship: data.coach_name || "",
+                name: person.guardian_name || "",
+                phone: person.guardian_phone || "",
+                relationship: person.coach_name || "",
               });
             }
             setGuardianConfirmOpen(true);

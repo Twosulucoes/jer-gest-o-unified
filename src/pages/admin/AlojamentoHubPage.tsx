@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useStageInfo, useLodgingLocations, useLodgingUnits, useLodgingOccupancyCounts } from "@/hooks/useLodgingAdmin";
+import { useStageInfo, useLodgingLocations, useLodgingUnits, useLodgingWings } from "@/hooks/useLodgingAdmin";
+import { useLodgingOccupancy } from "@/hooks/useLodgingOccupancy";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,7 +9,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, Building, DoorOpen, KeyRound, BedDouble, Users, Moon, AlertTriangle, History, ClipboardList
+  Plus, Pencil, Building, DoorOpen, KeyRound, BedDouble, Users, Moon, AlertTriangle, History, ClipboardList, Accessibility
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LodgingLocationFormDialog, { type LodgingLocationFormValues } from "@/components/admin/LodgingLocationFormDialog";
 import LodgingUnitFormDialog, { type LodgingUnitFormValues } from "@/components/admin/LodgingUnitFormDialog";
 import type { StageContext } from "@/components/admin/VehicleFormDialog";
+import { genderRestrictionLabel } from "@/lib/alojamento/labels";
 
 export default function AlojamentoHubPage() {
   const qc = useQueryClient();
@@ -38,16 +40,15 @@ export default function AlojamentoHubPage() {
 
   const { data: locations = [], isLoading: loadingLocations } = useLodgingLocations(stageId);
   const { data: units = [], isLoading: loadingUnits } = useLodgingUnits(stageId);
-  const { data: occupancyCounts = [] } = useLodgingOccupancyCounts(stageId);
-
-  const occCountMap = new Map<string, number>();
-  occupancyCounts.forEach((o: any) => {
-    occCountMap.set(o.unit_id, (occCountMap.get(o.unit_id) || 0) + 1);
-  });
+  const { data: wings = [] } = useLodgingWings(stageId);
+  const { countsByUnit, totals: occupancyTotals } = useLodgingOccupancy(stageId);
+  const activeOccupancyByUnit = (unitId: string) =>
+    countsByUnit.get(unitId)?.active ?? 0;
 
   const totalCapacity = units.reduce((sum: number, u: any) => sum + (u.capacity || 0), 0);
-  const totalOccupied = occupancyCounts.length;
-  const genderLabel = (g: string) => g === "male" ? "Masc." : g === "female" ? "Fem." : "Misto";
+  const totalOccupied = occupancyTotals.active;
+  const accessibleUnitsCount = units.filter((u: any) => u.is_accessible).length;
+  const genderLabel = (g: string) => genderRestrictionLabel(g, { short: true });
 
   const createLocation = useMutation({
     mutationFn: async (v: LodgingLocationFormValues) => {
@@ -72,12 +73,32 @@ export default function AlojamentoHubPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  function buildUnitPayload(v: LodgingUnitFormValues) {
+    const features = v.is_accessible && v.accessible_features.length > 0
+      ? { items: v.accessible_features }
+      : null;
+    return {
+      location_id: v.location_id,
+      wing_id: v.wing_id || null,
+      name: v.name,
+      capacity: v.capacity,
+      gender_restriction: v.gender_restriction,
+      notes: v.notes || null,
+      is_active: v.is_active,
+      floor: v.floor || null,
+      is_accessible: v.is_accessible,
+      accessible_features_json: features,
+      gender_zone: v.gender_zone || null,
+      min_age_policy: v.min_age_policy === "none" ? null : v.min_age_policy,
+    };
+  }
+
   const createUnit = useMutation({
     mutationFn: async (v: LodgingUnitFormValues) => {
       const { error } = await (supabase.from("lodging_units") as any).insert({
-        event_id: stageInfo!.event_id, event_stage_id: stageId,
-        location_id: v.location_id, name: v.name, capacity: v.capacity,
-        gender_restriction: v.gender_restriction, notes: v.notes || null, is_active: v.is_active,
+        event_id: stageInfo!.event_id,
+        event_stage_id: stageId,
+        ...buildUnitPayload(v),
       });
       if (error) throw error;
     },
@@ -87,10 +108,7 @@ export default function AlojamentoHubPage() {
 
   const updateUnit = useMutation({
     mutationFn: async ({ id, ...v }: LodgingUnitFormValues & { id: string }) => {
-      const { error } = await supabase.from("lodging_units").update({
-        location_id: v.location_id, name: v.name, capacity: v.capacity,
-        gender_restriction: v.gender_restriction, notes: v.notes || null, is_active: v.is_active,
-      }).eq("id", id);
+      const { error } = await (supabase.from("lodging_units") as any).update(buildUnitPayload(v)).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["lodging_units"] }); toast.success("Quarto atualizado"); setUnitDialog(false); setEditingUnit(null); },
@@ -133,7 +151,7 @@ export default function AlojamentoHubPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <Building className="h-8 w-8 text-primary shrink-0" />
@@ -170,10 +188,19 @@ export default function AlojamentoHubPage() {
             </div>
           </CardContent>
         </Card>
+        <Card className="border-blue-200/60 bg-blue-50/30 dark:bg-blue-950/10">
+          <CardContent className="p-4 flex items-center gap-3">
+            <Accessibility className="h-8 w-8 text-blue-600 dark:text-blue-400 shrink-0" />
+            <div>
+              <p className="text-2xl font-bold">{accessibleUnitsCount}</p>
+              <p className="text-xs text-muted-foreground">Quartos PCD</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Operations Shortcuts */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("ocupacao")}>
           <CardContent className="flex items-center gap-3 p-4">
             <KeyRound className="h-8 w-8 text-primary shrink-0" />
@@ -200,6 +227,26 @@ export default function AlojamentoHubPage() {
             <div>
               <p className="font-medium text-sm">Presença Noturna</p>
               <p className="text-xs text-muted-foreground">Reconciliação</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors border-emerald-200 bg-emerald-50/10" onClick={() => navigate("alocacao-lote")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <Users className="h-8 w-8 text-emerald-500 shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Alocação em Lote</p>
+              <p className="text-xs text-muted-foreground">Wizard por delegação</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors border-amber-200 bg-amber-50/10" onClick={() => navigate("divergencias")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <AlertTriangle className="h-8 w-8 text-amber-500 shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Divergências</p>
+              <p className="text-xs text-muted-foreground">Alocado × real, ausências</p>
             </div>
           </CardContent>
         </Card>
@@ -233,7 +280,7 @@ export default function AlojamentoHubPage() {
           {locations.map((loc: any) => {
             const locUnits = units.filter((u: any) => u.location_id === loc.id);
             const locCapacity = locUnits.reduce((s: number, u: any) => s + (u.capacity || 0), 0);
-            const locOccupied = locUnits.reduce((s: number, u: any) => s + (occCountMap.get(u.id) || 0), 0);
+            const locOccupied = locUnits.reduce((s: number, u: any) => s + activeOccupancyByUnit(u.id), 0);
 
             return (
               <Card key={loc.id}>
@@ -268,7 +315,7 @@ export default function AlojamentoHubPage() {
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {locUnits.map((u: any) => {
-                        const occ = occCountMap.get(u.id) || 0;
+                        const occ = activeOccupancyByUnit(u.id);
                         const full = occ >= u.capacity;
                         return (
                           <div
@@ -319,14 +366,21 @@ export default function AlojamentoHubPage() {
         stageContext={stageContext}
         onSubmit={(v) => editingLocation ? updateLocation.mutate({ id: editingLocation.id, ...v }) : createLocation.mutate(v)}
         isPending={createLocation.isPending || updateLocation.isPending}
+        dependentCounts={editingLocation ? (() => {
+          const locUnits = units.filter((u: any) => u.location_id === editingLocation.id && u.is_active);
+          const locOcc = locUnits.reduce((s: number, u: any) => s + activeOccupancyByUnit(u.id), 0);
+          return { activeUnits: locUnits.length, activeOccupancies: locOcc };
+        })() : undefined}
       />
       <LodgingUnitFormDialog
         open={unitDialog}
         onOpenChange={(o) => { setUnitDialog(o); if (!o) setEditingUnit(null); }}
         unit={editingUnit}
         locations={locations}
+        wings={wings}
         onSubmit={(v) => editingUnit?.id ? updateUnit.mutate({ id: editingUnit.id, ...v }) : createUnit.mutate(v)}
         isPending={createUnit.isPending || updateUnit.isPending}
+        activeOccupancies={editingUnit?.id ? activeOccupancyByUnit(editingUnit.id) : 0}
       />
     </div>
   );

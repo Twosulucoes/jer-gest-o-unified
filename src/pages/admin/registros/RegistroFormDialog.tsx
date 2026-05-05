@@ -80,7 +80,7 @@ export default function RegistroFormDialog({ open, onOpenChange }: Props) {
       if (!selectedSportEventId) return [];
       const { data, error } = await supabase
         .from("teams")
-        .select("*, delegation:delegations(school_name)")
+        .select("*, delegation:delegations(institutions(name))")
         .eq("event_id", eventId)
         .eq("sport_event_id", selectedSportEventId)
         .order("name");
@@ -195,7 +195,7 @@ export default function RegistroFormDialog({ open, onOpenChange }: Props) {
                       <SelectContent>
                         {teams.map(t => (
                           <SelectItem key={t.id} value={t.id}>
-                            {t.name} ({(t.delegation as any)?.school_name || "Sem delegação"})
+                            {t.name} ({(t.delegation as any)?.institutions?.name || "Sem delegação"})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -214,7 +214,7 @@ export default function RegistroFormDialog({ open, onOpenChange }: Props) {
                       <SelectContent>
                         {teams.map(t => (
                           <SelectItem key={t.id} value={t.id}>
-                            {t.name} ({(t.delegation as any)?.school_name || "Sem delegação"})
+                            {t.name} ({(t.delegation as any)?.institutions?.name || "Sem delegação"})
                           </SelectItem>
                         ))}
                       </SelectContent>

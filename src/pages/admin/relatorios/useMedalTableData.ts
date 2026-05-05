@@ -186,16 +186,16 @@ export function useMedalTableData(eventId: string | null | undefined, filters: M
         if (d) pseToDeleg.set(p.id, d);
       }
 
-      // 8) delegations → school_name
+      // 8) delegations → nome da escola (vindo de institutions, fonte canônica)
       const delegIdsAll = new Set<string>();
       teamToDeleg.forEach((d) => delegIdsAll.add(d));
       pseToDeleg.forEach((d) => delegIdsAll.add(d));
       const delegIds = Array.from(delegIdsAll);
       const { data: delegs = [] } = delegIds.length
-        ? await supabase.from("delegations").select("id, school_name").in("id", delegIds).eq("event_id", eventId)
+        ? await supabase.from("delegations").select("id, institutions(name)").in("id", delegIds).eq("event_id", eventId)
         : { data: [] as any[] };
       const delegToSchool = new Map<string, string>();
-      for (const d of delegs as any[]) delegToSchool.set(d.id, d.school_name || "—");
+      for (const d of delegs as any[]) delegToSchool.set(d.id, d.institutions?.name || "—");
 
       // ─── Aplicar filtros de escopo/tipo/modalidade ───
       const passesFilter = (se: SEMeta) => {

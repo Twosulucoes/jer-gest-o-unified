@@ -501,3 +501,30 @@ div[style*="Edit with Lovable"],
   z-index: -9999 !important;
 }
 
+
+/* ============================================================
+ * QW4 da auditoria UX/UI
+ * ============================================================ */
+
+/* Utility: focus-ring acessível, padronizado.
+   Aplica anel visível no foco por teclado (focus-visible), evitando
+   vazar no clique de mouse. */
+@layer utilities {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+/* Respeita prefers-reduced-motion: anima quase nada para usuários
+   que pedem menos movimento (configuração do SO/navegador, alta
+   prevalência em dispositivos de acessibilidade). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

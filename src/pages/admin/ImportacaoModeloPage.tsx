@@ -35,11 +35,11 @@ export default function ImportacaoModeloPage() {
         supabase.from("sports").select("name").eq("event_id", eventId).order("name"),
         supabase.from("sport_events").select("id, name, sport:sports(name), category:categories(name, gender_scope)").eq("event_id", eventId).eq("is_active", true).order("name"),
         supabase.from("categories").select("name, gender_scope").eq("event_id", eventId).order("name"),
-        supabase.from("delegations").select("school_name").eq("event_id", eventId).order("school_name"),
+        supabase.from("delegations").select("institutions(name)").eq("event_id", eventId),
       ]);
 
       const modalidades = Array.from(new Set((sportsRes.data ?? []).map((s: any) => s.name))).filter(Boolean);
-      const escolas = Array.from(new Set((delegationsRes.data ?? []).map((d: any) => d.school_name))).filter(Boolean);
+      const escolas = Array.from(new Set((delegationsRes.data ?? []).map((d: any) => d.institutions?.name))).filter(Boolean) as string[];
 
       // Provas: nomes reais das sport_events cadastradas
       const provasSet = new Set<string>();

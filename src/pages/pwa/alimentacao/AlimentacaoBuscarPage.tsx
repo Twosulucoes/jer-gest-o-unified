@@ -41,6 +41,10 @@ export default function AlimentacaoBuscarPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            inputMode="search"
+            autoCapitalize="off"
+            autoCorrect="off"
+            autoComplete="off"
           />
           <Button onClick={handleSearch} disabled={loading || !query.trim()}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
@@ -54,19 +58,37 @@ export default function AlimentacaoBuscarPage() {
         )}
 
         <div className="space-y-2">
-          {results.map((p) => (
-            <Card key={p.participant_id} className="cursor-pointer hover:bg-accent/50 active:scale-[0.98] transition-all">
-              <CardContent className="p-3 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">{p.full_name}</p>
-                  <p className="text-xs text-muted-foreground">{p.participant_type}</p>
-                </div>
-                {p.cpf && (
-                  <Badge variant="outline" className="text-xs text-muted-foreground">{p.cpf}</Badge>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+          {results.map((p) => {
+            const blockReason = p.is_active === false
+              ? "inativo"
+              : p.needs_meals === false
+                ? "não precisa alim."
+                : !p.credentialed_at
+                  ? "sem credencial"
+                  : p.left_event_at
+                    ? "saiu do evento"
+                    : null;
+            return (
+              <Card key={p.participant_id} className="cursor-pointer hover:bg-accent/50 active:scale-[0.98] transition-all">
+                <CardContent className="p-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{p.full_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{p.participant_type}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {blockReason && (
+                      <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                        {blockReason}
+                      </span>
+                    )}
+                    {p.cpf && (
+                      <Badge variant="outline" className="text-xs text-muted-foreground">{p.cpf}</Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </main>
     </PwaLayout>

@@ -102,10 +102,10 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
     queryKey: ["delegations_for_form", eventId],
     enabled: !!eventId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("delegations")
-        .select("id, school_name, institution:institutions(name)")
-        .eq("event_id", eventId!).order("school_name");
+        .select("id, institution:institutions(name)")
+        .eq("event_id", eventId!);
       if (error) throw error;
       return data;
     },
@@ -151,7 +151,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
       setBirthDate(p.person?.birth_date ?? "");
       setGender(p.person?.gender ?? "");
       setParticipantType(p.participant_type);
-      setParticipantCategory(p.category || "delegation");
+      setParticipantCategory((p.enrollment_class as "delegation" | "organization") || "delegation");
       setDelegationId(p.delegation_id ?? "");
       setOrganizationSubtype(p.organization_subtype ?? "");
       setRoleFunction(p.role_function ?? "");
@@ -214,7 +214,8 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
       if (isEdit && existing) {
         personId = (existing.participant as any).person_id;
         pId = (existing.participant as any).id;
-        // Update person
+        // Update person — cadastrais civis (vínculos guardian/coach) vivem
+        // em `people` desde a Fase A2.
         const { error: errPerson } = await supabase.from("people").update({
           full_name: fullName.trim(),
           cpf: cpfClean,
@@ -225,22 +226,23 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           food_restrictions: foodRestrictions || null,
           disability_type: disabilityType || null,
           medical_notes: medicalNotes || null,
-        }).eq("id", personId);
+          guardian_name: participantCategory === "delegation" ? (guardianName || null) : null,
+          guardian_phone: participantCategory === "delegation" ? (guardianPhone || null) : null,
+          coach_name: participantCategory === "delegation" ? (coachName || null) : null,
+          coach_phone: participantCategory === "delegation" ? (coachPhone || null) : null,
+        } as any).eq("id", personId);
         if (errPerson) throw errPerson;
-        // Update participant
-        const { error: errPart } = await supabase.from("participants").update({
+        // Update participant — só campos da inscrição.
+        const { error: errPart } = await (supabase.from("participants") as any).update({
           participant_type: participantType,
+          enrollment_class: participantCategory,
           delegation_id: participantCategory === "delegation" ? (delegationId || null) : null,
           needs_transport: needsTransport,
           needs_meals: needsMeals,
           needs_lodging: needsLodging,
           logistics_restrictions: logisticsRestrictions || null,
           logistics_notes: logisticsNotes || null,
-          guardian_name: participantCategory === "delegation" ? (guardianName || null) : null,
-          guardian_phone: participantCategory === "delegation" ? (guardianPhone || null) : null,
-          coach_name: participantCategory === "delegation" ? (coachName || null) : null,
-          coach_phone: participantCategory === "delegation" ? (coachPhone || null) : null,
-        } as any).eq("id", pId);
+        }).eq("id", pId);
         if (errPart) throw errPart;
       } else {
         // Find or create person by CPF
@@ -259,7 +261,9 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
             throw new Error("Esta pessoa (CPF " + cpfClean + ") já está cadastrada neste evento.");
           }
         } else {
-          const { data: newPerson, error: errCreate } = await supabase.from("people").insert({
+          // Cadastrais civis (vínculos guardian/coach) vivem em `people`
+          // desde a Fase A2.
+          const { data: newPerson, error: errCreate } = await (supabase.from("people") as any).insert({
             full_name: fullName.trim(),
             cpf: cpfClean,
             email: email || null,
@@ -269,6 +273,10 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
             food_restrictions: foodRestrictions || null,
             disability_type: disabilityType || null,
             medical_notes: medicalNotes || null,
+            guardian_name: participantCategory === "delegation" ? (guardianName || null) : null,
+            guardian_phone: participantCategory === "delegation" ? (guardianPhone || null) : null,
+            coach_name: participantCategory === "delegation" ? (coachName || null) : null,
+            coach_phone: participantCategory === "delegation" ? (coachPhone || null) : null,
           }).select("id").single();
           if (errCreate) throw errCreate;
           personId = newPerson.id;
@@ -278,6 +286,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           event_id: eventId,
           delegation_id: participantCategory === "delegation" ? (delegationId || null) : null,
           participant_type: participantType,
+          enrollment_class: participantCategory,
           status: "confirmed",
           is_active: true,
           needs_transport: needsTransport,
@@ -285,10 +294,6 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           needs_lodging: needsLodging,
           logistics_restrictions: logisticsRestrictions || null,
           logistics_notes: logisticsNotes || null,
-          guardian_name: participantCategory === "delegation" ? (guardianName || null) : null,
-          guardian_phone: participantCategory === "delegation" ? (guardianPhone || null) : null,
-          coach_name: participantCategory === "delegation" ? (coachName || null) : null,
-          coach_phone: participantCategory === "delegation" ? (coachPhone || null) : null,
         }).select("id").single();
         if (errPart) throw errPart;
         pId = newPart.id;
@@ -496,7 +501,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
                         >
                           <span className="truncate">
                             {delegationId
-                              ? delegations.find((d: any) => d.id === delegationId)?.school_name
+                              ? delegations.find((d: any) => d.id === delegationId)?.institution?.name
                               : "Sem delegação"}
                           </span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -518,11 +523,11 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
                               {delegations.map((d: any) => (
                                 <CommandItem
                                   key={d.id}
-                                  value={d.school_name}
+                                  value={d.institution?.name}
                                   onSelect={() => { setDelegationId(d.id); setDelegationOpen(false); }}
                                 >
                                   <Check className={cn("mr-2 h-4 w-4", delegationId === d.id ? "opacity-100" : "opacity-0")} />
-                                  {d.school_name}
+                                  {d.institution?.name}
                                 </CommandItem>
                               ))}
                             </CommandGroup>

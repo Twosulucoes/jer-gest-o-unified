@@ -22,8 +22,46 @@ export const saveOfflineQueue = (queue: OfflineQueueItem[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
 };
 
-export const addToOfflineQueue = (module: "alimentacao" | "transporte", data: Record<string, unknown>, participantName?: string) => {
+/**
+ * Etapa 6 (auditoria Alimentação): deduplicação determinística no ato
+ * do enfileiramento. Para o mesmo `meal_window_id + participant_id` na
+ * fila de alimentação ainda não sincronizado, mantém o registro original
+ * em vez de empilhar duplicatas que iriam colidir no UNIQUE do banco.
+ */
+function findDuplicateMealItem(
+  queue: OfflineQueueItem[],
+  data: Record<string, unknown>,
+): OfflineQueueItem | undefined {
+  const windowId = (data as any)?.meal_window_id;
+  const participantId = (data as any)?.participant_id;
+  if (!windowId || !participantId) return undefined;
+  return queue.find(
+    (item) =>
+      item.module === "alimentacao" &&
+      item.status !== "conflict" &&
+      (item.data as any)?.meal_window_id === windowId &&
+      (item.data as any)?.participant_id === participantId,
+  );
+}
+
+export type AddToOfflineQueueResult =
+  | { item: OfflineQueueItem; deduped: false }
+  | { item: OfflineQueueItem; deduped: true };
+
+export const addToOfflineQueue = (
+  module: "alimentacao" | "transporte",
+  data: Record<string, unknown>,
+  participantName?: string,
+): AddToOfflineQueueResult => {
   const queue = getOfflineQueue();
+
+  if (module === "alimentacao") {
+    const existing = findDuplicateMealItem(queue, data);
+    if (existing) {
+      return { item: existing, deduped: true };
+    }
+  }
+
   const newItem: OfflineQueueItem = {
     id: crypto.randomUUID(),
     module,
@@ -35,7 +73,7 @@ export const addToOfflineQueue = (module: "alimentacao" | "transporte", data: Re
   };
   queue.push(newItem);
   saveOfflineQueue(queue);
-  return newItem;
+  return { item: newItem, deduped: false };
 };
 
 export const removeFromOfflineQueue = (id: string) => {
@@ -74,11 +112,47 @@ export const syncOfflineQueue = async () => {
       if (item.module === "alimentacao") {
         const { error } = await supabase.from("meal_consumptions").insert(item.data as any);
         if (error) {
-          if (error.code === "23505") { // Unique violation
-             updatedQueue[idx].status = "conflict";
-             updatedQueue[idx].lastError = "Consumo já registrado para este período.";
-             errorCount++;
-             continue;
+          if (error.code === "23505") {
+            // Etapa 6: ao bater no UNIQUE durante o sync (outro operador
+            // já registrou o consumo, possivelmente em outro device),
+            // gravamos meal_incidents.DUPLICATE marcado como offline e
+            // descartamos o item da fila. O consumo "vencedor" continua
+            // íntegro no banco; a tentativa offline ganha trilha de
+            // auditoria em vez de sumir silenciosamente.
+            try {
+              const data = item.data as any;
+              await (supabase as any).rpc("record_meal_incident", {
+                p_meal_window_id: data?.meal_window_id,
+                p_incident_type: "DUPLICATE",
+                p_participant_id: data?.participant_id ?? null,
+                p_is_offline: true,
+                p_incident_at: item.timestamp,
+                p_device_info: {
+                  source: "offline_queue_sync",
+                  attempts: item.attempts,
+                  participantName: item.participantName ?? null,
+                  userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+                },
+              });
+            } catch (incidentErr) {
+              // Se o registro do incidente também falhar, mantemos o
+              // item como conflict para revisão manual em vez de perdê-lo.
+              const cur = getOfflineQueue();
+              const cIdx = cur.findIndex((i) => i.id === item.id);
+              if (cIdx !== -1) {
+                cur[cIdx].status = "conflict";
+                cur[cIdx].lastError =
+                  "Consumo já registrado para este período (falha ao gravar incidente).";
+                saveOfflineQueue(cur);
+              }
+              errorCount++;
+              continue;
+            }
+            // Sucesso na "resolução": remove da fila local.
+            const finalQueueDup = getOfflineQueue().filter((i) => i.id !== item.id);
+            saveOfflineQueue(finalQueueDup);
+            errorCount++;
+            continue;
           }
           throw error;
         }

@@ -38,7 +38,7 @@ const ParticipanteDetalhePage = lazy(() => import("../pages/admin/ParticipanteDe
 const ParticipanteHistoricoPage = lazy(() => import("../pages/admin/ParticipanteHistoricoPage"));
 const PessoasPage = lazy(() => import("../pages/admin/PessoasPage"));
 const EventuaisPage = lazy(() => import("../pages/admin/EventuaisPage"));
-const ArbitrosPage = lazy(() => import("../pages/admin/ArbitrosPage"));
+const ArbitragemEquipePage = lazy(() => import("../pages/admin/ArbitragemEquipePage"));
 const RegrasPage = lazy(() => import("../pages/admin/RegrasPage"));
 const ComplianceDashboardPage = lazy(() => import("../pages/admin/ComplianceDashboardPage"));
 const AuditoriaPage = lazy(() => import("../pages/admin/AuditoriaPage"));
@@ -57,6 +57,7 @@ const AjudaChamadosPage = lazy(() => import("../pages/admin/AjudaChamadosPage"))
 const AjudaChatPage = lazy(() => import("../pages/admin/AjudaChatPage"));
 const AjudaManualPage = lazy(() => import("../pages/admin/AjudaManualPage"));
 const CompeticaoPartidaDetalhePage = lazy(() => import("../pages/admin/CompeticaoPartidaDetalhePage"));
+const SubstituicoesPage = lazy(() => import("../pages/admin/SubstituicoesPage"));
 const CompeticaoLancamentoScorePage = lazy(() => import("../pages/admin/CompeticaoLancamentoScorePage"));
 const CompeticaoLancamentoSetsPage = lazy(() => import("../pages/admin/CompeticaoLancamentoSetsPage"));
 const CompeticaoLancamentoCombatPage = lazy(() => import("../pages/admin/CompeticaoLancamentoCombatPage"));
@@ -134,6 +135,10 @@ const AdminAlojamentoUnidadesPage = lazy(() => import("../pages/admin/Alojamento
 const AdminAlojamentoPresencaPage = lazy(() => import("../pages/admin/AlojamentoPresencaPage"));
 const AdminAlojamentoLocaisPage = lazy(() => import("../pages/admin/AlojamentoLocaisPage"));
 const AdminAlojamentoRelatoriosPage = lazy(() => import("../pages/admin/AlojamentoRelatoriosPage"));
+const AdminAlojamentoDivergenciasPage = lazy(() => import("../pages/admin/AlojamentoDivergenciasPage"));
+const AdminAlojamentoAlocacaoLotePage = lazy(() => import("../pages/admin/alojamento/AlocacaoLotePage"));
+const AdminAlojamentoColchoesPage = lazy(() => import("../pages/admin/alojamento/AlojamentoColchoesPage"));
+const AdminAlojamentoEscolasPage = lazy(() => import("../pages/admin/alojamento/AlojamentoEscolasPage"));
 
 // Competicao Subpages (Admin)
 const CompeticaoPainelPage = lazy(() => import("../pages/admin/CompeticaoPainelPage"));
@@ -192,6 +197,8 @@ const DelegacaoHomePage = lazy(() => import("../pages/pwa/delegacao/DelegacaoHom
 const DelegacaoParticipantesPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoParticipantesPage"));
 const DelegacaoAgendaPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoAgendaPage"));
 const DelegacaoLogisticaPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoLogisticaPage"));
+const DelegacaoAlimentacaoPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoAlimentacaoPage"));
+const DelegacaoSubstituicoesPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoSubstituicoesPage"));
 const DelegacaoLocaisPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoLocaisPage"));
 const DelegacaoProtestosPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoProtestosPage"));
 const DelegacaoProtestoNovoPage = lazy(() => import("../pages/pwa/delegacao/DelegacaoProtestoNovoPage"));
@@ -199,6 +206,9 @@ const DelegacaoProtestoDetalhePage = lazy(() => import("../pages/pwa/delegacao/D
 const PwaDebugPage = lazy(() => import("../pages/pwa/PwaDebugPage"));
 const QrDiagnosticoPage = lazy(() => import("../pages/pwa/diagnostico/QrDiagnosticoPage"));
 const RefereePwaProfilePage = lazy(() => import("../pages/pwa/arbitragem/RefereeProfilePage"));
+const ArbitragemHomePage = lazy(() => import("../pages/pwa/arbitragem/ArbitragemHomePage"));
+const ArbitragemAgendaPage = lazy(() => import("../pages/pwa/arbitragem/ArbitragemAgendaPage"));
+const ArbitragemIndisponibilidadePage = lazy(() => import("../pages/pwa/arbitragem/ArbitragemIndisponibilidadePage"));
 const VincularCredencialPage = lazy(() => import("../pages/pwa/credenciamento/VincularCredencialPage"));
 const PwaSelectionFallback = lazy(() => import("../pages/pwa/PwaSelectionFallback"));
 const PwaNotFoundHandler = lazy(() => import("../components/pwa/PwaNotFoundHandler"));
@@ -278,6 +288,7 @@ export const AppRoutes = () => (
             <Route path="competicao/pre-validacao" element={<CompeticaoPreValidacaoPage />} />
             <Route path="competicao/regras" element={<RegrasPage />} />
             <Route path="competicao/partida/:matchId" element={<CompeticaoPartidaDetalhePage />} />
+            <Route path="competicao/substituicoes" element={<SubstituicoesPage />} />
             <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
             <Route path="alojamento" element={<AlojamentoHubPage />} />
             <Route path="alojamento/ocupacao" element={<AdminAlojamentoOcupacaoPage />} />
@@ -285,6 +296,10 @@ export const AppRoutes = () => (
             <Route path="alojamento/locais" element={<AdminAlojamentoLocaisPage />} />
             <Route path="alojamento/presenca" element={<AdminAlojamentoPresencaPage />} />
             <Route path="alojamento/relatorios" element={<AdminAlojamentoRelatoriosPage />} />
+            <Route path="alojamento/divergencias" element={<AdminAlojamentoDivergenciasPage />} />
+            <Route path="alojamento/alocacao-lote" element={<AdminAlojamentoAlocacaoLotePage />} />
+            <Route path="alojamento/colchoes" element={<AdminAlojamentoColchoesPage />} />
+            <Route path="alojamento/escolas" element={<AdminAlojamentoEscolasPage />} />
             <Route path="alimentacao" element={<AlimentacaoHubPage />} />
             <Route path="alimentacao/tipos" element={<AdminAlimentacaoTiposPage />} />
             <Route path="alimentacao/janelas" element={<AdminAlimentacaoJanelasPage />} />
@@ -310,7 +325,7 @@ export const AppRoutes = () => (
            <Route path="relatorios" element={<StageReportsPage />} />
         </Route>
 
-        <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitrosPage /></ProtectedRoute>} />
+        <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitragemEquipePage /></ProtectedRoute>} />
         <Route path="arbitragem/config" element={<ProtectedRoute allowedRoles={["admin"]}><RefereeRemunerationConfigPage /></ProtectedRoute>} />
         <Route path="arbitragem/relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RefereeReportingPage /></ProtectedRoute>} />
         <Route path="modalidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ModalidadesPage /></ProtectedRoute>} />
@@ -434,17 +449,36 @@ export const AppRoutes = () => (
         <Route path="delegacao/participantes" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoParticipantesPage /></PwaRouteGuard>} />
         <Route path="delegacao/agenda" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoAgendaPage /></PwaRouteGuard>} />
         <Route path="delegacao/logistica" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoLogisticaPage /></PwaRouteGuard>} />
+        <Route path="delegacao/alimentacao" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoAlimentacaoPage /></PwaRouteGuard>} />
+        <Route path="delegacao/substituicoes" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria", "coordenacao_tecnica"]}><DelegacaoSubstituicoesPage /></PwaRouteGuard>} />
         <Route path="delegacao/locais" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoLocaisPage /></PwaRouteGuard>} />
         <Route path="delegacao/protestos" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestosPage /></PwaRouteGuard>} />
         <Route path="delegacao/protesto/novo" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
         <Route path="delegacao/protesto/:id" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
 
-        <Route path="arbitragem/perfil" element={<RefereePwaProfilePage />} />
+        <Route path="arbitragem" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemHomePage /></PwaRouteGuard>} />
+        <Route path="arbitragem/agenda" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemAgendaPage /></PwaRouteGuard>} />
+        <Route path="arbitragem/indisponibilidade" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemIndisponibilidadePage /></PwaRouteGuard>} />
+        <Route path="arbitragem/perfil" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><RefereePwaProfilePage /></PwaRouteGuard>} />
         <Route path="credenciamento" element={<Navigate to="vincular" replace />} />
         <Route path="credenciamento/vincular" element={<VincularCredencialPage />} />
         
         <Route path="debug" element={<PwaDebugPage />} />
         <Route path="diagnostico/qr" element={<QrDiagnosticoPage />} />
+
+        {/*
+          Wildcard de recuperação por módulo. Captura URLs com lixo
+          (ex: /pwa/alimentacao/<UUID>) e renderiza a home do módulo,
+          em vez de cair no catch-all global e gerar loop de redirect.
+          Rotas específicas acima ainda têm prioridade no React Router v6.
+        */}
+        <Route path="alojamento/*" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoHomePage /></PwaRouteGuard>} />
+        <Route path="alimentacao/*" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoHomePage /></PwaRouteGuard>} />
+        <Route path="transporte/*" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteHomePage /></PwaRouteGuard>} />
+        <Route path="coordenacao-tecnica/*" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
+        <Route path="delegacao/*" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoHomePage /></PwaRouteGuard>} />
+        <Route path="arbitragem/*" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemHomePage /></PwaRouteGuard>} />
+        <Route path="resultados/*" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosHomePage /></PwaRouteGuard>} />
 
         {/* Catch-all for modules not yet explicitly defined or "coming soon" */}
         <Route path=":module" element={<PwaModulePage />} />

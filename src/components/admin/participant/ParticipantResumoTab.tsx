@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Mail, Phone, Heart, Accessibility, Trophy, Swords, IdCard, BedDouble, UtensilsCrossed, Bus } from "lucide-react";
+import ParticipantEarlyExitCard from "./ParticipantEarlyExitCard";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta", coach: "Técnico", head_of_delegation: "Chefe Delegação", staff: "Staff",
@@ -12,7 +13,7 @@ interface Props {
   participant: {
     id: string;
     participant_type: string;
-    category?: string;
+    enrollment_class?: string;
     status: string;
     is_active: boolean;
     notes: string | null;
@@ -153,7 +154,7 @@ export default function ParticipantResumoTab({ participant, person, institution 
             <CardTitle className="text-base">Participação no Evento</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <Row label="Categoria" value={participant.category === "organization" ? "Organização" : "Delegação"} />
+            <Row label="Categoria" value={participant.enrollment_class === "organization" ? "Organização" : "Delegação"} />
             <Row label="Tipo" value={TYPE_LABELS[participant.participant_type] ?? participant.participant_type} />
             <Row label="Instituição" value={institution?.name} />
             <Row label="Ativo" value={participant.is_active ? "Sim" : "Não"} />
@@ -164,7 +165,7 @@ export default function ParticipantResumoTab({ participant, person, institution 
         </Card>
 
         {/* Dados Administrativos (Organização) */}
-        {participant.category === "organization" && (
+        {participant.enrollment_class === "organization" && (
           <Card className="md:col-span-2">
             <CardHeader className="pb-3 border-b">
               <CardTitle className="text-base flex items-center gap-2">
@@ -190,6 +191,12 @@ export default function ParticipantResumoTab({ participant, person, institution 
             </CardContent>
           </Card>
         )}
+
+        {/* Saída antecipada do evento (Etapa 2 — Alimentação) */}
+        <ParticipantEarlyExitCard
+          participantId={participant.id}
+          participantName={person?.full_name ?? "este participante"}
+        />
 
         {/* Saúde / restrições */}
         {(person?.food_restrictions || person?.disability_type || person?.medical_notes) && (

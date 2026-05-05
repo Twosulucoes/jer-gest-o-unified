@@ -406,26 +406,14 @@ export const systemMap: SystemMapGroup[] = [
         nextActions: ["Implementar quadro de medalhas"],
       },
       {
-        id: "arbitragem-base",
-        label: "Árbitros (Base)",
+        id: "arbitragem-equipe",
+        label: "Equipe de Arbitragem",
         route: "/admin/arbitragem",
-        pageFile: "src/pages/admin/ArbitrosPage.tsx",
-        description: "Cadastro central de oficiais de arbitragem e base de árbitros.",
+        pageFile: "src/pages/admin/ArbitragemEquipePage.tsx",
+        description: "Página unificada com 4 abas — Árbitros (cadastro/convite/import), Por oficial (designações agregadas por usuário), Por modalidade, Escala em lote — KPIs e exportação CSV/PDF de escalas.",
         roles: ["admin", "secretaria", "coordenacao_tecnica"],
         status: ModuleStatus.DONE,
-        dataSources: ["referee_profiles", "profiles"],
-        gaps: [],
-        nextActions: [],
-      },
-      {
-        id: "arbitragem-equipe",
-        label: "Escala de Arbitragem",
-        route: "/admin/competicao/arbitragem",
-        pageFile: "src/pages/admin/ArbitragemEquipePage.tsx",
-        description: "Escalas por etapa e modalidade usando os usuários cadastrados para liberar partidas no JER Ao Vivo.",
-        roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", "arbitragem"],
-        status: ModuleStatus.DONE,
-        dataSources: ["match_user_assignments", "competition_matches", "profiles"],
+        dataSources: ["user_roles", "profiles", "referee_profiles", "match_user_assignments", "competition_matches", "people"],
         gaps: [],
         nextActions: [],
       },
@@ -549,30 +537,12 @@ export const systemMap: SystemMapGroup[] = [
         gaps: [],
         nextActions: [],
       },
-      {
-        id: "painel-score",
-        label: "Painel de Confrontos (Score)",
-        route: "/admin/competicao/painel-score",
-        pageFile: "src/pages/admin/CompeticaoPainelScorePage.tsx",
-        description: "Gestão operacional de confrontos e resultados para modalidades de placar (futebol, futsal, basquete etc).",
-        roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"],
-        status: ModuleStatus.DONE,
-        dataSources: ["competition_matches", "competition_match_results", "match_scores"],
-        gaps: [],
-        nextActions: [],
-      },
-      {
-        id: "painel-sets",
-        label: "Painel de Confrontos (Sets)",
-        route: "/admin/competicao/painel-sets",
-        pageFile: "src/pages/admin/CompeticaoPainelSetsPage.tsx",
-        description: "Gestão operacional de confrontos e resultados para modalidades de sets e parciais (vôlei, tênis de mesa etc).",
-        roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"],
-        status: ModuleStatus.DONE,
-        dataSources: ["competition_matches", "competition_match_results", "match_scores"],
-        gaps: [],
-        nextActions: [],
-      },
+      // (removidas as entradas painel-score e painel-sets que apontavam para
+      // CompeticaoPainelScorePage.tsx e CompeticaoPainelSetsPage.tsx — páginas
+      // órfãs deletadas na Fase 2 da auditoria de competição.
+      // O lançamento de placar/sets continua via CompeticaoLancamentoScorePage
+      // e CompeticaoLancamentoSetsPage, acessíveis pelas rotas
+      // /admin/competicao/painel-score/:sportEventId/confronto/:matchId/resultado.)
     ],
   },
   {

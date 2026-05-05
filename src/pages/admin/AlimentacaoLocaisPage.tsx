@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScope } from "@/hooks/useStageScope";
 import { toast } from "sonner";
 import { Plus, Pencil, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ export default function AlimentacaoLocaisPage() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
+  const { stageId } = useStageScope();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,8 +39,10 @@ export default function AlimentacaoLocaisPage() {
 
   const createMut = useMutation({
     mutationFn: async (v: MealLocationFormValues) => {
+      if (!stageId) throw new Error("Selecione uma etapa antes de criar local.");
       const { error } = await (supabase as any).from("meal_locations").insert({
         event_id: selectedEventId!,
+        event_stage_id: stageId,
         name: v.name,
         address: v.address || null,
         capacity: v.capacity || null,

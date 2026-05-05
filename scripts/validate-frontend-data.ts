@@ -43,11 +43,14 @@ async function runValidation() {
       }
     },
     {
-      name: 'Colunas críticas em Delegations (school_name, status, event_id)',
+      name: 'Delegations canônica (institutions.name via FK, status, event_id)',
       test: async () => {
+        // delegations.school_name foi dropped na Fase B3 da Normalização
+        // (20260503202727). O nome da escola agora vive em
+        // institutions.name e é lido via JOIN.
         const { error } = await supabase
           .from('delegations')
-          .select('id, school_name, status, event_id')
+          .select('id, status, event_id, institution_id, institutions(name)')
           .limit(1);
         if (error) throw error;
       }

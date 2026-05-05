@@ -15,11 +15,12 @@ import { usePwaNavigation } from "@/hooks/pwa/usePwaNavigation";
 import { PwaHeader } from "./PwaHeader";
 import { PwaScreen } from "./PwaScreen";
 import { OfflineSyncStatus } from "./OfflineSyncStatus";
+import { PwaOfflineBanner } from "./PwaOfflineBanner";
 import { VersionBadge } from "@/components/VersionBadge";
 import { cn } from "@/lib/utils";
 import {
   Home, Scan, Search, History, ClipboardList, Users,
-  Calendar, Bus, Trophy, LayoutDashboard, Radio, LogOut,
+  Calendar, Bus, Trophy, LayoutDashboard, LayoutGrid, Radio, LogOut,
   Menu, ShieldCheck, AlertCircle, Settings, Layers, Plus,
   UtensilsCrossed, Building, IdCard, Award
 } from "lucide-react";
@@ -84,6 +85,7 @@ export default function PwaLayout({
     alojamento: { title: "Alojamento", icon: Building, scanTo: "/pwa/alojamento/scan", homeTo: "/pwa/alojamento" },
     "coordenacao-tecnica": { title: "Coordenação", icon: Trophy, homeTo: "/pwa/coordenacao-tecnica", primaryAction: { icon: Search, to: "/pwa/coordenacao-tecnica/consulta", label: "Consultar" } },
     delegacao: { title: "Delegação", icon: Users, homeTo: "/pwa/delegacao" },
+    arbitragem: { title: "Arbitragem", icon: ShieldCheck, homeTo: "/pwa/arbitragem", primaryAction: { icon: Calendar, to: "/pwa/arbitragem/agenda", label: "Agenda" } },
     credenciamento: { title: "Credenciamento", icon: IdCard, scanTo: "/pwa/credenciamento/vincular", homeTo: "/pwa/credenciamento" },
     resultados: { title: "Resultados", icon: Award, homeTo: "/pwa/resultados" },
     registros: { title: "Registros", icon: Trophy, homeTo: "/pwa/registros", primaryAction: { icon: Plus, to: "/pwa/registros", label: "Novo" } },
@@ -105,8 +107,8 @@ export default function PwaLayout({
       { role: "secretaria", label: "Credenciamento", icon: IdCard, to: "/pwa/credenciamento/vincular" },
       { role: "mesario", label: "Ao Vivo", icon: Radio, to: "/aovivo" },
       { role: "mesario", label: "Registros", icon: Trophy, to: "/pwa/registros", showOnlyIfRegistrosEnabled: true },
+      { role: "arbitragem", label: "Arbitragem", icon: ShieldCheck, to: "/pwa/arbitragem" },
       { role: "arbitragem", label: "Ao Vivo", icon: Radio, to: "/pwa/resultados" },
-      { role: "arbitragem", label: "Meu Perfil", icon: ShieldCheck, to: "/pwa/arbitragem/perfil" },
     ] as const;
     
     const isSuperOrAdmin = hasRole("admin") || hasRole("super_admin");
@@ -183,6 +185,7 @@ export default function PwaLayout({
 
   return (
     <PwaScreen noPadding className="min-h-[100dvh]">
+      <PwaOfflineBanner />
       {path !== "/pwa" && path !== "/pwa/" && (
         <PwaHeader
           title={displayTitle}
@@ -190,24 +193,21 @@ export default function PwaLayout({
           backTo={backToOverride ?? backTo}
           onBack={onBackOverride ?? onBack}
           onSignOut={handleSignOut}
+          hideStage={(currentModule === "alojamento" || currentModule === "alimentacao") && !!activeStage}
         />
       )}
       <PwaLayoutCtx.Provider value={ownCtxValue}>
-        {/* Banner de Etapa Ativa para segurança operacional (Alojamento/Alimentação) */}
+        {/* Banner de Etapa Ativa para segurança operacional (Alojamento/Alimentação).
+            Polish UX: removido o badge ID hex (operador não usa esse valor; ocupava espaço).
+            O nome da etapa só aparece aqui — header não duplica mais. */}
         {(currentModule === "alojamento" || currentModule === "alimentacao") && activeStage && (
-          <div className="sticky top-14 z-10 bg-amber-500/20 dark:bg-amber-500/10 border-b border-amber-500/40 px-4 py-2.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-amber-800 dark:text-amber-400 backdrop-blur-md shadow-sm">
-            <div className="flex items-center gap-2 truncate mr-3">
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-500">
-                <Layers className="h-3 w-3" />
-              </div>
-              <span className="truncate">
-                ETAPA: <span className="font-black text-amber-900 dark:text-amber-300">{activeStage.name}</span>
-              </span>
+          <div className="sticky top-14 z-10 bg-amber-500/20 dark:bg-amber-500/10 border-b border-amber-500/40 px-4 py-2.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-amber-800 dark:text-amber-400 backdrop-blur-md shadow-sm">
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-500 shrink-0">
+              <Layers className="h-3 w-3" />
             </div>
-            <div className="shrink-0 flex items-center gap-1 font-mono text-[9px] font-bold opacity-90 bg-background/60 dark:bg-black/30 px-2 py-0.5 rounded border border-amber-500/30 tabular-nums text-amber-900 dark:text-amber-200">
-              <span className="opacity-50 font-normal">ID:</span>
-              <span>{activeStage.id.slice(0, 8)}</span>
-            </div>
+            <span className="truncate">
+              ETAPA: <span className="font-black text-amber-900 dark:text-amber-300">{activeStage.name}</span>
+            </span>
           </div>
         )}
         <main className={cn("flex-1 overflow-auto", !hideFooter && "pb-24")}>
@@ -243,9 +243,12 @@ export default function PwaLayout({
               {showSwitcher && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex flex-col items-center gap-1 text-muted-foreground transition-all active:scale-90">
-                      <LayoutDashboard className="h-6 w-6" />
-                      <span className="text-[10px] font-bold uppercase tracking-tighter">Trocar</span>
+                    <button
+                      className="flex flex-col items-center gap-1 text-muted-foreground transition-all active:scale-90"
+                      aria-label="Trocar módulo ou etapa"
+                    >
+                      <LayoutGrid className="h-6 w-6" />
+                      <span className="text-[10px] font-bold uppercase tracking-tighter">Módulos</span>
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-app-lg">

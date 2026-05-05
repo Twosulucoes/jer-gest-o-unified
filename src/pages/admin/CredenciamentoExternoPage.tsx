@@ -129,7 +129,9 @@ export default function CredenciamentoExternoPage() {
   // ====== Carregamento progressivo dos participantes ======
   // 1ª página renderiza imediatamente; demais entram em segundo plano.
   const PARTICIPANT_SELECT =
-    "id, participant_type, delegation_id, person:people!participants_person_id_fkey(full_name, cpf, photo_url), delegation:delegations!participants_delegation_id_fkey(institution:institutions(name))";
+    // FK hint por coluna (vw_person_logistics_consumption torna o hint
+    // por nome da constraint ambíguo — ver CredenciamentoPage).
+    "id, participant_type, delegation_id, person:people!person_id(full_name, cpf, photo_url), delegation:delegations!delegation_id(institution:institutions(name))";
 
   const stageScopeIds = useMemo(
     () => (isStageScoped ? (stageParticipantIds ? Array.from(stageParticipantIds) : []) : null),

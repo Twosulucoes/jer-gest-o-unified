@@ -223,16 +223,23 @@ export default function ParticipantRastreamentoTab({ participantId, eventId }: P
     },
   });
 
-  // --- Participant contacts ---
+  // --- Participant contacts (Fase A2: contatos cadastrais vivem em `people`) ---
   const { data: participant } = useQuery({
     queryKey: ["participant_contacts", participantId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("participants")
-        .select("guardian_name, guardian_phone, coach_name, coach_phone")
+        .select("people(guardian_name, guardian_phone, coach_name, coach_phone)")
         .eq("id", participantId)
         .single();
-      return data;
+      // Achata para preservar a forma { guardian_*, coach_* } usada pela UI.
+      const person = data?.people ?? {};
+      return {
+        guardian_name: person.guardian_name ?? null,
+        guardian_phone: person.guardian_phone ?? null,
+        coach_name: person.coach_name ?? null,
+        coach_phone: person.coach_phone ?? null,
+      };
     },
   });
 

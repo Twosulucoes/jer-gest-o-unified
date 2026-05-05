@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, Building, Gavel, Shield, Layers, IdCard, Download, Calendar, Settings } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
+import { isStageOpenToday, stageWindowLabel, stageWindowBadge } from "@/lib/stageDateUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VersionBadge } from "@/components/VersionBadge";
 import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
@@ -198,8 +199,8 @@ export default function PwaLandingPage() {
                   Etapa de Trabalho
                 </h2>
               </div>
-              <Select 
-                value={activeStageId || ""} 
+              <Select
+                value={activeStageId || ""}
                 onValueChange={setActiveStageId}
                 disabled={!activeEventId || stages.length === 0}
               >
@@ -207,11 +208,34 @@ export default function PwaLandingPage() {
                   <SelectValue placeholder={!activeEventId ? "Selecione um evento" : "Selecione a etapa..."} />
                 </SelectTrigger>
                 <SelectContent>
-                  {stages.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
+                  {(() => {
+                    // PWAs só permitem operar em etapas vigentes hoje.
+                    // Futuras/encerradas aparecem desabilitadas com badge.
+                    const sorted = [...stages].sort((a, b) => {
+                      const aOpen = isStageOpenToday(a) ? 0 : 1;
+                      const bOpen = isStageOpenToday(b) ? 0 : 1;
+                      return aOpen - bOpen;
+                    });
+                    return sorted.map((s) => {
+                      const open = isStageOpenToday(s);
+                      const badge = stageWindowBadge(s);
+                      return (
+                        <SelectItem key={s.id} value={s.id} disabled={!open}>
+                          <span className="flex items-center gap-2">
+                            <span>{s.name}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {stageWindowLabel(s)}
+                            </span>
+                            {badge && (
+                              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                {badge}
+                              </span>
+                            )}
+                          </span>
+                        </SelectItem>
+                      );
+                    });
+                  })()}
                 </SelectContent>
               </Select>
               {!activeStageId && activeEventId && stages.length > 0 && (
@@ -249,12 +273,9 @@ export default function PwaLandingPage() {
                 <button
                   key={card.role}
                   onClick={() => {
-                    console.log("[PwaLandingPage] CLICK card", { role: card.role, to: card.to, activeEventId, activeStageId });
                     if (card.to.startsWith("/pwa") && !card.to.includes("install") && !card.to.includes("credenciamento") && !activeStageId) {
-                      console.log("[PwaLandingPage] → /pwa/configuracao (missing_stage)");
                       navigate("/pwa/configuracao", { state: { from: { pathname: card.to }, reason: "missing_stage" } });
                     } else {
-                      console.log("[PwaLandingPage] → navigate to", card.to);
                       navigate(card.to);
                     }
                   }}
