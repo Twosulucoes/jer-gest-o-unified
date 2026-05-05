@@ -6,12 +6,13 @@ import { useStageScope } from "@/hooks/useStageScope";
 import { useStageInfo, useLodgingLocations, useLodgingUnits } from "@/hooks/useLodgingAdmin";
 import { useLodgingOccupancy } from "@/hooks/useLodgingOccupancy";
 import { toast } from "sonner";
-import { Plus, Pencil, Building } from "lucide-react";
+import { Plus, Pencil, Building, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import LodgingLocationFormDialog, { type LodgingLocationFormValues } from "@/components/admin/LodgingLocationFormDialog";
+import LodgingWingsManageDialog from "@/components/admin/LodgingWingsManageDialog";
 import type { StageContext } from "@/components/admin/VehicleFormDialog";
 
 export default function AlojamentoLocaisPage() {
@@ -20,6 +21,7 @@ export default function AlojamentoLocaisPage() {
   const { stageId, isStageScoped } = useStageScope();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [wingsTarget, setWingsTarget] = useState<{ id: string; name: string } | null>(null);
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
   const { data: stageInfo } = useStageInfo(stageId);
@@ -117,9 +119,16 @@ export default function AlojamentoLocaisPage() {
                   <TableCell><Badge variant={l.is_active ? "default" : "secondary"}>{l.is_active ? "Ativo" : "Inativo"}</Badge></TableCell>
                   {canWrite && (
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => { setEditing(l); setDialogOpen(true); }}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" title="Alas"
+                          onClick={() => setWingsTarget({ id: l.id, name: l.name })}>
+                          <Layers className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" title="Editar"
+                          onClick={() => { setEditing(l); setDialogOpen(true); }}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>
@@ -139,6 +148,15 @@ export default function AlojamentoLocaisPage() {
         isPending={createMut.isPending || updateMut.isPending}
         dependentCounts={dependentCounts}
       />
+
+      {wingsTarget && (
+        <LodgingWingsManageDialog
+          open={true}
+          onOpenChange={(o) => { if (!o) setWingsTarget(null); }}
+          locationId={wingsTarget.id}
+          locationName={wingsTarget.name}
+        />
+      )}
     </div>
   );
 }
