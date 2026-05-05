@@ -143,8 +143,14 @@ async function callAdminUsers(action: string, body: Record<string, unknown> = {}
   const { data, error } = await supabase.functions.invoke("admin-users", {
     body: { action, ...body },
   });
+  // For non-2xx, Supabase client sets a generic error.message but the JSON body
+  // with the real reason lands in data (v2 client) or error.context.json (some builds).
+  const detail: string | undefined =
+    data?.error ??
+    (error as any)?.context?.json?.error ??
+    (error as any)?.context?.json?.message;
+  if (detail) throw new Error(detail);
   if (error) throw new Error(error.message);
-  if (data?.error) throw new Error(data.error);
   return data;
 }
 
