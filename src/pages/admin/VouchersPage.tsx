@@ -184,13 +184,23 @@ export default function VouchersPage() {
   const [revokeReason, setRevokeReason] = useState("");
 
   const { data: vouchers = [], isLoading } = useQuery({
-    queryKey: ["vouchers", eventId, statusFilter, scopeFilter, typeFilter],
+    queryKey: ["vouchers", eventId, stageId, statusFilter, scopeFilter, typeFilter],
     queryFn: async () => {
+      // Auto-expira: marca como 'expired' todos os vouchers cujo valid_until
+      // já passou. Vouchers são canonical-mente "1 evento × 1 etapa × 1 dia ×
+      // 1 janela" (ver migration 20260504143000); fora da janela não devem
+      // aparecer como ativos. Idempotente, custo desprezível.
+      try { await supabase.rpc("mark_expired_vouchers" as any); } catch { /* silencioso */ }
+
       let q = (supabase.from("service_vouchers") as any)
         .select("*")
         .eq("event_id", eventId)
         .order("created_at", { ascending: false })
         .limit(500);
+      // Lei de escopo: voucher pertence à ETAPA. Quando a UI tem stage
+      // ativa, filtra; sem stage não bloqueia (super admin que opera
+      // sem etapa selecionada continua vendo todos).
+      if (stageId) q = q.eq("event_stage_id", stageId);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
       if (scopeFilter === "transport") q = q.eq("scope_transport", true);
       if (scopeFilter === "meals") q = q.eq("scope_meals", true);
@@ -204,13 +214,33 @@ export default function VouchersPage() {
   });
 
   const { data: batches = [], isLoading: loadingBatches } = useQuery({
-    queryKey: ["voucher-batches", eventId],
+    queryKey: ["voucher-batches", eventId, stageId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Filtra lotes da etapa atual via os vouchers gerados (batches não
+      // têm event_stage_id direto; o escopo é herdado dos vouchers do lote).
+      // TODO: migration aditiva para denormalizar event_stage_id em
+      // service_voucher_batches eliminaria essa sub-query.
+      let stageBatchIds: string[] | null = null;
+      if (stageId) {
+        const { data: rels } = await (supabase.from("service_vouchers") as any)
+          .select("batch_id")
+          .eq("event_id", eventId)
+          .eq("event_stage_id", stageId)
+          .not("batch_id", "is", null);
+        const ids = new Set<string>();
+        (rels ?? []).forEach((r: any) => r.batch_id && ids.add(r.batch_id as string));
+        stageBatchIds = Array.from(ids);
+        // Etapa selecionada mas zero lotes vinculados → curto-circuito
+        if (stageBatchIds.length === 0) return [] as BatchRow[];
+      }
+
+      let q = supabase
         .from("service_voucher_batches")
         .select("*")
         .eq("event_id", eventId)
         .order("created_at", { ascending: false });
+      if (stageBatchIds) q = q.in("id", stageBatchIds);
+      const { data, error } = await q;
       if (error) throw error;
       return data as BatchRow[];
     },

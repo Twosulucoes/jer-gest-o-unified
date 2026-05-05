@@ -93,13 +93,22 @@ export function usePwaUpdateCheck(options?: { intervalMs?: number; onUpdateDetec
       // APP_VERSION pode vir como "unknown" em build local sem git; ignora.
       if (!APP_VERSION || APP_VERSION === "unknown") return;
 
-      if (server !== APP_VERSION) {
-        console.warn(
-          `[pwa-update] Deploy novo detectado. Cliente=${APP_VERSION} Servidor=${server} → reload limpo.`,
-        );
-        if (onUpdateDetected) onUpdateDetected(server);
-        await performHardReload(server);
-      }
+      // Hashes truncados em tamanhos diferentes contam como iguais
+      // se um for prefixo do outro. Cenário real:
+      //   __APP_VERSION__ injetado pelo Vite = `git rev-parse --short HEAD`
+      //   (7 chars por padrão). public/version.json é gerado pelo
+      //   scripts/update-version e usa 8 chars. Sem essa normalização,
+      //   "0cd4565" !== "0cd4565b" causaria reload infinito.
+      const sameCommit = server === APP_VERSION
+        || server.startsWith(APP_VERSION)
+        || APP_VERSION.startsWith(server);
+      if (sameCommit) return;
+
+      console.warn(
+        `[pwa-update] Deploy novo detectado. Cliente=${APP_VERSION} Servidor=${server} → reload limpo.`,
+      );
+      if (onUpdateDetected) onUpdateDetected(server);
+      await performHardReload(server);
     };
 
     // 1) Primeira checagem ao montar.
