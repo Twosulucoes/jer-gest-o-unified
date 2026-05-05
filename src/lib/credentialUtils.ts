@@ -1,53 +1,123 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Centralized credential code and QR code generation utilities.
- * All credential issuance/reissuance points MUST use these helpers
- * to ensure format consistency across the system.
+ * Geração e emissão de credenciais nativas — single source of truth.
+ *
+ * Formato canônico (decisão de UX, mai/2026):
+ *   credential_code = "J" + 5 dígitos numéricos (ex: "J04382")
+ *   qr_code_value   = mesmo valor (sem prefixo "jer:", sem HMAC)
+ *
+ * Por que esse formato:
+ *   - Operador no campo digita 6 caracteres em segundos.
+ *   - Tudo numérico após o "J" (zero ambiguidade visual O/0, I/1, etc).
+ *   - QR físico curto → câmera ruim ainda lê.
+ *   - Único valor (qr_code_value === credential_code) → resolveQrCredential
+ *     já bate em qualquer um dos campos sem mágica.
+ *
+ * Universo: 100.000 combinações por evento. Suficiente para a operação
+ * típica do JER (≤ alguns milhares de credenciais por evento). O helper
+ * `issueCredentialWithRetry` lida com colisão automaticamente.
+ *
+ * Compatibilidade com legado:
+ *   - Credenciais antigas (`JER-XXXX-YYYY` + `jer:v2:...:hmac16`) continuam
+ *     válidas. resolveQrCredential procura nas duas colunas.
+ *   - Edge function `generate-credential-qr` segue viva por compat mas não
+ *     é mais consumida.
  */
 
-/**
- * Generates a unique credential code.
- * Format: JER-{base36_timestamp}-{4_char_random}
- * Example: JER-M1ABC2D-K7X9
- */
+const CRED_PREFIX = "J";
+const CRED_DIGITS = 5;
+const CRED_MAX_RETRIES = 8;
+
+/** Gera um credential_code novo no formato J + 5 dígitos. */
 export function generateCredentialCode(): string {
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `JER-${timestamp}-${random}`;
+  const max = 10 ** CRED_DIGITS; // 100000
+  const n = Math.floor(Math.random() * max);
+  return CRED_PREFIX + n.toString().padStart(CRED_DIGITS, "0");
 }
 
-/**
- * Generates the official QR code value for a credential (legacy/unsigned).
- * Format: jer:{event_id}:{participant_id}:{credential_code}
- */
+/** QR value canonical: mesmo valor do credential_code. */
 export function generateQrCodeValue(
-  eventId: string,
-  participantId: string,
+  _eventId: string,
+  _participantId: string,
   credentialCode: string,
 ): string {
-  return `jer:${eventId}:${participantId}:${credentialCode}`;
+  return credentialCode;
 }
 
 /**
- * Generates a signed QR code value using the generate-credential-qr Edge Function.
- * Format: jer:v2:{event_id}:{participant_id}:{credential_code}:{hmac_short}
+ * Mantida por compat — agora retorna o próprio credentialCode (sem HMAC).
+ * @deprecated Use `generateQrCodeValue` ou `issueCredentialWithRetry`.
+ *             A edge function `generate-credential-qr` virou no-op.
  */
 export async function generateSignedQrCodeValue(
-  eventId: string,
-  participantId: string,
+  _eventId: string,
+  _participantId: string,
   credentialCode: string,
 ): Promise<string> {
-  const { data, error } = await supabase.functions.invoke("generate-credential-qr", {
-    body: { event_id: eventId, participant_id: participantId, credential_code: credentialCode },
-  });
-
-  if (error) {
-    console.error("Error generating signed QR:", error);
-    // Fallback to legacy format if function fails, but log error
-    return generateQrCodeValue(eventId, participantId, credentialCode);
-  }
-
-  return data.qr_code_value;
+  return credentialCode;
 }
 
+interface IssueOptions {
+  /** Quando reemitindo, ID da credencial anterior (vai pra status='reissued'). */
+  revokeId?: string | null;
+  /** Default 'manual'. */
+  bindingSource?: "import" | "manual" | "api_sync" | "external";
+  /** Tentativas máximas em caso de colisão de credential_code. */
+  maxRetries?: number;
+}
+
+interface IssueResult {
+  credentialCode: string;
+  qrCodeValue: string;
+  attempts: number;
+}
+
+/**
+ * Emite credencial chamando `issue_participant_credential` com retry em
+ * colisão de UNIQUE (event_id, credential_code). Retorna o code/qr efetivos.
+ *
+ * Idempotência: cada tentativa gera código novo via Math.random; chance de
+ * colidir 8 vezes seguidas é desprezível para um evento com ≤ 5 mil
+ * credenciais.
+ *
+ * Erros não-colisão (RLS, permissão, FK quebrada) propagam imediatamente.
+ */
+export async function issueCredentialWithRetry(
+  eventId: string,
+  participantId: string,
+  userId: string,
+  options: IssueOptions = {},
+): Promise<IssueResult> {
+  const max = options.maxRetries ?? CRED_MAX_RETRIES;
+  const bindingSource = options.bindingSource ?? "manual";
+  let lastError: any = null;
+
+  for (let attempt = 1; attempt <= max; attempt++) {
+    const credentialCode = generateCredentialCode();
+    const qrCodeValue = credentialCode;
+
+    const { error } = await (supabase as any).rpc("issue_participant_credential", {
+      p_event_id: eventId,
+      p_participant_id: participantId,
+      p_credential_code: credentialCode,
+      p_qr_code_value: qrCodeValue,
+      p_user_id: userId,
+      p_binding_source: bindingSource,
+      p_revoke_id: options.revokeId ?? null,
+    });
+
+    if (!error) return { credentialCode, qrCodeValue, attempts: attempt };
+
+    const msg = (error.message || "").toLowerCase();
+    const isCollision =
+      msg.includes("duplicate") || msg.includes("unique") || msg.includes("23505");
+    if (!isCollision) throw error;
+    lastError = error;
+  }
+
+  throw new Error(
+    `Não foi possível gerar credential_code único após ${max} tentativas (universo J+${CRED_DIGITS}d quase esgotado neste evento).` +
+      (lastError ? ` Último erro: ${lastError.message}` : ""),
+  );
+}
