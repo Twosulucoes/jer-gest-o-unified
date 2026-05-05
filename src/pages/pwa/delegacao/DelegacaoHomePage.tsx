@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PwaContainer } from "@/components/pwa/PwaScreen";
 import { PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
@@ -22,7 +22,22 @@ interface AthleteRow {
 
 export default function DelegacaoHomePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
+
+  // Defensivo: a rota PWA delegação é catch-all (`delegacao/*`). URLs
+  // antigas (cache de PWA, deep-links, push notifications) podem chegar
+  // como `/pwa/delegacao/<uuid>` ou similar — sem sub-rota válida.
+  // Normaliza pra `/pwa/delegacao` e evita loops onde o caminho extra
+  // confunde guards/state.
+  useEffect(() => {
+    if (location.pathname !== "/pwa/delegacao") {
+      navigate("/pwa/delegacao", { replace: true });
+    }
+    // intencional: só dispara no path inicial; sub-rotas como
+    // /pwa/delegacao/participantes têm sua própria página e não chegam aqui.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [delegationId, setDelegationId] = useState<string | null>(null);
   const [delegationLabel, setDelegationLabel] = useState<string>("");
   const [athletes, setAthletes] = useState<AthleteRow[]>([]);
