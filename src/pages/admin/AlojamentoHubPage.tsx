@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useStageInfo, useLodgingLocations, useLodgingUnits } from "@/hooks/useLodgingAdmin";
+import { useStageInfo, useLodgingLocations, useLodgingUnits, useLodgingWings } from "@/hooks/useLodgingAdmin";
 import { useLodgingOccupancy } from "@/hooks/useLodgingOccupancy";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +40,7 @@ export default function AlojamentoHubPage() {
 
   const { data: locations = [], isLoading: loadingLocations } = useLodgingLocations(stageId);
   const { data: units = [], isLoading: loadingUnits } = useLodgingUnits(stageId);
+  const { data: wings = [] } = useLodgingWings(stageId);
   const { countsByUnit, totals: occupancyTotals } = useLodgingOccupancy(stageId);
   const activeOccupancyByUnit = (unitId: string) =>
     countsByUnit.get(unitId)?.active ?? 0;
@@ -78,6 +79,7 @@ export default function AlojamentoHubPage() {
       : null;
     return {
       location_id: v.location_id,
+      wing_id: v.wing_id || null,
       name: v.name,
       capacity: v.capacity,
       gender_restriction: v.gender_restriction,
@@ -375,6 +377,7 @@ export default function AlojamentoHubPage() {
         onOpenChange={(o) => { setUnitDialog(o); if (!o) setEditingUnit(null); }}
         unit={editingUnit}
         locations={locations}
+        wings={wings}
         onSubmit={(v) => editingUnit?.id ? updateUnit.mutate({ id: editingUnit.id, ...v }) : createUnit.mutate(v)}
         isPending={createUnit.isPending || updateUnit.isPending}
         activeOccupancies={editingUnit?.id ? activeOccupancyByUnit(editingUnit.id) : 0}

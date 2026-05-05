@@ -46,15 +46,28 @@ export default function AlocacaoLotePage() {
     enabled: !!selectedEventId,
   });
 
-  // Step 2: List participants of selected delegation
+  // Step 2: List participants of selected delegation cujo universo bate com a etapa.
+  // Universo da etapa = participantes com vínculo em participant_event_stages
+  // (classificatória usa inscritos; o vínculo fica explícito ali).
+  // Universo "final" (classificados) é responsabilidade do módulo de competição
+  // e ainda não está plugado aqui — quando estiver, basta trocar a fonte do filtro.
   const { data: participants = [], isLoading: loadingParticipants } = useQuery({
-    queryKey: ["delegation-participants", selectedDelegationId],
+    queryKey: ["delegation-participants", selectedDelegationId, stageId],
     queryFn: async () => {
-      if (!selectedDelegationId) return [];
+      if (!selectedDelegationId || !stageId) return [];
+
+      // 1. IDs do universo desta etapa (vínculo explícito).
+      const { data: stageRows, error: stageErr } = await supabase
+        .from("participant_event_stages")
+        .select("participant_id")
+        .eq("event_stage_id", stageId);
+      if (stageErr) throw stageErr;
+      const stageIds = new Set((stageRows ?? []).map((r: any) => r.participant_id));
+
       const { data, error } = await supabase
         .from("participants")
         .select(`
-          id, 
+          id,
           participant_type,
           person_id,
           people(full_name, gender),
@@ -63,9 +76,14 @@ export default function AlocacaoLotePage() {
         .eq("delegation_id", selectedDelegationId)
         .in("lodging_occupancies.status", ["allocated", "checked_in"]);
       if (error) throw error;
-      return data;
+
+      // 2. Se houver vínculo de etapa, filtra; se não houver NENHUM (etapa sem
+      //    universo cadastrado), mantém o comportamento legado (mostra todos da
+      //    delegação) para não bloquear o operador.
+      if (stageIds.size === 0) return data ?? [];
+      return (data ?? []).filter((p: any) => stageIds.has(p.id));
     },
-    enabled: !!selectedDelegationId && step >= 2,
+    enabled: !!selectedDelegationId && !!stageId && step >= 2,
   });
 
   // Step 3: List available lodging units
