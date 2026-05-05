@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
       }
 
       case "invite_user": {
-        const { email, full_name, role: singleRole, roles: multiRoles, phone } = body;
+        const { email, full_name, role: singleRole, roles: multiRoles, phone, send_email } = body;
         // Support both single role (legacy) and multiple roles
         const targetRoles: string[] = multiRoles && Array.isArray(multiRoles) && multiRoles.length > 0
           ? multiRoles
@@ -182,32 +182,83 @@ Deno.serve(async (req) => {
         }
 
         const redirectTo = `${req.headers.get("origin") || supabaseUrl}/pwa/set-password`;
+        const wantsEmail = send_email !== false; // default true; explicit false skips SMTP
 
         let userId: string;
-        const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
-          redirectTo,
-        });
+        let manualLink: string | null = null;
 
-        if (inviteErr) {
-          const msg = inviteErr.message.toLowerCase();
-          if (msg.includes("already") || msg.includes("existe") || msg.includes("registered")) {
-            // User already in auth — just update roles/profile
-            const { data: { users: existingUsers }, error: listErr } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
-            if (listErr || !existingUsers) {
-              return jsonResponse({ error: `Usuário já existe mas não pôde ser recuperado: ${inviteErr.message}` }, 500);
+        // Helper: cria usuário sem email + gera invite link manual (sem SMTP).
+        // Usado tanto quando o admin pede explicitamente (send_email=false) quanto
+        // como fallback se inviteUserByEmail falhar por qualquer motivo (rate limit,
+        // SMTP fora, email inválido pro provider, etc).
+        async function createWithoutEmail(): Promise<{ id: string; link: string | null } | { error: string }> {
+          const { data: created, error: createErr } = await adminClient.auth.admin.createUser({
+            email,
+            email_confirm: false,
+          });
+          if (createErr || !created?.user) {
+            // Pode ser que o user já exista — tenta recuperar
+            const m = (createErr?.message || "").toLowerCase();
+            if (m.includes("already") || m.includes("registered") || m.includes("existe")) {
+              const { data: { users: existingUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+              const found = existingUsers?.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+              if (found) {
+                const { data: linkData } = await adminClient.auth.admin.generateLink({
+                  type: "recovery",
+                  email,
+                  options: { redirectTo },
+                });
+                return { id: found.id, link: linkData?.properties?.action_link ?? null };
+              }
             }
-            const existingUser = existingUsers.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
-            if (!existingUser) {
-              return jsonResponse({ error: `Usuário já existe no Auth mas não foi encontrado na listagem.` }, 404);
-            }
-            userId = existingUser.id;
-          } else if (msg.includes("rate limit") || msg.includes("too many") || msg.includes("smtp") || msg.includes("email")) {
-            return jsonResponse({ error: `Limite de envio de convites atingido. Aguarde alguns minutos e tente novamente. (${inviteErr.message})` }, 429);
-          } else {
-            return jsonResponse({ error: inviteErr.message }, 500);
+            return { error: `Falha ao criar usuário sem email: ${createErr?.message ?? "unknown"}` };
           }
+          const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
+            type: "invite",
+            email,
+            options: { redirectTo },
+          });
+          if (linkErr) console.warn("generateLink failed:", linkErr.message);
+          return { id: created.user.id, link: linkData?.properties?.action_link ?? null };
+        }
+
+        if (!wantsEmail) {
+          // Caminho explícito sem email — não tenta SMTP nem uma vez
+          const r = await createWithoutEmail();
+          if ("error" in r) return jsonResponse({ error: r.error }, 500);
+          userId = r.id;
+          manualLink = r.link;
         } else {
-          userId = inviteData.user.id;
+          const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
+            redirectTo,
+          });
+
+          if (inviteErr) {
+            const msg = inviteErr.message.toLowerCase();
+            if (msg.includes("already") || msg.includes("existe") || msg.includes("registered")) {
+              // Usuário já em auth — recupera id e segue para upsert de profile/roles
+              const { data: { users: existingUsers }, error: listErr } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+              if (listErr || !existingUsers) {
+                return jsonResponse({ error: `Usuário já existe mas não pôde ser recuperado: ${inviteErr.message}` }, 500);
+              }
+              const existingUser = existingUsers.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+              if (!existingUser) {
+                return jsonResponse({ error: `Usuário já existe no Auth mas não foi encontrado na listagem.` }, 404);
+              }
+              userId = existingUser.id;
+            } else {
+              // Fallback agressivo: qualquer outra falha (rate limit, SMTP fora, email
+              // inválido pro provider, network blip) → cria sem email e devolve link manual.
+              // Mantém demos funcionando 100% mesmo com SMTP indisponível.
+              console.warn("inviteUserByEmail failed, falling back to createUser:", inviteErr.message);
+              const r = await createWithoutEmail();
+              if ("error" in r) return jsonResponse({ error: `${inviteErr.message} | ${r.error}` }, 500);
+              userId = r.id;
+              manualLink = r.link;
+            }
+          } else {
+            userId = inviteData.user.id;
+          }
         }
 
         // Upsert profile
@@ -254,9 +305,13 @@ Deno.serve(async (req) => {
         }
 
         // Log audit
-        await logAudit(adminClient, "user_created", userId, caller.id, { email, roles: targetRoles, full_name });
+        await logAudit(adminClient, "user_created", userId, caller.id, { email, roles: targetRoles, full_name, manual_link: !!manualLink });
 
-        return jsonResponse({ success: true, user_id: userId });
+        return jsonResponse({
+          success: true,
+          user_id: userId,
+          manual_link: manualLink,
+        });
       }
 
       case "set_role": {
@@ -388,23 +443,46 @@ Deno.serve(async (req) => {
       }
 
       case "resend_invite": {
-        const { user_id } = body;
+        const { user_id, send_email } = body;
         if (!user_id) return jsonResponse({ error: "user_id is required" }, 400);
         if (await isProtectedTarget(user_id)) {
           return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
         }
 
-        // Get user email
         const { data: { user: targetUser }, error: getUserErr } = await adminClient.auth.admin.getUserById(user_id);
         if (getUserErr || !targetUser) return jsonResponse({ error: "Usuário não encontrado" }, 404);
 
         const redirectTo = `${req.headers.get("origin") || supabaseUrl}/pwa/set-password`;
-        const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(targetUser.email!, { redirectTo });
-        if (inviteErr) return jsonResponse({ error: inviteErr.message }, 500);
+        const wantsEmail = send_email !== false;
 
-        await logAudit(adminClient, "invite_resent", user_id, caller.id, { email: targetUser.email });
+        let manualLink: string | null = null;
 
-        return jsonResponse({ success: true });
+        async function genResendLink() {
+          // Recovery serve pra usuário que já tem conta; invite serve só pra
+          // quem ainda não definiu senha. Tenta recovery (mais robusto).
+          const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
+            type: "recovery",
+            email: targetUser.email!,
+            options: { redirectTo },
+          });
+          if (linkErr) console.warn("recovery generateLink failed:", linkErr.message);
+          return linkData?.properties?.action_link ?? null;
+        }
+
+        if (!wantsEmail) {
+          manualLink = await genResendLink();
+        } else {
+          const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(targetUser.email!, { redirectTo });
+          if (inviteErr) {
+            console.warn("resend_invite SMTP failed, generating manual link:", inviteErr.message);
+            manualLink = await genResendLink();
+            if (!manualLink) return jsonResponse({ error: inviteErr.message }, 500);
+          }
+        }
+
+        await logAudit(adminClient, "invite_resent", user_id, caller.id, { email: targetUser.email, manual_link: !!manualLink });
+
+        return jsonResponse({ success: true, manual_link: manualLink });
       }
 
       case "reset_password": {

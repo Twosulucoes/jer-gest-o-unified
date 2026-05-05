@@ -177,6 +177,8 @@ export default function AcessosUsuariosPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviteRoles, setInviteRoles] = useState<string[]>([]);
+  const [inviteManualLink, setInviteManualLink] = useState<string | null>(null);
+  const [inviteSendEmail, setInviteSendEmail] = useState(true);
 
   // User detail drawer
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
@@ -372,14 +374,25 @@ export default function AcessosUsuariosPage() {
         email: inviteEmail,
         full_name: inviteName || undefined,
         roles: inviteRoles,
+        send_email: inviteSendEmail,
       }),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users-list"] });
-      toast.success("Convite enviado!");
-      setInviteOpen(false);
-      setInviteEmail("");
-      setInviteName("");
-      setInviteRoles([]);
+      if (data?.manual_link) {
+        // Caminho sem email (escolhido pelo admin) ou fallback automático após
+        // falha de SMTP. Usuário criado; admin envia o link manualmente.
+        setInviteManualLink(data.manual_link);
+        toast.success(inviteSendEmail
+          ? "Usuário criado. Email não foi enviado — copie o link abaixo e envie manualmente."
+          : "Usuário criado. Copie o link abaixo e envie ao usuário."
+        );
+      } else {
+        toast.success("Convite enviado por email!");
+        setInviteOpen(false);
+        setInviteEmail("");
+        setInviteName("");
+        setInviteRoles([]);
+      }
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -387,7 +400,15 @@ export default function AcessosUsuariosPage() {
   const resendInviteMutation = useMutation({
     mutationFn: (user_id: string) =>
       callAdminUsers("resend_invite", { user_id }),
-    onSuccess: () => toast.success("Convite reenviado!"),
+    onSuccess: (data: any) => {
+      if (data?.manual_link) {
+        // SMTP indisponível — surface o link no estado de reset pra o admin copiar
+        setResetLink(data.manual_link);
+        toast.success("Email não enviado. Link de acesso gerado — copie abaixo.");
+      } else {
+        toast.success("Convite reenviado!");
+      }
+    },
     onError: (err: Error) => toast.error(err.message),
   });
 
@@ -701,15 +722,85 @@ export default function AcessosUsuariosPage() {
                 <p className="text-xs text-destructive">Selecione pelo menos um perfil</p>
               )}
             </div>
+
+            {!inviteManualLink && (
+              <div className="flex items-start gap-3 rounded-md border p-3">
+                <Switch
+                  checked={inviteSendEmail}
+                  onCheckedChange={setInviteSendEmail}
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <Label className="text-sm font-semibold">
+                    {inviteSendEmail ? "Enviar email automaticamente" : "Gerar link de acesso (sem email)"}
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {inviteSendEmail
+                      ? "O sistema tentará enviar o email; se o servidor de email estiver com limite, gera link manual automaticamente."
+                      : "Pula o envio de email. O usuário será criado e um link de acesso aparecerá pra você copiar e enviar (WhatsApp, etc). Recomendado para vários convites em sequência."}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {inviteManualLink && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+                <p className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                  {inviteSendEmail ? "Email não enviado — use o link manual" : "Link de acesso gerado"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Copie o link abaixo e envie ao usuário (WhatsApp, Telegram, etc). O link é de uso único e expira em 24h.
+                </p>
+                <div className="rounded bg-background p-2 text-[10px] font-mono break-all">
+                  {inviteManualLink}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { navigator.clipboard.writeText(inviteManualLink); toast.success("Link copiado!"); }}
+                  >
+                    <Copy className="mr-2 h-3 w-3" /> Copiar link
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      // Mantém o dialog aberto para criar mais um (fluxo demo em massa)
+                      setInviteManualLink(null);
+                      setInviteEmail("");
+                      setInviteName("");
+                      setInviteRoles([]);
+                    }}
+                  >
+                    <UserPlus className="mr-2 h-3 w-3" /> Convidar outro
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setInviteOpen(false);
+                      setInviteManualLink(null);
+                      setInviteEmail("");
+                      setInviteName("");
+                      setInviteRoles([]);
+                    }}
+                  >
+                    Concluir
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setInviteOpen(false); setInviteManualLink(null); }}>Cancelar</Button>
             <Button
               onClick={() => inviteMutation.mutate()}
-              disabled={!inviteEmail || !inviteName || inviteName.trim().length < 3 || inviteRoles.length === 0 || inviteMutation.isPending}
+              disabled={!inviteEmail || !inviteName || inviteName.trim().length < 3 || inviteRoles.length === 0 || inviteMutation.isPending || !!inviteManualLink}
             >
               <UserPlus className="mr-2 h-4 w-4" />
-              {inviteMutation.isPending ? "Enviando..." : "Enviar Convite"}
+              {inviteMutation.isPending
+                ? "Processando..."
+                : inviteSendEmail ? "Enviar Convite por Email" : "Criar e Gerar Link"}
             </Button>
           </DialogFooter>
         </DialogContent>
