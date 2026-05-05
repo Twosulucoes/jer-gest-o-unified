@@ -123,10 +123,9 @@ export default function HomologarClassificadoCard({
       if (phases && phases.length > 0) {
         phaseId = phases[0].id;
       } else {
-        const { data: newPhase, error: phErr } = await supabase
+        const { data: newPhase, error: phErr } = await (supabase as any)
           .from("competition_phases")
           .insert({
-            event_id: eventId,
             sport_event_id: sportEventId,
             name: "Classificação Direta",
             phase_type: "direct",
