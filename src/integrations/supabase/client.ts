@@ -46,8 +46,21 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// For telemetry to avoid any recursion risk
-export const rawSupabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+// Cliente "raw" usado pela telemetria de DB (dbTelemetry) — fora da
+// instrumentação do client principal pra evitar risco de recursão.
+// Não consome auth, então:
+//   - persistSession: false → não escreve token no localStorage.
+//   - autoRefreshToken: false → não dispara refresh em background.
+//   - storageKey distinto → evita o warning "Multiple GoTrueClient
+//     instances detected" do supabase-js (compartilhar storage key
+//     entre 2 clients confunde o GoTrue).
+export const rawSupabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    storageKey: "sb-jer-telemetry-noauth",
+  },
+});
 
 // Helpers expostos para a tela de configuração
 export const SUPABASE_OVERRIDE_KEYS = { url: LS_URL_KEY, anonKey: LS_KEY_KEY } as const;
