@@ -641,23 +641,27 @@ export default function AcessosUsuariosPage() {
 
       {/* Invite Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Convidar novo usuário</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-1">
-              <Label>Email *</Label>
-              <Input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} type="email" placeholder="usuario@email.com" />
-            </div>
-            <div className="space-y-1">
-              <Label>Nome completo *</Label>
-              <Input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Nome completo (mín. 3 caracteres)" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Email *</Label>
+                <Input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} type="email" placeholder="usuario@email.com" />
+              </div>
+              <div className="space-y-1">
+                <Label>Nome completo *</Label>
+                <Input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Nome completo (mín. 3 caracteres)" />
+              </div>
             </div>
             <div className="space-y-2">
               <Label className="font-semibold">Perfis de Acesso *</Label>
-              <p className="text-xs text-muted-foreground">Selecione todos os módulos que este usuário pode acessar</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+              <p className="text-xs text-muted-foreground">
+                Selecione todos os módulos que este usuário pode acessar ({availableRoles.length} disponíveis)
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-1">
                 {availableRoles.map((r) => (
                   <TooltipProvider key={r.value}>
                     <Tooltip>
