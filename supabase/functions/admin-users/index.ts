@@ -184,6 +184,7 @@ Deno.serve(async (req) => {
         const redirectTo = `${req.headers.get("origin") || supabaseUrl}/pwa/set-password`;
 
         let userId: string;
+        let manualLink: string | null = null;
         const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
           redirectTo,
         });
@@ -202,7 +203,26 @@ Deno.serve(async (req) => {
             }
             userId = existingUser.id;
           } else if (msg.includes("rate limit") || msg.includes("too many") || msg.includes("smtp") || msg.includes("email")) {
-            return jsonResponse({ error: `Limite de envio de convites atingido. Aguarde alguns minutos e tente novamente. (${inviteErr.message})` }, 429);
+            // SMTP rate limit: cria o usuário sem mandar email e gera link manual.
+            // Admin copia/cola pro usuário (WhatsApp, etc) sem depender do envio do Supabase.
+            const { data: created, error: createErr } = await adminClient.auth.admin.createUser({
+              email,
+              email_confirm: false,
+            });
+            if (createErr || !created?.user) {
+              return jsonResponse({ error: `Falha ao criar usuário sem email: ${createErr?.message ?? "unknown"}` }, 500);
+            }
+            userId = created.user.id;
+
+            const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
+              type: "invite",
+              email,
+              options: { redirectTo },
+            });
+            manualLink = linkData?.properties?.action_link ?? null;
+            if (linkErr) {
+              console.warn("generateLink failed but user was created:", linkErr.message);
+            }
           } else {
             return jsonResponse({ error: inviteErr.message }, 500);
           }
@@ -254,9 +274,13 @@ Deno.serve(async (req) => {
         }
 
         // Log audit
-        await logAudit(adminClient, "user_created", userId, caller.id, { email, roles: targetRoles, full_name });
+        await logAudit(adminClient, "user_created", userId, caller.id, { email, roles: targetRoles, full_name, manual_link: !!manualLink });
 
-        return jsonResponse({ success: true, user_id: userId });
+        return jsonResponse({
+          success: true,
+          user_id: userId,
+          manual_link: manualLink,
+        });
       }
 
       case "set_role": {
