@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
-import { generateCredentialCode, generateSignedQrCodeValue } from "@/lib/credentialUtils";
+import { issueCredentialWithRetry } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, User, IdCard, Bus, Trophy, CheckCircle, Tag, ArrowLeft, Eye, RefreshCw, Activity, Edit } from "lucide-react";
@@ -140,26 +140,10 @@ export default function ParticipanteDetalhePage() {
   const emitCredentialMutation = useMutation({
     mutationFn: async () => {
       if (!participant || !user) throw new Error("Dados insuficientes");
-      const credentialCode = generateCredentialCode();
-      const qrCodeValue = await generateSignedQrCodeValue(participant.event_id, participant.id, credentialCode);
-      const { error } = await supabase.from("participant_credentials").insert({
-        participant_id: participant.id,
-        event_id: participant.event_id,
-        credential_code: credentialCode,
-        qr_code_value: qrCodeValue,
-        status: "active",
-        is_active: true,
-        binding_source: "manual",
-        activated_at: new Date().toISOString(),
-        activated_by: user.id,
-        issued_at: new Date().toISOString(),
-        issued_by: user.id,
-      });
-      if (error) throw error;
-      await supabase
-        .from("participants")
-        .update({ status: "credentialed", credentialed_at: new Date().toISOString(), credentialed_by: user.id })
-        .eq("id", participant.id);
+      // Helper já chama RPC issue_participant_credential atômica
+      // (INSERT credencial + UPDATE participants.status='credentialed').
+      // Antes era INSERT direto duplicando a lógica do servidor.
+      await issueCredentialWithRetry(participant.event_id, participant.id, user.id);
     },
     onSuccess: () => {
       toast({ title: "Credencial emitida com sucesso!" });
@@ -176,26 +160,13 @@ export default function ParticipanteDetalhePage() {
   const reissueCredentialMutation = useMutation({
     mutationFn: async () => {
       if (!participant || !user || !activeCredential) throw new Error("Dados insuficientes");
-      await supabase
-        .from("participant_credentials")
-        .update({ status: "reissued", is_active: false, revoked_at: new Date().toISOString() })
-        .eq("id", activeCredential.id);
-      const credentialCode = generateCredentialCode();
-      const qrCodeValue = await generateSignedQrCodeValue(participant.event_id, participant.id, credentialCode);
-      const { error } = await supabase.from("participant_credentials").insert({
-        participant_id: participant.id,
-        event_id: participant.event_id,
-        credential_code: credentialCode,
-        qr_code_value: qrCodeValue,
-        status: "active",
-        is_active: true,
-        binding_source: "reissue",
-        activated_at: new Date().toISOString(),
-        activated_by: user.id,
-        issued_at: new Date().toISOString(),
-        issued_by: user.id,
+      // Antes: 2 statements (UPDATE old + INSERT new) sem transação,
+      // com binding_source='reissue' que viola o CHECK constraint.
+      // Agora: helper único que chama issue_participant_credential com
+      // p_revoke_id (revogação + INSERT atômicos no banco).
+      await issueCredentialWithRetry(participant.event_id, participant.id, user.id, {
+        revokeId: activeCredential.id,
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       toast({ title: "2ª via emitida com sucesso!" });
