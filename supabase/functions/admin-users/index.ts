@@ -189,17 +189,20 @@ Deno.serve(async (req) => {
         });
 
         if (inviteErr) {
-          // If user already exists, we just want to update their roles/profile
-          if (inviteErr.message.toLowerCase().includes("already") || inviteErr.message.toLowerCase().includes("existe")) {
-            const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers();
-            if (listErr || !users) {
+          const msg = inviteErr.message.toLowerCase();
+          if (msg.includes("already") || msg.includes("existe") || msg.includes("registered")) {
+            // User already in auth — just update roles/profile
+            const { data: { users: existingUsers }, error: listErr } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+            if (listErr || !existingUsers) {
               return jsonResponse({ error: `Usuário já existe mas não pôde ser recuperado: ${inviteErr.message}` }, 500);
             }
-            const existingUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+            const existingUser = existingUsers.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
             if (!existingUser) {
               return jsonResponse({ error: `Usuário já existe no Auth mas não foi encontrado na listagem.` }, 404);
             }
             userId = existingUser.id;
+          } else if (msg.includes("rate limit") || msg.includes("too many") || msg.includes("smtp") || msg.includes("email")) {
+            return jsonResponse({ error: `Limite de envio de convites atingido. Aguarde alguns minutos e tente novamente. (${inviteErr.message})` }, 429);
           } else {
             return jsonResponse({ error: inviteErr.message }, 500);
           }
