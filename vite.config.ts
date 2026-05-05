@@ -37,17 +37,24 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "prompt",
+      // autoUpdate: novo SW ativa automaticamente sem prompt explícito.
+      // Combina com skipWaiting + clientsClaim para tomar controle das abas
+      // abertas imediatamente. O usePwaUpdateCheck no front detecta a
+      // mudança de commit via /version.json e força reload limpo.
+      registerType: "autoUpdate",
       devOptions: {
         enabled: false,
       },
-      manifest: false, // We use our own manifest file
+      manifest: false,
       workbox: {
-        maximumFileSizeToCacheInBytes: 12 * 1024 * 1024, // 12 MB
+        maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/~oauth/],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        // version.json é o sinal canônico de "tem deploy novo".
+        // Tira do precache pra nunca vir do cache antigo do SW.
+        globIgnores: ["version.json"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/,
@@ -55,6 +62,17 @@ export default defineConfig(({ mode }) => ({
             options: {
               cacheName: "supabase-api",
               expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+            },
+          },
+          {
+            // version.json: sempre tenta rede primeiro com timeout curto.
+            // Garante que o front detecte deploys novos rapidamente.
+            urlPattern: /\/version\.json$/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "app-version",
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 1, maxAgeSeconds: 30 },
             },
           },
         ],
