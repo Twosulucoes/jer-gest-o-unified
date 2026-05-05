@@ -15,6 +15,7 @@ import { usePwaNavigation } from "@/hooks/pwa/usePwaNavigation";
 import { PwaHeader } from "./PwaHeader";
 import { PwaScreen } from "./PwaScreen";
 import { OfflineSyncStatus } from "./OfflineSyncStatus";
+import { PwaOfflineBanner } from "./PwaOfflineBanner";
 import { VersionBadge } from "@/components/VersionBadge";
 import { cn } from "@/lib/utils";
 import {
@@ -184,6 +185,7 @@ export default function PwaLayout({
 
   return (
     <PwaScreen noPadding className="min-h-[100dvh]">
+      <PwaOfflineBanner />
       {path !== "/pwa" && path !== "/pwa/" && (
         <PwaHeader
           title={displayTitle}

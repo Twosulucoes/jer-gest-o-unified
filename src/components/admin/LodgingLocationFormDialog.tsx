@@ -96,7 +96,7 @@ export default function LodgingLocationFormDialog({ open, onOpenChange, location
             )}
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome</FormLabel>
+                <FormLabel required>Nome</FormLabel>
                 <FormControl><Input placeholder="Escola Municipal XYZ" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
