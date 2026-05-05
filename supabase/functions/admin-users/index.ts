@@ -232,21 +232,21 @@ Deno.serve(async (req) => {
           }
         }
         
-        // If one of the roles is 'arbitragem', ensure they have a record in referee_profiles
+        // If one of the roles is 'arbitragem', tenta semear um referee_profiles vazio.
+        // Não-bloqueante: existe a CHECK constraint `cpf IS NOT NULL OR rne IS NOT NULL`,
+        // e nesse momento ainda não temos esses dados. O usuário completa depois
+        // em /pwa/arbitragem/perfil — a home detecta `incomplete`/`missing-doc`
+        // e força a edição antes de qualquer designação.
         if (targetRoles.includes("arbitragem")) {
           const { error: refereeErr } = await adminClient.from("referee_profiles").upsert({
             user_id: userId,
             full_name: full_name || email.split('@')[0],
             email: email,
             phone: phone || null,
-            status: "Ativo"
           }, { onConflict: "user_id" });
 
           if (refereeErr) {
-            console.error("Error creating referee profile:", refereeErr);
-            // We don't necessarily want to fail the whole invite if just the referee profile fails
-            // but for now let's be strict to ensure data integrity
-            return jsonResponse({ error: `Erro ao criar cadastro de árbitro: ${refereeErr.message}` }, 500);
+            console.warn("referee_profiles seed skipped:", refereeErr.message);
           }
         }
 
