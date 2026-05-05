@@ -89,11 +89,11 @@ export default function AlojamentoEscolasPage() {
             delegations(id, institution_id, institutions(name)),
             people(full_name, gender)
           ),
-          unit:lodging_units!lodging_occupancies_unit_id_fkey(
+          unit:lodging_units!unit_id(
             id, name, location_id, gender_restriction, capacity,
             lodging_locations(name)
           ),
-          checked_in_unit:lodging_units!lodging_occupancies_checked_in_unit_id_fkey(
+          checked_in_unit:lodging_units!checked_in_unit_id(
             id, name, lodging_locations(name)
           )
         `)
