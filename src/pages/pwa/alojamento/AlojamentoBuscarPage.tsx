@@ -57,6 +57,10 @@ export default function AlojamentoBuscarPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            inputMode="search"
+            autoCapitalize="off"
+            autoCorrect="off"
+            autoComplete="off"
           />
           <Button onClick={handleSearch} disabled={loading || !query.trim()}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}

@@ -13,6 +13,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import PwaLayout from "@/components/pwa/PwaLayout";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function VincularCredencialPage() {
   useAuth();
@@ -31,6 +35,9 @@ export default function VincularCredencialPage() {
   const [manualSearching, setManualSearching] = useState(false);
   
   const [linking, setLinking] = useState(false);
+  // Confirmação destrutiva: vinculação é definitiva, então paramos antes
+  // do INSERT para o operador conferir credencial × participante.
+  const [pendingLink, setPendingLink] = useState<ParticipantManualSearchRow | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
@@ -216,12 +223,12 @@ export default function VincularCredencialPage() {
                 
                 <Button 
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl h-14 shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
-                  onClick={() => void handleLink({ 
-                    participant_id: resolved.participant_id, 
-                    full_name: resolved.full_name || "", 
-                    person_id: "", 
+                  onClick={() => setPendingLink({
+                    participant_id: resolved.participant_id,
+                    full_name: resolved.full_name || "",
+                    person_id: "",
                     cpf: scannedCode,
-                    participant_type: "" 
+                    participant_type: "",
                   })}
                   disabled={linking}
                 >
@@ -262,6 +269,10 @@ export default function VincularCredencialPage() {
                     onChange={(e) => setManualQuery(e.target.value)}
                     className="h-12 border-border/80 bg-card/90 pl-10 shadow-app-sm rounded-xl"
                     autoFocus
+                    inputMode="search"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    autoComplete="off"
                   />
                 </div>
                 <Button 
@@ -287,7 +298,7 @@ export default function VincularCredencialPage() {
                       <button
                         key={h.participant_id}
                         type="button"
-                        onClick={() => void handleLink(h)}
+                        onClick={() => setPendingLink(h)}
                         disabled={linking}
                         className="group flex items-center gap-4 rounded-2xl border bg-card p-4 text-left shadow-app-sm transition-all hover:border-primary/30 hover:shadow-app-md active:scale-[0.98] disabled:opacity-50"
                       >
@@ -341,6 +352,37 @@ export default function VincularCredencialPage() {
           </div>
         </div>
       )}
+
+      {/* Confirmação destrutiva: vinculação é definitiva no fluxo PWA;
+          operador no campo (sol, dedos molhados) precisa de double-check
+          claro entre credencial × pessoa antes do INSERT. */}
+      <AlertDialog open={!!pendingLink} onOpenChange={(o) => !o && setPendingLink(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar vínculo de credencial</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vincular a credencial <strong className="font-mono">{scannedCode ?? "—"}</strong>{" "}
+              ao participante <strong>{pendingLink?.full_name || "—"}</strong>?
+              <br />
+              <span className="text-destructive font-medium">Esta ação é definitiva no PWA.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingLink) {
+                  const target = pendingLink;
+                  setPendingLink(null);
+                  void handleLink(target);
+                }
+              }}
+            >
+              Confirmar vínculo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PwaLayout>
   );
 }
