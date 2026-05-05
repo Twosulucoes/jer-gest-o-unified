@@ -158,7 +158,7 @@ export default function AlimentacaoHomePage() {
 
         <PwaActionGrid
           actions={[
-            { label: "Scan QR", icon: ScanLine, to: "/pwa/alimentacao/scan" },
+            { label: "Scan QR", description: "Registrar consumo agora", icon: ScanLine, to: "/pwa/alimentacao/scan", featured: true },
             { label: "Buscar", icon: Search, to: "/pwa/alimentacao/buscar" },
             { label: "Janelas", icon: Clock, to: "/pwa/alimentacao/janelas" },
             { label: "Lista de Consumos", icon: ListChecks, to: "/pwa/alimentacao/lista-consumos" },

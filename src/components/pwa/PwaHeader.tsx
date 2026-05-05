@@ -19,9 +19,13 @@ interface PwaHeaderProps {
   rightSlot?: React.ReactNode;
   /** Segunda linha sticky abaixo do header — para botões operacionais (Scan, Manual, Finalizar, etc.) */
   actionsBar?: React.ReactNode;
+  /** Quando true, esconde o nome da etapa do subtítulo. Usado pelos módulos
+   * que renderizam o banner âmbar de etapa logo abaixo do header (alojamento,
+   * alimentação) para evitar duplicação visual da mesma informação. */
+  hideStage?: boolean;
 }
 
-export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignOut, rightSlot, actionsBar }: PwaHeaderProps) {
+export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignOut, rightSlot, actionsBar, hideStage }: PwaHeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { roles, hasRole } = useAuth();
@@ -94,12 +98,12 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
             <p className="truncate font-heading text-base font-bold tracking-tight text-foreground">
               {title}
             </p>
-            {(subtitle || activeStage) && (
-              <button 
+            {(subtitle || (activeStage && !hideStage)) && (
+              <button
                 onClick={() => navigate("/pwa/configuracao", { state: { from: location } })}
                 className="truncate text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors active:scale-95"
               >
-                {activeStage && (
+                {activeStage && !hideStage && (
                   <>
                     <Layers className="h-2.5 w-2.5 inline shrink-0" />
                     <span className="font-bold">{activeStage.name}</span>
