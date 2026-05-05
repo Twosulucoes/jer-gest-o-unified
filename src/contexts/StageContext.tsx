@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { handleContextChange } from "@/lib/context-manager";
 import { getModuleByPath } from "@/constants/modules";
+import { isStageOpenToday } from "@/lib/stageDateUtils";
 
 const STORAGE_KEY = "jer_active_stage_id";
 const MODULE_STORAGE_KEY = "jer_active_module";
@@ -135,9 +136,18 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
     }
   }, [activeStageId, stages, routeStageId, setActiveStageId]);
 
-  // Default stage selection: if only one stage, auto-select it if none selected
+  // Default stage selection: auto-pick a etapa única SE estiver vigente hoje.
+  // Se houver várias mas só uma estiver aberta hoje, também auto-seleciona —
+  // evita que o operador precise escolher quando o sistema sabe a resposta.
   useEffect(() => {
-    if (!activeStageId && stages.length === 1) {
+    if (activeStageId) return;
+    const openStages = stages.filter((s) => isStageOpenToday(s));
+    if (openStages.length === 1) {
+      setActiveStageId(openStages[0].id);
+    } else if (openStages.length === 0 && stages.length === 1) {
+      // Único caminho: só uma etapa cadastrada e nem ela está vigente.
+      // Mantém o auto-pick para o admin não ficar sem contexto, mas a UI
+      // dos seletores ainda vai sinalizar que está fora da janela.
       setActiveStageId(stages[0].id);
     }
   }, [activeStageId, stages, setActiveStageId]);

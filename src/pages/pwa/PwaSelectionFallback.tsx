@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { AlertCircle, Calendar, MapPin, ArrowLeft, CheckCircle2, AlertTriangle, RefreshCcw } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
+import { isStageOpenToday, stageWindowLabel, stageWindowBadge } from "@/lib/stageDateUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getOfflineQueue } from "@/lib/offlineQueue";
 import { getVoucherQueue } from "@/lib/voucherOffline";
@@ -164,11 +165,28 @@ const PwaSelectionFallback = () => {
                 <SelectValue placeholder={!selectedEventId ? "Selecione um evento primeiro" : "Selecione a etapa..."} />
               </SelectTrigger>
               <SelectContent>
-                {stages.filter(s => !selectedEventId || s.event_id === selectedEventId).map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
+                {(() => {
+                  const filtered = stages.filter(s => !selectedEventId || s.event_id === selectedEventId);
+                  // Etapas vigentes hoje primeiro; futuras/encerradas no final, desabilitadas.
+                  const sorted = [...filtered].sort((a, b) => (isStageOpenToday(a) ? 0 : 1) - (isStageOpenToday(b) ? 0 : 1));
+                  return sorted.map((s) => {
+                    const open = isStageOpenToday(s);
+                    const badge = stageWindowBadge(s);
+                    return (
+                      <SelectItem key={s.id} value={s.id} disabled={!open}>
+                        <span className="flex items-center gap-2">
+                          <span>{s.name}</span>
+                          <span className="text-[10px] text-muted-foreground">{stageWindowLabel(s)}</span>
+                          {badge && (
+                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                              {badge}
+                            </span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    );
+                  });
+                })()}
               </SelectContent>
             </Select>
           </div>
