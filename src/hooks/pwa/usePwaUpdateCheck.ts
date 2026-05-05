@@ -104,9 +104,16 @@ export function usePwaUpdateCheck(options?: { intervalMs?: number; onUpdateDetec
         || APP_VERSION.startsWith(server);
       if (sameCommit) return;
 
+      const previous = sessionStorage.getItem(RELOADED_FOR_VERSION);
+      if (previous === server) {
+        console.warn("[pwa-update] Reload já tentado para", server, "— abortando para evitar loop.");
+        return;
+      }
+
       console.warn(
         `[pwa-update] Deploy novo detectado. Cliente=${APP_VERSION} Servidor=${server} → reload limpo.`,
       );
+      
       if (onUpdateDetected) onUpdateDetected(server);
       await performHardReload(server);
     };
