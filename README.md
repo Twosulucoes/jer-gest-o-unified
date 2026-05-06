@@ -10,6 +10,12 @@ O **JER Gestão** é uma plataforma robusta de gestão operacional para os Jogos
 
 ## 🚀 Novidades Recentes (Maio 2026)
 
+### Vouchers — Pacote P1 (auditoria etapa Hqy0B-p1, branch `claude/audit-vouchers-module-Hqy0B-p1`)
+- **Filtros operacionais completos:** listagem e auditoria ganham filtros por **Dia** (default = hoje), **Janela/viagem/local** (dependente do escopo), **Origem** (online/offline) e **Operador** (dropdown dinâmico na auditoria), com indicador da etapa ativa.
+- **Audit trigger DB:** mudanças de status em `service_vouchers` (revoke/expire/unrevoke) gravam automaticamente em `service_voucher_audit` com `event_type`, `event_stage_id`, motivo e dados de reemissão. Trigger anti-spoof força `issuer_id = auth.uid()`.
+- **Denormalização `event_stage_id`:** em `service_voucher_batches` e `service_voucher_attempts` (com backfill), eliminando subquery na listagem de lotes e habilitando filtro direto na auditoria.
+- **RLS por etapa:** `service_vouchers`, `service_voucher_batches`, `service_voucher_uses` e `service_voucher_attempts` agora respeitam `check_user_stage_access(event_stage_id)`. Operacionais (alimentação/transporte/alojamento) só enxergam vouchers das etapas atribuídas; admin/secretaria/super_admin/coordenação técnica mantêm bypass.
+
 ### Vouchers — Correções P0 (auditoria etapa Hqy0B, branch `claude/audit-vouchers-module-Hqy0B`)
 - **Invariante canônico reafirmado:** 1 voucher = 1 evento × 1 etapa × 1 dia × 1 janela. Voucher só vale no dia da janela‑alvo.
 - **Emissão destravada:** wizards de voucher individual e lote agora recebem a etapa ativa via `useStageScope()`; botões ficam desabilitados sem etapa selecionada.

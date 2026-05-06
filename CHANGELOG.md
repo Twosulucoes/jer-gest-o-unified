@@ -4,6 +4,14 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Unreleased]
 
+### Added — Vouchers (P1, auditoria etapa Hqy0B-p1)
+- **[Vouchers]** Filtros completos na listagem: **Dia** (date picker, default = hoje), **Janela/viagem/local** (lista da etapa ativa, dependente do escopo), **Status**, **Escopo**, **Tipo**, busca textual. Indicador visual da etapa ativa e do dia filtrado.
+- **[Vouchers]** Filtros completos na auditoria: **Dia** (default = hoje), **Resultado** (sucesso/recusa), **Serviço**, **Origem** (online/offline), **Operador** (dropdown dinâmico). Indicador de etapa ativa e contagem de registros.
+- **[Vouchers]** Trigger `log_voucher_status_change` em `service_vouchers` registra automaticamente em `service_voucher_audit` toda mudança de status (revoke, expire, unrevoke), com `event_type`, `voucher_id`, `event_stage_id`, `old_status` → `new_status`, motivo e dados de reemissão.
+- **[Vouchers]** Trigger `enforce_audit_issuer_id` força `issuer_id = auth.uid()` em `service_voucher_audit` (anti-spoof).
+- **[Vouchers]** Coluna `event_stage_id` denormalizada em `service_voucher_batches` (com backfill via primeiro voucher do lote) e em `service_voucher_attempts` (com backfill + trigger `fill_attempt_event_stage_id`). Listagem de lotes deixa de fazer subquery e passa a filtrar direto.
+- **[Vouchers]** RLS endurecida por etapa para `service_vouchers`, `service_voucher_batches`, `service_voucher_uses` e `service_voucher_attempts` via `check_user_stage_access(event_stage_id)` — operacionais (`alimentacao`/`transporte`/`alojamento`) só veem vouchers das etapas atribuídas em `user_stage_assignments`. `admin`/`secretaria`/`super_admin`/`coordenacao_tecnica` mantêm acesso amplo (bypass na função).
+
 ### Fixed — Vouchers (P0, auditoria etapa Hqy0B)
 - **[Vouchers]** Emissão (individual e lote) destravada: `stageId` passa a ser propagado pelos dois wizards a partir de `useStageScope()` no `VouchersPage`. Sem etapa ativa os botões "Novo Voucher" / "Novo Lote" ficam desabilitados com tooltip explicativo.
 - **[Vouchers]** Voucher de **alojamento** agora exige campo "Data" obrigatório nos wizards; trigger `derive_voucher_validity` recusa `INSERT` com `target_facility_id` sem `target_date` (regra "válido somente no dia").
