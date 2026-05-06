@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -98,6 +98,10 @@ export default function CredenciamentoExternoPage() {
   const [manualCode, setManualCode] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Dedupe de scanner: o decoder pode emitir o mesmo onScan várias vezes
+  // em sequência rápida — sem isso, dispararíamos N RPCs para o mesmo código.
+  const lastScanRef = useRef<{ value: string; at: number } | null>(null);
 
   const selectParticipant = (p: ParticipantRow) => {
     setSelectedParticipant(p);
@@ -255,7 +259,9 @@ export default function CredenciamentoExternoPage() {
     onSuccess: () => {
       toast.success("Credencial vinculada! Participante credenciado e apto a competir.");
       if (navigator.vibrate) navigator.vibrate(200);
-      qc.invalidateQueries({ queryKey: ["ext-cred-participants", eventId, stageId] });
+      // ext-cred-active alimenta o credMap que define ext_cred_id/code/status
+      // por participante. Sem este invalidate, lista mostra estado defasado.
+      qc.invalidateQueries({ queryKey: ["ext-cred-active", eventId] });
       closeSheet();
     },
     onError: (err: any) => toast.error(err.message || "Erro ao vincular credencial"),
@@ -275,7 +281,7 @@ export default function CredenciamentoExternoPage() {
     },
     onSuccess: () => {
       toast.success("Credencial cancelada");
-      qc.invalidateQueries({ queryKey: ["ext-cred-participants", eventId, stageId] });
+      qc.invalidateQueries({ queryKey: ["ext-cred-active", eventId] });
       closeSheet();
     },
     onError: () => toast.error("Erro ao cancelar credencial"),
@@ -285,6 +291,17 @@ export default function CredenciamentoExternoPage() {
     setScannerOpen(false);
     const code = normalizeCredentialCode(rawValue);
     if (!code) return;
+
+    // Dedupe: ignora reemissão do mesmo código em < 1500ms.
+    const now = Date.now();
+    const last = lastScanRef.current;
+    if (last && last.value === code && now - last.at < 1500) return;
+    lastScanRef.current = { value: code, at: now };
+
+    // Bloqueia também enquanto a mutation anterior estiver em voo,
+    // evitando 2 RPCs concorrentes para a mesma operação.
+    if (linkMutation.isPending) return;
+
     if (hasActiveCred) { setPendingCode(code); setReplaceDialogOpen(true); }
     else { linkMutation.mutate({ code }); }
   }, [hasActiveCred, linkMutation]);

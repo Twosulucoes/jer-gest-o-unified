@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,10 @@ export default function VincularCredencialPage() {
   // do INSERT para o operador conferir credencial × participante.
   const [pendingLink, setPendingLink] = useState<ParticipantManualSearchRow | null>(null);
 
+  // Dedupe de scanner: o decoder pode emitir o mesmo onScan várias vezes
+  // em sucessão; sem isso, dispararíamos múltiplas RPCs para o mesmo código.
+  const lastScanRef = useRef<{ value: string; at: number } | null>(null);
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
     return () => clearTimeout(t);
@@ -68,6 +72,12 @@ export default function VincularCredencialPage() {
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
     if (!rawValue.trim()) return;
+
+    // Dedupe: ignora reemissão do mesmo QR em < 1500ms (decoder em loop).
+    const now = Date.now();
+    const last = lastScanRef.current;
+    if (last && last.value === rawValue && now - last.at < 1500) return;
+    lastScanRef.current = { value: rawValue, at: now };
 
     // Defesa contra falso-positivo: voucher escaneado por engano não pode
     // ser vinculado como credencial externa. Sem essa guarda, o code do
@@ -160,27 +170,54 @@ export default function VincularCredencialPage() {
 
   const handleLink = async (participant: ParticipantManualSearchRow) => {
     if (!scannedCode || !activeEventId) return;
-    
+
     setLinking(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      const { error } = await supabase
-        .from("external_credentials")
-        .upsert({
-          credential_code: scannedCode,
-          participant_id: participant.participant_id,
-          event_id: activeEventId,
-          status: "active",
-          linked_by_user_id: session?.user.id || null,
-          linked_at: new Date().toISOString()
-        }, {
-          onConflict: "credential_code"
-        });
+      if (!session?.user) {
+        throw new Error("Sessão expirada — faça login novamente.");
+      }
 
-      if (error) throw error;
+      // RPC link_external_credential exige p_replace_id quando o participante
+      // já tem credencial externa ativa (caso de troca de pulseira).
+      const { data: existing } = await supabase
+        .from("external_credentials")
+        .select("id")
+        .eq("participant_id", participant.participant_id)
+        .eq("event_id", activeEventId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      // Atomic: insere external_credentials, sincroniza participant_credentials
+      // e marca participant.status='credentialed' numa única transação.
+      // Sem isso, o admin via participante como "não credenciado" mesmo após
+      // PWA confirmar.
+      const { error } = await (supabase as any).rpc("link_external_credential", {
+        p_event_id: activeEventId,
+        p_participant_id: participant.participant_id,
+        p_credential_code: scannedCode,
+        p_user_id: session.user.id,
+        p_replace_id: existing?.id ?? null,
+        p_is_internal_mode: false,
+      });
+
+      if (error) {
+        const raw = (error.message || "").toLowerCase();
+        if (raw.includes("já vinculada a outro") || raw.includes("uq_external_credentials_event_code")) {
+          throw new Error(
+            "Esta credencial já está com outro participante. Cancele a vinculação atual no admin antes de transferir.",
+          );
+        }
+        if (raw.includes("uq_external_credentials_active_participant") || raw.includes("uq_participant_credentials_active")) {
+          throw new Error(
+            "Este participante já possui uma credencial ativa. Use a opção de substituir.",
+          );
+        }
+        throw error;
+      }
 
       toast.success("Credencial vinculada com sucesso!");
+      if (navigator.vibrate) navigator.vibrate(200);
       handleReset();
     } catch (err: any) {
       toast.error(`Erro ao vincular: ${err.message}`);
