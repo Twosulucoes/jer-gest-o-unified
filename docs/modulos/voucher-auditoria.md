@@ -4,6 +4,19 @@
 > **Estado:** 🟢 P0 mergeado / 🟡 P1 pendente revisão.
 > Histórico: ✅ FECHADO 2026-04-28 → regressão por mudança de RPC → P0 mergeado em 2026‑05‑06 → P1 (filtros, audit, RLS).
 
+## Auditoria 2026-05-06 (Hqy0B-p2) — Pacote P2
+
+| Frente | Mudança | Migration / Arquivo |
+|---|---|---|
+| RPCs canônicas | `revoke_voucher_v1(p_voucher_id, p_reason)`, `revoke_voucher_batch_v1(p_batch_id, p_reason)`, `reissue_voucher_v1(p_voucher_id, p_reason, p_new_qr)` — todas atomic com lock pessimista (`FOR UPDATE`) e idempotência (segundo clique não duplica). RLS via `SECURITY INVOKER`. | `20260507100000_voucher_p2_revoke_reissue_rpcs.sql` |
+| Revalidação on-update | Trigger `revalidate_voucher_validity_on_update` em `service_vouchers` BEFORE UPDATE de `target_*_id`/`target_date` recalcula `valid_from`/`valid_until`. Defesa em profundidade: hoje a UI não permite editar, mas SQL manual fica seguro. | mesma migration |
+| Frontend revoke/reissue | `VouchersPage` chama as RPCs (em vez de `UPDATE` direto). Mensagem "noop" quando voucher já estava revogado/reemitido. | `src/pages/admin/VouchersPage.tsx` |
+| Mensagens humanas | Helper `humanizeVoucherError` traduz erros técnicos (RLS, PostgREST, 404, 22023) para PT-BR operacional. Aplicado em revoke, reissue e ambos wizards de emissão. | mesma página |
+| Estados UI | Skeleton durante loading + empty state informativo (com sugestão de ajuste de filtro) na lista de vouchers e de lotes. | mesma página |
+| Limpeza | Removidos `console.log("DEBUG:")` espalhados nos wizards. | mesma página |
+
+---
+
 ## Auditoria 2026-05-06 (Hqy0B-p1) — Pacote P1
 
 | Frente | Mudança | Migration / Arquivo |
