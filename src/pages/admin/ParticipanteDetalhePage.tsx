@@ -152,8 +152,13 @@ export default function ParticipanteDetalhePage() {
       queryClient.invalidateQueries({ queryKey: ["participant_full"] });
       queryClient.invalidateQueries({ queryKey: ["participant_active_credential"] });
     },
-    onError: (err) => {
-      toast({ title: "Erro ao emitir credencial", description: String(err), variant: "destructive" });
+    onError: (err: any) => {
+      // err.message já é humano após L2 (EXCEPTION handler da RPC).
+      toast({
+        title: "Erro ao emitir credencial",
+        description: err?.message || String(err),
+        variant: "destructive",
+      });
     },
   });
 
@@ -176,8 +181,12 @@ export default function ParticipanteDetalhePage() {
       queryClient.invalidateQueries({ queryKey: ["participant_active_credential"] });
       queryClient.invalidateQueries({ queryKey: ["credential_scans"] });
     },
-    onError: (err) => {
-      toast({ title: "Erro ao reemitir credencial", description: String(err), variant: "destructive" });
+    onError: (err: any) => {
+      toast({
+        title: "Erro ao reemitir credencial",
+        description: err?.message || String(err),
+        variant: "destructive",
+      });
       setReissueConfirmOpen(false);
     },
   });

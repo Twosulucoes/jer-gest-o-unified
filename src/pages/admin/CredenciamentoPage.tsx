@@ -502,12 +502,13 @@ export default function CredenciamentoPage() {
       setManualCode("");
     },
     onError: (err: Error) => {
+      // Após L2, mensagens de unique_violation já são humanas (vêm do
+      // EXCEPTION handler da RPC). Só interceptamos sinais específicos
+      // de regras de negócio (irregularidade) que vêm de outros RAISEs.
       if (err.message?.includes("irregularidade") || err.message?.includes("Credenciamento bloqueado")) {
         toast.error("Credenciamento bloqueado: atleta possui irregularidade aberta. Resolva em Irregularidades.");
-      } else if (err.message?.includes("uq_participant_event_active")) {
-        toast.error("Este participante já possui credencial ativa.");
       } else {
-        toast.error(`Erro ao credenciar: ${err.message}`);
+        toast.error(err.message || "Erro ao credenciar");
       }
     },
   });
@@ -523,10 +524,8 @@ export default function CredenciamentoPage() {
     onError: (err: Error) => {
       if (err.message?.includes("irregularidade") || err.message?.includes("Credenciamento bloqueado")) {
         toast.error("Credenciamento bloqueado: atleta possui irregularidade aberta. Resolva em Irregularidades.");
-      } else if (err.message?.includes("uq_participant_event_active")) {
-        toast.error("Este participante já possui credencial ativa.");
       } else {
-        toast.error(`Erro ao emitir credencial: ${err.message}`);
+        toast.error(err.message || "Erro ao emitir credencial");
       }
     },
   });

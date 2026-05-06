@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -98,6 +100,10 @@ export default function CredenciamentoExternoPage() {
   const [manualCode, setManualCode] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  // Cancelamento agora exige motivo (audit trail).
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState<string>("");
+  const [cancelNote, setCancelNote] = useState<string>("");
 
   // Dedupe de scanner: o decoder pode emitir o mesmo onScan várias vezes
   // em sequência rápida — sem isso, dispararíamos N RPCs para o mesmo código.
@@ -267,25 +273,54 @@ export default function CredenciamentoExternoPage() {
     onError: (err: any) => toast.error(err.message || "Erro ao vincular credencial"),
   });
 
-  // Cancel credential mutation — all writes happen inside a single DB transaction via RPC
+  // Cancel credential mutation — all writes happen inside a single DB transaction via RPC.
+  // p_user_id e p_reason alimentam credential_audit_log (trigger captura
+  // ator e motivo). Sem isso, no pós-evento ninguém sabe quem cancelou
+  // nem por quê.
   const cancelMutation = useMutation({
-    mutationFn: async (credId: string) => {
-      if (!eventId || !selectedParticipant) throw new Error("Participante não selecionado");
+    mutationFn: async ({ credId, reason }: { credId: string; reason: string }) => {
+      if (!eventId || !selectedParticipant || !user) throw new Error("Dados insuficientes");
 
       const { error } = await (supabase as any).rpc("cancel_external_credential", {
         p_event_id: eventId,
         p_participant_id: selectedParticipant.id,
         p_cred_id: credId,
+        p_user_id: user.id,
+        p_reason: reason,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Credencial cancelada");
       qc.invalidateQueries({ queryKey: ["ext-cred-active", eventId] });
+      setCancelDialogOpen(false);
+      setCancelReason("");
+      setCancelNote("");
       closeSheet();
     },
-    onError: () => toast.error("Erro ao cancelar credencial"),
+    onError: (err: any) => toast.error(err?.message || "Erro ao cancelar credencial"),
   });
+
+  // Lista canônica de motivos. 'outro' permite texto livre na nota.
+  const CANCEL_REASONS = [
+    { value: "extraviada", label: "Extraviada (perdida pelo atleta)" },
+    { value: "danificada", label: "Danificada (QR ilegível ou rompida)" },
+    { value: "erro_cadastro", label: "Erro de cadastro (vinculada à pessoa errada)" },
+    { value: "duplicidade", label: "Duplicidade (vinculada por engano)" },
+    { value: "outro", label: "Outro (descrever na nota)" },
+  ];
+
+  const submitCancel = () => {
+    if (!cancelReason || !existingCred?.id) return;
+    const reasonLabel = CANCEL_REASONS.find((r) => r.value === cancelReason)?.label ?? cancelReason;
+    const fullReason =
+      cancelReason === "outro" && cancelNote.trim()
+        ? `outro: ${cancelNote.trim()}`
+        : cancelNote.trim()
+        ? `${reasonLabel} — ${cancelNote.trim()}`
+        : reasonLabel;
+    cancelMutation.mutate({ credId: existingCred.id, reason: fullReason });
+  };
 
   const handleScan = useCallback((rawValue: string) => {
     setScannerOpen(false);
@@ -580,7 +615,11 @@ export default function CredenciamentoExternoPage() {
                       <Button
                         variant="destructive"
                         className="flex-1"
-                        onClick={() => cancelMutation.mutate(existingCred!.id!)}
+                        onClick={() => {
+                          setCancelReason("");
+                          setCancelNote("");
+                          setCancelDialogOpen(true);
+                        }}
                         disabled={cancelMutation.isPending}
                       >
                         <XCircle className="h-4 w-4 mr-2" /> Cancelar
@@ -663,7 +702,64 @@ export default function CredenciamentoExternoPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <PessoaFormDialog 
+      {/* Dialog de cancelamento com motivo obrigatório.
+          O motivo + ator (user.id) vão para credential_audit_log via
+          trigger AFTER UPDATE — sem isso, no pós-evento ninguém sabe
+          quem cancelou nem por quê. */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar credencial?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Selecione o motivo do cancelamento. Esta ação fica registrada
+              no histórico da credencial.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Motivo
+              </Label>
+              <Select value={cancelReason} onValueChange={setCancelReason}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione o motivo…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CANCEL_REASONS.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Nota (opcional)
+              </Label>
+              <Textarea
+                value={cancelNote}
+                onChange={(e) => setCancelNote(e.target.value)}
+                placeholder="Detalhe adicional para o histórico…"
+                rows={2}
+                maxLength={500}
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelMutation.isPending}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                submitCancel();
+              }}
+              disabled={!cancelReason || cancelMutation.isPending || (cancelReason === "outro" && !cancelNote.trim())}
+            >
+              {cancelMutation.isPending ? "Cancelando…" : "Confirmar cancelamento"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <PessoaFormDialog
         open={editDialogOpen} 
         onOpenChange={setEditDialogOpen} 
         participantId={selectedParticipant?.id} 

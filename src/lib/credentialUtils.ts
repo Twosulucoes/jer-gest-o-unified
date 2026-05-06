@@ -109,10 +109,30 @@ export async function issueCredentialWithRetry(
 
     if (!error) return { credentialCode, qrCodeValue, attempts: attempt };
 
-    const msg = (error.message || "").toLowerCase();
-    const isCollision =
-      msg.includes("duplicate") || msg.includes("unique") || msg.includes("23505");
-    if (!isCollision) throw error;
+    // Após L2 a RPC issue_participant_credential captura unique_violation
+    // e relança com HINT = nome da constraint. Recoverable significa "gerar
+    // outro código resolve": uq_event_credential (mesmo evento) e
+    // uq_credential_qr (cross-event). Non-recoverable: participante já tem
+    // ativa — só Reemitir resolve, e nesse caso o caller passa revokeId.
+    const code = String((error as any).code ?? "");
+    const hint = String((error as any).hint ?? "");
+    const msgLower = (error.message || "").toLowerCase();
+    const isUniqueViolation = code === "23505" || msgLower.includes("23505");
+
+    const RECOVERABLE_CONSTRAINTS = new Set(["uq_event_credential", "uq_credential_qr"]);
+    const isRecoverable =
+      isUniqueViolation &&
+      (RECOVERABLE_CONSTRAINTS.has(hint) ||
+        // Fallback pré-L2 (constraint name no message cru): mantém retry
+        // funcionando antes da migration L2 ser aplicada.
+        (!hint && (msgLower.includes("uq_event_credential") || msgLower.includes("uq_credential_qr"))));
+
+    if (!isRecoverable) {
+      // Erro não-recuperável (participante já tem ativa, RLS, FK quebrada,
+      // etc.) — error.message já é humano após L2. Propaga sem mascarar.
+      throw error;
+    }
+
     lastError = error;
   }
 
