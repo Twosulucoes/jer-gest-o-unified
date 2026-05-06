@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { syncOfflineQueue } from "@/lib/offlineQueue";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,24 +9,34 @@ import { useAuth } from "@/hooks/useAuth";
  */
 export function OfflineSyncManager() {
   const { user } = useAuth();
+  const isSyncingRef = useRef(false);
 
   useEffect(() => {
+    let isMounted = true;
     if (!user) return;
 
     const handleSync = async () => {
-      if (navigator.onLine) {
-        const result = await syncOfflineQueue();
-        if (result.count > 0) {
-          toast.success(`${result.count} registro(s) sincronizados com sucesso.`, {
-            description: "Os dados coletados offline foram enviados ao servidor."
-          });
+      if (isSyncingRef.current || !navigator.onLine) return;
+      isSyncingRef.current = true;
+        try {
+          const result = await syncOfflineQueue();
+          if (!isMounted) return;
+          
+          if (result.count > 0) {
+            toast.success(`${result.count} registro(s) sincronizados com sucesso.`, {
+              description: "Os dados coletados offline foram enviados ao servidor."
+            });
+          }
+          if (result.errors && result.errors > 0) {
+            toast.error(`Falha ao sincronizar ${result.errors} registro(s).`, {
+              description: "Verifique a Central de Conflitos no menu PWA."
+            });
+          }
+        } catch (error) {
+          console.error("Sync error:", error);
+        } finally {
+          isSyncingRef.current = false;
         }
-        if (result.errors && result.errors > 0) {
-          toast.error(`Falha ao sincronizar ${result.errors} registro(s).`, {
-            description: "Verifique a Central de Conflitos no menu PWA."
-          });
-        }
-      }
     };
 
     // 1. Sync when coming back online
@@ -39,6 +49,7 @@ export function OfflineSyncManager() {
     handleSync();
 
     return () => {
+      isMounted = false;
       window.removeEventListener("online", handleSync);
       clearInterval(interval);
     };

@@ -80,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const userData = await fetchUserData(nextSession.user.id);
         if (!isMounted) return;
+        // Verify we are still processing the same user to avoid race conditions
         if (processingRef.current !== nextUserId) return;
         setRoles(userData.roles);
         setProfile(userData.profile);
