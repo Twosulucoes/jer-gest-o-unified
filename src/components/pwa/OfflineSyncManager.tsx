@@ -9,13 +9,15 @@ import { useAuth } from "@/hooks/useAuth";
  */
 export function OfflineSyncManager() {
   const { user } = useAuth();
+  const isSyncingRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
     if (!user) return;
 
     const handleSync = async () => {
-      if (navigator.onLine) {
+      if (isSyncingRef.current || !navigator.onLine) return;
+      isSyncingRef.current = true;
         try {
           const result = await syncOfflineQueue();
           if (!isMounted) return;
@@ -32,6 +34,8 @@ export function OfflineSyncManager() {
           }
         } catch (error) {
           console.error("Sync error:", error);
+        } finally {
+          isSyncingRef.current = false;
         }
       }
     };
