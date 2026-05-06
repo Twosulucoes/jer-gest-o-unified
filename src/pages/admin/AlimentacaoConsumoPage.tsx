@@ -3,8 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  UtensilsCrossed, QrCode, AlertTriangle, Plus,
+  UtensilsCrossed, QrCode, AlertTriangle, Plus, Undo2,
 } from "lucide-react";
+import ReverseConsumptionDialog from "@/components/admin/ReverseConsumptionDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,13 @@ export default function AlimentacaoConsumoPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
+  const canReverse = hasRole("admin");
+
+  const [reverseTarget, setReverseTarget] = useState<{
+    consumptionId: string;
+    participantName: string | null;
+    windowLabel: string | null;
+  } | null>(null);
 
   // H6: qualquer filtro reseta para a primeira página
   useEffect(() => {
@@ -322,6 +330,7 @@ export default function AlimentacaoConsumoPage() {
                     <TableHead>Restrições</TableHead>
                     <TableHead>Hora</TableHead>
                     <TableHead>Método</TableHead>
+                    {canReverse && <TableHead className="w-12 text-right">Ações</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -354,6 +363,26 @@ export default function AlimentacaoConsumoPage() {
                           {new Date(c.consumed_at).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                         </TableCell>
                         <TableCell><Badge variant="outline" className="text-[10px] h-5">{c.method === "qr" ? "QR" : "Manual"}</Badge></TableCell>
+                        {canReverse && (
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              aria-label="Estornar consumo"
+                              onClick={() =>
+                                setReverseTarget({
+                                  consumptionId: c.id,
+                                  participantName: person?.full_name ?? null,
+                                  windowLabel: win?.label || mt?.name || null,
+                                })
+                              }
+                            >
+                              <Undo2 className="h-3.5 w-3.5" aria-hidden />
+                              <span className="ml-1 hidden md:inline text-xs">Estornar</span>
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   })}
@@ -427,6 +456,16 @@ export default function AlimentacaoConsumoPage() {
           <p className="text-muted-foreground font-medium">Selecione uma janela de refeição</p>
         </div>
       )}
+
+      <ReverseConsumptionDialog
+        open={reverseTarget !== null}
+        onOpenChange={(next) => {
+          if (!next) setReverseTarget(null);
+        }}
+        consumptionId={reverseTarget?.consumptionId ?? null}
+        participantName={reverseTarget?.participantName ?? null}
+        windowLabel={reverseTarget?.windowLabel ?? null}
+      />
     </div>
   );
 }
